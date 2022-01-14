@@ -9,7 +9,7 @@ For our Proxy and EVM we need to use a lot of frameworks, languages, contracts a
 
 1. Top level we split for different types of tests by : loadtesting, integration, compatibility tests.
     - utils - some python utils which can help write integration, loadtesting and another python tests
-    - ci - directory with docker files, configs and files for deploy
+    - deploy - directory with docker files, configs and files for deploy
     - allure - directory with allure configs
     - envs.yml - stand configurations
     - clickfile.py - file with CLI interface with different tasks to run all tests and prepare it.

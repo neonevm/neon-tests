@@ -20,4 +20,4 @@ For our Proxy and EVM we need to use a lot of frameworks, languages, contracts a
    or realize one basic scenario (like: create several accounts, get evm version, get blocks, make several transactions, deploy one contract).
    Each framework and language has private structure and we don't need to change it and use good practices for each language.
 3. Loadtesting - future tests for load testing
-4. Integration - integration tests for base fsunctionalitiy; operator economy and so
+4. Integration - integration tests for base functionalitiy; operator economy and so

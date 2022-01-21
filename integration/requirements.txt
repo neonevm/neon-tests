@@ -1,5 +1,6 @@
 pytest==6.2.5
 allure-pytest==2.9.45
 web3==5.26.0
-solana==0.20.0
+solana==0.21.0
 requests==2.27.1
+black

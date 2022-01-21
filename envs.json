@@ -1,0 +1,9 @@
+{
+  "night-stand": {
+    "proxy_url": "http://proxy.night.stand.neontest.xyz/solana",
+    "network_id": 111,
+    "solana_url": "http://proxy.night.stand.neontest.xyz/node-solana",
+    "faucet_url": "http://proxy.night.stand.neontest.xyz",
+    "operator_solana_key": "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih"
+  }
+}

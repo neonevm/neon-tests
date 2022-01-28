@@ -3,4 +3,5 @@ allure-pytest==2.9.45
 web3==5.26.0
 solana==0.21.0
 requests==2.27.1
-black
+py-solc-x==1.1.1
+black==21.12b0

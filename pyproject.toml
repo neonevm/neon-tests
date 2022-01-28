@@ -6,3 +6,4 @@ target-version = ['py39']
 markers = [
     "only_stands: this tests work only on test stands",
 ]
+addopts = "--alluredir=allure-report"

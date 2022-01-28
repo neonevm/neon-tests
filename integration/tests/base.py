@@ -4,12 +4,13 @@ import pytest
 
 from utils.operator import Operator
 from utils.faucet import Faucet
+from utils.web3client import NeonWeb3Client
 
 
 class BaseTests:
     operator: Operator
     faucet: Faucet
-    web3_client: web3.Web3
+    web3_client: NeonWeb3Client
     sol_client: solana.rpc.api.Client
 
     @pytest.fixture(autouse=True)

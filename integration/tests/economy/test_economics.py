@@ -18,27 +18,32 @@ LAMPORT_PER_SOL = 1000000000
 @pytest.fixture(scope="class")
 def prepare_account(operator, faucet, web3_client):
     start_neon_balance = operator.get_neon_balance()
+    start_sol_balance = operator.get_solana_balance()
+
     acc = web3_client.eth.account.create()
-    print("GET FAUCET")
     faucet.request_neon(acc.address, 100)
     assert web3_client.get_balance(acc) == 100
     yield acc
     end_neon_balance = operator.get_neon_balance()
+    end_sol_balance = operator.get_solana_balance()
 
 
 @allure.story("Operator economy")
 class TestEconomics(BaseTests):
     acc = None
 
+    @allure.step("Verify operator profit")
     def assert_profit(self, sol_diff, neon_diff):
         sol_amount = sol_diff / LAMPORT_PER_SOL
         if neon_diff < 0:
             raise AssertionError(f"NEON has negative difference {neon_diff}")
-
-        neon_amount = self.web3_client.fromWei(neon_diff, "ether")
+        # neon_amount = self.web3_client.fromWei(neon_diff, "ether")
+        neon_amount = neon_diff / LAMPORT_PER_SOL
         sol_cost = Decimal(sol_amount) * Decimal(SOL_PRICE)
-        neon_cost = neon_amount * Decimal(NEON_PRICE)
-        assert neon_cost > sol_cost, "Operator receive {:.9f} NEON and spend {:.9f} SOL".format(neon_cost, sol_cost)
+        neon_cost = Decimal(neon_amount) * Decimal(NEON_PRICE)
+        msg = "Operator receive {:.9f} NEON ({:.2f} $) and spend {:.9f} SOL ({:.2f} $)".format(neon_amount, neon_cost, sol_amount, sol_cost)
+        with allure.step(msg):
+            assert neon_cost > sol_cost, msg
 
     def get_compiled_contract(self, name, compiled):
         for key in compiled.keys():

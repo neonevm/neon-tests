@@ -1,0 +1,2 @@
+# this file for packages which has conflicts with
+web3==5.26.0

@@ -1,10 +1,35 @@
 # Overview
 
-Experimental structure for move all neon tests to one repo.
+A main repository for all types of tests in NEON for proxy and evm.
 
-Main language for tests - Python.
+## How to use
 
-## What we need to tests?
+At first you need install a main dependency for CLI utility:
+
+```bash
+pip3 install click==8.0.3
+```
+
+After this you can use from project root directory:
+
+```bash
+./clickfile.py --help
+```
+
+This file contains a lot of utilities to work with this repository such as:
+1. update deps
+2. run different tests
+3. prepare data and stand for run tests
+
+
+##Install dependencies
+
+Please use clickfile.py to install deps because our web3 has conflicts with solana package and this problem resolved in:
+```bash
+./clickfile.py requirements
+```
+
+## Structure
 
 For our Proxy and EVM we need to use a lot of frameworks, languages, contracts and scenarios. For this I propose this
 structure:

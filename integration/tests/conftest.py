@@ -24,11 +24,11 @@ class EnvironmentConfig:
 
 
 def pytest_addoption(parser):
-    parser.addoption("--env", action="store", default="night-stand", help="Which stand use")
+    parser.addoption("--network", action="store", default="night-stand", help="Which stand use")
 
 
 def pytest_configure(config: Config):
-    env_name = config.getoption("--env")
+    env_name = config.getoption("--network")
     with open(pathlib.Path().parent.parent / "envs.json", "r+") as f:
         environments = json.load(f)
     assert env_name in environments, f"Environment {env_name} doesn't exist in envs.json"

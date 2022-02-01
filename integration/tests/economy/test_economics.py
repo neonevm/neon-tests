@@ -101,7 +101,7 @@ class TestEconomics(BaseTests):
         assert neon_balance_after > neon_balance_before
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    @pytest.skip("Not implemented")
+    @pytest.mark.skip("Not implemented")
     def test_spl_transaction(self):
         pass
 
@@ -219,18 +219,18 @@ class TestEconomics(BaseTests):
         assert neon_balance_after == neon_balance_before
         assert sol_balance_after == sol_balance_before
 
-    @pytest.skip("Not implemented")
+    @pytest.mark.skip("Not implemented")
     def test_block_deposit(self):
         pass
 
-    @pytest.skip("Not implemented")
+    @pytest.mark.skip("Not implemented")
     def test_verify_operator_initialization(self):
         pass
 
-    @pytest.skip("Not implemented")
+    @pytest.mark.skip("Not implemented")
     def test_another_operator_complete_tx(self):
         """Maybe impossible from this side"""
 
-    @pytest.skip("Not implemented")
+    @pytest.mark.skip("Not implemented")
     def test_send_two_identical_tx(self):
         pass

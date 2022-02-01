@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import sys
 import click
 import subprocess
 
@@ -31,7 +32,11 @@ def run(name, network):
     if name == "economy":
         command = "py.test integration/tests/economy/test_economics.py"
     command += f" --network={network}"
-    subprocess.run(command, shell=True)
+
+    cmd = subprocess.run(command, shell=True)
+
+    if cmd.returncode != 0:
+        sys.exit(cmd.returncode)
 
 
 if __name__ == "__main__":

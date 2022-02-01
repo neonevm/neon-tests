@@ -77,3 +77,60 @@ jobs:
       - name: "Run economy tests"
         run: "./clickfile.py run economy"
 
+  allure:
+    runs-on: ubuntu-20.04
+    if: always()
+    needs:
+      - openzeppelin
+      - tests
+      - prepare-env
+    env:
+      NETWORK: ${{ needs.prepare-env.outputs.network }}
+    steps:
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v2
+
+      - name: Get Allure history
+        uses: actions/checkout@v2
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Create a path for report
+        run: |
+          path=""
+          network="${{ env.NETWORK }}"
+          ref_name="${{ github.ref_name }}"
+          if [[ "$network" != "night-stand" ]]; then
+            path="$network"
+          fi
+          if [[ "$ref_name" != "develop" ]]; then
+            if [ ${#path} -gt 0 ]; then
+              path="$path/$ref_name"
+            else
+              path="$ref_name"
+            fi
+          fi
+          echo "ALLURE_SUBDIR=$path" >> $GITHUB_ENV
+
+      - name: Allure Report action from marketplace
+        uses: neonlabsorg/allure-report-action@master
+        if: always()
+        with:
+          allure_results: allure-results
+          gh_pages: gh-pages
+          subfolder: ${{ env.ALLURE_SUBDIR }}
+          allure_report: allure-report
+          allure_history: allure-history
+          keep_reports: 50
+
+      - name: Deploy report to Github Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v2
+        env:
+          PERSONAL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: allure-history
+    outputs:
+      subdir: ${{ env.ALLURE_SUBDIR }}

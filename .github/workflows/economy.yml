@@ -16,7 +16,7 @@ on:
           - testnet
       runner:
         type: choice
-        default: neon-hosted
+        default: ubuntu-20.04
         required: true
         description: "Where to run tests (our runner or github)"
         options:
@@ -67,3 +67,13 @@ jobs:
     runs-on: ${{ needs.prepare-env.outputs.runner }}
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - name: "Install click"
+        run: "pip install click"
+      - name: "Install deps"
+        run: "./clickfile.py requirements"
+      - name: "Run economy tests"
+        run: "./clickfile.py run economy"
+

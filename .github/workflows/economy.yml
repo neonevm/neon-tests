@@ -1,0 +1,79 @@
+name: "Operator economy"
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        type: choice
+        default: night-stand
+        required: true
+        description: "Stand name"
+        options:
+          - night-stand
+          - release-stand
+          - devnet-aws
+          - devnet
+          - testnet
+      runner:
+        type: choice
+        default: ubuntu-20.04
+        required: true
+        description: "Where to run tests (our runner or github)"
+        options:
+          - neon-hosted
+          - aws-hosted
+          - ubuntu-20.04
+
+env:
+  NETWORK: night-stand
+  RUNNER: neon-hosted
+
+jobs:
+  prepare-env:
+    runs-on: ubuntu-20.04
+    if: always()
+    steps:
+      - name: Setup env
+        id: setup
+        run: |
+          # $1 - inputs
+          # $2 - env.VAR
+          function setVar {
+            if [ -z "$1" ]
+              then
+                RESULT="$2"
+              else
+                RESULT="$1"
+            fi
+            echo $RESULT
+          }
+          
+          NETWORK=$( setVar "${{ github.event.inputs.network }}" "${{ env.NETWORK }}" )
+          RUNNER=$( setVar "${{ github.event.inputs.runner }}" "${{ env.RUNNER }}" )
+          
+          echo "Network: ${NETWORK}"
+          echo "Runner: ${RUNNER}"
+
+          echo "::set-output name=network::${NETWORK}"
+          echo "::set-output name=runner::${RUNNER}"
+          echo "::set-output name=jobs::${JOBS_NUMBER}"
+    outputs:
+      network: ${{ steps.setup.outputs.network }}
+      runner: ${{ steps.setup.outputs.runner }}
+
+  tests:
+    needs:
+      - prepare-env
+    runs-on: ${{ needs.prepare-env.outputs.runner }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - name: "Install click"
+        run: "pip install click"
+      - name: "Install deps"
+        run: "./clickfile.py requirements"
+      - name: "Run economy tests"
+        run: "./clickfile.py run economy"
+

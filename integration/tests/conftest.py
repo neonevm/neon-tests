@@ -71,9 +71,12 @@ def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
         "EVM.Version": web3_client.get_evm_version()["result"],
         "CLI.Version": web3_client.get_cli_version()["result"]
     }
+
+    allure_path = pytestconfig.getoption("--alluredir")
+
     yield opts
-    with open(pathlib.Path() / "allure-report" / "environment.properties", "w+") as f:
+    with open(pathlib.Path() / allure_path / "environment.properties", "w+") as f:
         f.write("\n".join(map(lambda x: f"{x[0]}={x[1]}", opts.items())))
     categories_from = pathlib.Path() / "allure" / "categories.json"
-    categories_to = pathlib.Path() / "allure-report" / "categories.json"
+    categories_to = pathlib.Path() / allure_path / "categories.json"
     shutil.copy(categories_from, categories_to)

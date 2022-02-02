@@ -105,8 +105,6 @@ jobs:
           ref: gh-pages
           path: gh-pages
 
-      - run: ls -la
-
       - name: Create a path for report
         run: |
           path=""

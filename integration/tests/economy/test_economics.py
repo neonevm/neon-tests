@@ -109,6 +109,27 @@ class TestEconomics(BaseTests):
         assert neon_balance_after > neon_balance_before
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
+    def test_send_when_not_enough_for_gas(self):
+        acc2 = self.web3_client.create_account()
+
+        assert self.web3_client.get_balance(acc2) == 0
+
+        self.web3_client.send_neon(self.acc, acc2, 1)
+
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        acc3 = self.web3_client.create_account()
+
+        with pytest.raises(ValueError):
+            self.web3_client.send_neon(acc2, acc3, 1)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before == sol_balance_after
+        assert neon_balance_before == neon_balance_after
+
     @pytest.mark.skip("Not implemented")
     def test_spl_transaction(self):
         pass

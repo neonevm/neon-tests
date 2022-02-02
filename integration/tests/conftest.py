@@ -1,4 +1,5 @@
 import json
+import shutil
 import pathlib
 from dataclasses import dataclass
 
@@ -73,3 +74,6 @@ def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
     yield opts
     with open(pathlib.Path() / "allure-report" / "environment.properties", "w+") as f:
         f.write("\n".join(map(lambda x: f"{x[0]}={x[1]}", opts.items())))
+    categories_from = pathlib.Path() / "allure" / "categories.json"
+    categories_to = pathlib.Path() / "allure-report" / "categories.json"
+    shutil.copy(categories_from, categories_to)

@@ -76,6 +76,11 @@ jobs:
         run: "./clickfile.py requirements"
       - name: "Run economy tests"
         run: "./clickfile.py run economy"
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: "Allure results"
+          folder-name: allure-results
 
   allure:
     runs-on: ubuntu-20.04
@@ -88,6 +93,8 @@ jobs:
     steps:
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v2
+        with:
+          name: "Allure results"
 
       - name: Get Allure history
         uses: actions/checkout@v2

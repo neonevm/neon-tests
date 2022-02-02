@@ -96,6 +96,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: "Allure results"
+          path: allure-results
 
       - name: Get Allure history
         uses: actions/checkout@v2

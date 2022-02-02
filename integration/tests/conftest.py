@@ -77,6 +77,7 @@ def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
     yield opts
     with open(pathlib.Path() / allure_path / "environment.properties", "w+") as f:
         f.write("\n".join(map(lambda x: f"{x[0]}={x[1]}", opts.items())))
+        f.write("\n")
     categories_from = pathlib.Path() / "allure" / "categories.json"
     categories_to = pathlib.Path() / allure_path / "categories.json"
     shutil.copy(categories_from, categories_to)

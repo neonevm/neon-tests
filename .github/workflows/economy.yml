@@ -62,6 +62,7 @@ jobs:
       runner: ${{ steps.setup.outputs.runner }}
 
   tests:
+    name: "Operator tests"
     needs:
       - prepare-env
     runs-on: ${{ needs.prepare-env.outputs.runner }}
@@ -80,7 +81,7 @@ jobs:
         if: always()
         with:
           name: "Allure results"
-          folder-name: allure-results
+          path: allure-results
 
   allure:
     runs-on: ubuntu-20.04

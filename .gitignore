@@ -224,3 +224,4 @@ cython_debug/
 
 # allure report
 allure-report/
+allure-results/

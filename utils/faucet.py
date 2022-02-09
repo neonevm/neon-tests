@@ -9,7 +9,7 @@ class Faucet:
 
     def request_neon(self, address: str, amount: int = 100):
         assert address.startswith("0x")
-        url = urllib.parse.urljoin(self._url, "request_eth_token")
+        url = urllib.parse.urljoin(self._url, "request_neon")
         self._session.post(url, json={"amount": amount, "wallet": address})
 
     def request_sol(self, address: str, amount: int = 100):

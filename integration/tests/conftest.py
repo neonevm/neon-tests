@@ -1,16 +1,24 @@
 import json
 import shutil
+import asyncio
 import pathlib
+import typing as tp
 from dataclasses import dataclass
 
 import web3
+import allure
 import pytest
 import solana
+from pythclient.pythaccounts import PythPriceAccount
+from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP_ENDPOINT
 from _pytest.config import Config
 
 from utils.operator import Operator
 from utils.faucet import Faucet
 from utils.web3client import NeonWeb3Client
+
+
+LAMPORT_PER_SOL = 1_000_000_000
 
 
 @dataclass
@@ -22,6 +30,7 @@ class EnvironmentConfig:
     network_id: int
     operator_solana_key: str
     spl_neon_mint: str
+    operator_keys: tp.List[str]
 
 
 def pytest_addoption(parser):
@@ -36,6 +45,19 @@ def pytest_configure(config: Config):
     config.environment = EnvironmentConfig(**environments[env_name])
 
 
+@pytest.fixture(scope="session")
+def sol_price():
+    async def get_price():
+        account_key = SolanaPublicKey("H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG")
+        solana_client = SolanaClient(endpoint=SOLANA_MAINNET_HTTP_ENDPOINT)
+        price: PythPriceAccount = PythPriceAccount(account_key, solana_client)
+        await price.update()
+        return price.aggregate_price
+
+    loop = asyncio.get_event_loop()
+    return loop.run_until_complete(get_price())
+
+
 @pytest.fixture(scope="session", autouse=True)
 def operator(pytestconfig: Config) -> Operator:
     return Operator(
@@ -44,6 +66,7 @@ def operator(pytestconfig: Config) -> Operator:
         pytestconfig.environment.network_id,
         pytestconfig.environment.operator_solana_key,
         pytestconfig.environment.spl_neon_mint,
+        pytestconfig.environment.operator_keys
     )
 
 
@@ -81,3 +104,26 @@ def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
     categories_from = pathlib.Path() / "allure" / "categories.json"
     categories_to = pathlib.Path() / allure_path / "categories.json"
     shutil.copy(categories_from, categories_to)
+
+
+@pytest.fixture(scope="class")
+def prepare_account(operator, faucet, web3_client):
+    """Create new account for tests and save operator pre/post balances"""
+    with allure.step("Create account for tests"):
+        acc = web3_client.eth.account.create()
+    with allure.step(f"Request 1000 NEON from faucet for {acc.address}"):
+        faucet.request_neon(acc.address, 1000)
+        assert web3_client.get_balance(acc) == 1000
+    start_neon_balance = operator.get_neon_balance()
+    start_sol_balance = operator.get_solana_balance()
+    with allure.step(f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"):
+        pass
+    yield acc
+    end_neon_balance = operator.get_neon_balance()
+    end_sol_balance = operator.get_solana_balance()
+    with allure.step(f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"):
+        pass
+    with allure.step(
+            f"Account end balance: {web3_client.get_balance(acc)} NEON"):
+        pass
+

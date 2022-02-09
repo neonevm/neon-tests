@@ -27,8 +27,8 @@ class NeonWeb3Client:
                             json={"jsonrpc": "2.0", "method": "web3_clientVersion", "params": [], "id": 0}).json()
 
     def gas_price(self):
-        # TODO: Change this when we will use gasPrice value in proxy for calculations
-        return 1000000000
+        gas = self._web3.eth.gas_price
+        return gas * 1_000_000_000
 
     def create_account(self):
         return self._web3.eth.account.create()
@@ -43,7 +43,7 @@ class NeonWeb3Client:
         from_: eth_account.signers.local.LocalAccount,
         to: tp.Union[str, eth_account.signers.local.LocalAccount],
         amount: tp.Union[int, float, Decimal],
-        gas: int = 21000,
+        gas: int = 100000000,
         gas_price: tp.Optional[int] = None,
     ) -> web3.types.TxReceipt:
         to_addr = to if isinstance(to, str) else to.address

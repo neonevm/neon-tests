@@ -16,14 +16,20 @@
     "solana_url": "http://proxy.release.stand.neontest.xyz/node-solana",
     "faucet_url": "http://proxy.release.stand.neontest.xyz/",
     "operator_solana_key": "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih",
-    "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU"
+    "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
+    "operator_keys": [
+      "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih"
+    ]
   },
   "devnet": {
     "proxy_url": "https://proxy.devnet.neonlabs.org/solana",
     "network_id": 245022926,
     "solana_url": "http://neon.devnet.rpcpool.com/c7710a7b633cbadb9be9900c7946/",
     "faucet_url": "https://neonswap.live/",
-    "operator_solana_key": "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih"
+    "operator_solana_key": "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih",
+    "operator_keys": [
+      "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih"
+    ]
   },
   "local": {
     "proxy_url": "http://192.168.65.1:9090/solana",

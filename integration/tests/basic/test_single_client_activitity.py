@@ -65,6 +65,7 @@ class TestBasic():
     class TestSingleClient():
         def test_create_account_and_get_balance(self):
             '''Create account and get balance'''
+            # create account
             # request faucet
             # check balance
             pass
@@ -154,3 +155,20 @@ class TestBasic():
         def test_denied_client_is_never_supplied_by_airdropper(self):
             # Note: airdropper works only with transactions, there should not be transactions for denied clients
             pass
+
+    # TODO: write code
+    def create_account(self) -> str:
+        return ""
+
+    # TODO: write code
+    def get_balance(self, address: str) -> str:
+        return "0"
+
+    # TODO: write code
+    def request_faucet(self, wallet: str, amount: int):
+        pass
+
+    # TODO: write code
+    def transfer_neon(self, sender_address: str, recipient_address: str,
+                      amount: int):
+        pass

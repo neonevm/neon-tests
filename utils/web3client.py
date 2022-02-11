@@ -28,7 +28,7 @@ class NeonWeb3Client:
 
     def gas_price(self):
         gas = self._web3.eth.gas_price
-        return gas * 1_000_000_000
+        return gas
 
     def create_account(self):
         return self._web3.eth.account.create()

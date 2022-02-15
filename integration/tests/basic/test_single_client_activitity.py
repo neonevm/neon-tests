@@ -47,16 +47,16 @@ def prepare_account(faucet, web3_client):
 9.	Verify faucet work (request drop for several accounts)
 	 - single request
 	 - double request
-10.	Interact with simple contract
-11.	Deploy erc20 contract with tokens and mint this token
-12.	Verify implemented rpc calls work
-13.	Speed up transaction by increase gas
-14.	Cancel transaction when gasprice setted very small for tx
+# 10.	Interact with simple contract
+# 11.	Deploy erc20 contract with tokens and mint this token
+# 12.	Verify implemented rpc calls work
+# 13.	Speed up transaction by increase gas
+# 14.	Cancel transaction when gasprice setted very small for tx
 15.	Send token to an invalid address
 16.	Send token to a non-existing address
-17.	Move tokens from solana to neon
-18.	Move tokens from neon to solana
-19.	Create TX like NeonSwap (thus leveraging airdropper) and swap token
+# 17.	Move tokens from solana to neon
+# 18.	Move tokens from neon to solana
+# 19.	Create TX like NeonSwap (thus leveraging airdropper) and swap token
 '''
 
 
@@ -87,23 +87,16 @@ class TestBasic():
             # check balance
             pass
 
-        @pytest.mark.skip("later")
-        def test_allowed_client_is_able_to_receive_spl_token(self):
-            '''Whitelisted client is able to receive SPL token'''
-            pass
-
-        @pytest.mark.skip("later")
-        def test_allowed_client_is_able_to_connect_to_neonpass(self):
-            '''Whitelisted client is able to connect to Neonpass'''
-            pass
-
-        def test_allowed_client_is_able_to_be_supplied_by_airdropper(self):
-            '''Whitelisted client's balance could be supplied with tokens by Airdropper'''
+        def test_check_tokens_in_wallet_ERC20(self):
+            '''Verify faucet work (request drop for several accounts): single request'''
             # request faucet
             # check balance
+            pass
+
+        def test_check_tokens_in_wallet_ERC20(self):
+            '''Verify faucet work (request drop for several accounts): double request'''
             # request faucet
             # check balance
-            # send tokens
             pass
 
     class TestTransfer():
@@ -114,11 +107,19 @@ class TestBasic():
             # request faucet
             # check balance
             # send tokens
+            # check balance
+            # check balance
             pass
 
         def test_send_spl_wrapped_account_from_one_account_to_another(self):
             '''Send spl wrapped account from one account to another'''
-            # request balance
+            # request faucet
+            # check balance
+            # request faucet
+            # check balance
+            # send tokens
+            # check balance
+            # check balance
             pass
 
         def test_send_more_than_exist_on_account_neon(self):
@@ -128,6 +129,8 @@ class TestBasic():
             # request faucet
             # check balance
             # send tokens
+            # check balance
+            # check balance
             pass
 
         def test_send_more_than_exist_on_account_spl(self):
@@ -137,23 +140,110 @@ class TestBasic():
             # request faucet
             # check balance
             # send tokens
+            # check balance
+            # check balance
             pass
 
         @pytest.mark.skip("later")
         def test_send_more_than_exist_on_account_erc20(self):
             '''Send more than exist on account: ERC20'''
+            # request faucet
+            # check balance
+            # request faucet
+            # check balance
+            # send tokens
+            # check balance
+            # check balance
+            pass
+
+        def test_send_more_than_exist_on_account_neon(self):
+            '''Send zero: neon'''
+            # request faucet
+            # check balance
+            # request faucet
+            # check balance
+            # send tokens
+            # check balance
+            # check balance
+            pass
+
+        def test_send_more_than_exist_on_account_spl(self):
+            '''Send zero: spl (with different precision)'''
+            # request faucet
+            # check balance
+            # request faucet
+            # check balance
+            # send tokens
+            # check balance
+            # check balance
             pass
 
         @pytest.mark.skip("later")
-        def test_denied_client_fails_to_connect_to_neonpass(self):
-            '''Denied client is able to connect to Neonpass'''
+        def test_send_more_than_exist_on_account_erc20(self):
+            '''Send zero: ERC20'''
+            # request faucet
+            # check balance
+            # request faucet
+            # check balance
+            # send tokens
+            # check balance
+            # check balance
             pass
 
-        @pytest.mark.skip(
-            'airdropper works only with transactions, there should not be transactions for denied clients'
-        )
-        def test_denied_client_is_never_supplied_by_airdropper(self):
-            # Note: airdropper works only with transactions, there should not be transactions for denied clients
+        def test_send_more_than_exist_on_account_neon(self):
+            '''Send negative sum from account: neon'''
+            # request faucet
+            # check balance
+            # request faucet
+            # check balance
+            # send tokens
+            # check balance
+            # check balance
+            pass
+
+        def test_send_more_than_exist_on_account_spl(self):
+            '''Send negative sum from account: spl (with different precision)'''
+            # request faucet
+            # check balance
+            # request faucet
+            # check balance
+            # send tokens
+            # check balance
+            # check balance
+            pass
+
+        @pytest.mark.skip("later")
+        def test_send_more_than_exist_on_account_erc20(self):
+            '''Send negative sum from account: ERC20'''
+            # request faucet
+            # check balance
+            # request faucet
+            # check balance
+            # send tokens
+            # check balance
+            # check balance
+            pass
+
+        def test_send_more_than_exist_on_account_spl(self):
+            '''Send token to an invalid address'''
+            # request faucet
+            # check balance
+            # request faucet
+            # check balance
+            # send tokens
+            # check balance
+            # check balance
+            pass
+
+        def test_send_more_than_exist_on_account_spl(self):
+            '''Send token to a non-existing address'''
+            # request faucet
+            # check balance
+            # request faucet
+            # check balance
+            # send tokens
+            # check balance
+            # check balance
             pass
 
     # TODO: write code

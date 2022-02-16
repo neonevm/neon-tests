@@ -10,7 +10,7 @@ import allure
 import pytest
 import solana
 # from pythclient.pythaccounts import PythPriceAccount
-from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP_ENDPOINT
+# from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP_ENDPOINT
 from _pytest.config import Config
 
 from utils.operator import Operator
@@ -45,17 +45,17 @@ def pytest_configure(config: Config):
     config.environment = EnvironmentConfig(**environments[env_name])
 
 
-@pytest.fixture(scope="session")
-def sol_price():
-    async def get_price():
-        account_key = SolanaPublicKey("H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG")
-        solana_client = SolanaClient(endpoint=SOLANA_MAINNET_HTTP_ENDPOINT)
-        price: PythPriceAccount = PythPriceAccount(account_key, solana_client)
-        await price.update()
-        return price.aggregate_price
+# @pytest.fixture(scope="session")
+# def sol_price():
+#     async def get_price():
+#         account_key = SolanaPublicKey("H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG")
+#         solana_client = SolanaClient(endpoint=SOLANA_MAINNET_HTTP_ENDPOINT)
+#         price: PythPriceAccount = PythPriceAccount(account_key, solana_client)
+#         await price.update()
+#         return price.aggregate_price
 
-    loop = asyncio.get_event_loop()
-    return loop.run_until_complete(get_price())
+#     loop = asyncio.get_event_loop()
+#     return loop.run_until_complete(get_price())
 
 
 @pytest.fixture(scope="session", autouse=True)

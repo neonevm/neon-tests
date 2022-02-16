@@ -76,7 +76,9 @@ stack overflow и stack underflow
 
 @allure.story("Basic")
 class TestBasic():
+    @allure.story("Basic: single user tests")
     class TestSingleClient():
+        @allure.step("single test")
         def test_create_account_and_get_balance(self):
             '''Create account and get balance'''
             # create account
@@ -113,6 +115,7 @@ class TestBasic():
             # check balance
             pass
 
+    @allure.story("Basic: transfer tests")
     class TestTransfer():
         def test_send_neon_from_one_account_to_another(self):
             '''Send neon from one account to another'''

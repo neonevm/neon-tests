@@ -55,7 +55,9 @@ def sol_price():
         return price.aggregate_price
 
     loop = asyncio.get_event_loop()
-    return loop.run_until_complete(get_price())
+    price = loop.run_until_complete(get_price())
+    with allure.step(f"SOL price {price}$"):
+        return price
 
 
 @pytest.fixture(scope="session", autouse=True)

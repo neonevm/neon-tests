@@ -57,6 +57,20 @@ def prepare_account(faucet, web3_client):
 # 17.	Move tokens from solana to neon
 # 18.	Move tokens from neon to solana
 # 19.	Create TX like NeonSwap (thus leveraging airdropper) and swap token
+
+Есть много известных вариантов, описать все не очень реалистично.
+Самые простые:
+Слишком маленький gas_limit
+Слишком большой gas_limit > u64::max
+Слишком большой gas_price > u64::max
+Слишком большой gas_limit * gas_price > u64::max
+Недостаточно неонов на оплату газа
+Недостаточно неонов на трансфер
+Размер эфировской транзакции больше лимита, лимит точно не известен, 256кб точно больше
+Размер солановской транзакции больше лимита, вызов другого контракта из контракта или erc20 wrapper увеличивает размер транзакции
+Выделение памяти в транзакции больше лимита, нужны специальные контракты
+Запись в storage больше лимита, лимит ~9мб
+stack overflow и stack underflow
 '''
 
 

@@ -76,7 +76,7 @@ jobs:
       - name: "Install deps"
         run: "./clickfile.py requirements"
       - name: "Run basic tests"
-        run: "./clickfile.py run basic"
+        run: "./clickfile.py run 'basic' " # -n ${{ needs.prepare-env.outputs.network }}"
       - uses: actions/upload-artifact@v2
         if: always()
         with:

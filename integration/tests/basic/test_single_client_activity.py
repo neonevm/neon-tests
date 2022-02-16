@@ -76,18 +76,20 @@ stack overflow и stack underflow
 
 @allure.story("Basic")
 class TestBasic():
+    @allure.story("Basic: single user tests")
     class TestSingleClient():
+        @allure.step("single test")
         def test_create_account_and_get_balance(self):
             '''Create account and get balance'''
             # create account
             # request faucet
             # check balance
-            pass
+            assert 1 == 1
 
         def test_check_tokens_in_wallet_neon(self):
             '''Check tokens in wallet: neon'''
             # request balance
-            pass
+            assert 1 == 2
 
         def test_check_tokens_in_wallet_spl(self):
             '''Check tokens in wallet: spl'''
@@ -113,6 +115,7 @@ class TestBasic():
             # check balance
             pass
 
+    @allure.story("Basic: transfer tests")
     class TestTransfer():
         def test_send_neon_from_one_account_to_another(self):
             '''Send neon from one account to another'''

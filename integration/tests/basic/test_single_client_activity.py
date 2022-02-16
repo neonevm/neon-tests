@@ -1,6 +1,8 @@
 import allure
 import pytest
 
+from integration.tests.base import BaseTests
+
 
 @pytest.fixture(scope="class")
 def prepare_account(faucet, web3_client):
@@ -77,7 +79,7 @@ stack overflow и stack underflow
 @allure.story("Basic")
 class TestBasic():
     @allure.story("Basic: single user tests")
-    class TestSingleClient():
+    class TestSingleClient(BaseTests):
         @allure.step("single test")
         def test_create_account_and_get_balance(self):
             '''Create account and get balance'''
@@ -116,7 +118,7 @@ class TestBasic():
             pass
 
     @allure.story("Basic: transfer tests")
-    class TestTransfer():
+    class TestTransfer(BaseTests):
         def test_send_neon_from_one_account_to_another(self):
             '''Send neon from one account to another'''
             # request faucet

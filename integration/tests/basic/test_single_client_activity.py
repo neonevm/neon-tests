@@ -82,12 +82,12 @@ class TestBasic():
             # create account
             # request faucet
             # check balance
-            pass
+            assert 1 == 1
 
         def test_check_tokens_in_wallet_neon(self):
             '''Check tokens in wallet: neon'''
             # request balance
-            pass
+            assert 1 == 2
 
         def test_check_tokens_in_wallet_spl(self):
             '''Check tokens in wallet: spl'''

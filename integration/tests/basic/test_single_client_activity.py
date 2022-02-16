@@ -3,7 +3,7 @@ import pytest
 
 
 @pytest.fixture(scope="class")
-async def prepare_account(faucet, web3_client):
+def prepare_account(faucet, web3_client):
     # """Create new account for tests and save operator pre/post balances"""
     # start_neon_balance = operator.get_neon_balance()
     # start_sol_balance = operator.get_solana_balance()
@@ -79,37 +79,37 @@ class TestBasic():
     @allure.story("Basic: single user tests")
     class TestSingleClient():
         @allure.step("single test")
-        async def test_create_account_and_get_balance(self):
+        def test_create_account_and_get_balance(self):
             '''Create account and get balance'''
             # create account
             # request faucet
             # check balance
             assert 1 == 1
 
-        async def test_check_tokens_in_wallet_neon(self):
+        def test_check_tokens_in_wallet_neon(self):
             '''Check tokens in wallet: neon'''
             # request balance
             assert 1 == 2
 
-        async def test_check_tokens_in_wallet_spl(self):
+        def test_check_tokens_in_wallet_spl(self):
             '''Check tokens in wallet: spl'''
             # request faucet
             # check balance
             pass
 
-        async def test_check_tokens_in_wallet_ERC20(self):
+        def test_check_tokens_in_wallet_ERC20(self):
             '''Check tokens in wallet: ERC20'''
             # request faucet
             # check balance
             pass
 
-        async def test_check_tokens_in_wallet_ERC20(self):
+        def test_check_tokens_in_wallet_ERC20(self):
             '''Verify faucet work (request drop for several accounts): single request'''
             # request faucet
             # check balance
             pass
 
-        async def test_check_tokens_in_wallet_ERC20(self):
+        def test_check_tokens_in_wallet_ERC20(self):
             '''Verify faucet work (request drop for several accounts): double request'''
             # request faucet
             # check balance
@@ -117,7 +117,7 @@ class TestBasic():
 
     @allure.story("Basic: transfer tests")
     class TestTransfer():
-        async def test_send_neon_from_one_account_to_another(self):
+        def test_send_neon_from_one_account_to_another(self):
             '''Send neon from one account to another'''
             # request faucet
             # check balance
@@ -128,7 +128,7 @@ class TestBasic():
             # check balance
             pass
 
-        async def test_send_spl_wrapped_account_from_one_account_to_another(self):
+        def test_send_spl_wrapped_account_from_one_account_to_another(self):
             '''Send spl wrapped account from one account to another'''
             # request faucet
             # check balance
@@ -139,7 +139,7 @@ class TestBasic():
             # check balance
             pass
 
-        async def test_send_more_than_exist_on_account_neon(self):
+        def test_send_more_than_exist_on_account_neon(self):
             '''Send more than exist on account: neon'''
             # request faucet
             # check balance
@@ -150,7 +150,7 @@ class TestBasic():
             # check balance
             pass
 
-        async def test_send_more_than_exist_on_account_spl(self):
+        def test_send_more_than_exist_on_account_spl(self):
             '''Send more than exist on account: spl (with different precision)'''
             # request faucet
             # check balance
@@ -162,7 +162,7 @@ class TestBasic():
             pass
 
         @pytest.mark.skip("later")
-        async def test_send_more_than_exist_on_account_erc20(self):
+        def test_send_more_than_exist_on_account_erc20(self):
             '''Send more than exist on account: ERC20'''
             # request faucet
             # check balance
@@ -173,7 +173,7 @@ class TestBasic():
             # check balance
             pass
 
-        async def test_send_more_than_exist_on_account_neon(self):
+        def test_send_more_than_exist_on_account_neon(self):
             '''Send zero: neon'''
             # request faucet
             # check balance
@@ -184,7 +184,7 @@ class TestBasic():
             # check balance
             pass
 
-        async def test_send_more_than_exist_on_account_spl(self):
+        def test_send_more_than_exist_on_account_spl(self):
             '''Send zero: spl (with different precision)'''
             # request faucet
             # check balance
@@ -196,7 +196,7 @@ class TestBasic():
             pass
 
         @pytest.mark.skip("later")
-        async def test_send_more_than_exist_on_account_erc20(self):
+        def test_send_more_than_exist_on_account_erc20(self):
             '''Send zero: ERC20'''
             # request faucet
             # check balance
@@ -207,7 +207,7 @@ class TestBasic():
             # check balance
             pass
 
-        async def test_send_more_than_exist_on_account_neon(self):
+        def test_send_more_than_exist_on_account_neon(self):
             '''Send negative sum from account: neon'''
             # request faucet
             # check balance
@@ -218,7 +218,7 @@ class TestBasic():
             # check balance
             pass
 
-        async def test_send_more_than_exist_on_account_spl(self):
+        def test_send_more_than_exist_on_account_spl(self):
             '''Send negative sum from account: spl (with different precision)'''
             # request faucet
             # check balance
@@ -230,7 +230,7 @@ class TestBasic():
             pass
 
         @pytest.mark.skip("later")
-        async def test_send_more_than_exist_on_account_erc20(self):
+        def test_send_more_than_exist_on_account_erc20(self):
             '''Send negative sum from account: ERC20'''
             # request faucet
             # check balance
@@ -241,7 +241,7 @@ class TestBasic():
             # check balance
             pass
 
-        async def test_send_more_than_exist_on_account_spl(self):
+        def test_send_more_than_exist_on_account_spl(self):
             '''Send token to an invalid address'''
             # request faucet
             # check balance
@@ -252,7 +252,7 @@ class TestBasic():
             # check balance
             pass
 
-        async def test_send_more_than_exist_on_account_spl(self):
+        def test_send_more_than_exist_on_account_spl(self):
             '''Send token to a non-existing address'''
             # request faucet
             # check balance
@@ -264,18 +264,18 @@ class TestBasic():
             pass
 
     # TODO: write code
-    async def create_account(self) -> str:
+    def create_account(self) -> str:
         return ""
 
     # TODO: write code
-    async def get_balance(self, address: str) -> str:
+    def get_balance(self, address: str) -> str:
         return "0"
 
     # TODO: write code
-    async def request_faucet(self, wallet: str, amount: int):
+    def request_faucet(self, wallet: str, amount: int):
         pass
 
     # TODO: write code
-    async def transfer_neon(self, sender_address: str, recipient_address: str,
+    def transfer_neon(self, sender_address: str, recipient_address: str,
                       amount: int):
         pass

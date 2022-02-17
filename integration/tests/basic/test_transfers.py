@@ -22,9 +22,9 @@ class TestTransfer(BasicHelpers):
 
         tx_receipt = self.web3_client.send_neon(sender_account,
                                                 recipient_account,
-                                                DEFAULT_TRANSFER_AMOUNT,
+                                                2.5, # DEFAULT_TRANSFER_AMOUNT,
                                                 gas=10_000,
-                                                gas_price=1000_000_000)
+                                                gas_price=1_000_000_000)
 
         self.assert_amount(sender_account.address,
                            GREAT_AMOUNT - DEFAULT_TRANSFER_AMOUNT)

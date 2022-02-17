@@ -56,9 +56,6 @@ class TestTransfer(BasicHelpers):
 
         with pytest.raises(ValueError) as error_info:
             self.transfer_neon(sender_account,recipient_account,amount)
-            # def tx(sender_account,recipient_account,amount):
-            #     self.web3_client.send_neon(sender_account, recipient_account,   amount=amount)
-            # tx(sender_account,recipient_account,amount)
         assert "The account balance is less than required" in str(error_info.value)
 
         self.assert_amount(sender_account.address,

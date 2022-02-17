@@ -2,6 +2,8 @@ import allure
 import pytest
 from integration.tests.basic.helper_methods import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, BasicHelpers
 
+TRANSFER_AMOUNT_DATA = [10, 100, 10.1]
+
 
 @allure.story("Basic: transfer tests")
 class TestTransfer(BasicHelpers):
@@ -56,20 +58,32 @@ class TestTransfer(BasicHelpers):
         # check balance
         pass
 
-    @pytest.mark.skip("not yet done")
     @allure.step(
         "test: send more than exist on account: spl (with different precision)"
     )
     def test_send_more_than_exist_on_account_spl(self):
         '''Send more than exist on account: spl (with different precision)'''
-        # request faucet
-        # check balance
-        # request faucet
-        # check balance
-        # send tokens
-        # check balance
-        # check balance
-        pass
+        sender_account = self.create_account()
+        self.request_faucet(sender_account.address,
+                            FIRST_FAUCET_REQUEST_AMOUNT)
+        self.assert_amount(sender_account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+
+        recipient_account = self.create_account()
+        self.request_faucet(recipient_account.address,
+                            FIRST_FAUCET_REQUEST_AMOUNT)
+        self.assert_amount(recipient_account.address,
+                           FIRST_FAUCET_REQUEST_AMOUNT)
+
+        tx_receipt = self.web3_client.send_neon(sender_account,
+                                                recipient_account,
+                                                DEFAULT_TRANSFER_AMOUNT)
+
+        self.assert_amount(
+            sender_account.address,
+            FIRST_FAUCET_REQUEST_AMOUNT - DEFAULT_TRANSFER_AMOUNT)
+        self.assert_amount(
+            recipient_account.address,
+            FIRST_FAUCET_REQUEST_AMOUNT + DEFAULT_TRANSFER_AMOUNT)
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: send more than exist on account: ERC20")

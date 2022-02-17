@@ -1,13 +1,7 @@
 import allure
 import pytest
 
-from integration.tests.base import BaseTests
-from web3 import Account
-
-from integration.tests.basic.helper_methods import TestBasic
-
-FIRST_FAUCET_REQUEST_AMOUNT = 5
-SECOND_FAUCET_REQUEST_AMOUNT = 3
+from integration.tests.basic.helper_methods import BasicHelpers
 
 
 @pytest.fixture(scope="class")
@@ -83,7 +77,7 @@ stack overflow и stack underflow
 
 
 @allure.story("Basic: single user tests")
-class TestSingleClient(TestBasic):
+class TestSingleClient(BasicHelpers):
     @allure.step("test: create account and get balance")
     def test_create_account_and_get_balance(self):
         '''Create account and get balance'''

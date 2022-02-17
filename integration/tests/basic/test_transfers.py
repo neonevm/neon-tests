@@ -1,18 +1,22 @@
 import allure
 import pytest
-from integration.tests.basic.helper_methods import TestBasic
+from integration.tests.basic.helper_methods import BasicHelpers
 
 
 @allure.story("Basic: transfer tests")
-class TestTransfer(TestBasic):
+class TestTransfer(BasicHelpers):
     @pytest.mark.skip("not yet done")
     @allure.step("test: send neon from one account to another")
     def test_send_neon_from_one_account_to_another(self):
         '''Send neon from one account to another'''
-        # request faucet
-        # check balance
-        # request faucet
-        # check balance
+        sender_account = self.create_account()
+        self.request_faucet(sender_account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+        self.assert_amount(sender_account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+
+        recipient_account = self.create_account()
+        self.request_faucet(recipient_account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+        self.assert_amount(recipient_account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+
         # send tokens
         # check balance
         # check balance

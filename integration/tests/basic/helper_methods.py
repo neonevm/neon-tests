@@ -2,10 +2,11 @@ import allure
 from eth_account import Account
 
 from integration.tests.base import BaseTests
-
+FIRST_FAUCET_REQUEST_AMOUNT = 5
+SECOND_FAUCET_REQUEST_AMOUNT = 3
 
 @allure.story("Basic")
-class TestBasic(BaseTests):
+class BasicHelpers(BaseTests):
     @allure.step("creating a new account")
     def create_account(self) -> Account:
         return self.web3_client.create_account()

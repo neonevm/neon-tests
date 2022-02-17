@@ -95,16 +95,12 @@ class TestSingleClient(BasicHelpers):
     @allure.step("test: check tokens in wallet: spl")
     def test_check_tokens_in_wallet_spl(self):
         '''Check tokens in wallet: spl'''
-        # request faucet
-        # check balance
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: check tokens in wallet: ERC20")
     def test_check_tokens_in_wallet_ERC20(self):
         '''Check tokens in wallet: ERC20'''
-        # request faucet
-        # check balance
         pass
 
     @allure.step(

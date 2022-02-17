@@ -1,10 +1,9 @@
 import allure
-import allure_commons
 import pytest
 from integration.tests.basic.helper_methods import TestBasic
 
 
-@allure_commons.story("Basic: transfer tests")
+@allure.story("Basic: transfer tests")
 class TestTransfer(TestBasic):
     @pytest.mark.skip("not yet done")
     @allure.step("test: send neon from one account to another")

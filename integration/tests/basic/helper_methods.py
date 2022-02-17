@@ -1,9 +1,8 @@
 import allure
-import allure_commons
 from eth_account import Account
 
 
-@allure_commons.story("Basic")
+@allure.story("Basic")
 class TestBasic(BaseTests):
     @allure.step("creating a new account")
     def create_account(self) -> Account:

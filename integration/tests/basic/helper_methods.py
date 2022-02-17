@@ -40,13 +40,11 @@ class BasicHelpers(BaseTests):
             self.transfer_neon(sender_account, recipient_account, amount)
         assert "The account balance is less than required" in str(error_info.value)
 
+    @allure.step("comparing expected and actual balance")
+    def compare_balance(self, expected: int, actual: int):
+        assert actual == expected, f"expected balance = {expected}, actual balance = {actual}"
 
-@allure.step("comparing expected and actual balance")
-def compare_balance(self, expected: int, actual: int):
-    assert actual == expected, f"expected balance = {expected}, actual balance = {actual}"
-
-
-@allure.step("checking balance")
-def assert_amount(self, address: str, expected_amount: int):
-    balance = self.web3_client.fromWei(self.get_balance(address), "ether")
-    self.compare_balance(expected_amount, balance)
+    @allure.step("checking balance")
+    def assert_amount(self, address: str, expected_amount: int):
+        balance = self.web3_client.fromWei(self.get_balance(address), "ether")
+        self.compare_balance(expected_amount, balance)

@@ -20,8 +20,8 @@ class TestTransfer(BasicHelpers):
         self.assert_amount(recipient_account.address,
                            FIRST_FAUCET_REQUEST_AMOUNT)
 
-        tx_receipt = self.web3_client.send_neon(sender_account,
-                                                recipient_account,
+        tx_receipt = self.web3_client.send_neon(sender_account.address,
+                                                recipient_account.address,
                                                 2.5, # DEFAULT_TRANSFER_AMOUNT,
                                                 gas=10_000,
                                                 gas_price=1_000_000_000)

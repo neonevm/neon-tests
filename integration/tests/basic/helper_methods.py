@@ -36,10 +36,9 @@ class BasicHelpers(BaseTests):
     @allure.step("checking less than required")
     def check_value_error_if_less_than_required(self, sender_account: Account, recipient_account: Account, amount: int,
                                                 gas: int, gas_price: int):
-
-    with pytest.raises(ValueError) as error_info:
-        self.transfer_neon(sender_account, recipient_account, amount)
-    assert "The account balance is less than required" in str(error_info.value)
+        with pytest.raises(ValueError) as error_info:
+            self.transfer_neon(sender_account, recipient_account, amount)
+        assert "The account balance is less than required" in str(error_info.value)
 
 
 @allure.step("comparing expected and actual balance")

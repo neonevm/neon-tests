@@ -79,21 +79,21 @@ stack overflow и stack underflow
 
 @allure.story("Basic")
 class TestBasic(BaseTests):
-    @allure.step("creating a new account")
+    # @allure.step("creating a new account")
     def create_account(self) -> Account:
         return self.web3_client.create_account()
 
-    @allure.step("getting balance of account")
+    # @allure.step("getting balance of account")
     def get_balance(self, address: str) -> int:
         return self.web3_client.eth.get_balance(address)
 
     # TODO: write code
-    @allure.step("requesting faucet")
+    # @allure.step("requesting faucet")
     def request_faucet(self, wallet: str, amount: int):
         pass
 
     # TODO: write code
-    @allure.step("transferring tokens")
+    # @allure.step("transferring tokens")
     def transfer_neon(self, sender_address: str, recipient_address: str,
                       amount: int):
         pass

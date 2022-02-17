@@ -27,7 +27,11 @@ class BasicHelpers(BaseTests):
                       amount: int):
         pass
 
+    @allure.step("comparing expected and actual balance")
+    def compare_balance(self, expected: int, actual, int):
+        assert actual == expected, f"expected balance = {expected}, actual balance = {actual}"
+
     @allure.step("checking balance")
     def assert_amount(self, address: str, amount: int):
         balance = self.web3_client.fromWei(self.get_balance(address), "ether")
-        assert balance == amount, f"expected balance = {amount}, actual balance = {balance}"
+        self.compare_balance(amount, balance)

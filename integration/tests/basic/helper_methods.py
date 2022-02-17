@@ -30,4 +30,4 @@ class BasicHelpers(BaseTests):
     @allure.step("checking balance")
     def assert_amount(self, address: str, amount: int):
         balance = self.get_balance(address)
-        assert balance == amount
+        assert balance == amount, f"expected balance = {amount}, actual balance = {balance}"

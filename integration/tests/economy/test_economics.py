@@ -93,7 +93,6 @@ class TestEconomics(BaseTests):
 
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
-
         tx = self.web3_client.send_neon(self.acc, acc2, 5)
 
         assert self.web3_client.get_balance(acc2) == 6
@@ -152,17 +151,8 @@ class TestEconomics(BaseTests):
             address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
         )
 
-        gas_begin_trx = 331 * GAS_MULTIPLIER
-        gas_holder_acc = math.ceil(4938 / 1000) * 331 * GAS_MULTIPLIER
-        gas_for_trx = 331 * GAS_MULTIPLIER
-        gas_for_space = (ETHER_ACCOUNT_SIZE + SPL_ACCOUNT_SIZE + 4916) * BYTE_COST * GAS_MULTIPLIER
-        deploy_cost = gas_for_trx + gas_for_space + gas_holder_acc
-        print("Deploy cost ", deploy_cost, contract_deploy_tx["gasUsed"])
-
         sol_balance_before_request = self.operator.get_solana_balance()
         neon_balance_before_request = self.operator.get_neon_balance()
-
-        # assert neon_balance_before_request == (neon_balance_before + contract_deploy_tx["gasUsed"])
 
         assert contract.functions.balanceOf(self.acc.address).call() == 1000
 
@@ -187,20 +177,8 @@ class TestEconomics(BaseTests):
 
     def test_tx_lower_100_instruction(self, sol_price):
         """Verify we are bill minimum for 100 instruction"""
-        print("START")
-        time.sleep(15)
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
-        print(f"SOL Price {sol_price}")
-        print(f"Before all SOL {sol_balance_before}  NEON {neon_balance_before}")
-        try:
-            tx = self.web3_client.send_neon(self.acc, self.web3_client.create_account(), 1, gas=2)
-        except:
-            pass
-
-        sol_balance_after_tx = self.operator.get_solana_balance()
-        neon_balance_after_tx = self.operator.get_neon_balance()
-        print(f"After failed tx SOL {sol_balance_after_tx}  NEON {neon_balance_after_tx}")
 
         solcx.install_solc("0.8.10")
         contract_path = (pathlib.Path(__file__).parent / "contracts" / "Counter.sol").absolute()  # Deploy 17 steps
@@ -214,37 +192,34 @@ class TestEconomics(BaseTests):
             bytecode=contract_interface["bin"],
         )
 
-        # contract = self.web3_client.eth.contract(
-        #     address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
-        # )
-        #
-        # sol_balance_after_deploy = self.operator.get_solana_balance()
-        # neon_balance_after_deploy = self.operator.get_neon_balance()
-        # print("gas used: ", contract_deploy_tx["gasUsed"])
-        # assert neon_balance_after_deploy == (neon_balance_before + contract_deploy_tx["gasUsed"])
+        contract = self.web3_client.eth.contract(
+            address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
+        )
 
-        # inc_tx = contract.functions.inc().buildTransaction(
-        #     {
-        #         "from": self.acc.address,
-        #         "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
-        #         "gasPrice": self.web3_client.gas_price(),
-        #     }
-        # )
-        #
-        # inc_tx["gas"] = self.web3_client._web3.eth.estimate_gas(inc_tx)
-        # print(f"INC transaction gas {inc_tx['gas']} and gasPrice {inc_tx['gasPrice']}")
-        # inc_tx = self.web3_client.eth.account.sign_transaction(inc_tx, self.acc.key)
-        # signature = self.web3_client.eth.send_raw_transaction(inc_tx.rawTransaction)
-        # inc_receipt = self.web3_client.eth.wait_for_transaction_receipt(signature)
-        #
-        # assert contract.functions.get().call() == 1
+        sol_balance_after_deploy = self.operator.get_solana_balance()
+        neon_balance_after_deploy = self.operator.get_neon_balance()
+
+        inc_tx = contract.functions.inc().buildTransaction(
+            {
+                "from": self.acc.address,
+                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
+                "gasPrice": self.web3_client.gas_price(),
+            }
+        )
+
+        inc_tx["gas"] = self.web3_client._web3.eth.estimate_gas(inc_tx)
+        inc_tx = self.web3_client.eth.account.sign_transaction(inc_tx, self.acc.key)
+        signature = self.web3_client.eth.send_raw_transaction(inc_tx.rawTransaction)
+        inc_receipt = self.web3_client.eth.wait_for_transaction_receipt(signature)
+
+        assert contract.functions.get().call() == 1
+        self.assert_tx_gasused(neon_balance_after_deploy, inc_receipt)
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
-        print(f"After deploy SOL {sol_balance_after}  NEON {neon_balance_after}")
-        print("Deploy tx ", contract_deploy_tx)
-        # assert sol_balance_before > sol_balance_after_deploy > sol_balance_after
-        # assert neon_balance_after == (neon_balance_after_deploy + inc_receipt["gasUsed"])
+
+        assert sol_balance_before > sol_balance_after_deploy > sol_balance_after
+        assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
     def test_contract_get_is_free(self):
@@ -320,7 +295,7 @@ class TestEconomics(BaseTests):
         self.assert_tx_gasused(neon_balance_before_increase, increase_tx)
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    def test_failed_tx(self):
+    def test_failed_tx_when_less_gas(self):
         """Don't get money from user if tx failed"""
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()

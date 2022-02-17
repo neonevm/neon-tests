@@ -46,7 +46,7 @@ def pytest_configure(config: Config):
 
 
 @pytest.fixture(scope="session")
-def sol_price():
+def sol_price() -> float:
     async def get_price():
         account_key = SolanaPublicKey("H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG")
         solana_client = SolanaClient(endpoint=SOLANA_MAINNET_HTTP_ENDPOINT)

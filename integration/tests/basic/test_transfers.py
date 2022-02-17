@@ -13,7 +13,7 @@ class TestTransfer(BasicHelpers):
         '''Send neon from one account to another'''
         sender_account = self.create_account()
         self.request_faucet(sender_account.address, GREAT_AMOUNT)
-        self.assert_amount(sender_account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+        self.assert_amount(sender_account.address, GREAT_AMOUNT)
 
         recipient_account = self.create_account()
         self.request_faucet(recipient_account.address,
@@ -25,9 +25,8 @@ class TestTransfer(BasicHelpers):
                                                 recipient_account,
                                                 DEFAULT_TRANSFER_AMOUNT)
 
-        self.assert_amount(
-            sender_account.address,
-            FIRST_FAUCET_REQUEST_AMOUNT - DEFAULT_TRANSFER_AMOUNT)
+        self.assert_amount(sender_account.address,
+                           GREAT_AMOUNT - DEFAULT_TRANSFER_AMOUNT)
         self.assert_amount(
             recipient_account.address,
             FIRST_FAUCET_REQUEST_AMOUNT + DEFAULT_TRANSFER_AMOUNT)
@@ -45,25 +44,10 @@ class TestTransfer(BasicHelpers):
         # check balance
         pass
 
-    @pytest.mark.skip("not yet done")
     @allure.step("test: send more than exist on account: neon")
-    def test_send_more_than_exist_on_account_neon(self):
-        '''Send more than exist on account: neon'''
-        # request faucet
-        # check balance
-        # request faucet
-        # check balance
-        # send tokens
-        # check balance
-        # check balance
-        pass
-
-    @allure.step(
-        "test: send more than exist on account: spl (with different precision)"
-    )
     @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
-    def test_send_more_than_exist_on_account_spl(self, amount):
-        '''Send more than exist on account: spl (with different precision)'''
+    def test_send_more_than_exist_on_account_neon(self, amount):
+        '''Send more than exist on account: neon'''
         sender_account = self.create_account()
         self.request_faucet(sender_account.address,
                             FIRST_FAUCET_REQUEST_AMOUNT)
@@ -83,6 +67,15 @@ class TestTransfer(BasicHelpers):
                            FIRST_FAUCET_REQUEST_AMOUNT - amount)
         self.assert_amount(recipient_account.address,
                            FIRST_FAUCET_REQUEST_AMOUNT + amount)
+
+    @pytest.mark.skip("not yet done")
+    @allure.step(
+        "test: send more than exist on account: spl (with different precision)"
+    )
+    @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
+    def test_send_more_than_exist_on_account_spl(self, amount):
+        '''Send more than exist on account: spl (with different precision)'''
+        pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: send more than exist on account: ERC20")

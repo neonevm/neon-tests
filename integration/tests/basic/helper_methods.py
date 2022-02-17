@@ -26,7 +26,11 @@ class BasicHelpers(BaseTests):
     @allure.step("transferring tokens")
     def transfer_neon(self, sender_address: str, recipient_address: str,
                       amount: int):
-        pass
+        tx_receipt = self.web3_client.send_neon(sender_address,
+                                                recipient_address,
+                                                DEFAULT_TRANSFER_AMOUNT,
+                                                gas=100_000_000,
+                                                gas_price=1000_000_000)
 
     @allure.step("comparing expected and actual balance")
     def compare_balance(self, expected: int, actual: int):

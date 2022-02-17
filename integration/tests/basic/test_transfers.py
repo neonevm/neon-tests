@@ -24,7 +24,7 @@ class TestTransfer(BasicHelpers):
                                                 recipient_account,
                                                 DEFAULT_TRANSFER_AMOUNT,
                                                 gas=1_000,
-                                                gas_price=10_000)
+                                                gas_price=100_000_000)
 
         self.assert_amount(sender_account.address,
                            GREAT_AMOUNT - DEFAULT_TRANSFER_AMOUNT)

@@ -32,7 +32,7 @@ def run(name, network):
     if name == "economy":
         command = "py.test integration/tests/economy/test_economics.py"
     elif name == "basic":
-        command = "py.test integration/tests/basic/*"
+        command = "py.test integration/tests/basic/"
     # command += f" --network={network}"
 
     cmd = subprocess.run(command, shell=True)

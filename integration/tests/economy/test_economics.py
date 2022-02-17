@@ -35,10 +35,9 @@ class TestEconomics(BaseTests):
         neon_amount = neon_diff / LAMPORT_PER_SOL
         sol_cost = Decimal(sol_amount, DECIMAL_CONTEXT) * Decimal(self.sol_price, DECIMAL_CONTEXT)
         neon_cost = Decimal(neon_amount, DECIMAL_CONTEXT) * Decimal(NEON_PRICE, DECIMAL_CONTEXT)
-        msg = "Operator receive {:.9f} NEON ({:.2f} $) and spend {:.9f} SOL ({:.2f} $)".format(
-            neon_amount, neon_cost, sol_amount, sol_cost
+        msg = "Operator receive {:.9f} NEON ({:.2f} $) and spend {:.9f} SOL ({:.2f} $), profit - {:.9f}% ".format(
+            neon_amount, neon_cost, sol_amount, sol_cost, ((neon_cost - sol_cost) / sol_cost * 100)
         )
-        print(msg)
         with allure.step(msg):
             assert neon_cost > sol_cost, msg
 

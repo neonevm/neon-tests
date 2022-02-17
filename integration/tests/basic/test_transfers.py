@@ -20,8 +20,8 @@ class TestTransfer(BasicHelpers):
         self.assert_amount(recipient_account.address,
                            FIRST_FAUCET_REQUEST_AMOUNT)
 
-        tx_receipt = self.web3_client.send_neon(sender_account.address,
-                                                recipient_account.address,
+        tx_receipt = self.web3_client.send_neon(sender_account,
+                                                recipient_account,
                                                 2.5, # DEFAULT_TRANSFER_AMOUNT,
                                                 gas=10_000,
                                                 gas_price=1_000_000_000)
@@ -53,11 +53,11 @@ class TestTransfer(BasicHelpers):
         self.assert_amount(recipient_account.address,
                            FIRST_FAUCET_REQUEST_AMOUNT)
 
-        with pytest.raises(ValueError):
-            tx_receipt = self.web3_client.send_neon(sender_account,
-                                                    recipient_account,
-                                                    amount=amount)
-
+        with pytest.raises(ValueError) as error_info:
+            def tx(sender_account,recipient_account,amount):
+                self.web3_client.send_neon(sender_account, recipient_account,   amount=amount)
+            tx(sender_account,recipient_account,amount)
+        assert "The account balance is less than required" in str(error_info.value)
         self.assert_amount(sender_account.address,
                            FIRST_FAUCET_REQUEST_AMOUNT - amount)
         self.assert_amount(recipient_account.address,

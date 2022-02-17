@@ -1,7 +1,7 @@
 import allure
 import pytest
 
-from integration.tests.basic.helper_methods import BasicHelpers
+from integration.tests.basic.helper_methods import FIRST_FAUCET_REQUEST_AMOUNT, SECOND_FAUCET_REQUEST_AMOUNT, BasicHelpers
 
 
 @pytest.fixture(scope="class")

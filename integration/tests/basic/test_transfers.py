@@ -1,6 +1,6 @@
 import allure
 import pytest
-from integration.tests.basic.helper_methods import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, BasicHelpers
+from integration.tests.basic.helper_methods import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, BasicHelpers
 
 
 @allure.story("Basic: transfer tests")

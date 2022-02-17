@@ -90,18 +90,27 @@ class TestTransfer(BasicHelpers):
         # check balance
         pass
 
-    @pytest.mark.skip("not yet done")
     @allure.step("test: send zero: neon")
     def test_send_more_than_exist_on_account_neon(self):
         '''Send zero: neon'''
-        # request faucet
-        # check balance
-        # request faucet
-        # check balance
-        # send tokens
-        # check balance
-        # check balance
-        pass
+        sender_account = self.create_account()
+        self.request_faucet(sender_account.address, GREAT_AMOUNT)
+        self.assert_amount(sender_account.address, GREAT_AMOUNT)
+
+        recipient_account = self.create_account()
+        self.request_faucet(recipient_account.address,
+                            FIRST_FAUCET_REQUEST_AMOUNT)
+        self.assert_amount(recipient_account.address,
+                           FIRST_FAUCET_REQUEST_AMOUNT)
+
+        tx_receipt = self.web3_client.send_neon(sender_account,
+                                                recipient_account, 0)
+
+        self.assert_amount(sender_account.address,
+                           GREAT_AMOUNT - DEFAULT_TRANSFER_AMOUNT)
+        self.assert_amount(
+            recipient_account.address,
+            FIRST_FAUCET_REQUEST_AMOUNT + DEFAULT_TRANSFER_AMOUNT)
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: send zero: spl (with different precision)")

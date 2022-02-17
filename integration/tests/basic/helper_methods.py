@@ -32,7 +32,7 @@ class BasicHelpers(BaseTests):
                       amount: int) -> web3.types.TxReceipt:
         tx_receipt = self.web3_client.send_neon(sender_address,
                                                 recipient_address,
-                                                DEFAULT_TRANSFER_AMOUNT,
+                                                amount=amount,
                                                 gas=1_000,
                                                 gas_price=1_000)
 

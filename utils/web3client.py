@@ -28,7 +28,7 @@ class NeonWeb3Client:
 
     def gas_price(self):
         gas = self._web3.eth.gas_price
-        return gas * 1_000_000_000
+        return gas
 
     def create_account(self):
         return self._web3.eth.account.create()
@@ -43,12 +43,13 @@ class NeonWeb3Client:
         from_: eth_account.signers.local.LocalAccount,
         to: tp.Union[str, eth_account.signers.local.LocalAccount],
         amount: tp.Union[int, float, Decimal],
-        gas: int = 100000000,
+        gas: tp.Optional[int] = 0,
         gas_price: tp.Optional[int] = None,
     ) -> web3.types.TxReceipt:
         to_addr = to if isinstance(to, str) else to.address
         gas_price = gas_price or self.gas_price()
         transaction = {
+            "from": from_.address,
             "to": to_addr,
             "value": web3.Web3.toWei(amount, "ether"),
             "chainId": self._chain_id,
@@ -56,6 +57,8 @@ class NeonWeb3Client:
             "gas": gas,
             "nonce": self._web3.eth.get_transaction_count(from_.address),
         }
+        if transaction["gas"] == 0:
+            transaction["gas"] = self._web3.eth.estimate_gas(transaction)
 
         signed_tx = self._web3.eth.account.sign_transaction(transaction, from_.key)
         tx = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
@@ -66,22 +69,29 @@ class NeonWeb3Client:
         from_: eth_account.signers.local.LocalAccount,
         abi,
         bytecode: str,
-        gas: int = 100000000,
+        gas: tp.Optional[int] = 0,
         gas_price: tp.Optional[int] = None,
-        constructor_args: tp.List = [],
+        constructor_args: tp.Optional[tp.List] = None,
     ):
         """Proxy doesn't support send_transaction"""
         gas_price = gas_price or self.gas_price()
+        constructor_args = constructor_args or []
+
         contract = self._web3.eth.contract(abi=abi, bytecode=bytecode)
-        trans = contract.constructor(*constructor_args).buildTransaction(
+        transaction = contract.constructor(*constructor_args).buildTransaction(
             {
                 "chainId": self._chain_id,
+                "from": from_.address,
                 "gas": gas,
                 "gasPrice": gas_price,
                 "nonce": self._web3.eth.get_transaction_count(from_.address),
             }
         )
-        signed_tx = self._web3.eth.account.sign_transaction(trans, from_.key)
+
+        if transaction["gas"] == 0:
+            transaction["gas"] = self._web3.eth.estimate_gas(transaction)
+
+        signed_tx = self._web3.eth.account.sign_transaction(transaction, from_.key)
         tx = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
         return self._web3.eth.wait_for_transaction_receipt(tx)
 
@@ -92,13 +102,13 @@ class NeonWeb3Client:
         amount: tp.Union[int, float, Decimal],
         address: str,
         abi,
-        gas: int = 100000000,
+        gas: tp.Optional[int] = 0,
         gas_price: tp.Optional[int] = None,
     ):
         to_addr = to if isinstance(to, str) else to.address
         gas_price = gas_price or self.gas_price()
         contract = self._web3.eth.contract(address=address, abi=abi)
-        trans = contract.functions.transfer(to_addr, amount).buildTransaction(
+        transaction = contract.functions.transfer(to_addr, amount).buildTransaction(
             {
                 "chainId": self._chain_id,
                 "gas": gas,
@@ -107,6 +117,10 @@ class NeonWeb3Client:
                 "from": from_.address,
             }
         )
-        signed_tx = self._web3.eth.account.sign_transaction(trans, from_.key)
+
+        if transaction["gas"] == 0:
+            transaction["gas"] = self._web3.eth.estimate_gas(transaction)
+
+        signed_tx = self._web3.eth.account.sign_transaction(transaction, from_.key)
         tx = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
         return self._web3.eth.wait_for_transaction_receipt(tx)

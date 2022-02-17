@@ -1,5 +1,6 @@
 import allure
 from eth_account import Account
+import web3
 
 from integration.tests.base import BaseTests
 
@@ -17,15 +18,13 @@ class BasicHelpers(BaseTests):
     def get_balance(self, address: str) -> int:
         return self.web3_client.eth.get_balance(address)
 
-    # TODO: write code
     @allure.step("requesting faucet")
     def request_faucet(self, wallet: str, amount: int):
         self.faucet.request_neon(wallet, amount=amount)
 
-    # TODO: write code
     @allure.step("transferring tokens")
     def transfer_neon(self, sender_address: str, recipient_address: str,
-                      amount: int):
+                      amount: int) -> web3.types.TxReceipt:
         tx_receipt = self.web3_client.send_neon(sender_address,
                                                 recipient_address,
                                                 DEFAULT_TRANSFER_AMOUNT,

@@ -6,7 +6,7 @@ from integration.tests.base import BaseTests
 
 FIRST_FAUCET_REQUEST_AMOUNT = 5
 SECOND_FAUCET_REQUEST_AMOUNT = 3
-GREAT_AMOUNT = 200_000_000
+GREAT_AMOUNT = 1_000
 DEFAULT_TRANSFER_AMOUNT = 3
 
 
@@ -29,8 +29,8 @@ class BasicHelpers(BaseTests):
         tx_receipt = self.web3_client.send_neon(sender_address,
                                                 recipient_address,
                                                 DEFAULT_TRANSFER_AMOUNT,
-                                                gas=100_000_000,
-                                                gas_price=1000_000_000)
+                                                gas=1_000,
+                                                gas_price=1_000)
 
     @allure.step("comparing expected and actual balance")
     def compare_balance(self, expected: int, actual: int):

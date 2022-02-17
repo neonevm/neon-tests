@@ -4,6 +4,8 @@ import pytest
 from integration.tests.base import BaseTests
 from web3 import Account
 
+from integration.tests.basic.helper_methods import TestBasic
+
 FIRST_FAUCET_REQUEST_AMOUNT = 5
 SECOND_FAUCET_REQUEST_AMOUNT = 3
 

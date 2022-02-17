@@ -1,5 +1,6 @@
+import allure
 import allure_commons
-
+import pytest
 from integration.tests.basic.helper_methods import TestBasic
 
 

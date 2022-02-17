@@ -5,6 +5,7 @@ from integration.tests.base import BaseTests
 
 FIRST_FAUCET_REQUEST_AMOUNT = 5
 SECOND_FAUCET_REQUEST_AMOUNT = 3
+DEFAULT_TRANSFER_AMOUNT = 3
 
 
 class BasicHelpers(BaseTests):

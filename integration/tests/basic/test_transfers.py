@@ -1,11 +1,11 @@
 import allure
 import pytest
-from integration.tests.basic.helper_methods import FIRST_FAUCET_REQUEST_AMOUNT, BasicHelpers
+from integration.tests.basic.helper_methods import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, SECOND_FAUCET_REQUEST_AMOUNT, BasicHelpers
 
 
 @allure.story("Basic: transfer tests")
 class TestTransfer(BasicHelpers):
-    @pytest.mark.skip("not yet done")
+    # @pytest.mark.skip("not yet done")
     @allure.step("test: send neon from one account to another")
     def test_send_neon_from_one_account_to_another(self):
         '''Send neon from one account to another'''
@@ -20,10 +20,16 @@ class TestTransfer(BasicHelpers):
         self.assert_amount(recipient_account.address,
                            FIRST_FAUCET_REQUEST_AMOUNT)
 
-        # send tokens
-        # check balance
-        # check balance
-        pass
+        tx_receipt = self.web3_client.send_neon(sender_account,
+                                                recipient_account,
+                                                DEFAULT_TRANSFER_AMOUNT)
+
+        self.assert_amount(
+            sender_account.address,
+            FIRST_FAUCET_REQUEST_AMOUNT - DEFAULT_TRANSFER_AMOUNT)
+        self.assert_amount(
+            recipient_account.address,
+            FIRST_FAUCET_REQUEST_AMOUNT + DEFAULT_TRANSFER_AMOUNT)
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: send spl wrapped account from one account to another")

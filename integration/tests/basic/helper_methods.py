@@ -35,7 +35,7 @@ class BasicHelpers(BaseTests):
 
     @allure.step("checking less than required")
     def check_value_error_if_less_than_required(self, sender_account: Account, recipient_account: Account, amount: int,
-                                                gas: int, gas_price: int);
+                                                gas: int, gas_price: int):
 
     with pytest.raises(ValueError) as error_info:
         self.transfer_neon(sender_account, recipient_account, amount)

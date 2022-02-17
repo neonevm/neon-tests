@@ -7,7 +7,6 @@ TRANSFER_AMOUNT_DATA = [(10), (100), (10.1)]
 
 @allure.story("Basic: transfer tests")
 class TestTransfer(BasicHelpers):
-    # @pytest.mark.skip("not yet done")
     @allure.step("test: send neon from one account to another")
     def test_send_neon_from_one_account_to_another(self):
         '''Send neon from one account to another'''
@@ -23,7 +22,9 @@ class TestTransfer(BasicHelpers):
 
         tx_receipt = self.web3_client.send_neon(sender_account,
                                                 recipient_account,
-                                                DEFAULT_TRANSFER_AMOUNT)
+                                                DEFAULT_TRANSFER_AMOUNT,
+                                                gas=1_000,
+                                                gas_price=10_000)
 
         self.assert_amount(sender_account.address,
                            GREAT_AMOUNT - DEFAULT_TRANSFER_AMOUNT)

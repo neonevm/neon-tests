@@ -4,6 +4,9 @@ import pytest
 from integration.tests.base import BaseTests
 from web3 import Account
 
+FIRST_FAUCET_REQUEST_AMOUNT = 5
+SECOND_FAUCET_REQUEST_AMOUNT = 3
+
 
 @pytest.fixture(scope="class")
 def prepare_account(faucet, web3_client):
@@ -79,26 +82,29 @@ stack overflow и stack underflow
 
 @allure.story("Basic")
 class TestBasic(BaseTests):
-    # @allure.step("creating a new account")
+    @allure.step("creating a new account")
     def create_account(self) -> Account:
         return self.web3_client.create_account()
 
-    # @allure.step("getting balance of account")
+    @allure.step("getting balance of account")
     def get_balance(self, address: str) -> int:
         return self.web3_client.eth.get_balance(address)
 
     # TODO: write code
-    # @allure.step("requesting faucet")
+    @allure.step("requesting faucet")
     def request_faucet(self, wallet: str, amount: int):
-        pass
+        self.faucet.request_neon(wallet, amount=amount)
 
     # TODO: write code
-    # @allure.step("transferring tokens")
+    @allure.step("transferring tokens")
     def transfer_neon(self, sender_address: str, recipient_address: str,
                       amount: int):
         pass
 
-    # def allure_step(self, message:str):
+    @allure.step("checking balance")
+    def assert_amount(self, address: str, amount: int):
+        balance = self.get_balance(address)
+        assert balance == amount
 
 
 @allure.story("Basic: single user tests")
@@ -107,37 +113,44 @@ class TestSingleClient(TestBasic):
     def test_create_account_and_get_balance(self):
         '''Create account and get balance'''
         account = self.create_account()
-        balance = self.get_balance(account.address)
-        assert balance == 0
+        self.assert_amount(account.address, 0)
 
     def test_check_tokens_in_wallet_neon(self):
         '''Check tokens in wallet: neon'''
-        # request balance
-        assert 1 == 2
+        account = self.create_account()
+        self.request_faucet(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+        self.assert_amount(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
 
+    @pytest.mark.skip("not yet done")
     def test_check_tokens_in_wallet_spl(self):
         '''Check tokens in wallet: spl'''
         # request faucet
         # check balance
         pass
 
+    @pytest.mark.skip("not yet done")
     def test_check_tokens_in_wallet_ERC20(self):
         '''Check tokens in wallet: ERC20'''
         # request faucet
         # check balance
         pass
 
-    def test_check_tokens_in_wallet_ERC20(self):
+    def test_verify_faucet_work_single_request(self):
         '''Verify faucet work (request drop for several accounts): single request'''
-        # request faucet
-        # check balance
-        pass
+        for _ in range(10):
+            account = self.create_account()
+            self.request_faucet(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+            self.assert_amount(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
 
-    def test_check_tokens_in_wallet_ERC20(self):
+    def test_verify_faucet_work_multiple_requests(self):
         '''Verify faucet work (request drop for several accounts): double request'''
-        # request faucet
-        # check balance
-        pass
+        for _ in range(10):
+            account = self.create_account()
+            self.request_faucet(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+            self.request_faucet(account.address, SECOND_FAUCET_REQUEST_AMOUNT)
+            self.assert_amount(
+                account.address,
+                FIRST_FAUCET_REQUEST_AMOUNT + SECOND_FAUCET_REQUEST_AMOUNT)
 
 
 @allure.story("Basic: transfer tests")

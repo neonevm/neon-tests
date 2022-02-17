@@ -30,20 +30,24 @@ class BasicHelpers(BaseTests):
 
     @allure.step("transferring tokens")
     def transfer_neon(self, sender_account: Account, recipient_account: Account,
-                      amount: int, gas: int, gas_price:int) -> web3.types.TxReceipt:
-        self.web3_client.send_neon(sender_account, recipient_account,   amount=amount,gas=gas,gas_price=gas_price)
-    
+                      amount: int, gas: int, gas_price: int) -> web3.types.TxReceipt:
+        self.web3_client.send_neon(sender_account, recipient_account, amount=amount, gas=gas, gas_price=gas_price)
+
     @allure.step("checking less than required")
-    def check_value_error_if_less_than_required(self, sender_account: Account, recipient_account: Account, amount: int, gas: int, gas_price:int);
-        with pytest.raises(ValueError) as error_info:
-            self.transfer_neon(sender_account,recipient_account,amount)
-        assert "The account balance is less than required" in str(error_info.value)
+    def check_value_error_if_less_than_required(self, sender_account: Account, recipient_account: Account, amount: int,
+                                                gas: int, gas_price: int);
 
-    @allure.step("comparing expected and actual balance")
-    def compare_balance(self, expected: int, actual: int):
-        assert actual == expected, f"expected balance = {expected}, actual balance = {actual}"
+    with pytest.raises(ValueError) as error_info:
+        self.transfer_neon(sender_account, recipient_account, amount)
+    assert "The account balance is less than required" in str(error_info.value)
 
-    @allure.step("checking balance")
-    def assert_amount(self, address: str, expected_amount: int):
-        balance = self.web3_client.fromWei(self.get_balance(address), "ether")
-        self.compare_balance(expected_amount, balance)
+
+@allure.step("comparing expected and actual balance")
+def compare_balance(self, expected: int, actual: int):
+    assert actual == expected, f"expected balance = {expected}, actual balance = {actual}"
+
+
+@allure.step("checking balance")
+def assert_amount(self, address: str, expected_amount: int):
+    balance = self.web3_client.fromWei(self.get_balance(address), "ether")
+    self.compare_balance(expected_amount, balance)

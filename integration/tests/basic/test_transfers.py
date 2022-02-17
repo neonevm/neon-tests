@@ -1,6 +1,7 @@
 import allure
 import pytest
-from integration.tests.basic.helper_methods import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, BasicHelpers
+from integration.tests.basic.helper_methods import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, \
+    BasicHelpers
 
 TRANSFER_AMOUNT_DATA = [(10), (100), (10.1)]
 
@@ -16,7 +17,7 @@ class TestTransfer(BasicHelpers):
 
         recipient_account = self.create_account()
         self.request_faucet_neon(recipient_account.address,
-                            FIRST_FAUCET_REQUEST_AMOUNT)
+                                 FIRST_FAUCET_REQUEST_AMOUNT)
         self.assert_amount(recipient_account.address,
                            FIRST_FAUCET_REQUEST_AMOUNT)
 
@@ -25,7 +26,8 @@ class TestTransfer(BasicHelpers):
         #                                         2.5, # DEFAULT_TRANSFER_AMOUNT,
         #                                         gas=10_000,
         #                                         gas_price=1_000_000_000)
-        self.transfer_neon(sender_account,recipient_account,DEFAULT_TRANSFER_AMOUNT,gas=10_000,gas_price=1_000_000_000)
+        self.transfer_neon(sender_account, recipient_account, DEFAULT_TRANSFER_AMOUNT, gas=10_000,
+                           gas_price=1_000_000_000)
 
         self.assert_amount(sender_account.address,
                            GREAT_AMOUNT - DEFAULT_TRANSFER_AMOUNT)
@@ -45,19 +47,19 @@ class TestTransfer(BasicHelpers):
         '''Send more than exist on account: neon'''
         sender_account = self.create_account()
         self.request_faucet_neon(sender_account.address,
-                            FIRST_FAUCET_REQUEST_AMOUNT)
+                                 FIRST_FAUCET_REQUEST_AMOUNT)
         self.assert_amount(sender_account.address, FIRST_FAUCET_REQUEST_AMOUNT)
 
         recipient_account = self.create_account()
         self.request_faucet_neon(recipient_account.address,
-                            FIRST_FAUCET_REQUEST_AMOUNT)
+                                 FIRST_FAUCET_REQUEST_AMOUNT)
         self.assert_amount(recipient_account.address,
                            FIRST_FAUCET_REQUEST_AMOUNT)
 
         # with pytest.raises(ValueError) as error_info:
         #     self.transfer_neon(sender_account,recipient_account,amount)
         # assert "The account balance is less than required" in str(error_info.value)
-        self.check_value_error_if_less_than_required(sender_account,recipient_account,amount)
+        self.check_value_error_if_less_than_required(sender_account, recipient_account, amount)
 
         self.assert_amount(sender_account.address,
                            FIRST_FAUCET_REQUEST_AMOUNT - amount)
@@ -88,7 +90,7 @@ class TestTransfer(BasicHelpers):
 
         recipient_account = self.create_account()
         self.request_faucet_neon(recipient_account.address,
-                            FIRST_FAUCET_REQUEST_AMOUNT)
+                                 FIRST_FAUCET_REQUEST_AMOUNT)
         self.assert_amount(recipient_account.address,
                            FIRST_FAUCET_REQUEST_AMOUNT)
 

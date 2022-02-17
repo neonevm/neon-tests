@@ -28,13 +28,9 @@ class BasicHelpers(BaseTests):
     #     self.faucet.request_sol(wallet, amount=amount)
 
     @allure.step("transferring tokens")
-    def transfer_neon(self, sender_address: str, recipient_address: str,
-                      amount: int) -> web3.types.TxReceipt:
-        tx_receipt = self.web3_client.send_neon(sender_address,
-                                                recipient_address,
-                                                amount=amount,
-                                                gas=1_000,
-                                                gas_price=1_000)
+    def transfer_neon(self, sender_account: Account, recipient_account: Account,
+                      amount: int, gas: int, gas_price:int) -> web3.types.TxReceipt:
+        self.web3_client.send_neon(sender_account, recipient_account,   amount=amount,gas=gas,gas_price=gas_price)
 
     @allure.step("comparing expected and actual balance")
     def compare_balance(self, expected: int, actual: int):

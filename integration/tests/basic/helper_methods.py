@@ -1,4 +1,5 @@
 import allure
+import pytest
 from eth_account import Account
 import web3
 
@@ -31,6 +32,12 @@ class BasicHelpers(BaseTests):
     def transfer_neon(self, sender_account: Account, recipient_account: Account,
                       amount: int, gas: int, gas_price:int) -> web3.types.TxReceipt:
         self.web3_client.send_neon(sender_account, recipient_account,   amount=amount,gas=gas,gas_price=gas_price)
+    
+    @allure.step("checking less than required")
+    def check_value_error_if_less_than_required(self, sender_account: Account, recipient_account: Account, amount: int, gas: int, gas_price:int);
+        with pytest.raises(ValueError) as error_info:
+            self.transfer_neon(sender_account,recipient_account,amount)
+        assert "The account balance is less than required" in str(error_info.value)
 
     @allure.step("comparing expected and actual balance")
     def compare_balance(self, expected: int, actual: int):

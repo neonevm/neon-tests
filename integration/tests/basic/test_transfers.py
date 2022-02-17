@@ -32,11 +32,11 @@ class TestTransfer(BasicHelpers):
             recipient_account.address,
             FIRST_FAUCET_REQUEST_AMOUNT + DEFAULT_TRANSFER_AMOUNT)
 
-    @pytest.mark.skip("not yet done")
-    @allure.step("test: send spl wrapped account from one account to another")
-    def test_send_spl_wrapped_account_from_one_account_to_another(self):
-        '''Send spl wrapped account from one account to another'''
-        pass
+    # @pytest.mark.skip("not yet done")
+    # @allure.step("test: send spl wrapped account from one account to another")
+    # def test_send_spl_wrapped_account_from_one_account_to_another(self):
+    #     '''Send spl wrapped account from one account to another'''
+    #     pass
 
     @allure.step("test: send more than exist on account: neon")
     @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)

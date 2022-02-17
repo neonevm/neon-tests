@@ -1,6 +1,8 @@
 import allure
 from eth_account import Account
 
+from integration.tests.base import BaseTests
+
 
 @allure.story("Basic")
 class TestBasic(BaseTests):

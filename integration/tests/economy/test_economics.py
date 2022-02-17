@@ -1,6 +1,4 @@
 import pathlib
-import time
-import math
 from decimal import Decimal, getcontext
 
 import pytest
@@ -15,10 +13,13 @@ LAMPORT_PER_SOL = 1000000000
 DECIMAL_CONTEXT = getcontext()
 DECIMAL_CONTEXT.prec = 9
 
-GAS_MULTIPLIER = 1
-ETHER_ACCOUNT_SIZE = 256
-SPL_ACCOUNT_SIZE = 165
-BYTE_COST = 6960
+SOLCX_VERSIONS = ["0.6.6", "0.8.10"]
+
+
+@pytest.fixture(scope="session", autouse=True)
+def install_solcx_versions():
+    for version in SOLCX_VERSIONS:
+        solcx.install_solc(version)
 
 
 @allure.story("Operator economy")
@@ -133,8 +134,10 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        solcx.install_solc("0.6.6")
-        contract_path = (pathlib.Path(__file__).parent / "contracts" / "ERC20.sol").absolute()  # Deploy 331 steps, size 4916, tx full size - 4938
+
+        contract_path = (
+            pathlib.Path(__file__).parent / "contracts" / "ERC20.sol"
+        ).absolute()  # Deploy 331 steps, size 4916, tx full size - 4938
         compiled = solcx.compile_files([contract_path], output_values=["abi", "bin"], solc_version="0.6.6")
         contract_interface = self.get_compiled_contract("ERC20", compiled)
 
@@ -180,7 +183,6 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        solcx.install_solc("0.8.10")
         contract_path = (pathlib.Path(__file__).parent / "contracts" / "Counter.sol").absolute()  # Deploy 17 steps
         compiled = solcx.compile_files([contract_path], output_values=["abi", "bin"], solc_version="0.8.10")
 
@@ -224,7 +226,6 @@ class TestEconomics(BaseTests):
 
     def test_contract_get_is_free(self):
         """Verify that get contract calls is free"""
-        solcx.install_solc("0.8.10")
         contract_path = (pathlib.Path(__file__).parent / "contracts" / "Counter.sol").absolute()  # Deploy 17 steps
         compiled = solcx.compile_files([contract_path], output_values=["abi", "bin"], solc_version="0.8.10")
 
@@ -314,4 +315,3 @@ class TestEconomics(BaseTests):
 
         assert neon_balance_after == neon_balance_before
         assert sol_balance_after == sol_balance_before
-

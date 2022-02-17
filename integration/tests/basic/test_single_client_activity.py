@@ -5,7 +5,7 @@ from integration.tests.basic.helper_methods import FIRST_FAUCET_REQUEST_AMOUNT, 
 
 
 @pytest.fixture(scope="class")
-def prepare_account(faucet, web3_client):
+def prepare_account():  # faucet, web3_client):
     # """Create new account for tests and save operator pre/post balances"""
     # start_neon_balance = operator.get_neon_balance()
     # start_sol_balance = operator.get_solana_balance()
@@ -22,7 +22,7 @@ def prepare_account(faucet, web3_client):
     # with allure.step(f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"):
     #     pass
 
-    pass
+    yield
 
 
 '''

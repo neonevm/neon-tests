@@ -88,7 +88,7 @@ class TestSingleClient(BasicHelpers):
     def test_check_tokens_in_wallet_neon(self):
         '''Check tokens in wallet: neon'''
         account = self.create_account()
-        self.request_faucet(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+        self.request_faucet_neon(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
         self.assert_amount(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
 
     @pytest.mark.skip("not yet done")
@@ -114,7 +114,7 @@ class TestSingleClient(BasicHelpers):
         '''Verify faucet work (request drop for several accounts): single request'''
         for _ in range(10):
             account = self.create_account()
-            self.request_faucet(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+            self.request_faucet_neon(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
             self.assert_amount(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
 
     @allure.step(
@@ -124,8 +124,8 @@ class TestSingleClient(BasicHelpers):
         '''Verify faucet work (request drop for several accounts): double request'''
         for _ in range(10):
             account = self.create_account()
-            self.request_faucet(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
-            self.request_faucet(account.address, SECOND_FAUCET_REQUEST_AMOUNT)
+            self.request_faucet_neon(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+            self.request_faucet_neon(account.address, SECOND_FAUCET_REQUEST_AMOUNT)
             self.assert_amount(
                 account.address,
                 FIRST_FAUCET_REQUEST_AMOUNT + SECOND_FAUCET_REQUEST_AMOUNT)

@@ -12,11 +12,11 @@ class TestTransfer(BasicHelpers):
     def test_send_neon_from_one_account_to_another(self):
         '''Send neon from one account to another'''
         sender_account = self.create_account()
-        self.request_faucet(sender_account.address, GREAT_AMOUNT)
+        self.request_faucet_neon(sender_account.address, GREAT_AMOUNT)
         self.assert_amount(sender_account.address, GREAT_AMOUNT)
 
         recipient_account = self.create_account()
-        self.request_faucet(recipient_account.address,
+        self.request_faucet_neon(recipient_account.address,
                             FIRST_FAUCET_REQUEST_AMOUNT)
         self.assert_amount(recipient_account.address,
                            FIRST_FAUCET_REQUEST_AMOUNT)
@@ -49,12 +49,12 @@ class TestTransfer(BasicHelpers):
     def test_send_more_than_exist_on_account_neon(self, amount):
         '''Send more than exist on account: neon'''
         sender_account = self.create_account()
-        self.request_faucet(sender_account.address,
+        self.request_faucet_neon(sender_account.address,
                             FIRST_FAUCET_REQUEST_AMOUNT)
         self.assert_amount(sender_account.address, FIRST_FAUCET_REQUEST_AMOUNT)
 
         recipient_account = self.create_account()
-        self.request_faucet(recipient_account.address,
+        self.request_faucet_neon(recipient_account.address,
                             FIRST_FAUCET_REQUEST_AMOUNT)
         self.assert_amount(recipient_account.address,
                            FIRST_FAUCET_REQUEST_AMOUNT)
@@ -94,11 +94,11 @@ class TestTransfer(BasicHelpers):
     def test_send_more_than_exist_on_account_neon(self):
         '''Send zero: neon'''
         sender_account = self.create_account()
-        self.request_faucet(sender_account.address, GREAT_AMOUNT)
+        self.request_faucet_neon(sender_account.address, GREAT_AMOUNT)
         self.assert_amount(sender_account.address, GREAT_AMOUNT)
 
         recipient_account = self.create_account()
-        self.request_faucet(recipient_account.address,
+        self.request_faucet_neon(recipient_account.address,
                             FIRST_FAUCET_REQUEST_AMOUNT)
         self.assert_amount(recipient_account.address,
                            FIRST_FAUCET_REQUEST_AMOUNT)

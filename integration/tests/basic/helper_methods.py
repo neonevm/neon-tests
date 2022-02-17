@@ -19,9 +19,13 @@ class BasicHelpers(BaseTests):
     def get_balance(self, address: str) -> int:
         return self.web3_client.eth.get_balance(address)
 
-    @allure.step("requesting faucet")
-    def request_faucet(self, wallet: str, amount: int):
+    @allure.step("requesting faucet for Neon")
+    def request_faucet_neon(self, wallet: str, amount: int):
         self.faucet.request_neon(wallet, amount=amount)
+
+    # @allure.step("requesting faucet for ERC20")
+    # def request_faucet_erc20(self, wallet: str, amount: int):
+    #     self.faucet.request_sol(wallet, amount=amount)
 
     @allure.step("transferring tokens")
     def transfer_neon(self, sender_address: str, recipient_address: str,

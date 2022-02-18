@@ -1,15 +1,19 @@
+from typing import Union
 import allure
 import pytest
 from integration.tests.basic.helper_methods import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, \
     BasicHelpers
 
-TRANSFER_AMOUNT_DATA = [(10), (100), (10.1)]
+WRONG_TRANSFER_AMOUNT_DATA = [(10), (100), (10.1)]
+TRANSFER_AMOUNT_DATA = [(0.01), (1), (1.1)]
 
 
 @allure.story("Basic: transfer tests")
 class TestTransfer(BasicHelpers):
     @allure.step("test: send neon from one account to another")
-    def test_send_neon_from_one_account_to_another(self):
+    @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
+    def test_send_neon_from_one_account_to_another(self, amount: Union[int,
+                                                                       float]):
         '''Send neon from one account to another'''
         # sender_account = self.create_account()
         # self.request_faucet_neon(sender_account.address, GREAT_AMOUNT)
@@ -31,7 +35,7 @@ class TestTransfer(BasicHelpers):
         #                                         gas_price=1_000_000_000)
         self.transfer_neon(sender_account,
                            recipient_account,
-                           DEFAULT_TRANSFER_AMOUNT,
+                           amount,
                            gas=10_000,
                            gas_price=1_000_000_000)
 
@@ -48,8 +52,9 @@ class TestTransfer(BasicHelpers):
     #     pass
 
     @allure.step("test: send more than exist on account: neon")
-    @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
-    def test_send_more_than_exist_on_account_neon(self, amount):
+    @pytest.mark.parametrize("amount", WRONG_TRANSFER_AMOUNT_DATA)
+    def test_send_more_than_exist_on_account_neon(self, amount: Union[int,
+                                                                      float]):
         '''Send more than exist on account: neon'''
         # sender_account = self.create_account()
         # self.request_faucet_neon(sender_account.address,

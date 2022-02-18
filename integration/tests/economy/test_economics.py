@@ -1,4 +1,5 @@
 import pathlib
+import time
 from decimal import Decimal, getcontext
 
 import pytest
@@ -69,9 +70,10 @@ class TestEconomics(BaseTests):
     def test_send_neon_to_unexist_account(self):
         """Verify how many cost neon send to new user"""
         sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
         acc2 = self.web3_client.create_account()
 
-        neon_balance_before = self.operator.get_neon_balance()
         tx = self.web3_client.send_neon(self.acc, acc2, 5)
 
         assert self.web3_client.get_balance(acc2) == 5

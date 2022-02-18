@@ -59,7 +59,7 @@ class BasicHelpers(BaseTests):
         except ValueError as error_info:
             print(error_info)
             assert "The account balance is less than required" in str(
-                error_info.value)
+                error_info)
         except Exception as error_info:
             print(error_info)
             assert 1 == 2, f"Error is not ValueError: {error_info}"
@@ -91,17 +91,6 @@ class BasicHelpers(BaseTests):
                                                 amount: int,
                                                 gas: int = GAS,
                                                 gas_price: int = GAS_PRICE):
-        # with pytest.raises(ValueError) as error_info:
-        #     self.transfer_neon(sender_account, recipient_account, amount)
-        # assert "The account balance is less than required" in str(error_info.value)
-        # try:
-        #     with pytest.raises(ValueError) as error_info:
-        #         self.transfer_neon(sender_account, recipient_account, amount)
-        #     assert "The account balance is less than required" in str(error_info.value)
-        # except ValueError as error_info:
-        #     assert "The account balance is less than required" in str(error_info.value)
-        # else:
-        #     assert 1 == 2, "Error is not ValueError"
         self.process_transaction(sender_account, recipient_account, amount,
                                  gas, gas_price,
                                  "The account balance is less than required")

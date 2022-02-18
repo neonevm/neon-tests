@@ -10,6 +10,9 @@ SECOND_FAUCET_REQUEST_AMOUNT = 3
 GREAT_AMOUNT = 1_000
 DEFAULT_TRANSFER_AMOUNT = 3
 
+GAS = 100_000_000
+GAS_PRICE = 0
+
 
 class BasicHelpers(BaseTests):
     @allure.step("creating a new account")
@@ -35,9 +38,13 @@ class BasicHelpers(BaseTests):
     #     self.faucet.request_sol(wallet, amount=amount)
 
     @allure.step("processing transaction")
-    def process_transaction(self, sender_account: Account,
-                            recipient_account: Account, amount: int, gas: int,
-                            gas_price: int, message: str):
+    def process_transaction(self,
+                            sender_account: Account,
+                            recipient_account: Account,
+                            amount: int,
+                            gas: int = GAS,
+                            gas_price: int = GAS_PRICE,
+                            message: str = ""):
         try:
             with pytest.raises(ValueError) as error_info:
                 self.web3_client.send_neon(sender_account, recipient_account,
@@ -50,9 +57,12 @@ class BasicHelpers(BaseTests):
             assert 1 == 2, "Error is not ValueError"
 
     @allure.step("transferring tokens")
-    def transfer_neon(self, sender_account: Account,
-                      recipient_account: Account, amount: int, gas: int,
-                      gas_price: int) -> web3.types.TxReceipt:
+    def transfer_neon(self,
+                      sender_account: Account,
+                      recipient_account: Account,
+                      amount: int,
+                      gas: int = GAS,
+                      gas_price: int = GAS_PRICE) -> web3.types.TxReceipt:
         # self.web3_client.send_neon(sender_account,
         #                            recipient_account,
         #                            amount=amount,
@@ -62,9 +72,12 @@ class BasicHelpers(BaseTests):
                                  gas, gas_price, "InvalidInstructionData")
 
     @allure.step("transferring 0 tokens")
-    def transfer_zero_neon(self, sender_account: Account,
-                           recipient_account: Account, amount: int, gas: int,
-                           gas_price: int) -> web3.types.TxReceipt:
+    def transfer_zero_neon(self,
+                           sender_account: Account,
+                           recipient_account: Account,
+                           amount: int,
+                           gas: int = GAS,
+                           gas_price: int = GAS_PRICE) -> web3.types.TxReceipt:
         # self.web3_client.send_neon(sender_account,
         #                            recipient_account,
         #                            amount=amount,
@@ -74,10 +87,12 @@ class BasicHelpers(BaseTests):
                                  gas, gas_price, "aaa")
 
     @allure.step("checking less than required")
-    def check_value_error_if_less_than_required(self, sender_account: Account,
+    def check_value_error_if_less_than_required(self,
+                                                sender_account: Account,
                                                 recipient_account: Account,
-                                                amount: int, gas: int,
-                                                gas_price: int):
+                                                amount: int,
+                                                gas: int = GAS,
+                                                gas_price: int = GAS_PRICE):
         # with pytest.raises(ValueError) as error_info:
         #     self.transfer_neon(sender_account, recipient_account, amount)
         # assert "The account balance is less than required" in str(error_info.value)

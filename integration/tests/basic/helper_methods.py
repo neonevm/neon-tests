@@ -1,4 +1,5 @@
 import allure
+from construct import integertypes
 import pytest
 from eth_account import Account
 import web3
@@ -108,11 +109,20 @@ class BasicHelpers(BaseTests):
                                  gas, gas_price,
                                  "The account balance is less than required")
 
-    @allure.step("comparing expected and actual balance")
-    def compare_balance(self, expected: int, actual: int):
-        assert actual == expected, f"expected balance = {expected}, actual balance = {actual}"
+    def compare_balance(self, expected: int, actual: int, message: str):
+        assert actual == expected, message + f"expected balance = {expected}, actual balance = {actual}"
 
-    @allure.step("checking balance")
-    def assert_amount(self, address: str, expected_amount: int):
+    def assert_amount(self, address: str, expected_amount: int, message: str):
         balance = self.web3_client.fromWei(self.get_balance(address), "ether")
-        self.compare_balance(expected_amount, balance)
+        self.compare_balance(expected_amount, balance, message)
+
+    @allure.step("checking sender balance")
+    def assert_sender_amount(self, address: str, expected_amount: int):
+        balance = self.web3_client.fromWei(self.get_balance(address), "ether")
+        self.compare_balance(expected_amount, balance, "Sender: ")
+
+    @allure.step("checking recipient balance")
+    def assert_recipient_amount(self, address: str,
+                                expected_amount: integertypes):
+        balance = self.web3_client.fromWei(self.get_balance(address), "ether")
+        self.compare_balance(expected_amount, balance, "Recipient: ")

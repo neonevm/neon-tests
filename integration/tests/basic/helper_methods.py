@@ -27,7 +27,7 @@ class BasicHelpers(BaseTests):
     @allure.step("creating a new account with balance")
     def create_account_with_balance(self, amount: int) -> Account:
         account = self.create_account()
-        self.request_faucet(account.address, amount)
+        self.request_faucet_neon(account.address, amount)
         return account
 
     # @allure.step("requesting faucet for ERC20")

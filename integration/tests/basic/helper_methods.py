@@ -40,8 +40,8 @@ class BasicHelpers(BaseTests):
                             gas_price: int, message: str):
         try:
             with pytest.raises(ValueError) as error_info:
-                self.transfer_neon(sender_account, recipient_account, amount,
-                                   gas, gas_price)
+                self.web3_client.send_neon(sender_account, recipient_account,
+                                           amount, gas, gas_price)
             assert message in str(error_info.value)
         except ValueError as error_info:
             assert "The account balance is less than required" in str(

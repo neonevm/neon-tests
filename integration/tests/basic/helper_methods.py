@@ -53,9 +53,9 @@ class BasicHelpers(BaseTests):
         except ValueError as error_info:
             assert "The account balance is less than required" in str(
                 error_info.value)
-        else:
+        except Exception as error_info:
             assert 1 == 2, "Error is not ValueError"
-
+    
     @allure.step("transferring tokens")
     def transfer_neon(self,
                       sender_account: Account,

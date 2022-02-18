@@ -111,7 +111,8 @@ class TestSingleClient(BasicHelpers):
         '''Verify faucet work (request drop for several accounts): single request'''
         for _ in range(10):
             account = self.create_account()
-            self.request_faucet_neon(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+            self.request_faucet_neon(account.address,
+                                     FIRST_FAUCET_REQUEST_AMOUNT)
             self.assert_amount(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
 
     @allure.step(
@@ -121,8 +122,10 @@ class TestSingleClient(BasicHelpers):
         '''Verify faucet work (request drop for several accounts): double request'''
         for _ in range(10):
             account = self.create_account()
-            self.request_faucet_neon(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
-            self.request_faucet_neon(account.address, SECOND_FAUCET_REQUEST_AMOUNT)
+            self.request_faucet_neon(account.address,
+                                     FIRST_FAUCET_REQUEST_AMOUNT)
+            self.request_faucet_neon(account.address,
+                                     SECOND_FAUCET_REQUEST_AMOUNT)
             self.assert_amount(
                 account.address,
                 FIRST_FAUCET_REQUEST_AMOUNT + SECOND_FAUCET_REQUEST_AMOUNT)

@@ -50,11 +50,14 @@ class BasicHelpers(BaseTests):
             with pytest.raises(ValueError) as error_info:
                 self.web3_client.send_neon(sender_account, recipient_account,
                                            amount, gas, gas_price)
+                print(error_info)
             assert message in str(error_info.value)
         except ValueError as error_info:
+            print(error_info)
             assert "The account balance is less than required" in str(
                 error_info.value)
         except Exception as error_info:
+            print(error_info)
             assert 1 == 2, f"Error is not ValueError: {error_info}"
 
     @allure.step("transferring tokens")
@@ -64,11 +67,6 @@ class BasicHelpers(BaseTests):
                       amount: int,
                       gas: int = GAS,
                       gas_price: int = GAS_PRICE) -> web3.types.TxReceipt:
-        # self.web3_client.send_neon(sender_account,
-        #                            recipient_account,
-        #                            amount=amount,
-        #                            gas=gas,
-        #                            gas_price=gas_price)
         self.process_transaction(sender_account, recipient_account, amount,
                                  gas, gas_price, "InvalidInstructionData")
 
@@ -79,11 +77,6 @@ class BasicHelpers(BaseTests):
                            amount: int,
                            gas: int = GAS,
                            gas_price: int = GAS_PRICE) -> web3.types.TxReceipt:
-        # self.web3_client.send_neon(sender_account,
-        #                            recipient_account,
-        #                            amount=amount,
-        #                            gas=gas,
-        #                            gas_price=gas_price)
         self.process_transaction(sender_account, recipient_account, amount,
                                  gas, gas_price, "aaa")
 

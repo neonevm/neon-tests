@@ -25,8 +25,8 @@ def requirements(dev=False):
 
 
 @cli.command(help="Run any type of tests")
-@click.option('-n', '--network', default="night-stand", type=click.Choice(networks), help="In which stand run tests")
-# @click.option('-n', '--network', default="release-stand", type=click.Choice(networks), help="In which stand run tests")
+# @click.option('-n', '--network', default="night-stand", type=click.Choice(networks), help="In which stand run tests")
+@click.option('-n', '--network', default="release-stand", type=click.Choice(networks), help="In which stand run tests")
 @click.argument('name', required=True, type=click.Choice(["economy", "basic"]))
 def run(name, network):
     command = ""

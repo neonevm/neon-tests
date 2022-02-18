@@ -93,7 +93,7 @@ class TestTransfer(BasicHelpers):
     #     pass
 
     @allure.step("test: send zero: neon")
-    def test_send_more_than_exist_on_account_neon(self):
+    def test_zero_neon(self):
         '''Send zero: neon'''
         # sender_account = self.create_account()
         # self.request_faucet_neon(sender_account.address, GREAT_AMOUNT)
@@ -120,43 +120,43 @@ class TestTransfer(BasicHelpers):
 
     # @pytest.mark.skip("not yet done")
     # @allure.step("test: send zero: spl (with different precision)")
-    # def test_send_more_than_exist_on_account_spl(self):
+    # def test_zero_spl(self):
     #     '''Send zero: spl (with different precision)'''
     #     pass
 
     # @pytest.mark.skip("not yet done")
     # @allure.step("test: send zero: ERC20")
-    # def test_send_more_than_exist_on_account_erc20(self):
+    # def test_zero_erc20(self):
     #     '''Send zero: ERC20'''
     #     pass
 
     # @pytest.mark.skip("not yet done")
     # @allure.step("test: send negative sum from account: neon")
-    # def test_send_more_than_exist_on_account_neon(self):
+    # def test_send_negative_sum_from_account_neon(self):
     #     '''Send negative sum from account: neon'''
     #     pass
 
     # @pytest.mark.skip("not yet done")
     # @allure.step(
     #     "test: send negative sum from account: spl (with different precision)")
-    # def test_send_more_than_exist_on_account_spl(self):
+    # def test_send_negative_sum_from_account_spl(self):
     #     '''Send negative sum from account: spl (with different precision)'''
     #     pass
 
     # @pytest.mark.skip("not yet done")
     # @allure.step("test: send negative sum from account: ERC20")
-    # def test_send_more_than_exist_on_account_erc20(self):
+    # def test_send_negative_sum_from_account_erc20(self):
     #     '''Send negative sum from account: ERC20'''
     #     pass
 
     # @pytest.mark.skip("not yet done")
-    # @allure.step("test: send token to an invalid addres")
-    # def test_send_more_than_exist_on_account_spl(self):
+    # @allure.step("test: send token to an invalid address")
+    # def test_send_token_to_an_invalid_address(self):
     #     '''Send token to an invalid address'''
     #     pass
 
     # @pytest.mark.skip("not yet done")
     # @allure.step("test: send token to a non-existing address")
-    # def test_send_more_than_exist_on_account_spl(self):
+    # def test_send_more_token_to_non_existing_address(self):
     #     '''Send token to a non-existing address'''
     #     pass

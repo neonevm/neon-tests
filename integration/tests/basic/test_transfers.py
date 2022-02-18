@@ -11,15 +11,18 @@ class TestTransfer(BasicHelpers):
     @allure.step("test: send neon from one account to another")
     def test_send_neon_from_one_account_to_another(self):
         '''Send neon from one account to another'''
-        sender_account = self.create_account()
-        self.request_faucet_neon(sender_account.address, GREAT_AMOUNT)
-        self.assert_amount(sender_account.address, GREAT_AMOUNT)
+        # sender_account = self.create_account()
+        # self.request_faucet_neon(sender_account.address, GREAT_AMOUNT)
+        # self.assert_amount(sender_account.address, GREAT_AMOUNT)
+        sender_account = self.create_account_with_balance(GREAT_AMOUNT)
 
-        recipient_account = self.create_account()
-        self.request_faucet_neon(recipient_account.address,
-                                 FIRST_FAUCET_REQUEST_AMOUNT)
-        self.assert_amount(recipient_account.address,
-                           FIRST_FAUCET_REQUEST_AMOUNT)
+        # recipient_account = self.create_account()
+        # self.request_faucet_neon(recipient_account.address,
+        #                          FIRST_FAUCET_REQUEST_AMOUNT)
+        # self.assert_amount(recipient_account.address,
+        #                    FIRST_FAUCET_REQUEST_AMOUNT)
+        recipient_account = self.create_account_with_balance(
+            FIRST_FAUCET_REQUEST_AMOUNT)
 
         # tx_receipt = self.web3_client.send_neon(sender_account,
         #                                         recipient_account,
@@ -48,16 +51,20 @@ class TestTransfer(BasicHelpers):
     @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
     def test_send_more_than_exist_on_account_neon(self, amount):
         '''Send more than exist on account: neon'''
-        sender_account = self.create_account()
-        self.request_faucet_neon(sender_account.address,
-                                 FIRST_FAUCET_REQUEST_AMOUNT)
-        self.assert_amount(sender_account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+        # sender_account = self.create_account()
+        # self.request_faucet_neon(sender_account.address,
+        #                          FIRST_FAUCET_REQUEST_AMOUNT)
+        # self.assert_amount(sender_account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+        sender_account = self.create_account_with_balance(
+            FIRST_FAUCET_REQUEST_AMOUNT)
 
-        recipient_account = self.create_account()
-        self.request_faucet_neon(recipient_account.address,
-                                 FIRST_FAUCET_REQUEST_AMOUNT)
-        self.assert_amount(recipient_account.address,
-                           FIRST_FAUCET_REQUEST_AMOUNT)
+        # recipient_account = self.create_account()
+        # self.request_faucet_neon(recipient_account.address,
+        #                          FIRST_FAUCET_REQUEST_AMOUNT)
+        # self.assert_amount(recipient_account.address,
+        #                    FIRST_FAUCET_REQUEST_AMOUNT)
+        recipient_account = self.create_account_with_balance(
+            FIRST_FAUCET_REQUEST_AMOUNT)
 
         # with pytest.raises(ValueError) as error_info:
         #     self.transfer_neon(sender_account,recipient_account,amount)
@@ -88,20 +95,26 @@ class TestTransfer(BasicHelpers):
     @allure.step("test: send zero: neon")
     def test_send_more_than_exist_on_account_neon(self):
         '''Send zero: neon'''
-        sender_account = self.create_account()
-        self.request_faucet_neon(sender_account.address, GREAT_AMOUNT)
-        self.assert_amount(sender_account.address, GREAT_AMOUNT)
+        # sender_account = self.create_account()
+        # self.request_faucet_neon(sender_account.address, GREAT_AMOUNT)
+        # self.assert_amount(sender_account.address, GREAT_AMOUNT)
+        sender_account = self.create_account_with_balance(
+            FIRST_FAUCET_REQUEST_AMOUNT)
 
-        recipient_account = self.create_account()
-        self.request_faucet_neon(recipient_account.address,
-                                 FIRST_FAUCET_REQUEST_AMOUNT)
-        self.assert_amount(recipient_account.address,
-                           FIRST_FAUCET_REQUEST_AMOUNT)
+        # recipient_account = self.create_account()
+        # self.request_faucet_neon(recipient_account.address,
+        #                          FIRST_FAUCET_REQUEST_AMOUNT)
+        # self.assert_amount(recipient_account.address,
+        #                    FIRST_FAUCET_REQUEST_AMOUNT)
+        recipient_account = self.create_account_with_balance(
+            FIRST_FAUCET_REQUEST_AMOUNT)
 
-        tx_receipt = self.web3_client.send_neon(sender_account,
-                                                recipient_account, 0)
+        # tx_receipt = self.web3_client.send_neon(sender_account,
+        #                                         recipient_account, 0)
+        self.transfer_zero_neon(sender_account, recipient_account,
+                                DEFAULT_TRANSFER_AMOUNT)
 
-        self.assert_amount(sender_account.address, GREAT_AMOUNT)
+        self.assert_amount(sender_account.address, FIRST_FAUCET_REQUEST_AMOUNT)
         self.assert_amount(recipient_account.address,
                            FIRST_FAUCET_REQUEST_AMOUNT)
 

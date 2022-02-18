@@ -53,9 +53,8 @@ class BasicHelpers(BaseTests):
             #     print(error_info)
             # assert message in str(error_info.value)
 
-
             self.web3_client.send_neon(sender_account, recipient_account,
-                                        amount, gas, gas_price)
+                                       amount, gas, gas_price)
 
         except ValueError as error_info:
             print(error_info)
@@ -110,7 +109,10 @@ class BasicHelpers(BaseTests):
     def compare_balance(self, expected: int, actual: int, message: str):
         assert actual == expected, message + f"expected balance = {expected}, actual balance = {actual}"
 
-    def assert_amount(self, address: str, expected_amount: int, message: str):
+    def assert_amount(self,
+                      address: str,
+                      expected_amount: int,
+                      message: str = ""):
         balance = self.web3_client.fromWei(self.get_balance(address), "ether")
         self.compare_balance(expected_amount, balance, message)
 

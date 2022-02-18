@@ -40,10 +40,10 @@ class TestTransfer(BasicHelpers):
                            gas_price=1_000_000_000)
 
         self.assert_amount(sender_account.address,
-                           GREAT_AMOUNT - DEFAULT_TRANSFER_AMOUNT)
+                           GREAT_AMOUNT - amount)
         self.assert_amount(
             recipient_account.address,
-            FIRST_FAUCET_REQUEST_AMOUNT + DEFAULT_TRANSFER_AMOUNT)
+            FIRST_FAUCET_REQUEST_AMOUNT + amount)
 
     # @pytest.mark.skip("not yet done")
     # @allure.step("test: send spl wrapped account from one account to another")

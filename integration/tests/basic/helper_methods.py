@@ -46,23 +46,23 @@ class BasicHelpers(BaseTests):
                             gas: int = GAS,
                             gas_price: int = GAS_PRICE,
                             message: str = ""):
-        try:
+        # try:
             # with pytest.raises(ValueError) as error_info:
             #     self.web3_client.send_neon(sender_account, recipient_account,
             #                                amount, gas, gas_price)
             #     print(error_info)
             # assert message in str(error_info.value)
 
-            self.web3_client.send_neon(sender_account, recipient_account,
-                                       amount, gas, gas_price)
+        self.web3_client.send_neon(sender_account, recipient_account,
+                                    amount, gas, gas_price)
 
-        except ValueError as error_info:
-            print(error_info)
-            assert "The account balance is less than required" in str(
-                error_info)
-        except Exception as error_info:
-            print(error_info)
-            assert 1 == 2, f"Error is not ValueError: {error_info}"
+        # except ValueError as error_info:
+        #     print(error_info)
+        #     assert "The account balance is less than required" in str(
+        #         error_info)
+        # except Exception as error_info:
+        #     print(error_info)
+        #     assert 1 == 2, f"Error is not ValueError: {error_info}"
 
     @allure.step("transferring tokens")
     def transfer_neon(self,

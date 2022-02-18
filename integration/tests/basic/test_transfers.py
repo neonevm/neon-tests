@@ -26,7 +26,10 @@ class TestTransfer(BasicHelpers):
         #                                         2.5, # DEFAULT_TRANSFER_AMOUNT,
         #                                         gas=10_000,
         #                                         gas_price=1_000_000_000)
-        self.transfer_neon(sender_account, recipient_account, DEFAULT_TRANSFER_AMOUNT, gas=10_000,
+        self.transfer_neon(sender_account,
+                           recipient_account,
+                           DEFAULT_TRANSFER_AMOUNT,
+                           gas=10_000,
                            gas_price=1_000_000_000)
 
         self.assert_amount(sender_account.address,
@@ -41,30 +44,30 @@ class TestTransfer(BasicHelpers):
     #     '''Send spl wrapped account from one account to another'''
     #     pass
 
-    @allure.step("test: send more than exist on account: neon")
-    @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
-    def test_send_more_than_exist_on_account_neon(self, amount):
-        '''Send more than exist on account: neon'''
-        sender_account = self.create_account()
-        self.request_faucet_neon(sender_account.address,
-                                 FIRST_FAUCET_REQUEST_AMOUNT)
-        self.assert_amount(sender_account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+    # @allure.step("test: send more than exist on account: neon")
+    # @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
+    # def test_send_more_than_exist_on_account_neon(self, amount):
+    #     '''Send more than exist on account: neon'''
+    #     sender_account = self.create_account()
+    #     self.request_faucet_neon(sender_account.address,
+    #                              FIRST_FAUCET_REQUEST_AMOUNT)
+    #     self.assert_amount(sender_account.address, FIRST_FAUCET_REQUEST_AMOUNT)
 
-        recipient_account = self.create_account()
-        self.request_faucet_neon(recipient_account.address,
-                                 FIRST_FAUCET_REQUEST_AMOUNT)
-        self.assert_amount(recipient_account.address,
-                           FIRST_FAUCET_REQUEST_AMOUNT)
+    #     recipient_account = self.create_account()
+    #     self.request_faucet_neon(recipient_account.address,
+    #                              FIRST_FAUCET_REQUEST_AMOUNT)
+    #     self.assert_amount(recipient_account.address,
+    #                        FIRST_FAUCET_REQUEST_AMOUNT)
 
-        # with pytest.raises(ValueError) as error_info:
-        #     self.transfer_neon(sender_account,recipient_account,amount)
-        # assert "The account balance is less than required" in str(error_info.value)
-        self.check_value_error_if_less_than_required(sender_account, recipient_account, amount)
+    #     # with pytest.raises(ValueError) as error_info:
+    #     #     self.transfer_neon(sender_account,recipient_account,amount)
+    #     # assert "The account balance is less than required" in str(error_info.value)
+    #     self.check_value_error_if_less_than_required(sender_account, recipient_account, amount)
 
-        self.assert_amount(sender_account.address,
-                           FIRST_FAUCET_REQUEST_AMOUNT - amount)
-        self.assert_amount(recipient_account.address,
-                           FIRST_FAUCET_REQUEST_AMOUNT + amount)
+    #     self.assert_amount(sender_account.address,
+    #                        FIRST_FAUCET_REQUEST_AMOUNT - amount)
+    #     self.assert_amount(recipient_account.address,
+    #                        FIRST_FAUCET_REQUEST_AMOUNT + amount)
 
     # @pytest.mark.skip("not yet done")
     # @allure.step(
@@ -97,11 +100,9 @@ class TestTransfer(BasicHelpers):
         tx_receipt = self.web3_client.send_neon(sender_account,
                                                 recipient_account, 0)
 
-        self.assert_amount(sender_account.address,
-                           GREAT_AMOUNT)
-        self.assert_amount(
-            recipient_account.address,
-            FIRST_FAUCET_REQUEST_AMOUNT)
+        self.assert_amount(sender_account.address, GREAT_AMOUNT)
+        self.assert_amount(recipient_account.address,
+                           FIRST_FAUCET_REQUEST_AMOUNT)
 
     # @pytest.mark.skip("not yet done")
     # @allure.step("test: send zero: spl (with different precision)")

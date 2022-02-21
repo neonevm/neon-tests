@@ -97,11 +97,20 @@ class TestTransfer(BasicHelpers):
         '''Send zero: ERC20'''
         pass
 
-    @pytest.mark.skip("not yet done")
     @allure.step("test: send negative sum from account: neon")
     def test_send_negative_sum_from_account_neon(self):
         '''Send negative sum from account: neon'''
-        pass
+        sender_account = self.create_account_with_balance(
+            FIRST_FAUCET_REQUEST_AMOUNT)
+        recipient_account = self.create_account_with_balance(
+            FIRST_FAUCET_REQUEST_AMOUNT)
+
+        self.transfer_zero_neon(sender_account, recipient_account, -1)
+
+        self.assert_sender_amount(sender_account.address,
+                                  FIRST_FAUCET_REQUEST_AMOUNT)
+        self.assert_recipient_amount(recipient_account.address,
+                                     FIRST_FAUCET_REQUEST_AMOUNT)
 
     @pytest.mark.skip("not yet done")
     @allure.step(

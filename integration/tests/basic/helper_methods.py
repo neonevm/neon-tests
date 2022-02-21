@@ -4,7 +4,8 @@ import pytest
 from eth_account import Account
 import web3
 
-from integration.tests.base import BaseTests
+from utils.faucet import Faucet
+from utils.web3client import NeonWeb3Client
 
 FIRST_FAUCET_REQUEST_AMOUNT = 5
 SECOND_FAUCET_REQUEST_AMOUNT = 3
@@ -15,7 +16,15 @@ GAS = 100_000_000
 GAS_PRICE = 0
 
 
-class BasicHelpers(BaseTests):
+class BasicHelpers():
+    faucet: Faucet
+    web3_client: NeonWeb3Client
+
+    @pytest.fixture(autouse=True)
+    def prepare(self, faucet: Faucet, web3_client):
+        self.faucet = faucet
+        self.web3_client = web3_client
+
     @allure.step("creating a new account")
     def create_account(self) -> Account:
         return self.web3_client.create_account()

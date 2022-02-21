@@ -44,6 +44,7 @@ def pytest_configure(config: Config):
     assert env_name in environments, f"Environment {env_name} doesn't exist in envs.json"
     config.environment = EnvironmentConfig(**environments[env_name])
 
+
 @pytest.fixture(scope="session")
 def sol_price() -> float:
     async def get_price():

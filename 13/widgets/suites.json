@@ -1,0 +1,15 @@
+{
+  "total" : 1,
+  "items" : [ {
+    "uid" : "6beddccd7df37051163433fc24c81a3b",
+    "name" : "integration.tests.economy",
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 7,
+      "skipped" : 1,
+      "passed" : 2,
+      "unknown" : 0,
+      "total" : 10
+    }
+  } ]
+}

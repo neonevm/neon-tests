@@ -1,0 +1,15 @@
+{
+  "total" : 1,
+  "items" : [ {
+    "uid" : "0710fda294ed754a90a5583d6675dac6",
+    "name" : "Operator economy",
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 7,
+      "skipped" : 1,
+      "passed" : 2,
+      "unknown" : 0,
+      "total" : 10
+    }
+  } ]
+}

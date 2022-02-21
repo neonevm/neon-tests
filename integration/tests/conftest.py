@@ -9,8 +9,8 @@ import web3
 import allure
 import pytest
 import solana
-from pythclient.pythaccounts import PythPriceAccount
-from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP_ENDPOINT
+# from pythclient.pythaccounts import PythPriceAccount
+# from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP_ENDPOINT
 from _pytest.config import Config
 
 from utils.operator import Operator
@@ -43,7 +43,6 @@ def pytest_configure(config: Config):
         environments = json.load(f)
     assert env_name in environments, f"Environment {env_name} doesn't exist in envs.json"
     config.environment = EnvironmentConfig(**environments[env_name])
-
 
 @pytest.fixture(scope="session")
 def sol_price() -> float:

@@ -25,13 +25,16 @@ def requirements(dev=False):
 
 
 @cli.command(help="Run any type of tests")
-@click.option('-n', '--network', default="night-stand", type=click.Choice(networks), help="In which stand run tests")
-@click.argument('name', required=True, type=click.Choice(["economy"]))
+# @click.option('-n', '--network', default="night-stand", type=click.Choice(networks), help="In which stand run tests")
+@click.option('-n', '--network', default="release-stand", type=click.Choice(networks), help="In which stand run tests")
+@click.argument('name', required=True, type=click.Choice(["economy", "basic"]))
 def run(name, network):
     command = ""
     if name == "economy":
         command = "py.test integration/tests/economy/test_economics.py"
-    command += f" --network={network}"
+    elif name == "basic":
+        command = "py.test integration/tests/basic/"
+    # command += f" --network={network}"
 
     cmd = subprocess.run(command, shell=True)
 

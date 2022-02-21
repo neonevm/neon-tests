@@ -10,7 +10,7 @@ import allure
 import pytest
 import solana
 # 01 from pythclient.pythaccounts import PythPriceAccount
-from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP_ENDPOINT
+# 02 from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP_ENDPOINT
 from _pytest.config import Config
 
 from utils.operator import Operator

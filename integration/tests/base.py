@@ -15,8 +15,7 @@ class BaseTests:
     sol_price: float
 
     @pytest.fixture(autouse=True)
-    def prepare(self, operator: Operator, faucet: Faucet, web3_client,
-                sol_client, sol_price):
+    def prepare(self, operator: Operator, faucet: Faucet, web3_client, sol_client, sol_price):
         self.operator = operator
         self.faucet = faucet
         self.web3_client = web3_client

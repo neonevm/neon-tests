@@ -60,6 +60,8 @@ def prepare_account():  # faucet, web3_client):
 # 17.	Move tokens from solana to neon
 # 18.	Move tokens from neon to solana
 # 19.	Create TX like NeonSwap (thus leveraging airdropper) and swap token
+# 20.	Check ERC-1820 transaction (without chain_id in sign)
+# 21.	Generate bad sign (when v, r, s over allowed size)
 
 Есть много известных вариантов, описать все не очень реалистично.
 Самые простые:

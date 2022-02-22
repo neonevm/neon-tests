@@ -4,6 +4,9 @@ import pytest
 from integration.tests.basic.helper_methods import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, \
     BasicHelpers
 
+NON_EXISTING_ADDRESS = "0xmmmmm"
+INVALID_ADDRESS = "0x12345"
+
 WRONG_TRANSFER_AMOUNT_DATA = [(10), (100), (10.1)]
 TRANSFER_AMOUNT_DATA = [(0.01), (1), (1.1)]
 
@@ -30,7 +33,7 @@ class TestTransfer(BasicHelpers):
         self.assert_recipient_amount(recipient_account.address,
                                      FIRST_FAUCET_REQUEST_AMOUNT + amount)
 
-    @pytest.mark.skip("not yet done")
+    @pytest.mark.skip("waiting for MS")
     @allure.step("test: send spl wrapped account from one account to another")
     def test_send_spl_wrapped_account_from_one_account_to_another(self):
         '''Send spl wrapped account from one account to another'''
@@ -54,7 +57,7 @@ class TestTransfer(BasicHelpers):
         self.assert_recipient_amount(recipient_account.address,
                                      FIRST_FAUCET_REQUEST_AMOUNT)
 
-    @pytest.mark.skip("not yet done")
+    @pytest.mark.skip("waiting for MS")
     @allure.step(
         "test: send more than exist on account: spl (with different precision)"
     )
@@ -85,7 +88,7 @@ class TestTransfer(BasicHelpers):
         self.assert_recipient_amount(recipient_account.address,
                                      FIRST_FAUCET_REQUEST_AMOUNT)
 
-    @pytest.mark.skip("not yet done")
+    @pytest.mark.skip("waiting for MS")
     @allure.step("test: send zero: spl (with different precision)")
     def test_zero_spl(self):
         '''Send zero: spl (with different precision)'''
@@ -112,7 +115,7 @@ class TestTransfer(BasicHelpers):
         self.assert_recipient_amount(recipient_account.address,
                                      FIRST_FAUCET_REQUEST_AMOUNT)
 
-    @pytest.mark.skip("not yet done")
+    @pytest.mark.skip("waiting for MS")
     @allure.step(
         "test: send negative sum from account: spl (with different precision)")
     def test_send_negative_sum_from_account_spl(self):
@@ -135,4 +138,13 @@ class TestTransfer(BasicHelpers):
     @allure.step("test: send token to a non-existing address")
     def test_send_more_token_to_non_existing_address(self):
         '''Send token to a non-existing address'''
-        pass
+        sender_account = self.create_account_with_balance(
+            FIRST_FAUCET_REQUEST_AMOUNT)
+        recipient_address = NON_EXISTING_ADDRESS
+
+        self.transfer_zero_neon(sender_account, recipient_account, -1)
+
+        self.assert_sender_amount(sender_account.address,
+                                  FIRST_FAUCET_REQUEST_AMOUNT)
+        self.assert_recipient_amount(recipient_account.address,
+                                     FIRST_FAUCET_REQUEST_AMOUNT)

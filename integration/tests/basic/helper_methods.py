@@ -1,3 +1,4 @@
+from typing import Optional
 import allure
 from construct import integertypes
 import pytest
@@ -10,9 +11,6 @@ FIRST_FAUCET_REQUEST_AMOUNT = 5
 SECOND_FAUCET_REQUEST_AMOUNT = 3
 GREAT_AMOUNT = 1_000
 DEFAULT_TRANSFER_AMOUNT = 3
-
-GAS = 100_000_000
-GAS_PRICE = 0
 
 
 class BasicHelpers(BaseTests):
@@ -43,8 +41,8 @@ class BasicHelpers(BaseTests):
                             sender_account: Account,
                             recipient_account: Account,
                             amount: int,
-                            gas: int = GAS,
-                            gas_price: int = GAS_PRICE,
+                            gas: Optional[int] = 0,
+                            gas_price: Optional[int] = None,
                             message: str = ""):
         # try:
         # with pytest.raises(ValueError) as error_info:
@@ -71,28 +69,30 @@ class BasicHelpers(BaseTests):
                       sender_account: Account,
                       recipient_account: Account,
                       amount: int,
-                      gas: int = GAS,
-                      gas_price: int = GAS_PRICE) -> web3.types.TxReceipt:
+                      gas: Optional[int] = 0,
+                      gas_price: Optional[int] = None) -> web3.types.TxReceipt:
         self.process_transaction(sender_account, recipient_account, amount,
                                  gas, gas_price, "InvalidInstructionData")
 
     @allure.step("transferring 0 tokens")
-    def transfer_zero_neon(self,
-                           sender_account: Account,
-                           recipient_account: Account,
-                           amount: int,
-                           gas: int = GAS,
-                           gas_price: int = GAS_PRICE) -> web3.types.TxReceipt:
+    def transfer_zero_neon(
+            self,
+            sender_account: Account,
+            recipient_account: Account,
+            amount: int,
+            gas: Optional[int] = 0,
+            gas_price: Optional[int] = None) -> web3.types.TxReceipt:
         self.process_transaction(sender_account, recipient_account, amount,
                                  gas, gas_price, "aaa")
 
     @allure.step("checking less than required")
-    def check_value_error_if_less_than_required(self,
-                                                sender_account: Account,
-                                                recipient_account: Account,
-                                                amount: int,
-                                                gas: int = GAS,
-                                                gas_price: int = GAS_PRICE):
+    def check_value_error_if_less_than_required(
+            self,
+            sender_account: Account,
+            recipient_account: Account,
+            amount: int,
+            gas: Optional[int] = 0,
+            gas_price: Optional[int] = None):
         self.process_transaction(sender_account, recipient_account, amount,
                                  gas, gas_price,
                                  "The account balance is less than required")

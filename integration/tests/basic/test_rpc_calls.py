@@ -26,100 +26,100 @@ class TestRpcCalls(BasicHelpers):
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_getBlockByHash")
     def test_rpc_call_eth_getBlockByHash(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work eth_getBlockByHash'''
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_getBlockByNumber"
                  )
     def test_rpc_call_eth_getBlockByNumber(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work eth_getBlockByNumber'''
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_blockNumber")
     def test_rpc_call_eth_blockNumber(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work work eth_blockNumber'''
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_call")
     def test_rpc_call_eth_call(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work eth_call'''
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_estimateGas")
     def test_rpc_call_eth_estimateGas(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work eth_estimateGas'''
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_gasPrice")
     def test_rpc_call_eth_gasPrice(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work eth_gasPrice'''
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_getLogs")
     def test_rpc_call_eth_getLogs(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work eth_getLogs'''
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_getBalance")
     def test_rpc_call_eth_getBalance(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work eth_getBalance'''
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step(
         "test: verify implemented rpc calls work eth_getTransactionCount")
     def test_rpc_call_eth_getTransactionCount(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work eth_getTransactionCount'''
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_getCode")
     def test_rpc_call_eth_getCode(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work eth_getCode'''
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step(
         "test: verify implemented rpc calls work eth_sendRawTransaction")
     def test_rpc_call_eth_sendRawTransaction(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work eth_sendRawTransaction'''
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step(
         "test: verify implemented rpc calls work eth_getTransactionByHash")
     def test_rpc_call_eth_getTransactionByHash(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work eth_getTransactionByHash'''
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step(
         "test: verify implemented rpc calls work eth_getTransactionReceipt")
     def test_rpc_call_eth_getTransactionReceipt(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work eth_getTransactionReceipt'''
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eht_getStorageAt")
     def test_rpc_call_eht_getStorageAt(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work eht_getStorageAt'''
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work web3_clientVersion")
     def test_rpc_call_web3_clientVersion(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work web3_clientVersion'''
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work net_version")
     def test_rpc_call_net_version(self):
-        '''Create account and get balance'''
+        '''Verify implemented rpc calls work work net_version'''
         pass

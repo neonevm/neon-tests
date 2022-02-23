@@ -33,7 +33,7 @@ class TestRpcCalls(BasicHelpers):
         print(model)
 
     @pytest.mark.skip("not yet done")
-    @allure.step("test: verify implemented rpc calls work eth_getBlockByNumber"Ï
+    @allure.step("test: verify implemented rpc calls work eth_getBlockByNumber"
                  )
     def test_rpc_call_eth_getBlockByNumber(self):
         """Verify implemented rpc calls work eth_getBlockByNumber"""

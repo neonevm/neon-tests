@@ -1,5 +1,4 @@
 import allure
-# from construct import integertypes
 import pytest
 import web3
 from eth_account import Account
@@ -112,7 +111,6 @@ class BasicHelpers(BaseTests):
         self.compare_balance(expected_amount, balance, "Sender: ")
 
     @allure.step("checking recipient balance")
-    def assert_recipient_amount(self, address: str,
-                                expected_amount: integertypes):
+    def assert_recipient_amount(self, address: str, expected_amount: int):
         balance = self.web3_client.fromWei(self.get_balance(address), "ether")
         self.compare_balance(expected_amount, balance, "Recipient: ")

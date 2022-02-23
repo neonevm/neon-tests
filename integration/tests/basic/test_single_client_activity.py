@@ -1,7 +1,7 @@
 import allure
 import pytest
 
-from integration.tests.basic.helper_methods import FIRST_FAUCET_REQUEST_AMOUNT, SECOND_FAUCET_REQUEST_AMOUNT, \
+from integration.tests.basic.helpers.helper_methods import FIRST_FAUCET_REQUEST_AMOUNT, SECOND_FAUCET_REQUEST_AMOUNT, \
     BasicHelpers
 
 
@@ -83,13 +83,13 @@ stack overflow и stack underflow
 class TestSingleClient(BasicHelpers):
     @allure.step("test: create account and get balance")
     def test_create_account_and_get_balance(self):
-        '''Create account and get balance'''
+        """Create account and get balance"""
         account = self.create_account()
         self.assert_amount(account.address, 0)
 
     @allure.step("test: check tokens in wallet: neon")
     def test_check_tokens_in_wallet_neon(self):
-        '''Check tokens in wallet: neon'''
+        """Check tokens in wallet: neon"""
         account = self.create_account()
         self.request_faucet_neon(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
         self.assert_amount(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
@@ -97,20 +97,20 @@ class TestSingleClient(BasicHelpers):
     @pytest.mark.skip("waiting for MS")
     @allure.step("test: check tokens in wallet: spl")
     def test_check_tokens_in_wallet_spl(self):
-        '''Check tokens in wallet: spl'''
+        """Check tokens in wallet: spl"""
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: check tokens in wallet: ERC20")
     def test_check_tokens_in_wallet_ERC20(self):
-        '''Check tokens in wallet: ERC20'''
+        """Check tokens in wallet: ERC20"""
         pass
 
     @allure.step(
         "test: verify faucet work (request drop for several accounts): single request"
     )
     def test_verify_faucet_work_single_request(self):
-        '''Verify faucet work (request drop for several accounts): single request'''
+        """Verify faucet work (request drop for several accounts): single request"""
         for _ in range(10):
             account = self.create_account()
             self.request_faucet_neon(account.address,
@@ -121,7 +121,7 @@ class TestSingleClient(BasicHelpers):
         "test: verify faucet work (request drop for several accounts): double request"
     )
     def test_verify_faucet_work_multiple_requests(self):
-        '''Verify faucet work (request drop for several accounts): double request'''
+        """Verify faucet work (request drop for several accounts): double request"""
         for _ in range(10):
             account = self.create_account()
             self.request_faucet_neon(account.address,

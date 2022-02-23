@@ -1,7 +1,8 @@
 from typing import Union
 import allure
 import pytest
-from integration.tests.basic.helper_methods import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, \
+from integration.tests.basic.helpers.helper_methods import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, \
+    GREAT_AMOUNT, \
     BasicHelpers
 
 NON_EXISTING_ADDRESS = "0xmmmmm"
@@ -17,7 +18,7 @@ class TestTransfer(BasicHelpers):
     @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
     def test_send_neon_from_one_account_to_another(self, amount: Union[int,
                                                                        float]):
-        '''Send neon from one account to another'''
+        """Send neon from one account to another"""
         sender_account = self.create_account_with_balance(GREAT_AMOUNT)
         recipient_account = self.create_account_with_balance(
             FIRST_FAUCET_REQUEST_AMOUNT)
@@ -36,14 +37,14 @@ class TestTransfer(BasicHelpers):
     @pytest.mark.skip("waiting for MS")
     @allure.step("test: send spl wrapped account from one account to another")
     def test_send_spl_wrapped_account_from_one_account_to_another(self):
-        '''Send spl wrapped account from one account to another'''
+        """Send spl wrapped account from one account to another"""
         pass
 
     @allure.step("test: send more than exist on account: neon")
     @pytest.mark.parametrize("amount", WRONG_TRANSFER_AMOUNT_DATA)
     def test_send_more_than_exist_on_account_neon(self, amount: Union[int,
                                                                       float]):
-        '''Send more than exist on account: neon'''
+        """Send more than exist on account: neon"""
         sender_account = self.create_account_with_balance(
             FIRST_FAUCET_REQUEST_AMOUNT)
         recipient_account = self.create_account_with_balance(
@@ -63,18 +64,18 @@ class TestTransfer(BasicHelpers):
     )
     @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
     def test_send_more_than_exist_on_account_spl(self, amount):
-        '''Send more than exist on account: spl (with different precision)'''
+        """Send more than exist on account: spl (with different precision)"""
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: send more than exist on account: ERC20")
     def test_send_more_than_exist_on_account_erc20(self):
-        '''Send more than exist on account: ERC20'''
+        """Send more than exist on account: ERC20"""
         pass
 
     @allure.step("test: send zero: neon")
     def test_zero_neon(self):
-        '''Send zero: neon'''
+        """Send zero: neon"""
         sender_account = self.create_account_with_balance(
             FIRST_FAUCET_REQUEST_AMOUNT)
         recipient_account = self.create_account_with_balance(
@@ -91,18 +92,18 @@ class TestTransfer(BasicHelpers):
     @pytest.mark.skip("waiting for MS")
     @allure.step("test: send zero: spl (with different precision)")
     def test_zero_spl(self):
-        '''Send zero: spl (with different precision)'''
+        """Send zero: spl (with different precision)"""
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: send zero: ERC20")
     def test_zero_erc20(self):
-        '''Send zero: ERC20'''
+        """Send zero: ERC20"""
         pass
 
     @allure.step("test: send negative sum from account: neon")
     def test_send_negative_sum_from_account_neon(self):
-        '''Send negative sum from account: neon'''
+        """Send negative sum from account: neon"""
         sender_account = self.create_account_with_balance(
             FIRST_FAUCET_REQUEST_AMOUNT)
         recipient_account = self.create_account_with_balance(
@@ -119,25 +120,25 @@ class TestTransfer(BasicHelpers):
     @allure.step(
         "test: send negative sum from account: spl (with different precision)")
     def test_send_negative_sum_from_account_spl(self):
-        '''Send negative sum from account: spl (with different precision)'''
+        """Send negative sum from account: spl (with different precision)"""
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: send negative sum from account: ERC20")
     def test_send_negative_sum_from_account_erc20(self):
-        '''Send negative sum from account: ERC20'''
+        """Send negative sum from account: ERC20"""
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: send token to an invalid address")
     def test_send_token_to_an_invalid_address(self):
-        '''Send token to an invalid address'''
+        """Send token to an invalid address"""
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: send token to a non-existing address")
     def test_send_more_token_to_non_existing_address(self):
-        '''Send token to a non-existing address'''
+        """Send token to a non-existing address"""
         sender_account = self.create_account_with_balance(
             FIRST_FAUCET_REQUEST_AMOUNT)
         recipient_address = NON_EXISTING_ADDRESS

@@ -1,7 +1,7 @@
 from integration.tests.basic.model.json_rpc_methods import GET_BLOCK_BY_HASH, \
-    GET_BLOCK_BY_NUMBER, BLOCK_NUMBER, CALL,ESTIMATE_GAS,GAS_PRICE,GET_LOGS, \
-    GET_BALANCE,GET_TRX_COUNT,GET_CODE,SEND_RAW_TRX,GET_TRX_BY_HASH, \
-        GET_TRX_RECEIPT,GET_STORAGE_AT,WEB3_CLIENT_VERSION,NET_VERSION
+    GET_BLOCK_BY_NUMBER, BLOCK_NUMBER, CALL, ESTIMATE_GAS, GAS_PRICE, GET_LOGS, \
+    GET_BALANCE, GET_TRX_COUNT, GET_CODE, SEND_RAW_TRX, GET_TRX_BY_HASH, \
+    GET_TRX_RECEIPT, GET_STORAGE_AT, WEB3_CLIENT_VERSION, NET_VERSION
 from integration.tests.basic.model.rpc_request import RpcRequest
 from integration.tests.basic.model.rpc_request_parameters import RpcRequestParams
 

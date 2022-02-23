@@ -1,10 +1,9 @@
-from typing import Optional
 import allure
-from construct import integertypes
+# from construct import integertypes
 import pytest
-from eth_account import Account
 import web3
-
+from eth_account import Account
+from typing import Optional
 from integration.tests.base import BaseTests
 
 FIRST_FAUCET_REQUEST_AMOUNT = 5

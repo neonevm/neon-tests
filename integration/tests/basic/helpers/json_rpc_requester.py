@@ -33,9 +33,15 @@ class JsonRpcRequester:
     def deserialize_response(
             self, response: Response
     ) -> Union[JsonRpcResponse, JsonRpcErrorResponse]:
-        str_data = str(response.json())
+        str_data = self.stringify(response.json())
         with allure.step("deserialized"):
             if 'result' in str_data:
                 return JsonRpcResponse(**response.json())
             elif 'error' in str_data:
                 return JsonRpcErrorResponse(**response.json())
+            else:
+                return JsonRpcErrorResponse(**response.json())
+
+    @allure.step("showing as JSON")
+    def stringify(self, data) -> str:
+        return str(data)

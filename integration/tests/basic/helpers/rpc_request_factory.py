@@ -1,84 +1,120 @@
+from typing import List, Union
 from integration.tests.basic.model.json_rpc_methods import JsonRpcMethods
 from integration.tests.basic.model.rpc_request import RpcRequest
 from integration.tests.basic.model.rpc_request_parameters import RpcRequestParams
 
 
-class RpcRequestFactory():
-    def get_block_by_hash(self, id: int,
-                          params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id,
-                          method=JsonRpcMethods.GET_BLOCK_BY_HASH,
+class RpcRequestFactory:
+    @classmethod
+    def get_block_by_hash(cls, req_id: int,
+                          params: Union[List, RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.GET_BLOCK_BY_HASH.value,
                           params=params)
 
-    def get_block_by_number(self, id: int,
-                            params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id,
-                          method=JsonRpcMethods.GET_BLOCK_BY_NUMBER,
+    @classmethod
+    def get_block_by_number(
+            cls, req_id: int, params: Union[List,
+                                            RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.GET_BLOCK_BY_NUMBER.value,
                           params=params)
 
-    def get_block_umber(self, id: int, params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id,
-                          method=JsonRpcMethods.BLOCK_NUMBER,
+    @classmethod
+    def get_block_number(cls, req_id: int,
+                         params: Union[List, RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.BLOCK_NUMBER.value,
                           params=params)
 
-    def get_call(self, id: int, params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id, method=JsonRpcMethods.CALL, params=params)
-
-    def get_estimate_gas(self, id: int,
-                         params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id,
-                          method=JsonRpcMethods.ESTIMATE_GAS,
+    @classmethod
+    def get_call(cls, req_id: int,
+                 params: Union[List, RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.CALL.value,
                           params=params)
 
-    def get_gas_price(self, id: int, params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id,
-                          method=JsonRpcMethods.GAS_PRICE,
+    @classmethod
+    def get_estimate_gas(cls, req_id: int,
+                         params: Union[List, RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.ESTIMATE_GAS.value,
                           params=params)
 
-    def get_logs(self, id: int, params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id, method=JsonRpcMethods.GET_LOGS, params=params)
-
-    def get_balance(self, id: int, params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id,
-                          method=JsonRpcMethods.GET_BALANCE,
+    @classmethod
+    def get_gas_price(cls, req_id: int,
+                      params: Union[List, RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.GAS_PRICE.value,
                           params=params)
 
-    def get_trx_count(self, id: int, params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id,
-                          method=JsonRpcMethods.GET_TRX_COUNT,
+    @classmethod
+    def get_logs(cls, req_id: int,
+                 params: Union[List, RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.GET_LOGS.value,
                           params=params)
 
-    def get_code(self, id: int, params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id, method=JsonRpcMethods.GET_CODE, params=params)
-
-    def get_send_raw_trx(self, id: int,
-                         params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id,
-                          method=JsonRpcMethods.SEND_RAW_TRX,
+    @classmethod
+    def get_balance(cls, req_id: int,
+                    params: Union[List, RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.GET_BALANCE.value,
                           params=params)
 
-    def get_trx_by_hash(self, id: int, params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id,
-                          method=JsonRpcMethods.GET_TRX_BY_HASH,
+    @classmethod
+    def get_trx_count(cls, req_id: int,
+                      params: Union[List, RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.GET_TRX_COUNT.value,
                           params=params)
 
-    def get_trx_receipt(self, id: int, params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id,
-                          method=JsonRpcMethods.GET_TRX_RECEIPT,
+    @classmethod
+    def get_code(cls, req_id: int,
+                 params: Union[List, RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.GET_CODE.value,
                           params=params)
 
-    def get_storage_at(self, id: int, params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id,
-                          method=JsonRpcMethods.GET_STORAGE_AT,
+    @classmethod
+    def get_send_raw_trx(cls, req_id: int,
+                         params: Union[List, RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.SEND_RAW_TRX.value,
                           params=params)
 
-    def get_web3_client_version(self, id: int,
-                                params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id,
-                          method=JsonRpcMethods.WEB3_CLIENT_VERSION,
+    @classmethod
+    def get_trx_by_hash(cls, req_id: int,
+                        params: Union[List, RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.GET_TRX_BY_HASH.value,
                           params=params)
 
-    def get_net_version(self, id: int, params: RpcRequestParams) -> RpcRequest:
-        return RpcRequest(id=id,
-                          method=JsonRpcMethods.NET_VERSION,
+    @classmethod
+    def get_trx_receipt(cls, req_id: int,
+                        params: Union[List, RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.GET_TRX_RECEIPT.value,
+                          params=params)
+
+    @classmethod
+    def get_storage_at(cls, req_id: int,
+                       params: Union[List, RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.GET_STORAGE_AT.value,
+                          params=params)
+
+    @classmethod
+    def get_web3_client_version(
+            cls, req_id: int, params: Union[List,
+                                            RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.WEB3_CLIENT_VERSION.value,
+                          params=params)
+
+    @classmethod
+    def get_net_version(cls, req_id: int,
+                        params: Union[List, RpcRequestParams]) -> RpcRequest:
+        return RpcRequest(id=req_id,
+                          method=JsonRpcMethods.NET_VERSION.value,
                           params=params)

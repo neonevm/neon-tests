@@ -7,7 +7,7 @@ class JsonRpcMethods(Enum):
     BLOCK_NUMBER = "eth_blockNumber"
     CALL = "eth_call"
     ESTIMATE_GAS = "eth_estimateGas"
-    GAS_PROCE = "eth_gasPrice"
+    GAS_PRICE = "eth_gasPrice"
     GET_LOGS = "eth_getLogs"
     GET_BALANCE = "eth_getBalance"
     GET_TRX_COUNT = "eth_getTransactionCount"

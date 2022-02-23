@@ -30,8 +30,8 @@ class TestRpcCallsBlocks(BasicHelpers):
     @allure.step("test: verify implemented rpc calls work eth_getBlockByHash")
     def test_rpc_call_eth_getBlockByHash(self):
         """Verify implemented rpc calls work eth_getBlockByHash"""
-        model = RpcRequestFactory.get_block_by_hash(req_id=1,
-                                                    params=JsonRpcRequestParams())
+        model = RpcRequestFactory.get_block_by_hash(
+            req_id=1, params=JsonRpcRequestParams())
         print(model)
 
     @pytest.mark.skip("not yet done")
@@ -45,4 +45,14 @@ class TestRpcCallsBlocks(BasicHelpers):
     @allure.step("test: verify implemented rpc calls work eth_blockNumber")
     def test_rpc_call_eth_blockNumber(self):
         """Verify implemented rpc calls work work eth_blockNumber"""
-        pass
+        model = RpcRequestFactory.get_block_number(params=[])
+        response = self.jsonrpc_requester.request_json_rpc(model)
+        result = self.jsonrpc_requester.deserialize(response.json())
+
+        #
+        print(type(result))
+        print(result)
+        #
+
+        assert result.id == model.id
+        assert result.result == '111'

@@ -1,8 +1,7 @@
-import random
-from typing import Type
 import allure
-from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
 import pytest
+from typing import Type
+from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
 from integration.tests.basic.helpers.helper_methods import BasicHelpers
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
@@ -123,37 +122,17 @@ class TestRpcCalls(BasicHelpers):
     @allure.step("test: verify implemented rpc calls work web3_clientVersion")
     def test_rpc_call_web3_clientVersion(self):
         """Verify implemented rpc calls work web3_clientVersion"""
-        random_id = random.randint(0, 100)
-        model = RpcRequestFactory.get_web3_client_version(req_id=random_id, params=[])
-
-        #
-        print(model)
-        print(type(model))
-        #
-
+        model = RpcRequestFactory.get_web3_client_version(params=[])
         response = self.jsonrpc_requester.request_json_rpc(model)
+        actual_result = self.jsonrpc_requester.deserialize(response.json())
 
-        #
-        print(response)
-        print(response.status_code)
-        print(response.json())
-        #
-
-        result = self.jsonrpc_requester.deserialize(response.json())
-
-        #
-        print(type(result))
-        print(result)
-        #
-
-        assert result.id == random_id
-        assert 'Neon' in result.result
+        assert actual_result.id == model.id
+        assert 'Neon' in actual_result.result
 
     @allure.step("test: verify implemented rpc calls work net_version")
     def test_rpc_call_net_version(self):
         """Verify implemented rpc calls work work net_version"""
-        random_id = random.randint(0, 100)
-        model = RpcRequestFactory.get_net_version(req_id=random_id, params=[])
+        model = RpcRequestFactory.get_net_version(params=[])
         response = self.jsonrpc_requester.request_json_rpc(model)
         result = self.jsonrpc_requester.deserialize(response.json())
 
@@ -162,5 +141,5 @@ class TestRpcCalls(BasicHelpers):
         print(result)
         #
 
-        assert result.id == random_id
+        assert result.id == model.id
         assert result.result == '111'

@@ -24,6 +24,7 @@ from integration.tests.basic.model.rpc_request_parameters import RpcRequestParam
 '''
 
 
+@allure.story("Basic: Json-RPC call tests")
 class TestRpcCalls(BasicHelpers):
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_getBlockByHash")

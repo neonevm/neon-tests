@@ -48,10 +48,5 @@ class TestRpcCallsBlocks(BasicHelpers):
         response = self.jsonrpc_requester.request_json_rpc(model)
         result = self.jsonrpc_requester.deserialize(response.json())
 
-        #
-        print(type(result))
-        print(result)
-        #
-
         assert result.id == model.id
         assert '0x' in result.result

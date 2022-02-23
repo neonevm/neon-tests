@@ -61,11 +61,20 @@ class TestRpcCalls(BasicHelpers):
         """Verify implemented rpc calls work eth_estimateGas"""
         pass
 
-    @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_gasPrice")
     def test_rpc_call_eth_gasPrice(self):
         """Verify implemented rpc calls work eth_gasPrice"""
-        pass
+        model = RpcRequestFactory.get_gas_price(params=[])
+        response = self.jsonrpc_requester.request_json_rpc(model)
+        result = self.jsonrpc_requester.deserialize(response.json())
+
+        #
+        print(type(result))
+        print(result)
+        #
+
+        assert result.id == model.id
+        assert '0x' in result.result
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_getLogs")

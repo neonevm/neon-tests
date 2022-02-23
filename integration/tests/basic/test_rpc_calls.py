@@ -134,12 +134,7 @@ class TestRpcCalls(BasicHelpers):
         """Verify implemented rpc calls work work net_version"""
         model = RpcRequestFactory.get_net_version(params=[])
         response = self.jsonrpc_requester.request_json_rpc(model)
-        result = self.jsonrpc_requester.deserialize(response.json())
+        actual_result = self.jsonrpc_requester.deserialize(response.json())
 
-        #
-        print(type(result))
-        print(result)
-        #
-
-        assert result.id == model.id
-        assert result.result == '111'
+        assert actual_result.id == model.id
+        assert actual_result.result == '111'

@@ -54,4 +54,4 @@ class TestRpcCallsBlocks(BasicHelpers):
         #
 
         assert result.id == model.id
-        assert result.result == '111'
+        assert '0x' in result.result

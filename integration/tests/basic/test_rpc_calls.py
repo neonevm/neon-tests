@@ -1,6 +1,7 @@
 import allure
 import pytest
 from typing import Type
+from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
 from integration.tests.basic.helpers.helper_methods import BasicHelpers
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
@@ -66,15 +67,12 @@ class TestRpcCalls(BasicHelpers):
         """Verify implemented rpc calls work eth_gasPrice"""
         model = RpcRequestFactory.get_gas_price(params=[])
         response = self.jsonrpc_requester.request_json_rpc(model)
-        result = self.jsonrpc_requester.deserialize(response.json())
+        actual_result = self.jsonrpc_requester.deserialize_response(response)
 
-        #
-        print(type(result))
-        print(result)
-        #
-
-        assert result.id == model.id
-        assert '0x' in result.result
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert type(actual_result) == type(
+            JsonRpcResponse), AssertMessage.WRONG_TYPE.value
+        assert '0x' in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_getLogs")
@@ -133,17 +131,21 @@ class TestRpcCalls(BasicHelpers):
         """Verify implemented rpc calls work web3_clientVersion"""
         model = RpcRequestFactory.get_web3_client_version(params=[])
         response = self.jsonrpc_requester.request_json_rpc(model)
-        actual_result = self.jsonrpc_requester.deserialize(response.json())
+        actual_result = self.jsonrpc_requester.deserialize_response(response)
 
-        assert actual_result.id == model.id
-        assert 'Neon' in actual_result.result
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert type(actual_result) == type(
+            JsonRpcResponse), AssertMessage.WRONG_TYPE.value
+        assert 'Neon' in actual_result.result, "version does not contain 'Neon'"
 
     @allure.step("test: verify implemented rpc calls work net_version")
     def test_rpc_call_net_version(self):
         """Verify implemented rpc calls work work net_version"""
         model = RpcRequestFactory.get_net_version(params=[])
         response = self.jsonrpc_requester.request_json_rpc(model)
-        actual_result = self.jsonrpc_requester.deserialize(response.json())
+        actual_result = self.jsonrpc_requester.deserialize_response(response)
 
-        assert actual_result.id == model.id
-        assert actual_result.result == '111'
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert type(actual_result) == type(
+            JsonRpcResponse), AssertMessage.WRONG_TYPE.value
+        assert actual_result.result == '111', "net version is not 111"

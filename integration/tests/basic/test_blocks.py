@@ -1,5 +1,7 @@
 import allure
 import pytest
+from integration.tests.basic.helpers.assert_message import AssertMessage
+from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
 from integration.tests.basic.helpers.helper_methods import BasicHelpers
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
@@ -46,7 +48,9 @@ class TestRpcCallsBlocks(BasicHelpers):
         """Verify implemented rpc calls work work eth_blockNumber"""
         model = RpcRequestFactory.get_block_number(params=[])
         response = self.jsonrpc_requester.request_json_rpc(model)
-        result = self.jsonrpc_requester.deserialize(response.json())
+        actual_result = self.jsonrpc_requester.deserialize_response(response)
 
-        assert result.id == model.id
-        assert '0x' in result.result
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert isinstance(actual_result,
+                          JsonRpcResponse), AssertMessage.WRONG_TYPE.value
+        assert '0x' in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value

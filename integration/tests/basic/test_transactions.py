@@ -2,7 +2,7 @@ import allure
 import pytest
 from integration.tests.basic.helpers.helper_methods import BasicHelpers
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
-from integration.tests.basic.model.rpc_request_parameters import RpcRequestParams
+from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
 '''
 12.	Verify implemented rpc calls work
 12.1.	eth_getBlockByHash		

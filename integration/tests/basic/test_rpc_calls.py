@@ -1,8 +1,11 @@
+import random
+from typing import Type
 import allure
+from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
 import pytest
 from integration.tests.basic.helpers.helper_methods import BasicHelpers
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
-from integration.tests.basic.model.rpc_request_parameters import RpcRequestParams
+from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
 '''
 12.	Verify implemented rpc calls work
 12.1.	eth_getBlockByHash		
@@ -120,12 +123,44 @@ class TestRpcCalls(BasicHelpers):
     @allure.step("test: verify implemented rpc calls work web3_clientVersion")
     def test_rpc_call_web3_clientVersion(self):
         """Verify implemented rpc calls work web3_clientVersion"""
-        model = RpcRequestFactory.get_web3_client_version(req_id=1, params=[])
+        random_id = random.randint(0, 100)
+        model = RpcRequestFactory.get_web3_client_version(req_id=random_id, params=[])
+
+        #
         print(model)
-        assert 1 == 2
+        print(type(model))
+        #
+
+        response = self.jsonrpc_requester.request_json_rpc(model)
+
+        #
+        print(response)
+        print(response.status_code)
+        print(response.json())
+        #
+
+        result = self.jsonrpc_requester.deserialize(response.json())
+
+        #
+        print(type(result))
+        print(result)
+        #
+
+        assert result.id == random_id
+        assert 'Neon' in result.result
 
     @allure.step("test: verify implemented rpc calls work net_version")
     def test_rpc_call_net_version(self):
         """Verify implemented rpc calls work work net_version"""
-        model = RpcRequestFactory.get_net_version(req_id=11, params=[])
-        print(model)
+        random_id = random.randint(0, 100)
+        model = RpcRequestFactory.get_net_version(req_id=random_id, params=[])
+        response = self.jsonrpc_requester.request_json_rpc(model)
+        result = self.jsonrpc_requester.deserialize(response.json())
+
+        #
+        print(type(result))
+        print(result)
+        #
+
+        assert result.id == random_id
+        assert result.result == '111'

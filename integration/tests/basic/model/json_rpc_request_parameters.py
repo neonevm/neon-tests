@@ -3,5 +3,5 @@ from typing import List
 
 
 @dataclass
-class RpcRequestParams(List):
+class JsonRpcRequestParams(List):
     pass

@@ -1,6 +1,8 @@
 import allure
+from integration.tests.basic.helpers.json_rpc_requester import JsonRpcRequester
 import pytest
 import web3
+from _pytest.config import Config
 from eth_account import Account
 from typing import Optional
 from integration.tests.base import BaseTests
@@ -12,6 +14,12 @@ DEFAULT_TRANSFER_AMOUNT = 3
 
 
 class BasicHelpers(BaseTests):
+    jsonrpc_requester: JsonRpcRequester
+
+    @pytest.fixture(autouse=True)
+    def prepare_json_rpc_requester(self, jsonrpc_requester: JsonRpcRequester):
+        self.jsonrpc_requester = jsonrpc_requester
+
     @allure.step("creating a new account")
     def create_account(self) -> Account:
         return self.web3_client.create_account()

@@ -3,6 +3,7 @@ import typing as tp
 import time
 from decimal import Decimal, getcontext
 
+import rlp
 import pytest
 import solcx
 import allure
@@ -64,7 +65,8 @@ class TestEconomics(BaseTests):
                                 contract_name: str,
                                 version: str,
                                 account: tp.Optional[eth_account.signers.local.LocalAccount] = None,
-                                constructor_args: tp.Optional[tp.Any] = None
+                                constructor_args: tp.Optional[tp.Any] = None,
+                                gas: tp.Optional[int] = 0
                                 ):
         if contract_name.endswith(".sol"):
             contract_name = contract_name.rsplit(".", 1)[0]
@@ -86,6 +88,7 @@ class TestEconomics(BaseTests):
             abi=contract_interface["abi"],
             bytecode=contract_interface["bin"],
             constructor_args=constructor_args,
+            gas=gas
         )
 
         contract = self.web3_client.eth.contract(
@@ -201,7 +204,7 @@ class TestEconomics(BaseTests):
         self.assert_tx_gasused(neon_balance_before_request, transfer_tx)
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    def test_tx_lower_100_instruction(self, sol_price):
+    def test_deploy_small_contract_less_100tx(self, sol_price):
         """Verify we are bill minimum for 100 instruction"""
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
@@ -230,6 +233,35 @@ class TestEconomics(BaseTests):
         assert sol_balance_before > sol_balance_after_deploy > sol_balance_after
         assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
+
+    def test_deploy_small_contract_less_gas(self):
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        with pytest.raises(ValueError, match="custom program error: 0x5"):
+            contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10", gas=10000)
+
+        sol_balance_after_deploy = self.operator.get_solana_balance()
+        neon_balance_after_deploy = self.operator.get_neon_balance()
+
+        assert sol_balance_before == sol_balance_after_deploy
+        assert neon_balance_before == neon_balance_after_deploy
+
+    def test_deploy_small_contract_less_neon(self):
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        acc2 = self.web3_client.create_account()
+        self.web3_client.send_neon(self.acc, acc2, 0.001)
+
+        with pytest.raises(ValueError, match="The account balance is less than required"):
+            contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
+
+        sol_balance_after_deploy = self.operator.get_solana_balance()
+        neon_balance_after_deploy = self.operator.get_neon_balance()
+
+        assert sol_balance_before == sol_balance_after_deploy
+        assert neon_balance_before == neon_balance_after_deploy
 
     def test_contract_get_is_free(self):
         """Verify that get contract calls is free"""
@@ -278,6 +310,36 @@ class TestEconomics(BaseTests):
         self.assert_tx_gasused(neon_balance_before_increase, instruction_receipt)
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
+    def test_cost_resize_account_less_neon(self):
+        """Verify how much cost account resize"""
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        contract, contract_deploy_tx = self.deploy_and_get_contract("IncreaseStorage", "0.8.10")
+
+        acc2 = self.web3_client.create_account()
+        self.web3_client.send_neon(self.acc, acc2, 0.001)
+
+        sol_balance_before_increase = self.operator.get_solana_balance()
+        neon_balance_before_increase = self.operator.get_neon_balance()
+
+        inc_tx = contract.functions.inc().buildTransaction(
+            {
+                "from": acc2.address,
+                "nonce": self.web3_client.eth.get_transaction_count(acc2.address),
+                "gasPrice": self.web3_client.gas_price(),
+            }
+        )
+
+        with pytest.raises(ValueError, match="The account balance is less than required"):
+            self.web3_client.send_transaction(acc2, inc_tx)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before_increase == sol_balance_after, "SOL Balance not changed"
+        assert neon_balance_after == neon_balance_before_increase, "NEON Balance incorrect"
+
     def test_failed_tx_when_less_gas(self):
         """Don't get money from user if tx failed"""
         sol_balance_before = self.operator.get_solana_balance()
@@ -298,7 +360,7 @@ class TestEconomics(BaseTests):
         assert neon_balance_after == neon_balance_before
         assert sol_balance_after == sol_balance_before
 
-    def test_contract_more_500_steps(self):
+    def test_contract_interact_more_500_steps(self):
         """Deploy a contract with more 500 instructions"""
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
@@ -329,7 +391,88 @@ class TestEconomics(BaseTests):
         self.assert_profit(sol_balance_before_instruction - sol_balance_after,
                            neon_balance_after - neon_balance_before_instruction)
 
-    def test_tx_more_1kb(self):
+    def test_contract_interact_more_500000_bpf(self):
+        """Deploy a contract with more 500000 bpf"""
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+
+        self.assert_tx_gasused(neon_balance_before, contract_deploy_tx)
+
+        sol_balance_before_instruction = self.operator.get_solana_balance()
+        neon_balance_before_instruction = self.operator.get_neon_balance()
+
+        instruction_tx = contract.functions.moreInstruction(0, 5000).buildTransaction(
+            {
+                "from": self.acc.address,
+                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
+                "gasPrice": self.web3_client.gas_price(),
+            }
+        )
+
+        instruction_receipt = self.web3_client.send_transaction(self.acc, instruction_tx)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before > sol_balance_before_instruction > sol_balance_after, "SOL Balance not changed"
+        assert neon_balance_after > neon_balance_before_instruction > neon_balance_before, "NEON Balance incorrect"
+        self.assert_tx_gasused(neon_balance_before_instruction, instruction_receipt)
+        self.assert_profit(sol_balance_before_instruction - sol_balance_after,
+                           neon_balance_after - neon_balance_before_instruction)
+
+    def test_contract_interact_more_500000_bpf_less_gas(self):
+        """Deploy a contract with more 500000 bpf"""
+        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+
+        sol_balance_before_instruction = self.operator.get_solana_balance()
+        neon_balance_before_instruction = self.operator.get_neon_balance()
+
+        instruction_tx = contract.functions.moreInstruction(0, 50000).buildTransaction(
+            {
+                "from": self.acc.address,
+                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
+                "gasPrice": self.web3_client.gas_price(),
+            }
+        )
+
+        with pytest.raises(ValueError, match=r"Transaction simulation failed.*") as e:
+            self.web3_client.send_transaction(self.acc, instruction_tx, gas=1000)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before_instruction == sol_balance_after, "SOL Balance changed"
+        assert neon_balance_after == neon_balance_before_instruction, "NEON Balance incorrect"
+
+    def test_contract_interact_more_500000_bpf_less_neon(self):
+        """Deploy a contract with more 500000 bpf"""
+        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+
+        sol_balance_before_instruction = self.operator.get_solana_balance()
+        neon_balance_before_instruction = self.operator.get_neon_balance()
+
+        acc2 = self.web3_client.create_account()
+        self.web3_client.send_neon(self.acc, acc2, 0.001)
+
+        instruction_tx = contract.functions.moreInstruction(0, 5000).buildTransaction(
+            {
+                "from": acc2.address,
+                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
+                "gasPrice": self.web3_client.gas_price(),
+            }
+        )
+        with pytest.raises(ValueError, match="The account balance is less than required"):
+            self.web3_client.send_transaction(acc2, instruction_tx, gas=10000)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before_instruction == sol_balance_after, "SOL Balance changed"
+        assert neon_balance_after == neon_balance_before_instruction, "NEON Balance incorrect"
+
+    def test_tx_interact_more_1kb(self):
         """Send to contract a big text (tx more than 1 kb)"""
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
@@ -376,5 +519,169 @@ class TestEconomics(BaseTests):
         self.assert_profit(sol_balance_before_instruction - sol_balance_after,
                            neon_balance_after - neon_balance_before_instruction)
 
-    def test_interact_with_contract_when_less_neon(self):
-        """Interact with contract when less neon"""
+    def test_tx_interact_more_1kb_less_neon(self):
+        """Send to contract a big text (tx more than 1 kb) when less neon"""
+        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+
+        acc2 = self.web3_client.create_account()
+        self.web3_client.send_neon(self.acc, acc2, 0.001)
+
+        sol_balance_before_instruction = self.operator.get_solana_balance()
+        neon_balance_before_instruction = self.operator.get_neon_balance()
+
+        instruction_tx = contract.functions.bigString(
+            "But I must explain to you how all this mistaken idea of denouncing pleasure and "
+            "praising pain was born and I will give you a complete account of the system, and "
+            "expound the actual teachings of the great explorer of the truth, the master-builder "
+            "of human happiness. No one rejects, dislikes, or avoids pleasure itself, because it"
+            " is pleasure, but because those who do not know how to pursue pleasure rationally"
+            " encounter consequences that are extremely painful. Nor again is there anyone who"
+            " loves or pursues or desires to obtain pain of itself, because it is pain, but"
+            " because occasionally circumstances occur in which toil and pain can procure him"
+            " some great pleasure. To take a trivial example, which of us ever undertakes laborious"
+            " physical exercise, except to obtain some advantage from it? But who has any right to"
+            " find fault with a man who chooses to enjoy a pleasure that has no annoying consequences,"
+            " or one who avoids a pain that produces no resultant pleasure? On the other hand,"
+            " we denounce with righteous indigna"
+            " some great pleasure. To take a trivial example, which of us ever undertakes laborious"
+            " physical exercise, except to obtain some advantage from it? But who has any right to"
+        ).buildTransaction(
+            {
+                "from": acc2.address,
+                "nonce": self.web3_client.eth.get_transaction_count(acc2.address),
+                "gasPrice": self.web3_client.gas_price(),
+            }
+        )
+        with pytest.raises(ValueError, match="The account balance is less than required"):
+            instruction_receipt = self.web3_client.send_transaction(acc2, instruction_tx)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before_instruction == sol_balance_after, "SOL Balance changed"
+        assert neon_balance_after == neon_balance_before_instruction, "NEON Balance incorrect"
+
+    def test_tx_interact_more_1kb_less_gas(self):
+        """Send to contract a big text (tx more than 1 kb)"""
+        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+
+        sol_balance_before_instruction = self.operator.get_solana_balance()
+        neon_balance_before_instruction = self.operator.get_neon_balance()
+
+        instruction_tx = contract.functions.bigString(
+            "But I must explain to you how all this mistaken idea of denouncing pleasure and "
+            "praising pain was born and I will give you a complete account of the system, and "
+            "expound the actual teachings of the great explorer of the truth, the master-builder "
+            "of human happiness. No one rejects, dislikes, or avoids pleasure itself, because it"
+            " is pleasure, but because those who do not know how to pursue pleasure rationally"
+            " encounter consequences that are extremely painful. Nor again is there anyone who"
+            " loves or pursues or desires to obtain pain of itself, because it is pain, but"
+            " because occasionally circumstances occur in which toil and pain can procure him"
+            " some great pleasure. To take a trivial example, which of us ever undertakes laborious"
+            " physical exercise, except to obtain some advantage from it? But who has any right to"
+            " find fault with a man who chooses to enjoy a pleasure that has no annoying consequences,"
+            " or one who avoids a pain that produces no resultant pleasure? On the other hand,"
+            " we denounce with righteous indigna"
+            " some great pleasure. To take a trivial example, which of us ever undertakes laborious"
+            " physical exercise, except to obtain some advantage from it? But who has any right to"
+        ).buildTransaction(
+            {
+                "from": self.acc.address,
+                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
+                "gasPrice": self.web3_client.gas_price(),
+            }
+        )
+
+        instruction_receipt = self.web3_client.send_transaction(self.acc, instruction_tx, gas=1000)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before_instruction == sol_balance_after, "SOL Balance changed"
+        assert neon_balance_after == neon_balance_before_instruction, "NEON Balance incorrect"
+
+    def test_deploy_contract_more_1kb(self):
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        contract, contract_deploy_tx = self.deploy_and_get_contract("Fat", "0.8.10")
+
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before > sol_balance_after
+        assert neon_balance_after > neon_balance_before
+        self.assert_tx_gasused(neon_balance_before, contract_deploy_tx)
+        self.assert_profit(sol_balance_before - sol_balance_after,
+                           neon_balance_after - neon_balance_before)
+
+    def test_deploy_contract_more_1kb_less_neon(self):
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        acc2 = self.web3_client.create_account()
+        self.web3_client.send_neon(self.acc, acc2, 0.001)
+
+        with pytest.raises(ValueError, match="The account balance is less than required"):
+            contract, contract_deploy_tx = self.deploy_and_get_contract("Fat", "0.8.10", account=acc2)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before == sol_balance_after
+        assert neon_balance_after == neon_balance_before
+
+    def test_deploy_contract_more_1kb_less_gas(self):
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        with pytest.raises(ValueError, match=r"Transaction simulation failed.*") as e:
+            contract, contract_deploy_tx = self.deploy_and_get_contract("Fat", "0.8.10", gas=1000)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before == sol_balance_after
+        assert neon_balance_after == neon_balance_before
+
+    def test_deploy_contract_to_payed(self):
+        acc2 = self.web3_client.create_account()
+        self.web3_client.send_neon(self.acc, acc2, 10)
+
+        nonce = self.web3_client.eth.get_transaction_count(self.acc.address)
+        contract_address = self.web3_client.keccak(rlp.encode((bytes.fromhex(self.acc.address[2:]), nonce)))[-20:]
+
+        self.web3_client.send_neon(acc2, self.web3_client.toChecksumAddress(contract_address.hex()), 0.5)
+
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before > sol_balance_after, "SOL Balance not changed"
+        assert neon_balance_after > neon_balance_before, "NEON Balance incorrect"
+        self.assert_profit(sol_balance_before - sol_balance_after,
+                           neon_balance_after - neon_balance_before)
+
+    def test_deploy_contract_to_exist_unpayed(self):
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        acc2 = self.web3_client.create_account()
+        self.web3_client.send_neon(self.acc, acc2, 50)
+
+        nonce = self.web3_client.eth.get_transaction_count(acc2.address)
+        contract_address = self.web3_client.toChecksumAddress(self.web3_client.keccak(rlp.encode((bytes.fromhex(acc2.address[2:]), nonce)))[-20:].hex())
+
+        self.web3_client.send_neon(acc2, contract_address, 1, gas=1)
+
+        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
+
+        sol_balance_after_deploy = self.operator.get_solana_balance()
+        neon_balance_after_deploy = self.operator.get_neon_balance()
+
+        assert sol_balance_before == sol_balance_after_deploy
+        assert neon_balance_before == neon_balance_after_deploy

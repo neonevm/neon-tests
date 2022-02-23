@@ -125,8 +125,9 @@ class NeonWeb3Client:
         tx = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
         return self._web3.eth.wait_for_transaction_receipt(tx)
 
-    def send_transaction(self, account: eth_account.signers.local.LocalAccount, transaction):
-        transaction["gas"] = self._web3.eth.estimate_gas(transaction)
+    def send_transaction(self, account: eth_account.signers.local.LocalAccount, transaction, gas: tp.Optional[int] = None):
+        if "gas" not in transaction:
+            transaction["gas"] = self._web3.eth.estimate_gas(transaction)
 
         instruction_tx = self._web3.eth.account.sign_transaction(transaction, account.key)
         signature = self._web3.eth.send_raw_transaction(instruction_tx.rawTransaction)

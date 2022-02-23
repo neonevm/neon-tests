@@ -4,6 +4,7 @@ from integration.tests.basic.model.rpc_request import RpcRequest
 
 
 @dataclass
-class Web3ClientVersion(RpcRequest):
+class EthBlockNumberRequest(RpcRequest):
     id: int
-    result: str
+    params: str  # ,"params":[],"id":83}'
+    method: "eth_blockNumber"

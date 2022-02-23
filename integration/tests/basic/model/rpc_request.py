@@ -1,4 +1,9 @@
 from dataclasses import dataclass
+
+
 @dataclass
 class RpcRequest():
-    jsonrpc:"2.0"
+    id: int
+    method: str
+    params: str  # TODO
+    jsonrpc: str = "2.0"

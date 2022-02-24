@@ -49,14 +49,6 @@ class TestEconomics(BaseTests):
         with allure.step(msg):
             assert neon_cost > sol_cost, msg
 
-    @allure.step("Verify operator get full gas for TX")
-    def assert_tx_gasused(self, balance_before, transaction):
-        gas_price = int(self.web3_client.gas_price() / 1000000000)
-        balance = self.operator.get_neon_balance()
-
-        assert transaction["gasUsed"] == transaction["cumulativeGasUsed"]
-        assert int((balance - balance_before) / transaction["gasUsed"]) == gas_price
-
     def get_compiled_contract(self, name, compiled):
         for key in compiled.keys():
             if name in key:
@@ -126,8 +118,6 @@ class TestEconomics(BaseTests):
         neon_balance_after = self.operator.get_neon_balance()
 
         assert sol_balance_before > sol_balance_after, "Operator balance after getBalance doesn't changed"
-        print(neon_balance_before, tx)
-        self.assert_tx_gasused(neon_balance_before, tx)
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
     @pytest.mark.only_stands
@@ -147,7 +137,7 @@ class TestEconomics(BaseTests):
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
         assert sol_balance_before > sol_balance_after, "Operator balance after send tx doesn't changed"
-        self.assert_tx_gasused(neon_balance_before, tx)
+
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
     def test_send_when_not_enough_for_gas(self):
@@ -203,7 +193,6 @@ class TestEconomics(BaseTests):
 
         assert sol_balance_before > sol_balance_after_request > sol_balance_after
 
-        self.assert_tx_gasused(neon_balance_before_request, transfer_tx)
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
     def test_deploy_small_contract_less_100tx(self, sol_price):
@@ -227,7 +216,6 @@ class TestEconomics(BaseTests):
         instruction_receipt = self.web3_client.send_transaction(self.acc, inc_tx)
 
         assert contract.functions.get().call() == 1
-        self.assert_tx_gasused(neon_balance_after_deploy, instruction_receipt)
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
@@ -309,8 +297,6 @@ class TestEconomics(BaseTests):
 
         contract, contract_deploy_tx = self.deploy_and_get_contract("IncreaseStorage", "0.8.10")
 
-        self.assert_tx_gasused(neon_balance_before, contract_deploy_tx)
-
         sol_balance_before_increase = self.operator.get_solana_balance()
         neon_balance_before_increase = self.operator.get_neon_balance()
 
@@ -329,7 +315,6 @@ class TestEconomics(BaseTests):
 
         assert sol_balance_before > sol_balance_before_increase > sol_balance_after, "SOL Balance not changed"
         assert neon_balance_after > neon_balance_before_increase > neon_balance_before, "NEON Balance incorrect"
-        self.assert_tx_gasused(neon_balance_before_increase, instruction_receipt)
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
     def test_cost_resize_account_less_neon(self):
@@ -386,7 +371,6 @@ class TestEconomics(BaseTests):
 
         contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
 
-        self.assert_tx_gasused(neon_balance_before, contract_deploy_tx)
 
         sol_balance_before_instruction = self.operator.get_solana_balance()
         neon_balance_before_instruction = self.operator.get_neon_balance()
@@ -406,7 +390,6 @@ class TestEconomics(BaseTests):
 
         assert sol_balance_before > sol_balance_before_instruction > sol_balance_after, "SOL Balance not changed"
         assert neon_balance_after > neon_balance_before_instruction > neon_balance_before, "NEON Balance incorrect"
-        self.assert_tx_gasused(neon_balance_before_instruction, instruction_receipt)
         self.assert_profit(sol_balance_before_instruction - sol_balance_after,
                            neon_balance_after - neon_balance_before_instruction)
 
@@ -416,8 +399,6 @@ class TestEconomics(BaseTests):
         neon_balance_before = self.operator.get_neon_balance()
 
         contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
-
-        self.assert_tx_gasused(neon_balance_before, contract_deploy_tx)
 
         sol_balance_before_instruction = self.operator.get_solana_balance()
         neon_balance_before_instruction = self.operator.get_neon_balance()
@@ -437,7 +418,7 @@ class TestEconomics(BaseTests):
 
         assert sol_balance_before > sol_balance_before_instruction > sol_balance_after, "SOL Balance not changed"
         assert neon_balance_after > neon_balance_before_instruction > neon_balance_before, "NEON Balance incorrect"
-        self.assert_tx_gasused(neon_balance_before_instruction, instruction_receipt)
+
         self.assert_profit(sol_balance_before_instruction - sol_balance_after,
                            neon_balance_after - neon_balance_before_instruction)
 
@@ -498,8 +479,6 @@ class TestEconomics(BaseTests):
 
         contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
 
-        self.assert_tx_gasused(neon_balance_before, contract_deploy_tx)
-
         sol_balance_before_instruction = self.operator.get_solana_balance()
         neon_balance_before_instruction = self.operator.get_neon_balance()
 
@@ -534,7 +513,7 @@ class TestEconomics(BaseTests):
 
         assert sol_balance_before > sol_balance_before_instruction > sol_balance_after, "SOL Balance not changed"
         assert neon_balance_after > neon_balance_before_instruction > neon_balance_before, "NEON Balance incorrect"
-        self.assert_tx_gasused(neon_balance_before_instruction, instruction_receipt)
+
         self.assert_profit(sol_balance_before_instruction - sol_balance_after,
                            neon_balance_after - neon_balance_before_instruction)
 
@@ -630,7 +609,7 @@ class TestEconomics(BaseTests):
 
         assert sol_balance_before > sol_balance_after
         assert neon_balance_after > neon_balance_before
-        self.assert_tx_gasused(neon_balance_before, contract_deploy_tx)
+
         self.assert_profit(sol_balance_before - sol_balance_after,
                            neon_balance_after - neon_balance_before)
 
@@ -728,7 +707,6 @@ class TestEconomics(BaseTests):
         instruction_receipt = self.web3_client.send_transaction(acc2, inc_tx)
 
         assert contract.functions.get().call() == 1
-        self.assert_tx_gasused(neon_balance_after_deploy, instruction_receipt)
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()

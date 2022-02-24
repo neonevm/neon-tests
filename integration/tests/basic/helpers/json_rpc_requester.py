@@ -19,16 +19,6 @@ class JsonRpcRequester:
         with allure.step("getting response"):
             return self._session.post(self._url, json=dataclasses.asdict(data))
 
-    # @allure.step("deserializing response from JSON")
-    # def deserialize_response(self, data: str) -> JsonRpcResponse:
-    #     with allure.step("deserialized"):
-    #         return JsonRpcResponse(**data)
-
-    # @allure.step("deserializing error response from JSON")
-    # def deserialize_error_response(self, data: str) -> JsonRpcErrorResponse:
-    #     with allure.step("deserialized"):
-    #         return JsonRpcErrorResponse(**data)
-
     @allure.step("deserializing response from JSON")
     def deserialize_response(
             self, response: Response

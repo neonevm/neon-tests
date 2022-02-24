@@ -30,7 +30,6 @@ SAMPLE_AMOUNT = 5
 
 @allure.story("Basic: Json-RPC call tests - transactions")
 class TestRpcCallsTransactions(BasicHelpers):
-    @pytest.mark.skip("not yet done")
     @allure.step(
         "test: verify implemented rpc calls work eth_getTransactionCount")
     def test_rpc_call_eth_getTransactionCount(self):

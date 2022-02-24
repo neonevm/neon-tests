@@ -4,6 +4,7 @@ import asyncio
 import pathlib
 import typing as tp
 from dataclasses import dataclass
+from integration.tests.basic.helpers.json_rpc_requester import JsonRpcRequester
 
 import web3
 import allure
@@ -75,6 +76,10 @@ def operator(pytestconfig: Config) -> Operator:
 @pytest.fixture(scope="session", autouse=True)
 def faucet(pytestconfig: Config) -> Faucet:
     return Faucet(pytestconfig.environment.faucet_url)
+
+@pytest.fixture(scope="session", autouse=True)
+def jsonrpc_requester(pytestconfig: Config) -> JsonRpcRequester:
+    return JsonRpcRequester(pytestconfig.environment.proxy_url)
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -1,10 +1,10 @@
-from typing import Optional
 import allure
-from construct import integertypes
+from integration.tests.basic.helpers.json_rpc_requester import JsonRpcRequester
 import pytest
-from eth_account import Account
 import web3
-
+from _pytest.config import Config
+from eth_account import Account
+from typing import Optional
 from integration.tests.base import BaseTests
 
 FIRST_FAUCET_REQUEST_AMOUNT = 5
@@ -14,6 +14,12 @@ DEFAULT_TRANSFER_AMOUNT = 3
 
 
 class BasicHelpers(BaseTests):
+    jsonrpc_requester: JsonRpcRequester
+
+    @pytest.fixture(autouse=True)
+    def prepare_json_rpc_requester(self, jsonrpc_requester: JsonRpcRequester):
+        self.jsonrpc_requester = jsonrpc_requester
+
     @allure.step("creating a new account")
     def create_account(self) -> Account:
         return self.web3_client.create_account()
@@ -113,7 +119,6 @@ class BasicHelpers(BaseTests):
         self.compare_balance(expected_amount, balance, "Sender: ")
 
     @allure.step("checking recipient balance")
-    def assert_recipient_amount(self, address: str,
-                                expected_amount: integertypes):
+    def assert_recipient_amount(self, address: str, expected_amount: int):
         balance = self.web3_client.fromWei(self.get_balance(address), "ether")
         self.compare_balance(expected_amount, balance, "Recipient: ")

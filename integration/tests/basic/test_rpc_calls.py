@@ -1,6 +1,11 @@
 import allure
 import pytest
-from integration.tests.basic.helper_methods import BasicHelpers
+from typing import Type
+from integration.tests.basic.helpers.assert_message import AssertMessage
+from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
+from integration.tests.basic.helpers.helper_methods import BasicHelpers
+from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
+from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
 '''
 12.	Verify implemented rpc calls work
 12.1.	eth_getBlockByHash		
@@ -22,104 +27,125 @@ from integration.tests.basic.helper_methods import BasicHelpers
 '''
 
 
+@allure.story("Basic: Json-RPC call tests")
 class TestRpcCalls(BasicHelpers):
-    @pytest.mark.skip("not yet done")
-    @allure.step("test: verify implemented rpc calls work eth_getBlockByHash")
-    def test_rpc_call_eth_getBlockByHash(self):
-        '''Create account and get balance'''
-        pass
+    # @pytest.mark.skip("not yet done")
+    # @allure.step("test: verify implemented rpc calls work eth_getBlockByHash")
+    # def test_rpc_call_eth_getBlockByHash(self):
+    #     """Verify implemented rpc calls work eth_getBlockByHash"""
+    #     model = RpcRequestFactory.get_block_by_hash(req_id=1,
+    #                                                 params=RpcRequestParams())
+    #     print(model)
 
-    @pytest.mark.skip("not yet done")
-    @allure.step("test: verify implemented rpc calls work eth_getBlockByNumber"
-                 )
-    def test_rpc_call_eth_getBlockByNumber(self):
-        '''Create account and get balance'''
-        pass
+    # @pytest.mark.skip("not yet done")
+    # @allure.step("test: verify implemented rpc calls work eth_getBlockByNumber"
+    #              )
+    # def test_rpc_call_eth_getBlockByNumber(self):
+    #     """Verify implemented rpc calls work eth_getBlockByNumber"""
+    #     pass
 
-    @pytest.mark.skip("not yet done")
-    @allure.step("test: verify implemented rpc calls work eth_blockNumber")
-    def test_rpc_call_eth_blockNumber(self):
-        '''Create account and get balance'''
-        pass
+    # @pytest.mark.skip("not yet done")
+    # @allure.step("test: verify implemented rpc calls work eth_blockNumber")
+    # def test_rpc_call_eth_blockNumber(self):
+    #     """Verify implemented rpc calls work work eth_blockNumber"""
+    #     pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_call")
     def test_rpc_call_eth_call(self):
-        '''Create account and get balance'''
+        """Verify implemented rpc calls work eth_call"""
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_estimateGas")
     def test_rpc_call_eth_estimateGas(self):
-        '''Create account and get balance'''
+        """Verify implemented rpc calls work eth_estimateGas"""
         pass
 
-    @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_gasPrice")
     def test_rpc_call_eth_gasPrice(self):
-        '''Create account and get balance'''
-        pass
+        """Verify implemented rpc calls work eth_gasPrice"""
+        model = RpcRequestFactory.get_gas_price(params=[])
+        response = self.jsonrpc_requester.request_json_rpc(model)
+        actual_result = self.jsonrpc_requester.deserialize_response(response)
+
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert isinstance(actual_result,
+                          JsonRpcResponse), AssertMessage.WRONG_TYPE.value
+        assert '0x' in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_getLogs")
     def test_rpc_call_eth_getLogs(self):
-        '''Create account and get balance'''
+        """Verify implemented rpc calls work eth_getLogs"""
         pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_getBalance")
     def test_rpc_call_eth_getBalance(self):
-        '''Create account and get balance'''
+        """Verify implemented rpc calls work eth_getBalance"""
         pass
 
-    @pytest.mark.skip("not yet done")
-    @allure.step(
-        "test: verify implemented rpc calls work eth_getTransactionCount")
-    def test_rpc_call_eth_getTransactionCount(self):
-        '''Create account and get balance'''
-        pass
+    # @pytest.mark.skip("not yet done")
+    # @allure.step(
+    #     "test: verify implemented rpc calls work eth_getTransactionCount")
+    # def test_rpc_call_eth_getTransactionCount(self):
+    #     """Verify implemented rpc calls work eth_getTransactionCount"""
+    #     pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_getCode")
     def test_rpc_call_eth_getCode(self):
-        '''Create account and get balance'''
+        """Verify implemented rpc calls work eth_getCode"""
         pass
 
-    @pytest.mark.skip("not yet done")
-    @allure.step(
-        "test: verify implemented rpc calls work eth_sendRawTransaction")
-    def test_rpc_call_eth_sendRawTransaction(self):
-        '''Create account and get balance'''
-        pass
+    # @pytest.mark.skip("not yet done")
+    # @allure.step(
+    #     "test: verify implemented rpc calls work eth_sendRawTransaction")
+    # def test_rpc_call_eth_sendRawTransaction(self):
+    #     """Verify implemented rpc calls work eth_sendRawTransaction"""
+    #     pass
 
-    @pytest.mark.skip("not yet done")
-    @allure.step(
-        "test: verify implemented rpc calls work eth_getTransactionByHash")
-    def test_rpc_call_eth_getTransactionByHash(self):
-        '''Create account and get balance'''
-        pass
+    # @pytest.mark.skip("not yet done")
+    # @allure.step(
+    #     "test: verify implemented rpc calls work eth_getTransactionByHash")
+    # def test_rpc_call_eth_getTransactionByHash(self):
+    #     """Verify implemented rpc calls work eth_getTransactionByHash"""
+    #     pass
 
-    @pytest.mark.skip("not yet done")
-    @allure.step(
-        "test: verify implemented rpc calls work eth_getTransactionReceipt")
-    def test_rpc_call_eth_getTransactionReceipt(self):
-        '''Create account and get balance'''
-        pass
+    # @pytest.mark.skip("not yet done")
+    # @allure.step(
+    #     "test: verify implemented rpc calls work eth_getTransactionReceipt")
+    # def test_rpc_call_eth_getTransactionReceipt(self):
+    #     """Verify implemented rpc calls work eth_getTransactionReceipt"""
+    #     pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eht_getStorageAt")
     def test_rpc_call_eht_getStorageAt(self):
-        '''Create account and get balance'''
+        """Verify implemented rpc calls work eht_getStorageAt"""
         pass
 
-    @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work web3_clientVersion")
     def test_rpc_call_web3_clientVersion(self):
-        '''Create account and get balance'''
-        pass
+        """Verify implemented rpc calls work web3_clientVersion"""
+        model = RpcRequestFactory.get_web3_client_version(params=[])
+        response = self.jsonrpc_requester.request_json_rpc(model)
+        actual_result = self.jsonrpc_requester.deserialize_response(response)
 
-    @pytest.mark.skip("not yet done")
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert isinstance(actual_result,
+                          JsonRpcResponse), AssertMessage.WRONG_TYPE.value
+        assert 'Neon' in actual_result.result, "version does not contain 'Neon'"
+
     @allure.step("test: verify implemented rpc calls work net_version")
     def test_rpc_call_net_version(self):
-        '''Create account and get balance'''
-        pass
+        """Verify implemented rpc calls work work net_version"""
+        model = RpcRequestFactory.get_net_version(params=[])
+        response = self.jsonrpc_requester.request_json_rpc(model)
+        actual_result = self.jsonrpc_requester.deserialize_response(response)
+
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert isinstance(actual_result,
+                          JsonRpcResponse), AssertMessage.WRONG_TYPE.value
+        assert actual_result.result == '111', "net version is not 111"

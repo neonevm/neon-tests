@@ -43,10 +43,10 @@
     ]
   },
   "local": {
-    "proxy_url": "http://192.168.65.1:9090/solana",
+    "proxy_url": "http://127.0.0.1:9090/solana",
     "network_id": 111,
-    "solana_url": "http://192.168.65.1:8899/",
-    "faucet_url": "http://192.168.65.1:3333/",
+    "solana_url": "http://127.0.0.1:8899/",
+    "faucet_url": "http://127.0.0.1:3333/",
     "operator_neon_rewards_address": [
       "0x8966Ef2ae7A109Fd0977F5151b4607dc42929fBD",
       "0x619d670152103a972B67a45b9Be764FF11979E4E"

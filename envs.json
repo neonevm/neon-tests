@@ -4,10 +4,23 @@
     "network_id": 111,
     "solana_url": "http://proxy.night.stand.neontest.xyz/node-solana",
     "faucet_url": "http://proxy.night.stand.neontest.xyz",
-    "operator_solana_key": "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih",
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "operator_keys": [
-      "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih"
+      "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih",
+      "9kPRbbwKL5SYELF4cZqWWFmP88QkKys51DoaUBx8eK73",
+      "3NqgsSRfjpmDfzRH4PLKrzBvMc8MgFXgU58Yy8n41KF5",
+      "8HStt6KLgRY8CBNmDjwMTZhCFrXeVrEgVp3jTS4gaRYR",
+      "V6fr3EgLUYFSGgzPBxTnhrieeAratBX46AGvAtmQ2Xe",
+      "7r5GAh4SDhBwxg98vT86Q8sA8c9zEgJduSWWCV1y48V",
+      "GwUnjJs6i7TKGjy71PvFpGN7yu9xqA8Cs1oyV4zSVPvq",
+      "EdSEh9UxXjbrrHLrH5manpxfXi7HxzkAMDAotPC5DggQ",
+      "9s7umnvnGqT1nvrCgzvBwWFyaaYABj64LxiBpjAayLiv",
+      "5mszzfV23zRfcAdn9d7kmW6Qn57SGkpGywyqyVCVc817",
+      "AdtXr9yGAsTokY75WernsmQdcBPu2LE2Bsh8Nx3ApbbR",
+      "2k8NURTZ8xd1qD2JhujP2MjxkLgLHUmwpXP8FNSP7ntd",
+      "EkEBZJmw4uKfvruf3c6EFJeWeAY3rev3hRsp2S4BDV3M",
+      "9LosHtRuxtFYtj2bJfvkcZpDywtdktpAabRQ7hCQasmt",
+      "FHYUtkDhNaMdaKzP2y7ZXmy6HtiKz7uahz19CPUkjeiD"
     ]
   },
   "release-stand": {
@@ -15,7 +28,6 @@
     "network_id": 111,
     "solana_url": "http://proxy.release.stand.neontest.xyz/node-solana",
     "faucet_url": "http://proxy.release.stand.neontest.xyz/",
-    "operator_solana_key": "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih",
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "operator_keys": [
       "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih"
@@ -26,17 +38,19 @@
     "network_id": 245022926,
     "solana_url": "http://neon.devnet.rpcpool.com/c7710a7b633cbadb9be9900c7946/",
     "faucet_url": "https://neonswap.live/",
-    "operator_solana_key": "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih",
     "operator_keys": [
       "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih"
     ]
   },
   "local": {
-    "proxy_url": "http://192.168.65.1:9090/solana",
+    "proxy_url": "http://127.0.0.1:9090/solana",
     "network_id": 111,
-    "solana_url": "http://192.168.65.1:8899/",
-    "faucet_url": "http://192.168.65.1:3333/",
-    "operator_solana_key": "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih",
+    "solana_url": "http://127.0.0.1:8899/",
+    "faucet_url": "http://127.0.0.1:3333/",
+    "operator_neon_rewards_address": [
+      "0x8966Ef2ae7A109Fd0977F5151b4607dc42929fBD",
+      "0x619d670152103a972B67a45b9Be764FF11979E4E"
+    ],
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "operator_keys": [
       "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih",

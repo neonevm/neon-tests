@@ -1,7 +1,7 @@
 import allure
 import pytest
 
-from integration.tests.basic.helpers.helper_methods import FIRST_FAUCET_REQUEST_AMOUNT, SECOND_FAUCET_REQUEST_AMOUNT, \
+from integration.tests.basic.helpers.helper_methods import FIRST_FAUCET_REQUEST_AMOUNT, SECOND_FAUCET_REQUEST_AMOUNT, WAITING_FOR_MS, \
     BasicHelpers
 
 
@@ -94,7 +94,7 @@ class TestSingleClient(BasicHelpers):
         self.request_faucet_neon(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
         self.assert_amount(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
 
-    @pytest.mark.skip("waiting for MS")
+    @pytest.mark.skip(WAITING_FOR_MS)
     @allure.step("test: check tokens in wallet: spl")
     def test_check_tokens_in_wallet_spl(self):
         """Check tokens in wallet: spl"""

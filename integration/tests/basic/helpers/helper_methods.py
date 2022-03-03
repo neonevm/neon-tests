@@ -1,16 +1,18 @@
 import allure
-from integration.tests.basic.helpers.json_rpc_requester import JsonRpcRequester
 import pytest
 import web3
 from _pytest.config import Config
 from eth_account import Account
-from typing import Optional
+from typing import Optional, Union
 from integration.tests.base import BaseTests
+from integration.tests.basic.helpers.json_rpc_requester import JsonRpcRequester
 
 FIRST_FAUCET_REQUEST_AMOUNT = 5
 SECOND_FAUCET_REQUEST_AMOUNT = 3
 GREAT_AMOUNT = 1_000
 DEFAULT_TRANSFER_AMOUNT = 3
+
+WAITING_FOR_MS = "waiting for MS"
 
 
 class BasicHelpers(BaseTests):
@@ -43,65 +45,73 @@ class BasicHelpers(BaseTests):
     #     self.faucet.request_sol(wallet, amount=amount)
 
     @allure.step("processing transaction")
-    def process_transaction(self,
-                            sender_account: Account,
-                            recipient_account: Account,
-                            amount: int,
-                            gas: Optional[int] = 0,
-                            gas_price: Optional[int] = None,
-                            message: str = ""):
-        # try:
-        # with pytest.raises(ValueError) as error_info:
-        #     self.web3_client.send_neon(sender_account, recipient_account,
-        #                                amount, gas, gas_price)
-        #     print(error_info)
-        # assert message in str(error_info.value)
-
-        with pytest.raises(Exception) as error_info:
-            self.web3_client.send_neon(sender_account, recipient_account,
-                                       amount, gas, gas_price)
-        print(error_info)
-        assert message in str(error_info)
-        # except ValueError as error_info:
-        #     print(error_info)
-        #     assert "The account balance is less than required" in str(
-        #         error_info)
-        # except Exception as error_info:
-        #     print(error_info)
-        #     assert 1 == 2, f"Error is not ValueError: {error_info}"
-
-    @allure.step("transferring tokens")
-    def transfer_neon(self,
-                      sender_account: Account,
-                      recipient_account: Account,
-                      amount: int,
-                      gas: Optional[int] = 0,
-                      gas_price: Optional[int] = None) -> web3.types.TxReceipt:
-        self.process_transaction(sender_account, recipient_account, amount,
-                                 gas, gas_price, "InvalidInstructionData")
-
-    @allure.step("transferring 0 tokens")
-    def transfer_zero_neon(
+    def process_transaction(
             self,
             sender_account: Account,
             recipient_account: Account,
             amount: int,
-            gas: Optional[int] = 0,
-            gas_price: Optional[int] = None) -> web3.types.TxReceipt:
-        self.process_transaction(sender_account, recipient_account, amount,
-                                 gas, gas_price, "aaa")
+            message: str = "") -> Union[web3.types.TxReceipt, None]:
+
+        tx = self.web3_client.send_neon(sender_account, recipient_account,
+                                        amount)
+
+        print("--------------------------------------")
+        print(tx)
+
+        return tx
+
+    @allure.step("processing transaction, expecting a failure")
+    def process_transaction_with_failure(
+            self,
+            sender_account: Account,
+            recipient_account: Account,
+            amount: int,
+            message: str = "") -> Union[web3.types.TxReceipt, None]:
+
+        tx: Union[web3.types.TxReceipt, None] = None
+        with pytest.raises(Exception) as error_info:
+            tx = self.web3_client.send_neon(sender_account, recipient_account,
+                                            amount)
+        print(error_info)
+        if error_info != None:
+            if message:
+                assert message in str(error_info)
+            assert None != error_info, "Transaction failed"
+
+        print("--------------------------------------")
+        print(tx)
+
+        return tx
+
+    @allure.step("transferring tokens")
+    def transfer_neon(self, sender_account: Account,
+                      recipient_account: Account,
+                      amount: int) -> Union[web3.types.TxReceipt, None]:
+        return self.process_transaction(sender_account, recipient_account,
+                                        amount, "InvalidInstructionData")
+
+    @allure.step("transferring 0 tokens")
+    def transfer_zero_neon(self, sender_account: Account,
+                           recipient_account: Account,
+                           amount: int) -> Union[web3.types.TxReceipt, None]:
+        return self.process_transaction(sender_account, recipient_account,
+                                        amount, "aaa")
+
+    @allure.step("transferring to an invalid address")
+    def transfer_to_invalid_address(
+            self, sender_account: Account, recipient_account: Account,
+            amount: int, message: str) -> Union[web3.types.TxReceipt, None]:
+        return self.process_transaction_with_failure(sender_account,
+                                                     recipient_account, amount,
+                                                     message)
 
     @allure.step("checking less than required")
     def check_value_error_if_less_than_required(
-            self,
-            sender_account: Account,
-            recipient_account: Account,
-            amount: int,
-            gas: Optional[int] = 0,
-            gas_price: Optional[int] = None):
-        self.process_transaction(sender_account, recipient_account, amount,
-                                 gas, gas_price,
-                                 "The account balance is less than required")
+            self, sender_account: Account, recipient_account: Account,
+            amount: int) -> Union[web3.types.TxReceipt, None]:
+        return self.process_transaction_with_failure(sender_account,
+                                                     recipient_account, amount,
+                                                     "Resulting wei value")
 
     def compare_balance(self, expected: int, actual: int, message: str):
         assert actual == expected, message + f"expected balance = {expected}, actual balance = {actual}"

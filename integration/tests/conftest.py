@@ -29,7 +29,7 @@ class EnvironmentConfig:
     solana_url: str
     faucet_url: str
     network_id: int
-    operator_solana_key: str
+    operator_neon_rewards_address: tp.List[str]
     spl_neon_mint: str
     operator_keys: tp.List[str]
 
@@ -62,18 +62,6 @@ def sol_price() -> float:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def operator(pytestconfig: Config) -> Operator:
-    return Operator(
-        pytestconfig.environment.proxy_url,
-        pytestconfig.environment.solana_url,
-        pytestconfig.environment.network_id,
-        pytestconfig.environment.operator_solana_key,
-        pytestconfig.environment.spl_neon_mint,
-        pytestconfig.environment.operator_keys
-    )
-
-
-@pytest.fixture(scope="session", autouse=True)
 def faucet(pytestconfig: Config) -> Faucet:
     return Faucet(pytestconfig.environment.faucet_url)
 
@@ -92,6 +80,19 @@ def web3_client(pytestconfig: Config) -> NeonWeb3Client:
 def sol_client(pytestconfig: Config):
     client = solana.rpc.api.Client(pytestconfig.environment.solana_url)
     return client
+
+
+@pytest.fixture(scope="session", autouse=True)
+def operator(pytestconfig: Config, web3_client: NeonWeb3Client) -> Operator:
+    return Operator(
+        pytestconfig.environment.proxy_url,
+        pytestconfig.environment.solana_url,
+        pytestconfig.environment.network_id,
+        pytestconfig.environment.operator_neon_rewards_address,
+        pytestconfig.environment.spl_neon_mint,
+        pytestconfig.environment.operator_keys,
+        web3_client=web3_client
+    )
 
 
 @pytest.fixture(scope="session", autouse=True)

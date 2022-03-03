@@ -8,9 +8,6 @@ from integration.tests.basic.helpers.helper_methods import DEFAULT_TRANSFER_AMOU
 NON_EXISTING_ADDRESS = "0xmmmmm"
 INVALID_ADDRESS = "0x12345"
 
-ENS_NAME_ERROR = f"ENS name: '{INVALID_ADDRESS}' is invalid."
-EIP55_INVALID_CHECKUM = "'Address has an invalid EIP-55 checksum. After looking up the address from the original source, try again.'"
-
 WRONG_TRANSFER_AMOUNT_DATA = [(10), (100), (10.1)]
 TRANSFER_AMOUNT_DATA = [(0.01), (1), (1.1)]
 
@@ -158,8 +155,7 @@ class TestTransfer(BasicHelpers):
         recipient_address = INVALID_ADDRESS
 
         self.transfer_to_invalid_address(sender_account, recipient_address,
-                                         DEFAULT_TRANSFER_AMOUNT,
-                                         ENS_NAME_ERROR)
+                                         DEFAULT_TRANSFER_AMOUNT,f"ENS name: '{INVALID_ADDRESS}' is invalid.")
 
         self.assert_sender_amount(sender_account.address,
                                   FIRST_FAUCET_REQUEST_AMOUNT)
@@ -173,8 +169,7 @@ class TestTransfer(BasicHelpers):
             '3', '4')
 
         self.transfer_to_invalid_address(sender_account, recipient_address,
-                                         DEFAULT_TRANSFER_AMOUNT,
-                                         EIP55_INVALID_CHECKUM)
+                                         DEFAULT_TRANSFER_AMOUNT)
 
         self.assert_sender_amount(sender_account.address,
                                   FIRST_FAUCET_REQUEST_AMOUNT)

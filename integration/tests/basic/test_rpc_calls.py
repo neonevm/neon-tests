@@ -29,27 +29,6 @@ from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcReq
 
 @allure.story("Basic: Json-RPC call tests")
 class TestRpcCalls(BasicHelpers):
-    # @pytest.mark.skip("not yet done")
-    # @allure.step("test: verify implemented rpc calls work eth_getBlockByHash")
-    # def test_rpc_call_eth_getBlockByHash(self):
-    #     """Verify implemented rpc calls work eth_getBlockByHash"""
-    #     model = RpcRequestFactory.get_block_by_hash(req_id=1,
-    #                                                 params=RpcRequestParams())
-    #     print(model)
-
-    # @pytest.mark.skip("not yet done")
-    # @allure.step("test: verify implemented rpc calls work eth_getBlockByNumber"
-    #              )
-    # def test_rpc_call_eth_getBlockByNumber(self):
-    #     """Verify implemented rpc calls work eth_getBlockByNumber"""
-    #     pass
-
-    # @pytest.mark.skip("not yet done")
-    # @allure.step("test: verify implemented rpc calls work eth_blockNumber")
-    # def test_rpc_call_eth_blockNumber(self):
-    #     """Verify implemented rpc calls work work eth_blockNumber"""
-    #     pass
-
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_call")
     def test_rpc_call_eth_call(self):
@@ -86,39 +65,11 @@ class TestRpcCalls(BasicHelpers):
         """Verify implemented rpc calls work eth_getBalance"""
         pass
 
-    # @pytest.mark.skip("not yet done")
-    # @allure.step(
-    #     "test: verify implemented rpc calls work eth_getTransactionCount")
-    # def test_rpc_call_eth_getTransactionCount(self):
-    #     """Verify implemented rpc calls work eth_getTransactionCount"""
-    #     pass
-
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_getCode")
     def test_rpc_call_eth_getCode(self):
         """Verify implemented rpc calls work eth_getCode"""
         pass
-
-    # @pytest.mark.skip("not yet done")
-    # @allure.step(
-    #     "test: verify implemented rpc calls work eth_sendRawTransaction")
-    # def test_rpc_call_eth_sendRawTransaction(self):
-    #     """Verify implemented rpc calls work eth_sendRawTransaction"""
-    #     pass
-
-    # @pytest.mark.skip("not yet done")
-    # @allure.step(
-    #     "test: verify implemented rpc calls work eth_getTransactionByHash")
-    # def test_rpc_call_eth_getTransactionByHash(self):
-    #     """Verify implemented rpc calls work eth_getTransactionByHash"""
-    #     pass
-
-    # @pytest.mark.skip("not yet done")
-    # @allure.step(
-    #     "test: verify implemented rpc calls work eth_getTransactionReceipt")
-    # def test_rpc_call_eth_getTransactionReceipt(self):
-    #     """Verify implemented rpc calls work eth_getTransactionReceipt"""
-    #     pass
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eht_getStorageAt")

@@ -1,0 +1,463 @@
+{
+  "uid" : "71d2f3e750826f73",
+  "name" : "test_cost_resize_account",
+  "fullName" : "integration.tests.economy.test_economics.TestEconomics#test_cost_resize_account",
+  "historyId" : "9e45d41037110c3e3b9d622220f3c108",
+  "time" : {
+    "start" : 1646319271125,
+    "stop" : 1646319289000,
+    "duration" : 17875
+  },
+  "description" : "Verify how much cost account resize",
+  "descriptionHtml" : "<p>Verify how much cost account resize</p>\n",
+  "status" : "passed",
+  "flaky" : false,
+  "newFailed" : false,
+  "newBroken" : false,
+  "newPassed" : true,
+  "retriesCount" : 0,
+  "retriesStatusChange" : false,
+  "beforeStages" : [ {
+    "name" : "web3_client",
+    "time" : {
+      "start" : 1646319126403,
+      "stop" : 1646319126405,
+      "duration" : 2
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "pytestconfig",
+    "time" : {
+      "start" : 1646319126403,
+      "stop" : 1646319126403,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "allure_environment",
+    "time" : {
+      "start" : 1646319126405,
+      "stop" : 1646319127440,
+      "duration" : 1035
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "sol_client",
+    "time" : {
+      "start" : 1646319127441,
+      "stop" : 1646319127441,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "faucet",
+    "time" : {
+      "start" : 1646319127441,
+      "stop" : 1646319127441,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "install_solcx_versions",
+    "time" : {
+      "start" : 1646319127441,
+      "stop" : 1646319128233,
+      "duration" : 792
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "operator",
+    "time" : {
+      "start" : 1646319127441,
+      "stop" : 1646319127441,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "sol_price",
+    "time" : {
+      "start" : 1646319128234,
+      "stop" : 1646319128364,
+      "duration" : 130
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "SOL price 98.50338500000001$",
+      "time" : {
+        "start" : 1646319128363,
+        "stop" : 1646319128363,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 1,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1646319128364,
+      "stop" : 1646319134088,
+      "duration" : 5724
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Create account for tests",
+      "time" : {
+        "start" : 1646319128364,
+        "stop" : 1646319128376,
+        "duration" : 12
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Request 1000 NEON from faucet for 0x8713570fC5b23Baeaff67d6a1dA119AACCa54817",
+      "time" : {
+        "start" : 1646319128376,
+        "stop" : 1646319129473,
+        "duration" : 1097
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Operator initial balance: 0.000231336255 NEON 4636.97659448 SOL",
+      "time" : {
+        "start" : 1646319134088,
+        "stop" : 1646319134088,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 3,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "prepare",
+    "time" : {
+      "start" : 1646319271124,
+      "stop" : 1646319271124,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1646319271124,
+      "stop" : 1646319271124,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "setup_sol_cost",
+    "time" : {
+      "start" : 1646319271125,
+      "stop" : 1646319271125,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "testStage" : {
+    "description" : "Verify how much cost account resize",
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Verify operator profit",
+      "time" : {
+        "start" : 1646319288999,
+        "stop" : 1646319288999,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ {
+        "name" : "Operator receive 54.686000000 NEON (13.67 $) and spend 0.053616240 SOL (5.28 $), profit - 158.862212000% ",
+        "time" : {
+          "start" : 1646319288999,
+          "stop" : 1646319288999,
+          "duration" : 0
+        },
+        "status" : "passed",
+        "steps" : [ ],
+        "attachments" : [ ],
+        "parameters" : [ ],
+        "stepsCount" : 0,
+        "attachmentsCount" : 0,
+        "shouldDisplayMessage" : false,
+        "hasContent" : false
+      } ],
+      "attachments" : [ ],
+      "parameters" : [ {
+        "name" : "sol_diff",
+        "value" : "53616240"
+      }, {
+        "name" : "neon_diff",
+        "value" : "Decimal('54.686')"
+      } ],
+      "stepsCount" : 1,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 2,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  },
+  "afterStages" : [ {
+    "name" : "prepare_account::0",
+    "time" : {
+      "start" : 1646319501636,
+      "stop" : 1646319506409,
+      "duration" : 4773
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Operator end balance: 0.000231812742 NEON 4636.26146784 SOL",
+      "time" : {
+        "start" : 1646319506255,
+        "stop" : 1646319506255,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Account end balance: 441.982840744658 NEON",
+      "time" : {
+        "start" : 1646319506409,
+        "stop" : 1646319506409,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 2,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "allure_environment::0",
+    "time" : {
+      "start" : 1646319506414,
+      "stop" : 1646319506414,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "labels" : [ {
+    "name" : "story",
+    "value" : "Operator economy"
+  }, {
+    "name" : "parentSuite",
+    "value" : "integration.tests.economy"
+  }, {
+    "name" : "suite",
+    "value" : "test_economics"
+  }, {
+    "name" : "subSuite",
+    "value" : "TestEconomics"
+  }, {
+    "name" : "host",
+    "value" : "fv-az131-980"
+  }, {
+    "name" : "thread",
+    "value" : "1781-MainThread"
+  }, {
+    "name" : "framework",
+    "value" : "pytest"
+  }, {
+    "name" : "language",
+    "value" : "cpython3"
+  }, {
+    "name" : "package",
+    "value" : "integration.tests.economy.test_economics"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure2"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "retry" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ ],
+    "categories" : [ ],
+    "history" : {
+      "statistic" : {
+        "failed" : 3,
+        "broken" : 1,
+        "skipped" : 0,
+        "passed" : 1,
+        "unknown" : 0,
+        "total" : 5
+      },
+      "items" : [ {
+        "uid" : "5336e9fd1a7cae8d",
+        "reportUrl" : "https://neonlabsorg.github.io/neon-tests/13//#testresult/5336e9fd1a7cae8d",
+        "status" : "broken",
+        "statusDetails" : "ValueError: {\"code\": -32002, \"message\": \"Transaction simulation failed: Error processing Instruction 0: custom program error: 0x1\", \"data\": {\"accounts\": null, \"err\": {\"InstructionError\": [0, {\"Custom\": 1}]}, \"logs\": [\"Program 53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io invoke [1]\", \"Program log: program/src/storage_account.rs:75\", \"Program 53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io consumed 5263 of 500000 compute units\", \"Program 53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io failed: custom program error: 0x1\"]}}",
+        "time" : {
+          "start" : 1645443505509,
+          "stop" : 1645443507862,
+          "duration" : 2353
+        }
+      }, {
+        "uid" : "5eecda0338326502",
+        "reportUrl" : "https://neonlabsorg.github.io/neon-tests/12//#testresult/5eecda0338326502",
+        "status" : "failed",
+        "statusDetails" : "AssertionError: Operator receive 0.000061927 NEON (0.00 $) and spend 0.026477120 SOL (2.65 $)\nassert Decimal('0.0000154817500') > Decimal('2.64771200')",
+        "time" : {
+          "start" : 1643804023669,
+          "stop" : 1643804026465,
+          "duration" : 2796
+        }
+      }, {
+        "uid" : "3b8bbf16b7bd411a",
+        "reportUrl" : "https://neonlabsorg.github.io/neon-tests/11//#testresult/3b8bbf16b7bd411a",
+        "status" : "failed",
+        "statusDetails" : "AssertionError: Operator receive 0.000061927 NEON (0.00 $) and spend 0.026477120 SOL (2.65 $)\nassert Decimal('0.0000154817500') > Decimal('2.64771200')",
+        "time" : {
+          "start" : 1643803520977,
+          "stop" : 1643803524843,
+          "duration" : 3866
+        }
+      }, {
+        "uid" : "822c4149280bd410",
+        "reportUrl" : "https://neonlabsorg.github.io/neon-tests/10//#testresult/822c4149280bd410",
+        "status" : "failed",
+        "statusDetails" : "AssertionError: Operator receive 0.000061927 NEON (0.00 $) and spend 0.026477120 SOL (2.65 $)\nassert Decimal('0.0000154817500') > Decimal('2.64771200')",
+        "time" : {
+          "start" : 1643802875501,
+          "stop" : 1643802879318,
+          "duration" : 3817
+        }
+      } ]
+    },
+    "tags" : [ ]
+  },
+  "source" : "71d2f3e750826f73.json",
+  "parameterValues" : [ ]
+}

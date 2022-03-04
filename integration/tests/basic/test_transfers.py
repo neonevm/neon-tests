@@ -1,7 +1,8 @@
-from typing import Union
 import allure
 import pytest
-from integration.tests.basic.helper_methods import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, \
+from typing import Union
+from integration.tests.basic.helpers.helper_methods import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, \
+    GREAT_AMOUNT, WAITING_FOR_MS, \
     BasicHelpers
 
 WRONG_TRANSFER_AMOUNT_DATA = [(10), (100), (10.1)]

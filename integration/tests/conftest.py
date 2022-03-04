@@ -1,16 +1,12 @@
 import json
 import shutil
-import asyncio
 import pathlib
 import typing as tp
 from dataclasses import dataclass
 
-import web3
 import allure
 import pytest
 import solana
-from pythclient.pythaccounts import PythPriceAccount
-from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP_ENDPOINT
 from _pytest.config import Config
 
 from utils.operator import Operator
@@ -35,29 +31,16 @@ class EnvironmentConfig:
 
 def pytest_addoption(parser):
     parser.addoption("--network", action="store", default="night-stand", help="Which stand use")
+    parser.addoption("--envs", action="store", default="envs.json", help="Filename with environments")
 
 
 def pytest_configure(config: Config):
-    env_name = config.getoption("--network")
-    with open(pathlib.Path().parent.parent / "envs.json", "r+") as f:
+    network_name = config.getoption("--network")
+    envs_file = config.getoption("--envs")
+    with open(pathlib.Path().parent.parent / envs_file, "r+") as f:
         environments = json.load(f)
-    assert env_name in environments, f"Environment {env_name} doesn't exist in envs.json"
-    config.environment = EnvironmentConfig(**environments[env_name])
-
-
-@pytest.fixture(scope="session")
-def sol_price() -> float:
-    async def get_price():
-        account_key = SolanaPublicKey("H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG")
-        solana_client = SolanaClient(endpoint=SOLANA_MAINNET_HTTP_ENDPOINT)
-        price: PythPriceAccount = PythPriceAccount(account_key, solana_client)
-        await price.update()
-        return price.aggregate_price
-
-    loop = asyncio.get_event_loop()
-    price = loop.run_until_complete(get_price())
-    with allure.step(f"SOL price {price}$"):
-        return price
+    assert network_name in environments, f"Environment {network_name} doesn't exist in envs.json"
+    config.environment = EnvironmentConfig(**environments[network_name])
 
 
 @pytest.fixture(scope="session", autouse=True)

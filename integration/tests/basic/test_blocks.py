@@ -34,7 +34,10 @@ class TestRpcCallsBlocks(BasicHelpers):
         """Verify implemented rpc calls work eth_getBlockByHash"""
         model = RpcRequestFactory.get_block_by_hash(
             req_id=1, params=JsonRpcRequestParams())
+
+        # TODO: remove
         print(model)
+        #
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_getBlockByNumber"

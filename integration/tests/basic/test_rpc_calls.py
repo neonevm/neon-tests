@@ -1,11 +1,13 @@
+from urllib import response
 import allure
 import pytest
 from typing import Type
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
-from integration.tests.basic.helpers.helper_methods import BasicHelpers
+from integration.tests.basic.helpers.helper_methods import FIRST_AMOUNT_IN_RESPONSE, FIRST_FAUCET_REQUEST_AMOUNT, BasicHelpers
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
+from integration.tests.basic.model.tags import Tag
 '''
 12.	Verify implemented rpc calls work
 12.1.	eth_getBlockByHash		
@@ -59,11 +61,23 @@ class TestRpcCalls(BasicHelpers):
         """Verify implemented rpc calls work eth_getLogs"""
         pass
 
-    @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_getBalance")
     def test_rpc_call_eth_getBalance(self):
         """Verify implemented rpc calls work eth_getBalance"""
-        pass
+        sender_account = self.create_account_with_balance(
+            FIRST_FAUCET_REQUEST_AMOUNT)
+
+        params = [sender_account.address, Tag.LATEST.value]
+        model = RpcRequestFactory.get_balance(params=params)
+        response = self.jsonrpc_requester.request_json_rpc(model)
+        actual_result = self.jsonrpc_requester.deserialize_response(response)
+
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert actual_result.result == FIRST_AMOUNT_IN_RESPONSE, AssertMessage.WRONG_AMOUNT.value
+
+        # TODO: remove
+        print(actual_result)
+        #
 
     @pytest.mark.skip("not yet done")
     @allure.step("test: verify implemented rpc calls work eth_getCode")

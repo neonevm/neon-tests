@@ -40,15 +40,8 @@ class TestRpcCallsTransactions(BasicHelpers):
             FIRST_FAUCET_REQUEST_AMOUNT)
 
         self.transfer_neon(sender_account, recipient_account, SAMPLE_AMOUNT)
-        # ,
-        # gas=0,  # 10_000,
-        # gas_price=self.web3_client.gas_price()) # 0)  # 1_000_000_000)
 
-        # self.assert_sender_amount(sender_account.address,
-        #                           GREAT_AMOUNT - SAMPLE_AMOUNT)
-        # self.assert_recipient_amount(recipient_account.address,
-        #                              FIRST_FAUCET_REQUEST_AMOUNT + SAMPLE_AMOUNT)
-        params = [sender_account.address, Tag.LATEST.value]  # TODO: enum
+        params = [sender_account.address, Tag.LATEST.value]
         model = RpcRequestFactory.get_trx_count(params=params)
         response = self.jsonrpc_requester.request_json_rpc(model)
         actual_result = self.jsonrpc_requester.deserialize_response(response)

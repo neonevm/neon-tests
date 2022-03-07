@@ -4,7 +4,7 @@ import pytest
 from typing import Type
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
-from integration.tests.basic.helpers.helper_methods import FIRST_AMOUNT_IN_RESPONSE, FIRST_FAUCET_REQUEST_AMOUNT, BasicHelpers
+from integration.tests.basic.helpers.basic_helpers import FIRST_AMOUNT_IN_RESPONSE, FIRST_FAUCET_REQUEST_AMOUNT, BasicHelpers
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
 from integration.tests.basic.model.tags import Tag

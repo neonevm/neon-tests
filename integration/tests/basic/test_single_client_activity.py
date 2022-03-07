@@ -1,7 +1,7 @@
 import allure
 import pytest
 
-from integration.tests.basic.helpers.helper_methods import FIRST_FAUCET_REQUEST_AMOUNT, SECOND_FAUCET_REQUEST_AMOUNT, WAITING_FOR_MS, \
+from integration.tests.basic.helpers.basic_helpers import FIRST_FAUCET_REQUEST_AMOUNT, SECOND_FAUCET_REQUEST_AMOUNT, WAITING_FOR_MS, \
     BasicHelpers
 
 '''

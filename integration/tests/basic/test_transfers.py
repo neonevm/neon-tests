@@ -1,7 +1,7 @@
 import allure
 import pytest
 from typing import Union
-from integration.tests.basic.helpers.helper_methods import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, \
+from integration.tests.basic.helpers.basic_helpers import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, \
     GREAT_AMOUNT, WAITING_FOR_MS, \
     BasicHelpers
 

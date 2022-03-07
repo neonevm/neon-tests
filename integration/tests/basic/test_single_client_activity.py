@@ -1,9 +1,8 @@
 import allure
 import pytest
 
-from integration.tests.basic.helpers.basic_helpers import FIRST_FAUCET_REQUEST_AMOUNT, SECOND_FAUCET_REQUEST_AMOUNT, WAITING_FOR_MS, \
+from integration.tests.basic.helpers.basic_helpers import FIRST_FAUCET_REQUEST_AMOUNT, SECOND_FAUCET_REQUEST_AMOUNT, WAITING_FOR_ERC20, WAITING_FOR_MS, \
     BasicHelpers
-
 '''
 1.	Create account and get balance
 2.	Check tokens in wallet
@@ -78,7 +77,7 @@ class TestSingleClient(BasicHelpers):
         """Check tokens in wallet: spl"""
         pass
 
-    @pytest.mark.skip("not yet done")
+    @pytest.mark.skip(WAITING_FOR_ERC20)
     @allure.step("test: check tokens in wallet: ERC20")
     def test_check_tokens_in_wallet_ERC20(self):
         """Check tokens in wallet: ERC20"""

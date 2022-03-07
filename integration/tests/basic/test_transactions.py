@@ -3,7 +3,7 @@ import pytest
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
-from integration.tests.basic.helpers.basic_helpers import FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, BasicHelpers
+from integration.tests.basic.helpers.basic_helpers import FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, NOT_YET_DONE, BasicHelpers
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
 '''
@@ -51,21 +51,37 @@ class TestRpcCallsTransactions(BasicHelpers):
                           JsonRpcResponse), AssertMessage.WRONG_TYPE.value
         assert '0x' in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
 
-    @pytest.mark.skip("not yet done")
+    # @pytest.mark.skip(NOT_YET_DONE)
     @allure.step(
         "test: verify implemented rpc calls work eth_sendRawTransaction")
     def test_rpc_call_eth_sendRawTransaction(self):
         """Verify implemented rpc calls work eth_sendRawTransaction"""
-        pass
+        sender_account = self.create_account_with_balance(GREAT_AMOUNT)
+        recipient_account = self.create_account_with_balance(
+            FIRST_FAUCET_REQUEST_AMOUNT)
+        
+        #
 
-    @pytest.mark.skip("not yet done")
+        params = [sender_account.address, Tag.LATEST.value]
+        #
+
+        model = RpcRequestFactory.get_send_raw_trx(params=params)
+        response = self.jsonrpc_requester.request_json_rpc(model)
+        actual_result = self.jsonrpc_requester.deserialize_response(response)
+
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert isinstance(actual_result,
+                          JsonRpcResponse), AssertMessage.WRONG_TYPE.value
+        assert '0x' in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
+
+    @pytest.mark.skip(NOT_YET_DONE)
     @allure.step(
         "test: verify implemented rpc calls work eth_getTransactionByHash")
     def test_rpc_call_eth_getTransactionByHash(self):
         """Verify implemented rpc calls work eth_getTransactionByHash"""
         pass
 
-    @pytest.mark.skip("not yet done")
+    @pytest.mark.skip(NOT_YET_DONE)
     @allure.step(
         "test: verify implemented rpc calls work eth_getTransactionReceipt")
     def test_rpc_call_eth_getTransactionReceipt(self):

@@ -6,6 +6,7 @@ from integration.tests.basic.model.json_rpc_request import JsonRpcRequest
 from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
 
 ALLURE_RETURN_VALUE_DESCRIPTION = "the model built"
+ALLURE_PARAMS_BUILT = "parameters built"
 
 
 class RpcRequestFactory:

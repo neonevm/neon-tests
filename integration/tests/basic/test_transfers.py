@@ -2,7 +2,7 @@ import allure
 import pytest
 from typing import Union
 from integration.tests.basic.helpers.basic_helpers import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, \
-    GREAT_AMOUNT, WAITING_FOR_MS, \
+    GREAT_AMOUNT, NOT_YET_DONE, WAITING_FOR_ERC20, WAITING_FOR_MS, \
     BasicHelpers
 
 NON_EXISTING_ADDRESS = "0xmmmmm"
@@ -17,27 +17,6 @@ TRANSFER_AMOUNT_DATA = [(0.01), (1), (1.1)]
 
 @allure.story("Basic: transfer tests")
 class TestTransfer(BasicHelpers):
-    @pytest.mark.only_stands
-    def test_send_neon_to_exist_account(self):
-        """Verify how many cost neon send to use who was already initialized"""
-        acc2 = self.web3_client.create_account()
-        self.web3_client.send_neon(self.acc, acc2, 1)
-
-        assert self.web3_client.get_balance(acc2) == 1
-
-        sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
-        tx = self.web3_client.send_neon(self.acc, acc2, 5)
-
-        assert self.web3_client.get_balance(acc2) == 6
-
-        sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
-        assert sol_balance_before > sol_balance_after, "Operator balance after send tx doesn't changed"
-
-        # self.assert_profit(sol_balance_before - sol_balance_after,
-        #                    neon_balance_after - neon_balance_before)
-
     @allure.step("test: send neon from one account to another")
     @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
     def test_send_neon_from_one_account_to_another(self, amount: Union[int,
@@ -47,9 +26,7 @@ class TestTransfer(BasicHelpers):
         recipient_account = self.create_account_with_balance(
             FIRST_FAUCET_REQUEST_AMOUNT)
 
-        self.transfer_neon(sender_account, recipient_account, amount)  #,
-        # gas=0,  # 10_000,
-        # gas_price=self.web3_client.gas_price())  # 0)  # 1_000_000_000)
+        self.transfer_neon(sender_account, recipient_account, amount)
 
         self.assert_sender_amount(sender_account.address,
                                   GREAT_AMOUNT - amount)
@@ -89,7 +66,7 @@ class TestTransfer(BasicHelpers):
         """Send more than exist on account: spl (with different precision)"""
         pass
 
-    @pytest.mark.skip("not yet done")
+    @pytest.mark.skip(WAITING_FOR_ERC20)
     @allure.step("test: send more than exist on account: ERC20")
     def test_send_more_than_exist_on_account_erc20(self):
         """Send more than exist on account: ERC20"""
@@ -116,7 +93,9 @@ class TestTransfer(BasicHelpers):
         """Send zero: spl (with different precision)"""
         pass
 
-    @pytest.mark.skip("not yet done")
+    # @pytest.mark.skip(NOT_YET_DONE)
+    # @pytest.fail(NOT_YET_DONE)
+    @pytest.mark.xfail()
     @allure.step("test: send zero: ERC20")
     def test_zero_erc20(self):
         """Send zero: ERC20"""
@@ -144,7 +123,7 @@ class TestTransfer(BasicHelpers):
         """Send negative sum from account: spl (with different precision)"""
         pass
 
-    @pytest.mark.skip("not yet done")
+    @pytest.mark.skip(WAITING_FOR_ERC20)
     @allure.step("test: send negative sum from account: ERC20")
     def test_send_negative_sum_from_account_erc20(self):
         """Send negative sum from account: ERC20"""

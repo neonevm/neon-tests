@@ -16,27 +16,6 @@ DEFAULT_TRANSFER_AMOUNT = 3
 WAITING_FOR_MS = "waiting for MS"
 
 
-@pytest.fixture(scope="class")
-def prepare_account():  # faucet, web3_client):
-    # """Create new account for tests and save operator pre/post balances"""
-    # start_neon_balance = operator.get_neon_balance()
-    # start_sol_balance = operator.get_solana_balance()
-    # with allure.step(f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"):
-    #     pass
-    # with allure.step("Create account for tests"):
-    #     acc = web3_client.eth.account.create()
-    # with allure.step(f"Request 100 NEON from faucet for {acc.address}"):
-    #     faucet.request_neon(acc.address, 100)
-    #     assert web3_client.get_balance(acc) == 100
-    # yield acc
-    # end_neon_balance = operator.get_neon_balance()
-    # end_sol_balance = operator.get_solana_balance()
-    # with allure.step(f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"):
-    #     pass
-
-    yield
-
-
 class BasicHelpers(BaseTests):
     jsonrpc_requester: JsonRpcRequester
 

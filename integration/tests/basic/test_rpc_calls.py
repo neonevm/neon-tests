@@ -1,12 +1,12 @@
-from urllib import response
 import allure
+import json
 import pytest
 from typing import Type
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.model.call_request import CallRequest
 from integration.tests.basic.model.get_logs_request import GetLogsRequest
 from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
-from integration.tests.basic.helpers.basic_helpers import FIRST_AMOUNT_IN_RESPONSE, FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, NOT_YET_DONE, BasicHelpers
+from integration.tests.basic.helpers.basic_helpers import FIRST_AMOUNT_IN_RESPONSE, FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, WAITIING_FOR_CONTRACT_SUPPORT, BasicHelpers
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
 from integration.tests.basic.model.tags import Tag
@@ -48,17 +48,18 @@ class TestRpcCalls(BasicHelpers):
         # params = [
         #     sender_account.address, recipient_account.address, Tag.LATEST.value
         # ]
-        params = [
-            CallRequest(from1=sender_account.address,
-                        to=recipient_account.address), Tag.LATEST.value
-        ]
+        data = CallRequest(from1=sender_account.address,
+                           to=recipient_account.address)
+        params = [json.dumps(data.__dict__), Tag.LATEST.value]
         model = RpcRequestFactory.get_call(params=params)
         response = self.jsonrpc_requester.request_json_rpc(model)
         actual_result = self.jsonrpc_requester.deserialize_response(response)
 
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        assert actual_result.error != None, AssertMessage.CONTAINS_ERROR
-        assert actual_result.result == None, AssertMessage.DOES_NOT_CONTAIN_RESULT
+        assert self.assert_no_error_object(
+            actual_result), AssertMessage.CONTAINS_ERROR
+        assert self.assert_result_object(
+            actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
     # TODO: implement numerous variants
     @allure.step("test: verify implemented rpc calls work eth_estimateGas")
@@ -72,17 +73,18 @@ class TestRpcCalls(BasicHelpers):
         # params = [
         #     sender_account.address, recipient_account.address, Tag.LATEST.value
         # ]
-        params = [
-            CallRequest(from1=sender_account.address,
-                        to=recipient_account.address), Tag.LATEST.value
-        ]
+        data = CallRequest(from1=sender_account.address,
+                           to=recipient_account.address)
+        params = [json.dumps(data.__dict__), Tag.LATEST.value]
         model = RpcRequestFactory.get_estimate_gas(params=params)
         response = self.jsonrpc_requester.request_json_rpc(model)
         actual_result = self.jsonrpc_requester.deserialize_response(response)
 
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        assert actual_result.error != None, AssertMessage.CONTAINS_ERROR
-        assert actual_result.result == None, AssertMessage.DOES_NOT_CONTAIN_RESULT
+        assert self.assert_no_error_object(
+            actual_result), AssertMessage.CONTAINS_ERROR
+        assert self.assert_result_object(
+            actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
     @allure.step("test: verify implemented rpc calls work eth_gasPrice")
     def test_rpc_call_eth_gasPrice(self):
@@ -101,18 +103,19 @@ class TestRpcCalls(BasicHelpers):
     def test_rpc_call_eth_getLogs(self):
         """Verify implemented rpc calls work eth_getLogs"""
         # TOOD: variants
-        params = [
-            GetLogsRequest(fromBlock=Tag.EARLIEST.value,
-                           toBlock=Tag.LATEST.value)
-        ]
+        data = GetLogsRequest(fromBlock=Tag.EARLIEST.value,
+                              toBlock=Tag.LATEST.value)
+        params = [json.dumps(data.__dict__)]
         # params = [Tag.EARLIEST.value, Tag.LATEST.value]
         model = RpcRequestFactory.get_logs(params=params)
         response = self.jsonrpc_requester.request_json_rpc(model)
         actual_result = self.jsonrpc_requester.deserialize_response(response)
 
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        assert actual_result.error != None, AssertMessage.CONTAINS_ERROR
-        assert actual_result.result == None, AssertMessage.DOES_NOT_CONTAIN_RESULT
+        assert self.assert_no_error_object(
+            actual_result), AssertMessage.CONTAINS_ERROR
+        assert self.assert_result_object(
+            actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
     @allure.step("test: verify implemented rpc calls work eth_getBalance")
     def test_rpc_call_eth_getBalance(self):
@@ -140,10 +143,12 @@ class TestRpcCalls(BasicHelpers):
         actual_result = self.jsonrpc_requester.deserialize_response(response)
 
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        assert actual_result.error != None, AssertMessage.CONTAINS_ERROR
-        assert actual_result.result == None, AssertMessage.DOES_NOT_CONTAIN_RESULT
+        assert self.assert_no_error_object(
+            actual_result), AssertMessage.CONTAINS_ERROR
+        assert self.assert_result_object(
+            actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
-    @pytest.mark.skip(NOT_YET_DONE)
+    @pytest.mark.skip(WAITIING_FOR_CONTRACT_SUPPORT)
     @allure.step("test: verify implemented rpc calls work eht_getStorageAt")
     def test_rpc_call_eht_getStorageAt(self):
         """Verify implemented rpc calls work eht_getStorageAt"""

@@ -6,6 +6,8 @@ from eth_account import Account
 from typing import Optional, Union
 from integration.tests.base import BaseTests
 from integration.tests.basic.helpers.json_rpc_requester import JsonRpcRequester
+from integration.tests.basic.model.json_rpc_error_response import JsonRpcErrorResponse
+from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
 
 FIRST_FAUCET_REQUEST_AMOUNT = 5
 SECOND_FAUCET_REQUEST_AMOUNT = 3
@@ -17,6 +19,7 @@ WAITING_FOR_MS = "waiting for MS"
 # TODO: remove it later
 WAITING_FOR_ERC20 = "ERC20 is in progress"
 WAITING_FOR_TRX = "Json-RPC not yet done"
+WAITIING_FOR_CONTRACT_SUPPORT = "no contracts are yet done"
 NOT_YET_DONE = "not yet done"
 
 
@@ -70,11 +73,6 @@ class BasicHelpers(BaseTests):
         tx = self.web3_client.send_neon(sender_account, recipient_account,
                                         amount)
 
-        # TODO: remove
-        print("--------------------------------------")
-        print(tx)
-        #
-
         return tx
 
     @allure.step("processing transaction, expecting a failure")
@@ -91,19 +89,10 @@ class BasicHelpers(BaseTests):
             tx = self.web3_client.send_neon(sender_account, recipient_account,
                                             amount)
 
-        # TODO: remove
-        print(error_info)
-        #
-
         if error_info != None:
             if message:
                 assert message in str(error_info)
             assert None != error_info, "Transaction failed"
-
-        # TODO: remove
-        print("--------------------------------------")
-        print(tx)
-        #
 
         return tx
 
@@ -166,3 +155,17 @@ class BasicHelpers(BaseTests):
         '''Checks recipient's balance'''
         balance = self.web3_client.fromWei(self.get_balance(address), "ether")
         self.compare_balance(expected_amount, balance, "Recipient: ")
+
+    @allure.step("checking the result subobject")
+    def assert_result_object(self, data: JsonRpcResponse) -> bool:
+        try:
+            return data.result != None
+        except Exception:
+            return False
+
+    @allure.step("checking the error subobject")
+    def assert_no_error_object(self, data: JsonRpcErrorResponse) -> bool:
+        try:
+            return data.error == None
+        except Exception:
+            return False

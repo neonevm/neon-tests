@@ -1,0 +1,10 @@
+[ {
+  "name" : "GitHub Actions",
+  "type" : "github",
+  "url" : "https://neonlabsorg.github.io/neon-tests",
+  "buildOrder" : 15,
+  "buildName" : "GitHub Actions Run #1945271719",
+  "buildUrl" : "https://github.com/neonlabsorg/neon-tests/actions/runs/1945271719",
+  "reportName" : "Allure Report with history",
+  "reportUrl" : "https://neonlabsorg.github.io/neon-tests/15/"
+} ]

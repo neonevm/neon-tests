@@ -1,0 +1,13 @@
+[ {
+  "values" : [ "Neon-proxy/v0.6.0-dev-e9cfb57587f351286fd89e62348e792de65cb2d3" ],
+  "name" : "Proxy.Version"
+}, {
+  "values" : [ "Neon/v0.6.0-dev-8f74edc0b0490ae4459a3b1fc0d6fac905aaf0d7" ],
+  "name" : "EVM.Version"
+}, {
+  "values" : [ "Neon-cli/v0.6.0-dev-8f74edc0b0490ae4459a3b1fc0d6fac905aaf0d7" ],
+  "name" : "CLI.Version"
+}, {
+  "values" : [ "https://neonlabsorg.github.io/neon-tests" ],
+  "name" : "URL"
+} ]

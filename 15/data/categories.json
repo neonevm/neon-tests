@@ -1,0 +1,157 @@
+{
+  "uid" : "4b4757e66a1912dae1a509f688f20b0f",
+  "children" : [ {
+    "name" : "Test defects",
+    "children" : [ {
+      "name" : "ValueError: InvalidAccountData",
+      "children" : [ {
+        "name" : "test_erc20_contract",
+        "uid" : "b7d747b9534ea05",
+        "parentUid" : "383569a6bea52eeb62be29b13cbb027f",
+        "status" : "broken",
+        "time" : {
+          "start" : 1646654426561,
+          "stop" : 1646654433325,
+          "duration" : 6764
+        },
+        "flaky" : true,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : true,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      }, {
+        "name" : "test_contract_get_is_free",
+        "uid" : "c43faa9c35d5b0c9",
+        "parentUid" : "383569a6bea52eeb62be29b13cbb027f",
+        "status" : "broken",
+        "time" : {
+          "start" : 1646654509081,
+          "stop" : 1646654510802,
+          "duration" : 1721
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : true,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      }, {
+        "name" : "test_cost_resize_account",
+        "uid" : "8173c9c8af2e9396",
+        "parentUid" : "383569a6bea52eeb62be29b13cbb027f",
+        "status" : "broken",
+        "time" : {
+          "start" : 1646654510898,
+          "stop" : 1646654524795,
+          "duration" : 13897
+        },
+        "flaky" : true,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : true,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      }, {
+        "name" : "test_contract_interact_more_500_steps",
+        "uid" : "1111ef0d7502e8c9",
+        "parentUid" : "383569a6bea52eeb62be29b13cbb027f",
+        "status" : "broken",
+        "time" : {
+          "start" : 1646654551933,
+          "stop" : 1646654558708,
+          "duration" : 6775
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : true,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      }, {
+        "name" : "test_tx_interact_more_1kb",
+        "uid" : "5faeacdd43e6fa41",
+        "parentUid" : "383569a6bea52eeb62be29b13cbb027f",
+        "status" : "broken",
+        "time" : {
+          "start" : 1646654598787,
+          "stop" : 1646654612607,
+          "duration" : 13820
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : true,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      }, {
+        "name" : "test_deploy_contract_to_payed",
+        "uid" : "91277bf40d5139db",
+        "parentUid" : "383569a6bea52eeb62be29b13cbb027f",
+        "status" : "broken",
+        "time" : {
+          "start" : 1646654673150,
+          "stop" : 1646654683122,
+          "duration" : 9972
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : true,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      }, {
+        "name" : "test_interact_with_contract_from_non_payed_user",
+        "uid" : "cc264b14248bd835",
+        "parentUid" : "383569a6bea52eeb62be29b13cbb027f",
+        "status" : "broken",
+        "time" : {
+          "start" : 1646654698605,
+          "stop" : 1646654706192,
+          "duration" : 7587
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : true,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "383569a6bea52eeb62be29b13cbb027f"
+    } ],
+    "uid" : "bdbf199525818fae7a8651db9eafe741"
+  }, {
+    "name" : "Product defects",
+    "children" : [ {
+      "name" : "AssertionError: assert Decimal('2279193.10') > Decimal('2279193.10')",
+      "children" : [ {
+        "name" : "test_deploy_contract_more_1kb_less_gas",
+        "uid" : "fbac4784c599324a",
+        "parentUid" : "d9bc6530122158629d7b0ac4ee479656",
+        "status" : "failed",
+        "time" : {
+          "start" : 1646654661402,
+          "stop" : 1646654673128,
+          "duration" : 11726
+        },
+        "flaky" : false,
+        "newFailed" : true,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "d9bc6530122158629d7b0ac4ee479656"
+    } ],
+    "uid" : "8fb3a91ba5aaf9de24cc8a92edc82b5d"
+  } ],
+  "name" : "categories"
+}

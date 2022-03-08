@@ -156,16 +156,18 @@ class BasicHelpers(BaseTests):
         balance = self.web3_client.fromWei(self.get_balance(address), "ether")
         self.compare_balance(expected_amount, balance, "Recipient: ")
 
-    @allure.step("checking the result subobject")
+    @allure.step("checking that the result subobject is present")
     def assert_result_object(self, data: JsonRpcResponse) -> bool:
+        '''Checks that the result subobject is present'''
         try:
             return data.result != None
         except Exception:
             return False
 
-    @allure.step("checking the error subobject")
+    @allure.step("checking that the error subobject is not present")
     def assert_no_error_object(self, data: JsonRpcErrorResponse) -> bool:
+        '''Checks that the error subobject is not present'''
         try:
             return data.error == None
         except Exception:
-            return False
+            return True

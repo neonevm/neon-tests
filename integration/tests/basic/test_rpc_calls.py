@@ -1,8 +1,10 @@
+from audioop import add
 import allure
 import json
 import pytest
 from typing import Type
 from integration.tests.basic.helpers.assert_message import AssertMessage
+from integration.tests.basic.helpers.json_rpc_encoder import JsonRpcEncoder
 from integration.tests.basic.model.call_request import CallRequest
 from integration.tests.basic.model.get_logs_request import GetLogsRequest
 from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
@@ -45,12 +47,8 @@ class TestRpcCalls(BasicHelpers):
         self.transfer_neon(sender_account, recipient_account, SAMPLE_AMOUNT)
 
         # TOOD: variants
-        # params = [
-        #     sender_account.address, recipient_account.address, Tag.LATEST.value
-        # ]
-        data = CallRequest(from1=sender_account.address,
-                           to=recipient_account.address)
-        params = [json.dumps(data.__dict__), Tag.LATEST.value]
+        data = CallRequest(to=recipient_account.address)
+        params = [data, Tag.LATEST.value]
         model = RpcRequestFactory.get_call(params=params)
         response = self.jsonrpc_requester.request_json_rpc(model)
         actual_result = self.jsonrpc_requester.deserialize_response(response)
@@ -70,12 +68,10 @@ class TestRpcCalls(BasicHelpers):
             FIRST_FAUCET_REQUEST_AMOUNT)
 
         # TOOD: variants
-        # params = [
-        #     sender_account.address, recipient_account.address, Tag.LATEST.value
-        # ]
         data = CallRequest(from1=sender_account.address,
-                           to=recipient_account.address)
-        params = [json.dumps(data.__dict__), Tag.LATEST.value]
+                           to=recipient_account.address,
+                           value=hex(1))
+        params = [data]
         model = RpcRequestFactory.get_estimate_gas(params=params)
         response = self.jsonrpc_requester.request_json_rpc(model)
         actual_result = self.jsonrpc_requester.deserialize_response(response)
@@ -102,12 +98,16 @@ class TestRpcCalls(BasicHelpers):
     @allure.step("test: verify implemented rpc calls work eth_getLogs")
     def test_rpc_call_eth_getLogs(self):
         """Verify implemented rpc calls work eth_getLogs"""
+        # TODO: use contract instead of account
+        sender_account = self.create_account_with_balance(GREAT_AMOUNT)
         # TOOD: variants
-        data = GetLogsRequest(fromBlock=Tag.EARLIEST.value,
-                              toBlock=Tag.LATEST.value)
-        params = [json.dumps(data.__dict__)]
-        # params = [Tag.EARLIEST.value, Tag.LATEST.value]
+        params = [
+            GetLogsRequest(fromBlock=Tag.LATEST.value,
+                           toBlock=Tag.LATEST.value,
+                           address=sender_account.address)
+        ]
         model = RpcRequestFactory.get_logs(params=params)
+
         response = self.jsonrpc_requester.request_json_rpc(model)
         actual_result = self.jsonrpc_requester.deserialize_response(response)
 

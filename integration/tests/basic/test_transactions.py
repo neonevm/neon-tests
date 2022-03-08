@@ -59,10 +59,37 @@ class TestRpcCallsTransactions(BasicHelpers):
         sender_account = self.create_account_with_balance(GREAT_AMOUNT)
         recipient_account = self.create_account_with_balance(
             FIRST_FAUCET_REQUEST_AMOUNT)
-        
+
+        # TODO: chain id
+        transaction = {
+            "from":
+            sender_account.address,
+            "to":
+            recipient_account.address,
+            "value":
+            self.web3_client.toWei(SAMPLE_AMOUNT, "ether"),
+            "chainId":
+            111,
+            "gasPrice":
+            self.web3_client.gas_price(),
+            "gas":
+            0,
+            "nonce":
+            self.web3_client.eth.get_transaction_count(sender_account.address),
+        }
+        transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
+
+        #
+        print(transaction)
+        print(sender_account.key)
         #
 
-        params = [sender_account.address, Tag.LATEST.value]
+        signed_tx = self.web3_client.eth.account.sign_transaction(
+            transaction, sender_account.key)
+        params = [signed_tx]
+
+        #
+        print(signed_tx)
         #
 
         model = RpcRequestFactory.get_send_raw_trx(params=params)

@@ -26,6 +26,10 @@ def install_solcx_versions():
         solcx.install_solc(version)
 
 
+def test_wrapped_acc(erc20wrapper):
+    print(erc20wrapper)
+
+
 @allure.story("Operator economy")
 class TestEconomics(BaseTests):
     acc = None

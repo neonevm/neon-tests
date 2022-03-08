@@ -1,5 +1,6 @@
 {
   "night-stand": {
+    "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
     "proxy_url": "http://proxy.night.stand.neontest.xyz/solana",
     "network_id": 111,
     "solana_url": "http://proxy.night.stand.neontest.xyz/node-solana",
@@ -28,6 +29,7 @@
     ]
   },
   "release-stand": {
+    "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
     "proxy_url": "http://proxy.release.stand.neontest.xyz/solana",
     "network_id": 111,
     "solana_url": "http://proxy.release.stand.neontest.xyz/node-solana",
@@ -38,6 +40,7 @@
     ]
   },
   "devnet": {
+    "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
     "proxy_url": "https://proxy.devnet.neonlabs.org/solana",
     "network_id": 245022926,
     "solana_url": "http://neon.devnet.rpcpool.com/c7710a7b633cbadb9be9900c7946/",
@@ -47,6 +50,7 @@
     ]
   },
   "local": {
+    "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
     "proxy_url": "http://127.0.0.1:9090/solana",
     "network_id": 111,
     "solana_url": "http://127.0.0.1:8899/",

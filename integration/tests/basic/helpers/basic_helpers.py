@@ -1,3 +1,4 @@
+from decimal import Decimal
 import allure
 import pytest
 import web3
@@ -5,6 +6,7 @@ from _pytest.config import Config
 from eth_account import Account
 from typing import Optional, Union
 from integration.tests.base import BaseTests
+from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.json_rpc_requester import JsonRpcRequester
 from integration.tests.basic.model.json_rpc_error_response import JsonRpcErrorResponse
 from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
@@ -14,6 +16,8 @@ SECOND_FAUCET_REQUEST_AMOUNT = 3
 FIRST_AMOUNT_IN_RESPONSE = '0x4563918244f40000'
 GREAT_AMOUNT = 1_000
 DEFAULT_TRANSFER_AMOUNT = 3
+NEGATIVE_AMOUNT = -1
+ROUND_DIGITS = 4
 
 WAITING_FOR_MS = "waiting for MS"
 # TODO: remove it later
@@ -36,7 +40,7 @@ class BasicHelpers(BaseTests):
         return self.web3_client.create_account()
 
     @allure.step("getting balance of account")
-    def get_balance(self, address: str) -> int:
+    def get_balance(self, address: str) -> Decimal:
         '''Gets balance of account'''
         return self.web3_client.eth.get_balance(address)
 
@@ -81,7 +85,7 @@ class BasicHelpers(BaseTests):
             sender_account: Account,
             recipient_account: Account,
             amount: int,
-            message: str = "") -> Union[web3.types.TxReceipt, None]:
+            error_message: str = "") -> Union[web3.types.TxReceipt, None]:
         '''Processes transaction, expects a failure'''
 
         tx: Union[web3.types.TxReceipt, None] = None
@@ -90,8 +94,12 @@ class BasicHelpers(BaseTests):
                                             amount)
 
         if error_info != None:
-            if message:
-                assert message in str(error_info)
+            #
+            print("<<<<<<<<<<<<<<<<<")
+            print(error_info)
+            #
+            if error_message:
+                assert error_message in str(error_info)
             assert None != error_info, "Transaction failed"
 
         return tx
@@ -110,7 +118,16 @@ class BasicHelpers(BaseTests):
                            amount: int) -> Union[web3.types.TxReceipt, None]:
         '''Transfers 0 tokens'''
         return self.process_transaction(sender_account, recipient_account,
-                                        amount, "aaa")
+                                        amount, "zero")
+
+    @allure.step("transferring negative amount of tokens")
+    def transfer_negative_neon(
+            self, sender_account: Account, recipient_account: Account,
+            amount: int) -> Union[web3.types.TxReceipt, None]:
+        '''Transfers negative amount of tokens'''
+        return self.process_transaction_with_failure(
+            sender_account, recipient_account, amount,
+            ErrorMessage.NEGATIVE_VALUE.value)
 
     @allure.step("transferring tokens to an invalid address")
     def transfer_to_invalid_address(
@@ -126,32 +143,35 @@ class BasicHelpers(BaseTests):
             self, sender_account: Account, recipient_account: Account,
             amount: int) -> Union[web3.types.TxReceipt, None]:
         '''Checks in case the balance is less than required'''
-        return self.process_transaction_with_failure(sender_account,
-                                                     recipient_account, amount,
-                                                     "Resulting wei value")
+        return self.process_transaction_with_failure(
+            sender_account, recipient_account, amount,
+            ErrorMessage.EXPECTING_VALUE.value)
 
     @allure.step("comparing the balance with expectation")
-    def compare_balance(self, expected: int, actual: int, message: str):
+    def compare_balance(self, expected: float, actual: Decimal, message: str):
         '''Compares the balance with expectation'''
-        assert actual == expected, message + f"expected balance = {expected}, actual balance = {actual}"
+        expected_dec = round(expected, ROUND_DIGITS)
+        actual_dec = float(round(actual, ROUND_DIGITS))
+
+        assert actual_dec == expected_dec, message + f"expected balance = {expected_dec}, actual balance = {actual_dec}"
 
     @allure.step("comparing balance of an account with expectation")
     def assert_amount(self,
                       address: str,
-                      expected_amount: int,
+                      expected_amount: float,
                       message: str = ""):
         '''Compares balance of an account with expectation'''
         balance = self.web3_client.fromWei(self.get_balance(address), "ether")
         self.compare_balance(expected_amount, balance, message)
 
     @allure.step("checking sender's balance")
-    def assert_sender_amount(self, address: str, expected_amount: int):
+    def assert_sender_amount(self, address: str, expected_amount: float):
         '''Checks sender's balance'''
         balance = self.web3_client.fromWei(self.get_balance(address), "ether")
         self.compare_balance(expected_amount, balance, "Sender: ")
 
     @allure.step("checking recipient's balance")
-    def assert_recipient_amount(self, address: str, expected_amount: int):
+    def assert_recipient_amount(self, address: str, expected_amount: float):
         '''Checks recipient's balance'''
         balance = self.web3_client.fromWei(self.get_balance(address), "ether")
         self.compare_balance(expected_amount, balance, "Recipient: ")
@@ -171,3 +191,8 @@ class BasicHelpers(BaseTests):
             return data.error == None
         except Exception:
             return True
+
+    @allure.step("calculating gas")
+    def calculate_trx_gas(self, tx_receipt: web3.types.TxReceipt) -> Decimal:
+        return tx_receipt.cumulativeGasUsed * self.web3_client.gas_price(
+        ) * 0.000_000_000_000_000_001

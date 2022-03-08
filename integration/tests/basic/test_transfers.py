@@ -2,7 +2,7 @@ import allure
 import pytest
 from typing import Union
 from integration.tests.basic.helpers.basic_helpers import DEFAULT_TRANSFER_AMOUNT, FIRST_FAUCET_REQUEST_AMOUNT, \
-    GREAT_AMOUNT, NOT_YET_DONE, WAITING_FOR_ERC20, WAITING_FOR_MS, \
+    GREAT_AMOUNT, NEGATIVE_AMOUNT, NOT_YET_DONE, ROUND_DIGITS, WAITING_FOR_ERC20, WAITING_FOR_MS, \
     BasicHelpers
 
 NON_EXISTING_ADDRESS = "0xmmmmm"
@@ -26,10 +26,12 @@ class TestTransfer(BasicHelpers):
         recipient_account = self.create_account_with_balance(
             FIRST_FAUCET_REQUEST_AMOUNT)
 
-        self.transfer_neon(sender_account, recipient_account, amount)
+        tx_receipt = self.transfer_neon(sender_account, recipient_account,
+                                        amount)
 
-        self.assert_sender_amount(sender_account.address,
-                                  GREAT_AMOUNT - amount)
+        self.assert_sender_amount(
+            sender_account.address, GREAT_AMOUNT - amount -
+            self.calculate_trx_gas(tx_receipt=tx_receipt))
         self.assert_recipient_amount(recipient_account.address,
                                      FIRST_FAUCET_REQUEST_AMOUNT + amount)
 
@@ -80,10 +82,12 @@ class TestTransfer(BasicHelpers):
         recipient_account = self.create_account_with_balance(
             FIRST_FAUCET_REQUEST_AMOUNT)
 
-        self.transfer_zero_neon(sender_account, recipient_account, 0)
+        tx_receipt = self.transfer_zero_neon(sender_account, recipient_account,
+                                             0)
 
-        self.assert_sender_amount(sender_account.address,
-                                  FIRST_FAUCET_REQUEST_AMOUNT)
+        self.assert_sender_amount(
+            sender_account.address, FIRST_FAUCET_REQUEST_AMOUNT -
+            self.calculate_trx_gas(tx_receipt=tx_receipt))
         self.assert_recipient_amount(recipient_account.address,
                                      FIRST_FAUCET_REQUEST_AMOUNT)
 
@@ -93,8 +97,6 @@ class TestTransfer(BasicHelpers):
         """Send zero: spl (with different precision)"""
         pass
 
-    # @pytest.mark.skip(NOT_YET_DONE)
-    # @pytest.fail(NOT_YET_DONE)
     @pytest.mark.xfail()
     @allure.step("test: send zero: ERC20")
     def test_zero_erc20(self):
@@ -109,7 +111,8 @@ class TestTransfer(BasicHelpers):
         recipient_account = self.create_account_with_balance(
             FIRST_FAUCET_REQUEST_AMOUNT)
 
-        self.transfer_zero_neon(sender_account, recipient_account, -1)
+        self.transfer_negative_neon(sender_account, recipient_account,
+                                    NEGATIVE_AMOUNT)
 
         self.assert_sender_amount(sender_account.address,
                                   FIRST_FAUCET_REQUEST_AMOUNT)

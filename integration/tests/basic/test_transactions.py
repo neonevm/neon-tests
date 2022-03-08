@@ -51,7 +51,6 @@ class TestRpcCallsTransactions(BasicHelpers):
                           JsonRpcResponse), AssertMessage.WRONG_TYPE.value
         assert '0x' in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
 
-    # @pytest.mark.skip(NOT_YET_DONE)
     @allure.step(
         "test: verify implemented rpc calls work eth_sendRawTransaction")
     def test_rpc_call_eth_sendRawTransaction(self):
@@ -79,18 +78,10 @@ class TestRpcCallsTransactions(BasicHelpers):
         }
         transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
 
-        #
-        print(transaction)
-        print(sender_account.key)
-        #
-
         signed_tx = self.web3_client.eth.account.sign_transaction(
             transaction, sender_account.key)
-        params = [signed_tx]
 
-        #
-        print(signed_tx)
-        #
+        params = [signed_tx.rawTransaction.hex()]
 
         model = RpcRequestFactory.get_send_raw_trx(params=params)
         response = self.jsonrpc_requester.request_json_rpc(model)

@@ -3,7 +3,7 @@ import pytest
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
-from integration.tests.basic.helpers.basic_helpers import FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, NOT_YET_DONE, BasicHelpers
+from integration.tests.basic.helpers.basic_helpers import FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, SAMPLE_AMOUNT, BasicHelpers
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
 '''
@@ -25,8 +25,6 @@ from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcReq
 12.61.	web3_clientVersion		
 12.63.	net_version
 '''
-
-SAMPLE_AMOUNT = 5
 
 
 @allure.story("Basic: Json-RPC call tests - transactions")
@@ -92,16 +90,54 @@ class TestRpcCallsTransactions(BasicHelpers):
                           JsonRpcResponse), AssertMessage.WRONG_TYPE.value
         assert '0x' in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
 
-    @pytest.mark.skip(NOT_YET_DONE)
+        # TODO: calculate sender's amount
+        # self.assert_sender_amount(
+        #     sender_account.address, GREAT_AMOUNT - SAMPLE_AMOUNT -
+        #     self.calculate_trx_gas(tx_receipt=actual_result.result))
+        self.assert_recipient_amount(
+            recipient_account.address,
+            FIRST_FAUCET_REQUEST_AMOUNT + SAMPLE_AMOUNT)
+
     @allure.step(
         "test: verify implemented rpc calls work eth_getTransactionByHash")
     def test_rpc_call_eth_getTransactionByHash(self):
         """Verify implemented rpc calls work eth_getTransactionByHash"""
-        pass
+        sender_account = self.create_account_with_balance(GREAT_AMOUNT)
+        recipient_account = self.create_account_with_balance(
+            FIRST_FAUCET_REQUEST_AMOUNT)
 
-    @pytest.mark.skip(NOT_YET_DONE)
+        tx_receipt = self.transfer_neon(sender_account, recipient_account,
+                                        SAMPLE_AMOUNT)
+
+        params = [tx_receipt.transactionHash.hex()]
+        model = RpcRequestFactory.get_trx_by_hash(params=params)
+        response = self.jsonrpc_requester.request_json_rpc(model)
+        actual_result = self.jsonrpc_requester.deserialize_response(response)
+
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert self.assert_no_error_object(
+            actual_result), AssertMessage.CONTAINS_ERROR
+        assert self.assert_result_object(
+            actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
+
     @allure.step(
         "test: verify implemented rpc calls work eth_getTransactionReceipt")
     def test_rpc_call_eth_getTransactionReceipt(self):
         """Verify implemented rpc calls work eth_getTransactionReceipt"""
-        pass
+        sender_account = self.create_account_with_balance(GREAT_AMOUNT)
+        recipient_account = self.create_account_with_balance(
+            FIRST_FAUCET_REQUEST_AMOUNT)
+
+        tx_receipt = self.transfer_neon(sender_account, recipient_account,
+                                        SAMPLE_AMOUNT)
+
+        params = [tx_receipt.transactionHash.hex()]
+        model = RpcRequestFactory.get_trx_receipt(params=params)
+        response = self.jsonrpc_requester.request_json_rpc(model)
+        actual_result = self.jsonrpc_requester.deserialize_response(response)
+
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert self.assert_no_error_object(
+            actual_result), AssertMessage.CONTAINS_ERROR
+        assert self.assert_result_object(
+            actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT

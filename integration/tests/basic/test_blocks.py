@@ -4,11 +4,10 @@ import pytest
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.rpc_request_params_factory import RpcRequestParamsFactory
 from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
-from integration.tests.basic.helpers.basic_helpers import FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, NOT_YET_DONE, BasicHelpers
+from integration.tests.basic.helpers.basic_helpers import FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, SAMPLE_AMOUNT, BasicHelpers
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
 from integration.tests.basic.model.tags import Tag
-from integration.tests.basic.test_transactions import SAMPLE_AMOUNT
 '''
 12.	Verify implemented rpc calls work
 12.1.	eth_getBlockByHash		

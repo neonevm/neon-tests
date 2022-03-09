@@ -9,3 +9,9 @@ class TestInputData(Enum):
     NEGATIVE_AMOUNT = -1
     SAMPLE_AMOUNT = 4
     ROUND_DIGITS = 3
+
+    def get_default_amount(self) -> int:
+        return self.DEFAULT_TRANSFER_AMOUNT.value
+
+    def get_default_initial_amount(self) -> int:
+        return self.FIRST_FAUCET_REQUEST_AMOUNT.value

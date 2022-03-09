@@ -99,8 +99,8 @@ class TestRpcCalls(BasicHelpers):
         sender_account = self.create_account_with_balance()
         # TOOD: variants
         params = [
-            GetLogsRequest(fromBlock=Tag.LATEST.value,
-                           toBlock=Tag.LATEST.value,
+            GetLogsRequest(from_block=Tag.LATEST.value,
+                           to_block=Tag.LATEST.value,
                            address=sender_account.address)
         ]
         model = RpcRequestFactory.get_logs(params=params)

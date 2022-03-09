@@ -1,16 +1,12 @@
 import json
 import shutil
-import asyncio
 import pathlib
 import typing as tp
 from dataclasses import dataclass
 
-import web3
 import allure
 import pytest
 import solana
-from pythclient.pythaccounts import PythPriceAccount
-from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP_ENDPOINT
 from _pytest.config import Config
 
 from utils.operator import Operator
@@ -28,46 +24,23 @@ class EnvironmentConfig:
     solana_url: str
     faucet_url: str
     network_id: int
-    operator_solana_key: str
+    operator_neon_rewards_address: tp.List[str]
     spl_neon_mint: str
     operator_keys: tp.List[str]
 
 
 def pytest_addoption(parser):
     parser.addoption("--network", action="store", default="night-stand", help="Which stand use")
+    parser.addoption("--envs", action="store", default="envs.json", help="Filename with environments")
 
 
 def pytest_configure(config: Config):
-    env_name = config.getoption("--network")
-    with open(pathlib.Path().parent.parent / "envs.json", "r+") as f:
+    network_name = config.getoption("--network")
+    envs_file = config.getoption("--envs")
+    with open(pathlib.Path().parent.parent / envs_file, "r+") as f:
         environments = json.load(f)
-    assert env_name in environments, f"Environment {env_name} doesn't exist in envs.json"
-    config.environment = EnvironmentConfig(**environments[env_name])
-
-
-@pytest.fixture(scope="session")
-def sol_price():
-    async def get_price():
-        account_key = SolanaPublicKey("H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG")
-        solana_client = SolanaClient(endpoint=SOLANA_MAINNET_HTTP_ENDPOINT)
-        price: PythPriceAccount = PythPriceAccount(account_key, solana_client)
-        await price.update()
-        return price.aggregate_price
-
-    loop = asyncio.get_event_loop()
-    return loop.run_until_complete(get_price())
-
-
-@pytest.fixture(scope="session", autouse=True)
-def operator(pytestconfig: Config) -> Operator:
-    return Operator(
-        pytestconfig.environment.proxy_url,
-        pytestconfig.environment.solana_url,
-        pytestconfig.environment.network_id,
-        pytestconfig.environment.operator_solana_key,
-        pytestconfig.environment.spl_neon_mint,
-        pytestconfig.environment.operator_keys
-    )
+    assert network_name in environments, f"Environment {network_name} doesn't exist in envs.json"
+    config.environment = EnvironmentConfig(**environments[network_name])
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -85,6 +58,19 @@ def web3_client(pytestconfig: Config) -> NeonWeb3Client:
 def sol_client(pytestconfig: Config):
     client = solana.rpc.api.Client(pytestconfig.environment.solana_url)
     return client
+
+
+@pytest.fixture(scope="session", autouse=True)
+def operator(pytestconfig: Config, web3_client: NeonWeb3Client) -> Operator:
+    return Operator(
+        pytestconfig.environment.proxy_url,
+        pytestconfig.environment.solana_url,
+        pytestconfig.environment.network_id,
+        pytestconfig.environment.operator_neon_rewards_address,
+        pytestconfig.environment.spl_neon_mint,
+        pytestconfig.environment.operator_keys,
+        web3_client=web3_client
+    )
 
 
 @pytest.fixture(scope="session", autouse=True)

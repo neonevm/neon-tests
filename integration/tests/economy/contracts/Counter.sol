@@ -17,4 +17,20 @@ contract Counter {
     function dec() public {
         count -= 1;
     }
+
+    function moreInstruction(uint x, uint y) public {
+        uint z = x;
+        while (x < y) {
+            z++;
+            x = z;
+        }
+
+        if (y - z == 1) {
+            z ++;
+        }
+    }
+
+    function bigString(string memory text) public {
+        bytes memory _baseBytes = bytes(text);
+    }
 }

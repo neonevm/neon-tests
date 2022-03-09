@@ -47,7 +47,7 @@ class ERC20Wrapper:
 
     def eth_to_solana_address(self, eth_account_address: str) -> (PublicKey, int):
         eth_account_addressbytes = bytes.fromhex(eth_account_address[2:])
-        return PublicKey.find_program_address([b"\1", eth_account_addressbytes], self.evm_loader)
+        return PublicKey.find_program_address([b"\1", eth_account_addressbytes], PublicKey(self.evm_loader))
 
     def get_wrapped_token_account_address(self, eth_account_address: str, token_mint, erc20_contract_address) -> PublicKey:
         eth_contract_address_bytes = bytes.fromhex(erc20_contract_address[2:])
@@ -56,7 +56,7 @@ class ERC20Wrapper:
                  bytes(token_mint),
                  eth_contract_address_bytes,
                  eth_account_address_bytes]
-        return PublicKey.find_program_address(seeds, self.evm_loader)[0]
+        return PublicKey.find_program_address(seeds, PublicKey(self.evm_loader))[0]
 
     def is_account_exist(self, acc: PublicKey):
         acc_info_resp = self.sol_client.get_account_info(acc, Commitment("confirmed"))
@@ -100,34 +100,34 @@ class ERC20Wrapper:
         source = source.replace("Awesome Token", name).replace("AWST", symbol)
 
         compiled = solcx.compile_source(source, output_values=["abi", "bin"], solc_version="0.8.10")
-        contract_interface = compiled["NeonERC20Wrapper"]
+        contract_interface = compiled[list(compiled.keys())[0]]
 
         contract_deploy_tx = self.web3_client.deploy_contract(
             account,
             abi=contract_interface["abi"],
             bytecode=contract_interface["bin"],
-            constructor_args=[mint_address]
+            constructor_args=[bytes(mint_address)]
         )
 
         contract = self.web3_client.eth.contract(
             address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
         )
 
-        return contract
+        return contract, contract_deploy_tx["contractAddress"]
 
     def mint_tokens(self, to_address, solana_owner, mint_address, wrapped_contract, amount: int = 1000000):
         """Mint wrapped tokens to eth user"""
-        source_token_acc = get_associated_token_address(solana_owner.public_key(), mint_address)
+        source_token_acc = get_associated_token_address(solana_owner.public_key, mint_address)
 
         trx = Transaction()
         neon_acc, nonce = self.eth_to_solana_address(to_address)
-        assoc_acc = get_associated_token_address(neon_acc, self.neon_token_mint)
+        assoc_acc = get_associated_token_address(neon_acc, PublicKey(self.neon_token_mint))
         if not self.is_account_exist(neon_acc):
             trx.add(TransactionInstruction(
                 program_id=self.evm_loader,
                 data=create_account_layout(bytes.fromhex(to_address[2:]), nonce),
                 keys=[
-                    AccountMeta(pubkey=solana_owner.public_key(), is_signer=True, is_writable=True),
+                    AccountMeta(pubkey=solana_owner.public_key, is_signer=True, is_writable=True),
                     AccountMeta(pubkey=neon_acc, is_signer=False, is_writable=True),
                     AccountMeta(pubkey=assoc_acc, is_signer=False, is_writable=True),
                     AccountMeta(pubkey=SYS_PROGRAM_ID, is_signer=False, is_writable=False),
@@ -143,7 +143,7 @@ class ERC20Wrapper:
                 program_id=self.evm_loader,
                 data=bytes.fromhex('0F'),
                 keys=[
-                    AccountMeta(pubkey=solana_owner.public_key(), is_signer=True, is_writable=True),
+                    AccountMeta(pubkey=solana_owner.public_key, is_signer=True, is_writable=True),
                     AccountMeta(pubkey=dest_token_account, is_signer=False, is_writable=True),
                     AccountMeta(pubkey=neon_acc, is_signer=False, is_writable=True),
                     AccountMeta(pubkey=self.eth_to_solana_address(wrapped_contract)[0], is_signer=False, is_writable=True),
@@ -160,7 +160,7 @@ class ERC20Wrapper:
             keys=[
                 AccountMeta(pubkey=source_token_acc, is_signer=False, is_writable=True),
                 AccountMeta(pubkey=dest_token_account, is_signer=False, is_writable=True),
-                AccountMeta(pubkey=solana_owner.public_key(), is_signer=True, is_writable=False)
+                AccountMeta(pubkey=solana_owner.public_key, is_signer=True, is_writable=False)
             ]
         ))
 

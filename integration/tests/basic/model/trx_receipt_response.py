@@ -8,7 +8,7 @@ class TrxReceiptResponse:
     transactionIndex: int
     blockHash: str
     blockNumber: int
-    from1: str
+    from_: str
     to: str
     cumulativeGasUsed: int
     gasUsed: int

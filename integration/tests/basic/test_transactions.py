@@ -3,9 +3,10 @@ import pytest
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
-from integration.tests.basic.helpers.basic_helpers import FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, SAMPLE_AMOUNT, BasicHelpers
+from integration.tests.basic.helpers.basic_helpers import BasicHelpers
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
+from integration.tests.basic.test_data.test_input_data import TestInputData
 '''
 12.	Verify implemented rpc calls work
 12.1.	eth_getBlockByHash		
@@ -33,11 +34,11 @@ class TestRpcCallsTransactions(BasicHelpers):
         "test: verify implemented rpc calls work eth_getTransactionCount")
     def test_rpc_call_eth_getTransactionCount(self):
         """Verify implemented rpc calls work eth_getTransactionCount"""
-        sender_account = self.create_account_with_balance(GREAT_AMOUNT)
-        recipient_account = self.create_account_with_balance(
-            FIRST_FAUCET_REQUEST_AMOUNT)
+        sender_account = self.create_account_with_balance()
+        recipient_account = self.create_account_with_balance()
 
-        self.transfer_neon(sender_account, recipient_account, SAMPLE_AMOUNT)
+        self.transfer_neon(sender_account, recipient_account,
+                           TestInputData.SAMPLE_AMOUNT.value)
 
         params = [sender_account.address, Tag.LATEST.value]
         model = RpcRequestFactory.get_trx_count(params=params)
@@ -53,9 +54,8 @@ class TestRpcCallsTransactions(BasicHelpers):
         "test: verify implemented rpc calls work eth_sendRawTransaction")
     def test_rpc_call_eth_sendRawTransaction(self):
         """Verify implemented rpc calls work eth_sendRawTransaction"""
-        sender_account = self.create_account_with_balance(GREAT_AMOUNT)
-        recipient_account = self.create_account_with_balance(
-            FIRST_FAUCET_REQUEST_AMOUNT)
+        sender_account = self.create_account_with_balance()
+        recipient_account = self.create_account_with_balance()
 
         # TODO: chain id
         transaction = {
@@ -64,7 +64,7 @@ class TestRpcCallsTransactions(BasicHelpers):
             "to":
             recipient_account.address,
             "value":
-            self.web3_client.toWei(SAMPLE_AMOUNT, "ether"),
+            self.web3_client.toWei(TestInputData.SAMPLE_AMOUNT.value, "ether"),
             "chainId":
             111,
             "gasPrice":
@@ -92,22 +92,22 @@ class TestRpcCallsTransactions(BasicHelpers):
 
         # TODO: calculate sender's amount
         # self.assert_sender_amount(
-        #     sender_account.address, GREAT_AMOUNT - SAMPLE_AMOUNT -
+        #     sender_account.address, TestInputData.FIRST_FAUCET_REQUEST_AMOUNT.value - SAMPLE_AMOUNT -
         #     self.calculate_trx_gas(tx_receipt=actual_result.result))
         self.assert_recipient_amount(
             recipient_account.address,
-            FIRST_FAUCET_REQUEST_AMOUNT + SAMPLE_AMOUNT)
+            TestInputData.FIRST_FAUCET_REQUEST_AMOUNT.value +
+            TestInputData.SAMPLE_AMOUNT.value)
 
     @allure.step(
         "test: verify implemented rpc calls work eth_getTransactionByHash")
     def test_rpc_call_eth_getTransactionByHash(self):
         """Verify implemented rpc calls work eth_getTransactionByHash"""
-        sender_account = self.create_account_with_balance(GREAT_AMOUNT)
-        recipient_account = self.create_account_with_balance(
-            FIRST_FAUCET_REQUEST_AMOUNT)
+        sender_account = self.create_account_with_balance()
+        recipient_account = self.create_account_with_balance()
 
         tx_receipt = self.transfer_neon(sender_account, recipient_account,
-                                        SAMPLE_AMOUNT)
+                                        TestInputData.SAMPLE_AMOUNT.value)
 
         params = [tx_receipt.transactionHash.hex()]
         model = RpcRequestFactory.get_trx_by_hash(params=params)
@@ -124,12 +124,11 @@ class TestRpcCallsTransactions(BasicHelpers):
         "test: verify implemented rpc calls work eth_getTransactionReceipt")
     def test_rpc_call_eth_getTransactionReceipt(self):
         """Verify implemented rpc calls work eth_getTransactionReceipt"""
-        sender_account = self.create_account_with_balance(GREAT_AMOUNT)
-        recipient_account = self.create_account_with_balance(
-            FIRST_FAUCET_REQUEST_AMOUNT)
+        sender_account = self.create_account_with_balance()
+        recipient_account = self.create_account_with_balance()
 
         tx_receipt = self.transfer_neon(sender_account, recipient_account,
-                                        SAMPLE_AMOUNT)
+                                        TestInputData.SAMPLE_AMOUNT.value)
 
         params = [tx_receipt.transactionHash.hex()]
         model = RpcRequestFactory.get_trx_receipt(params=params)

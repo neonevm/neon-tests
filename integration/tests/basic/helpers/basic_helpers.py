@@ -10,22 +10,12 @@ from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.json_rpc_requester import JsonRpcRequester
 from integration.tests.basic.model.json_rpc_error_response import JsonRpcErrorResponse
 from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
-
-FIRST_FAUCET_REQUEST_AMOUNT = 5
-SECOND_FAUCET_REQUEST_AMOUNT = 3
-FIRST_AMOUNT_IN_RESPONSE = '0x4563918244f40000'
-GREAT_AMOUNT = 1_000
-DEFAULT_TRANSFER_AMOUNT = 3
-NEGATIVE_AMOUNT = -1
-SAMPLE_AMOUNT = 5
-ROUND_DIGITS = 3
+from integration.tests.basic.test_data.test_input_data import TestInputData
 
 WAITING_FOR_MS = "waiting for MS"
-# TODO: remove it later
+# TODO: remove it after t
 WAITING_FOR_ERC20 = "ERC20 is in progress"
-WAITING_FOR_TRX = "Json-RPC not yet done"
 WAITIING_FOR_CONTRACT_SUPPORT = "no contracts are yet done"
-NOT_YET_DONE = "not yet done"
 
 
 class BasicHelpers(BaseTests):
@@ -51,7 +41,10 @@ class BasicHelpers(BaseTests):
         self.faucet.request_neon(wallet, amount=amount)
 
     @allure.step("creating a new account with balance")
-    def create_account_with_balance(self, amount: int) -> Account:
+    def create_account_with_balance(
+        self,
+        amount: int = TestInputData.FIRST_FAUCET_REQUEST_AMOUNT.value
+    ) -> Account:
         '''Creates a new account with balance'''
         account = self.create_account()
         self.request_faucet_neon(account.address, amount)
@@ -151,8 +144,8 @@ class BasicHelpers(BaseTests):
     @allure.step("comparing the balance with expectation")
     def compare_balance(self, expected: float, actual: Decimal, message: str):
         '''Compares the balance with expectation'''
-        expected_dec = round(expected, ROUND_DIGITS)
-        actual_dec = float(round(actual, ROUND_DIGITS))
+        expected_dec = round(expected, TestInputData.ROUND_DIGITS.value)
+        actual_dec = float(round(actual, TestInputData.ROUND_DIGITS.value))
 
         assert actual_dec == expected_dec, message + f"expected balance = {expected_dec}, actual balance = {actual_dec}"
 

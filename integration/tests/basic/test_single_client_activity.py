@@ -1,8 +1,8 @@
 import allure
 import pytest
 
-from integration.tests.basic.helpers.basic_helpers import FIRST_FAUCET_REQUEST_AMOUNT, SECOND_FAUCET_REQUEST_AMOUNT, WAITING_FOR_ERC20, WAITING_FOR_MS, \
-    BasicHelpers
+from integration.tests.basic.helpers.basic_helpers import WAITING_FOR_ERC20, WAITING_FOR_MS, BasicHelpers
+from integration.tests.basic.test_data.test_input_data import TestInputData
 '''
 1.	Create account and get balance
 2.	Check tokens in wallet
@@ -68,8 +68,10 @@ class TestSingleClient(BasicHelpers):
     def test_check_tokens_in_wallet_neon(self):
         """Check tokens in wallet: neon"""
         account = self.create_account()
-        self.request_faucet_neon(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
-        self.assert_amount(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+        self.request_faucet_neon(
+            account.address, TestInputData.FIRST_FAUCET_REQUEST_AMOUNT.value)
+        self.assert_amount(account.address,
+                           TestInputData.FIRST_FAUCET_REQUEST_AMOUNT.value)
 
     @pytest.mark.skip(WAITING_FOR_MS)
     @allure.step("test: check tokens in wallet: spl")
@@ -90,9 +92,11 @@ class TestSingleClient(BasicHelpers):
         """Verify faucet work (request drop for several accounts): single request"""
         for _ in range(10):
             account = self.create_account()
-            self.request_faucet_neon(account.address,
-                                     FIRST_FAUCET_REQUEST_AMOUNT)
-            self.assert_amount(account.address, FIRST_FAUCET_REQUEST_AMOUNT)
+            self.request_faucet_neon(
+                account.address,
+                TestInputData.FIRST_FAUCET_REQUEST_AMOUNT.value)
+            self.assert_amount(account.address,
+                               TestInputData.FIRST_FAUCET_REQUEST_AMOUNT.value)
 
     @allure.step(
         "test: verify faucet work (request drop for several accounts): double request"
@@ -101,10 +105,13 @@ class TestSingleClient(BasicHelpers):
         """Verify faucet work (request drop for several accounts): double request"""
         for _ in range(10):
             account = self.create_account()
-            self.request_faucet_neon(account.address,
-                                     FIRST_FAUCET_REQUEST_AMOUNT)
-            self.request_faucet_neon(account.address,
-                                     SECOND_FAUCET_REQUEST_AMOUNT)
+            self.request_faucet_neon(
+                account.address,
+                TestInputData.FIRST_FAUCET_REQUEST_AMOUNT.value)
+            self.request_faucet_neon(
+                account.address,
+                TestInputData.SECOND_FAUCET_REQUEST_AMOUNT.value)
             self.assert_amount(
                 account.address,
-                FIRST_FAUCET_REQUEST_AMOUNT + SECOND_FAUCET_REQUEST_AMOUNT)
+                TestInputData.FIRST_FAUCET_REQUEST_AMOUNT.value +
+                TestInputData.SECOND_FAUCET_REQUEST_AMOUNT.value)

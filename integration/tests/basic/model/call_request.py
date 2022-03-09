@@ -4,7 +4,7 @@ from typing import List
 
 @dataclass
 class CallRequest:
-    from1: List[str] = None
+    from_: List[str] = None
     to: List[str] = None
     gas: int = None
     gasPrice: int = None

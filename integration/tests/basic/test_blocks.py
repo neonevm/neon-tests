@@ -1,13 +1,14 @@
-from typing import Union
 import allure
 import pytest
+from typing import Union
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.rpc_request_params_factory import RpcRequestParamsFactory
 from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
-from integration.tests.basic.helpers.basic_helpers import FIRST_FAUCET_REQUEST_AMOUNT, GREAT_AMOUNT, SAMPLE_AMOUNT, BasicHelpers
+from integration.tests.basic.helpers.basic_helpers import BasicHelpers
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
 from integration.tests.basic.model.tags import Tag
+from integration.tests.basic.test_data.test_input_data import TestInputData
 '''
 12.	Verify implemented rpc calls work
 12.1.	eth_getBlockByHash		
@@ -41,12 +42,11 @@ class TestRpcCallsBlocks(BasicHelpers):
     @allure.step("test: verify implemented rpc calls work eth_getBlockByHash")
     def test_rpc_call_eth_getBlockByHash(self):
         """Verify implemented rpc calls work eth_getBlockByHash"""
-        sender_account = self.create_account_with_balance(GREAT_AMOUNT)
-        recipient_account = self.create_account_with_balance(
-            FIRST_FAUCET_REQUEST_AMOUNT)
+        sender_account = self.create_account_with_balance()
+        recipient_account = self.create_account_with_balance()
 
         tx_receipt = self.transfer_neon(sender_account, recipient_account,
-                                        SAMPLE_AMOUNT)
+                                        TestInputData.SAMPLE_AMOUNT.value)
 
         params = [tx_receipt.blockHash.hex(), True]
         model = RpcRequestFactory.get_block_by_hash(params=params)
@@ -87,12 +87,11 @@ class TestRpcCallsBlocks(BasicHelpers):
     )
     def test_rpc_call_eth_getBlockByNumber_via_numbers(self):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
-        sender_account = self.create_account_with_balance(GREAT_AMOUNT)
-        recipient_account = self.create_account_with_balance(
-            FIRST_FAUCET_REQUEST_AMOUNT)
+        sender_account = self.create_account_with_balance()
+        recipient_account = self.create_account_with_balance()
 
         tx_receipt = self.transfer_neon(sender_account, recipient_account,
-                                        SAMPLE_AMOUNT)
+                                        TestInputData.SAMPLE_AMOUNT.value)
 
         params = RpcRequestParamsFactory.get_block_by_number(
             tx_receipt.blockNumber, True)

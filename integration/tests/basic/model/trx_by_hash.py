@@ -6,7 +6,7 @@ from typing import Union
 class TrxByHashResponse:
     blockHash: str
     blockNumber: Union[int, None]
-    from1: str
+    from_: str
     gas: int
     gasPrice: int
     hash: str

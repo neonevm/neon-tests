@@ -1,9 +1,9 @@
 import pytest
 from eth_account import Account
-from integration.tests.basic.helpers.basic_helpers import BasicHelpers
+from integration.tests.basic.helpers.basic import BasicTests
 
 
-class BaseTransfers(BasicHelpers):
+class BaseTransfers(BasicTests):
     sender_account: Account
     recipient_account: Account
 

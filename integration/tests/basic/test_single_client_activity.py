@@ -1,7 +1,7 @@
 import allure
 import pytest
 
-from integration.tests.basic.helpers.basic_helpers import WAITING_FOR_ERC20, WAITING_FOR_MS, BasicHelpers
+from integration.tests.basic.helpers.basic import WAITING_FOR_ERC20, WAITING_FOR_MS, BasicTests
 from integration.tests.basic.test_data.test_input_data import TestInputData
 '''
 1.	Create account and get balance
@@ -57,7 +57,7 @@ stack overflow и stack underflow
 
 
 @allure.story("Basic: single user tests")
-class TestSingleClient(BasicHelpers):
+class TestSingleClient(BasicTests):
     @allure.step("test: create account and get balance")
     def test_create_account_and_get_balance(self):
         """Create account and get balance"""

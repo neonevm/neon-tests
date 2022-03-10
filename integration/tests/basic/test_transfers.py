@@ -2,7 +2,7 @@ import allure
 import pytest
 from typing import Union
 from integration.tests.basic.helpers.base_transfers import BaseTransfers
-from integration.tests.basic.helpers.basic_helpers import WAITING_FOR_ERC20, WAITING_FOR_MS
+from integration.tests.basic.helpers.basic import WAITING_FOR_ERC20, WAITING_FOR_MS
 from integration.tests.basic.test_data.test_input_data import TestInputData
 
 NON_EXISTING_ADDRESS = "0xmmmmm"

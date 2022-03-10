@@ -17,7 +17,7 @@ WAITING_FOR_ERC20 = "ERC20 is in progress"
 WAITIING_FOR_CONTRACT_SUPPORT = "no contracts are yet done"
 
 
-class BasicHelpers(BaseTests):
+class BasicTests(BaseTests):
     jsonrpc_requester: JsonRpcRequester
 
     @pytest.fixture(autouse=True)

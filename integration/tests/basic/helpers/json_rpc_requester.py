@@ -3,10 +3,8 @@ import dataclasses
 import requests
 from requests.models import Response
 from typing import Union
-from integration.tests.basic.model.json_rpc_error_response import JsonRpcErrorResponse
 
-from integration.tests.basic.model.json_rpc_request import JsonRpcRequest
-from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
+from integration.tests.basic.model.model import JsonRpcErrorResponse, JsonRpcRequest, JsonRpcResponse
 
 
 class JsonRpcRequester:

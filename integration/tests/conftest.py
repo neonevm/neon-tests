@@ -4,7 +4,6 @@ import asyncio
 import pathlib
 import typing as tp
 from dataclasses import dataclass
-from integration.tests.basic.helpers.json_rpc_requester import JsonRpcRequester
 
 import web3
 import allure
@@ -13,6 +12,7 @@ import solana
 from pythclient.pythaccounts import PythPriceAccount
 from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP_ENDPOINT
 from _pytest.config import Config
+from integration.tests.basic.helpers.json_rpc_requester import JsonRpcRequester
 
 from utils.operator import Operator
 from utils.faucet import Faucet

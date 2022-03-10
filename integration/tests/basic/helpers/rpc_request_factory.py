@@ -2,8 +2,7 @@ import allure
 import random
 from typing import List, Union
 from integration.tests.basic.model.json_rpc_methods import JsonRpcMethods
-from integration.tests.basic.model.json_rpc_request import JsonRpcRequest
-from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
+from integration.tests.basic.model.model import JsonRpcRequest, JsonRpcRequestParams
 
 ALLURE_RETURN_VALUE_DESCRIPTION = "the model built"
 ALLURE_PARAMS_BUILT = "parameters built"

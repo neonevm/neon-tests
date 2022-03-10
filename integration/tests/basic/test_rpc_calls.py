@@ -3,12 +3,9 @@ import pytest
 from typing import Type
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.json_rpc_encoder import JsonRpcEncoder
-from integration.tests.basic.model.call_request import CallRequest
-from integration.tests.basic.model.get_logs_request import GetLogsRequest
-from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
 from integration.tests.basic.helpers.basic_helpers import WAITIING_FOR_CONTRACT_SUPPORT, BasicHelpers
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
-from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
+from integration.tests.basic.model.model import CallRequest, GetLogsRequest, JsonRpcResponse
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.test_data.test_input_data import TestInputData
 '''

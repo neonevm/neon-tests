@@ -2,11 +2,11 @@ import allure
 import pytest
 from typing import Union
 from integration.tests.basic.helpers.assert_message import AssertMessage
+from integration.tests.basic.helpers.base_transfers import BaseTransfers
 from integration.tests.basic.helpers.rpc_request_params_factory import RpcRequestParamsFactory
-from integration.tests.basic.model.json_rpc_response import JsonRpcResponse
 from integration.tests.basic.helpers.basic_helpers import BasicHelpers
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
-from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
+from integration.tests.basic.model.model import JsonRpcResponse
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.test_data.test_input_data import TestInputData
 '''
@@ -36,16 +36,15 @@ TAGS_TEST_DATA = [(Tag.EARLIEST, True), (Tag.EARLIEST, False),
 
 
 @allure.story("Basic: Json-RPC call tests - blocks")
-class TestRpcCallsBlocks(BasicHelpers):
+class TestRpcCallsBlocks(BaseTransfers):
 
     # TODO: implement numerous variants
     @allure.step("test: verify implemented rpc calls work eth_getBlockByHash")
-    def test_rpc_call_eth_getBlockByHash(self):
+    def test_rpc_call_eth_getBlockByHash(self, prepare_accounts):
         """Verify implemented rpc calls work eth_getBlockByHash"""
-        sender_account = self.create_account_with_balance()
-        recipient_account = self.create_account_with_balance()
 
-        tx_receipt = self.transfer_neon(sender_account, recipient_account,
+        tx_receipt = self.transfer_neon(self.sender_account,
+                                        self.recipient_account,
                                         TestInputData.SAMPLE_AMOUNT.value)
 
         params = [tx_receipt.blockHash.hex(), True]
@@ -85,12 +84,11 @@ class TestRpcCallsBlocks(BasicHelpers):
     @allure.step(
         "test: verify implemented rpc calls work eth_getBlockByNumber via numbers"
     )
-    def test_rpc_call_eth_getBlockByNumber_via_numbers(self):
+    def test_rpc_call_eth_getBlockByNumber_via_numbers(self, prepare_accounts):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
-        sender_account = self.create_account_with_balance()
-        recipient_account = self.create_account_with_balance()
 
-        tx_receipt = self.transfer_neon(sender_account, recipient_account,
+        tx_receipt = self.transfer_neon(self.sender_account,
+                                        self.recipient_account,
                                         TestInputData.SAMPLE_AMOUNT.value)
 
         params = RpcRequestParamsFactory.get_block_by_number(

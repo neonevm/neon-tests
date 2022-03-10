@@ -2,7 +2,7 @@ import allure
 from typing import List, Union
 
 from integration.tests.basic.helpers.rpc_request_factory import ALLURE_PARAMS_BUILT
-from integration.tests.basic.model.json_rpc_request_parameters import JsonRpcRequestParams
+from integration.tests.basic.model.model import JsonRpcRequestParams
 from integration.tests.basic.model.tags import Tag
 
 

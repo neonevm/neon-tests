@@ -27,7 +27,7 @@ CREATE_ACCOUNT_LAYOUT = Struct(
 
 
 def create_account_layout(ether, nonce):
-    return bytes.fromhex("0200000000000000000000000000000000000000")+CREATE_ACCOUNT_LAYOUT.build(dict(
+    return bytes.fromhex("18")+CREATE_ACCOUNT_LAYOUT.build(dict(
         ether=ether,
         nonce=nonce
     ))
@@ -74,11 +74,12 @@ class ERC20Wrapper:
             program_id=TOKEN_PROGRAM_ID
         )
 
-        assoc_addr = token_mint.create_account(owner.public_key)
+        assoc_addr = token_mint.create_associated_token_account(owner.public_key)
+
         token_mint.mint_to(
             dest=assoc_addr,
             mint_authority=owner,
-            amount=1000000000,
+            amount=1000000000000000,
             opts=TxOpts(skip_confirmation=False),
         )
 
@@ -115,26 +116,20 @@ class ERC20Wrapper:
 
         return contract, contract_deploy_tx["contractAddress"]
 
-    def mint_tokens(self, to_address, solana_owner, mint_address, wrapped_contract, amount: int = 1000000):
+    def mint_tokens(self, to_address, solana_owner, mint_address, wrapped_contract, amount: int = 1000000000000000):
         """Mint wrapped tokens to eth user"""
         source_token_acc = get_associated_token_address(solana_owner.public_key, mint_address)
-
         trx = Transaction()
         neon_acc, nonce = self.eth_to_solana_address(to_address)
-        assoc_acc = get_associated_token_address(neon_acc, PublicKey(self.neon_token_mint))
+
         if not self.is_account_exist(neon_acc):
             trx.add(TransactionInstruction(
                 program_id=self.evm_loader,
                 data=create_account_layout(bytes.fromhex(to_address[2:]), nonce),
                 keys=[
                     AccountMeta(pubkey=solana_owner.public_key, is_signer=True, is_writable=True),
-                    AccountMeta(pubkey=neon_acc, is_signer=False, is_writable=True),
-                    AccountMeta(pubkey=assoc_acc, is_signer=False, is_writable=True),
                     AccountMeta(pubkey=SYS_PROGRAM_ID, is_signer=False, is_writable=False),
-                    AccountMeta(pubkey=self.neon_token_mint, is_signer=False, is_writable=False),
-                    AccountMeta(pubkey=TOKEN_PROGRAM_ID, is_signer=False, is_writable=False),
-                    AccountMeta(pubkey=ASSOCIATED_TOKEN_PROGRAM_ID, is_signer=False, is_writable=False),
-                    AccountMeta(pubkey=SYSVAR_RENT_PUBKEY, is_signer=False, is_writable=False),
+                    AccountMeta(pubkey=neon_acc, is_signer=False, is_writable=True),
                 ]))
 
         dest_token_account = self.get_wrapped_token_account_address(to_address, mint_address, wrapped_contract)
@@ -146,7 +141,8 @@ class ERC20Wrapper:
                     AccountMeta(pubkey=solana_owner.public_key, is_signer=True, is_writable=True),
                     AccountMeta(pubkey=dest_token_account, is_signer=False, is_writable=True),
                     AccountMeta(pubkey=neon_acc, is_signer=False, is_writable=True),
-                    AccountMeta(pubkey=self.eth_to_solana_address(wrapped_contract)[0], is_signer=False, is_writable=True),
+                    AccountMeta(pubkey=self.eth_to_solana_address(wrapped_contract)[0],
+                                is_signer=False, is_writable=True),
                     AccountMeta(pubkey=mint_address, is_signer=False, is_writable=True),
                     AccountMeta(pubkey=SYS_PROGRAM_ID, is_signer=False, is_writable=False),
                     AccountMeta(pubkey=TOKEN_PROGRAM_ID, is_signer=False, is_writable=False),
@@ -167,3 +163,20 @@ class ERC20Wrapper:
         opts = TxOpts(skip_preflight=True, skip_confirmation=False)
         resp = self.sol_client.send_transaction(trx, solana_owner, opts=opts)
         return resp
+
+    def get_wrapper_contract(self, contract_address):
+        contract_path = (
+                pathlib.Path(__file__).parent / "erc20interface.sol"
+        ).absolute()
+
+        with open(contract_path, "r") as s:
+            source = s.read()
+
+        compiled = solcx.compile_source(source, output_values=["abi", "bin"], solc_version="0.8.10")
+        contract_interface = compiled[list(compiled.keys())[0]]
+
+        contract = self.web3_client.eth.contract(
+            address=contract_address, abi=contract_interface["abi"]
+        )
+
+        return contract

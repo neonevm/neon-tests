@@ -11,13 +11,16 @@ import allure
 import pytest
 import solana
 import solana.rpc.api
+from solana.publickey import PublicKey as SolanaPublickey
 from solana.rpc.commitment import Commitment
+from solana.account import Account as SolanaAccount
 from _pytest.config import Config
 
 from utils.operator import Operator
 from utils.faucet import Faucet
 from utils.web3client import NeonWeb3Client
 from utils.erc20wrapper import ERC20Wrapper
+from eth_keys.datatypes import PrivateKey as NeonPrivateKey
 
 from solana.keypair import Keypair
 
@@ -126,16 +129,18 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
 def erc20wrapper(sol_client, web3_client: NeonWeb3Client, faucet, pytestconfig: Config):
     wrapper = ERC20Wrapper(web3_client, sol_client, pytestconfig.environment.evm_loader, pytestconfig.environment.spl_neon_mint)
     owner = Keypair.generate()
+
     sol_client.request_airdrop(owner.public_key, 10000000000)
 
     for _ in range(10):
         if sol_client.get_balance(owner.public_key)["result"]["value"] == 10000000000:
             break
-        time.sleep(10)
+        time.sleep(5)
 
     token = wrapper.create_spl(owner)
 
     eth_user = web3_client.create_account()
+
     faucet.request_neon(eth_user.address, 100)
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
 
@@ -147,4 +152,7 @@ def erc20wrapper(sol_client, web3_client: NeonWeb3Client, faucet, pytestconfig: 
     )
 
     wrapper.mint_tokens(eth_user.address, owner, token.pubkey, address)
-    yield wrapper
+
+    contract = wrapper.get_wrapper_contract(address)
+
+    yield contract, eth_user

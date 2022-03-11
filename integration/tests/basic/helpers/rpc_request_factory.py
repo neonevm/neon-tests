@@ -1,7 +1,6 @@
 import allure
 import random
 from typing import List, Union
-from integration.tests.basic.model.json_rpc_methods import JsonRpcMethods
 from integration.tests.basic.model.model import JsonRpcRequest, JsonRpcRequestParams
 
 ALLURE_RETURN_VALUE_DESCRIPTION = "the model built"
@@ -9,6 +8,23 @@ ALLURE_PARAMS_BUILT = "parameters built"
 
 
 class RpcRequestFactory:
+    GET_BLOCK_BY_HASH = "eth_getBlockByHash"
+    GET_BLOCK_BY_NUMBER = "eth_getBlockByNumber"
+    BLOCK_NUMBER = "eth_blockNumber"
+    CALL = "eth_call"
+    ESTIMATE_GAS = "eth_estimateGas"
+    GAS_PRICE = "eth_gasPrice"
+    GET_LOGS = "eth_getLogs"
+    GET_BALANCE = "eth_getBalance"
+    GET_TRX_COUNT = "eth_getTransactionCount"
+    GET_CODE = "eth_getCode"
+    SEND_RAW_TRX = "eth_sendRawTransaction"
+    GET_TRX_BY_HASH = "eth_getTransactionByHash"
+    GET_TRX_RECEIPT = "eth_getTransactionReceipt"
+    GET_STORAGE_AT = "eth_getStorageAt"
+    WEB3_CLIENT_VERSION = "web3_clientVersion"
+    NET_VERSION = "net_version"
+
     @classmethod
     def get_random_value(cls) -> int:
         return random.randint(0, 100)
@@ -17,26 +33,24 @@ class RpcRequestFactory:
     def get_block_by_hash(
             cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
-            return JsonRpcRequest(
-                id=cls.get_random_value(),
-                method=JsonRpcMethods.GET_BLOCK_BY_HASH.value,
-                params=params)
+            return JsonRpcRequest(id=cls.get_random_value(),
+                                  method=cls.GET_BLOCK_BY_HASH,
+                                  params=params)
 
     @classmethod
     def get_block_by_number(
             cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
-            return JsonRpcRequest(
-                id=cls.get_random_value(),
-                method=JsonRpcMethods.GET_BLOCK_BY_NUMBER.value,
-                params=params)
+            return JsonRpcRequest(id=cls.get_random_value(),
+                                  method=cls.GET_BLOCK_BY_NUMBER,
+                                  params=params)
 
     @classmethod
     def get_block_number(
             cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
             return JsonRpcRequest(id=cls.get_random_value(),
-                                  method=JsonRpcMethods.BLOCK_NUMBER.value,
+                                  method=cls.BLOCK_NUMBER,
                                   params=params)
 
     @classmethod
@@ -44,7 +58,7 @@ class RpcRequestFactory:
                                     JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
             return JsonRpcRequest(id=cls.get_random_value(),
-                                  method=JsonRpcMethods.CALL.value,
+                                  method=cls.CALL,
                                   params=params)
 
     @classmethod
@@ -52,7 +66,7 @@ class RpcRequestFactory:
             cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
             return JsonRpcRequest(id=cls.get_random_value(),
-                                  method=JsonRpcMethods.ESTIMATE_GAS.value,
+                                  method=cls.ESTIMATE_GAS,
                                   params=params)
 
     @classmethod
@@ -60,7 +74,7 @@ class RpcRequestFactory:
             cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
             return JsonRpcRequest(id=cls.get_random_value(),
-                                  method=JsonRpcMethods.GAS_PRICE.value,
+                                  method=cls.GAS_PRICE,
                                   params=params)
 
     @classmethod
@@ -68,7 +82,7 @@ class RpcRequestFactory:
                                     JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
             return JsonRpcRequest(id=cls.get_random_value(),
-                                  method=JsonRpcMethods.GET_LOGS.value,
+                                  method=cls.GET_LOGS,
                                   params=params)
 
     @classmethod
@@ -76,7 +90,7 @@ class RpcRequestFactory:
             cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
             return JsonRpcRequest(id=cls.get_random_value(),
-                                  method=JsonRpcMethods.GET_BALANCE.value,
+                                  method=cls.GET_BALANCE,
                                   params=params)
 
     @classmethod
@@ -84,7 +98,7 @@ class RpcRequestFactory:
             cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
             return JsonRpcRequest(id=cls.get_random_value(),
-                                  method=JsonRpcMethods.GET_TRX_COUNT.value,
+                                  method=cls.GET_TRX_COUNT,
                                   params=params)
 
     @classmethod
@@ -92,7 +106,7 @@ class RpcRequestFactory:
                                     JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
             return JsonRpcRequest(id=cls.get_random_value(),
-                                  method=JsonRpcMethods.GET_CODE.value,
+                                  method=cls.GET_CODE,
                                   params=params)
 
     @classmethod
@@ -100,7 +114,7 @@ class RpcRequestFactory:
             cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
             return JsonRpcRequest(id=cls.get_random_value(),
-                                  method=JsonRpcMethods.SEND_RAW_TRX.value,
+                                  method=cls.SEND_RAW_TRX,
                                   params=params)
 
     @classmethod
@@ -108,7 +122,7 @@ class RpcRequestFactory:
             cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
             return JsonRpcRequest(id=cls.get_random_value(),
-                                  method=JsonRpcMethods.GET_TRX_BY_HASH.value,
+                                  method=cls.GET_TRX_BY_HASH,
                                   params=params)
 
     @classmethod
@@ -116,7 +130,7 @@ class RpcRequestFactory:
             cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
             return JsonRpcRequest(id=cls.get_random_value(),
-                                  method=JsonRpcMethods.GET_TRX_RECEIPT.value,
+                                  method=cls.GET_TRX_RECEIPT,
                                   params=params)
 
     @classmethod
@@ -124,22 +138,21 @@ class RpcRequestFactory:
             cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
             return JsonRpcRequest(id=cls.get_random_value(),
-                                  method=JsonRpcMethods.GET_STORAGE_AT.value,
+                                  method=cls.GET_STORAGE_AT,
                                   params=params)
 
     @classmethod
     def get_web3_client_version(
             cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
-            return JsonRpcRequest(
-                id=cls.get_random_value(),
-                method=JsonRpcMethods.WEB3_CLIENT_VERSION.value,
-                params=params)
+            return JsonRpcRequest(id=cls.get_random_value(),
+                                  method=cls.WEB3_CLIENT_VERSION,
+                                  params=params)
 
     @classmethod
     def get_net_version(
             cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
         with allure.step(ALLURE_RETURN_VALUE_DESCRIPTION):
             return JsonRpcRequest(id=cls.get_random_value(),
-                                  method=JsonRpcMethods.NET_VERSION.value,
+                                  method=cls.NET_VERSION,
                                   params=params)

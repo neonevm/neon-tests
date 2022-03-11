@@ -5,7 +5,7 @@ from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.rpc_request_params_factory import RpcRequestParamsFactory
 from integration.tests.basic.helpers.basic import BasicTests
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
-from integration.tests.basic.model.model import JsonRpcResponse
+from integration.tests.basic.model.model import BlockByResponse, JsonRpcResponse
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.test_data.input_data import InputData
 '''
@@ -51,6 +51,7 @@ class TestRpcCallsBlocks(BasicTests):
 
         response = self.jsonrpc_requester.request_json_rpc(model)
         actual_result = self.jsonrpc_requester.deserialize_response(response)
+        # , BlockByResponse)
 
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
         assert self.assert_no_error_object(
@@ -73,6 +74,7 @@ class TestRpcCallsBlocks(BasicTests):
 
         response = self.jsonrpc_requester.request_json_rpc(model)
         actual_result = self.jsonrpc_requester.deserialize_response(response)
+        # , BlockByResponse)
 
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
         # assert self.assert_no_error_object(
@@ -96,6 +98,7 @@ class TestRpcCallsBlocks(BasicTests):
 
         response = self.jsonrpc_requester.request_json_rpc(model)
         actual_result = self.jsonrpc_requester.deserialize_response(response)
+        # , BlockByResponse)
 
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
         assert self.assert_no_error_object(

@@ -26,6 +26,7 @@ class GetLogsRequest:
     blockhash: List[str] = None
 
 
+# TODO: decide whether to use this class or satisfy using just a list
 @dataclass
 class JsonRpcRequestParams(List):
     pass
@@ -53,6 +54,7 @@ class JsonRpcErrorResponse:
     jsonrpc: str = "2.0"
 
 
+# TODO: used only once
 @dataclass
 class BlockByHashResponse:
     number: Union[int, None]
@@ -76,6 +78,7 @@ class BlockByHashResponse:
     uncles: List[str]
 
 
+# TODO: used only once
 @dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
 class TrxByHashResponse:
@@ -95,6 +98,7 @@ class TrxByHashResponse:
     s: str
 
 
+# TODO: used only once
 @dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
 class TrxReceiptResponse:

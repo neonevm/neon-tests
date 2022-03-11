@@ -2,13 +2,12 @@ import allure
 import pytest
 from typing import Union
 from integration.tests.basic.helpers.assert_message import AssertMessage
-from integration.tests.basic.helpers.base_transfers import BaseTransfers
 from integration.tests.basic.helpers.rpc_request_params_factory import RpcRequestParamsFactory
 from integration.tests.basic.helpers.basic import BasicTests
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.model.model import JsonRpcResponse
 from integration.tests.basic.model.tags import Tag
-from integration.tests.basic.test_data.test_input_data import TestInputData
+from integration.tests.basic.test_data.input_data import InputData
 '''
 12.	Verify implemented rpc calls work
 12.1.	eth_getBlockByHash		
@@ -36,7 +35,7 @@ TAGS_TEST_DATA = [(Tag.EARLIEST, True), (Tag.EARLIEST, False),
 
 
 @allure.story("Basic: Json-RPC call tests - blocks")
-class TestRpcCallsBlocks(BaseTransfers):
+class TestRpcCallsBlocks(BasicTests):
 
     # TODO: implement numerous variants
     @allure.step("test: verify implemented rpc calls work eth_getBlockByHash")
@@ -45,7 +44,7 @@ class TestRpcCallsBlocks(BaseTransfers):
 
         tx_receipt = self.transfer_neon(self.sender_account,
                                         self.recipient_account,
-                                        TestInputData.SAMPLE_AMOUNT.value)
+                                        InputData.SAMPLE_AMOUNT.value)
 
         params = [tx_receipt.blockHash.hex(), True]
         model = RpcRequestFactory.get_block_by_hash(params=params)
@@ -89,7 +88,7 @@ class TestRpcCallsBlocks(BaseTransfers):
 
         tx_receipt = self.transfer_neon(self.sender_account,
                                         self.recipient_account,
-                                        TestInputData.SAMPLE_AMOUNT.value)
+                                        InputData.SAMPLE_AMOUNT.value)
 
         params = RpcRequestParamsFactory.get_block_by_number(
             tx_receipt.blockNumber, True)
@@ -112,6 +111,6 @@ class TestRpcCallsBlocks(BaseTransfers):
         actual_result = self.jsonrpc_requester.deserialize_response(response)
 
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        assert isinstance(actual_result,
-                          JsonRpcResponse), AssertMessage.WRONG_TYPE.value
+        assert self.assert_is_successful_response(
+            actual_result), AssertMessage.WRONG_TYPE.value
         assert '0x' in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value

@@ -138,3 +138,5 @@ class TestRpcCallsTransactions(BasicTests):
             actual_result), AssertMessage.CONTAINS_ERROR
         assert self.assert_result_object(
             actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
+        
+        result_object = self.jsonrpc_requester.deserialize_response

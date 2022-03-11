@@ -57,7 +57,7 @@ class JsonRpcErrorResponse:
 # TODO: used only once
 @dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
-class BlockByHashResponse:
+class BlockByResponse:
     number: Union[int, None]
     hash: Union[str, None]
     parent_hash: str

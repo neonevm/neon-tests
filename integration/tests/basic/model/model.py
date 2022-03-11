@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from dataclasses_json import LetterCase, dataclass_json
+from dataclasses_json import CatchAll, LetterCase, dataclass_json, Undefined
 from time import time
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 
 
 @dataclass_json(letter_case=LetterCase.CAMEL)
@@ -55,37 +55,12 @@ class JsonRpcErrorResponse:
 
 
 # TODO: used only once
-@dataclass_json(letter_case=LetterCase.CAMEL)
+@dataclass_json(letter_case=LetterCase.CAMEL, undefined=Undefined.INCLUDE)
 @dataclass
-class BlockByResponse:
-    number: Union[int, None]
-    hash: Union[str, None]
-    parent_hash: str
-    nonce: Union[int, None]
-    sha3_uncles: str
-    logs_bloom: Union[str, None]
-    transactions_root: Any
-    state_root: Any
-    receipts_root: Any
-    miner: str
-    difficulty: int
-    total_dificulty: int
-    extra_data: Any
-    size: int
-    gas_limit: int
-    gas_used: int
-    timestamp: time
-    transactions: List[Any]
-    uncles: List[str]
-
-
-# TODO: used only once
-@dataclass_json(letter_case=LetterCase.CAMEL)
-@dataclass
-class TrxByHashResponse:
+class TrxResponse:
     block_hash: str
     block_number: Union[int, None]
-    from_: str
+    from_: CatchAll
     gas: int
     gas_price: int
     hash: str
@@ -99,20 +74,45 @@ class TrxByHashResponse:
     s: str
 
 
+@dataclass_json(letter_case=LetterCase.CAMEL, undefined=Undefined.INCLUDE)
+@dataclass(frozen=True)
+class BlockResponse:
+    number: Union[int, None]
+    hash: Union[str, None]
+    parent_hash: str
+    # nonce: Optional[Union[int, None]]
+    # sha3_uncles: Optional[str]
+    # logs_bloom: Optional[Union[str, None]]
+    # transactions_root: Optional[Any]
+    # state_root: Optional[Any]
+    # receipts_root: Optional[Any]
+    # miner: Optional[str]
+    # difficulty: Optional[int]
+    # total_dificulty: Optional[int]
+    # extra_data: Optional[Any]
+    # size: Optional[int]
+    gas_limit: int
+    gas_used: int
+    timestamp: int
+    # transactions: Optional[List[TrxByResponse]]
+    # uncles: Optional[List[str]]
+    unknown: CatchAll
+
+
 # TODO: used only once
-@dataclass_json(letter_case=LetterCase.CAMEL)
-@dataclass
+@dataclass_json(letter_case=LetterCase.CAMEL, undefined=Undefined.INCLUDE)
+@dataclass(frozen=True)
 class TrxReceiptResponse:
     transaction_hash: str
     transaction_index: int
     block_hash: str
     block_number: int
-    from_: str
+    from_: CatchAll
     to: str
     cumulative_gas_used: int
     gas_used: int
     contract_address: Union[str, None]
     logs: List[Any]
     logs_bloom: str
-    root: Any
+    # root: Any
     status: int

@@ -26,7 +26,6 @@ class JsonRpcRequester:
         str_data = self.stringify(response.json())
         with allure.step("deserialized"):
             if 'result' in str_data:
-                # return JsonRpcResponse(**response.json())
                 return self.deserialize_successful_response(response=response,
                                                             type=type)
             elif 'error' in str_data:
@@ -39,9 +38,10 @@ class JsonRpcRequester:
         json_rpc_response = JsonRpcResponse(**response.json())
         if type == None:
             return json_rpc_response
-        # subobject = type(**json_rpc_response.result)
-        subobject = type.from_json(json_rpc_response.result)
-        json_rpc_response.result = subobject
+
+        result_dict = dict(json_rpc_response.result)
+        result_subobject = type.from_dict(result_dict)
+        json_rpc_response.result = result_subobject
         return json_rpc_response
 
     @allure.step("showing as JSON")

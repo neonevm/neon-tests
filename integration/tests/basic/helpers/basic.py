@@ -67,9 +67,11 @@ class BasicTests(BaseTests):
     #     self.faucet.request_sol(wallet, amount=amount)
 
     @allure.step("processing transaction")
-    def process_transaction(self, sender_account: Account,
-                            recipient_account: Account,
-                            amount: int) -> Union[web3.types.TxReceipt, None]:
+    def process_transaction(
+            self,
+            sender_account: Account,
+            recipient_account: Account,
+            amount: float = 0.0) -> Union[web3.types.TxReceipt, None]:
         '''Processes transaction'''
 
         tx = self.web3_client.send_neon(sender_account, recipient_account,
@@ -106,12 +108,11 @@ class BasicTests(BaseTests):
         return self.process_transaction(sender_account, recipient_account,
                                         amount)
 
-    def transfer_zero_neon(self, sender_account: Account,
-                           recipient_account: Account,
-                           amount: int) -> Union[web3.types.TxReceipt, None]:
+    def transfer_zero_neon(
+            self, sender_account: Account,
+            recipient_account: Account) -> Union[web3.types.TxReceipt, None]:
         '''Transfers 0 tokens'''
-        return self.process_transaction(sender_account, recipient_account,
-                                        amount)
+        return self.process_transaction(sender_account, recipient_account)
 
     def transfer_negative_neon(
             self, sender_account: Account, recipient_account: Account,

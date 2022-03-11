@@ -1,7 +1,7 @@
 import allure
 import pytest
 from integration.tests.basic.helpers.basic import BasicTests
-from integration.tests.basic.model.model import JsonRpcResponse
+from integration.tests.basic.model.model import JsonRpcResponse, TrxReceiptResponse, TrxResponse
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
@@ -111,7 +111,8 @@ class TestRpcCallsTransactions(BasicTests):
         params = [tx_receipt.transactionHash.hex()]
         model = RpcRequestFactory.get_trx_by_hash(params=params)
         response = self.jsonrpc_requester.request_json_rpc(model)
-        actual_result = self.jsonrpc_requester.deserialize_response(response)
+        actual_result = self.jsonrpc_requester.deserialize_response(
+            response, TrxResponse)
 
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
         assert self.assert_no_error_object(
@@ -131,12 +132,13 @@ class TestRpcCallsTransactions(BasicTests):
         params = [tx_receipt.transactionHash.hex()]
         model = RpcRequestFactory.get_trx_receipt(params=params)
         response = self.jsonrpc_requester.request_json_rpc(model)
-        actual_result = self.jsonrpc_requester.deserialize_response(response)
+        actual_result = self.jsonrpc_requester.deserialize_response(
+            response, TrxReceiptResponse)
 
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
         assert self.assert_no_error_object(
             actual_result), AssertMessage.CONTAINS_ERROR
         assert self.assert_result_object(
             actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
-        
+
         result_object = self.jsonrpc_requester.deserialize_response

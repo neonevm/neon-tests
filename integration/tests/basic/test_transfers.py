@@ -53,9 +53,8 @@ class TestTransfer(BasicTests):
 
         self.assert_sender_amount(self.sender_account.address,
                                   InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-        self.assert_recipient_amount(
-            self.recipient_account.address,
-            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+        self.assert_recipient_amount(self.recipient_account.address,
+                                     InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
 
     @pytest.mark.skip(WAITING_FOR_MS)
     @allure.step(
@@ -77,15 +76,14 @@ class TestTransfer(BasicTests):
         """Send zero: neon"""
 
         tx_receipt = self.transfer_zero_neon(self.sender_account,
-                                             self.recipient_account, 0)
+                                             self.recipient_account)
 
         self.assert_sender_amount(
             self.sender_account.address,
             InputData.FAUCET_1ST_REQUEST_AMOUNT.value -
             self.calculate_trx_gas(tx_receipt=tx_receipt))
-        self.assert_recipient_amount(
-            self.recipient_account.address,
-            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+        self.assert_recipient_amount(self.recipient_account.address,
+                                     InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
 
     @pytest.mark.skip(WAITING_FOR_MS)
     @allure.step("test: send zero: spl (with different precision)")
@@ -109,9 +107,8 @@ class TestTransfer(BasicTests):
 
         self.assert_sender_amount(self.sender_account.address,
                                   InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-        self.assert_recipient_amount(
-            self.recipient_account.address,
-            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+        self.assert_recipient_amount(self.recipient_account.address,
+                                     InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
 
     @pytest.mark.skip(WAITING_FOR_MS)
     @allure.step(

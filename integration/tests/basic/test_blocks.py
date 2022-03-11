@@ -50,7 +50,8 @@ class TestRpcCallsBlocks(BasicTests):
         model = RpcRequestFactory.get_block_by_hash(params=params)
 
         response = self.jsonrpc_requester.request_json_rpc(model)
-        actual_result = self.jsonrpc_requester.deserialize_response(response)
+        actual_result = self.jsonrpc_requester.deserialize_response(
+            response, BlockByResponse)
 
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
         assert self.assert_no_error_object(

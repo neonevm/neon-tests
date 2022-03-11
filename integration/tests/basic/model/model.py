@@ -55,24 +55,25 @@ class JsonRpcErrorResponse:
 
 
 # TODO: used only once
+@dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
 class BlockByHashResponse:
     number: Union[int, None]
     hash: Union[str, None]
-    parenthash: str
+    parent_hash: str
     nonce: Union[int, None]
-    sha3uncles: str
-    logsbloom: Union[str, None]
-    transactionsroot: Any
-    stateroot: Any
-    receiptsroot: Any
+    sha3_uncles: str
+    logs_bloom: Union[str, None]
+    transactions_root: Any
+    state_root: Any
+    receipts_root: Any
     miner: str
     difficulty: int
-    totaldificulty: int
-    extradata: Any
+    total_dificulty: int
+    extra_data: Any
     size: int
-    gaslimit: int
-    gasused: int
+    gas_limit: int
+    gas_used: int
     timestamp: time
     transactions: List[Any]
     uncles: List[str]

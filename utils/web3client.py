@@ -38,6 +38,9 @@ class NeonWeb3Client:
             address = address.address
         return web3.Web3.fromWei(self._web3.eth.get_balance(address), "ether")
 
+    def get_block_number(self):
+        return self._web3.eth.get_block_number()
+
     def send_neon(
         self,
         from_: eth_account.signers.local.LocalAccount,

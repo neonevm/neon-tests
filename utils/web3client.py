@@ -126,6 +126,9 @@ class NeonWeb3Client:
         return self._web3.eth.wait_for_transaction_receipt(tx)
 
     def send_transaction(self, account: eth_account.signers.local.LocalAccount, transaction, gas: tp.Optional[int] = None):
+        if "gasPrice" not in transaction:
+            transaction["gasPrice"] = self.gas_price(),
+
         if "gas" not in transaction:
             transaction["gas"] = self._web3.eth.estimate_gas(transaction)
 

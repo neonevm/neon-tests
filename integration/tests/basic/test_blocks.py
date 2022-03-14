@@ -38,7 +38,7 @@ TAGS_TEST_DATA = [(Tag.EARLIEST, True), (Tag.EARLIEST, False),
 class TestRpcCallsBlocks(BasicTests):
 
     # TODO: implement numerous variants
-    @allure.step("test: verify implemented rpc calls work eth_getBlockByHash")
+
     def test_rpc_call_eth_getBlockByHash(self, prepare_accounts):
         """Verify implemented rpc calls work eth_getBlockByHash"""
 
@@ -60,9 +60,6 @@ class TestRpcCallsBlocks(BasicTests):
             actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
     @pytest.mark.parametrize("quantity_tag,full_trx", TAGS_TEST_DATA)
-    @allure.step(
-        "test: verify implemented rpc calls work eth_getBlockByNumber via tags"
-    )
     def test_rpc_call_eth_getBlockByNumber_via_tags(self,
                                                     quantity_tag: Union[int,
                                                                         Tag],
@@ -82,9 +79,6 @@ class TestRpcCallsBlocks(BasicTests):
         # assert self.assert_result_object(
         #     actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
-    @allure.step(
-        "test: verify implemented rpc calls work eth_getBlockByNumber via numbers"
-    )
     def test_rpc_call_eth_getBlockByNumber_via_numbers(self, prepare_accounts):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
 
@@ -106,7 +100,6 @@ class TestRpcCallsBlocks(BasicTests):
         assert self.assert_result_object(
             actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
-    @allure.step("test: verify implemented rpc calls work eth_blockNumber")
     def test_rpc_call_eth_blockNumber(self):
         """Verify implemented rpc calls work work eth_blockNumber"""
         model = RpcRequestFactory.get_block_number(params=[])

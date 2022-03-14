@@ -145,17 +145,11 @@ class BasicTests(BaseTests):
 
     def assert_result_object(self, data: JsonRpcResponse) -> bool:
         '''Checks that the result subobject is present'''
-        try:
-            return data.result != None
-        except Exception:
-            return False
+        return hasattr(data, 'result')
 
     def assert_no_error_object(self, data: JsonRpcErrorResponse) -> bool:
         '''Checks that the error subobject is not present'''
-        try:
-            return data.error == None
-        except Exception:
-            return True
+        return not hasattr(data, 'error')
 
     def assert_is_successful_response(
             self, actual_result: Union[JsonRpcResponse,
@@ -167,3 +161,4 @@ class BasicTests(BaseTests):
         gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.fromWei(
             self.web3_client.gas_price(), "ether")
         return float(round(gas_used_in_tx, InputData.ROUND_DIGITS.value))
+    

@@ -61,13 +61,11 @@ FAUCET_REQUEST_MESSAGE = "requesting faucet for Neon"
 
 @allure.story("Basic: single user tests")
 class TestSingleClient(BasicTests):
-    @allure.step("test: create account and get balance")
     def test_create_account_and_get_balance(self):
         """Create account and get balance"""
         account = self.create_account()
         self.assert_amount(account.address, 0)
 
-    @allure.step("test: check tokens in wallet: neon")
     def test_check_tokens_in_wallet_neon(self):
         """Check tokens in wallet: neon"""
         account = self.create_account()
@@ -78,20 +76,15 @@ class TestSingleClient(BasicTests):
                            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
 
     @pytest.mark.skip(WAITING_FOR_MS)
-    @allure.step("test: check tokens in wallet: spl")
     def test_check_tokens_in_wallet_spl(self):
         """Check tokens in wallet: spl"""
         pass
 
     @pytest.mark.skip(WAITING_FOR_ERC20)
-    @allure.step("test: check tokens in wallet: ERC20")
     def test_check_tokens_in_wallet_ERC20(self):
         """Check tokens in wallet: ERC20"""
         pass
 
-    @allure.step(
-        "test: verify faucet work (request drop for several accounts): single request"
-    )
     @pytest.mark.parametrize("amount", FAUCET_TEST_DATA)
     def test_verify_faucet_work_single_request(self, amount: int):
         """Verify faucet work (request drop for several accounts): single request"""
@@ -101,9 +94,6 @@ class TestSingleClient(BasicTests):
                 self.request_faucet_neon(account.address, amount)
             self.assert_amount(account.address, amount)
 
-    @allure.step(
-        "test: verify faucet work (request drop for several accounts): double request"
-    )
     @pytest.mark.parametrize("amount", FAUCET_TEST_DATA)
     def test_verify_faucet_work_multiple_requests(self, amount: int):
         """Verify faucet work (request drop for several accounts): double request"""

@@ -37,7 +37,7 @@ GET_LOGS_TEST_DATA = [(Tag.LATEST.value, Tag.LATEST.value),
 @allure.story("Basic: Json-RPC call tests")
 class TestRpcCalls(BasicTests):
     # TODO: implement numerous variants
-    @allure.step("test: verify implemented rpc calls work eth_call")
+
     def test_rpc_call_eth_call(self):
         """Verify implemented rpc calls work eth_call"""
         sender_account = self.create_account_with_balance()
@@ -60,7 +60,7 @@ class TestRpcCalls(BasicTests):
         #     actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
     # TODO: implement numerous variants
-    @allure.step("test: verify implemented rpc calls work eth_estimateGas")
+
     def test_rpc_call_eth_estimateGas(self):
         """Verify implemented rpc calls work eth_estimateGas"""
         sender_account = self.create_account_with_balance()
@@ -81,7 +81,6 @@ class TestRpcCalls(BasicTests):
         # assert self.assert_result_object(
         #     actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
-    @allure.step("test: verify implemented rpc calls work eth_gasPrice")
     def test_rpc_call_eth_gasPrice(self):
         """Verify implemented rpc calls work eth_gasPrice"""
         model = RpcRequestFactory.get_gas_price(params=[])
@@ -93,8 +92,6 @@ class TestRpcCalls(BasicTests):
             actual_result), AssertMessage.WRONG_TYPE.value
         assert '0x' in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
 
-    @allure.step("test: verify implemented rpc calls work eth_getLogs via tags"
-                 )
     @pytest.mark.parametrize("from_block,to_block", GET_LOGS_TEST_DATA)
     def test_rpc_call_eth_getLogs_via_tags(self, from_block: Tag,
                                            to_block: Tag):
@@ -117,8 +114,6 @@ class TestRpcCalls(BasicTests):
         assert self.assert_result_object(
             actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
-    @allure.step(
-        "test: verify implemented rpc calls work eth_getLogs via numbers")
     def test_rpc_call_eth_getLogs_via_numbers(self):
         """Verify implemented rpc calls work eth_getLogs"""
         # TODO: use contract instead of account
@@ -140,7 +135,6 @@ class TestRpcCalls(BasicTests):
         assert self.assert_result_object(
             actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
-    @allure.step("test: verify implemented rpc calls work eth_getBalance")
     def test_rpc_call_eth_getBalance(self):
         """Verify implemented rpc calls work eth_getBalance"""
         sender_account = self.create_account_with_balance()
@@ -153,7 +147,6 @@ class TestRpcCalls(BasicTests):
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
         assert actual_result.result == InputData.FIRST_AMOUNT_IN_RESPONSE.value, AssertMessage.WRONG_AMOUNT.value
 
-    @allure.step("test: verify implemented rpc calls work eth_getCode")
     def test_rpc_call_eth_getCode(self):
         """Verify implemented rpc calls work eth_getCode"""
         # TODO: use contract instead of account?
@@ -171,12 +164,10 @@ class TestRpcCalls(BasicTests):
             actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
     @pytest.mark.skip(WAITIING_FOR_CONTRACT_SUPPORT)
-    @allure.step("test: verify implemented rpc calls work eht_getStorageAt")
     def test_rpc_call_eht_getStorageAt(self):
         """Verify implemented rpc calls work eht_getStorageAt"""
         pass
 
-    @allure.step("test: verify implemented rpc calls work web3_clientVersion")
     def test_rpc_call_web3_clientVersion(self):
         """Verify implemented rpc calls work web3_clientVersion"""
         model = RpcRequestFactory.get_web3_client_version(params=[])
@@ -188,7 +179,6 @@ class TestRpcCalls(BasicTests):
             actual_result), AssertMessage.WRONG_TYPE.value
         assert 'Neon' in actual_result.result, "version does not contain 'Neon'"
 
-    @allure.step("test: verify implemented rpc calls work net_version")
     def test_rpc_call_net_version(self):
         """Verify implemented rpc calls work work net_version"""
         model = RpcRequestFactory.get_net_version(params=[])

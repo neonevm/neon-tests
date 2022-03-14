@@ -4,7 +4,6 @@
     "network_id": 111,
     "solana_url": "http://proxy.night.stand.neontest.xyz/node-solana",
     "faucet_url": "http://proxy.night.stand.neontest.xyz",
-    "operator_neon_rewards_address": [],
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "operator_neon_rewards_address": [
       "0x098ff879e923063cd538f6a84d6f0f0f68707d65",

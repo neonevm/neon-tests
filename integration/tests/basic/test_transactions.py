@@ -29,8 +29,6 @@ from integration.tests.basic.test_data.input_data import InputData
 
 @allure.story("Basic: Json-RPC call tests - transactions")
 class TestRpcCallsTransactions(BasicTests):
-    @allure.step(
-        "test: verify implemented rpc calls work eth_getTransactionCount")
     def test_rpc_call_eth_getTransactionCount(self, prepare_accounts):
         """Verify implemented rpc calls work eth_getTransactionCount"""
 
@@ -47,8 +45,6 @@ class TestRpcCallsTransactions(BasicTests):
             actual_result), AssertMessage.WRONG_TYPE.value
         assert '0x' in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
 
-    @allure.step(
-        "test: verify implemented rpc calls work eth_sendRawTransaction")
     def test_rpc_call_eth_sendRawTransaction(self, prepare_accounts):
         """Verify implemented rpc calls work eth_sendRawTransaction"""
 
@@ -97,8 +93,6 @@ class TestRpcCallsTransactions(BasicTests):
             InputData.FAUCET_1ST_REQUEST_AMOUNT.value +
             InputData.SAMPLE_AMOUNT.value)
 
-    @allure.step(
-        "test: verify implemented rpc calls work eth_getTransactionByHash")
     def test_rpc_call_eth_getTransactionByHash(self, prepare_accounts):
         """Verify implemented rpc calls work eth_getTransactionByHash"""
 
@@ -118,8 +112,6 @@ class TestRpcCallsTransactions(BasicTests):
         assert self.assert_result_object(
             actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
-    @allure.step(
-        "test: verify implemented rpc calls work eth_getTransactionReceipt")
     def test_rpc_call_eth_getTransactionReceipt(self, prepare_accounts):
         """Verify implemented rpc calls work eth_getTransactionReceipt"""
 

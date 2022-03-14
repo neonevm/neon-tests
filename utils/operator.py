@@ -39,7 +39,11 @@ class Operator:
         balances = []
         if len(self._operator_neon_rewards_address) > 0:
             for addr in self._operator_neon_rewards_address:
-                balances.append(self.web3.get_balance(addr))
+                balances.append(
+                    self.web3.get_balance(
+                        self.web3.toChecksumAddress(addr.lower())
+                    )
+                )
         else:
             for key in self._operator_keys:
                 if self._operator_keys[key] is None:

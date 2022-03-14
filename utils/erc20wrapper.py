@@ -92,7 +92,7 @@ class ERC20Wrapper:
                        ):
         solcx.install_solc("0.8.10")
         contract_path = (
-                pathlib.Path(__file__).parent / "erc20wrapper.sol"
+                pathlib.Path.cwd() / "contracts" / "erc20wrapper.sol"
         ).absolute()
 
         with open(contract_path, "r") as s:
@@ -166,7 +166,7 @@ class ERC20Wrapper:
 
     def get_wrapper_contract(self, contract_address):
         contract_path = (
-                pathlib.Path(__file__).parent / "erc20interface.sol"
+                pathlib.Path.cwd() / "contracts" / "erc20interface.sol"
         ).absolute()
 
         with open(contract_path, "r") as s:

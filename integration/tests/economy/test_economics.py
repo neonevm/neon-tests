@@ -67,13 +67,14 @@ class TestEconomics(BaseTests):
             contract_name = contract_name.rsplit(".", 1)[0]
 
         contract_path = (
-                pathlib.Path(__file__).parent / "contracts" / f"{contract_name}.sol"
+                pathlib.Path.cwd() / "contracts" / f"{contract_name}.sol"
         ).absolute()
 
         assert contract_path.exists()
 
         compiled = solcx.compile_files([contract_path], output_values=["abi", "bin"], solc_version=version)
         contract_interface = self.get_contract_abi(contract_name, compiled)
+
         return contract_interface
 
     def deploy_and_get_contract(self,
@@ -304,7 +305,7 @@ class TestEconomics(BaseTests):
         contract, contract_deploy_tx = self.deploy_and_get_contract("ERC20", "0.6.6", constructor_args=[1000])
 
         assert contract.functions.balanceOf(self.acc.address).call() == 1000
-        self.web3_client.send_neon(self.acc, contract_deploy_tx["contractAddress"], 10)
+
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
 

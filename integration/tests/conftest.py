@@ -11,16 +11,13 @@ import allure
 import pytest
 import solana
 import solana.rpc.api
-from solana.publickey import PublicKey as SolanaPublickey
-from solana.rpc.commitment import Commitment
-from solana.account import Account as SolanaAccount
+
 from _pytest.config import Config
 
 from utils.operator import Operator
 from utils.faucet import Faucet
 from utils.web3client import NeonWeb3Client
 from utils.erc20wrapper import ERC20Wrapper
-from eth_keys.datatypes import PrivateKey as NeonPrivateKey
 
 from solana.keypair import Keypair
 
@@ -37,6 +34,7 @@ class EnvironmentConfig:
     network_id: int
     operator_neon_rewards_address: tp.List[str]
     spl_neon_mint: str
+    neon_erc20wrapper_address: str
     operator_keys: tp.List[str]
 
 

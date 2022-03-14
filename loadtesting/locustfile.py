@@ -138,6 +138,8 @@ class NeonProxyBaseTasksSet(TaskSet):
     """
 
     _neon_consumer_id: int = 0
+    """Consumer id
+    """
 
     _setup_class_locker = gevent.threading.Lock()
     _setup_class_done = False
@@ -149,7 +151,7 @@ class NeonProxyBaseTasksSet(TaskSet):
     @staticmethod
     def setup_class() -> None:
         """Base initialization"""
-        NeonProxyBaseTasksSet.web3_client = NeonWeb3ClientExt(credentials["proxy_url"], credentials["network_id"])
+        NeonProxyBaseTasksSet.web3_client = NeonWeb3Client(credentials["proxy_url"], credentials["network_id"])
         NeonProxyBaseTasksSet._faucet = Faucet(credentials["faucet_url"])
         NeonProxyBaseTasksSet._accounts = []
 
@@ -203,11 +205,12 @@ class NeonProxyTasksSet(NeonProxyBaseTasksSet):
 
     @task
     @extend_task("task_block_number", "task_keeps_balance")
+    @statistics_collector
     def send_neon(self) -> None:
         """Transferring funds to a random account"""
         # add credits to account
         recipient = random.choice(NeonProxyTasksSet._accounts)
-        self.log.info(f"Send neon form {str(self.account.address)[:8]} to {str(recipient.address)[:8]}.")
+        self.log.info(f"Send `neon` from {str(self.account.address)[:8]} to {str(recipient.address)[:8]}.")
         self.web3_client.send_neon(self.account, recipient, amount=10)
 
 

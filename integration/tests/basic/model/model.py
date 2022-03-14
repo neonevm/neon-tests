@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 
 from dataclasses_json import CatchAll, LetterCase, dataclass_json, Undefined
-from time import time
-from typing import Any, List, Optional, Union
+from typing import Any, List, Union
 
 
 @dataclass_json(letter_case=LetterCase.CAMEL)
@@ -54,7 +53,7 @@ class JsonRpcErrorResponse:
     jsonrpc: str = "2.0"
 
 
-# TODO: used only once
+
 @dataclass_json(letter_case=LetterCase.CAMEL, undefined=Undefined.INCLUDE)
 @dataclass
 class TrxResponse:
@@ -74,6 +73,7 @@ class TrxResponse:
     s: str
 
 
+# commented fields aren't represented in Neon EVM
 @dataclass_json(letter_case=LetterCase.CAMEL, undefined=Undefined.INCLUDE)
 @dataclass(frozen=True)
 class BlockResponse:
@@ -99,7 +99,6 @@ class BlockResponse:
     unknown: CatchAll
 
 
-# TODO: used only once
 @dataclass_json(letter_case=LetterCase.CAMEL, undefined=Undefined.INCLUDE)
 @dataclass(frozen=True)
 class TrxReceiptResponse:
@@ -116,3 +115,8 @@ class TrxReceiptResponse:
     logs_bloom: str
     # root: Any
     status: int
+
+
+@dataclass
+class InvalidAddress:
+    address: str

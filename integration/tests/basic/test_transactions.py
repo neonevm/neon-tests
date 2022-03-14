@@ -1,7 +1,7 @@
 import allure
 import pytest
 from integration.tests.basic.helpers.basic import BasicTests
-from integration.tests.basic.model.model import JsonRpcResponse, TrxReceiptResponse, TrxResponse
+from integration.tests.basic.model.model import TrxReceiptResponse, TrxResponse
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
@@ -85,8 +85,6 @@ class TestRpcCallsTransactions(BasicTests):
         assert self.assert_is_successful_response(
             actual_result), AssertMessage.WRONG_TYPE.value
         assert '0x' in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
-
-        # FYI: JsonRpcResponse(id=42, result='0x9609b6c8d6b62019e80229e7cb60032e57ad86d353ed239e923cca5250b86237', jsonrpc='2.0')
 
         # TODO: calculate sender's amount
         # self.assert_sender_amount(

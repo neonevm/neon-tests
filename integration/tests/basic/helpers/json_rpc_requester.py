@@ -12,19 +12,16 @@ class JsonRpcRequester:
         self._url = proxy_url
         self._session = requests.Session()
 
-    @allure.step("requesting Json-RPC")
     def request_json_rpc(self, data: JsonRpcRequest) -> Response:
-        with allure.step("getting response"):
+        with allure.step(f'Request: {data}'):
             return self._session.post(self._url, json=dataclasses.asdict(data))
 
-    # TODO: deserialize subobject
-    @allure.step("deserializing response from JSON")
     def deserialize_response(
             self,
             response: Response,
             type: Type = None) -> Union[JsonRpcResponse, JsonRpcErrorResponse]:
-        str_data = self.stringify(response.json())
-        with allure.step("deserialized"):
+        str_data = str(response.json())
+        with allure.step(f'Response: {str_data}'):
             if 'result' in str_data:
                 return self.deserialize_successful_response(response=response,
                                                             type=type)
@@ -43,7 +40,3 @@ class JsonRpcRequester:
         result_subobject = type.from_dict(result_dict)
         json_rpc_response.result = result_subobject
         return json_rpc_response
-
-    @allure.step("showing as JSON")
-    def stringify(self, data) -> str:
-        return str(data)

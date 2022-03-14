@@ -56,6 +56,7 @@ stack overflow и stack underflow
 '''
 
 FAUCET_TEST_DATA = [(1), (5), (999), (1_0000), (20_000)]
+FAUCET_REQUEST_MESSAGE = "requesting faucet for Neon"
 
 
 @allure.story("Basic: single user tests")
@@ -70,8 +71,9 @@ class TestSingleClient(BasicTests):
     def test_check_tokens_in_wallet_neon(self):
         """Check tokens in wallet: neon"""
         account = self.create_account()
-        self.request_faucet_neon(
-            account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+        with allure.step(FAUCET_REQUEST_MESSAGE):
+            self.request_faucet_neon(account.address,
+                                     InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
         self.assert_amount(account.address,
                            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
 
@@ -95,7 +97,8 @@ class TestSingleClient(BasicTests):
         """Verify faucet work (request drop for several accounts): single request"""
         for _ in range(10):
             account = self.create_account()
-            self.request_faucet_neon(account.address, amount)
+            with allure.step(FAUCET_REQUEST_MESSAGE):
+                self.request_faucet_neon(account.address, amount)
             self.assert_amount(account.address, amount)
 
     @allure.step(
@@ -106,10 +109,11 @@ class TestSingleClient(BasicTests):
         """Verify faucet work (request drop for several accounts): double request"""
         for _ in range(10):
             account = self.create_account()
-            self.request_faucet_neon(account.address, amount)
-            self.request_faucet_neon(
-                account.address,
-                InputData.FAUCET_2ND_REQUEST_AMOUNT.value)
+            with allure.step(FAUCET_REQUEST_MESSAGE):
+                self.request_faucet_neon(account.address, amount)
+            with allure.step(FAUCET_REQUEST_MESSAGE):
+                self.request_faucet_neon(
+                    account.address, InputData.FAUCET_2ND_REQUEST_AMOUNT.value)
             self.assert_amount(
                 account.address,
                 amount + InputData.FAUCET_2ND_REQUEST_AMOUNT.value)

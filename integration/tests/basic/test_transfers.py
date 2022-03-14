@@ -2,12 +2,12 @@ import allure
 import pytest
 from typing import Union
 from integration.tests.basic.helpers.basic import WAITING_FOR_ERC20, WAITING_FOR_MS, BasicTests
+from integration.tests.basic.helpers.error_message import ErrorMessage
+from integration.tests.basic.model.model import InvalidAddress
 from integration.tests.basic.test_data.input_data import InputData
 
-NON_EXISTING_ADDRESS = "0xmmmmm"
-INVALID_ADDRESS = "0x12345"
-
-ENS_NAME_ERROR = f"ENS name: '{INVALID_ADDRESS}' is invalid."
+INVALID_ADDRESS = InvalidAddress(address="0x12345")
+ENS_NAME_ERROR = f"ENS name: '{INVALID_ADDRESS.address}' is invalid."
 EIP55_INVALID_CHECKUM = "'Address has an invalid EIP-55 checksum. After looking up the address from the original source, try again.'"
 
 WRONG_TRANSFER_AMOUNT_DATA = [(10), (100), (10.1)]
@@ -75,8 +75,8 @@ class TestTransfer(BasicTests):
     def test_zero_neon(self, prepare_accounts):
         """Send zero: neon"""
 
-        tx_receipt = self.transfer_zero_neon(self.sender_account,
-                                             self.recipient_account)
+        tx_receipt = self.process_transaction(self.sender_account,
+                                              self.recipient_account)
 
         self.assert_sender_amount(
             self.sender_account.address,
@@ -101,9 +101,9 @@ class TestTransfer(BasicTests):
     def test_send_negative_sum_from_account_neon(self, prepare_accounts):
         """Send negative sum from account: neon"""
 
-        self.transfer_negative_neon(self.sender_account,
-                                    self.recipient_account,
-                                    InputData.NEGATIVE_AMOUNT.value)
+        self.process_transaction_with_failure(
+            self.sender_account, self.recipient_account,
+            InputData.NEGATIVE_AMOUNT.value, ErrorMessage.NEGATIVE_VALUE.value)
 
         self.assert_sender_amount(self.sender_account.address,
                                   InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
@@ -127,10 +127,9 @@ class TestTransfer(BasicTests):
     def test_send_token_to_an_invalid_address(self):
         """Send token to an invalid address"""
         sender_account = self.create_account_with_balance()
-        recipient_address = INVALID_ADDRESS
 
-        self.transfer_to_invalid_address(
-            sender_account, recipient_address,
+        self.process_transaction_with_failure(
+            sender_account, INVALID_ADDRESS,
             InputData.DEFAULT_TRANSFER_AMOUNT.value, ENS_NAME_ERROR)
 
         self.assert_sender_amount(sender_account.address,
@@ -140,10 +139,10 @@ class TestTransfer(BasicTests):
     def test_send_more_token_to_non_existing_address(self):
         """Send token to a non-existing address"""
         sender_account = self.create_account_with_balance()
-        recipient_address = sender_account.address.replace('1', '2').replace(
-            '3', '4')
+        recipient_address = InvalidAddress(
+            address=sender_account.address.replace('1', '2').replace('3', '4'))
 
-        self.transfer_to_invalid_address(
+        self.process_transaction_with_failure(
             sender_account, recipient_address,
             InputData.DEFAULT_TRANSFER_AMOUNT.value, EIP55_INVALID_CHECKUM)
 

@@ -7,8 +7,21 @@
     "operator_neon_rewards_address": [],
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "operator_neon_rewards_address": [
-      "0x8966Ef2ae7A109Fd0977F5151b4607dc42929fBD",
-      "0x619d670152103a972B67a45b9Be764FF11979E4E"
+      "0x098ff879e923063cd538f6a84d6f0f0f68707d65",
+      "0x181fe64831130575ec6ea6a1de0183464dc13f8f",
+      "0x2ad6ed986ad6caa4be7752d6f62496b79f935062",
+      "0x4a901eefb08073be155363362433cd0ea14476e4",
+      "0x66af4fd019c2d2290deb2d9413c7bd4a5b9098e1",
+      "0x87386b7d01cd1997777039b0d765a619c9f15ae4",
+      "0x910bc86b92aa1bda080648ae19216e7ebe8dc340",
+      "0xa2e0e83a67c30a3d1b275174c55fba482aefb1e8",
+      "0xb1239ffe4a30d4ad678f42cd5e56ce13c0daf3e9",
+      "0xc6e5512efdb0c693c9a78755754f577e2fbb742d",
+      "0xd1b27c35c47bd37398ad6ab642b1bf63aec0ca43",
+      "0xddce527b997472e70a7d5b98712392a43f66a9af",
+      "0xe5b82b93923143f915ba81343a34d982b49c5aef",
+      "0xe64533d0b2d46f50c6a92b74ea6310555fc5796b",
+      "0xf9d6b9185de626df96ea9b03c7f8dc72c625e20c"
     ],
     "operator_keys": [
       "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih",
@@ -55,8 +68,21 @@
     "solana_url": "http://127.0.0.1:8899/",
     "faucet_url": "http://127.0.0.1:3333/",
     "operator_neon_rewards_address": [
-      "0x8966Ef2ae7A109Fd0977F5151b4607dc42929fBD",
-      "0x619d670152103a972B67a45b9Be764FF11979E4E"
+      "0x098ff879e923063cd538f6a84d6f0f0f68707d65",
+      "0x181fe64831130575ec6ea6a1de0183464dc13f8f",
+      "0x2ad6ed986ad6caa4be7752d6f62496b79f935062",
+      "0x4a901eefb08073be155363362433cd0ea14476e4",
+      "0x66af4fd019c2d2290deb2d9413c7bd4a5b9098e1",
+      "0x87386b7d01cd1997777039b0d765a619c9f15ae4",
+      "0x910bc86b92aa1bda080648ae19216e7ebe8dc340",
+      "0xa2e0e83a67c30a3d1b275174c55fba482aefb1e8",
+      "0xb1239ffe4a30d4ad678f42cd5e56ce13c0daf3e9",
+      "0xc6e5512efdb0c693c9a78755754f577e2fbb742d",
+      "0xd1b27c35c47bd37398ad6ab642b1bf63aec0ca43",
+      "0xddce527b997472e70a7d5b98712392a43f66a9af",
+      "0xe5b82b93923143f915ba81343a34d982b49c5aef",
+      "0xe64533d0b2d46f50c6a92b74ea6310555fc5796b",
+      "0xf9d6b9185de626df96ea9b03c7f8dc72c625e20c"
     ],
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "operator_keys": [

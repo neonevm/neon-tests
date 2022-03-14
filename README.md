@@ -29,6 +29,20 @@ Please use clickfile.py to install deps because our web3 has conflicts with sola
 ./clickfile.py requirements
 ```
 
+
+##Run tests manual
+
+You can run all tests manual uif know which framework it uses. For example economy tests:
+
+```bash
+py.test integration/tests/economy/test_economics.py
+```
+
+##Useful options
+
+- --network - which network uses for run tests (from file envs.json)
+- --envs - change file name with networks
+
 ## Structure
 
 For our Proxy and EVM we need to use a lot of frameworks, languages, contracts and scenarios. For this I propose this

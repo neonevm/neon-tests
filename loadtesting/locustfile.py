@@ -15,13 +15,13 @@ from utils.web3client import NeonWeb3Client
 
 LOG = logging.getLogger("neon_client")
 
-ENVS = "envs.json"
+ENV_FILE = "envs.json"
 """ Default environment credentials storage 
 """
 
 
 @events.init_command_line_parser.add_listener
-def _(parser):
+def arg_parser(parser):
     """Add custom command line arguments to Locust"""
     parser.add_argument(
         "--network", type=str, env_var="NEON_NETWORK", default="night-stand", help="Test environment name."
@@ -36,18 +36,19 @@ def _(parser):
 
 
 @events.test_start.add_listener
-def _(environment, **kw):
+def load_credentials(environment, **kw):
     """Test start event handler"""
     cred = pathlib.Path(environment.parsed_options.credentials)
     network = environment.parsed_options.network
     if not (cred.exists() and cred.is_file()):
-        cred = pathlib.Path(__file__).parent / ".." / ENVS
+        cred = pathlib.Path(__file__).parent / ".." / ENV_FILE
     with open(cred, "r") as fp:
         global credentials
         credentials = json.load(fp).get(network, dict())
 
 
 class LocustEventHandler(object):
+    """Implements custom Locust events handler"""
     success = events.request_success
     failure = events.request_failure
 

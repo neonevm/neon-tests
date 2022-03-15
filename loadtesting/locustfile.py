@@ -10,6 +10,7 @@ import gevent
 import time
 from locust import HttpUser, TaskSet, between, task, events
 
+from utils import helpers
 from utils.faucet import Faucet
 from utils.web3client import NeonWeb3Client
 
@@ -17,6 +18,10 @@ LOG = logging.getLogger("neon_client")
 
 ENV_FILE = "envs.json"
 """ Default environment credentials storage 
+"""
+
+ERC20_VERSION = "0.6.6"
+"""ERC20 Protocol version
 """
 
 
@@ -49,6 +54,7 @@ def load_credentials(environment, **kw):
 
 class LocustEventHandler(object):
     """Implements custom Locust events handler"""
+
     success = events.request_success
     failure = events.request_failure
 
@@ -102,14 +108,14 @@ def statistics_collector(func: tp.Callable) -> tp.Callable:
     """Handle locust events."""
 
     @functools.wraps(func)
-    def wrap(self, *args, **kwargs) -> tp.Any:
+    def wrap(*args, **kwargs) -> tp.Any:
         event: tp.Dict[str, tp.Any] = dict(
             task_id=str(uuid.uuid4()), request_type=f"`{func.__name__.replace('_', ' ')}`"
         )
         locust_events_handler.init_event(**event)
         response = None
         try:
-            response = func(self, *args, **kwargs)
+            response = func(*args, **kwargs)
             event["event_type"] = "success"
         except Exception as err:
             event["exc_msg"] = err.args[0]
@@ -123,9 +129,12 @@ def statistics_collector(func: tp.Callable) -> tp.Callable:
 class NeonWeb3ClientExt(NeonWeb3Client):
     """Extends Neon Web3 client adds statistics metrics"""
 
-    @statistics_collector
-    def send_neon(self, *args, **kwargs):
-        super().send_neon(*args, **kwargs)
+    def __getattribute__(self, item):
+        black_list = ["create_account"]
+        attr = super(NeonWeb3ClientExt, self).__getattribute__(item)
+        if callable(attr) and item not in black_list:
+            attr = statistics_collector(attr)
+        return attr
 
 
 class NeonProxyBaseTasksSet(TaskSet):
@@ -137,6 +146,8 @@ class NeonProxyBaseTasksSet(TaskSet):
     _faucet: tp.Optional[Faucet] = None
     """Earn Free Cryptocurrencies service
     """
+
+    _erc20_contracts: tp.Optional[tp.List] = None
 
     _neon_consumer_id: int = 0
     """Consumer id
@@ -152,19 +163,46 @@ class NeonProxyBaseTasksSet(TaskSet):
     @staticmethod
     def setup_class() -> None:
         """Base initialization"""
-        NeonProxyBaseTasksSet.web3_client = NeonWeb3Client(credentials["proxy_url"], credentials["network_id"])
+        NeonProxyBaseTasksSet.web3_client = NeonWeb3ClientExt(credentials["proxy_url"], credentials["network_id"])
         NeonProxyBaseTasksSet._faucet = Faucet(credentials["faucet_url"])
         NeonProxyBaseTasksSet._accounts = []
+        NeonProxyBaseTasksSet._erc20_contracts = []
 
     def task_block_number(self) -> None:
         """Check the number of the most recent block"""
         self.web3_client.get_block_number()
 
-    def task_keeps_balance(self):
+    def task_keeps_balance(self) -> None:
         """Keeps account balance not empty"""
         if self.web3_client.get_balance(self.account.address) < 10:
             # add credits to account
             self._faucet.request_neon(self.account.address)
+
+    def deploy_contract(
+        self,
+        name: str,
+        version: str,
+        account: "eth_account.signers.local.LocalAccount",
+        constructor_args: tp.Optional[tp.Any] = None,
+        gas: tp.Optional[int] = 0,
+    ) -> "web3._utils.datatypes.Contract":
+        """contract deployments"""
+
+        contract_interface = helpers.get_contract_interface(name, version)
+
+        contract_deploy_tx = self.web3_client.deploy_contract(
+            account,
+            abi=contract_interface["abi"],
+            bytecode=contract_interface["bin"],
+            constructor_args=constructor_args,
+            gas=gas,
+        )
+
+        contract = self.web3_client.eth.contract(
+            address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
+        )
+
+        return contract, contract_deploy_tx
 
     def setup(self) -> None:
         """Prepare data requirements"""
@@ -202,12 +240,11 @@ def extend_task(*attrs) -> tp.Callable:
 
 
 class NeonProxyTasksSet(NeonProxyBaseTasksSet):
-    """Implements Neon proxy pipeline tasks"""
+    """Implements Neons transfer base pipeline tasks"""
 
     @task
     @extend_task("task_block_number", "task_keeps_balance")
-    @statistics_collector
-    def send_neon(self) -> None:
+    def task_send_neon(self) -> None:
         """Transferring funds to a random account"""
         # add credits to account
         recipient = random.choice(NeonProxyTasksSet._accounts)
@@ -215,6 +252,32 @@ class NeonProxyTasksSet(NeonProxyBaseTasksSet):
         self.web3_client.send_neon(self.account, recipient, amount=10)
 
 
-class NeonProxyUser(HttpUser):
+class ERC20ProxyTasksSet(NeonProxyBaseTasksSet):
+    """Implements ERC20 base pipeline tasks"""
+
+    _erc20_version = ERC20_VERSION
+
+    @task
+    @extend_task("task_block_number", "task_keeps_balance")
+    def task_deploy_contract(self) -> None:
+        """Deploy ERC20 contract"""
+        self.log.info(f"Deploy `ERC20` contract.")
+
+        contract, contract_deploy_tx = self.deploy_contract(
+            "ERC20", self._erc20_version, self.account, constructor_args=[1000]
+        )
+        self._erc20_contracts.append(contract.address)
+
+
+class NeonUser(HttpUser):
+    """class represents a `Neons` transfer pipeline by one user"""
+
     wait_time = between(1, 3)
     tasks = [NeonProxyTasksSet]
+
+
+class ERC20User(HttpUser):
+    """class represents the pipeline of basic tasks of the ERC20 protocol by one user"""
+
+    wait_time = between(1, 3)
+    tasks = [ERC20ProxyTasksSet]

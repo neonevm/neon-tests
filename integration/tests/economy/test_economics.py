@@ -1,6 +1,6 @@
 import pathlib
-import typing as tp
 import time
+import typing as tp
 from decimal import Decimal, getcontext
 
 import rlp
@@ -8,12 +8,20 @@ import pytest
 import solcx
 import allure
 import eth_account.signers.local
+from solana.publickey import PublicKey
+from solana.keypair import Keypair as SolanaAccount
+from solana.transaction import Transaction
+from solana.rpc.types import TxOpts
+from solana.rpc.types import TokenAccountOpts, Commitment
+from spl.token.instructions import create_associated_token_account, get_associated_token_address
+
+from _pytest.config import Config
 
 from ..base import BaseTests
 
 NEON_PRICE = 0.25
 
-LAMPORT_PER_SOL = 1000000000
+LAMPORT_PER_SOL = 1_000_000_000
 DECIMAL_CONTEXT = getcontext()
 DECIMAL_CONTEXT.prec = 9
 
@@ -49,10 +57,25 @@ class TestEconomics(BaseTests):
         with allure.step(msg):
             assert neon_cost > sol_cost, msg
 
-    def get_compiled_contract(self, name, compiled):
+    def get_contract_abi(self, name, compiled):
         for key in compiled.keys():
             if name in key:
                 return compiled[key]
+
+    def get_contract_interface(self, contract_name: str, version: str):
+        if contract_name.endswith(".sol"):
+            contract_name = contract_name.rsplit(".", 1)[0]
+
+        contract_path = (
+                pathlib.Path.cwd() / "contracts" / f"{contract_name}.sol"
+        ).absolute()
+
+        assert contract_path.exists()
+
+        compiled = solcx.compile_files([contract_path], output_values=["abi", "bin"], solc_version=version)
+        contract_interface = self.get_contract_abi(contract_name, compiled)
+
+        return contract_interface
 
     def deploy_and_get_contract(self,
                                 contract_name: str,
@@ -61,20 +84,11 @@ class TestEconomics(BaseTests):
                                 constructor_args: tp.Optional[tp.Any] = None,
                                 gas: tp.Optional[int] = 0
                                 ):
-        if contract_name.endswith(".sol"):
-            contract_name = contract_name.rsplit(".", 1)[0]
-
-        contract_path = (
-                pathlib.Path(__file__).parent / "contracts" / f"{contract_name}.sol"
-        ).absolute()
-
-        assert contract_path.exists()
 
         if account is None:
             account = self.acc
 
-        compiled = solcx.compile_files([contract_path], output_values=["abi", "bin"], solc_version=version)
-        contract_interface = self.get_compiled_contract(contract_name, compiled)
+        contract_interface = self.get_contract_interface(contract_name, version)
 
         contract_deploy_tx = self.web3_client.deploy_contract(
             account,
@@ -161,9 +175,127 @@ class TestEconomics(BaseTests):
         assert sol_balance_before == sol_balance_after
         assert neon_balance_before == neon_balance_after
 
-    @pytest.mark.skip("Not implemented")
-    def test_spl_transaction(self):
-        pass
+    def test_erc20wrapper_transfer(self, erc20wrapper):
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        contract, spl_owner = erc20wrapper
+
+        assert contract.functions.balanceOf(self.acc.address).call() == 0
+
+        transfer_tx = self.web3_client.send_erc20(
+            spl_owner, self.acc, 25, contract.address, abi=contract.abi
+        )
+
+        assert contract.functions.balanceOf(self.acc.address).call() == 25
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before > sol_balance_after
+
+        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
+
+    def test_withdraw_neon_unexisting_ata(self, pytestconfig: Config):
+        sol_user = SolanaAccount()
+        self.sol_client.request_airdrop(sol_user.public_key, 5 * LAMPORT_PER_SOL)
+
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        contract_interface = self.get_contract_interface("NeonToken.sol", "0.8.10")
+        contract = self.web3_client.eth.contract(
+            address=pytestconfig.environment.neon_erc20wrapper_address, abi=contract_interface["abi"]
+        )
+
+        user_neon_balance_before = self.web3_client.get_balance(self.acc)
+        move_amount = self.web3_client._web3.toWei(5, "ether")
+
+        instruction_tx = contract.functions.withdraw(bytes(sol_user.public_key)).buildTransaction(
+            {
+                "from": self.acc.address,
+                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
+                "gasPrice": self.web3_client.gas_price(),
+                "value": move_amount
+            }
+        )
+        receipt = self.web3_client.send_transaction(self.acc, instruction_tx)
+
+        assert receipt["status"] == 1
+        assert (user_neon_balance_before - self.web3_client.get_balance(self.acc)) > 5
+        sol_balances = self.sol_client.get_token_accounts_by_owner(
+            sol_user.public_key,
+            TokenAccountOpts(mint=pytestconfig.environment.spl_neon_mint, encoding="jsonParsed"),
+            Commitment("confirmed")
+        )["result"]
+
+        assert int(sol_balances["value"][0]["account"]["data"]["parsed"]["info"]["tokenAmount"]["amount"]) == int(move_amount / 1_000_000_000)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before > sol_balance_after
+        assert neon_balance_after > neon_balance_before
+
+        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
+
+    def test_withdraw_neon_existing_ata(self, pytestconfig):
+        neon_mint = PublicKey(pytestconfig.environment.spl_neon_mint)
+        sol_user = SolanaAccount()
+        self.sol_client.request_airdrop(sol_user.public_key, 5 * LAMPORT_PER_SOL)
+
+        for _ in range(6):
+            if self.sol_client.get_balance(sol_user.public_key) != 0:
+                break
+            time.sleep(10)
+
+        trx = Transaction()
+        trx.add(
+            create_associated_token_account(
+                sol_user.public_key,
+                sol_user.public_key,
+                neon_mint
+            )
+        )
+
+        opts = TxOpts(skip_preflight=True, skip_confirmation=False)
+        self.sol_client.send_transaction(trx, sol_user, opts=opts)
+
+        dest_token_acc = get_associated_token_address(sol_user.public_key, neon_mint)
+
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        contract_interface = self.get_contract_interface("NeonToken.sol", "0.8.10")
+        contract = self.web3_client.eth.contract(
+            address=pytestconfig.environment.neon_erc20wrapper_address, abi=contract_interface["abi"]
+        )
+
+        user_neon_balance_before = self.web3_client.get_balance(self.acc)
+        move_amount = self.web3_client._web3.toWei(5, "ether")
+
+        instruction_tx = contract.functions.withdraw(bytes(sol_user.public_key)).buildTransaction(
+            {
+                "from": self.acc.address,
+                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
+                "gasPrice": self.web3_client.gas_price(),
+                "value": move_amount
+            }
+        )
+        receipt = self.web3_client.send_transaction(self.acc, instruction_tx)
+
+        assert receipt["status"] == 1
+        assert (user_neon_balance_before - self.web3_client.get_balance(self.acc)) > 5
+        assert int(self.sol_client.get_token_account_balance(
+            dest_token_acc, Commitment("confirmed")
+        )["result"]["value"]["amount"]) == move_amount / 1_000_000_000
+
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before > sol_balance_after
+        assert neon_balance_after > neon_balance_before
+
+        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
     def test_erc20_contract(self):
         """Verify ERC20 token send"""
@@ -199,6 +331,7 @@ class TestEconomics(BaseTests):
         neon_balance_after = self.operator.get_neon_balance()
 
         assert sol_balance_before > sol_balance_after
+        assert neon_balance_after > neon_balance_before
 
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 

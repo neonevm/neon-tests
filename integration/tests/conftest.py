@@ -1,18 +1,26 @@
 import json
+import random
+import string
 import shutil
 import pathlib
+import time
 import typing as tp
 from dataclasses import dataclass
 
 import allure
 import pytest
 import solana
+import solana.rpc.api
+
 from _pytest.config import Config
 from integration.tests.basic.helpers.json_rpc_requester import JsonRpcRequester
 
 from utils.operator import Operator
 from utils.faucet import Faucet
 from utils.web3client import NeonWeb3Client
+from utils.erc20wrapper import ERC20Wrapper
+
+from solana.keypair import Keypair
 
 
 LAMPORT_PER_SOL = 1_000_000_000
@@ -20,13 +28,14 @@ LAMPORT_PER_SOL = 1_000_000_000
 
 @dataclass
 class EnvironmentConfig:
-    # name: str
+    evm_loader: str
     proxy_url: str
     solana_url: str
     faucet_url: str
     network_id: int
     operator_neon_rewards_address: tp.List[str]
     spl_neon_mint: str
+    neon_erc20wrapper_address: str
     operator_keys: tp.List[str]
 
 
@@ -98,7 +107,7 @@ def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
 
 
 @pytest.fixture(scope="class")
-def prepare_account(operator, faucet, web3_client):
+def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
     """Create new account for tests and save operator pre/post balances"""
     with allure.step("Create account for tests"):
         acc = web3_client.eth.account.create()
@@ -118,3 +127,35 @@ def prepare_account(operator, faucet, web3_client):
             f"Account end balance: {web3_client.get_balance(acc)} NEON"):
         pass
 
+
+@pytest.fixture(scope="session")
+def erc20wrapper(sol_client, web3_client: NeonWeb3Client, faucet, pytestconfig: Config):
+    wrapper = ERC20Wrapper(web3_client, sol_client, pytestconfig.environment.evm_loader, pytestconfig.environment.spl_neon_mint)
+    owner = Keypair.generate()
+
+    sol_client.request_airdrop(owner.public_key, 10000000000)
+
+    for _ in range(10):
+        if sol_client.get_balance(owner.public_key)["result"]["value"] == 10000000000:
+            break
+        time.sleep(5)
+
+    token = wrapper.create_spl(owner)
+
+    eth_user = web3_client.create_account()
+
+    faucet.request_neon(eth_user.address, 100)
+    symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
+
+    contract, address = wrapper.deploy_wrapper(
+        name=f"Test {symbol}",
+        symbol=symbol,
+        account=eth_user,
+        mint_address=token.pubkey
+    )
+
+    wrapper.mint_tokens(eth_user.address, owner, token.pubkey, address)
+
+    contract = wrapper.get_wrapper_contract(address)
+
+    yield contract, eth_user

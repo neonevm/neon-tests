@@ -1,10 +1,12 @@
 {
   "night-stand": {
+    "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
     "proxy_url": "http://proxy.night.stand.neontest.xyz/solana",
     "network_id": 111,
     "solana_url": "http://proxy.night.stand.neontest.xyz/node-solana",
     "faucet_url": "http://proxy.night.stand.neontest.xyz",
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
+    "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
     "operator_neon_rewards_address": [
       "0x098ff879e923063cd538f6a84d6f0f0f68707d65",
       "0x181fe64831130575ec6ea6a1de0183464dc13f8f",
@@ -41,6 +43,7 @@
     ]
   },
   "release-stand": {
+    "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
     "proxy_url": "http://proxy.release.stand.neontest.xyz/solana",
     "network_id": 111,
     "solana_url": "http://proxy.release.stand.neontest.xyz/node-solana",
@@ -52,20 +55,25 @@
     ]
   },
   "devnet": {
+    "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
     "proxy_url": "https://proxy.devnet.neonlabs.org/solana",
     "network_id": 245022926,
     "solana_url": "http://neon.devnet.rpcpool.com/c7710a7b633cbadb9be9900c7946/",
     "faucet_url": "https://neonswap.live/",
     "operator_neon_rewards_address": [],
+    "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "operator_keys": [
       "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih"
     ]
   },
   "local": {
+    "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
     "proxy_url": "http://127.0.0.1:9090/solana",
     "network_id": 111,
     "solana_url": "http://127.0.0.1:8899/",
     "faucet_url": "http://127.0.0.1:3333/",
+    "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
+    "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
     "operator_neon_rewards_address": [
       "0x098ff879e923063cd538f6a84d6f0f0f68707d65",
       "0x181fe64831130575ec6ea6a1de0183464dc13f8f",
@@ -83,7 +91,6 @@
       "0xe64533d0b2d46f50c6a92b74ea6310555fc5796b",
       "0xf9d6b9185de626df96ea9b03c7f8dc72c625e20c"
     ],
-    "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "operator_keys": [
       "BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih",
       "9kPRbbwKL5SYELF4cZqWWFmP88QkKys51DoaUBx8eK73",

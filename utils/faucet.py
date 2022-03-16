@@ -10,8 +10,5 @@ class Faucet:
     def request_neon(self, address: str, amount: int = 100):
         assert address.startswith("0x")
         url = urllib.parse.urljoin(self._url, "request_neon")
-        self._session.post(url, json={"amount": amount, "wallet": address})
-
-    def request_sol(self, address: str, amount: int = 100):
-        url = urllib.parse.urljoin(self._url, "request_sol_token")
-        self._session.post(url, json={"amount": amount, "wallet": address})
+        resp = self._session.post(url, json={"amount": amount, "wallet": address})
+        assert resp.status_code == 200

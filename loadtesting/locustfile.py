@@ -6,15 +6,20 @@ import random
 import time
 import typing as tp
 import uuid
+import requests
 
 import gevent
-from locust import HttpUser, TaskSet, between, task, events
+from locust import User, TaskSet, between, task, events
 
 from utils import helpers
 from utils.faucet import Faucet
 from utils.web3client import NeonWeb3Client
 
 LOG = logging.getLogger("neon_client")
+
+DEFAULT_NETWORK = "night-stand"
+"""Default test environment name
+"""
 
 ENV_FILE = "envs.json"
 """ Default environment credentials storage 
@@ -29,13 +34,10 @@ ERC20_VERSION = "0.6.6"
 def arg_parser(parser):
     """Add custom command line arguments to Locust"""
     parser.add_argument(
-        "--network", type=str, env_var="NEON_NETWORK", default="night-stand", help="Test environment name."
-    )
-    parser.add_argument(
         "--credentials",
         type=str,
         env_var="NEON_CRED",
-        default="",
+        default=ENV_FILE,
         help="Absolute path to environment credentials file.",
     )
 
@@ -43,13 +45,16 @@ def arg_parser(parser):
 @events.test_start.add_listener
 def load_credentials(environment, **kw):
     """Test start event handler"""
-    cred = pathlib.Path(environment.parsed_options.credentials)
-    network = environment.parsed_options.network
-    if not (cred.exists() and cred.is_file()):
-        cred = pathlib.Path(__file__).parent / ".." / ENV_FILE
-    with open(cred, "r") as fp:
+    path = pathlib.Path(environment.parsed_options.credentials)
+    network = environment.parsed_options.host
+    if not (path.exists() and path.is_file()):
+        path = pathlib.Path(__file__).parent.parent / ENV_FILE
+    with open(path, "r") as fp:
         global credentials
-        credentials = json.load(fp).get(network, dict())
+        f = json.load(fp)
+        credentials = f.get(network, f[DEFAULT_NETWORK])
+    global num_users
+    num_users = environment.parsed_options.num_users
 
 
 class LocustEventHandler(object):
@@ -130,9 +135,9 @@ class NeonWeb3ClientExt(NeonWeb3Client):
     """Extends Neon Web3 client adds statistics metrics"""
 
     def __getattribute__(self, item):
-        black_list = ["create_account"]
+        ignore_list = ["create_account"]
         attr = super(NeonWeb3ClientExt, self).__getattribute__(item)
-        if callable(attr) and item not in black_list:
+        if callable(attr) and item not in ignore_list:
             attr = statistics_collector(attr)
         return attr
 
@@ -161,10 +166,17 @@ class NeonProxyTasksSet(TaskSet):
     web3_client: tp.Optional[NeonWeb3ClientExt] = None
 
     @staticmethod
+    def __init_session() -> requests.Session:
+        """init request session with extended pool size"""
+        adapter = requests.adapters.HTTPAdapter(pool_connections=num_users, pool_maxsize=num_users, pool_block=True)
+        session = requests.Session()
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        return session
+
+    @staticmethod
     def setup_class() -> None:
         """Base initialization"""
-        NeonProxyTasksSet.web3_client = NeonWeb3ClientExt(credentials["proxy_url"], credentials["network_id"])
-        NeonProxyTasksSet._faucet = Faucet(credentials["faucet_url"])
         NeonProxyTasksSet._accounts = []
         NeonProxyTasksSet._erc20_contracts = []
 
@@ -206,6 +218,9 @@ class NeonProxyTasksSet(TaskSet):
 
     def setup(self) -> None:
         """Prepare data requirements"""
+        session = self.__init_session()
+        self._faucet = Faucet(credentials["faucet_url"], session=session)
+        self.web3_client = NeonWeb3ClientExt(credentials["proxy_url"], credentials["network_id"], session=session)
         # create new account for each simulating user
         self.account = self.web3_client.create_account()
         NeonProxyTasksSet._accounts.append(self.account)
@@ -286,7 +301,7 @@ class ERC20TasksSet(NeonProxyTasksSet):
         self.log.info(f"balance of contract {contract.address[:8]} is empty, cancel sending tokens")
 
 
-class NeonPipelineUser(HttpUser):
+class NeonPipelineUser(User):
     """class represents a base Neon pipeline by one user"""
 
     wait_time = between(1, 3)

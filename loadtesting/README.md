@@ -11,19 +11,14 @@ Python 3.6 or later, if you dont already have it.
    pip install -U locust==2.8.3 
    or 
    pip install -U -r ./deploy/requirements/prod.txt
-2. export NEON_NETWORK=night-stand 
-   or --network=night-stand as locust command line argument
-   export NEON_CRED=/Users/user_name/neon-tests/envs.json 
+2. export NEON_CRED=/Users/user_name/neon-tests/envs.json 
    or --credentials=/Users/user_name/neon-tests/envs.json as locust command linee argument 
-3. locust -f ./loadtesting/locustfile.py --headless --host=localhost -t 60 -u 10 -r 10 --logfile run.log
+3. locust -f ./loadtesting/locustfile.py --headless --host=night-stand -t 60 -u 10 -r 10 --logfile run.log
 ```
 
 #### Environment Variables
 
 Test configuration via environment variables settings:
-
-- `NEON_NETWORK`
-  Test environment name.
 
 - `NEON_CRED`
   Absolute path to environment credentials file.
@@ -31,10 +26,10 @@ Test configuration via environment variables settings:
 
 ## Running the test and analyzing the results in the console without using the web interface 
 
-##### Instant load method 
+##### Instant load method without locust web interface 
 ```bash
 
-locust -f ./loadtesting/locustfile.py --headless --host=localhost -u 10 -r 10
+locust -f ./loadtesting/locustfile.py --headless --host=night-stand -u 10 -r 10
 
 -f             : Python module to import, e.g. '../other_test.py'. Either a .py file or a package directory.
                  Defaults to 'locustfile'
@@ -45,6 +40,7 @@ locust -f ./loadtesting/locustfile.py --headless --host=localhost -u 10 -r 10
                  --autostart
 --headless     : Disable the web interface, and start the test immediately. Use -u and -t to control user
                  count and run time
+--host or -h   : Test environment name (night-stand | devnet | local)
 ```
 
 ##### Statistics metrics 

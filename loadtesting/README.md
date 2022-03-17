@@ -43,6 +43,58 @@ locust -f ./loadtesting/locustfile.py --headless --host=night-stand -u 10 -r 10
 --host or -h   : Test environment name (night-stand | devnet | local)
 ```
 
+### Running the test with clickfile
+```bash
+./clickfile locust --help
+
+
+Usage: clickfile.py locust [OPTIONS]
+
+  Run `neon` pipeline performance test
+
+Options:
+  -f, --locustfile TEXT           Python module to import. It's sub-folder and
+                                  file name.  [default:
+                                  loadtesting/locustfile.py]
+  -h, --host [night-stand|release-stand|devnet|local]
+                                  In which stand run tests.  [default: night-
+                                  stand]
+  -u, --users INTEGER             Peak number of concurrent Locust users.
+                                  [default: 10]
+  -r, --spawn-rate INTEGER        Rate to spawn users at (users per second)
+                                  [default: 1]
+  -t, --run-time INTEGER          Stop after the specified amount of time,
+                                  e.g. (300s, 20m, 3h, 1h30m, etc.). Only used
+                                  together without Locust Web UI. [default:
+                                  always run]
+  --web-ui / -w, --headless       Enable the web interface. If UI is enabled,
+                                  go to http://0.0.0.0:8089/ [default: `Web UI
+                                  is enabled`]
+  --help                          Show this message and exit.
+```
+##### Running test with Web UI
+```bash
+./clifile locust
+then go to http://0.0.0.0:8089/
+
+[2022-03-17 16:21:43,161] local/INFO/locust.main: Starting web interface at http://0.0.0.0:8089 (accepting connections from all network interfaces)
+[2022-03-17 16:21:43,175] local/INFO/locust.main: Starting Locust 2.8.3
+
+for exit press Ctrl+C
+
+for more options use --help
+```
+
+##### Running test without Web UI (headless mode)
+```bash
+./clifile locust --headless | -w 
+Test will start immediately. Use -u and -t to control user count and run time
+
+for exit press Ctrl+C
+
+for more options use --help
+```
+
 ##### Statistics metrics 
 ```bash
 

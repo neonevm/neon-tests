@@ -30,6 +30,15 @@ ERC20_VERSION = "0.6.6"
 """
 
 
+def init_session(size: int) -> requests.Session:
+    """init request session with extended connection pool size"""
+    adapter = requests.adapters.HTTPAdapter(pool_connections=size, pool_maxsize=size, pool_block=True)
+    session = requests.Session()
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
+
 @events.init_command_line_parser.add_listener
 def arg_parser(parser):
     """Add custom command line arguments to Locust"""
@@ -43,7 +52,7 @@ def arg_parser(parser):
 
 
 @events.test_start.add_listener
-def load_credentials(environment, **kw):
+def load_credentials(environment, **kwargs):
     """Test start event handler"""
     path = pathlib.Path(environment.parsed_options.credentials)
     network = environment.parsed_options.host
@@ -53,8 +62,6 @@ def load_credentials(environment, **kw):
         global credentials
         f = json.load(fp)
         credentials = f.get(network, f[DEFAULT_NETWORK])
-    global num_users
-    num_users = environment.parsed_options.num_users
 
 
 class LocustEventHandler(object):
@@ -148,11 +155,13 @@ class NeonProxyTasksSet(TaskSet):
     _accounts: tp.Optional[tp.List] = None
     """Cross user Accounts storage
     """
+    _erc20_contracts: tp.Optional[tp.List[tp.Tuple]] = None
+    """user erc20 contracts storage 
+    """
+
     _faucet: tp.Optional[Faucet] = None
     """Earn Free Cryptocurrencies service
     """
-
-    _erc20_contracts: tp.Optional[tp.List[tp.Tuple]] = None
 
     _neon_consumer_id: int = 0
     """Consumer id
@@ -166,19 +175,33 @@ class NeonProxyTasksSet(TaskSet):
     web3_client: tp.Optional[NeonWeb3ClientExt] = None
 
     @staticmethod
-    def __init_session() -> requests.Session:
-        """init request session with extended pool size"""
-        adapter = requests.adapters.HTTPAdapter(pool_connections=num_users, pool_maxsize=num_users, pool_block=True)
-        session = requests.Session()
-        session.mount("http://", adapter)
-        session.mount("https://", adapter)
-        return session
-
-    @staticmethod
     def setup_class() -> None:
         """Base initialization"""
         NeonProxyTasksSet._accounts = []
         NeonProxyTasksSet._erc20_contracts = []
+
+    def setup(self) -> None:
+        """Prepare data requirements"""
+        # create new account for each simulating user
+        self.account = self.web3_client.create_account()
+        NeonProxyTasksSet._accounts.append(self.account)
+
+    def on_start(self) -> None:
+        """on_start is called when a Locust start before any task is scheduled"""
+        # setup class once
+        with self._setup_class_locker:
+            if not NeonProxyTasksSet._setup_class_done:
+                self.setup_class()
+                NeonProxyTasksSet._setup_class_done = True
+            NeonProxyTasksSet._neon_consumer_id += 1
+            self.neon_consumer_id = NeonProxyTasksSet._neon_consumer_id
+            session = init_session(
+                self.user.environment.parsed_options.num_users or self.user.environment.runner.target_user_count
+            )
+            self._faucet = Faucet(credentials["faucet_url"], session=session)
+            self.web3_client = NeonWeb3ClientExt(credentials["proxy_url"], credentials["network_id"], session=session)
+        self.setup()
+        self.log = logging.getLogger("neon-consumer[%s]" % self.neon_consumer_id)
 
     def task_block_number(self) -> None:
         """Check the number of the most recent block"""
@@ -215,27 +238,6 @@ class NeonProxyTasksSet(TaskSet):
         )
 
         return contract, contract_deploy_tx
-
-    def setup(self) -> None:
-        """Prepare data requirements"""
-        session = self.__init_session()
-        self._faucet = Faucet(credentials["faucet_url"], session=session)
-        self.web3_client = NeonWeb3ClientExt(credentials["proxy_url"], credentials["network_id"], session=session)
-        # create new account for each simulating user
-        self.account = self.web3_client.create_account()
-        NeonProxyTasksSet._accounts.append(self.account)
-
-    def on_start(self) -> None:
-        """on_start is called when a Locust start before any task is scheduled"""
-        # setup class once
-        with self._setup_class_locker:
-            if not NeonProxyTasksSet._setup_class_done:
-                self.setup_class()
-                NeonProxyTasksSet._setup_class_done = True
-            NeonProxyTasksSet._neon_consumer_id += 1
-            self.neon_consumer_id = NeonProxyTasksSet._neon_consumer_id
-        self.setup()
-        self.log = logging.getLogger("neon-consumer[%s]" % self.neon_consumer_id)
 
 
 def extend_task(*attrs) -> tp.Callable:

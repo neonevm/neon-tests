@@ -6,11 +6,12 @@ Python 3.6 or later, if you dont already have it.
 
 ```bash
 
-1. 
-   cd /Users/user_name/NeonLabs/neon-tests/ 
+1. cd /Users/user_name/NeonLabs/neon-tests/ 
    pip install -U locust==2.8.3 
    or 
    pip install -U -r ./deploy/requirements/prod.txt
+   or
+   ./clickfile.py requirements
 2. export NEON_CRED=/Users/user_name/neon-tests/envs.json 
    or --credentials=/Users/user_name/neon-tests/envs.json as locust command linee argument 
 3. locust -f ./loadtesting/locustfile.py --headless --host=night-stand -t 60 -u 10 -r 10 --logfile run.log

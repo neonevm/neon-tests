@@ -1,4 +1,4 @@
-### Requirements
+## Requirements
 Python 3.6 or later, if you dont already have it. 
 [Locust](https://docs.locust.io/en/stable/index.html) 2.8.3 or later.
 
@@ -17,7 +17,7 @@ Python 3.6 or later, if you dont already have it.
 3. locust -f ./loadtesting/locustfile.py --headless --host=night-stand -t 60 -u 10 -r 10 --logfile run.log
 ```
 
-#### Environment Variables
+## Environment Variables
 
 Test configuration via environment variables settings:
 

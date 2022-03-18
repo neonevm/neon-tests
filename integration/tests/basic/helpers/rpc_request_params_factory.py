@@ -11,15 +11,3 @@ class RpcRequestParamsFactory:
         q_tag = quantity_tag if isinstance(quantity_tag,
                                            int) else quantity_tag.value
         return [q_tag, full_trx_object]
-
-    @classmethod
-    def get_call(cls, quantity_tag: Union[int, Tag],
-                 full_trx_object: bool) -> Union[List, JsonRpcRequestParams]:
-        # TODO: implement this
-        return []
-
-    @classmethod
-    def get_logs(cls, quantity_tag: Union[int, Tag],
-                 full_trx_object: bool) -> Union[List, JsonRpcRequestParams]:
-        # TODO: implement this
-        return []

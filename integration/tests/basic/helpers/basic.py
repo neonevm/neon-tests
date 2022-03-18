@@ -114,34 +114,17 @@ class BasicTests(BaseTests):
             sender_account, recipient_account, amount,
             ErrorMessage.EXPECTING_VALUE.value)
 
-    def check_balance(self, expected: float, actual: Decimal, message: str):
+    def check_balance(self, expected: float, actual: Decimal):
         '''Compares the balance with expectation'''
         expected_dec = round(expected, InputData.ROUND_DIGITS.value)
         actual_dec = float(round(actual, InputData.ROUND_DIGITS.value))
 
-        assert actual_dec == expected_dec, message + f"expected balance = {expected_dec}, actual balance = {actual_dec}"
+        assert actual_dec == expected_dec, f"expected balance = {expected_dec}, actual balance = {actual_dec}"
 
-    def assert_amount(self,
-                      address: str,
-                      expected_amount: float,
-                      message: str = ""):
+    def assert_balance(self, address: str, expected_amount: float):
         '''Compares balance of an account with expectation'''
         balance = self.web3_client.fromWei(self.get_balance(address), "ether")
-        self.check_balance(expected_amount, balance, message)
-
-    def assert_sender_amount(self, address: str, expected_amount: float):
-        '''Checks sender's balance'''
-        balance = self.web3_client.fromWei(self.get_balance(address), "ether")
-        self.check_balance(
-            expected_amount, balance,
-            f"Sender: expected ={expected_amount}, actual = {balance}")
-
-    def assert_recipient_amount(self, address: str, expected_amount: float):
-        '''Checks recipient's balance'''
-        balance = self.web3_client.fromWei(self.get_balance(address), "ether")
-        self.check_balance(
-            expected_amount, balance,
-            f"Recipient: expected ={expected_amount}, actual = {balance}")
+        self.check_balance(expected_amount, balance)
 
     def assert_result_object(self, data: JsonRpcResponse) -> bool:
         '''Checks that the result subobject is present'''
@@ -161,4 +144,3 @@ class BasicTests(BaseTests):
         gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.fromWei(
             self.web3_client.gas_price(), "ether")
         return float(round(gas_used_in_tx, InputData.ROUND_DIGITS.value))
-    

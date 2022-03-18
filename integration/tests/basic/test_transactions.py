@@ -83,12 +83,12 @@ class TestRpcCallsTransactions(BasicTests):
         assert '0x' in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
 
         # TODO: calculate sender's amount
-        # self.assert_sender_amount(
+        # self.assert_balance(
         #     self.sender_account.address,
         #     InputData.FAUCET_1ST_REQUEST_AMOUNT.value -
         #     InputData.SAMPLE_AMOUNT.value -
         #     self.calculate_trx_gas(tx_receipt=actual_result.result))
-        self.assert_recipient_amount(
+        self.assert_balance(
             self.recipient_account.address,
             InputData.FAUCET_1ST_REQUEST_AMOUNT.value +
             InputData.SAMPLE_AMOUNT.value)

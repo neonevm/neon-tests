@@ -64,7 +64,7 @@ class TestSingleClient(BasicTests):
     def test_create_account_and_get_balance(self):
         """Create account and get balance"""
         account = self.create_account()
-        self.assert_amount(account.address, 0)
+        self.assert_balance(account.address, 0)
 
     def test_check_tokens_in_wallet_neon(self):
         """Check tokens in wallet: neon"""
@@ -72,8 +72,8 @@ class TestSingleClient(BasicTests):
         with allure.step(FAUCET_REQUEST_MESSAGE):
             self.request_faucet_neon(account.address,
                                      InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-        self.assert_amount(account.address,
-                           InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+        self.assert_balance(account.address,
+                            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
 
     @pytest.mark.skip(WAITING_FOR_MS)
     def test_check_tokens_in_wallet_spl(self):
@@ -92,7 +92,7 @@ class TestSingleClient(BasicTests):
             account = self.create_account()
             with allure.step(FAUCET_REQUEST_MESSAGE):
                 self.request_faucet_neon(account.address, amount)
-            self.assert_amount(account.address, amount)
+            self.assert_balance(account.address, amount)
 
     @pytest.mark.parametrize("amount", FAUCET_TEST_DATA)
     def test_verify_faucet_work_multiple_requests(self, amount: int):
@@ -104,6 +104,6 @@ class TestSingleClient(BasicTests):
             with allure.step(FAUCET_REQUEST_MESSAGE):
                 self.request_faucet_neon(
                     account.address, InputData.FAUCET_2ND_REQUEST_AMOUNT.value)
-            self.assert_amount(
+            self.assert_balance(
                 account.address,
                 amount + InputData.FAUCET_2ND_REQUEST_AMOUNT.value)

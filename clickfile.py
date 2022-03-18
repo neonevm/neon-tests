@@ -81,7 +81,7 @@ def locust(locustfile, host, users, spawn_rate, run_time, web_ui):
     """
     path = pathlib.Path(__file__).parent / locustfile
     if not (path.exists() and path.is_file()):
-        raise click.BadParameter(f"path doe's not exists. {path.resolve()}")
+        raise FileNotFoundError(f"path doe's not exists. {path.resolve()}")
     command = f"locust -f {path.as_posix()} --host={host} --users={users} --spawn-rate={spawn_rate}"
     if run_time:
         command += f" --run-time={run_time}"

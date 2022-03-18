@@ -112,8 +112,6 @@ class LocustEventHandler(object):
 
 
 locust_events_handler = LocustEventHandler()
-"""Locust events handler
-"""
 
 
 def statistics_collector(func: tp.Callable) -> tp.Callable:
@@ -163,8 +161,8 @@ class NeonProxyTasksSet(TaskSet):
     """Earn Free Cryptocurrencies service
     """
 
-    _neon_consumer_id: int = 0
-    """Consumer id
+    _last_consumer_id: int = 0
+    """Last spawned user id
     """
 
     _setup_class_locker = gevent.threading.Lock()
@@ -172,6 +170,8 @@ class NeonProxyTasksSet(TaskSet):
 
     account: tp.Optional["eth_account.signers.local.LocalAccount"] = None
     neon_consumer_id: tp.Optional[int] = None
+    """Spawned user id
+    """
     web3_client: tp.Optional[NeonWeb3ClientExt] = None
 
     @staticmethod
@@ -193,8 +193,8 @@ class NeonProxyTasksSet(TaskSet):
             if not NeonProxyTasksSet._setup_class_done:
                 self.setup_class()
                 NeonProxyTasksSet._setup_class_done = True
-            NeonProxyTasksSet._neon_consumer_id += 1
-            self.neon_consumer_id = NeonProxyTasksSet._neon_consumer_id
+            NeonProxyTasksSet._last_consumer_id += 1
+            self.neon_consumer_id = NeonProxyTasksSet._last_consumer_id
             session = init_session(
                 self.user.environment.parsed_options.num_users or self.user.environment.runner.target_user_count
             )
@@ -294,7 +294,7 @@ class ERC20TasksSet(NeonProxyTasksSet):
             return
         contract, contract_deploy_tx = random.choice(self._erc20_contracts)
         if contract.functions.balanceOf(self.account.address).call() >= 1:
-            recipient = random.choice(NeonTasksSet._accounts)
+            recipient = random.choice(self._accounts)
             self.log.info(f"Send `erc20` tokens from {str(contract.address)[:8]} to {str(recipient.address)[:8]}.")
             self.web3_client.send_erc20(
                 self.account, recipient, 1, contract_deploy_tx["contractAddress"], abi=contract.abi

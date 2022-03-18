@@ -8,23 +8,35 @@ import eth_account.signers.local
 
 
 class NeonWeb3Client:
-    def __init__(self, proxy_url: str, chain_id: int):
+    def __init__(self, proxy_url: str, chain_id: int, session: tp.Optional[tp.Any] = None):
         self._proxy_url = proxy_url
-        self._web3 = web3.Web3(web3.HTTPProvider(proxy_url))
+        self._web3 = web3.Web3(web3.HTTPProvider(proxy_url, session=session))
         self._chain_id = chain_id
+        self._session = session
 
     def __getattr__(self, item):
         return getattr(self._web3, item)
 
     def get_proxy_version(self):
-        return requests.get(self._proxy_url, json={"jsonrpc": "2.0", "method": "neon_proxy_version", "params": [], "id": 0}).json()
+        return requests.get(
+            self._proxy_url,
+            json={"jsonrpc": "2.0", "method": "neon_proxy_version", "params": [], "id": 0},
+            session=self._session,
+        ).json()
 
     def get_cli_version(self):
-        return requests.get(self._proxy_url, json={"jsonrpc": "2.0", "method": "neon_cli_version", "params": [], "id": 0}).json()
+        return requests.get(
+            self._proxy_url,
+            json={"jsonrpc": "2.0", "method": "neon_cli_version", "params": [], "id": 0},
+            session=self._session,
+        ).json()
 
     def get_evm_version(self):
-        return requests.get(self._proxy_url,
-                            json={"jsonrpc": "2.0", "method": "web3_clientVersion", "params": [], "id": 0}).json()
+        return requests.get(
+            self._proxy_url,
+            json={"jsonrpc": "2.0", "method": "web3_clientVersion", "params": [], "id": 0},
+            session=self._session,
+        ).json()
 
     def gas_price(self):
         gas = self._web3.eth.gas_price
@@ -37,6 +49,9 @@ class NeonWeb3Client:
         if not isinstance(address, str):
             address = address.address
         return web3.Web3.fromWei(self._web3.eth.get_balance(address), "ether")
+
+    def get_block_number(self):
+        return self._web3.eth.get_block_number()
 
     def send_neon(
         self,
@@ -125,9 +140,11 @@ class NeonWeb3Client:
         tx = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
         return self._web3.eth.wait_for_transaction_receipt(tx)
 
-    def send_transaction(self, account: eth_account.signers.local.LocalAccount, transaction, gas: tp.Optional[int] = None):
+    def send_transaction(
+        self, account: eth_account.signers.local.LocalAccount, transaction, gas: tp.Optional[int] = None
+    ):
         if "gasPrice" not in transaction:
-            transaction["gasPrice"] = self.gas_price(),
+            transaction["gasPrice"] = (self.gas_price(),)
 
         if "gas" not in transaction:
             transaction["gas"] = self._web3.eth.estimate_gas(transaction)

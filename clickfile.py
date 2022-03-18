@@ -50,6 +50,13 @@ def run(name, network):
     show_default=True,
 )
 @click.option(
+    "-c",
+    "--credentials",
+    type=str,
+    help="Relative path to credentials module.",
+    show_default=True,
+)
+@click.option(
     "-h",
     "--host",
     default="night-stand",
@@ -74,7 +81,7 @@ def run(name, network):
     default=True,
     help="Enable the web interface. " "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
 )
-def locust(locustfile, host, users, spawn_rate, run_time, web_ui):
+def locust(locustfile, credentials, host, users, spawn_rate, run_time, web_ui):
     """Run `Neon` pipeline performance test
 
     path it's sub-folder and file name  `loadtesting/locustfile.py`.
@@ -83,6 +90,8 @@ def locust(locustfile, host, users, spawn_rate, run_time, web_ui):
     if not (path.exists() and path.is_file()):
         raise FileNotFoundError(f"path doe's not exists. {path.resolve()}")
     command = f"locust -f {path.as_posix()} --host={host} --users={users} --spawn-rate={spawn_rate}"
+    if credentials:
+        command += f" --credentials={credentials}"
     if run_time:
         command += f" --run-time={run_time}"
     if not web_ui:

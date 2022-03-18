@@ -47,17 +47,18 @@ def arg_parser(parser):
         type=str,
         env_var="NEON_CRED",
         default=ENV_FILE,
-        help="Absolute path to environment credentials file.",
+        help="Relative path to environment credentials file.",
     )
 
 
 @events.test_start.add_listener
 def load_credentials(environment, **kwargs):
     """Test start event handler"""
-    path = pathlib.Path(environment.parsed_options.credentials)
+    base_path = pathlib.Path(__file__).parent.parent
+    path = base_path / environment.parsed_options.credentials
     network = environment.parsed_options.host
     if not (path.exists() and path.is_file()):
-        path = pathlib.Path(__file__).parent.parent / ENV_FILE
+        path = base_path / ENV_FILE
     with open(path, "r") as fp:
         global credentials
         f = json.load(fp)

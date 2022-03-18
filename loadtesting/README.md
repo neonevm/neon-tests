@@ -12,8 +12,8 @@ Python 3.6 or later, if you dont already have it.
    pip install -U -r ./deploy/requirements/prod.txt
    or
    ./clickfile.py requirements
-2. export NEON_CRED=/Users/user_name/neon-tests/envs.json 
-   or --credentials=/Users/user_name/neon-tests/envs.json as locust command linee argument 
+2. export NEON_CRED=envs.json 
+   or --credentials=envs.json as locust command line argument 
 3. locust -f ./loadtesting/locustfile.py --headless --host=night-stand -t 60 -u 10 -r 10 --logfile run.log
 ```
 
@@ -22,7 +22,7 @@ Python 3.6 or later, if you dont already have it.
 Test configuration via environment variables settings:
 
 - `NEON_CRED`
-  Absolute path to environment credentials file.
+  Relative path to environment credentials file.
 
 
 ## Running the test and analyzing the results in the console without using the web interface 
@@ -57,6 +57,8 @@ Options:
   -f, --locustfile TEXT           Python module to import. It's sub-folder and
                                   file name.  [default:
                                   loadtesting/locustfile.py]
+  --credentials 
+  or -c                           Relative path to credentials module. Defaults envs.json
   -h, --host [night-stand|release-stand|devnet|local]
                                   In which stand run tests.  [default: night-
                                   stand]

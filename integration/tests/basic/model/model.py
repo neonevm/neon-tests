@@ -53,7 +53,6 @@ class JsonRpcErrorResponse:
     jsonrpc: str = "2.0"
 
 
-
 @dataclass_json(letter_case=LetterCase.CAMEL, undefined=Undefined.INCLUDE)
 @dataclass
 class TrxResponse:
@@ -118,5 +117,6 @@ class TrxReceiptResponse:
 
 
 @dataclass
-class InvalidAddress:
+class AccountData:
     address: str
+    key: str = ""

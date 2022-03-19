@@ -57,7 +57,7 @@ class TestRpcCallsTransactions(BasicTests):
             "value":
             self.web3_client.toWei(InputData.SAMPLE_AMOUNT.value, "ether"),
             "chainId":
-            111,
+            self.web3_client._chain_id,
             "gasPrice":
             self.web3_client.gas_price(),
             "gas":

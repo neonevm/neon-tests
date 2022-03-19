@@ -38,16 +38,14 @@ GET_LOGS_TEST_DATA = [(Tag.LATEST.value, Tag.LATEST.value),
 class TestRpcCalls(BasicTests):
     # TODO: implement numerous variants
 
-    def test_rpc_call_eth_call(self):
+    def test_rpc_call_eth_call(self, prepare_accounts):
         """Verify implemented rpc calls work eth_call"""
-        sender_account = self.create_account_with_balance()
-        recipient_account = self.create_account_with_balance()
 
-        self.transfer_neon(sender_account, recipient_account,
+        self.transfer_neon(self.sender_account, self.recipient_account,
                            InputData.SAMPLE_AMOUNT.value)
 
         # TOOD: variants
-        data = CallRequest(to=recipient_account.address)
+        data = CallRequest(to=self.recipient_account.address)
         params = [data, Tag.LATEST.value]
         model = RpcRequestFactory.get_call(params=params)
         response = self.jsonrpc_requester.request_json_rpc(model)
@@ -61,14 +59,12 @@ class TestRpcCalls(BasicTests):
 
     # TODO: implement numerous variants
 
-    def test_rpc_call_eth_estimateGas(self):
+    def test_rpc_call_eth_estimateGas(self, prepare_accounts):
         """Verify implemented rpc calls work eth_estimateGas"""
-        sender_account = self.create_account_with_balance()
-        recipient_account = self.create_account_with_balance()
 
         # TOOD: variants
-        data = CallRequest(from_=sender_account.address,
-                           to=recipient_account.address,
+        data = CallRequest(from_=self.sender_account.address,
+                           to=self.recipient_account.address,
                            value=hex(1))
         params = [data]
         model = RpcRequestFactory.get_estimate_gas(params=params)
@@ -135,6 +131,7 @@ class TestRpcCalls(BasicTests):
         assert self.assert_result_object(
             actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
+    @pytest.mark.only_stands
     def test_rpc_call_eth_getBalance(self):
         """Verify implemented rpc calls work eth_getBalance"""
         sender_account = self.create_account_with_balance()
@@ -188,4 +185,6 @@ class TestRpcCalls(BasicTests):
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
         assert self.assert_is_successful_response(
             actual_result), AssertMessage.WRONG_TYPE.value
-        assert actual_result.result == '111', "net version is not 111"
+        assert actual_result.result == str(
+            self.web3_client._chain_id
+        ), f"net version is not {self.web3_client._chain_id}"

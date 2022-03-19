@@ -1,5 +1,7 @@
 import allure
+import pathlib
 import pytest
+import solcx
 import web3
 from _pytest.config import Config
 from decimal import Decimal
@@ -8,13 +10,16 @@ from typing import Union
 from integration.tests.base import BaseTests
 from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.json_rpc_requester import JsonRpcRequester
-from integration.tests.basic.model.model import InvalidAddress, JsonRpcErrorResponse, JsonRpcResponse
+from integration.tests.basic.model.model import AccountData, JsonRpcErrorResponse, JsonRpcResponse
 from integration.tests.basic.test_data.input_data import InputData
 
 WAITING_FOR_MS = "waiting for MS"
 
 WAITING_FOR_ERC20 = "ERC20 is in progress"
 WAITIING_FOR_CONTRACT_SUPPORT = "no contracts are yet done"
+
+DEVNET_SENDER_ADDRESS = "0x59cf149216bFBfeA66C4b1d2097d37A3Dfe74ff0"
+DEVNET_SENDER_KEY = "269bc1dd17e8cbfd4280a0f58d67a0ca4631a2a8debebb88b6017083fc90c56d"
 
 
 class BasicTests(BaseTests):
@@ -29,7 +34,8 @@ class BasicTests(BaseTests):
     @pytest.fixture
     def prepare_accounts(self):
         self.sender_account = self.create_account_with_balance()
-        self.recipient_account = self.create_account_with_balance()
+        self.recipient_account = self.create_account_with_balance(
+            is_sender=False)
         yield
 
     def create_account(self) -> Account:
@@ -46,12 +52,18 @@ class BasicTests(BaseTests):
 
     def create_account_with_balance(
             self,
-            amount: int = InputData.FAUCET_1ST_REQUEST_AMOUNT.value
-    ) -> Account:
+            amount: int = InputData.FAUCET_1ST_REQUEST_AMOUNT.value,
+            is_sender: bool = True) -> Account:
         '''Creates a new account with balance'''
-        account = self.create_account()
-        self.request_faucet_neon(account.address, amount)
-        return account
+
+        if self.jsonrpc_requester.is_devnet() and is_sender:
+            return AccountData(address=DEVNET_SENDER_ADDRESS,
+                               key=DEVNET_SENDER_KEY)
+        else:
+            account = self.create_account()
+            if not self.jsonrpc_requester.is_devnet():
+                self.request_faucet_neon(account.address, amount)
+            return account
 
     @allure.step("deploying an ERC_20 conract")
     def deploy_contract(self):
@@ -78,7 +90,7 @@ class BasicTests(BaseTests):
     def process_transaction_with_failure(
             self,
             sender_account: Account,
-            recipient_account: Union[Account, InvalidAddress],
+            recipient_account: Union[Account, AccountData],
             amount: int,
             error_message: str = "") -> Union[web3.types.TxReceipt, None]:
         '''Processes transaction, expects a failure'''
@@ -123,6 +135,8 @@ class BasicTests(BaseTests):
 
     def assert_balance(self, address: str, expected_amount: float):
         '''Compares balance of an account with expectation'''
+        if self.jsonrpc_requester.is_devnet():
+            return
         balance = self.web3_client.fromWei(self.get_balance(address), "ether")
         self.check_balance(expected_amount, balance)
 

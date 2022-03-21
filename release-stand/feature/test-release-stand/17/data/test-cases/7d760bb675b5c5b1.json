@@ -1,0 +1,390 @@
+{
+  "uid" : "7d760bb675b5c5b1",
+  "name" : "test_tx_interact_more_1kb_less_neon",
+  "fullName" : "integration.tests.economy.test_economics.TestEconomics#test_tx_interact_more_1kb_less_neon",
+  "historyId" : "7ed5204cc689e25a60d93bc45ee24cf5",
+  "time" : {
+    "start" : 1647888776396,
+    "stop" : 1647888792536,
+    "duration" : 16140
+  },
+  "description" : "Send to contract a big text (tx more than 1 kb) when less neon",
+  "descriptionHtml" : "<p>Send to contract a big text (tx more than 1 kb) when less neon</p>\n",
+  "status" : "failed",
+  "statusMessage" : "AssertionError: SOL Balance changed\nassert 72834792755800 == 72834788033680",
+  "statusTrace" : "self = <integration.tests.economy.test_economics.TestEconomics object at 0x7ffa0c938190>\n\n    def test_tx_interact_more_1kb_less_neon(self):\n        \"\"\"Send to contract a big text (tx more than 1 kb) when less neon\"\"\"\n        contract, contract_deploy_tx = self.deploy_and_get_contract(\"Counter\", \"0.8.10\")\n    \n        acc2 = self.web3_client.create_account()\n        self.web3_client.send_neon(self.acc, acc2, 0.001)\n    \n        sol_balance_before_instruction = self.operator.get_solana_balance()\n        neon_balance_before_instruction = self.operator.get_neon_balance()\n    \n        instruction_tx = contract.functions.bigString(\n            \"But I must explain to you how all this mistaken idea of denouncing pleasure and \"\n            \"praising pain was born and I will give you a complete account of the system, and \"\n            \"expound the actual teachings of the great explorer of the truth, the master-builder \"\n            \"of human happiness. No one rejects, dislikes, or avoids pleasure itself, because it\"\n            \" is pleasure, but because those who do not know how to pursue pleasure rationally\"\n            \" encounter consequences that are extremely painful. Nor again is there anyone who\"\n            \" loves or pursues or desires to obtain pain of itself, because it is pain, but\"\n            \" because occasionally circumstances occur in which toil and pain can procure him\"\n            \" some great pleasure. To take a trivial example, which of us ever undertakes laborious\"\n            \" physical exercise, except to obtain some advantage from it? But who has any right to\"\n            \" find fault with a man who chooses to enjoy a pleasure that has no annoying consequences,\"\n            \" or one who avoids a pain that produces no resultant pleasure? On the other hand,\"\n            \" we denounce with righteous indigna\"\n            \" some great pleasure. To take a trivial example, which of us ever undertakes laborious\"\n            \" physical exercise, except to obtain some advantage from it? But who has any right to\"\n        ).buildTransaction(\n            {\n                \"from\": acc2.address,\n                \"nonce\": self.web3_client.eth.get_transaction_count(acc2.address),\n                \"gasPrice\": self.web3_client.gas_price(),\n            }\n        )\n        with pytest.raises(ValueError, match=\"The account balance is less than required\"):\n            instruction_receipt = self.web3_client.send_transaction(acc2, instruction_tx)\n    \n        sol_balance_after = self.operator.get_solana_balance()\n        neon_balance_after = self.operator.get_neon_balance()\n    \n>       assert sol_balance_before_instruction == sol_balance_after, \"SOL Balance changed\"\nE       AssertionError: SOL Balance changed\nE       assert 72834792755800 == 72834788033680\n\nintegration/tests/economy/test_economics.py:686: AssertionError",
+  "flaky" : false,
+  "newFailed" : false,
+  "newBroken" : false,
+  "newPassed" : false,
+  "retriesCount" : 0,
+  "retriesStatusChange" : false,
+  "beforeStages" : [ {
+    "name" : "web3_client",
+    "time" : {
+      "start" : 1647888355813,
+      "stop" : 1647888355815,
+      "duration" : 2
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "pytestconfig",
+    "time" : {
+      "start" : 1647888355813,
+      "stop" : 1647888355813,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "allure_environment",
+    "time" : {
+      "start" : 1647888355815,
+      "stop" : 1647888356856,
+      "duration" : 1041
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "faucet",
+    "time" : {
+      "start" : 1647888356856,
+      "stop" : 1647888356856,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "install_solcx_versions",
+    "time" : {
+      "start" : 1647888356856,
+      "stop" : 1647888357697,
+      "duration" : 841
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "sol_client",
+    "time" : {
+      "start" : 1647888356856,
+      "stop" : 1647888356856,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "operator",
+    "time" : {
+      "start" : 1647888356856,
+      "stop" : 1647888356856,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "sol_price",
+    "time" : {
+      "start" : 1647888357697,
+      "stop" : 1647888357865,
+      "duration" : 168
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "SOL price 88.138324$",
+      "time" : {
+        "start" : 1647888357865,
+        "stop" : 1647888357865,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 1,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1647888357866,
+      "stop" : 1647888365378,
+      "duration" : 7512
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Create account for tests",
+      "time" : {
+        "start" : 1647888357866,
+        "stop" : 1647888357874,
+        "duration" : 8
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Request 1000 NEON from faucet for 0xBB2c66B57C4CF25bF627D2aed1Fd8be0B870D8E8",
+      "time" : {
+        "start" : 1647888357875,
+        "stop" : 1647888358988,
+        "duration" : 1113
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Operator initial balance: 0.000924095054 NEON 72836.69467424 SOL",
+      "time" : {
+        "start" : 1647888365378,
+        "stop" : 1647888365378,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 3,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1647888776395,
+      "stop" : 1647888776395,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "setup_sol_cost",
+    "time" : {
+      "start" : 1647888776395,
+      "stop" : 1647888776395,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "prepare",
+    "time" : {
+      "start" : 1647888776395,
+      "stop" : 1647888776395,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "testStage" : {
+    "description" : "Send to contract a big text (tx more than 1 kb) when less neon",
+    "status" : "failed",
+    "statusMessage" : "AssertionError: SOL Balance changed\nassert 72834792755800 == 72834788033680",
+    "statusTrace" : "self = <integration.tests.economy.test_economics.TestEconomics object at 0x7ffa0c938190>\n\n    def test_tx_interact_more_1kb_less_neon(self):\n        \"\"\"Send to contract a big text (tx more than 1 kb) when less neon\"\"\"\n        contract, contract_deploy_tx = self.deploy_and_get_contract(\"Counter\", \"0.8.10\")\n    \n        acc2 = self.web3_client.create_account()\n        self.web3_client.send_neon(self.acc, acc2, 0.001)\n    \n        sol_balance_before_instruction = self.operator.get_solana_balance()\n        neon_balance_before_instruction = self.operator.get_neon_balance()\n    \n        instruction_tx = contract.functions.bigString(\n            \"But I must explain to you how all this mistaken idea of denouncing pleasure and \"\n            \"praising pain was born and I will give you a complete account of the system, and \"\n            \"expound the actual teachings of the great explorer of the truth, the master-builder \"\n            \"of human happiness. No one rejects, dislikes, or avoids pleasure itself, because it\"\n            \" is pleasure, but because those who do not know how to pursue pleasure rationally\"\n            \" encounter consequences that are extremely painful. Nor again is there anyone who\"\n            \" loves or pursues or desires to obtain pain of itself, because it is pain, but\"\n            \" because occasionally circumstances occur in which toil and pain can procure him\"\n            \" some great pleasure. To take a trivial example, which of us ever undertakes laborious\"\n            \" physical exercise, except to obtain some advantage from it? But who has any right to\"\n            \" find fault with a man who chooses to enjoy a pleasure that has no annoying consequences,\"\n            \" or one who avoids a pain that produces no resultant pleasure? On the other hand,\"\n            \" we denounce with righteous indigna\"\n            \" some great pleasure. To take a trivial example, which of us ever undertakes laborious\"\n            \" physical exercise, except to obtain some advantage from it? But who has any right to\"\n        ).buildTransaction(\n            {\n                \"from\": acc2.address,\n                \"nonce\": self.web3_client.eth.get_transaction_count(acc2.address),\n                \"gasPrice\": self.web3_client.gas_price(),\n            }\n        )\n        with pytest.raises(ValueError, match=\"The account balance is less than required\"):\n            instruction_receipt = self.web3_client.send_transaction(acc2, instruction_tx)\n    \n        sol_balance_after = self.operator.get_solana_balance()\n        neon_balance_after = self.operator.get_neon_balance()\n    \n>       assert sol_balance_before_instruction == sol_balance_after, \"SOL Balance changed\"\nE       AssertionError: SOL Balance changed\nE       assert 72834792755800 == 72834788033680\n\nintegration/tests/economy/test_economics.py:686: AssertionError",
+    "steps" : [ ],
+    "attachments" : [ {
+      "uid" : "d11c813ee11120e7",
+      "name" : "stdout",
+      "source" : "d11c813ee11120e7.txt",
+      "type" : "text/plain",
+      "size" : 213
+    } ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 1,
+    "shouldDisplayMessage" : true,
+    "hasContent" : true
+  },
+  "afterStages" : [ {
+    "name" : "prepare_account::0",
+    "time" : {
+      "start" : 1647888906043,
+      "stop" : 1647888912316,
+      "duration" : 6273
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Operator end balance: 0.000925068385 NEON 72834.45591996 SOL",
+      "time" : {
+        "start" : 1647888912052,
+        "stop" : 1647888912052,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Account end balance: 594.459135330992 NEON",
+      "time" : {
+        "start" : 1647888912316,
+        "stop" : 1647888912316,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 2,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "allure_environment::0",
+    "time" : {
+      "start" : 1647888912320,
+      "stop" : 1647888912321,
+      "duration" : 1
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "labels" : [ {
+    "name" : "story",
+    "value" : "Operator economy"
+  }, {
+    "name" : "parentSuite",
+    "value" : "integration.tests.economy"
+  }, {
+    "name" : "suite",
+    "value" : "test_economics"
+  }, {
+    "name" : "subSuite",
+    "value" : "TestEconomics"
+  }, {
+    "name" : "host",
+    "value" : "fv-az168-587"
+  }, {
+    "name" : "thread",
+    "value" : "1760-MainThread"
+  }, {
+    "name" : "framework",
+    "value" : "pytest"
+  }, {
+    "name" : "language",
+    "value" : "cpython3"
+  }, {
+    "name" : "package",
+    "value" : "integration.tests.economy.test_economics"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure2"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "retry" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ ],
+    "categories" : [ {
+      "name" : "Product defects",
+      "matchedStatuses" : [ ],
+      "flaky" : false
+    } ],
+    "tags" : [ ]
+  },
+  "source" : "7d760bb675b5c5b1.json",
+  "parameterValues" : [ ]
+}

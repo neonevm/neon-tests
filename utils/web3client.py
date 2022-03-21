@@ -21,21 +21,18 @@ class NeonWeb3Client:
         return requests.get(
             self._proxy_url,
             json={"jsonrpc": "2.0", "method": "neon_proxy_version", "params": [], "id": 0},
-            session=self._session,
         ).json()
 
     def get_cli_version(self):
         return requests.get(
             self._proxy_url,
             json={"jsonrpc": "2.0", "method": "neon_cli_version", "params": [], "id": 0},
-            session=self._session,
         ).json()
 
     def get_evm_version(self):
         return requests.get(
             self._proxy_url,
             json={"jsonrpc": "2.0", "method": "web3_clientVersion", "params": [], "id": 0},
-            session=self._session,
         ).json()
 
     def gas_price(self):

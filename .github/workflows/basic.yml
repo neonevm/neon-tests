@@ -1,0 +1,144 @@
+name: "Basic tests"
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        type: choice
+        default: night-stand
+        required: true
+        description: "Stand name"
+        options:
+          - night-stand
+          - release-stand
+          - devnet-aws
+          - devnet
+          - testnet
+      runner:
+        type: choice
+        default: ubuntu-20.04
+        required: true
+        description: "Where to run tests (our runner or github)"
+        options:
+          - neon-hosted
+          - aws-hosted
+          - ubuntu-20.04
+
+env:
+  NETWORK: night-stand
+  RUNNER: neon-hosted
+
+jobs:
+  prepare-env:
+    runs-on: ubuntu-20.04
+    if: always()
+    steps:
+      - name: Setup env
+        id: setup
+        run: |
+          # $1 - inputs
+          # $2 - env.VAR
+          function setVar {
+            if [ -z "$1" ]
+              then
+                RESULT="$2"
+              else
+                RESULT="$1"
+            fi
+            echo $RESULT
+          }
+          
+          NETWORK=$( setVar "${{ github.event.inputs.network }}" "${{ env.NETWORK }}" )
+          RUNNER=$( setVar "${{ github.event.inputs.runner }}" "${{ env.RUNNER }}" )
+          
+          echo "Network: ${NETWORK}"
+          echo "Runner: ${RUNNER}"
+
+          echo "::set-output name=network::${NETWORK}"
+          echo "::set-output name=runner::${RUNNER}"
+          echo "::set-output name=jobs::${JOBS_NUMBER}"
+    outputs:
+      network: ${{ steps.setup.outputs.network }}
+      runner: ${{ steps.setup.outputs.runner }}
+
+  tests:
+    name: "Basic tests"
+    needs:
+      - prepare-env
+    runs-on: ${{ needs.prepare-env.outputs.runner }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - name: "Install click"
+        run: "pip install click"
+      - name: "Install deps"
+        run: "./clickfile.py requirements"
+      - name: "Run basic tests"
+        run: "./clickfile.py run 'basic' " # -n ${{ needs.prepare-env.outputs.network }}"
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: "Allure results"
+          path: allure-results
+
+  allure:
+    runs-on: ubuntu-20.04
+    if: always()
+    needs:
+      - prepare-env
+      - tests
+    env:
+      NETWORK: ${{ needs.prepare-env.outputs.network }}
+    steps:
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: "Allure results"
+          path: allure-results
+
+      - name: Get Allure history
+        uses: actions/checkout@v2
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Create a path for report
+        run: |
+          path=""
+          network="${{ env.NETWORK }}"
+          ref_name="${{ github.ref_name }}"
+          if [[ "$network" != "night-stand" ]]; then
+            path="$network"
+          fi
+          if [[ "$ref_name" != "develop" ]]; then
+            if [ ${#path} -gt 0 ]; then
+              path="$path/$ref_name"
+            else
+              path="$ref_name"
+            fi
+          fi
+          echo "ALLURE_SUBDIR=$path" >> $GITHUB_ENV
+
+      - name: Allure Report action from marketplace
+        uses: neonlabsorg/allure-report-action@master
+        if: always()
+        with:
+          allure_results: allure-results
+          gh_pages: gh-pages
+          subfolder: ${{ env.ALLURE_SUBDIR }}
+          allure_report: allure-report
+          allure_history: allure-history
+          keep_reports: 50
+
+      - name: Deploy report to Github Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v2
+        env:
+          PERSONAL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: allure-history
+    outputs:
+      subdir: ${{ env.ALLURE_SUBDIR }}

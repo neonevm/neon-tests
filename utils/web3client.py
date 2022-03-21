@@ -40,6 +40,11 @@ class NeonWeb3Client:
         return gas
 
     def create_account(self):
+        #
+        print("<<<<<<<<< URL >>>>>>>>>>>")
+        print(self._proxy_url)
+        #
+
         return self._web3.eth.account.create()
 
     def get_balance(self, address: tp.Union[str, eth_account.signers.local.LocalAccount]):
@@ -58,6 +63,12 @@ class NeonWeb3Client:
         gas: tp.Optional[int] = 0,
         gas_price: tp.Optional[int] = None,
     ) -> web3.types.TxReceipt:
+
+        #
+        print("<<<<<<<<< URL >>>>>>>>>>>")
+        print(self._proxy_url)
+        #
+
         to_addr = to if isinstance(to, str) else to.address
         gas_price = gas_price or self.gas_price()
         transaction = {
@@ -140,6 +151,13 @@ class NeonWeb3Client:
     def send_transaction(
         self, account: eth_account.signers.local.LocalAccount, transaction, gas: tp.Optional[int] = None
     ):
+
+        #
+        print("<<<<<<<<< URL >>>>>>>>>>>")
+        print(self._proxy_url)
+        #
+
+
         if "gasPrice" not in transaction:
             transaction["gasPrice"] = (self.gas_price(),)
 

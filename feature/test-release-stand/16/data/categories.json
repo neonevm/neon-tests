@@ -1,0 +1,244 @@
+{
+  "uid" : "4b4757e66a1912dae1a509f688f20b0f",
+  "children" : [ {
+    "name" : "Operator economy",
+    "children" : [ {
+      "name" : "AssertionError: Operator receive 0.013000000 NEON (0.00 $) and spend 0.001604040 SOL (0.14 $), profit - -97.700679200% \nassert Decimal('0.00325') > Decimal('0.141346090')",
+      "children" : [ {
+        "name" : "test_send_neon_to_exist_account",
+        "uid" : "20ec454327c6b68b",
+        "parentUid" : "10f0834d5c82344e5387633bf02d8c34",
+        "status" : "failed",
+        "time" : {
+          "start" : 1647888379882,
+          "stop" : 1647888392246,
+          "duration" : 12364
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "10f0834d5c82344e5387633bf02d8c34"
+    }, {
+      "name" : "XFAIL This tx unprofitable because we create accounts before check gas\n\nAssertionError: Operator receive 0.302000000 NEON (0.08 $) and spend 0.058576840 SOL (5.16 $), profit - -98.537309600% \nassert Decimal('0.07550') > Decimal('5.16172120')",
+      "children" : [ {
+        "name" : "test_deploy_small_contract_less_gas",
+        "uid" : "690f9c1869919ab4",
+        "parentUid" : "eb7de810d5a2b1e3ccf96ba956bb3277",
+        "status" : "skipped",
+        "time" : {
+          "start" : 1647888562586,
+          "stop" : 1647888573385,
+          "duration" : 10799
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "eb7de810d5a2b1e3ccf96ba956bb3277"
+    }, {
+      "name" : "AssertionError: Operator receive 0.031000000 NEON (0.01 $) and spend 0.037816640 SOL (3.33 $), profit - -99.767431900% \nassert Decimal('0.00775') > Decimal('3.33235716')",
+      "children" : [ {
+        "name" : "test_contract_interact_more_500_steps",
+        "uid" : "e843d13282344f2d",
+        "parentUid" : "4c67656ca5d243949586ee7d7de31c61",
+        "status" : "failed",
+        "time" : {
+          "start" : 1647888652909,
+          "stop" : 1647888670377,
+          "duration" : 17468
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "4c67656ca5d243949586ee7d7de31c61"
+    } ],
+    "uid" : "c1634e804028b4a2cd39b5c7f39c94f0"
+  }, {
+    "name" : "Product defects",
+    "children" : [ {
+      "name" : "AssertionError: assert 72836682051920 == 72836682036920",
+      "children" : [ {
+        "name" : "test_send_when_not_enough_for_gas",
+        "uid" : "75a51173d005cfc0",
+        "parentUid" : "e1dfc23b4d777bc799abf92f3c013f42",
+        "status" : "failed",
+        "time" : {
+          "start" : 1647888392363,
+          "stop" : 1647888403945,
+          "duration" : 11582
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "e1dfc23b4d777bc799abf92f3c013f42"
+    }, {
+      "name" : "AssertionError: assert 72836152329960 == 72836123049040",
+      "children" : [ {
+        "name" : "test_deploy_small_contract_less_neon",
+        "uid" : "43cd18e8f2149f3c",
+        "parentUid" : "da1811e27eb7e6dede1775e98ce6cc83",
+        "status" : "failed",
+        "time" : {
+          "start" : 1647888573420,
+          "stop" : 1647888584931,
+          "duration" : 11511
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "da1811e27eb7e6dede1775e98ce6cc83"
+    }, {
+      "name" : "AssertionError: assert Decimal('924372.824') == Decimal('924373.493')",
+      "children" : [ {
+        "name" : "test_contract_get_is_free",
+        "uid" : "e8934fa424046864",
+        "parentUid" : "1226652a78d4831411d0e9fe812e09dc",
+        "status" : "failed",
+        "time" : {
+          "start" : 1647888599500,
+          "stop" : 1647888610962,
+          "duration" : 11462
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "1226652a78d4831411d0e9fe812e09dc"
+    }, {
+      "name" : "AssertionError: SOL Balance not changed\nassert 72835779805960 == 72835750525040",
+      "children" : [ {
+        "name" : "test_cost_resize_account_less_neon",
+        "uid" : "7a4bd2e6c6d7836e",
+        "parentUid" : "da7f9920e40ca717d5bda63685eb6ae4",
+        "status" : "failed",
+        "time" : {
+          "start" : 1647888628977,
+          "stop" : 1647888642057,
+          "duration" : 13080
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "da7f9920e40ca717d5bda63685eb6ae4"
+    }, {
+      "name" : "AssertionError: NEON Balance incorrect\nassert Decimal('924753.629') == Decimal('924753.613')",
+      "children" : [ {
+        "name" : "test_tx_interact_more_1kb_less_neon",
+        "uid" : "eaef88862b5284ff",
+        "parentUid" : "17645eb8ddc7df841a9ba70550cfa162",
+        "status" : "failed",
+        "time" : {
+          "start" : 1647888710388,
+          "stop" : 1647888723421,
+          "duration" : 13033
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "17645eb8ddc7df841a9ba70550cfa162"
+    } ],
+    "uid" : "8fb3a91ba5aaf9de24cc8a92edc82b5d"
+  }, {
+    "name" : "Test defects",
+    "children" : [ {
+      "name" : "ValueError: InvalidArgument",
+      "children" : [ {
+        "name" : "test_withdraw_neon_unexisting_ata",
+        "uid" : "db642e5dd39361db",
+        "parentUid" : "56fac5776e95ed191077c246a35f158e",
+        "status" : "broken",
+        "time" : {
+          "start" : 1647888493843,
+          "stop" : 1647888499651,
+          "duration" : 5808
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      }, {
+        "name" : "test_withdraw_neon_existing_ata",
+        "uid" : "31acbce28f0b2f56",
+        "parentUid" : "56fac5776e95ed191077c246a35f158e",
+        "status" : "broken",
+        "time" : {
+          "start" : 1647888499743,
+          "stop" : 1647888520591,
+          "duration" : 20848
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "56fac5776e95ed191077c246a35f158e"
+    }, {
+      "name" : "ValueError: {'code': -32000, 'message': 'Expecting value: line 1 column 1 (char 0)'}",
+      "children" : [ {
+        "name" : "test_contract_interact_more_500000_bpf_less_neon",
+        "uid" : "76d03c6dbaf28ead",
+        "parentUid" : "55db5c3255ea0df8c44e1f5ba092f564",
+        "status" : "broken",
+        "time" : {
+          "start" : 1647888684502,
+          "stop" : 1647888692480,
+          "duration" : 7978
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "55db5c3255ea0df8c44e1f5ba092f564"
+    } ],
+    "uid" : "bdbf199525818fae7a8651db9eafe741"
+  } ],
+  "name" : "categories"
+}

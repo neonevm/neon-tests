@@ -1,0 +1,13 @@
+[ {
+  "values" : [ "Neon-proxy/v0.6.0-dev-9b45c0857358cf284a2a09befcee1186b5e00c0a" ],
+  "name" : "Proxy.Version"
+}, {
+  "values" : [ "Neon/v0.6.0-dev-9328a7d1c27d52a1647def61efc9d40ff397111d" ],
+  "name" : "EVM.Version"
+}, {
+  "values" : [ "Neon-cli/v0.6.0-dev-3875b4c3d7504c9641e819e200b186886bafd5df" ],
+  "name" : "CLI.Version"
+}, {
+  "values" : [ "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand" ],
+  "name" : "URL"
+} ]

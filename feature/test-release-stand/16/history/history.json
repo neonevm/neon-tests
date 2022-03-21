@@ -1,0 +1,617 @@
+{
+  "641d5ad43caf6c4f973e55f0834a909b" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "b1d8ec0e6059595c",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/b1d8ec0e6059595c",
+      "status" : "passed",
+      "time" : {
+        "start" : 1647888797678,
+        "stop" : 1647888815754,
+        "duration" : 18076
+      }
+    } ]
+  },
+  "12e73062f7cbeba387c4803ab398acfa" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 1,
+      "skipped" : 0,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "76d03c6dbaf28ead",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/76d03c6dbaf28ead",
+      "status" : "broken",
+      "statusDetails" : "ValueError: {'code': -32000, 'message': 'Expecting value: line 1 column 1 (char 0)'}",
+      "time" : {
+        "start" : 1647888684502,
+        "stop" : 1647888692480,
+        "duration" : 7978
+      }
+    } ]
+  },
+  "b33664140df336418189eed11c3e601f" : {
+    "statistic" : {
+      "failed" : 1,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "e8934fa424046864",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/e8934fa424046864",
+      "status" : "failed",
+      "statusDetails" : "AssertionError: assert Decimal('924372.824') == Decimal('924373.493')",
+      "time" : {
+        "start" : 1647888599500,
+        "stop" : 1647888610962,
+        "duration" : 11462
+      }
+    } ]
+  },
+  "633e256dcae9e5aeca3bce58d5dbad61" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 1,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "690f9c1869919ab4",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/690f9c1869919ab4",
+      "status" : "skipped",
+      "statusDetails" : "XFAIL This tx unprofitable because we create accounts before check gas\n\nAssertionError: Operator receive 0.302000000 NEON (0.08 $) and spend 0.058576840 SOL (5.16 $), profit - -98.537309600% \nassert Decimal('0.07550') > Decimal('5.16172120')",
+      "time" : {
+        "start" : 1647888562586,
+        "stop" : 1647888573385,
+        "duration" : 10799
+      }
+    } ]
+  },
+  "52388f388e2cf179effb04f66f459dd3" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "5b6bf98dbfeace57",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/5b6bf98dbfeace57",
+      "status" : "passed",
+      "time" : {
+        "start" : 1647888770558,
+        "stop" : 1647888784146,
+        "duration" : 13588
+      }
+    } ]
+  },
+  "59e198aaed7a25f202fc4dc5a2c9b5aa" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "ff7de67bb21071bd",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/ff7de67bb21071bd",
+      "status" : "passed",
+      "time" : {
+        "start" : 1647888359267,
+        "stop" : 1647888369033,
+        "duration" : 9766
+      }
+    } ]
+  },
+  "e4adc08b04eeb6d7890d511368b87725" : {
+    "statistic" : {
+      "failed" : 1,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "43cd18e8f2149f3c",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/43cd18e8f2149f3c",
+      "status" : "failed",
+      "statusDetails" : "AssertionError: assert 72836152329960 == 72836123049040",
+      "time" : {
+        "start" : 1647888573420,
+        "stop" : 1647888584931,
+        "duration" : 11511
+      }
+    } ]
+  },
+  "76780623b3b97679b79a7a9f2bde0b5b" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 1,
+      "skipped" : 0,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "31acbce28f0b2f56",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/31acbce28f0b2f56",
+      "status" : "broken",
+      "statusDetails" : "ValueError: InvalidArgument",
+      "time" : {
+        "start" : 1647888499743,
+        "stop" : 1647888520591,
+        "duration" : 20848
+      }
+    } ]
+  },
+  "07ec4851a3f9619fb95689b62d62e710" : {
+    "statistic" : {
+      "failed" : 1,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "20ec454327c6b68b",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/20ec454327c6b68b",
+      "status" : "failed",
+      "statusDetails" : "AssertionError: Operator receive 0.013000000 NEON (0.00 $) and spend 0.001604040 SOL (0.14 $), profit - -97.700679200% \nassert Decimal('0.00325') > Decimal('0.141346090')",
+      "time" : {
+        "start" : 1647888379882,
+        "stop" : 1647888392246,
+        "duration" : 12364
+      }
+    } ]
+  },
+  "16fd4d7fc14bf38144237104fa3bce88" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "a3b5da8f56fe27e8",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/a3b5da8f56fe27e8",
+      "status" : "passed",
+      "time" : {
+        "start" : 1647888736485,
+        "stop" : 1647888747895,
+        "duration" : 11410
+      }
+    } ]
+  },
+  "9e45d41037110c3e3b9d622220f3c108" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "3aceef50586e775d",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/3aceef50586e775d",
+      "status" : "passed",
+      "time" : {
+        "start" : 1647888610987,
+        "stop" : 1647888628973,
+        "duration" : 17986
+      }
+    } ]
+  },
+  "666d7115e0149fdb2ea1918863340039" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "8775b9ff6729e45a",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/8775b9ff6729e45a",
+      "status" : "passed",
+      "time" : {
+        "start" : 1647888482536,
+        "stop" : 1647888493838,
+        "duration" : 11302
+      }
+    } ]
+  },
+  "0c604605f9811f5b46217ed1be473a70" : {
+    "statistic" : {
+      "failed" : 1,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "75a51173d005cfc0",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/75a51173d005cfc0",
+      "status" : "failed",
+      "statusDetails" : "AssertionError: assert 72836682051920 == 72836682036920",
+      "time" : {
+        "start" : 1647888392363,
+        "stop" : 1647888403945,
+        "duration" : 11582
+      }
+    } ]
+  },
+  "9d327d1509b92a4e85b0526c0aacb74f" : {
+    "statistic" : {
+      "failed" : 1,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "7a4bd2e6c6d7836e",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/7a4bd2e6c6d7836e",
+      "status" : "failed",
+      "statusDetails" : "AssertionError: SOL Balance not changed\nassert 72835779805960 == 72835750525040",
+      "time" : {
+        "start" : 1647888628977,
+        "stop" : 1647888642057,
+        "duration" : 13080
+      }
+    } ]
+  },
+  "33e606011b08caf98458aa691e9300f1" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "d526732f4290c103",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/d526732f4290c103",
+      "status" : "passed",
+      "time" : {
+        "start" : 1647888784153,
+        "stop" : 1647888797673,
+        "duration" : 13520
+      }
+    } ]
+  },
+  "fc8ae87b611319943b5a6c4f8badd39d" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "f2a17424c97c1190",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/f2a17424c97c1190",
+      "status" : "passed",
+      "time" : {
+        "start" : 1647888692622,
+        "stop" : 1647888710384,
+        "duration" : 17762
+      }
+    } ]
+  },
+  "28602b371e25585ab77f360148a8dc07" : {
+    "statistic" : {
+      "failed" : 1,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "e843d13282344f2d",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/e843d13282344f2d",
+      "status" : "failed",
+      "statusDetails" : "AssertionError: Operator receive 0.031000000 NEON (0.01 $) and spend 0.037816640 SOL (3.33 $), profit - -99.767431900% \nassert Decimal('0.00775') > Decimal('3.33235716')",
+      "time" : {
+        "start" : 1647888652909,
+        "stop" : 1647888670377,
+        "duration" : 17468
+      }
+    } ]
+  },
+  "14bcb3793631bb6f3436695e8c188baa" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "bef69bd5db9eac55",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/bef69bd5db9eac55",
+      "status" : "passed",
+      "time" : {
+        "start" : 1647888544908,
+        "stop" : 1647888562580,
+        "duration" : 17672
+      }
+    } ]
+  },
+  "386e1f19a80b6625500e82abb2fcfe8c" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "bf92f777a05f8f8d",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/bf92f777a05f8f8d",
+      "status" : "passed",
+      "time" : {
+        "start" : 1647888759433,
+        "stop" : 1647888770553,
+        "duration" : 11120
+      }
+    } ]
+  },
+  "3b489ed6b268e304aed71573dccb4118" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 1,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "aa36679513bbccbf",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/aa36679513bbccbf",
+      "status" : "skipped",
+      "statusDetails" : "XFAIL Strange when more 200000 instructions\n\nValueError: {'code': -32000, 'message': 'Expecting value: line 1 column 1 (char 0)'}",
+      "time" : {
+        "start" : 1647888670458,
+        "stop" : 1647888677268,
+        "duration" : 6810
+      }
+    } ]
+  },
+  "89a6f2a567fa709a6cffcab2f442e17a" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "d70035a411d49675",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/d70035a411d49675",
+      "status" : "passed",
+      "time" : {
+        "start" : 1647888520642,
+        "stop" : 1647888532259,
+        "duration" : 11617
+      }
+    } ]
+  },
+  "e0fcb0c271369a58dc9a77dfbc0cb31e" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "8402b3a92aee4c5b",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/8402b3a92aee4c5b",
+      "status" : "passed",
+      "statusDetails" : "XPASS This tx unprofitable because we create accounts before check gas",
+      "time" : {
+        "start" : 1647888723450,
+        "stop" : 1647888736481,
+        "duration" : 13031
+      }
+    } ]
+  },
+  "036cc30be96ea7b4923f364bca544c14" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "25fc7599fe0578f5",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/25fc7599fe0578f5",
+      "status" : "passed",
+      "time" : {
+        "start" : 1647888584956,
+        "stop" : 1647888599494,
+        "duration" : 14538
+      }
+    } ]
+  },
+  "ede713537a77f865da0a522879c0205a" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 1,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "aacb3018be16a167",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/aacb3018be16a167",
+      "status" : "skipped",
+      "statusDetails" : "XFAIL This tx unprofitable because we create accounts before check gas\n\nAssertionError: assert Decimal('924523.646') > Decimal('924523.646')",
+      "time" : {
+        "start" : 1647888642085,
+        "stop" : 1647888652887,
+        "duration" : 10802
+      }
+    } ]
+  },
+  "d10cf1e97bfb9f4f8047853751ac038a" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "fc358d246985c7c3",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/fc358d246985c7c3",
+      "status" : "passed",
+      "time" : {
+        "start" : 1647888747899,
+        "stop" : 1647888759427,
+        "duration" : 11528
+      }
+    } ]
+  },
+  "30b14f3a24c429c0b7ce795058713573" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "9a57c6985b825cb5",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/9a57c6985b825cb5",
+      "status" : "passed",
+      "time" : {
+        "start" : 1647888532266,
+        "stop" : 1647888544903,
+        "duration" : 12637
+      }
+    } ]
+  },
+  "803410fee02c333000fc297da2dc67ad" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 1,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "c129f126ede78f9f",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/c129f126ede78f9f",
+      "status" : "skipped",
+      "statusDetails" : "XFAIL Strange when more 200000 instructions\n\nValueError: {'code': -32000, 'message': 'Expecting value: line 1 column 1 (char 0)'}",
+      "time" : {
+        "start" : 1647888677377,
+        "stop" : 1647888684408,
+        "duration" : 7031
+      }
+    } ]
+  },
+  "f049cba140517d973be27d369c48cf46" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "829f69803d4e42af",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/829f69803d4e42af",
+      "status" : "passed",
+      "time" : {
+        "start" : 1647888369037,
+        "stop" : 1647888379875,
+        "duration" : 10838
+      }
+    } ]
+  },
+  "7ed5204cc689e25a60d93bc45ee24cf5" : {
+    "statistic" : {
+      "failed" : 1,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "eaef88862b5284ff",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/eaef88862b5284ff",
+      "status" : "failed",
+      "statusDetails" : "AssertionError: NEON Balance incorrect\nassert Decimal('924753.629') == Decimal('924753.613')",
+      "time" : {
+        "start" : 1647888710388,
+        "stop" : 1647888723421,
+        "duration" : 13033
+      }
+    } ]
+  },
+  "fa8002c1167dc2e6db891f0b6d29ad54" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 1,
+      "skipped" : 0,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "db642e5dd39361db",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/db642e5dd39361db",
+      "status" : "broken",
+      "statusDetails" : "ValueError: InvalidArgument",
+      "time" : {
+        "start" : 1647888493843,
+        "stop" : 1647888499651,
+        "duration" : 5808
+      }
+    } ]
+  }
+}

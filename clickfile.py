@@ -34,6 +34,11 @@ def run(name, network):
         command = "py.test integration/tests/economy/test_economics.py"
     command += f" --network={network}"
 
+    #
+    print("----------- CMDLINE -------------")
+    print(command)
+    #
+
     cmd = subprocess.run(command, shell=True)
 
     if cmd.returncode != 0:

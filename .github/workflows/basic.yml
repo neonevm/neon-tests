@@ -47,10 +47,10 @@ jobs:
             fi
             echo $RESULT
           }
-          
+
           NETWORK=$( setVar "${{ github.event.inputs.network }}" "${{ env.NETWORK }}" )
           RUNNER=$( setVar "${{ github.event.inputs.runner }}" "${{ env.RUNNER }}" )
-          
+
           echo "Network: ${NETWORK}"
           echo "Runner: ${RUNNER}"
 
@@ -70,13 +70,13 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.9'
+          python-version: "3.9"
       - name: "Install click"
         run: "pip install click"
       - name: "Install deps"
         run: "./clickfile.py requirements"
       - name: "Run basic tests"
-        run: "./clickfile.py run 'basic' " # -n ${{ needs.prepare-env.outputs.network }}"
+        run: "./clickfile.py run 'basic' -n ${{ needs.prepare-env.outputs.network }}"
       - uses: actions/upload-artifact@v2
         if: always()
         with:

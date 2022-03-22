@@ -1,0 +1,444 @@
+{
+  "uid" : "af22778ce2e75aee",
+  "name" : "test_deploy_to_losted_contract_account",
+  "fullName" : "integration.tests.economy.test_economics.TestEconomics#test_deploy_to_losted_contract_account",
+  "historyId" : "036cc30be96ea7b4923f364bca544c14",
+  "time" : {
+    "start" : 1647927458051,
+    "stop" : 1647927472895,
+    "duration" : 14844
+  },
+  "status" : "passed",
+  "flaky" : false,
+  "newFailed" : false,
+  "newBroken" : false,
+  "newPassed" : false,
+  "retriesCount" : 0,
+  "retriesStatusChange" : false,
+  "beforeStages" : [ {
+    "name" : "pytestconfig",
+    "time" : {
+      "start" : 1647927223335,
+      "stop" : 1647927223335,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "web3_client",
+    "time" : {
+      "start" : 1647927223335,
+      "stop" : 1647927223337,
+      "duration" : 2
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "allure_environment",
+    "time" : {
+      "start" : 1647927223337,
+      "stop" : 1647927224064,
+      "duration" : 727
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "faucet",
+    "time" : {
+      "start" : 1647927224064,
+      "stop" : 1647927224064,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "operator",
+    "time" : {
+      "start" : 1647927224064,
+      "stop" : 1647927224065,
+      "duration" : 1
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "install_solcx_versions",
+    "time" : {
+      "start" : 1647927224065,
+      "stop" : 1647927225432,
+      "duration" : 1367
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "sol_client",
+    "time" : {
+      "start" : 1647927224065,
+      "stop" : 1647927224065,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "sol_price",
+    "time" : {
+      "start" : 1647927225433,
+      "stop" : 1647927225648,
+      "duration" : 215
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "SOL price 91.82271$",
+      "time" : {
+        "start" : 1647927225648,
+        "stop" : 1647927225648,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 1,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1647927225649,
+      "stop" : 1647927231572,
+      "duration" : 5923
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Create account for tests",
+      "time" : {
+        "start" : 1647927225649,
+        "stop" : 1647927225661,
+        "duration" : 12
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Request 1000 NEON from faucet for 0xBE8c54194A1EeA16Ec7a4E9Cbf7d6c63543301c9",
+      "time" : {
+        "start" : 1647927225661,
+        "stop" : 1647927226630,
+        "duration" : 969
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Operator initial balance: 0.00111451 NEON 72414.1780366 SOL",
+      "time" : {
+        "start" : 1647927231572,
+        "stop" : 1647927231572,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 3,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "setup_sol_cost",
+    "time" : {
+      "start" : 1647927458050,
+      "stop" : 1647927458050,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "prepare",
+    "time" : {
+      "start" : 1647927458050,
+      "stop" : 1647927458050,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1647927458050,
+      "stop" : 1647927458050,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "testStage" : {
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Verify operator profit",
+      "time" : {
+        "start" : 1647927472894,
+        "stop" : 1647927472895,
+        "duration" : 1
+      },
+      "status" : "passed",
+      "steps" : [ {
+        "name" : "Operator receive 27.430000000 NEON (6.86 $) and spend 0.060150880 SOL (5.52 $), profit - 24.157718900% ",
+        "time" : {
+          "start" : 1647927472894,
+          "stop" : 1647927472895,
+          "duration" : 1
+        },
+        "status" : "passed",
+        "steps" : [ ],
+        "attachments" : [ ],
+        "parameters" : [ ],
+        "stepsCount" : 0,
+        "attachmentsCount" : 0,
+        "shouldDisplayMessage" : false,
+        "hasContent" : false
+      } ],
+      "attachments" : [ ],
+      "parameters" : [ {
+        "name" : "sol_diff",
+        "value" : "60150880"
+      }, {
+        "name" : "neon_diff",
+        "value" : "Decimal('27.43')"
+      } ],
+      "stepsCount" : 1,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true
+    } ],
+    "attachments" : [ {
+      "uid" : "9523fd059070def0",
+      "name" : "stdout",
+      "source" : "9523fd059070def0.txt",
+      "type" : "text/plain",
+      "size" : 213
+    } ],
+    "parameters" : [ ],
+    "stepsCount" : 2,
+    "attachmentsCount" : 1,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  },
+  "afterStages" : [ {
+    "name" : "prepare_account::0",
+    "time" : {
+      "start" : 1647927690899,
+      "stop" : 1647927695940,
+      "duration" : 5041
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Operator end balance: 0.00111528141 NEON 72412.47846736 SOL",
+      "time" : {
+        "start" : 1647927695727,
+        "stop" : 1647927695727,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Account end balance: 583.262218070768 NEON",
+      "time" : {
+        "start" : 1647927695940,
+        "stop" : 1647927695940,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 2,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "allure_environment::0",
+    "time" : {
+      "start" : 1647927695947,
+      "stop" : 1647927695947,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "labels" : [ {
+    "name" : "story",
+    "value" : "Operator economy"
+  }, {
+    "name" : "parentSuite",
+    "value" : "integration.tests.economy"
+  }, {
+    "name" : "suite",
+    "value" : "test_economics"
+  }, {
+    "name" : "subSuite",
+    "value" : "TestEconomics"
+  }, {
+    "name" : "host",
+    "value" : "fv-az38-70"
+  }, {
+    "name" : "thread",
+    "value" : "1765-MainThread"
+  }, {
+    "name" : "framework",
+    "value" : "pytest"
+  }, {
+    "name" : "language",
+    "value" : "cpython3"
+  }, {
+    "name" : "package",
+    "value" : "integration.tests.economy.test_economics"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure2"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "retry" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ ],
+    "categories" : [ ],
+    "history" : {
+      "statistic" : {
+        "failed" : 0,
+        "broken" : 0,
+        "skipped" : 0,
+        "passed" : 3,
+        "unknown" : 0,
+        "total" : 3
+      },
+      "items" : [ {
+        "uid" : "f066417b4e82e143",
+        "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/19//#testresult/f066417b4e82e143",
+        "status" : "passed",
+        "time" : {
+          "start" : 1647892218249,
+          "stop" : 1647892235894,
+          "duration" : 17645
+        }
+      }, {
+        "uid" : "25fc7599fe0578f5",
+        "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/25fc7599fe0578f5",
+        "status" : "passed",
+        "time" : {
+          "start" : 1647888584956,
+          "stop" : 1647888599494,
+          "duration" : 14538
+        }
+      } ]
+    },
+    "tags" : [ ]
+  },
+  "source" : "af22778ce2e75aee.json",
+  "parameterValues" : [ ]
+}

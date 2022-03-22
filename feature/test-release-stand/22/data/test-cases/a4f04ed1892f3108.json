@@ -1,0 +1,396 @@
+{
+  "uid" : "a4f04ed1892f3108",
+  "name" : "test_contract_get_is_free",
+  "fullName" : "integration.tests.economy.test_economics.TestEconomics#test_contract_get_is_free",
+  "historyId" : "b33664140df336418189eed11c3e601f",
+  "time" : {
+    "start" : 1647927472899,
+    "stop" : 1647927484474,
+    "duration" : 11575
+  },
+  "description" : "Verify that get contract calls is free",
+  "descriptionHtml" : "<p>Verify that get contract calls is free</p>\n",
+  "status" : "passed",
+  "flaky" : false,
+  "newFailed" : false,
+  "newBroken" : false,
+  "newPassed" : true,
+  "retriesCount" : 0,
+  "retriesStatusChange" : false,
+  "beforeStages" : [ {
+    "name" : "pytestconfig",
+    "time" : {
+      "start" : 1647927223335,
+      "stop" : 1647927223335,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "web3_client",
+    "time" : {
+      "start" : 1647927223335,
+      "stop" : 1647927223337,
+      "duration" : 2
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "allure_environment",
+    "time" : {
+      "start" : 1647927223337,
+      "stop" : 1647927224064,
+      "duration" : 727
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "faucet",
+    "time" : {
+      "start" : 1647927224064,
+      "stop" : 1647927224064,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "operator",
+    "time" : {
+      "start" : 1647927224064,
+      "stop" : 1647927224065,
+      "duration" : 1
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "install_solcx_versions",
+    "time" : {
+      "start" : 1647927224065,
+      "stop" : 1647927225432,
+      "duration" : 1367
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "sol_client",
+    "time" : {
+      "start" : 1647927224065,
+      "stop" : 1647927224065,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "sol_price",
+    "time" : {
+      "start" : 1647927225433,
+      "stop" : 1647927225648,
+      "duration" : 215
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "SOL price 91.82271$",
+      "time" : {
+        "start" : 1647927225648,
+        "stop" : 1647927225648,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 1,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1647927225649,
+      "stop" : 1647927231572,
+      "duration" : 5923
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Create account for tests",
+      "time" : {
+        "start" : 1647927225649,
+        "stop" : 1647927225661,
+        "duration" : 12
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Request 1000 NEON from faucet for 0xBE8c54194A1EeA16Ec7a4E9Cbf7d6c63543301c9",
+      "time" : {
+        "start" : 1647927225661,
+        "stop" : 1647927226630,
+        "duration" : 969
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Operator initial balance: 0.00111451 NEON 72414.1780366 SOL",
+      "time" : {
+        "start" : 1647927231572,
+        "stop" : 1647927231572,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 3,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "prepare",
+    "time" : {
+      "start" : 1647927472899,
+      "stop" : 1647927472899,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "setup_sol_cost",
+    "time" : {
+      "start" : 1647927472899,
+      "stop" : 1647927472899,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1647927472899,
+      "stop" : 1647927472899,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "afterStages" : [ {
+    "name" : "prepare_account::0",
+    "time" : {
+      "start" : 1647927690899,
+      "stop" : 1647927695940,
+      "duration" : 5041
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Operator end balance: 0.00111528141 NEON 72412.47846736 SOL",
+      "time" : {
+        "start" : 1647927695727,
+        "stop" : 1647927695727,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Account end balance: 583.262218070768 NEON",
+      "time" : {
+        "start" : 1647927695940,
+        "stop" : 1647927695940,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 2,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "allure_environment::0",
+    "time" : {
+      "start" : 1647927695947,
+      "stop" : 1647927695947,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "labels" : [ {
+    "name" : "story",
+    "value" : "Operator economy"
+  }, {
+    "name" : "parentSuite",
+    "value" : "integration.tests.economy"
+  }, {
+    "name" : "suite",
+    "value" : "test_economics"
+  }, {
+    "name" : "subSuite",
+    "value" : "TestEconomics"
+  }, {
+    "name" : "host",
+    "value" : "fv-az38-70"
+  }, {
+    "name" : "thread",
+    "value" : "1765-MainThread"
+  }, {
+    "name" : "framework",
+    "value" : "pytest"
+  }, {
+    "name" : "language",
+    "value" : "cpython3"
+  }, {
+    "name" : "package",
+    "value" : "integration.tests.economy.test_economics"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure2"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "retry" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ ],
+    "categories" : [ ],
+    "history" : {
+      "statistic" : {
+        "failed" : 2,
+        "broken" : 0,
+        "skipped" : 0,
+        "passed" : 1,
+        "unknown" : 0,
+        "total" : 3
+      },
+      "items" : [ {
+        "uid" : "e32695ed8e171086",
+        "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/19//#testresult/e32695ed8e171086",
+        "status" : "failed",
+        "statusDetails" : "AssertionError: assert 72833416182680 == 72833357620840",
+        "time" : {
+          "start" : 1647892235897,
+          "stop" : 1647892250491,
+          "duration" : 14594
+        }
+      }, {
+        "uid" : "e8934fa424046864",
+        "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/test-release-stand/16//#testresult/e8934fa424046864",
+        "status" : "failed",
+        "statusDetails" : "AssertionError: assert Decimal('924372.824') == Decimal('924373.493')",
+        "time" : {
+          "start" : 1647888599500,
+          "stop" : 1647888610962,
+          "duration" : 11462
+        }
+      } ]
+    },
+    "tags" : [ ]
+  },
+  "source" : "a4f04ed1892f3108.json",
+  "parameterValues" : [ ]
+}

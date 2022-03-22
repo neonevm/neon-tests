@@ -1,0 +1,5 @@
+ERROR    asyncio:base_events.py:1738 Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7f08083213d0>
+ERROR    asyncio:base_events.py:1738 Unclosed connector
+connections: ['[(<aiohttp.client_proto.ResponseHandler object at 0x7f0808462be0>, 242.257128206)]']
+connector: <aiohttp.connector.TCPConnector object at 0x7f0808321070>

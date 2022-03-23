@@ -10,7 +10,7 @@ import uuid
 
 import gevent
 import requests
-from locust import User, TaskSet, between, task, events
+from locust import User, TaskSet, between, task, events, tag
 
 from utils import helpers
 from utils.faucet import Faucet
@@ -224,6 +224,9 @@ class NeonProxyTasksSet(TaskSet):
             gas=gas,
         )
 
+        if not (contract_deploy_tx and contract_interface):
+            return None, None
+
         contract = self.web3_client.eth.contract(
             address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
         )
@@ -247,6 +250,7 @@ def extend_task(*attrs) -> tp.Callable:
     return ext_runner
 
 
+@tag("send_neon")
 class NeonTasksSet(NeonProxyTasksSet):
     """Implements Neons transfer base pipeline tasks"""
 
@@ -260,6 +264,7 @@ class NeonTasksSet(NeonProxyTasksSet):
         self.web3_client.send_neon(self.account, recipient, amount=1)
 
 
+@tag("erc20")
 class ERC20TasksSet(NeonProxyTasksSet):
     """Implements ERC20 base pipeline tasks"""
 
@@ -272,12 +277,16 @@ class ERC20TasksSet(NeonProxyTasksSet):
         self.log.info(f"Deploy `ERC20` contract.")
 
         contract, contract_deploy_tx = self.deploy_contract(
-            "ERC20", self._erc20_version, self.account, constructor_args=[1000]
+            "ERC20", self._erc20_version, self.account, constructor_args=[pow(10, 10)]
         )
+        if not contract:
+            self.log.info("ERC20 contract deployment failed")
+            return
+
         self._erc20_contracts.append((contract, contract_deploy_tx))
 
     @task(5)
-    @extend_task("task_block_number")
+    @extend_task("task_block_number", "task_keeps_balance")
     def task_send_erc20(self) -> None:
         """Send ERC20 tokens"""
         if not self._erc20_contracts:

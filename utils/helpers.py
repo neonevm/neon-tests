@@ -19,6 +19,7 @@ def get_contract_interface(contract_name: str, version: str):
     if contract_name.endswith(".sol"):
         contract_name = contract_name.rsplit(".", 1)[0]
 
+    solcx.install_solc(version)
     contract_path = (pathlib.Path.cwd() / "contracts" / f"{contract_name}.sol").absolute()
 
     assert contract_path.exists()

@@ -3,12 +3,13 @@ import json
 import logging
 import pathlib
 import random
+import sys
 import time
 import typing as tp
 import uuid
-import requests
 
 import gevent
+import requests
 from locust import User, TaskSet, between, task, events
 
 from utils import helpers
@@ -68,11 +69,9 @@ def load_credentials(environment, **kwargs):
 class LocustEventHandler(object):
     """Implements custom Locust events handler"""
 
-    success = events.request_success
-    failure = events.request_failure
-
-    def __init__(self) -> None:
-        self._buffer: tp.Dict[str, tp.Any] = dict()
+    def __init__(self, request_event: "EventHook") -> None:
+        self.buffer: tp.Dict[str, tp.Any] = dict()
+        self._request_event = request_event
 
     def init_event(
         self, task_id: str, request_type: str, task_name: tp.Optional[str] = "", start_time: tp.Optional[float] = None
@@ -81,38 +80,30 @@ class LocustEventHandler(object):
         params = dict(
             name=task_name,
             start_time=start_time or time.time(),
-            type=request_type,
+            request_type=request_type,
+            start_perf_counter=time.perf_counter(),
         )
-        self._buffer[task_id] = params
-        LOG.debug("- buffer - %s" % self._buffer)
+        self.buffer[task_id] = params
+        LOG.debug("- buffer - %s" % self.buffer)
 
-    def send_event(self, event_type: str, task_id: tp.Optional[str] = None, **kwargs) -> None:
+    def fire_event(self, task_id: str, **kwargs) -> None:
         """Sends event to locust ."""
-        event = self._buffer.pop(task_id, None)  # type: ignore
-        end_time = time.time()
-        if event:
-            task_name = event["name"]
-            total_time = round((end_time - event["start_time"]) * 1000, ndigits=3)
-            event_params = dict(
-                request_type=event["type"],
-            )
-        else:
-            task_name = kwargs.get("name", str())
-            total_time = round((end_time - kwargs.get("start_time", end_time - 1)) * 1000, ndigits=3)
-            event_params = dict(
-                request_type=kwargs.get("type", str()),
-            )
-        event_params["name"] = task_name
-        event_params["response_length"] = float(kwargs.get("length", 0))
-        event_params["response_time"] = total_time
-        if event_type == "failure":
-            event_params["exception"] = kwargs.get("exc_msg", None)
-        # fire locust event
-        getattr(self, event_type).fire(**event_params)
-        LOG.debug("- %s : %s - %sms" % (event["type"], event_type, total_time))
+        event = self.buffer.pop(task_id)
+        total_time = (time.perf_counter() - event["start_perf_counter"]) * 1000
+        request_meta = dict(
+            name=event["name"],
+            request_type=event["request_type"],
+            response=event.get("response"),
+            response_time=total_time,
+            response_length=event.get("response_length", 0),
+            exception=event.get("exception"),
+            context={},
+        )
+        self._request_event.fire(**request_meta)
+        LOG.debug("- %s : %s - %sms" % (event["request_type"], event["event_type"], total_time))
 
 
-locust_events_handler = LocustEventHandler()
+locust_events_handler = LocustEventHandler(events.request)
 
 
 def statistics_collector(func: tp.Callable) -> tp.Callable:
@@ -120,18 +111,17 @@ def statistics_collector(func: tp.Callable) -> tp.Callable:
 
     @functools.wraps(func)
     def wrap(*args, **kwargs) -> tp.Any:
-        event: tp.Dict[str, tp.Any] = dict(
-            task_id=str(uuid.uuid4()), request_type=f"`{func.__name__.replace('_', ' ')}`"
-        )
+        task_id = str(uuid.uuid4())
+        event: tp.Dict[str, tp.Any] = dict(task_id=task_id, request_type=f"`{func.__name__.replace('_', ' ')}`")
         locust_events_handler.init_event(**event)
         response = None
         try:
             response = func(*args, **kwargs)
-            event["event_type"] = "success"
+            event = dict(response=response, response_length=sys.getsizeof(response), event_type="success")
         except Exception as err:
-            event["exc_msg"] = err.args[0]
-            event["event_type"] = "failure"
-        locust_events_handler.send_event(**event)
+            event = dict(event_type="failure", exception=err)
+        locust_events_handler.buffer[task_id].update(event)
+        locust_events_handler.fire_event(task_id)
         return response
 
     return wrap

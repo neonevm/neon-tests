@@ -144,7 +144,7 @@ class NeonProxyTasksSet(TaskSet):
     _accounts: tp.Optional[tp.List] = None
     """Cross user Accounts storage
     """
-    _erc20_contracts: tp.Optional[tp.List[tp.Tuple]] = None
+    _erc20_contracts: tp.Optional[tp.Dict] = None
     """user erc20 contracts storage 
     """
 
@@ -169,7 +169,7 @@ class NeonProxyTasksSet(TaskSet):
     def setup_class() -> None:
         """Base initialization"""
         NeonProxyTasksSet._accounts = []
-        NeonProxyTasksSet._erc20_contracts = []
+        NeonProxyTasksSet._erc20_contracts = {}
 
     def setup(self) -> None:
         """Prepare data requirements"""
@@ -276,31 +276,29 @@ class ERC20TasksSet(NeonProxyTasksSet):
         """Deploy ERC20 contract"""
         self.log.info(f"Deploy `ERC20` contract.")
 
-        contract, contract_deploy_tx = self.deploy_contract(
-            "ERC20", self._erc20_version, self.account, constructor_args=[pow(10, 10)]
-        )
+        contract, _ = self.deploy_contract("ERC20", self._erc20_version, self.account, constructor_args=[pow(10, 10)])
         if not contract:
             self.log.info("ERC20 contract deployment failed")
             return
-
-        self._erc20_contracts.append((contract, contract_deploy_tx))
+        self._erc20_contracts.setdefault(self.account.address, set()).add(contract)
 
     @task(5)
     @extend_task("task_block_number", "task_keeps_balance")
     def task_send_erc20(self) -> None:
         """Send ERC20 tokens"""
-        if not self._erc20_contracts:
-            self.log.info("no ERC20 contracts found, send is cancel")
-            return
-        contract, contract_deploy_tx = random.choice(self._erc20_contracts)
-        if contract.functions.balanceOf(self.account.address).call() >= 1:
+        contracts = self._erc20_contracts.get(self.account.address)
+        if contracts:
+            contract = random.choice(tuple(contracts))
             recipient = random.choice(self._accounts)
             self.log.info(f"Send `erc20` tokens from {str(contract.address)[:8]} to {str(recipient.address)[:8]}.")
-            self.web3_client.send_erc20(
-                self.account, recipient, 1, contract_deploy_tx["contractAddress"], abi=contract.abi
-            )
+            if self.web3_client.send_erc20(self.account, recipient, 1, contract.address, abi=contract.abi):
+                self._erc20_contracts.setdefault(recipient.address, set()).add(contract)
+            # remove contracts without balance
+            if contract.functions.balanceOf(self.account.address).call() < 1:
+                self.log.info(f"Remove contract `{contract.address[:8]}` with empty balance")
+                contracts.remove(contract)
             return
-        self.log.info(f"balance of contract {contract.address[:8]} is empty, cancel sending tokens")
+        self.log.info("no ERC20 contracts found, send is cancel")
 
 
 class NeonPipelineUser(User):

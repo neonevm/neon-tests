@@ -112,7 +112,8 @@ def statistics_collector(func: tp.Callable) -> tp.Callable:
     @functools.wraps(func)
     def wrap(*args, **kwargs) -> tp.Any:
         task_id = str(uuid.uuid4())
-        event: tp.Dict[str, tp.Any] = dict(task_id=task_id, request_type=f"`{func.__name__.replace('_', ' ')}`")
+        request_type = f"`{func.__name__.replace('_', ' ')}`"
+        event: tp.Dict[str, tp.Any] = dict(task_id=task_id, request_type=request_type)
         locust_events_handler.init_event(**event)
         response = None
         try:
@@ -120,6 +121,7 @@ def statistics_collector(func: tp.Callable) -> tp.Callable:
             event = dict(response=response, response_length=sys.getsizeof(response), event_type="success")
         except Exception as err:
             event = dict(event_type="failure", exception=err)
+            LOG.error(f"web3 RPC call {request_type} is failed: {err}")
         locust_events_handler.buffer[task_id].update(event)
         locust_events_handler.fire_event(task_id)
         return response
@@ -275,7 +277,6 @@ class ERC20TasksSet(NeonProxyTasksSet):
     def task_deploy_contract(self) -> None:
         """Deploy ERC20 contract"""
         self.log.info(f"Deploy `ERC20` contract.")
-
         contract, _ = self.deploy_contract("ERC20", self._erc20_version, self.account, constructor_args=[pow(10, 10)])
         if not contract:
             self.log.info("ERC20 contract deployment failed")

@@ -30,6 +30,10 @@ ERC20_VERSION = "0.6.6"
 """ERC20 Protocol version
 """
 
+INCREASE_STORAGE_VERSION = "0.8.10"
+"""Increase Storage Protocol version
+"""
+
 
 def init_session(size: int) -> requests.Session:
     """init request session with extended connection pool size"""
@@ -150,6 +154,10 @@ class NeonProxyTasksSet(TaskSet):
     """user erc20 contracts storage 
     """
 
+    _increase_storage_contracts: tp.Optional[tp.Dict] = None
+    """user `IncreaseStorage` contracts storage 
+    """
+
     _faucet: tp.Optional[Faucet] = None
     """Earn Free Cryptocurrencies service
     """
@@ -177,6 +185,7 @@ class NeonProxyTasksSet(TaskSet):
         """Prepare data requirements"""
         # create new account for each simulating user
         self.account = self.web3_client.create_account()
+        self._increase_storage_contracts = []
         NeonProxyTasksSet._accounts.append(self.account)
 
     def on_start(self) -> None:
@@ -261,7 +270,7 @@ class NeonTasksSet(NeonProxyTasksSet):
     def task_send_neon(self) -> None:
         """Transferring funds to a random account"""
         # add credits to account
-        recipient = random.choice(NeonTasksSet._accounts)
+        recipient = random.choice(self._accounts)
         self.log.info(f"Send `neon` from {str(self.account.address)[:8]} to {str(recipient.address)[:8]}.")
         self.web3_client.send_neon(self.account, recipient, amount=1)
 
@@ -299,11 +308,49 @@ class ERC20TasksSet(NeonProxyTasksSet):
                 self.log.info(f"Remove contract `{contract.address[:8]}` with empty balance")
                 contracts.remove(contract)
             return
-        self.log.info("no ERC20 contracts found, send is cancel")
+        self.log.info("no `ERC20` contracts found, send is cancel")
+
+
+@tag("increase_storage")
+class IncreaseStorageTasksSet(NeonProxyTasksSet):
+    """Implements IncreaseStorage base pipeline tasks"""
+
+    _inc_storage_version = INCREASE_STORAGE_VERSION
+
+    @task(1)
+    @extend_task("task_block_number", "task_keeps_balance")
+    def task_deploy_contract(self) -> None:
+        """Deploy IncreaseStorage contract"""
+        self.log.info(f"Deploy `IncreaseStorage` contract.")
+        contract, _ = self.deploy_contract("IncreaseStorage", self._inc_storage_version, self.account)
+        if not contract:
+            self.log.info("`IncreaseStorage` contract deployment failed")
+            return
+        self._increase_storage_contracts.append(contract)
+
+    @task(5)
+    @extend_task("task_block_number", "task_keeps_balance")
+    def task_account_resize(self) -> None:
+        """Accounts resize"""
+        contracts = self._increase_storage_contracts
+        if contracts:
+            contract = random.choice(contracts)
+            self.log.info(f"Increase account {str(contract.address)[:8]}.")
+            inc_tx = contract.functions.inc().buildTransaction(
+                {
+                    "from": self.account.address,
+                    "nonce": self.web3_client.eth.get_transaction_count(self.account.address),
+                    "gasPrice": self.web3_client.gas_price(),
+                }
+            )
+            self.web3_client.send_transaction(self.account, inc_tx)
+            return
+        self.log.info("no `IncreaseStorage` contracts found, account resize canceled")
 
 
 class NeonPipelineUser(User):
     """class represents a base Neon pipeline by one user"""
 
     wait_time = between(1, 3)
-    tasks = {NeonTasksSet: 2, ERC20TasksSet: 1}
+
+    tasks = {ERC20TasksSet: 1, IncreaseStorageTasksSet: 1, NeonTasksSet: 3}

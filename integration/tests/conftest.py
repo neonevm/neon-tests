@@ -13,6 +13,7 @@ import solana
 import solana.rpc.api
 
 from _pytest.config import Config
+from integration.tests.basic.helpers.json_rpc_requester import JsonRpcRequester
 
 from utils.operator import Operator
 from utils.faucet import Faucet
@@ -55,6 +56,10 @@ def pytest_configure(config: Config):
 @pytest.fixture(scope="session", autouse=True)
 def faucet(pytestconfig: Config) -> Faucet:
     return Faucet(pytestconfig.environment.faucet_url)
+
+@pytest.fixture(scope="session", autouse=True)
+def jsonrpc_requester(pytestconfig: Config) -> JsonRpcRequester:
+    return JsonRpcRequester(pytestconfig.environment.proxy_url)
 
 
 @pytest.fixture(scope="session", autouse=True)

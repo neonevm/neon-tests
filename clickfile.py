@@ -78,12 +78,20 @@ def run(name, network):
     "Only used together without Locust Web UI. [default: always run]",
 )
 @click.option(
+    "-T",
+    "--tag",
+    type=str,
+    multiple=True,
+    help="tag to include in the test, so only tasks "
+         "with any matching tags will be executed"
+)
+@click.option(
     "--web-ui/--headless",
     " /-w",
     default=True,
     help="Enable the web interface. " "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
 )
-def locust(locustfile, credentials, host, users, spawn_rate, run_time, web_ui):
+def locust(locustfile, credentials, host, users, spawn_rate, run_time, tag, web_ui):
     """Run `Neon` pipeline performance test
 
     path it's sub-folder and file name  `loadtesting/locustfile.py`.
@@ -96,6 +104,8 @@ def locust(locustfile, credentials, host, users, spawn_rate, run_time, web_ui):
         command += f" --credentials={credentials}"
     if run_time:
         command += f" --run-time={run_time}"
+    if tag:
+        command += f" --tags {' '.join(tag)}"
     if not web_ui:
         command += f" --headless"
 

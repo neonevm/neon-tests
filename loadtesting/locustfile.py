@@ -3,13 +3,14 @@ import json
 import logging
 import pathlib
 import random
+import sys
 import time
 import typing as tp
 import uuid
-import requests
 
 import gevent
-from locust import User, TaskSet, between, task, events
+import requests
+from locust import User, TaskSet, between, task, events, tag
 
 from utils import helpers
 from utils.faucet import Faucet
@@ -68,11 +69,9 @@ def load_credentials(environment, **kwargs):
 class LocustEventHandler(object):
     """Implements custom Locust events handler"""
 
-    success = events.request_success
-    failure = events.request_failure
-
-    def __init__(self) -> None:
-        self._buffer: tp.Dict[str, tp.Any] = dict()
+    def __init__(self, request_event: "EventHook") -> None:
+        self.buffer: tp.Dict[str, tp.Any] = dict()
+        self._request_event = request_event
 
     def init_event(
         self, task_id: str, request_type: str, task_name: tp.Optional[str] = "", start_time: tp.Optional[float] = None
@@ -81,38 +80,30 @@ class LocustEventHandler(object):
         params = dict(
             name=task_name,
             start_time=start_time or time.time(),
-            type=request_type,
+            request_type=request_type,
+            start_perf_counter=time.perf_counter(),
         )
-        self._buffer[task_id] = params
-        LOG.debug("- buffer - %s" % self._buffer)
+        self.buffer[task_id] = params
+        LOG.debug("- buffer - %s" % self.buffer)
 
-    def send_event(self, event_type: str, task_id: tp.Optional[str] = None, **kwargs) -> None:
+    def fire_event(self, task_id: str, **kwargs) -> None:
         """Sends event to locust ."""
-        event = self._buffer.pop(task_id, None)  # type: ignore
-        end_time = time.time()
-        if event:
-            task_name = event["name"]
-            total_time = round((end_time - event["start_time"]) * 1000, ndigits=3)
-            event_params = dict(
-                request_type=event["type"],
-            )
-        else:
-            task_name = kwargs.get("name", str())
-            total_time = round((end_time - kwargs.get("start_time", end_time - 1)) * 1000, ndigits=3)
-            event_params = dict(
-                request_type=kwargs.get("type", str()),
-            )
-        event_params["name"] = task_name
-        event_params["response_length"] = float(kwargs.get("length", 0))
-        event_params["response_time"] = total_time
-        if event_type == "failure":
-            event_params["exception"] = kwargs.get("exc_msg", None)
-        # fire locust event
-        getattr(self, event_type).fire(**event_params)
-        LOG.debug("- %s : %s - %sms" % (event["type"], event_type, total_time))
+        event = self.buffer.pop(task_id)
+        total_time = (time.perf_counter() - event["start_perf_counter"]) * 1000
+        request_meta = dict(
+            name=event["name"],
+            request_type=event["request_type"],
+            response=event.get("response"),
+            response_time=total_time,
+            response_length=event.get("response_length", 0),
+            exception=event.get("exception"),
+            context={},
+        )
+        self._request_event.fire(**request_meta)
+        LOG.debug("- %s : %s - %sms" % (event["request_type"], event["event_type"], total_time))
 
 
-locust_events_handler = LocustEventHandler()
+locust_events_handler = LocustEventHandler(events.request)
 
 
 def statistics_collector(func: tp.Callable) -> tp.Callable:
@@ -120,18 +111,19 @@ def statistics_collector(func: tp.Callable) -> tp.Callable:
 
     @functools.wraps(func)
     def wrap(*args, **kwargs) -> tp.Any:
-        event: tp.Dict[str, tp.Any] = dict(
-            task_id=str(uuid.uuid4()), request_type=f"`{func.__name__.replace('_', ' ')}`"
-        )
+        task_id = str(uuid.uuid4())
+        request_type = f"`{func.__name__.replace('_', ' ')}`"
+        event: tp.Dict[str, tp.Any] = dict(task_id=task_id, request_type=request_type)
         locust_events_handler.init_event(**event)
         response = None
         try:
             response = func(*args, **kwargs)
-            event["event_type"] = "success"
+            event = dict(response=response, response_length=sys.getsizeof(response), event_type="success")
         except Exception as err:
-            event["exc_msg"] = err.args[0]
-            event["event_type"] = "failure"
-        locust_events_handler.send_event(**event)
+            event = dict(event_type="failure", exception=err)
+            LOG.error(f"web3 RPC call {request_type} is failed: {err}")
+        locust_events_handler.buffer[task_id].update(event)
+        locust_events_handler.fire_event(task_id)
         return response
 
     return wrap
@@ -154,7 +146,7 @@ class NeonProxyTasksSet(TaskSet):
     _accounts: tp.Optional[tp.List] = None
     """Cross user Accounts storage
     """
-    _erc20_contracts: tp.Optional[tp.List[tp.Tuple]] = None
+    _erc20_contracts: tp.Optional[tp.Dict] = None
     """user erc20 contracts storage 
     """
 
@@ -179,7 +171,7 @@ class NeonProxyTasksSet(TaskSet):
     def setup_class() -> None:
         """Base initialization"""
         NeonProxyTasksSet._accounts = []
-        NeonProxyTasksSet._erc20_contracts = []
+        NeonProxyTasksSet._erc20_contracts = {}
 
     def setup(self) -> None:
         """Prepare data requirements"""
@@ -233,7 +225,10 @@ class NeonProxyTasksSet(TaskSet):
             constructor_args=constructor_args,
             gas=gas,
         )
-        self.log.debug(f"ERC20 contract deploy tx: {contract_deploy_tx}")
+
+        if not (contract_deploy_tx and contract_interface):
+            return None, None
+
         contract = self.web3_client.eth.contract(
             address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
         )
@@ -257,6 +252,7 @@ def extend_task(*attrs) -> tp.Callable:
     return ext_runner
 
 
+@tag("send_neon")
 class NeonTasksSet(NeonProxyTasksSet):
     """Implements Neons transfer base pipeline tasks"""
 
@@ -270,6 +266,7 @@ class NeonTasksSet(NeonProxyTasksSet):
         self.web3_client.send_neon(self.account, recipient, amount=1)
 
 
+@tag("erc20")
 class ERC20TasksSet(NeonProxyTasksSet):
     """Implements ERC20 base pipeline tasks"""
 
@@ -280,28 +277,29 @@ class ERC20TasksSet(NeonProxyTasksSet):
     def task_deploy_contract(self) -> None:
         """Deploy ERC20 contract"""
         self.log.info(f"Deploy `ERC20` contract.")
-
-        contract, contract_deploy_tx = self.deploy_contract(
-            "ERC20", self._erc20_version, self.account, constructor_args=[1000]
-        )
-        self._erc20_contracts.append((contract, contract_deploy_tx))
+        contract, _ = self.deploy_contract("ERC20", self._erc20_version, self.account, constructor_args=[pow(10, 10)])
+        if not contract:
+            self.log.info("ERC20 contract deployment failed")
+            return
+        self._erc20_contracts.setdefault(self.account.address, set()).add(contract)
 
     @task(5)
-    @extend_task("task_block_number")
+    @extend_task("task_block_number", "task_keeps_balance")
     def task_send_erc20(self) -> None:
         """Send ERC20 tokens"""
-        if not self._erc20_contracts:
-            self.log.debug("no ERC20 deployed contracts found, send is cancel")
-            return
-        contract, contract_deploy_tx = random.choice(self._erc20_contracts)
-        if contract.functions.balanceOf(self.account.address).call() >= 1:
+        contracts = self._erc20_contracts.get(self.account.address)
+        if contracts:
+            contract = random.choice(tuple(contracts))
             recipient = random.choice(self._accounts)
             self.log.info(f"Send `erc20` tokens from {str(contract.address)[:8]} to {str(recipient.address)[:8]}.")
-            self.web3_client.send_erc20(
-                self.account, recipient, 1, contract_deploy_tx["contractAddress"], abi=contract.abi
-            )
+            if self.web3_client.send_erc20(self.account, recipient, 1, contract.address, abi=contract.abi):
+                self._erc20_contracts.setdefault(recipient.address, set()).add(contract)
+            # remove contracts without balance
+            if contract.functions.balanceOf(self.account.address).call() < 1:
+                self.log.info(f"Remove contract `{contract.address[:8]}` with empty balance")
+                contracts.remove(contract)
             return
-        self.log.info(f"balance of contract {contract.address[:8]} is empty, cancel sending tokens")
+        self.log.info("no ERC20 contracts found, send is cancel")
 
 
 class NeonPipelineUser(User):

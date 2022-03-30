@@ -70,6 +70,8 @@ Options:
                                   e.g. (300s, 20m, 3h, 1h30m, etc.). Only used
                                   together without Locust Web UI. [default:
                                   always run]
+  -T, --tag TEXT                  tag to include in the test, so only tasks
+                                  with any matching tags will be executed
   --web-ui / -w, --headless       Enable the web interface. If UI is enabled,
                                   go to http://0.0.0.0:8089/ [default: `Web UI
                                   is enabled`]

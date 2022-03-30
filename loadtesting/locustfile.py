@@ -233,7 +233,7 @@ class NeonProxyTasksSet(TaskSet):
             constructor_args=constructor_args,
             gas=gas,
         )
-
+        self.log.debug(f"ERC20 contract deploy tx: {contract_deploy_tx}")
         contract = self.web3_client.eth.contract(
             address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
         )
@@ -291,7 +291,7 @@ class ERC20TasksSet(NeonProxyTasksSet):
     def task_send_erc20(self) -> None:
         """Send ERC20 tokens"""
         if not self._erc20_contracts:
-            self.log.info("no ERC20 contracts found, send is cancel")
+            self.log.debug("no ERC20 deployed contracts found, send is cancel")
             return
         contract, contract_deploy_tx = random.choice(self._erc20_contracts)
         if contract.functions.balanceOf(self.account.address).call() >= 1:

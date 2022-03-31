@@ -1,0 +1,9 @@
+[ {
+  "buildOrder" : 30,
+  "reportUrl" : "https://neonlabsorg.github.io/neon-tests/devnet/30/",
+  "reportName" : "Allure Report with history",
+  "data" : {
+    "run" : 30,
+    "retry" : 0
+  }
+} ]

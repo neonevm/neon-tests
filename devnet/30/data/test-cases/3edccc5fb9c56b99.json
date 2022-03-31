@@ -1,0 +1,384 @@
+{
+  "uid" : "3edccc5fb9c56b99",
+  "name" : "test_send_when_not_enough_for_gas",
+  "fullName" : "integration.tests.economy.test_economics.TestEconomics#test_send_when_not_enough_for_gas",
+  "historyId" : "0c604605f9811f5b46217ed1be473a70",
+  "time" : {
+    "start" : 1648721034907,
+    "stop" : 1648721042465,
+    "duration" : 7558
+  },
+  "status" : "failed",
+  "statusMessage" : "AssertionError: Regex pattern 'The account balance is less than required.*' does not match \"{'code': -32000, 'message': 'insufficient funds for transfer: address 0x00ea79092011f2f480f4fe546e6595d65a3fe249 have 1000000000000000000 want 1942402652800000000'}\".",
+  "statusTrace" : "self = <integration.tests.economy.test_economics.TestEconomics object at 0x7f7857f88550>\n\n    def test_send_when_not_enough_for_gas(self):\n        acc2 = self.web3_client.create_account()\n    \n        assert self.web3_client.get_balance(acc2) == 0\n    \n        self.web3_client.send_neon(self.acc, acc2, 1)\n    \n        sol_balance_before = self.operator.get_solana_balance()\n        neon_balance_before = self.operator.get_neon_balance()\n    \n        acc3 = self.web3_client.create_account()\n    \n        with pytest.raises(ValueError, match=r\"The account balance is less than required.*\") as e:\n>           self.web3_client.send_neon(acc2, acc3, 1)\n\nintegration/tests/economy/test_economics.py:150: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <utils.web3client.NeonWeb3Client object at 0x7f7857e8d0d0>\nfrom_ = <eth_account.signers.local.LocalAccount object at 0x7f7857f7ea60>\nto = <eth_account.signers.local.LocalAccount object at 0x7f7857ee6100>\namount = 1, gas = 0, gas_price = 596820000000\n\n    def send_neon(\n        self,\n        from_: eth_account.signers.local.LocalAccount,\n        to: tp.Union[str, eth_account.signers.local.LocalAccount],\n        amount: tp.Union[int, float, Decimal],\n        gas: tp.Optional[int] = 0,\n        gas_price: tp.Optional[int] = None,\n    ) -> web3.types.TxReceipt:\n        to_addr = to if isinstance(to, str) else to.address\n        gas_price = gas_price or self.gas_price()\n        transaction = {\n            \"from\": from_.address,\n            \"to\": to_addr,\n            \"value\": web3.Web3.toWei(amount, \"ether\"),\n            \"chainId\": self._chain_id,\n            \"gasPrice\": gas_price or self.gas_price(),\n            \"gas\": gas,\n            \"nonce\": self._web3.eth.get_transaction_count(from_.address),\n        }\n        if transaction[\"gas\"] == 0:\n            transaction[\"gas\"] = self._web3.eth.estimate_gas(transaction)\n    \n        signed_tx = self._web3.eth.account.sign_transaction(transaction, from_.key)\n>       tx = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)\n\nutils/web3client.py:76: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <web3.eth.Eth object at 0x7f7857e8dbb0>\ntransaction = HexBytes('0xf86f80858af53e7d00831818209490964773c22ad9f24798e7fa56933f32a68d4424880de0b6b3a764000080820102a0682577a4461601181dfefd3cbc52062583ee199973c29c7e84531bdb1b6dd662a05ab4a0102b8320880b2d10c7feb0a8399c79ce907cac1abc86777fd2f1f499ae')\n\n    def send_raw_transaction(self, transaction: Union[HexStr, bytes]) -> HexBytes:\n>       return self._send_raw_transaction(transaction)\n\n../../_tool/Python/3.9.12/x64/lib/python3.9/site-packages/web3/eth.py:783: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nargs = (HexBytes('0xf86f80858af53e7d00831818209490964773c22ad9f24798e7fa56933f32a68d4424880de0b6b3a764000080820102a0682577a44...81dfefd3cbc52062583ee199973c29c7e84531bdb1b6dd662a05ab4a0102b8320880b2d10c7feb0a8399c79ce907cac1abc86777fd2f1f499ae'),)\nkwargs = {}, method_str = 'eth_sendRawTransaction'\nparams = ('0xf86f80858af53e7d00831818209490964773c22ad9f24798e7fa56933f32a68d4424880de0b6b3a764000080820102a0682577a4461601181dfefd3cbc52062583ee199973c29c7e84531bdb1b6dd662a05ab4a0102b8320880b2d10c7feb0a8399c79ce907cac1abc86777fd2f1f499ae',)\nresponse_formatters = (Compose(<function apply_formatter_if at 0x7f785ac7b550>, <function to_hexbytes at 0x7f785a91b040>), <cyfunction identity at 0x7f785d847ee0>, <cyfunction identity at 0x7f785d847ee0>)\nresult_formatters = Compose(<function apply_formatter_if at 0x7f785ac7b550>, <function to_hexbytes at 0x7f785a91b040>)\nerror_formatters = <cyfunction identity at 0x7f785d847ee0>\nnull_result_formatters = <cyfunction identity at 0x7f785d847ee0>\n\n    def caller(*args: Any, **kwargs: Any) -> Union[TReturn, LogFilter]:\n        try:\n            (method_str, params), response_formatters = method.process_params(module, *args, **kwargs)  # noqa: E501\n        except _UseExistingFilter as err:\n            return LogFilter(eth_module=module, filter_id=err.filter_id)\n        result_formatters, error_formatters, null_result_formatters = response_formatters\n>       result = w3.manager.request_blocking(method_str,\n                                             params,\n                                             error_formatters,\n                                             null_result_formatters)\n\n../../_tool/Python/3.9.12/x64/lib/python3.9/site-packages/web3/module.py:57: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <web3.manager.RequestManager object at 0x7f7857e8d6a0>\nmethod = 'eth_sendRawTransaction'\nparams = ('0xf86f80858af53e7d00831818209490964773c22ad9f24798e7fa56933f32a68d4424880de0b6b3a764000080820102a0682577a4461601181dfefd3cbc52062583ee199973c29c7e84531bdb1b6dd662a05ab4a0102b8320880b2d10c7feb0a8399c79ce907cac1abc86777fd2f1f499ae',)\nerror_formatters = <cyfunction identity at 0x7f785d847ee0>\nnull_result_formatters = <cyfunction identity at 0x7f785d847ee0>\n\n    def request_blocking(\n        self,\n        method: Union[RPCEndpoint, Callable[..., RPCEndpoint]],\n        params: Any,\n        error_formatters: Optional[Callable[..., Any]] = None,\n        null_result_formatters: Optional[Callable[..., Any]] = None,\n    ) -> Any:\n        \"\"\"\n        Make a synchronous request using the provider\n        \"\"\"\n        response = self._make_request(method, params)\n>       return self.formatted_response(response,\n                                       params,\n                                       error_formatters,\n                                       null_result_formatters)\n\n../../_tool/Python/3.9.12/x64/lib/python3.9/site-packages/web3/manager.py:198: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <web3.manager.RequestManager object at 0x7f7857e8d6a0>\nresponse = {'error': {'code': -32000, 'message': 'insufficient funds for transfer: address 0x00ea79092011f2f480f4fe546e6595d65a3fe249 have 1000000000000000000 want 1942402652800000000'}, 'id': 159, 'jsonrpc': '2.0'}\nparams = ('0xf86f80858af53e7d00831818209490964773c22ad9f24798e7fa56933f32a68d4424880de0b6b3a764000080820102a0682577a4461601181dfefd3cbc52062583ee199973c29c7e84531bdb1b6dd662a05ab4a0102b8320880b2d10c7feb0a8399c79ce907cac1abc86777fd2f1f499ae',)\nerror_formatters = <cyfunction identity at 0x7f785d847ee0>\nnull_result_formatters = <cyfunction identity at 0x7f785d847ee0>\n\n    def formatted_response(\n        self,\n        response: RPCResponse,\n        params: Any,\n        error_formatters: Optional[Callable[..., Any]] = None,\n        null_result_formatters: Optional[Callable[..., Any]] = None,\n    ) -> Any:\n        if \"error\" in response:\n            apply_error_formatters(error_formatters, response)\n>           raise ValueError(response[\"error\"])\nE           ValueError: {'code': -32000, 'message': 'insufficient funds for transfer: address 0x00ea79092011f2f480f4fe546e6595d65a3fe249 have 1000000000000000000 want 1942402652800000000'}\n\n../../_tool/Python/3.9.12/x64/lib/python3.9/site-packages/web3/manager.py:171: ValueError\n\nDuring handling of the above exception, another exception occurred:\n\nself = <integration.tests.economy.test_economics.TestEconomics object at 0x7f7857f88550>\n\n    def test_send_when_not_enough_for_gas(self):\n        acc2 = self.web3_client.create_account()\n    \n        assert self.web3_client.get_balance(acc2) == 0\n    \n        self.web3_client.send_neon(self.acc, acc2, 1)\n    \n        sol_balance_before = self.operator.get_solana_balance()\n        neon_balance_before = self.operator.get_neon_balance()\n    \n        acc3 = self.web3_client.create_account()\n    \n        with pytest.raises(ValueError, match=r\"The account balance is less than required.*\") as e:\n>           self.web3_client.send_neon(acc2, acc3, 1)\nE           AssertionError: Regex pattern 'The account balance is less than required.*' does not match \"{'code': -32000, 'message': 'insufficient funds for transfer: address 0x00ea79092011f2f480f4fe546e6595d65a3fe249 have 1000000000000000000 want 1942402652800000000'}\".\n\nintegration/tests/economy/test_economics.py:150: AssertionError",
+  "flaky" : false,
+  "newFailed" : false,
+  "newBroken" : false,
+  "newPassed" : false,
+  "retriesCount" : 0,
+  "retriesStatusChange" : false,
+  "beforeStages" : [ {
+    "name" : "pytestconfig",
+    "time" : {
+      "start" : 1648720993280,
+      "stop" : 1648720993280,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "web3_client",
+    "time" : {
+      "start" : 1648720993281,
+      "stop" : 1648720993282,
+      "duration" : 1
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "allure_environment",
+    "time" : {
+      "start" : 1648720993282,
+      "stop" : 1648720993989,
+      "duration" : 707
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "faucet",
+    "time" : {
+      "start" : 1648720993989,
+      "stop" : 1648720993990,
+      "duration" : 1
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "operator",
+    "time" : {
+      "start" : 1648720993990,
+      "stop" : 1648720993990,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "sol_client",
+    "time" : {
+      "start" : 1648720993990,
+      "stop" : 1648720993990,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "jsonrpc_requester",
+    "time" : {
+      "start" : 1648720993990,
+      "stop" : 1648720993990,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "install_solcx_versions",
+    "time" : {
+      "start" : 1648720993990,
+      "stop" : 1648720995572,
+      "duration" : 1582
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "sol_price",
+    "time" : {
+      "start" : 1648720995572,
+      "stop" : 1648720995754,
+      "duration" : 182
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "SOL price 124.370228$",
+      "time" : {
+        "start" : 1648720995754,
+        "stop" : 1648720995754,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 1,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1648720995755,
+      "stop" : 1648721001339,
+      "duration" : 5584
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Create account for tests",
+      "time" : {
+        "start" : 1648720995755,
+        "stop" : 1648720995777,
+        "duration" : 22
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Request 1000 NEON from faucet for 0x666B9F196BC98AA29aF2083C885Fcfa3d6adE460",
+      "time" : {
+        "start" : 1648720995778,
+        "stop" : 1648720996704,
+        "duration" : 926
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Operator initial balance: 0.000622138128 NEON 73854.1249764 SOL",
+      "time" : {
+        "start" : 1648721001339,
+        "stop" : 1648721001339,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 3,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1648721034907,
+      "stop" : 1648721034907,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "prepare",
+    "time" : {
+      "start" : 1648721034907,
+      "stop" : 1648721034907,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "setup_sol_cost",
+    "time" : {
+      "start" : 1648721034907,
+      "stop" : 1648721034907,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "afterStages" : [ {
+    "name" : "prepare_account::0",
+    "time" : {
+      "start" : 1648721406522,
+      "stop" : 1648721411419,
+      "duration" : 4897
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Operator end balance: 0.000622560082 NEON 73853.5139944 SOL",
+      "time" : {
+        "start" : 1648721411308,
+        "stop" : 1648721411309,
+        "duration" : 1
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Account end balance: 528.01628186227456 NEON",
+      "time" : {
+        "start" : 1648721411418,
+        "stop" : 1648721411418,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 2,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "allure_environment::0",
+    "time" : {
+      "start" : 1648721411425,
+      "stop" : 1648721411425,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "labels" : [ {
+    "name" : "story",
+    "value" : "Operator economy"
+  }, {
+    "name" : "parentSuite",
+    "value" : "integration.tests.economy"
+  }, {
+    "name" : "suite",
+    "value" : "test_economics"
+  }, {
+    "name" : "subSuite",
+    "value" : "TestEconomics"
+  }, {
+    "name" : "host",
+    "value" : "ip-172-31-10-218"
+  }, {
+    "name" : "thread",
+    "value" : "1961254-MainThread"
+  }, {
+    "name" : "framework",
+    "value" : "pytest"
+  }, {
+    "name" : "language",
+    "value" : "cpython3"
+  }, {
+    "name" : "package",
+    "value" : "integration.tests.economy.test_economics"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure2"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "retry" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ ],
+    "categories" : [ {
+      "name" : "Product defects",
+      "matchedStatuses" : [ ],
+      "flaky" : false
+    } ],
+    "tags" : [ ]
+  },
+  "source" : "3edccc5fb9c56b99.json",
+  "parameterValues" : [ ]
+}

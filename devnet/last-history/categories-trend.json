@@ -1,0 +1,10 @@
+[ {
+  "buildOrder" : 30,
+  "reportUrl" : "https://neonlabsorg.github.io/neon-tests/devnet/30/",
+  "reportName" : "Allure Report with history",
+  "data" : {
+    "Product defects" : 6,
+    "Operator economy" : 3,
+    "Test defects" : 5
+  }
+} ]

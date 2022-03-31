@@ -1,0 +1,307 @@
+{
+  "uid" : "4b4757e66a1912dae1a509f688f20b0f",
+  "children" : [ {
+    "name" : "Operator economy",
+    "children" : [ {
+      "name" : "AssertionError: Operator receive 0.009000000 NEON (0.00 $) and spend 0.000020000 SOL (0.00 $), profit - -9.544268100% \nassert Decimal('0.00225') > Decimal('0.00248740456')",
+      "children" : [ {
+        "name" : "test_send_neon_to_exist_account",
+        "uid" : "8479f9d56005e11a",
+        "parentUid" : "1131ba24842386f0f03cddeb77bd1ada",
+        "status" : "failed",
+        "time" : {
+          "start" : 1648721021819,
+          "stop" : 1648721034726,
+          "duration" : 12907
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "1131ba24842386f0f03cddeb77bd1ada"
+    }, {
+      "name" : "AssertionError: Operator receive 0.022000000 NEON (0.01 $) and spend 0.000060000 SOL (0.01 $), profit - -26.295329600% \nassert Decimal('0.00550') > Decimal('0.00746221368')",
+      "children" : [ {
+        "name" : "test_contract_interact_more_500_steps",
+        "uid" : "5a7f6d211ffab4bf",
+        "parentUid" : "ea81ff87bd86eecaab6140e6126c6c61",
+        "status" : "failed",
+        "time" : {
+          "start" : 1648721265789,
+          "stop" : 1648721283727,
+          "duration" : 17938
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "ea81ff87bd86eecaab6140e6126c6c61"
+    }, {
+      "name" : "AssertionError: Operator receive 0.015000000 NEON (0.00 $) and spend 0.000040000 SOL (0.00 $), profit - -24.620223400% \nassert Decimal('0.00375') > Decimal('0.00497480912')",
+      "children" : [ {
+        "name" : "test_tx_interact_more_1kb",
+        "uid" : "b8efeee22b59ee8",
+        "parentUid" : "8d57ac3dbb2ef7bb90a86ef556958c93",
+        "status" : "failed",
+        "time" : {
+          "start" : 1648721307008,
+          "stop" : 1648721324909,
+          "duration" : 17901
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "8d57ac3dbb2ef7bb90a86ef556958c93"
+    } ],
+    "uid" : "c1634e804028b4a2cd39b5c7f39c94f0"
+  }, {
+    "name" : "Product defects",
+    "children" : [ {
+      "name" : "AssertionError: Regex pattern 'The account balance is less than required.*' does not match \"{'code': -32000, 'message': 'insufficient funds for transfer: address 0x00ea79092011f2f480f4fe546e6595d65a3fe249 have 1000000000000000000 want 1942402652800000000'}\".",
+      "children" : [ {
+        "name" : "test_send_when_not_enough_for_gas",
+        "uid" : "3edccc5fb9c56b99",
+        "parentUid" : "383415f80075aedf6a08f4b826ff4dfa",
+        "status" : "failed",
+        "time" : {
+          "start" : 1648721034907,
+          "stop" : 1648721042465,
+          "duration" : 7558
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "383415f80075aedf6a08f4b826ff4dfa"
+    }, {
+      "name" : "AssertionError: Regex pattern 'The account balance is less than required' does not match \"{'code': -32000, 'message': 'insufficient funds for gas * price + value: address 0x185b08927a733f3e709ae04f5ec3b171eea9f276 have 1000000000000000 want 18982347135918240000'}\".",
+      "children" : [ {
+        "name" : "test_deploy_small_contract_less_neon",
+        "uid" : "b476a0312c6574bc",
+        "parentUid" : "1b378e369ffafb3765f19ede2e8c1b54",
+        "status" : "failed",
+        "time" : {
+          "start" : 1648721205543,
+          "stop" : 1648721213003,
+          "duration" : 7460
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "1b378e369ffafb3765f19ede2e8c1b54"
+    }, {
+      "name" : "AssertionError: Regex pattern 'The account balance is less than required' does not match \"{'code': -32000, 'message': 'insufficient funds for gas * price + value: address 0x98d469b5d6dc966083d9cd6e047834daa7d410ad have 1000000000000000 want 18982347135918240000'}\".",
+      "children" : [ {
+        "name" : "test_deploy_to_losted_contract_account",
+        "uid" : "595a5c0908555594",
+        "parentUid" : "bc10468e2e0865fbf3727b4a4a55bed9",
+        "status" : "failed",
+        "time" : {
+          "start" : 1648721213099,
+          "stop" : 1648721220410,
+          "duration" : 7311
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "bc10468e2e0865fbf3727b4a4a55bed9"
+    }, {
+      "name" : "AssertionError: Regex pattern 'The account balance is less than required' does not match \"{'code': -32000, 'message': 'insufficient funds for gas * price + value: address 0xb2237a9dd9b4acbc08401db408094ee12da43c69 have 1000000000000000 want 13345460139765600000'}\".",
+      "children" : [ {
+        "name" : "test_cost_resize_account_less_neon",
+        "uid" : "38f519122f2eac4a",
+        "parentUid" : "2ab7d6949d5e8e16842de1c91adf303f",
+        "status" : "failed",
+        "time" : {
+          "start" : 1648721250508,
+          "stop" : 1648721259937,
+          "duration" : 9429
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "2ab7d6949d5e8e16842de1c91adf303f"
+    }, {
+      "name" : "AssertionError: Regex pattern 'The account balance is less than required' does not match \"{'code': -32000, 'message': 'insufficient funds for gas * price + value: address 0xc64c26694e39913fba9ec68bdaae584820ff04d4 have 1000000000000000 want 15329848935360000'}\".",
+      "children" : [ {
+        "name" : "test_tx_interact_more_1kb_less_neon",
+        "uid" : "2cf0a7a876f1daf8",
+        "parentUid" : "c7c56ca0a667f517782098db3b795622",
+        "status" : "failed",
+        "time" : {
+          "start" : 1648721324964,
+          "stop" : 1648721334309,
+          "duration" : 9345
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "c7c56ca0a667f517782098db3b795622"
+    }, {
+      "name" : "AssertionError: Regex pattern 'The account balance is less than required' does not match \"{'code': -32000, 'message': 'insufficient funds for gas * price + value: address 0x25b39616df590432d71e9a6d14c1c91645e6e70f have 1000000000000000 want 42749885767680000000'}\".",
+      "children" : [ {
+        "name" : "test_deploy_contract_more_1kb_less_neon",
+        "uid" : "45d91b7c53642f90",
+        "parentUid" : "09b521be383192f21fec5ec61e5ddff6",
+        "status" : "failed",
+        "time" : {
+          "start" : 1648721353215,
+          "stop" : 1648721360697,
+          "duration" : 7482
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "09b521be383192f21fec5ec61e5ddff6"
+    } ],
+    "uid" : "8fb3a91ba5aaf9de24cc8a92edc82b5d"
+  }, {
+    "name" : "Test defects",
+    "children" : [ {
+      "name" : "ValueError: {'code': -32000, 'message': 'Program log: Instruction: Create Account. Program log: Instruction: Execute Transaction from Instruction. Program log: program/src/transaction.rs:190 : Account 0x053e…576d - target must be contract account'}",
+      "children" : [ {
+        "name" : "test_withdraw_neon_unexisting_ata",
+        "uid" : "2f3e54a2015c0a67",
+        "parentUid" : "409aace0375bc645b0db912a27e04c60",
+        "status" : "broken",
+        "time" : {
+          "start" : 1648721131021,
+          "stop" : 1648721136911,
+          "duration" : 5890
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      }, {
+        "name" : "test_withdraw_neon_existing_ata",
+        "uid" : "12b5757874dfbcdc",
+        "parentUid" : "409aace0375bc645b0db912a27e04c60",
+        "status" : "broken",
+        "time" : {
+          "start" : 1648721136996,
+          "stop" : 1648721157415,
+          "duration" : 20419
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "409aace0375bc645b0db912a27e04c60"
+    }, {
+      "name" : "ValueError: {'code': -32000, 'message': 'Emulator error: Too many steps'}",
+      "children" : [ {
+        "name" : "test_contract_interact_more_500000_bpf_less_neon",
+        "uid" : "8fbff17ca4e3314",
+        "parentUid" : "68bfa1a7df59a73a054e4f9e81b68d7e",
+        "status" : "broken",
+        "time" : {
+          "start" : 1648721298030,
+          "stop" : 1648721306903,
+          "duration" : 8873
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "68bfa1a7df59a73a054e4f9e81b68d7e"
+    }, {
+      "name" : "ValueError: {'code': -32000, 'message': 'gas limit reached: have 1000 want 71518720'}",
+      "children" : [ {
+        "name" : "test_deploy_contract_more_1kb_less_gas",
+        "uid" : "b3689ff514afe0fd",
+        "parentUid" : "08e41e6644debd4a1f20ed1465021eb0",
+        "status" : "broken",
+        "time" : {
+          "start" : 1648721360796,
+          "stop" : 1648721366335,
+          "duration" : 5539
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "08e41e6644debd4a1f20ed1465021eb0"
+    }, {
+      "name" : "ValueError: {'code': -32000, 'message': 'gas limit reached: have 1 want 1579040'}",
+      "children" : [ {
+        "name" : "test_deploy_contract_to_exist_unpayed",
+        "uid" : "75f9a71d98703497",
+        "parentUid" : "f7b36ba1cfcf4018381e77161778cbe3",
+        "status" : "broken",
+        "time" : {
+          "start" : 1648721381203,
+          "stop" : 1648721387983,
+          "duration" : 6780
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "f7b36ba1cfcf4018381e77161778cbe3"
+    } ],
+    "uid" : "bdbf199525818fae7a8651db9eafe741"
+  } ],
+  "name" : "categories"
+}

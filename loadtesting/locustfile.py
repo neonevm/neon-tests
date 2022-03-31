@@ -46,6 +46,12 @@ COUNTER_VERSION = "0.8.10"
 """Counter Protocol version 
 """
 
+NEON_TOKEN_VERSION = "0.8.10"
+"""Neon tokens contract version
+"""
+
+LAMPORT_PER_SOL = 1_000_000_000
+
 
 def init_session(size: int) -> requests.Session:
     """init request session with extended connection pool size"""
@@ -331,11 +337,11 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
     def _deploy_erc20wrapper_contract(self) -> "web3._utils.datatypes.Contract":
         """Deploy SPL contract"""
 
-        ssh_keys = Keypair.generate()
-        self._solana_client.request_airdrop(ssh_keys.public_key, 10000000000)
+        keys = Keypair.generate()
+        self._solana_client.request_airdrop(keys.public_key, 10000000000)
 
         for _ in range(10):
-            balance = self._solana_client.get_balance(ssh_keys.public_key)["result"]["value"]
+            balance = self._solana_client.get_balance(keys.public_key)["result"]["value"]
             if balance == 10000000000:
                 self.log.info(f"solana balance not empty, current: {balance}")
                 break
@@ -344,12 +350,12 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
         else:
             return
 
-        token = self._erc20wrapper_client.create_spl(ssh_keys)
+        token = self._erc20wrapper_client.create_spl(keys)
         symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
         contract, address = self._erc20wrapper_client.deploy_wrapper(
             name=f"Test {symbol}", symbol=symbol, account=self.account, mint_address=token.pubkey
         )
-        self._erc20wrapper_client.mint_tokens(self.account.address, ssh_keys, token.pubkey, address)
+        self._erc20wrapper_client.mint_tokens(self.account.address, keys, token.pubkey, address)
         contract = self._erc20wrapper_client.get_wrapper_contract(address)
         return contract
 
@@ -511,6 +517,40 @@ class CounterTasksSet(BaseResizingTasksSet):
         super(CounterTasksSet, self).task_resize("dec")
 
 
+@tag("withdraw")
+class WithDrawTasksSet(NeonProxyTasksSet):
+    """Implements withdraw tokens to Solana tasks"""
+
+    _contract_name: str = "NeonToken"
+    _version: str = NEON_TOKEN_VERSION
+
+    @task
+    @extend_task("task_block_number", "task_keeps_balance")
+    def task_withdraw_tokens(self) -> None:
+        """withdraw Ethereum tokens to Solana"""
+        keys = Keypair.generate()
+        self._solana_client.request_airdrop(keys.public_key, 5 * LAMPORT_PER_SOL)
+        contract_interface = helpers.get_contract_interface(self._contract_name, self._version)
+        erc20wrapper_address = credentials.get("neon_erc20wrapper_address")
+        if erc20wrapper_address:
+            self.log.info(f"withdraw tokens to Solana from {self.account.address[:8]}")
+            contract = self._web3_client.eth.contract(address=erc20wrapper_address, abi=contract_interface["abi"])
+            amount = self._web3_client._web3.toWei(1, "ether")
+            instruction_tx = contract.functions.withdraw(bytes(keys.public_key)).buildTransaction(
+                {
+                    "from": self.account.address,
+                    "nonce": self._web3_client.eth.get_transaction_count(self.account.address),
+                    "gasPrice": self._web3_client.gas_price(),
+                    "value": amount,
+                }
+            )
+            result = self._web3_client.send_transaction(self.account, instruction_tx)
+            if not (result and result.get("status")):
+                self.log.error(f"withdrawing tokens is failed, transaction result: {result}")
+            return
+        self.log.error(f"No Neon erc20wrapper address in passed credentials, can't generate contract.")
+
+
 class NeonPipelineUser(User):
     """class represents a base Neon pipeline by one user"""
 
@@ -521,4 +561,5 @@ class NeonPipelineUser(User):
         ERC20WrappedTasksSet: 2,
         IncreaseStorageTasksSet: 2,
         NeonTasksSet: 10,
+        WithDrawTasksSet: 5,
     }

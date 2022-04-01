@@ -14,6 +14,7 @@ import requests
 import solana
 from locust import User, TaskSet, between, task, events, tag
 from solana.keypair import Keypair
+from functools import lru_cache
 
 from utils import helpers
 from utils.erc20wrapper import ERC20Wrapper
@@ -49,8 +50,6 @@ COUNTER_VERSION = "0.8.10"
 NEON_TOKEN_VERSION = "0.8.10"
 """Neon tokens contract version
 """
-
-LAMPORT_PER_SOL = 1_000_000_000
 
 
 def init_session(size: int) -> requests.Session:
@@ -262,8 +261,7 @@ class NeonProxyTasksSet(TaskSet):
     ) -> "web3._utils.datatypes.Contract":
         """contract deployments"""
 
-        contract_interface = helpers.get_contract_interface(name, version)
-
+        contract_interface = self._compile_contract_interface(name, version)
         contract_deploy_tx = self._web3_client.deploy_contract(
             account,
             abi=contract_interface["abi"],
@@ -280,6 +278,11 @@ class NeonProxyTasksSet(TaskSet):
         )
 
         return contract, contract_deploy_tx
+
+    @lru_cache(maxsize=32)
+    def _compile_contract_interface(self, name, version) -> tp.Any:
+        """Compile contract inteface form file"""
+        return helpers.get_contract_interface(name, version)
 
 
 class BaseResizingTasksSet(NeonProxyTasksSet):
@@ -529,8 +532,7 @@ class WithDrawTasksSet(NeonProxyTasksSet):
     def task_withdraw_tokens(self) -> None:
         """withdraw Ethereum tokens to Solana"""
         keys = Keypair.generate()
-        self._solana_client.request_airdrop(keys.public_key, 5 * LAMPORT_PER_SOL)
-        contract_interface = helpers.get_contract_interface(self._contract_name, self._version)
+        contract_interface = self._compile_contract_interface(self._contract_name, self._version)
         erc20wrapper_address = credentials.get("neon_erc20wrapper_address")
         if erc20wrapper_address:
             self.log.info(f"withdraw tokens to Solana from {self.account.address[:8]}")

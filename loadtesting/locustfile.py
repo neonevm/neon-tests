@@ -154,11 +154,30 @@ class NeonWeb3ClientExt(NeonWeb3Client):
     """Extends Neon Web3 client adds statistics metrics"""
 
     def __getattribute__(self, item):
-        ignore_list = ["create_account"]
-        attr = super(NeonWeb3ClientExt, self).__getattribute__(item)
+        ignore_list = ["create_account", "_send_transaction"]
+        try:
+            attr = object.__getattribute__(self, item)
+        except AttributeError:
+            attr = super(NeonWeb3ClientExt, self).__getattribute__(item)
         if callable(attr) and item not in ignore_list:
             attr = statistics_collector(attr)
         return attr
+
+    def _send_transaction(self, *args, **kwargs) -> tp.Any:
+        """Send transaction wrapper"""
+        return super(NeonWeb3ClientExt, self).send_transaction(*args, **kwargs)
+
+    def withdraw_tokens(self, *args, **kwargs) -> tp.Any:
+        """withdraw tokens wrapper"""
+        return self._send_transaction(*args, **kwargs)
+
+    def inc_account(self, *args, **kwargs) -> tp.Any:
+        """Increase account wrapper"""
+        return self._send_transaction(*args, **kwargs)
+
+    def dec_account(self, *args, **kwargs) -> tp.Any:
+        """Decrease account wrapper"""
+        return self._send_transaction(*args, **kwargs)
 
 
 class NeonProxyTasksSet(TaskSet):
@@ -318,7 +337,8 @@ class BaseResizingTasksSet(NeonProxyTasksSet):
                     "gasPrice": self._web3_client.gas_price(),
                 }
             )
-            self._web3_client.send_transaction(self.account, tx)
+            getattr(self._web3_client, f"{item}_account")(self.account, tx)
+            #self._web3_client.send_transaction(self.account, tx)
             return
         self.log.debug(f"no `{self._contract_name}` contracts found, account {item}rease canceled.")
 
@@ -546,7 +566,7 @@ class WithDrawTasksSet(NeonProxyTasksSet):
                     "value": amount,
                 }
             )
-            result = self._web3_client.send_transaction(self.account, instruction_tx)
+            result = self._web3_client.withdraw_tokens(self.account, instruction_tx)
             if not (result and result.get("status")):
                 self.log.error(f"withdrawing tokens is failed, transaction result: {result}")
             return

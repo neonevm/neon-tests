@@ -7,8 +7,11 @@ import subprocess
 import pathlib
 from multiprocessing.dummy import Pool
 
-from utils import web3client
-from utils import faucet
+try:
+    from utils import web3client
+    from utils import faucet
+except ImportError:
+    pass
 
 
 networks = []

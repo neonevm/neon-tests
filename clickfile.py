@@ -83,7 +83,7 @@ def install_python_requirements():
 
 def install_oz_requirements():
     cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
-    subprocess.check_call("yarn install", shell=True, cwd=cwd)
+    subprocess.check_call("npm ci", shell=True, cwd=cwd)
 
 
 @click.group()

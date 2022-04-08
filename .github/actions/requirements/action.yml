@@ -8,6 +8,11 @@ runs:
       uses: actions/setup-python@v2
       with:
         python-version: "3.9"
+    - name: Use Node.js 16
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16.x
+        cache: "npm"
     - name: "Install click"
       run: "pip install click"
       shell: bash

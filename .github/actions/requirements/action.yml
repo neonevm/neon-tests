@@ -1,0 +1,16 @@
+name: "Prepare Click"
+description: "Install python and Click"
+
+runs:
+  using: composite
+  steps:
+    - name: "Install python"
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.9"
+    - name: "Install click"
+      run: "pip install click"
+      shell: bash
+    - name: "Install deps"
+      run: "./clickfile.py requirements"
+      shell: bash

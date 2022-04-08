@@ -1,13 +1,86 @@
 #!/usr/bin/env python3
+import os
 import json
 import sys
 import click
 import subprocess
 import pathlib
+from multiprocessing.dummy import Pool
+
+from utils import web3client
+from utils import faucet
+
 
 networks = []
 with open("./envs.json", "r") as f:
-    networks = json.load(f).keys()
+    networks = json.load(f)
+
+
+def header(text):
+    print(text.capitalize().center(80, "-"))
+
+
+def prepare_wallets_with_balance(network, count=10, airdrop_amount=20000):
+    header(f"Preparing {count} wallets with balances")
+    settings = networks[network]
+    web3_client = web3client.NeonWeb3Client(settings["proxy_url"], settings["network_id"])
+    faucet_client = faucet.Faucet(settings["faucet_url"])
+    private_keys = []
+
+    for i in range(count):
+        acc = web3_client.eth.account.create()
+        faucet_client.request_neon(acc.address, airdrop_amount)
+        if i in (0, 1, 2):
+            faucet_client.request_neon(acc.address, airdrop_amount)
+        private_keys.append(acc.privateKey.hex())
+    return private_keys
+
+
+def run_openzeppelin_tests(network, jobs=8):
+    header(f"Running OpenZeppelin tests in {jobs} jobs on {network}")
+    cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
+    subprocess.check_call("npx hardhat compile", shell=True, cwd=cwd)
+    (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
+    keys_env = [prepare_wallets_with_balance(network) for i in range(jobs)]
+
+    tests = subprocess.check_output("find \"test\" -name '*.test.js'", shell=True, cwd=cwd).decode().splitlines()
+
+    def run_oz_file(file_name):
+        header(f"Running {file_name}")
+        keys = keys_env.pop(0)
+        env = os.environ.copy()
+        env["PRIVATE_KEYS"] = ",".join(keys)
+        env["NETWORK_ID"] = str(networks[network]["network_id"])
+        env["PROXY_URL"] = networks[network]["proxy_url"]
+        
+        out = subprocess.run(f"npx hardhat test {file_name}", shell=True, cwd=cwd, capture_output=True, env=env)
+        stdout = out.stdout.decode()
+        stderr = out.stderr.decode()
+        print(stdout)
+        print(stderr)
+        keys_env.append(keys)
+        log_dirs = (cwd.parent / "results" / file_name.replace(".", "_"))
+        log_dirs.mkdir(parents=True, exist_ok=True)
+        with open(log_dirs / "stdout.log", "w") as f:
+            f.write(stdout)
+        with open(log_dirs / "stderr.log", "w") as f:
+            f.write(stderr)
+
+    pool = Pool(jobs)
+    pool.map(run_oz_file, tests)
+    pool.close()
+    pool.join()
+
+
+def install_python_requirements():
+    command = "pip3 install --upgrade -r deploy/requirements/prod.txt  -r deploy/requirements/devel.txt"
+    subprocess.check_call(command, shell=True)
+    subprocess.check_call("pip3 install --no-deps -r deploy/requirements/nodeps.txt", shell=True)
+
+
+def install_oz_requirements():
+    cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
+    subprocess.check_call("yarn install", shell=True, cwd=cwd)
 
 
 @click.group()
@@ -16,26 +89,27 @@ def cli():
 
 
 @cli.command(help="Update base python requirements")
-@click.option("--dev", help="Install development requirements", default=False, is_flag=True)
-def requirements(dev=False):
-    command = "pip3 install --upgrade -r deploy/requirements/prod.txt"
-    if dev:
-        command += " -r requirements-dev.txt"
-    subprocess.check_call(command, shell=True)
-    subprocess.check_call("pip3 install --no-deps -r deploy/requirements/nodeps.txt", shell=True)
+def requirements():
+    install_python_requirements()
+    install_oz_requirements()
 
 
 @cli.command(help="Run any type of tests")
-@click.option("-n", "--network", default="night-stand", type=click.Choice(networks), help="In which stand run tests")
-@click.argument("name", required=True, type=click.Choice(["economy", "basic"]))
-def run(name, network):
-    command = ""
+@click.option("-n", "--network", default="n ight-stand", type=click.Choice(networks.keys()), help="In which stand run tests")
+@click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
+@click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz"]))
+def run(name, network, jobs):
     if name == "economy":
         command = "py.test integration/tests/economy/test_economics.py"
     elif name == "basic":
         command = "py.test integration/tests/basic/"
-    command += f" --network={network}"
+    elif name == "oz":
+        run_openzeppelin_tests(network, jobs=int(jobs))
+        return
+    else:
+        raise click.ClickException("Unknown test name")
 
+    command += f" --network={network}"
     cmd = subprocess.run(command, shell=True)
 
     if cmd.returncode != 0:

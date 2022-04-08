@@ -57,6 +57,7 @@ def pytest_configure(config: Config):
 def faucet(pytestconfig: Config) -> Faucet:
     return Faucet(pytestconfig.environment.faucet_url)
 
+
 @pytest.fixture(scope="session", autouse=True)
 def jsonrpc_requester(pytestconfig: Config) -> JsonRpcRequester:
     return JsonRpcRequester(pytestconfig.environment.proxy_url)

@@ -22,12 +22,8 @@ with open("./envs.json", "r") as f:
     networks = json.load(f)
 
 
-def header(text):
-    print(text.capitalize().center(80, "-"))
-
-
 def prepare_wallets_with_balance(network, count=10, airdrop_amount=20000):
-    header(f"Preparing {count} wallets with balances")
+    print(f"Preparing {count} wallets with balances")
     settings = networks[network]
     web3_client = web3client.NeonWeb3Client(settings["proxy_url"], settings["network_id"])
     faucet_client = faucet.Faucet(settings["faucet_url"])
@@ -43,7 +39,7 @@ def prepare_wallets_with_balance(network, count=10, airdrop_amount=20000):
 
 
 def run_openzeppelin_tests(network, jobs=8):
-    header(f"Running OpenZeppelin tests in {jobs} jobs on {network}")
+    print(f"Running OpenZeppelin tests in {jobs} jobs on {network}")
     cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
     subprocess.check_call("npx hardhat compile", shell=True, cwd=cwd)
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
@@ -52,7 +48,7 @@ def run_openzeppelin_tests(network, jobs=8):
     tests = subprocess.check_output("find \"test\" -name '*.test.js'", shell=True, cwd=cwd).decode().splitlines()
 
     def run_oz_file(file_name):
-        header(f"Running {file_name}")
+        print(f"Run {file_name}")
         keys = keys_env.pop(0)
         env = os.environ.copy()
         env["PRIVATE_KEYS"] = ",".join(keys)
@@ -76,7 +72,18 @@ def run_openzeppelin_tests(network, jobs=8):
     pool.map(run_oz_file, tests)
     pool.close()
     pool.join()
-
+    # Add allure environment
+    settings = networks[network]
+    web3_client = web3client.NeonWeb3Client(settings["proxy_url"], settings["network_id"])
+    opts = {
+        "Proxy.Version": web3_client.get_proxy_version()["result"],
+        "EVM.Version": web3_client.get_evm_version()["result"],
+        "CLI.Version": web3_client.get_cli_version()["result"]
+    }
+    with open("./allure-results/environment.properties", "w+") as f:
+        f.write("\n".join(map(lambda x: f"{x[0]}={x[1]}", opts.items())))
+        f.write("\n")
+    # Add epic name for allure result files
     openzeppelin_reports = pathlib.Path('./allure-results')
     res_file_list = [str(res_file) for res_file in openzeppelin_reports.glob('*-result.json')]
     print("Fix allure results: {}".format(len(res_file_list)))
@@ -114,7 +121,6 @@ def parse_openzeppelin_results():
                 test_report[count[1]] += int(count[0])
     return test_report, skipped_files
 
-
 def print_test_suite_results(test_report: Dict[str, int], skipped_files: List[str]):
     print("Summarize result:\n")
     for state in test_report:
@@ -126,6 +132,14 @@ def print_test_suite_results(test_report: Dict[str, int], skipped_files: List[st
     for f in skipped_files:
         test_file_name = f.split("/", 3)[3].rsplit("/", 1)[0].replace("_", "")
         print("    {}".format(test_file_name))
+
+
+def generate_allure_environment(network_name: str):
+    network = networks[network_name]
+    env = os.environ.copy()
+    env["NETWORK_ID"] = str(network["network_id"])
+    env["PROXY_URL"] = network["proxy_url"]
+    return env
 
 
 def install_python_requirements():

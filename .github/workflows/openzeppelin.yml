@@ -82,11 +82,13 @@ jobs:
         uses: ./.github/actions/requirements
       - name: "Run OpenZeppelin tests"
         run: "./clickfile.py run oz --network ${{ needs.prepare-env.outputs.network }} --jobs ${{ needs.prepare-env.outputs.jobs }}"
-#      - uses: actions/upload-artifact@v2
-#        if: always()
-#        with:
-#          name: "Allure results"
-#          path: allure-results
+      - name: "Print OpenZeppelin report"
+        run: "./clickfile.py ozreport"
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: "Allure results"
+          path: allure-results
 
 #  allure:
 #    runs-on: ubuntu-20.04

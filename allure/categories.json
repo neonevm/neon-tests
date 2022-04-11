@@ -2,5 +2,53 @@
   {
     "name": "Operator economy",
     "messageRegex": ".*Operator receive.*"
+  },
+    {
+    "name": "Not supported",
+    "messageRegex": ".*'EthereumModel' object has no attribute .*"
+  },
+  {
+    "name": "Connection problem",
+    "messageRegex": ".*Error: ETIMEDOUT.*|.*ESOCKETTIMEDOUT.*|.*ECONNRESET.*|.*Client network socket disconnected before secure TLS connection was established.*|.*500 Internal Server Error.*nginx.*|.*Error: socket hang up.*"
+  },
+  {
+    "name": "contract_sol",
+    "messageRegex": ".*local variable 'contract_sol' referenced before assignmen.*"
+  },
+  {
+    "name": "Database locked",
+    "messageRegex": ".*database is locked.*"
+  },
+  {
+    "name": "Storage account not empty",
+    "messageRegex": ".*storage account is not empty.*"
+  },
+  {
+    "name": "Locked account",
+    "messageRegex": ".*trying to execute transaction on rw locked account.*"
+  },
+  {
+    "name": "Insufficient funds",
+    "messageRegex": ".*Insufficient funds on token account.*"
+  },
+  {
+    "name": "Modify read-only account",
+    "messageRegex": ".*instruction modified data of a read-only account.*"
+  },
+  {
+    "name": "neon-cli error",
+    "messageRegex": ".*'neon-cli'.* returned non-zero exit status 1."
+  },
+  {
+    "name": "Transaction exited with an error",
+    "messageRegex": ".*exited with an error.*|.*Please check that the transaction.*"
+  },
+  {
+    "name": "Invalid nonce",
+    "messageRegex": ".*Invalid Ethereum transaction nonce.*"
+  },
+  {
+    "name": "Invalid revert (ProviderError)",
+    "messageRegex": "to equal 'revert'"
   }
 ]

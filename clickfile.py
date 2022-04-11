@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 import os
+import re
+import glob
 import json
+import shutil
 import sys
 import click
 import subprocess
 import pathlib
 from multiprocessing.dummy import Pool
+from typing import Dict, Tuple, List
 
 try:
     from utils import web3client
     from utils import faucet
 except ImportError:
     pass
-
 
 networks = []
 with open("./envs.json", "r") as f:
@@ -55,14 +58,14 @@ def run_openzeppelin_tests(network, jobs=8):
         env["PRIVATE_KEYS"] = ",".join(keys)
         env["NETWORK_ID"] = str(networks[network]["network_id"])
         env["PROXY_URL"] = networks[network]["proxy_url"]
-        
+
         out = subprocess.run(f"npx hardhat test {file_name}", shell=True, cwd=cwd, capture_output=True, env=env)
         stdout = out.stdout.decode()
         stderr = out.stderr.decode()
         print(stdout)
         print(stderr)
         keys_env.append(keys)
-        log_dirs = (cwd.parent / "results" / file_name.replace(".", "_"))
+        log_dirs = (cwd.parent / "results" / file_name.replace(".", "_").replace('/', '_'))
         log_dirs.mkdir(parents=True, exist_ok=True)
         with open(log_dirs / "stdout.log", "w") as f:
             f.write(stdout)
@@ -73,6 +76,56 @@ def run_openzeppelin_tests(network, jobs=8):
     pool.map(run_oz_file, tests)
     pool.close()
     pool.join()
+
+    openzeppelin_reports = pathlib.Path('./allure-results')
+    res_file_list = [str(res_file) for res_file in openzeppelin_reports.glob('*-result.json')]
+    print("Fix allure results: {}".format(len(res_file_list)))
+
+    for res_file in res_file_list:
+        with open(res_file, 'r+') as f:
+            report = json.load(f)
+        report["labels"].append({
+            "name": "epic",
+            "value": "OpenZeppelin contracts"
+        })
+        with open(res_file, 'w+') as f:
+            json.dump(report, f)
+
+
+def parse_openzeppelin_results():
+    test_report = {
+        "passing": 0,
+        "pending": 0,
+        "failing": 0
+    }
+
+    skipped_files = []
+
+    stdout_files = glob.glob("./compatibility/results/**/stdout.log", recursive=True)
+    print("`stdout` files found: {}. Processing ...\n".format(len(stdout_files)))
+
+    for stdout in stdout_files:
+        with open(stdout, 'r+', encoding="utf8") as f:
+            rep = f.read()
+            result = re.findall(r"(\d+) (passing|pending|failing)", rep)
+            if not result:
+                skipped_files.append(stdout)
+            for count in result:
+                test_report[count[1]] += int(count[0])
+    return test_report, skipped_files
+
+
+def print_test_suite_results(test_report: Dict[str, int], skipped_files: List[str]):
+    print("Summarize result:\n")
+    for state in test_report:
+        print("    {} - {}".format(state.capitalize(), test_report[state]))
+    print("\nTotal tests - {:d}\n".format(sum(test_report.values())))
+
+    print("Test files without test result - {}:\n".format(len(skipped_files)))
+
+    for f in skipped_files:
+        test_file_name = f.split("/", 3)[3].rsplit("/", 1)[0].replace("_", "")
+        print("    {}".format(test_file_name))
 
 
 def install_python_requirements():
@@ -98,25 +151,36 @@ def requirements():
 
 
 @cli.command(help="Run any type of tests")
-@click.option("-n", "--network", default="n ight-stand", type=click.Choice(networks.keys()), help="In which stand run tests")
+@click.option("-n", "--network", default="n ight-stand", type=click.Choice(networks.keys()),
+              help="In which stand run tests")
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
 @click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz"]))
 def run(name, network, jobs):
+    if pathlib.Path("./allure-results").exists():
+        shutil.rmtree("./allure-results", ignore_errors=True)
     if name == "economy":
         command = "py.test integration/tests/economy/test_economics.py"
     elif name == "basic":
         command = "py.test integration/tests/basic/"
     elif name == "oz":
         run_openzeppelin_tests(network, jobs=int(jobs))
+        shutil.copyfile("./allure/categories.json", "./allure-results/categories.json")
         return
     else:
         raise click.ClickException("Unknown test name")
 
     command += f" --network={network}"
     cmd = subprocess.run(command, shell=True)
+    shutil.copyfile("./allure/categories.json", "./allure-results/categories.json")
 
     if cmd.returncode != 0:
         sys.exit(cmd.returncode)
+
+
+@cli.command(help="Summarize openzeppelin tests results")
+def ozreport():
+    test_report, skipped_files = parse_openzeppelin_results()
+    print_test_suite_results(test_report, skipped_files)
 
 
 @cli.command(help="Run `neon` pipeline performance test")
@@ -152,7 +216,7 @@ def run(name, network, jobs):
     "--run-time",
     type=int,
     help="Stop after the specified amount of time, e.g. (300s, 20m, 3h, 1h30m, etc.). "
-    "Only used together without Locust Web UI. [default: always run]",
+         "Only used together without Locust Web UI. [default: always run]",
 )
 @click.option(
     "-T",

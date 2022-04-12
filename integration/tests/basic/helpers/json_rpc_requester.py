@@ -41,5 +41,4 @@ class JsonRpcRequester:
         json_rpc_response.result = result_subobject
         return json_rpc_response
 
-    def is_devnet(self) -> bool:
-        return 'devnet' in self._url
+

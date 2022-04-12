@@ -37,8 +37,16 @@ from integration.tests.basic.test_data.input_data import InputData
 # 17.	Move tokens from solana to neon
 # 18.	Move tokens from neon to solana
 # 19.	Create TX like NeonSwap (thus leveraging airdropper) and swap token
-# 20.	Check ERC-1820 transaction (without chain_id in sign)
-# 21.	Generate bad sign (when v, r, s over allowed size)
+20.	Check ERC-1820 transaction (without chain_id in sign)		
+21.	Generate bad sign (when v, r, s over allowed size)		
+ 	There are many known variants of, it's not possible to describe all of them.		
+ 	Below are the simplest:		
+22.	Too low gas_limit		
+23.	Too high gas_limit > u64::max		
+24.	Too high gas_price > u64::max		
+25.	Too high gas_limit * gas_price > u64::max		
+26.	There are not enough Neons for gas fee		
+27.	There are not enough Neons for transfer
 
 Есть много известных вариантов, описать все не очень реалистично.
 Самые простые:

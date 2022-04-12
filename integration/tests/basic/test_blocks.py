@@ -42,9 +42,9 @@ class TestRpcCallsBlocks(BasicTests):
     def test_rpc_call_eth_getBlockByHash(self, prepare_accounts):
         """Verify implemented rpc calls work eth_getBlockByHash"""
 
-        tx_receipt = self.transfer_neon(self.sender_account,
-                                        self.recipient_account,
-                                        InputData.SAMPLE_AMOUNT.value)
+        tx_receipt = self.process_transaction(self.sender_account,
+                                              self.recipient_account,
+                                              InputData.SAMPLE_AMOUNT.value)
 
         params = [tx_receipt.blockHash.hex(), True]
         model = RpcRequestFactory.get_block_by_hash(params=params)
@@ -82,9 +82,9 @@ class TestRpcCallsBlocks(BasicTests):
     def test_rpc_call_eth_getBlockByNumber_via_numbers(self, prepare_accounts):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
 
-        tx_receipt = self.transfer_neon(self.sender_account,
-                                        self.recipient_account,
-                                        InputData.SAMPLE_AMOUNT.value)
+        tx_receipt = self.process_transaction(self.sender_account,
+                                              self.recipient_account,
+                                              InputData.SAMPLE_AMOUNT.value)
 
         params = RpcRequestParamsFactory.get_block_by_number(
             tx_receipt.blockNumber, True)

@@ -32,8 +32,8 @@ class TestRpcCallsTransactions(BasicTests):
     def test_rpc_call_eth_getTransactionCount(self, prepare_accounts):
         """Verify implemented rpc calls work eth_getTransactionCount"""
 
-        self.transfer_neon(self.sender_account, self.recipient_account,
-                           InputData.SAMPLE_AMOUNT.value)
+        self.process_transaction(self.sender_account, self.recipient_account,
+                                 InputData.SAMPLE_AMOUNT.value)
 
         params = [self.sender_account.address, Tag.LATEST.value]
         model = RpcRequestFactory.get_trx_count(params=params)
@@ -96,9 +96,9 @@ class TestRpcCallsTransactions(BasicTests):
     def test_rpc_call_eth_getTransactionByHash(self, prepare_accounts):
         """Verify implemented rpc calls work eth_getTransactionByHash"""
 
-        tx_receipt = self.transfer_neon(self.sender_account,
-                                        self.recipient_account,
-                                        InputData.SAMPLE_AMOUNT.value)
+        tx_receipt = self.process_transaction(self.sender_account,
+                                              self.recipient_account,
+                                              InputData.SAMPLE_AMOUNT.value)
 
         params = [tx_receipt.transactionHash.hex()]
         model = RpcRequestFactory.get_trx_by_hash(params=params)
@@ -115,9 +115,9 @@ class TestRpcCallsTransactions(BasicTests):
     def test_rpc_call_eth_getTransactionReceipt(self, prepare_accounts):
         """Verify implemented rpc calls work eth_getTransactionReceipt"""
 
-        tx_receipt = self.transfer_neon(self.sender_account,
-                                        self.recipient_account,
-                                        InputData.SAMPLE_AMOUNT.value)
+        tx_receipt = self.process_transaction(self.sender_account,
+                                              self.recipient_account,
+                                              InputData.SAMPLE_AMOUNT.value)
 
         params = [tx_receipt.transactionHash.hex()]
         model = RpcRequestFactory.get_trx_receipt(params=params)

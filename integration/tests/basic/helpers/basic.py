@@ -6,7 +6,7 @@ import web3
 from _pytest.config import Config
 from decimal import Decimal
 from eth_account import Account
-from typing import Union
+from typing import Optional, Union
 from integration.tests.base import BaseTests
 from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.json_rpc_requester import JsonRpcRequester
@@ -34,8 +34,7 @@ class BasicTests(BaseTests):
     @pytest.fixture
     def prepare_accounts(self):
         self.sender_account = self.create_account_with_balance()
-        self.recipient_account = self.create_account_with_balance(
-            is_sender=False)
+        self.recipient_account = self.create_account_with_balance()
         yield
 
     def create_account(self) -> Account:
@@ -52,18 +51,12 @@ class BasicTests(BaseTests):
 
     def create_account_with_balance(
             self,
-            amount: int = InputData.FAUCET_1ST_REQUEST_AMOUNT.value,
-            is_sender: bool = True) -> Account:
+            amount: int = InputData.FAUCET_1ST_REQUEST_AMOUNT.value) -> Account:
         '''Creates a new account with balance'''
 
-        if self.jsonrpc_requester.is_devnet() and is_sender:
-            return AccountData(address=DEVNET_SENDER_ADDRESS,
-                               key=DEVNET_SENDER_KEY)
-        else:
-            account = self.create_account()
-            if not self.jsonrpc_requester.is_devnet():
-                self.request_faucet_neon(account.address, amount)
-            return account
+        account = self.create_account()
+        self.request_faucet_neon(account.address, amount)
+        return account
 
     @allure.step("deploying an ERC_20 conract")
     def deploy_contract(self):
@@ -78,20 +71,26 @@ class BasicTests(BaseTests):
             self,
             sender_account: Account,
             recipient_account: Account,
-            amount: float = 0.0) -> Union[web3.types.TxReceipt, None]:
+            amount: float = 0.0,
+            gas: Optional[int] = 0,
+            gas_price: Optional[int] = None
+    ) -> Union[web3.types.TxReceipt, None]:
         '''Processes transaction'''
 
         with allure.step(
                 f"Sending {amount} from {sender_account.address} to {recipient_account.address}"
         ):
             return self.web3_client.send_neon(sender_account,
-                                              recipient_account, amount)
+                                              recipient_account, amount, gas,
+                                              gas_price)
 
     def process_transaction_with_failure(
             self,
             sender_account: Account,
             recipient_account: Union[Account, AccountData],
             amount: int,
+            gas: Optional[int] = 0,
+            gas_price: Optional[int] = None,
             error_message: str = "") -> Union[web3.types.TxReceipt, None]:
         '''Processes transaction, expects a failure'''
 
@@ -101,7 +100,8 @@ class BasicTests(BaseTests):
         ):
             with pytest.raises(Exception) as error_info:
                 tx = self.web3_client.send_neon(sender_account,
-                                                recipient_account, amount)
+                                                recipient_account, amount, gas,
+                                                gas_price)
 
             if error_info != None:
 
@@ -111,20 +111,15 @@ class BasicTests(BaseTests):
 
             return tx
 
-    def transfer_neon(self, sender_account: Account,
-                      recipient_account: Account,
-                      amount: int) -> Union[web3.types.TxReceipt, None]:
-        '''Transers tokens'''
-        return self.process_transaction(sender_account, recipient_account,
-                                        amount)
-
     def check_value_error_if_less_than_required(
             self, sender_account: Account, recipient_account: Account,
             amount: int) -> Union[web3.types.TxReceipt, None]:
         '''Checks in case the balance is less than required'''
         return self.process_transaction_with_failure(
-            sender_account, recipient_account, amount,
-            ErrorMessage.EXPECTING_VALUE.value)
+            sender_account,
+            recipient_account,
+            amount,
+            error_message=ErrorMessage.INSUFFICIENT_FUNDS.value)
 
     def check_balance(self, expected: float, actual: Decimal):
         '''Compares the balance with expectation'''
@@ -135,8 +130,6 @@ class BasicTests(BaseTests):
 
     def assert_balance(self, address: str, expected_amount: float):
         '''Compares balance of an account with expectation'''
-        if self.jsonrpc_requester.is_devnet():
-            return
         balance = self.web3_client.fromWei(self.get_balance(address), "ether")
         self.check_balance(expected_amount, balance)
 

@@ -1,15 +1,13 @@
-from typing import Union
-
 import allure
 import pytest
+import typing as tp
 
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.basic import WAITIING_FOR_CONTRACT_SUPPORT
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.helpers.rpc_request_params_factory import RpcRequestParamsFactory
-from integration.tests.basic.model.model import BlockResponse
-from integration.tests.basic.model.model import CallRequest, GetLogsRequest
+from integration.tests.basic.model import model as request_models
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.test_data.input_data import InputData
 
@@ -62,7 +60,7 @@ class TestRpcCalls(BaseMixin):
         self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
 
         # TOOD: variants
-        data = CallRequest(to=self.recipient_account.address)
+        data = request_models.CallRequest(to=self.recipient_account.address)
         params = [data, Tag.LATEST.value]
         model = RpcRequestFactory.get_call(params=params)
         actual_result = self.json_rpc_client.do_call(model)
@@ -79,7 +77,9 @@ class TestRpcCalls(BaseMixin):
         """Verify implemented rpc calls work eth_estimateGas"""
 
         # TOOD: variants
-        data = CallRequest(from_=self.sender_account.address, to=self.recipient_account.address, value=hex(1))
+        data = request_models.CallRequest(
+            from_=self.sender_account.address, to=self.recipient_account.address, value=hex(1)
+        )
         params = [data]
         model = RpcRequestFactory.get_estimate_gas(params=params)
         actual_result = self.json_rpc_client.do_call(model)
@@ -104,7 +104,9 @@ class TestRpcCalls(BaseMixin):
         """Verify implemented rpc calls work eth_getLogs"""
         # TODO: use contract instead of account
         sender_account = self.create_account_with_balance()
-        params = [GetLogsRequest(from_block=from_block, to_block=to_block, address=sender_account.address)]
+        params = [
+            request_models.GetLogsRequest(from_block=from_block, to_block=to_block, address=sender_account.address)
+        ]
         model = RpcRequestFactory.get_logs(params=params)
 
         actual_result = self.json_rpc_client.do_call(model)
@@ -118,7 +120,9 @@ class TestRpcCalls(BaseMixin):
         # TODO: use contract instead of account
         sender_account = self.create_account_with_balance()
         # TOOD: variants
-        params = [GetLogsRequest(from_block=1, to_block=Tag.LATEST.value, address=sender_account.address)]
+        params = [
+            request_models.GetLogsRequest(from_block=1, to_block=Tag.LATEST.value, address=sender_account.address)
+        ]
         model = RpcRequestFactory.get_logs(params=params)
 
         actual_result = self.json_rpc_client.do_call(model)
@@ -180,19 +184,19 @@ class TestRpcCalls(BaseMixin):
         params = [tx_receipt.blockHash.hex(), True]
         model = RpcRequestFactory.get_block_by_hash(params=params)
 
-        actual_result = self.json_rpc_client.do_call(model, BlockResponse)
+        actual_result = self.json_rpc_client.do_call(model, request_models.BlockResponse)
 
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
         assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
         assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
     @pytest.mark.parametrize("quantity_tag,full_trx", TAGS_TEST_DATA)
-    def test_eth_get_blockn_by_umber_via_tags(self, quantity_tag: Union[int, Tag], full_trx: bool):
+    def test_eth_get_blockn_by_umber_via_tags(self, quantity_tag: tp.Union[int, Tag], full_trx: bool):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
         params = RpcRequestParamsFactory.get_block_by_number(quantity_tag, full_trx)
         model = RpcRequestFactory.get_block_by_number(params=params)
 
-        actual_result = self.json_rpc_client.do_call(model, BlockResponse)
+        actual_result = self.json_rpc_client.do_call(model, request_models.BlockResponse)
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
 
     def test_eth_get_block_by_number_via_numbers(self, prepare_accounts):
@@ -203,7 +207,7 @@ class TestRpcCalls(BaseMixin):
         params = RpcRequestParamsFactory.get_block_by_number(tx_receipt.blockNumber, True)
         model = RpcRequestFactory.get_block_by_number(params=params)
 
-        actual_result = self.json_rpc_client.do_call(model, BlockResponse)
+        actual_result = self.json_rpc_client.do_call(model, request_models.BlockResponse)
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
         assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
         assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
@@ -221,3 +225,23 @@ class TestRpcCalls(BaseMixin):
     def test_eht_get_storage_at(self):
         """Verify implemented rpc calls work eht_getStorageAt"""
         pass
+
+    # ToDo: rewrite when eth_accounts will be supported
+    def test_eth_accounts(self):
+        """Verify implemented rpc calls work eht_accounts"""
+        payloads = RpcRequestFactory().eth_accounts()
+        self.assert_expected_exception(payloads, "method eth_accounts is not supported")
+
+    @pytest.mark.parametrize("param", [None, "param"])
+    def test_eth_mining(self, param):
+        """Verify implemented rpc calls work eth_mining"""
+        payloads = RpcRequestFactory().eth_mining(param)
+        # Check failed state
+        if param:
+            self.assert_expected_exception(payloads, "takes 0 positional arguments but 1 was given")
+            return
+        # Check success state
+        response = self.json_rpc_client.do_call(payloads)
+        assert isinstance(
+            response, request_models.JsonRpcResponse
+        ), f"RPC call is failed: {response.error.get('message')}"

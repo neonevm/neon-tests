@@ -9,7 +9,7 @@ from eth_account import Account
 from integration.tests.base import BaseTests
 from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.json_rpc_requester import JsonRpcClient
-from integration.tests.basic.model.model import AccountData, JsonRpcErrorResponse, JsonRpcResponse
+from integration.tests.basic.model.model import AccountData, JsonRpcErrorResponse, JsonRpcResponse, JsonRpcRequest
 from integration.tests.basic.test_data.input_data import InputData
 
 WAITING_FOR_MS = "waiting for MS"
@@ -36,6 +36,14 @@ class BaseMixin(BaseTests):
         self.sender_account = self.create_account_with_balance()
         self.recipient_account = self.create_account_with_balance(is_sender=False)
         yield
+
+    def assert_expected_exception(self, payloads: JsonRpcRequest, err_message: str) -> None:
+        """Assertions about expected exceptions"""
+        with pytest.raises(AssertionError) as excinfo:
+            response = self.json_rpc_client.do_call(payloads)
+            if isinstance(response, JsonRpcErrorResponse):
+                raise AssertionError(response.error.get("message"))
+        assert err_message in str(excinfo.value)
 
     def create_account(self) -> Account:
         """Creates a new account"""

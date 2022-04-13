@@ -1,9 +1,8 @@
-import web3
-import solana.rpc.api
 import pytest
+import solana.rpc.api
 
-from utils.operator import Operator
 from utils.faucet import Faucet
+from utils.operator import Operator
 from utils.web3client import NeonWeb3Client
 
 

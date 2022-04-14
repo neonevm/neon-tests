@@ -36,12 +36,7 @@ class TestRpcCallsTransactions(BasicTests):
         params = [signed_tx.rawTransaction.hex()]
 
         model = RpcRequestFactory.get_send_raw_trx(params=params)
-        
-        #
-        print("====== transaction =======")
-        print(model)
-        #
-        
+
         response = self.jsonrpc_requester.request_json_rpc(model)
         actual_result = self.jsonrpc_requester.deserialize_response(response)
 
@@ -51,11 +46,6 @@ class TestRpcCallsTransactions(BasicTests):
         assert '0x' in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
 
         # TODO: calculate sender's amount
-        # self.assert_balance(
-        #     self.sender_account.address,
-        #     InputData.FAUCET_1ST_REQUEST_AMOUNT.value -
-        #     InputData.SAMPLE_AMOUNT.value -
-        #     self.calculate_trx_gas(tx_receipt=actual_result.result))
         self.assert_balance(
             self.recipient_account.address,
             InputData.FAUCET_1ST_REQUEST_AMOUNT.value +

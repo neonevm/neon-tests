@@ -132,7 +132,41 @@ class TestRpcCallsTransactions(BasicTests):
 
         result_object = self.jsonrpc_requester.deserialize_response
 
-    @pytest.mark.skip("in progress")
-    def test_check_erc_1820_transaction(self):
+    def test_check_erc_1820_transaction(self, prepare_accounts):
         """Check ERC-1820 transaction (without chain_id in sign)"""
-        pass
+        transaction = {
+            "from":
+            self.sender_account.address,
+            "to":
+            self.recipient_account.address,
+            "value":
+            self.web3_client.toWei(InputData.SAMPLE_AMOUNT.value, "ether"),
+            "gasPrice":
+            self.web3_client.gas_price(),
+            "gas":
+            0,
+            "nonce":
+            self.web3_client.eth.get_transaction_count(
+                self.sender_account.address),
+        }
+        transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
+
+        signed_tx = self.web3_client.eth.account.sign_transaction(
+            transaction, self.sender_account.key)
+
+        params = [signed_tx.rawTransaction.hex()]
+
+        model = RpcRequestFactory.get_send_raw_trx(params=params)
+        response = self.jsonrpc_requester.request_json_rpc(model)
+        actual_result = self.jsonrpc_requester.deserialize_response(response)
+
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert self.assert_is_successful_response(
+            actual_result), AssertMessage.WRONG_TYPE.value
+        assert '0x' in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
+
+        # TODO: calculate sender's amount
+        self.assert_balance(
+            self.recipient_account.address,
+            InputData.FAUCET_1ST_REQUEST_AMOUNT.value +
+            InputData.SAMPLE_AMOUNT.value)

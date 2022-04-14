@@ -17,7 +17,8 @@ U64_MAX = 18_446_744_073_709_551_615
 WRONG_TRANSFER_AMOUNT_DATA = [(1_501), (10_000.1)]
 TRANSFER_AMOUNT_DATA = [(0.01), (1), (1.1)]
 
-GAS_LIMIT_AND_PRICE_DATA = ([1, (U64_MAX+1)], [1000, int((U64_MAX+100)/1000)])
+GAS_LIMIT_AND_PRICE_DATA = ([1, None, ErrorMessage.GAS_LIMIT_REACHED.value], [0.01, None, ErrorMessage.INVALID_FIELDS_GAS.value], [
+                            U64_MAX+1, None, ErrorMessage.INSUFFICIENT_FUNDS.value], [0, U64_MAX+1, ErrorMessage.INSUFFICIENT_FUNDS.value], [1, (U64_MAX+1), ErrorMessage.INSUFFICIENT_FUNDS.value], [1000, int((U64_MAX+100)/1000), ErrorMessage.INSUFFICIENT_FUNDS.value])
 
 
 @allure.story("Basic: transfer tests")
@@ -156,89 +157,6 @@ class TestTransfer(BasicTests):
     26.	There are not enough Neons for gas fee		
     27.	There are not enough Neons for transfer
     """
-
-    def test_too_low_gas_limit(self, prepare_accounts):
-        """Too low gas_limit"""
-        amount = InputData.DEFAULT_TRANSFER_AMOUNT.value
-
-        self.process_transaction_with_failure(
-            self.sender_account,
-            self.recipient_account,
-            amount,
-            gas=1,
-            error_message=ErrorMessage.GAS_LIMIT_REACHED.value)
-
-        self.assert_balance(self.sender_account.address,
-                            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-        self.assert_balance(self.recipient_account.address,
-                            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-
-    def test_not_allowed_gas_limit(self, prepare_accounts):
-        """Too low gas_limit"""
-        amount = InputData.DEFAULT_TRANSFER_AMOUNT.value
-
-        self.process_transaction_with_failure(
-            self.sender_account,
-            self.recipient_account,
-            amount,
-            gas=0.01,
-            error_message=ErrorMessage.INVALID_FIELDS_GAS.value)
-
-        self.assert_balance(self.sender_account.address,
-                            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-        self.assert_balance(self.recipient_account.address,
-                            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-
-    def test_too_high_gas_limit_greater_than_u64_max(self, prepare_accounts):
-        """Too high gas_limit > u64::max"""
-        amount = InputData.DEFAULT_TRANSFER_AMOUNT.value
-
-        self.process_transaction_with_failure(
-            self.sender_account,
-            self.recipient_account,
-            amount,
-            gas=U64_MAX + 1,
-            error_message=ErrorMessage.INSUFFICIENT_FUNDS.value)
-
-        self.assert_balance(self.sender_account.address,
-                            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-        self.assert_balance(self.recipient_account.address,
-                            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-
-    def test_too_high_gas_price_greater_than_u64_max(self, prepare_accounts):
-        """Too high gas_price > u64::max"""
-        amount = InputData.DEFAULT_TRANSFER_AMOUNT.value
-
-        self.process_transaction_with_failure(
-            self.sender_account,
-            self.recipient_account,
-            amount,
-            gas_price=U64_MAX + 1,
-            error_message=ErrorMessage.INSUFFICIENT_FUNDS.value)
-
-        self.assert_balance(self.sender_account.address,
-                            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-        self.assert_balance(self.recipient_account.address,
-                            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-
-    @pytest.mark.parametrize("gas_limit,gas_price", GAS_LIMIT_AND_PRICE_DATA)
-    def test_too_high_gas_limit_by_gas_prise_greater_than_u64_max(self, gas_limit: float, gas_price: float, prepare_accounts):
-        """Too high gas_limit * gas_price > u64::max"""
-        sender_amount = 2
-        self.sender_account = self.create_account_with_balance(sender_amount)
-        self.recipient_account = self.web3_client.create_account()
-        amount = InputData.DEFAULT_TRANSFER_AMOUNT.value
-
-        self.process_transaction_with_failure(
-            self.sender_account,
-            self.recipient_account,
-            amount,
-            gas=gas_limit,
-            gas_price=gas_price,
-            error_message=ErrorMessage.INSUFFICIENT_FUNDS.value)
-
-        self.assert_balance(self.sender_account.address, sender_amount)
-        self.assert_balance(self.recipient_account.address, 0)
 
     def test_there_are_not_enough_neons_for_gas_fee(self):
         """There are not enough Neons for gas fee"""
@@ -434,6 +352,30 @@ class TestRpcCallsTransactions(BasicTests):
 
 @allure.story("Basic: Json-RPC call tests - transactions validation")
 class TestRpcCallsTransactionsValidation(BasicTests):
+    @pytest.mark.parametrize("gas_limit,gas_price,expected_message", GAS_LIMIT_AND_PRICE_DATA)
+    def test_gas_limit_and_gas_price(self, gas_limit, gas_price, expected_message, prepare_accounts):
+        """Too low gas_limit
+        Too high gas_limit > u64::max
+        Too high gas_limit > u64::max
+        Too high gas_price > u64::max
+        Too high gas_limit * gas_price > u64::max
+        """
+
+        amount = InputData.DEFAULT_TRANSFER_AMOUNT.value
+
+        self.process_transaction_with_failure(
+            self.sender_account,
+            self.recipient_account,
+            amount,
+            gas=gas_limit,
+            gas_price=gas_price,
+            error_message=expected_message)
+
+        self.assert_balance(self.sender_account.address,
+                            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+        self.assert_balance(self.recipient_account.address,
+                            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+
     def test_generate_bad_sign(self, prepare_accounts):
         """Generate bad sign (when v, r, s over allowed size)"""
 

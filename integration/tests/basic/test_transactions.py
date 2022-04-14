@@ -48,7 +48,6 @@ class TestRpcCallsTransactions(BasicTests):
     def test_rpc_call_eth_sendRawTransaction(self, prepare_accounts):
         """Verify implemented rpc calls work eth_sendRawTransaction"""
 
-        # TODO: chain id
         transaction = {
             "from":
             self.sender_account.address,
@@ -132,3 +131,8 @@ class TestRpcCallsTransactions(BasicTests):
             actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
         result_object = self.jsonrpc_requester.deserialize_response
+
+    @pytest.mark.skip("in progress")
+    def test_check_erc_1820_transaction(self):
+        """Check ERC-1820 transaction (without chain_id in sign)"""
+        pass

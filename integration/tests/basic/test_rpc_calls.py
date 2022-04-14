@@ -52,28 +52,22 @@ TAGS_TEST_DATA = [
 
 @allure.story("Basic: Json-RPC call tests")
 class TestRpcCalls(BaseMixin):
+
     # TODO: implement numerous variants
-
-    def test_eth_call(self, prepare_accounts):
+    def test_eth_call(self):
         """Verify implemented rpc calls work eth_call"""
-
         self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
-
         # TOOD: variants
         data = request_models.CallRequest(to=self.recipient_account.address)
         params = [data, Tag.LATEST.value]
-        model = RpcRequestFactory.get_call(params=params)
-        actual_result = self.json_rpc_client.do_call(model)
+        payloads = RpcRequestFactory.get_call(params=params)
+        actual_result = self.json_rpc_client.do_call(payloads)
 
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        # assert self.assert_no_error_object(
-        #     actual_result), AssertMessage.CONTAINS_ERROR
-        # assert self.assert_result_object(
-        #     actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
+        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
 
     # TODO: implement numerous variants
 
-    def test_eth_estimate_gas(self, prepare_accounts):
+    def test_eth_estimate_gas(self):
         """Verify implemented rpc calls work eth_estimateGas"""
 
         # TOOD: variants
@@ -81,21 +75,17 @@ class TestRpcCalls(BaseMixin):
             from_=self.sender_account.address, to=self.recipient_account.address, value=hex(1)
         )
         params = [data]
-        model = RpcRequestFactory.get_estimate_gas(params=params)
-        actual_result = self.json_rpc_client.do_call(model)
+        payloads = RpcRequestFactory.get_estimate_gas(params=params)
+        actual_result = self.json_rpc_client.do_call(payloads)
 
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        # assert self.assert_no_error_object(
-        #     actual_result), AssertMessage.CONTAINS_ERROR
-        # assert self.assert_result_object(
-        #     actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
+        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
 
     def test_eth_gas_price(self):
         """Verify implemented rpc calls work eth_gasPrice"""
-        model = RpcRequestFactory.get_gas_price(params=[])
-        actual_result = self.json_rpc_client.do_call(model)
+        payloads = RpcRequestFactory.get_gas_price(params=[])
+        actual_result = self.json_rpc_client.do_call(payloads)
 
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
         assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
         assert "0x" in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
 
@@ -107,11 +97,11 @@ class TestRpcCalls(BaseMixin):
         params = [
             request_models.GetLogsRequest(from_block=from_block, to_block=to_block, address=sender_account.address)
         ]
-        model = RpcRequestFactory.get_logs(params=params)
+        payloads = RpcRequestFactory.get_logs(params=params)
 
-        actual_result = self.json_rpc_client.do_call(model)
+        actual_result = self.json_rpc_client.do_call(payloads)
 
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
         assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
         assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
@@ -123,11 +113,11 @@ class TestRpcCalls(BaseMixin):
         params = [
             request_models.GetLogsRequest(from_block=1, to_block=Tag.LATEST.value, address=sender_account.address)
         ]
-        model = RpcRequestFactory.get_logs(params=params)
+        payloads = RpcRequestFactory.get_logs(params=params)
 
-        actual_result = self.json_rpc_client.do_call(model)
+        actual_result = self.json_rpc_client.do_call(payloads)
 
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
         assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
         assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
@@ -137,10 +127,10 @@ class TestRpcCalls(BaseMixin):
         sender_account = self.create_account_with_balance()
 
         params = [sender_account.address, Tag.LATEST.value]
-        model = RpcRequestFactory.get_balance(params=params)
-        actual_result = self.json_rpc_client.do_call(model)
+        payloads = RpcRequestFactory.get_balance(params=params)
+        actual_result = self.json_rpc_client.do_call(payloads)
 
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
         assert actual_result.result == InputData.FIRST_AMOUNT_IN_RESPONSE.value, AssertMessage.WRONG_AMOUNT.value
 
     def test_eth_get_code(self):
@@ -149,44 +139,44 @@ class TestRpcCalls(BaseMixin):
         sender_account = self.create_account_with_balance()
 
         params = [sender_account.address, Tag.LATEST.value]
-        model = RpcRequestFactory.get_code(params=params)
-        actual_result = self.json_rpc_client.do_call(model)
+        payloads = RpcRequestFactory.get_code(params=params)
+        actual_result = self.json_rpc_client.do_call(payloads)
 
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
         assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
         assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
     def test_web3_client_version(self):
         """Verify implemented rpc calls work web3_clientVersion"""
-        model = RpcRequestFactory.get_web3_client_version(params=[])
-        actual_result = self.json_rpc_client.do_call(model)
+        payloads = RpcRequestFactory.get_web3_client_version(params=[])
+        actual_result = self.json_rpc_client.do_call(payloads)
 
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
         assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
         assert "Neon" in actual_result.result, "version does not contain 'Neon'"
 
     def test_net_version(self):
         """Verify implemented rpc calls work work net_version"""
-        model = RpcRequestFactory.get_net_version(params=[])
-        actual_result = self.json_rpc_client.do_call(model)
+        payloads = RpcRequestFactory.get_net_version(params=[])
+        actual_result = self.json_rpc_client.do_call(payloads)
 
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
         assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
         assert actual_result.result == str(
             self.web3_client._chain_id
         ), f"net version is not {self.web3_client._chain_id}"
 
-    def test_eth_get_block_by_hash(self, prepare_accounts):
+    def test_eth_get_block_by_hash(self):
         """Verify implemented rpc calls work eth_getBlockByHash"""
 
         tx_receipt = self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
 
         params = [tx_receipt.blockHash.hex(), True]
-        model = RpcRequestFactory.get_block_by_hash(params=params)
+        payloads = RpcRequestFactory.get_block_by_hash(params=params)
 
-        actual_result = self.json_rpc_client.do_call(model, request_models.BlockResponse)
+        actual_result = self.json_rpc_client.do_call(payloads, request_models.BlockResponse)
 
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
         assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
         assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
@@ -194,30 +184,30 @@ class TestRpcCalls(BaseMixin):
     def test_eth_get_blockn_by_umber_via_tags(self, quantity_tag: tp.Union[int, Tag], full_trx: bool):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
         params = RpcRequestParamsFactory.get_block_by_number(quantity_tag, full_trx)
-        model = RpcRequestFactory.get_block_by_number(params=params)
+        payloads = RpcRequestFactory.get_block_by_number(params=params)
 
-        actual_result = self.json_rpc_client.do_call(model, request_models.BlockResponse)
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        actual_result = self.json_rpc_client.do_call(payloads, request_models.BlockResponse)
+        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
 
-    def test_eth_get_block_by_number_via_numbers(self, prepare_accounts):
+    def test_eth_get_block_by_number_via_numbers(self):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
 
         tx_receipt = self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
 
         params = RpcRequestParamsFactory.get_block_by_number(tx_receipt.blockNumber, True)
-        model = RpcRequestFactory.get_block_by_number(params=params)
+        payloads = RpcRequestFactory.get_block_by_number(params=params)
 
-        actual_result = self.json_rpc_client.do_call(model, request_models.BlockResponse)
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        actual_result = self.json_rpc_client.do_call(payloads, request_models.BlockResponse)
+        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
         assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
         assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
     def test_eth_block_number(self):
         """Verify implemented rpc calls work work eth_blockNumber"""
-        model = RpcRequestFactory.get_block_number(params=[])
-        actual_result = self.json_rpc_client.do_call(model)
+        payloads = RpcRequestFactory.get_block_number(params=[])
+        actual_result = self.json_rpc_client.do_call(payloads)
 
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
         assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
         assert "0x" in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
 
@@ -230,18 +220,19 @@ class TestRpcCalls(BaseMixin):
     def test_eth_accounts(self):
         """Verify implemented rpc calls work eht_accounts"""
         payloads = RpcRequestFactory().eth_accounts()
-        self.assert_expected_exception(payloads, "method eth_accounts is not supported")
-
-    @pytest.mark.parametrize("param", [None, "param"])
-    def test_eth_mining(self, param):
-        """Verify implemented rpc calls work eth_mining"""
-        payloads = RpcRequestFactory().eth_mining(param)
-        # Check failed state
-        if param:
-            self.assert_expected_exception(payloads, "takes 0 positional arguments but 1 was given")
-            return
-        # Check success state
         response = self.json_rpc_client.do_call(payloads)
-        assert isinstance(
-            response, request_models.JsonRpcResponse
-        ), f"RPC call is failed: {response.error.get('message')}"
+        self.assert_expected_raises(response, "method eth_accounts is not supported")
+
+    @pytest.mark.parametrize("params", [None, "param"])
+    def test_eth_mining(self, params):
+        """Verify implemented rpc calls work eth_mining"""
+        payloads = RpcRequestFactory().eth_mining(params)
+        response = self.json_rpc_client.do_call(payloads)
+        # Check failed state
+        if params:
+            self.assert_expected_raises(response, "takes 0 positional arguments but 1 was given")
+        # Check success state
+        else:
+            assert isinstance(
+                response, request_models.JsonRpcResponse
+            ), f"RPC call is failed: {response.error.get('message')}"

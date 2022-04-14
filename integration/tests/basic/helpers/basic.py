@@ -1,5 +1,5 @@
+import typing as tp
 from decimal import Decimal
-from typing import Union
 
 import allure
 import pytest
@@ -28,19 +28,15 @@ class BaseMixin(BaseTests):
     recipient_account: Account = None
 
     @pytest.fixture(autouse=True)
-    def prepare_json_rpc_requester(self, json_rpc_client):
+    def prepare_env(self, json_rpc_client):
         self.json_rpc_client = json_rpc_client
-
-    @pytest.fixture
-    def prepare_accounts(self):
         self.sender_account = self.create_account_with_balance()
         self.recipient_account = self.create_account_with_balance(is_sender=False)
-        yield
 
-    def assert_expected_exception(self, payloads: JsonRpcRequest, err_message: str) -> None:
+    @staticmethod
+    def assert_expected_raises(response: tp.Union[JsonRpcResponse, JsonRpcErrorResponse], err_message: str) -> None:
         """Assertions about expected exceptions"""
         with pytest.raises(AssertionError) as excinfo:
-            response = self.json_rpc_client.do_call(payloads)
             if isinstance(response, JsonRpcErrorResponse):
                 raise AssertionError(response.error.get("message"))
         assert err_message in str(excinfo.value)
@@ -75,7 +71,7 @@ class BaseMixin(BaseTests):
 
     def process_transaction(
         self, sender_account: Account, recipient_account: Account, amount: float = 0.0
-    ) -> Union[web3.types.TxReceipt, None]:
+    ) -> tp.Union[web3.types.TxReceipt, None]:
         """Processes transaction"""
         with allure.step(f"Sending {amount} from {sender_account.address} to {recipient_account.address}"):
             return self.web3_client.send_neon(sender_account, recipient_account, amount)
@@ -83,12 +79,12 @@ class BaseMixin(BaseTests):
     def process_transaction_with_failure(
         self,
         sender_account: Account,
-        recipient_account: Union[Account, AccountData],
+        recipient_account: tp.Union[Account, AccountData],
         amount: int,
         error_message: str = "",
-    ) -> Union[web3.types.TxReceipt, None]:
+    ) -> tp.Union[web3.types.TxReceipt, None]:
         """Processes transaction, expects a failure"""
-        tx: Union[web3.types.TxReceipt, None] = None
+        tx: tp.Union[web3.types.TxReceipt, None] = None
         with allure.step(f"Sending {amount} from {sender_account.address} to {recipient_account.address}"):
             with pytest.raises(Exception) as error_info:
                 tx = self.web3_client.send_neon(sender_account, recipient_account, amount)
@@ -99,13 +95,13 @@ class BaseMixin(BaseTests):
 
     def transfer_neon(
         self, sender_account: Account, recipient_account: Account, amount: int
-    ) -> Union[web3.types.TxReceipt, None]:
+    ) -> tp.Union[web3.types.TxReceipt, None]:
         """Transfers tokens"""
         return self.process_transaction(sender_account, recipient_account, amount)
 
     def check_value_error_if_less_than_required(
         self, sender_account: Account, recipient_account: Account, amount: int
-    ) -> Union[web3.types.TxReceipt, None]:
+    ) -> tp.Union[web3.types.TxReceipt, None]:
         """Checks in case the balance is less than required"""
         return self.process_transaction_with_failure(
             sender_account, recipient_account, amount, ErrorMessage.EXPECTING_VALUE.value
@@ -144,7 +140,7 @@ class BaseMixin(BaseTests):
         return not hasattr(data, "error")
 
     @staticmethod
-    def assert_is_successful_response(actual_result: Union[JsonRpcResponse, JsonRpcErrorResponse]) -> bool:
+    def assert_is_successful_response(actual_result: tp.Union[JsonRpcResponse, JsonRpcErrorResponse]) -> bool:
         return isinstance(actual_result, JsonRpcResponse)
 
     @staticmethod

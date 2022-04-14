@@ -15,12 +15,12 @@ class JsonRpcClient:
         self._url = proxy_url
         self._session = session or requests.Session()
 
-    def do_call(self, json_doc: tp.Any, model: tp.Any = None) -> tp.Union[JsonRpcResponse, JsonRpcErrorResponse]:
+    def do_call(self, payloads: tp.Any, model: tp.Any = None) -> tp.Union[JsonRpcResponse, JsonRpcErrorResponse]:
         """Implements light-weight remote procedure call (RPC) protocol."""
-        if not isinstance(json_doc, tp.Dict):
-            json_doc = dataclasses.asdict(json_doc)
-        with allure.step(f"Request params: {json_doc}"):
-            response = self._session.post(self._url, json=json_doc)
+        if not isinstance(payloads, tp.Dict):
+            payloads = dataclasses.asdict(payloads)
+        with allure.step(f"Request params: {payloads}"):
+            response = self._session.post(self._url, json=payloads)
             return self._deserialize_response(response, model=model)
 
     @staticmethod

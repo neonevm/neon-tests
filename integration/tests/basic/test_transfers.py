@@ -21,7 +21,7 @@ TRANSFER_AMOUNT_DATA = [(0.01), (1), (1.1)]
 @allure.story("Basic: transfer tests")
 class TestTransfer(BaseMixin):
     @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
-    def test_send_neon_from_one_account_to_another(self, amount: Union[int, float], prepare_accounts):
+    def test_send_neon_from_one_account_to_another(self, amount: Union[int, float]):
         """Send neon from one account to another"""
 
         tx_receipt = self.transfer_neon(self.sender_account, self.recipient_account, amount)
@@ -38,7 +38,7 @@ class TestTransfer(BaseMixin):
         pass
 
     @pytest.mark.parametrize("amount", WRONG_TRANSFER_AMOUNT_DATA)
-    def test_send_more_than_exist_on_account_neon(self, amount: Union[int, float], prepare_accounts):
+    def test_send_more_than_exist_on_account_neon(self, amount: Union[int, float]):
         """Send more than exist on account: neon"""
 
         self.check_value_error_if_less_than_required(self.sender_account, self.recipient_account, amount)
@@ -57,7 +57,7 @@ class TestTransfer(BaseMixin):
         """Send more than exist on account: ERC20"""
         pass
 
-    def test_zero_neon(self, prepare_accounts):
+    def test_zero_neon(self):
         """Send zero: neon"""
 
         tx_receipt = self.process_transaction(self.sender_account, self.recipient_account)
@@ -78,7 +78,7 @@ class TestTransfer(BaseMixin):
         """Send zero: ERC20"""
         pass
 
-    def test_send_negative_sum_from_account_neon(self, prepare_accounts):
+    def test_send_negative_sum_from_account_neon(self):
         """Send negative sum from account: neon"""
 
         self.process_transaction_with_failure(

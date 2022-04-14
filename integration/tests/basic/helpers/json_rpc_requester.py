@@ -27,7 +27,10 @@ class JsonRpcClient:
     def _deserialize_response(
         response: Response, model: tp.Any = None
     ) -> tp.Union[JsonRpcResponse, JsonRpcErrorResponse]:
-        json_doc = response.json()
+        try:
+            json_doc = response.json()
+        except requests.exceptions.JSONDecodeError:
+            return JsonRpcErrorResponse()
         with allure.step(f"Response data: {json_doc}"):
             if "error" in json_doc:
                 response = JsonRpcErrorResponse(**json_doc)

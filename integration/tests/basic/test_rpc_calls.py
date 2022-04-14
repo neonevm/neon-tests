@@ -52,6 +52,29 @@ TAGS_TEST_DATA = [
 
 @allure.story("Basic: Json-RPC call tests")
 class TestRpcCalls(BaseMixin):
+    @staticmethod
+    def is_hex(hex_data: str) -> bool:
+        try:
+            int(hex_data, 16)
+            return True
+        except (ValueError, TypeError):
+            return False
+
+    def check_endpoint_response(
+        self, method: str, err_message: str, raises: bool = False, param: tp.Optional[tp.Any] = None
+    ) -> tp.Union[request_models.JsonRpcResponse, request_models.JsonRpcErrorResponse]:
+        """Verify eth endpoints responses"""
+        payloads = getattr(RpcRequestFactory(), method)(param)
+        response = self.json_rpc_client.do_call(payloads)
+        if not isinstance(err_message, str):
+            err_message = err_message.value
+        if raises:
+            self.assert_expected_raises(response, err_message)
+        else:
+            assert isinstance(
+                response, request_models.JsonRpcResponse
+            ), f"RPC call is failed: {response.error.get('message')}"
+        return response
 
     # TODO: implement numerous variants
     def test_eth_call(self):
@@ -216,23 +239,51 @@ class TestRpcCalls(BaseMixin):
         """Verify implemented rpc calls work eht_getStorageAt"""
         pass
 
-    # ToDo: rewrite when eth_accounts will be supported
-    def test_eth_accounts(self):
+    @pytest.mark.skip(WAITIING_FOR_CONTRACT_SUPPORT)
+    @pytest.mark.parametrize("param, msg", [(None, "")])
+    def test_eth_accounts(self, param, msg):
         """Verify implemented rpc calls work eht_accounts"""
-        payloads = RpcRequestFactory().eth_accounts()
-        response = self.json_rpc_client.do_call(payloads)
-        self.assert_expected_raises(response, "method eth_accounts is not supported")
+        pass
 
-    @pytest.mark.parametrize("params", [None, "param"])
-    def test_eth_mining(self, params):
+    @pytest.mark.parametrize(
+        "param, msg, raises", [(None, "", None), ("param", AssertMessage.IVALID_ARG_1_GIVEN, True)]
+    )
+    def test_eth_mining(self, param, msg, raises):
         """Verify implemented rpc calls work eth_mining"""
-        payloads = RpcRequestFactory().eth_mining(params)
-        response = self.json_rpc_client.do_call(payloads)
-        # Check failed state
-        if params:
-            self.assert_expected_raises(response, "takes 0 positional arguments but 1 was given")
-        # Check success state
-        else:
-            assert isinstance(
-                response, request_models.JsonRpcResponse
-            ), f"RPC call is failed: {response.error.get('message')}"
+        self.check_endpoint_response(method="eth_mining", err_message=msg, param=param, raises=raises)
+
+    @pytest.mark.parametrize(
+        "param, msg, raises", [(None, "", None), ("param", AssertMessage.IVALID_ARG_2_GIVEN, True)]
+    )
+    def test_eth_syncing(self, param, msg, raises):
+        """Verify implemented rpc calls work eth_syncing"""
+        response = self.check_endpoint_response(method="eth_syncing", err_message=msg, param=param, raises=raises)
+        if not param and response.result:
+            assert all(
+                isinstance(block, int) for block in response.result.values()
+            ), f"Invalid response: {response.result}"
+
+    @pytest.mark.parametrize(
+        "param, msg, raises", [(None, "", None), ("param", AssertMessage.IVALID_ARG_2_GIVEN, True)]
+    )
+    def test_net_peer_count(self, param, msg, raises):
+        """Verify implemented rpc calls work net_peerCount"""
+        response = self.check_endpoint_response(method="net_peerCount", err_message=msg, param=param, raises=raises)
+        if not param:
+            assert self.is_hex(response.result), f"Invalid response: {response.result}"
+
+    @pytest.mark.parametrize(
+        "param, msg, raises",
+        [("0x6865", "", None), ("param", AssertMessage.NOT_HEX_STR, True), (None, AssertMessage.MISS_1_REQ_ARG, True)],
+    )
+    def test_web3_sha3(self, param, msg, raises):
+        """Verify implemented rpc calls work web3_sha3"""
+        response = self.check_endpoint_response(method="web3_sha3", err_message=msg, param=param, raises=raises)
+        if self.is_hex(param):
+            assert response.result.startswith("e5105")
+
+    @pytest.mark.skip(WAITIING_FOR_CONTRACT_SUPPORT)
+    @pytest.mark.parametrize("param, msg, raises", [(["0x9b2055d3", "0x9b2055d3"], "", None)])
+    def test_eth_sign(self, param, msg, raises):
+        """Verify implemented rpc calls work eth_sign"""
+        self.check_endpoint_response(method="eth_sign", err_message=msg, param=param, raises=raises)

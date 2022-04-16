@@ -5,7 +5,7 @@ from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import WAITING_FOR_ERC20, WAITING_FOR_MS, BasicTests
 from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
-from integration.tests.basic.model.model import AccountData, TrxReceiptResponse, TrxResponse
+from integration.tests.basic.model.model import AccountData,  TrxReceiptResponse, TrxResponse
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.test_data.input_data import InputData
 
@@ -17,8 +17,8 @@ U64_MAX = 18_446_744_073_709_551_615
 WRONG_TRANSFER_AMOUNT_DATA = [(1_501), (10_000.1)]
 TRANSFER_AMOUNT_DATA = [(0.01), (1), (1.1)]
 
-GAS_LIMIT_AND_PRICE_DATA = ([1, None, ErrorMessage.GAS_LIMIT_REACHED.value], [0.01, None, ErrorMessage.INVALID_FIELDS_GAS.value], [
-                            U64_MAX+1, None, ErrorMessage.INSUFFICIENT_FUNDS.value], [0, U64_MAX+1, ErrorMessage.INSUFFICIENT_FUNDS.value], [1, (U64_MAX+1), ErrorMessage.INSUFFICIENT_FUNDS.value], [1000, int((U64_MAX+100)/1000), ErrorMessage.INSUFFICIENT_FUNDS.value])
+GAS_LIMIT_AND_PRICE_DATA = ([1, None, ErrorMessage.GAS_LIMIT_REACHED.value], [U64_MAX+1, None, ErrorMessage.INSUFFICIENT_FUNDS.value], [0, U64_MAX+1,
+                            ErrorMessage.INSUFFICIENT_FUNDS.value], [1, (U64_MAX+1), ErrorMessage.INSUFFICIENT_FUNDS.value], [1000, int((U64_MAX+100)/1000), ErrorMessage.INSUFFICIENT_FUNDS.value])
 
 
 @allure.story("Basic: transfer tests")
@@ -353,8 +353,9 @@ class TestRpcCallsTransactions(BasicTests):
 @allure.story("Basic: Json-RPC call tests - transactions validation")
 class TestRpcCallsTransactionsValidation(BasicTests):
     @pytest.mark.parametrize("gas_limit,gas_price,expected_message", GAS_LIMIT_AND_PRICE_DATA)
-    def test_gas_limit_and_gas_price(self, gas_limit, gas_price, expected_message, prepare_accounts):
-        """Too low gas_limit
+    def test_generate_bad_sign(self, gas_limit, gas_price, expected_message, prepare_accounts):
+        """Generate bad sign (when v, r, s over allowed size)
+        Too low gas_limit
         Too high gas_limit > u64::max
         Too high gas_limit > u64::max
         Too high gas_price > u64::max
@@ -375,45 +376,3 @@ class TestRpcCallsTransactionsValidation(BasicTests):
                             InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
         self.assert_balance(self.recipient_account.address,
                             InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-
-    def test_generate_bad_sign(self, prepare_accounts):
-        """Generate bad sign (when v, r, s over allowed size)"""
-
-        transaction = {
-            "from":
-            self.sender_account.address,
-            "to":
-            self.recipient_account.address,
-            "value":
-            self.web3_client.toWei(InputData.SAMPLE_AMOUNT.value, "ether"),
-            "chainId":
-            self.web3_client._chain_id,
-            "gasPrice":
-            self.web3_client.gas_price(),
-            "gas":
-            0,
-            "nonce":
-            self.web3_client.eth.get_transaction_count(
-                self.sender_account.address),
-        }
-        transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
-
-        signed_tx = self.web3_client.eth.account.sign_transaction(
-            transaction, self.sender_account.key)
-
-        params = [signed_tx.rawTransaction.hex()]
-
-        model = RpcRequestFactory.get_send_raw_trx(params=params)
-
-        response = self.jsonrpc_requester.request_json_rpc(model)
-        actual_result = self.jsonrpc_requester.deserialize_response(response)
-
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        assert self.assert_is_successful_response(
-            actual_result), AssertMessage.WRONG_TYPE.value
-        assert '0x' in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
-
-        self.assert_balance(
-            self.recipient_account.address,
-            InputData.FAUCET_1ST_REQUEST_AMOUNT.value +
-            InputData.SAMPLE_AMOUNT.value)

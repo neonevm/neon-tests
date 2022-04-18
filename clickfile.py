@@ -282,7 +282,7 @@ def get_allure_history(name: str, network: str, destination: str = "./allure-res
 
     runs = []
     previous_runs = cloud.client.list_objects_v2(Bucket=cloud.NEON_TESTS_NUCKET_NAME,
-                                                 prefix=f"{path}/",
+                                                 Prefix=f"{path}/",
                                                  Delimiter="/").get("CommonPrefixes", [])
     for run in previous_runs:
         run_id = re.findall(r"(\d+)", run["Prefix"])

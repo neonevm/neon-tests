@@ -99,6 +99,8 @@ jobs:
           AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
       - name: "Generate allure report"
         uses: QuintilianoNery/action-allure-report-V2@master
+      - name: "Fix permissions"
+        run: sudo chown deploy:deploy -R allure-report
       - name: "Upload allure history"
         run: "./clickfile.py upload-allure-report economy --network ${{ needs.prepare-env.outputs.network }}"
         env:

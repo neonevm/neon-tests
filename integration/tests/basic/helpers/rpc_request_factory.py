@@ -28,6 +28,7 @@ class RpcRequestFactory:
 
         def wrapper(*args, **kwargs):
             params = list(filter(None, args))
+            print(f"params: {params}")
             params.extend(kwargs.values())
             return JsonRpcRequest(id=self.get_random_value(), method=eth_method, params=params)
 

@@ -34,12 +34,15 @@ class BaseMixin(BaseTests):
         self.recipient_account = self.create_account_with_balance(is_sender=False)
 
     @staticmethod
-    def assert_expected_raises(response: tp.Union[JsonRpcResponse, JsonRpcErrorResponse], err_message: str) -> None:
+    def assert_expected_raises(
+        response: tp.Union[JsonRpcResponse, JsonRpcErrorResponse], err_message: str = None
+    ) -> None:
         """Assertions about expected exceptions"""
         with pytest.raises(AssertionError) as excinfo:
             if isinstance(response, JsonRpcErrorResponse):
                 raise AssertionError(response.error.get("message"))
-        assert err_message in str(excinfo.value)
+        if err_message:
+            assert err_message in str(excinfo.value)
 
     def create_account(self) -> Account:
         """Creates a new account"""

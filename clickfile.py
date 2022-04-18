@@ -300,13 +300,15 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
     build_id = os.environ.get("GITHUB_RUN_NUMBER")
     path = pathlib.Path(name) / network / branch
     cloud.upload(source, path / build_id)
+    report_url = f"http://neon-test-allure.s3-website.eu-central-1.amazonaws.com/{path / build_id}"
     with open("/tmp/index.html", "w") as f:
         f.write(
-            f"""<!DOCTYPE html><meta charset="utf-8"><meta http-equiv="refresh" content="0; URL=http://neon-test-allure.s3-website.eu-central-1.amazonaws.com/{path / build_id}">
+            f"""<!DOCTYPE html><meta charset="utf-8"><meta http-equiv="refresh" content="0; URL={report_url}">
         <meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
         """
         )
-    cloud.upload("/tmp/index.html", path / "index.html")
+    cloud.upload("/tmp/index.html", path)
+    print(f"Allure report link: {report_url}")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,8 @@
 name: "OpenZeppelin"
 
 on:
+  schedule:
+    - cron: "0 2,5 * * *"
   workflow_dispatch:
     inputs:
       network:
@@ -36,7 +38,6 @@ env:
 jobs:
   prepare-env:
     runs-on: ubuntu-20.04
-    if: always()
     steps:
       - name: Setup env
         id: setup
@@ -89,6 +90,12 @@ jobs:
         with:
           name: "Allure results"
           path: allure-results
+      - name: "Download allure history"
+        run: "./clickfile.py get-allure-history"
+      - name: "Generate allure report"
+        uses: QuintilianoNery/action-allure-report-V2@master
+      - name: "Upload allure history"
+        run: "./clickfile.py upload-allure-report"
 
 #  allure:
 #    runs-on: ubuntu-20.04

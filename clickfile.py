@@ -281,11 +281,15 @@ def get_allure_history(name: str, network: str, destination: str = "./allure-res
     path = pathlib.Path(name) / network / branch
 
     runs = []
-    previous_runs = cloud.list_bucket(path)
+    previous_runs = cloud.client.client.list_objects_v2(Bucket=cloud.NEON_TESTS_NUCKET_NAME,
+                                                        prefix=f"{path}/",
+                                                        Delimiter="/").get("CommonPrefixes", [])
     for run in previous_runs:
-        if run.get("Key").isdigit():
-            runs.append(int(run))
+        run_id = re.findall(r"(\d+)", run["Prefix"])
+        if len(run_id) > 0:
+            runs.append(int(run_id[0]))
     if len(runs) > 0:
+        print(f"Downloading allure history from build: {max(runs)}")
         cloud.download(path / str(max(runs)) / "history", pathlib.Path(destination) / "history")
 
 

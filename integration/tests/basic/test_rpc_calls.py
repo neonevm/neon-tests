@@ -245,7 +245,7 @@ class TestRpcCalls(BaseMixin):
         assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
     @pytest.mark.parametrize("quantity_tag,full_trx", TAGS_TEST_DATA)
-    def test_eth_get_blockn_by_umber_via_tags(self, quantity_tag: tp.Union[int, Tag], full_trx: bool):
+    def test_eth_get_block_by_umber_via_tags(self, quantity_tag: tp.Union[int, Tag], full_trx: bool):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
         params = RpcRequestParamsFactory.get_block_by_number(quantity_tag, full_trx)
         payloads = RpcRequestFactory.get_block_by_number(params=params)
@@ -381,7 +381,12 @@ class TestRpcCalls(BaseMixin):
         if not raises:
             assert self.is_hex(response.result), f"Invalid response result: {response.result}"
 
-    def test_check_unsupported_methods(self):
+    @pytest.mark.parametrize("method", UNSUPPORTED_METHODS)
+    def test_check_unsupported_methods(self, method):
         """Check that endpoint was not implemented"""
-        for method in UNSUPPORTED_METHODS:
-            self.assert_rpc_response(method, err_message=f"method {method} is not supported", raises=True)
+        with pytest.raises(AssertionError):
+            payloads = getattr(RpcRequestFactory(), method)()
+            response = self.json_rpc_client.do_call(payloads)
+            err_message = getattr(response, "error", dict()).get("message")
+            assert isinstance(response, request_models.JsonRpcResponse)
+            assert err_message != f"method {method} is not supported"

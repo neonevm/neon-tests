@@ -9,7 +9,7 @@ from eth_account import Account
 from integration.tests.base import BaseTests
 from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.json_rpc_requester import JsonRpcClient
-from integration.tests.basic.model.model import AccountData, JsonRpcErrorResponse, JsonRpcResponse, JsonRpcRequest
+from integration.tests.basic.model.model import AccountData, JsonRpcErrorResponse, JsonRpcResponse
 from integration.tests.basic.test_data.input_data import InputData
 
 WAITING_FOR_MS = "waiting for MS"
@@ -39,8 +39,7 @@ class BaseMixin(BaseTests):
     ) -> None:
         """Assertions about expected exceptions"""
         with pytest.raises(AssertionError) as excinfo:
-            if isinstance(response, JsonRpcErrorResponse):
-                raise AssertionError(response.error.get("message"))
+            assert isinstance(response, JsonRpcResponse), response.error.get("message")
         if err_message:
             assert err_message in str(excinfo.value)
 

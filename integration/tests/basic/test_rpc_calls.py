@@ -1,6 +1,8 @@
+import os
+import typing as tp
+
 import allure
 import pytest
-import typing as tp
 
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
@@ -48,6 +50,41 @@ TAGS_TEST_DATA = [
     (Tag.PENDING, False),
 ]
 
+UNSUPPORTED_METHODS = [
+    "eth_accounts",
+    "eth_coinbase",
+    "eth_compileLLL",
+    "eth_compileSerpent",
+    "eth_compileSolidity",
+    "eth_getCompilers",
+    "eth_getFilterChanges",
+    "eth_getStorage",
+    "eth_getUncleByBlockHashAndIndex",
+    "eth_getUncleByBlockNumberAndIndex",
+    "eth_getUncleCountByBlockHash",
+    "eth_getUncleCountByBlockNumber",
+    "eth_newBlockFilter",
+    "eth_newFilter",
+    "eth_newPendingTransactionFilter",
+    "eth_protocolVersion",
+    "eth_sendTransaction",
+    "eth_sign",
+    "eth_signTransaction",
+    "eth_submitHashrate",
+    "eth_submitWork",
+    "eth_uninstallFilter",
+    "shh_addToGroup",
+    "shh_getFilterChanges",
+    "shh_getMessages",
+    "shh_hasIdentity",
+    "shh_newFilter",
+    "shh_newGroup",
+    "shh_newIdentity",
+    "shh_post",
+    "shh_uninstallFilter",
+    "shh_version",
+]
+
 
 @allure.story("Basic: Json-RPC call tests")
 class TestRpcCalls(BaseMixin):
@@ -70,9 +107,7 @@ class TestRpcCalls(BaseMixin):
         if not isinstance(params, tp.List):
             params = [params]
         payloads = getattr(RpcRequestFactory(), method)(*params)
-        print(f"payloads: {payloads}")
         response = self.json_rpc_client.do_call(payloads)
-        print(f"response: {response}")
         if raises:
             if err_message and not isinstance(err_message, str):
                 err_message = err_message.value
@@ -279,3 +314,74 @@ class TestRpcCalls(BaseMixin):
         response = self.assert_rpc_response(method="web3_sha3", params=params, raises=raises)
         if self.is_hex(params):
             assert response.result.startswith("e5105")
+
+    @pytest.mark.parametrize(
+        "params, raises",
+        [(32, False), (16, True), (None, True)],
+    )
+    def test_eth_get_block_transaction_count_by_hash(self, params, raises):
+        """Verify implemented rpc calls work eth_getBlockTransactionCountByHash"""
+        if params:
+            params = hex(int.from_bytes(os.urandom(params), "big"))
+        response = self.assert_rpc_response(method="eth_getBlockTransactionCountByHash", params=params, raises=raises)
+        if not raises:
+            assert self.is_hex(response.result), f"Invalid response: {response.result}"
+
+    @pytest.mark.parametrize(
+        "params, raises",
+        [(32, False), ("earliest", False), ("param", True), (None, True)],
+    )
+    def test_eth_get_block_transaction_count_by_number(self, params, raises):
+        """Verify implemented rpc calls work eth_getBlockTransactionCountByNumber"""
+        if params and isinstance(params, int):
+            params = hex(params)
+        response = self.assert_rpc_response(method="eth_getBlockTransactionCountByNumber", params=params, raises=raises)
+        if not raises:
+            assert self.is_hex(response.result), f"Invalid response: {response.result}"
+
+    @pytest.mark.parametrize(
+        "params, raises",
+        [([32, 1], False), ([32, "earliest"], False), ([16, 1], True), ([], True)],
+    )
+    def test_eth_get_transaction_by_block_hash_and_index(self, params, raises):
+        """Verify implemented rpc calls work eth_getTransactionByBlockHashAndIndex"""
+        if params:
+            params[0] = hex(int.from_bytes(os.urandom(params[0]), "big"))
+        response = self.assert_rpc_response(
+            method="eth_getTransactionByBlockHashAndIndex", params=params, raises=raises
+        )
+        if not raises:
+            assert response.result is None, f"Invalid response: {response.result}"
+
+    @pytest.mark.parametrize(
+        "params, raises",
+        [([32, 1], False), (["earliest", 0], False), (["param", 1], True), ([], True)],
+    )
+    def test_eth_get_transaction_by_block_number_and_index(self, params, raises):
+        """Verify implemented rpc calls work eth_getTransactionByBlockNumberAndIndex"""
+        if params:
+            params = list(map(lambda i: hex(i) if isinstance(i, int) else i, params))
+        response = self.assert_rpc_response(
+            method="eth_getTransactionByBlockNumberAndIndex", params=params, raises=raises
+        )
+        if not raises:
+            assert response.result is None, f"Invalid response: {response.result}"
+
+    @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
+    def test_eth_get_work(self, params, raises):
+        """Verify implemented rpc calls work eth_getWork"""
+        response = self.assert_rpc_response(method="eth_getWork", params=params, raises=raises)
+        if not raises:
+            assert len(response.result) >= 3, f"Invalid response result: {response.result}"
+
+    @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
+    def test_eth_hash_rate(self, params, raises):
+        """Verify implemented rpc calls work eth_hashrate"""
+        response = self.assert_rpc_response(method="eth_hashrate", params=params, raises=raises)
+        if not raises:
+            assert self.is_hex(response.result), f"Invalid response result: {response.result}"
+
+    def test_check_unsupported_methods(self):
+        """Check that endpoint was not implemented"""
+        for method in UNSUPPORTED_METHODS:
+            self.assert_rpc_response(method, err_message=f"method {method} is not supported", raises=True)

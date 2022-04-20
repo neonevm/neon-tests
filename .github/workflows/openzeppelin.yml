@@ -1,0 +1,29 @@
+name: "OpenZeppelin"
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        type: choice
+        default: night-stand
+        required: true
+        description: "Stand name"
+        options:
+          - night-stand
+          - release-stand
+          - devnet-aws
+          - devnet
+          - testnet
+      runner:
+        type: choice
+        default: ubuntu-20.04
+        required: true
+        description: "Where to run tests (our runner or github)"
+        options:
+          - neon-hosted
+          - aws-hosted
+          - ubuntu-20.04
+      jobsNumber:
+        description: "Count of parallel jobs"
+        required: true
+        default: "8"

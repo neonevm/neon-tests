@@ -35,7 +35,7 @@ def upload(source, destination, bucket=NEON_TESTS_NUCKET_NAME):
         else:
             mimetype = "text/plain"
         client.upload_file(str(f), bucket, str(destination / f.relative_to(source)),
-                           ExtraArgs={"ContentType": mimetype, "ACL": "public-read"})
+                           ExtraArgs={"ContentType": mimetype})
 
 
 def list_bucket(directory, bucket=NEON_TESTS_NUCKET_NAME):

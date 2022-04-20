@@ -38,8 +38,7 @@ def prepare_wallets_with_balance(network, count=10, airdrop_amount=20000):
     for i in range(count):
         acc = web3_client.eth.account.create()
         faucet_client.request_neon(acc.address, airdrop_amount)
-        if i in (0, 1, 2):
-            faucet_client.request_neon(acc.address, airdrop_amount)
+        faucet_client.request_neon(acc.address, airdrop_amount)
         private_keys.append(acc.privateKey.hex())
     return private_keys
 

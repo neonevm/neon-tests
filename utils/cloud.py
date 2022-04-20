@@ -3,13 +3,13 @@ import boto3
 import pathlib
 import mimetypes
 
-NEON_TESTS_NUCKET_NAME = os.environ.get("AWS_S3_BUCKET", "neon-test-allure")
+NEON_TESTS_BUCKET_NAME = os.environ.get("AWS_S3_BUCKET", "neon-test-allure")
 
 
 client = boto3.client("s3", region_name=os.environ.get("AWS_REGION", "eu-central-1"))
 
 
-def download(source, destination, bucket=NEON_TESTS_NUCKET_NAME):
+def download(source, destination, bucket=NEON_TESTS_BUCKET_NAME):
     files = list_bucket(source, bucket)
     for f in files:
         dst_file = pathlib.Path(destination) / f["Key"].split(str(source))[1][1:]
@@ -18,7 +18,7 @@ def download(source, destination, bucket=NEON_TESTS_NUCKET_NAME):
         client.download_file(bucket, f["Key"], str(dst_file))
 
 
-def upload(source, destination, bucket=NEON_TESTS_NUCKET_NAME):
+def upload(source, destination, bucket=NEON_TESTS_BUCKET_NAME):
     source = pathlib.Path(source)
     destination = pathlib.Path(destination)
 
@@ -34,7 +34,7 @@ def upload(source, destination, bucket=NEON_TESTS_NUCKET_NAME):
                            ExtraArgs={"ContentType": mimetype})
 
 
-def list_bucket(directory, bucket=NEON_TESTS_NUCKET_NAME):
+def list_bucket(directory, bucket=NEON_TESTS_BUCKET_NAME):
     result = client.list_objects_v2(
         Bucket=bucket,
         Prefix=str(directory)

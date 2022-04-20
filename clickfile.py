@@ -7,9 +7,8 @@ import shutil
 import sys
 import subprocess
 import pathlib
-import time
 from multiprocessing.dummy import Pool
-from typing import Dict, Tuple, List
+from typing import Dict, List
 
 try:
     import click
@@ -285,7 +284,7 @@ def get_allure_history(name: str, network: str, destination: str = "./allure-res
     path = pathlib.Path(name) / network / branch
 
     runs = []
-    previous_runs = cloud.client.list_objects_v2(Bucket=cloud.NEON_TESTS_NUCKET_NAME,
+    previous_runs = cloud.client.list_objects_v2(Bucket=cloud.NEON_TESTS_BUCKET_NAME,
                                                  Prefix=f"{path}/",
                                                  Delimiter="/").get("CommonPrefixes", [])
     for run in previous_runs:

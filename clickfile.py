@@ -7,6 +7,7 @@ import shutil
 import sys
 import subprocess
 import pathlib
+import time
 from multiprocessing.dummy import Pool
 from typing import Dict, Tuple, List
 
@@ -40,6 +41,8 @@ def prepare_wallets_with_balance(network, count=10, airdrop_amount=20000):
         faucet_client.request_neon(acc.address, airdrop_amount)
         faucet_client.request_neon(acc.address, airdrop_amount)
         private_keys.append(acc.privateKey.hex())
+        time.sleep(10)
+        print(f"Address: {acc.address} has amount: {web3_client.get_balance(acc.address)}")
     return private_keys
 
 
@@ -63,6 +66,7 @@ def run_openzeppelin_tests(network, jobs=8):
         out = subprocess.run(f"npx hardhat test {file_name}", shell=True, cwd=cwd, capture_output=True, env=env)
         stdout = out.stdout.decode()
         stderr = out.stderr.decode()
+        print(f"Test {file_name} finished with code {out.returncode}")
         print(stdout)
         print(stderr)
         keys_env.append(keys)

@@ -28,7 +28,14 @@ def upload(source, destination, bucket=NEON_TESTS_NUCKET_NAME):
     for f in source.glob("**/*"):
         if not f.is_file():
             continue
-        client.upload_file(str(f), bucket, str(destination / f.relative_to(source)))
+        if f.name.endswith("html"):
+            mimetype = "text/html"
+        elif f.name.endswith("json"):
+            mimetype = "application/json"
+        else:
+            mimetype = "text/plain"
+        client.upload_file(str(f), bucket, str(destination / f.relative_to(source)),
+                           ExtraArgs={"ContentType": mimetype, "ACL": "public-read"})
 
 
 def list_bucket(directory, bucket=NEON_TESTS_NUCKET_NAME):

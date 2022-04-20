@@ -32,7 +32,7 @@ class JsonRpcRequestParams(List):
 
 
 @dataclass
-class JsonRpcRequest():
+class JsonRpcRequest:
     id: int
     method: str
     params: JsonRpcRequestParams

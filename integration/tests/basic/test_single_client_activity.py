@@ -3,7 +3,8 @@ import pytest
 
 from integration.tests.basic.helpers.basic import WAITING_FOR_ERC20, WAITING_FOR_MS, BasicTests
 from integration.tests.basic.test_data.input_data import InputData
-'''
+
+"""
 1.	Create account and get balance
 2.	Check tokens in wallet
 	 - neon
@@ -61,7 +62,7 @@ from integration.tests.basic.test_data.input_data import InputData
 Выделение памяти в транзакции больше лимита, нужны специальные контракты
 Запись в storage больше лимита, лимит ~9мб
 stack overflow и stack underflow
-'''
+"""
 
 FAUCET_TEST_DATA = [(1), (5), (999), (1_0000), (20_000)]
 FAUCET_REQUEST_MESSAGE = "requesting faucet for Neon"
@@ -80,10 +81,8 @@ class TestSingleClient(BasicTests):
         """Check tokens in wallet: neon"""
         account = self.create_account()
         with allure.step(FAUCET_REQUEST_MESSAGE):
-            self.request_faucet_neon(account.address,
-                                     InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-        self.assert_balance(account.address,
-                            InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+            self.request_faucet_neon(account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+        self.assert_balance(account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
 
     @pytest.mark.skip(WAITING_FOR_MS)
     def test_check_tokens_in_wallet_spl(self):
@@ -114,8 +113,5 @@ class TestSingleClient(BasicTests):
             with allure.step(FAUCET_REQUEST_MESSAGE):
                 self.request_faucet_neon(account.address, amount)
             with allure.step(FAUCET_REQUEST_MESSAGE):
-                self.request_faucet_neon(
-                    account.address, InputData.FAUCET_2ND_REQUEST_AMOUNT.value)
-            self.assert_balance(
-                account.address,
-                amount + InputData.FAUCET_2ND_REQUEST_AMOUNT.value)
+                self.request_faucet_neon(account.address, InputData.FAUCET_2ND_REQUEST_AMOUNT.value)
+            self.assert_balance(account.address, amount + InputData.FAUCET_2ND_REQUEST_AMOUNT.value)

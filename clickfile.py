@@ -29,7 +29,7 @@ with open("./envs.json", "r") as f:
     networks = json.load(f)
 
 
-def prepare_wallets_with_balance(network, count=10, airdrop_amount=20000):
+def prepare_wallets_with_balance(network, count=8, airdrop_amount=20000):
     print(f"Preparing {count} wallets with balances")
     settings = networks[network]
     web3_client = web3client.NeonWeb3Client(settings["proxy_url"], settings["network_id"])
@@ -39,10 +39,13 @@ def prepare_wallets_with_balance(network, count=10, airdrop_amount=20000):
     for i in range(count):
         acc = web3_client.eth.account.create()
         faucet_client.request_neon(acc.address, airdrop_amount)
-        faucet_client.request_neon(acc.address, airdrop_amount)
+        if i == 0:
+            for _ in range(2):
+                faucet_client.request_neon(acc.address, airdrop_amount)
         private_keys.append(acc.privateKey.hex())
-        time.sleep(10)
-        print(f"Address: {acc.address} has amount: {web3_client.get_balance(acc.address)}")
+        # time.sleep(10)
+        # print(f"Address: {acc.address} has amount: {web3_client.get_balance(acc.address)}")
+    print("All private keys: ", ",".join(private_keys))
     return private_keys
 
 

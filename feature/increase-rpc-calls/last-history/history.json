@@ -1,0 +1,2453 @@
+{
+  "589444b6d8cb0427d7f65e3fe7e2de82" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "deec1704212c5012",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/deec1704212c5012",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465136279,
+        "stop" : 1650465136421,
+        "duration" : 142
+      }
+    } ]
+  },
+  "2b50d4abc71cfc203a7db448b505033d" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "eea7b6a4a3b6d245",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/eea7b6a4a3b6d245",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465132718,
+        "stop" : 1650465132859,
+        "duration" : 141
+      }
+    } ]
+  },
+  "88cfc7dffd9f93fd694ef5e449f34462" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "ed7d8e88dafec904",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/ed7d8e88dafec904",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465290950,
+        "stop" : 1650465292379,
+        "duration" : 1429
+      }
+    } ]
+  },
+  "9f660bf0f30f0013c682a0b56cdecd25" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "5a60cf225cc2931d",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/5a60cf225cc2931d",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465137158,
+        "stop" : 1650465137300,
+        "duration" : 142
+      }
+    } ]
+  },
+  "56f72685893e02235e13a169de712d39" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 1,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "3086a6e6118b04b5",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/3086a6e6118b04b5",
+      "status" : "skipped",
+      "statusDetails" : "Skipped: ERC20 is in progress",
+      "time" : {
+        "start" : 1650465322022,
+        "stop" : 1650465322022,
+        "duration" : 0
+      }
+    } ]
+  },
+  "7f343b255d2ac488646a4cab0015c8d9" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "ac903cc0b5bc33a3",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/ac903cc0b5bc33a3",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465128161,
+        "stop" : 1650465128306,
+        "duration" : 145
+      }
+    } ]
+  },
+  "ac02473504a28c218f3d4c3fd395bf31" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "fbd00a543854cfe2",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/fbd00a543854cfe2",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465136866,
+        "stop" : 1650465137007,
+        "duration" : 141
+      }
+    } ]
+  },
+  "717a347745bd9b5213e756607aea0f53" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "740302aeb12a911f",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/740302aeb12a911f",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465155178,
+        "stop" : 1650465163439,
+        "duration" : 8261
+      }
+    } ]
+  },
+  "daf7258f3cf6825cc5e2b085d66ca2d2" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "40cdd2fbf3af29d2",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/40cdd2fbf3af29d2",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465130810,
+        "stop" : 1650465130982,
+        "duration" : 172
+      }
+    } ]
+  },
+  "e82bc8ec0a0c64512fd85f92ea8059d4" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "cb98d7066c43ae3f",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/cb98d7066c43ae3f",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465136716,
+        "stop" : 1650465136858,
+        "duration" : 142
+      }
+    } ]
+  },
+  "ca4c867e7fdd0cb620a5e56dde71728a" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "840898c6938bd24a",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/840898c6938bd24a",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465134818,
+        "stop" : 1650465134959,
+        "duration" : 141
+      }
+    } ]
+  },
+  "0cee9969988246b6eef0ce962920c407" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "24e1d6f9102ac466",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/24e1d6f9102ac466",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465319267,
+        "stop" : 1650465321266,
+        "duration" : 1999
+      }
+    } ]
+  },
+  "ce6e3ac4976ce2310f207f2c6e19b836" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "da191a878d2a207",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/da191a878d2a207",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465131132,
+        "stop" : 1650465131274,
+        "duration" : 142
+      }
+    } ]
+  },
+  "54f6ca162977791c36638b336fca1b62" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "44595965b008e415",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/44595965b008e415",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465135253,
+        "stop" : 1650465135395,
+        "duration" : 142
+      }
+    } ]
+  },
+  "a5f980ee60faf9559323e0fa80b7e968" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "5c76d9bcd0c3ae01",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/5c76d9bcd0c3ae01",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465138178,
+        "stop" : 1650465138321,
+        "duration" : 143
+      }
+    } ]
+  },
+  "a7d387695931d440e6ccbab7048fba56" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "a0bbf07e1306377e",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/a0bbf07e1306377e",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465121153,
+        "stop" : 1650465121971,
+        "duration" : 818
+      }
+    } ]
+  },
+  "31a962a87363285a08920ecfb25de661" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 1,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "b0e0ff7be6950df9",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/b0e0ff7be6950df9",
+      "status" : "skipped",
+      "statusDetails" : "Skipped: ERC20 is in progress",
+      "time" : {
+        "start" : 1650465319264,
+        "stop" : 1650465319264,
+        "duration" : 0
+      }
+    } ]
+  },
+  "fa485d17d44509a71f41427fdbfa9484" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "652e37ef200d6",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/652e37ef200d6",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465135545,
+        "stop" : 1650465135687,
+        "duration" : 142
+      }
+    } ]
+  },
+  "c5826f9b8aa0c0525cc67c7532dc5453" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "4a5dc510e75cec19",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/4a5dc510e75cec19",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465138619,
+        "stop" : 1650465138762,
+        "duration" : 143
+      }
+    } ]
+  },
+  "1d5febe8ea5a8791c86afb2908da813a" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "c55708e3a563ee16",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/c55708e3a563ee16",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465137888,
+        "stop" : 1650465138030,
+        "duration" : 142
+      }
+    } ]
+  },
+  "af974bd94d6e38c7eef99511ef2265ba" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "b47f6d62103a4bcf",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/b47f6d62103a4bcf",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465118515,
+        "stop" : 1650465118673,
+        "duration" : 158
+      }
+    } ]
+  },
+  "59677eb9d4cda774e3491837cad0f877" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "628ec5da046a1b8a",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/628ec5da046a1b8a",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465139932,
+        "stop" : 1650465140074,
+        "duration" : 142
+      }
+    } ]
+  },
+  "3497754a9266c0371bd734f52761b2e8" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "421c732624c0766e",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/421c732624c0766e",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465119504,
+        "stop" : 1650465120324,
+        "duration" : 820
+      }
+    } ]
+  },
+  "13cbdcddd61b7a0cf129313a91b6a91b" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "aa773361ed6e63f9",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/aa773361ed6e63f9",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465131424,
+        "stop" : 1650465131569,
+        "duration" : 145
+      }
+    } ]
+  },
+  "ba79a40b9ae8e64dc94d373c886372be" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "c8e031ca38c2b23f",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/c8e031ca38c2b23f",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465118370,
+        "stop" : 1650465118511,
+        "duration" : 141
+      }
+    } ]
+  },
+  "cfd0d4a54284464cdb987de2f64a9b8b" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "cf05dacdc1a53ba1",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/cf05dacdc1a53ba1",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465118677,
+        "stop" : 1650465119500,
+        "duration" : 823
+      }
+    } ]
+  },
+  "94e21b6db44ad686ded61f4048e3c844" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "fefc29df7619bc01",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/fefc29df7619bc01",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465131278,
+        "stop" : 1650465131420,
+        "duration" : 142
+      }
+    } ]
+  },
+  "c381dd6451c427f550d6b95320dacf99" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "72fe843d9f6b809a",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/72fe843d9f6b809a",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465179961,
+        "stop" : 1650465188357,
+        "duration" : 8396
+      }
+    } ]
+  },
+  "66ce282fafdd7b7043db7c3086b0f9e4" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "d7a7ffda43cb28ed",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/d7a7ffda43cb28ed",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465127968,
+        "stop" : 1650465128158,
+        "duration" : 190
+      }
+    } ]
+  },
+  "add1442b68e6524f05bf1ac4bc4ebca3" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "7591818ebb333f19",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/7591818ebb333f19",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465227597,
+        "stop" : 1650465242359,
+        "duration" : 14762
+      }
+    } ]
+  },
+  "76b5ed20e40355cf6d1d2183ef7196b1" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 1,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "34428293b1726fbe",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/34428293b1726fbe",
+      "status" : "skipped",
+      "statusDetails" : "Skipped: waiting for MS",
+      "time" : {
+        "start" : 1650465155173,
+        "stop" : 1650465155173,
+        "duration" : 0
+      }
+    } ]
+  },
+  "127f84bfcc847fd23716f1b8405e9ca2" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "d0e60125fdab17a0",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/d0e60125fdab17a0",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465134382,
+        "stop" : 1650465134523,
+        "duration" : 141
+      }
+    } ]
+  },
+  "a7256ff9b44f9a791de94616eb920116" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 1,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "669681f475370f34",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/669681f475370f34",
+      "status" : "skipped",
+      "statusDetails" : "Skipped: waiting for MS",
+      "time" : {
+        "start" : 1650465319259,
+        "stop" : 1650465319259,
+        "duration" : 0
+      }
+    } ]
+  },
+  "5d6a359ca08f12fb45de905efb435400" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "97590eb62ecd983b",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/97590eb62ecd983b",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465117370,
+        "stop" : 1650465117511,
+        "duration" : 141
+      }
+    } ]
+  },
+  "ce7c67466b838afbede55fa8828139e2" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "39bc6772d6ddfd7b",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/39bc6772d6ddfd7b",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465132449,
+        "stop" : 1650465132713,
+        "duration" : 264
+      }
+    } ]
+  },
+  "2a7f990f11e37bf90ef422c40a4c1ae9" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "c0adc54dc040e010",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/c0adc54dc040e010",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465128456,
+        "stop" : 1650465128668,
+        "duration" : 212
+      }
+    } ]
+  },
+  "d4d7d4347a6af4161af9f3d8488b971b" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "9d4967a3017222d6",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/9d4967a3017222d6",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465137011,
+        "stop" : 1650465137154,
+        "duration" : 143
+      }
+    } ]
+  },
+  "ed5399388ea476ba95f8c72f851fdba0" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "f9927518e4fdae70",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/f9927518e4fdae70",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465127774,
+        "stop" : 1650465127964,
+        "duration" : 190
+      }
+    } ]
+  },
+  "0ef9bcb558d8c5d106b77162453ca288" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "86d8780bb4c3dea4",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/86d8780bb4c3dea4",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465133946,
+        "stop" : 1650465134087,
+        "duration" : 141
+      }
+    } ]
+  },
+  "13a3ed73f9e0b7c7a5dffbf23c373675" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "1658c8ac2b0dc640",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/1658c8ac2b0dc640",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465117515,
+        "stop" : 1650465118366,
+        "duration" : 851
+      }
+    } ]
+  },
+  "4f05c3f7d3a631faab3b58116337ee7e" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "f62d8d8132133506",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/f62d8d8132133506",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465123664,
+        "stop" : 1650465124500,
+        "duration" : 836
+      }
+    } ]
+  },
+  "25ef7c2262f54feb5e677b1b168eff30" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "4914538396ea2ed8",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/4914538396ea2ed8",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465294126,
+        "stop" : 1650465295877,
+        "duration" : 1751
+      }
+    } ]
+  },
+  "fe85e72f428568b674e85657cad12947" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "ba21af1858ec5367",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/ba21af1858ec5367",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465137450,
+        "stop" : 1650465137595,
+        "duration" : 145
+      }
+    } ]
+  },
+  "4de8061d47cc86c6297ca55d762c1db3" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "2b5fa52d0f00993c",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/2b5fa52d0f00993c",
+      "status" : "passed",
+      "statusDetails" : "XPASS",
+      "time" : {
+        "start" : 1650465321271,
+        "stop" : 1650465321272,
+        "duration" : 1
+      }
+    } ]
+  },
+  "1bc5aa1c213d1659261ab72104bb49e0" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "653c6dc36b6742f3",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/653c6dc36b6742f3",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465134091,
+        "stop" : 1650465134233,
+        "duration" : 142
+      }
+    } ]
+  },
+  "7368d9a7378b6ea5d4900d3c8ee27cb3" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "3e29c5d4d20842fc",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/3e29c5d4d20842fc",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465317909,
+        "stop" : 1650465319257,
+        "duration" : 1348
+      }
+    } ]
+  },
+  "e672280dbcbdd446d8662c44bed0208e" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "6161f858a2ca8333",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/6161f858a2ca8333",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465242363,
+        "stop" : 1650465257113,
+        "duration" : 14750
+      }
+    } ]
+  },
+  "8c3f736fc761b49410ecf5a4262a095f" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "35b88b37f935da15",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/35b88b37f935da15",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465133616,
+        "stop" : 1650465133773,
+        "duration" : 157
+      }
+    } ]
+  },
+  "b8f508ee5201276cfd41ffb825d00b2d" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "cf4767d4be1cc977",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/cf4767d4be1cc977",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465288916,
+        "stop" : 1650465290946,
+        "duration" : 2030
+      }
+    } ]
+  },
+  "e8c9b79105e0f207e82f3454f91fb95c" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "5aa9a88f2c9da807",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/5aa9a88f2c9da807",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465131573,
+        "stop" : 1650465131714,
+        "duration" : 141
+      }
+    } ]
+  },
+  "32d990776e43f818dc65096b66611852" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "cbad0e574e328395",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/cbad0e574e328395",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465188361,
+        "stop" : 1650465197120,
+        "duration" : 8759
+      }
+    } ]
+  },
+  "af04b258ffb4f7ddaf96f9fe398a0299" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "f58958f75d4213e1",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/f58958f75d4213e1",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465125612,
+        "stop" : 1650465127770,
+        "duration" : 2158
+      }
+    } ]
+  },
+  "e0bcff1a2ec127aa3a19055ce29f89c4" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "5bb6d525b1a2f42b",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/5bb6d525b1a2f42b",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465137743,
+        "stop" : 1650465137884,
+        "duration" : 141
+      }
+    } ]
+  },
+  "239a684e78b3b13b423a468fb97b7a64" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "e689c9f8446ce8ba",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/e689c9f8446ce8ba",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465135836,
+        "stop" : 1650465135983,
+        "duration" : 147
+      }
+    } ]
+  },
+  "a2498bd08007623f3f69aff73342aa8c" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "99a16ac59231f955",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/99a16ac59231f955",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465125468,
+        "stop" : 1650465125608,
+        "duration" : 140
+      }
+    } ]
+  },
+  "78de28628b77515e5629efa230c3bded" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "2d721e21a2257d3f",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/2d721e21a2257d3f",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465212550,
+        "stop" : 1650465227593,
+        "duration" : 15043
+      }
+    } ]
+  },
+  "8eb4b5295325a689125b2a49d2b9b42a" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "b7aa6c69ea3e4247",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/b7aa6c69ea3e4247",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465125323,
+        "stop" : 1650465125464,
+        "duration" : 141
+      }
+    } ]
+  },
+  "0825cb5291faf6f9ba34eb8cb1f2c36d" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "473eb1946478c8fd",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/473eb1946478c8fd",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465136133,
+        "stop" : 1650465136275,
+        "duration" : 142
+      }
+    } ]
+  },
+  "f3f68b383613d6dd766f390ae24df714" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 1,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "7b8b955010e7059b",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/7b8b955010e7059b",
+      "status" : "skipped",
+      "statusDetails" : "Skipped: waiting for MS",
+      "time" : {
+        "start" : 1650465316392,
+        "stop" : 1650465316392,
+        "duration" : 0
+      }
+    } ]
+  },
+  "7414a102f68be6a72f24569f8e6cae78" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "123266a59461647c",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/123266a59461647c",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465322025,
+        "stop" : 1650465323283,
+        "duration" : 1258
+      }
+    } ]
+  },
+  "d5b220b2a1a7b98c9564851e950b238f" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "996dbd79ba09b67b",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/996dbd79ba09b67b",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465132303,
+        "stop" : 1650465132445,
+        "duration" : 142
+      }
+    } ]
+  },
+  "8dab86c501a9c7bedd286e6a3e8e8a14" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "c6ac5169321844b9",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/c6ac5169321844b9",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465135690,
+        "stop" : 1650465135832,
+        "duration" : 142
+      }
+    } ]
+  },
+  "b38bfbdbbfc99ff480427b05876dee14" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "7055bebd20828040",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/7055bebd20828040",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465137304,
+        "stop" : 1650465137446,
+        "duration" : 142
+      }
+    } ]
+  },
+  "eb188a8a8530fd516b89b167939c43a3" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "2937da00c515f890",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/2937da00c515f890",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465138034,
+        "stop" : 1650465138175,
+        "duration" : 141
+      }
+    } ]
+  },
+  "e934ff18d7963eef63124ce75e94c2d0" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "9fae701ac143b109",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/9fae701ac143b109",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465128817,
+        "stop" : 1650465130636,
+        "duration" : 1819
+      }
+    } ]
+  },
+  "4059ad62d6b9e4bb187821c89296c4cf" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 1,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "b3fa56dc677a76eb",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/b3fa56dc677a76eb",
+      "status" : "skipped",
+      "statusDetails" : "Skipped: ERC20 is in progress",
+      "time" : {
+        "start" : 1650465155175,
+        "stop" : 1650465155175,
+        "duration" : 0
+      }
+    } ]
+  },
+  "959a9bb9a8535680249ed0387922ea0c" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "cadf37decec6ffd",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/cadf37decec6ffd",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465171694,
+        "stop" : 1650465179957,
+        "duration" : 8263
+      }
+    } ]
+  },
+  "d9f6086fa9f7d0f338cce50b5b9013e9" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "344a60738d40c13c",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/344a60738d40c13c",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465197123,
+        "stop" : 1650465212546,
+        "duration" : 15423
+      }
+    } ]
+  },
+  "50403a158e8b649c9a310e2cecce7018" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "282558c0e6ca6f2b",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/282558c0e6ca6f2b",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465133470,
+        "stop" : 1650465133612,
+        "duration" : 142
+      }
+    } ]
+  },
+  "4e69597368a146947ff66a7bab892077" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "a9f92f7081e6dab9",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/a9f92f7081e6dab9",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465292383,
+        "stop" : 1650465294123,
+        "duration" : 1740
+      }
+    } ]
+  },
+  "bf0d5cd9c5933cb5af1285cad50e866f" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "11e8db0920fe2743",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/11e8db0920fe2743",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465316396,
+        "stop" : 1650465317905,
+        "duration" : 1509
+      }
+    } ]
+  },
+  "76112fbb056e1dcfd9035c6ba06424d6" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "100c30e2bb7b357b",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/100c30e2bb7b357b",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465134963,
+        "stop" : 1650465135104,
+        "duration" : 141
+      }
+    } ]
+  },
+  "fdd8e66d58f4ac6bf1eb5234ea790ef7" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "78e9734f6dca898b",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/78e9734f6dca898b",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465133323,
+        "stop" : 1650465133465,
+        "duration" : 142
+      }
+    } ]
+  },
+  "f4ebe9e67d181569d581655b79b638ec" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 1,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "9a04c9659a9a0748",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/9a04c9659a9a0748",
+      "status" : "skipped",
+      "statusDetails" : "Skipped: waiting for MS",
+      "time" : {
+        "start" : 1650465321268,
+        "stop" : 1650465321268,
+        "duration" : 0
+      }
+    } ]
+  },
+  "1e413a330658bd038b6d2d8f46a07e59" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 1,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "25c20b5a9f0dcf32",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/25c20b5a9f0dcf32",
+      "status" : "skipped",
+      "statusDetails" : "Skipped: waiting for MS",
+      "time" : {
+        "start" : 1650465319263,
+        "stop" : 1650465319263,
+        "duration" : 0
+      }
+    } ]
+  },
+  "ba688a0337038bec5d1d6ce5d5fab4d3" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "ee09ecaebe51a26e",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/ee09ecaebe51a26e",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465136424,
+        "stop" : 1650465136567,
+        "duration" : 143
+      }
+    } ]
+  },
+  "4d669c097341337c698431613a45edee" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "85cccda00784ba8c",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/85cccda00784ba8c",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465134237,
+        "stop" : 1650465134378,
+        "duration" : 141
+      }
+    } ]
+  },
+  "479d1b623a032b58b823f1c32b2cd95a" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "59a8c2bd93f3bd90",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/59a8c2bd93f3bd90",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465130986,
+        "stop" : 1650465131128,
+        "duration" : 142
+      }
+    } ]
+  },
+  "9211c1f49719d043452be9f1dce4fc31" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "53cda9c06ab77259",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/53cda9c06ab77259",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465154344,
+        "stop" : 1650465155171,
+        "duration" : 827
+      }
+    } ]
+  },
+  "d44d22e156aacf65c25dadb247bfb1e4" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "d340bd08a8fa685c",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/d340bd08a8fa685c",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465163443,
+        "stop" : 1650465171690,
+        "duration" : 8247
+      }
+    } ]
+  },
+  "87d2932d0e542266b714b79e2b22b40d" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "4ea195f8a3384cf7",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/4ea195f8a3384cf7",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465135108,
+        "stop" : 1650465135249,
+        "duration" : 141
+      }
+    } ]
+  },
+  "58b7a16e60003057aaf40e9a7e054d9a" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 1,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "fb9a1c1f5f6ce354",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/fb9a1c1f5f6ce354",
+      "status" : "skipped",
+      "statusDetails" : "Skipped: waiting for MS",
+      "time" : {
+        "start" : 1650465319261,
+        "stop" : 1650465319261,
+        "duration" : 0
+      }
+    } ]
+  },
+  "51937ecf7e21817df6fe4f767ce7e03a" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "57d3159bd454e900",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/57d3159bd454e900",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465128310,
+        "stop" : 1650465128452,
+        "duration" : 142
+      }
+    } ]
+  },
+  "37f70085d78d9084938dae2b1de5baee" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "4b451e6a53387e1f",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/4b451e6a53387e1f",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465138471,
+        "stop" : 1650465138615,
+        "duration" : 144
+      }
+    } ]
+  },
+  "2ed4b18426b4f6fb3ac52672d5acc4d6" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "daaa28dd9e1722d7",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/daaa28dd9e1722d7",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465133009,
+        "stop" : 1650465133161,
+        "duration" : 152
+      }
+    } ]
+  },
+  "afa9b749d07c73f10f21b8307c9f3c94" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "b1db04afdc11133e",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/b1db04afdc11133e",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465120328,
+        "stop" : 1650465121149,
+        "duration" : 821
+      }
+    } ]
+  },
+  "d17db8ddbeb107c5bcccc887a8b1cac7" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "ad80f43bc3af450b",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/ad80f43bc3af450b",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465138324,
+        "stop" : 1650465138467,
+        "duration" : 143
+      }
+    } ]
+  },
+  "9caad29495af841d076ecc608b82cf74" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "99323cc42e72d09a",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/99323cc42e72d09a",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465134672,
+        "stop" : 1650465134814,
+        "duration" : 142
+      }
+    } ]
+  },
+  "df42c909564bfc865b9e0706f85bce4e" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 1,
+      "passed" : 0,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "c8a44e8e5230e9c8",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/c8a44e8e5230e9c8",
+      "status" : "skipped",
+      "statusDetails" : "Skipped: waiting for MS",
+      "time" : {
+        "start" : 1650465322020,
+        "stop" : 1650465322020,
+        "duration" : 0
+      }
+    } ]
+  },
+  "831824c76ae313aa8f568941ea1a2a2a" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "e4f620d10a8f05d",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/e4f620d10a8f05d",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465134527,
+        "stop" : 1650465134668,
+        "duration" : 141
+      }
+    } ]
+  },
+  "e0fb2960146feb86d2510769aeee9644" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "4ce851872d18f637",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/4ce851872d18f637",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465311991,
+        "stop" : 1650465314111,
+        "duration" : 2120
+      }
+    } ]
+  },
+  "78e1f6e9046c2303baac92462de35a96" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "4c0b20082bebe5c0",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/4c0b20082bebe5c0",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465133165,
+        "stop" : 1650465133319,
+        "duration" : 154
+      }
+    } ]
+  },
+  "5d3ceeb9019300f7d94cfe13bd8ef5b5" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "a785443afb653a86",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/a785443afb653a86",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465137598,
+        "stop" : 1650465137739,
+        "duration" : 141
+      }
+    } ]
+  },
+  "2168825788a223c5629710cc60b9314a" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "4e3cc2df70da9098",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/4e3cc2df70da9098",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465135399,
+        "stop" : 1650465135541,
+        "duration" : 142
+      }
+    } ]
+  },
+  "fca82894e884d91c1ed1e9696254fe46" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "fea8a0de8579cafe",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/fea8a0de8579cafe",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465121975,
+        "stop" : 1650465122842,
+        "duration" : 867
+      }
+    } ]
+  },
+  "78b81aa37ab41852c2bb126ff371e3fe" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "9323774e02438119",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/9323774e02438119",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465139057,
+        "stop" : 1650465139199,
+        "duration" : 142
+      }
+    } ]
+  },
+  "6d7ec96a567511c71f049794e96f1b0d" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "e200a4806c4dbbbb",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/e200a4806c4dbbbb",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465154184,
+        "stop" : 1650465154341,
+        "duration" : 157
+      }
+    } ]
+  },
+  "868c0b51957a148cb3db5eb11bd8a663" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "5cf554bfd90074dd",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/5cf554bfd90074dd",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465132158,
+        "stop" : 1650465132299,
+        "duration" : 141
+      }
+    } ]
+  },
+  "ef5cac8f6840f7a5acfc554ee896ad7a" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "ec25568864090de1",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/ec25568864090de1",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465117047,
+        "stop" : 1650465117366,
+        "duration" : 319
+      }
+    } ]
+  },
+  "b8f842096bc774361fb83c1b6571422c" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "ebe8aaa78e06625e",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/ebe8aaa78e06625e",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465321274,
+        "stop" : 1650465322018,
+        "duration" : 744
+      }
+    } ]
+  },
+  "5d5599c3f6936085b5c18a3dc9e433e0" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "7affed0eb379d656",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/7affed0eb379d656",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465138766,
+        "stop" : 1650465138907,
+        "duration" : 141
+      }
+    } ]
+  },
+  "ff2420b6a43fdd9d117c55d476cfa1b5" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "17ba952507722449",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/17ba952507722449",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465314114,
+        "stop" : 1650465316390,
+        "duration" : 2276
+      }
+    } ]
+  },
+  "927e294cd5a6e4415b76145367e9ffb1" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "3c8ff47e5bbf2020",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/3c8ff47e5bbf2020",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465139492,
+        "stop" : 1650465139635,
+        "duration" : 143
+      }
+    } ]
+  },
+  "fd5b3b1e718afadf2a28256b1f920c1e" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "e6754f3702095299",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/e6754f3702095299",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465323287,
+        "stop" : 1650465324535,
+        "duration" : 1248
+      }
+    } ]
+  },
+  "3dbb2f627f9062a08fed03d02d53cb61" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "2524c5fb1daa9b2",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/2524c5fb1daa9b2",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465139638,
+        "stop" : 1650465139783,
+        "duration" : 145
+      }
+    } ]
+  },
+  "3014f3e9486aac8d8effce17fcb3f79e" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "3473c6a8a2847d42",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/3473c6a8a2847d42",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465131718,
+        "stop" : 1650465131864,
+        "duration" : 146
+      }
+    } ]
+  },
+  "39b57d571bb3aede92af15a1e857fa9d" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "67ddbcfb8b1239b0",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/67ddbcfb8b1239b0",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465131867,
+        "stop" : 1650465132009,
+        "duration" : 142
+      }
+    } ]
+  },
+  "468859a02cbbf36eb35dac8ca17be612" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "11faa6f460c87900",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/11faa6f460c87900",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465309785,
+        "stop" : 1650465311987,
+        "duration" : 2202
+      }
+    } ]
+  },
+  "52ff6a992353b0d11428b2b141ef5cf8" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "c05053a05323a32b",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/c05053a05323a32b",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465139786,
+        "stop" : 1650465139928,
+        "duration" : 142
+      }
+    } ]
+  },
+  "443275ec4f0a0fb0241835fe28499e8f" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "604c35bc47602b55",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/604c35bc47602b55",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465132864,
+        "stop" : 1650465133005,
+        "duration" : 141
+      }
+    } ]
+  },
+  "bfe2f3ae888bff20fdaa316f8766a82d" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "654d3c3912b59b85",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/654d3c3912b59b85",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465130639,
+        "stop" : 1650465130806,
+        "duration" : 167
+      }
+    } ]
+  },
+  "5872377986bf0de196ee1cf0fb4790a9" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "91e435a454bf9122",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/91e435a454bf9122",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465122846,
+        "stop" : 1650465123661,
+        "duration" : 815
+      }
+    } ]
+  },
+  "80b55a83ba9175d7be5eb0c08602650f" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "2e86a1a4aaadd52b",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/2e86a1a4aaadd52b",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465138911,
+        "stop" : 1650465139053,
+        "duration" : 142
+      }
+    } ]
+  },
+  "ec4d589fe7cd0be7847b6eb98e009eab" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "5a699df8309caf20",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/5a699df8309caf20",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465124503,
+        "stop" : 1650465125319,
+        "duration" : 816
+      }
+    } ]
+  },
+  "b4d294d5753981674577da178262c4ff" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "4fc97fc308de3b59",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/4fc97fc308de3b59",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465139203,
+        "stop" : 1650465139344,
+        "duration" : 141
+      }
+    } ]
+  },
+  "d2351efecd0d51a221e6cd44961947bb" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "a49ccd6d01c6b437",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/a49ccd6d01c6b437",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465136570,
+        "stop" : 1650465136712,
+        "duration" : 142
+      }
+    } ]
+  },
+  "c8e74f68a4ca72a260d5e4eda8fb8ed2" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "533e6d7ae8a9f0a5",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/533e6d7ae8a9f0a5",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465133777,
+        "stop" : 1650465133943,
+        "duration" : 166
+      }
+    } ]
+  },
+  "aaa2c15dd50eece2b3ad0a525a1f21de" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "aef6601b2d7af5d1",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/aef6601b2d7af5d1",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465135986,
+        "stop" : 1650465136130,
+        "duration" : 144
+      }
+    } ]
+  },
+  "4cbf9d44c2b4194642b65ff82f1e9945" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "e7fda4714cf9d34d",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/e7fda4714cf9d34d",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465132012,
+        "stop" : 1650465132154,
+        "duration" : 142
+      }
+    } ]
+  },
+  "dff4b1ef89f876be6ba07507056fb986" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "38f552e1981dc298",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/38f552e1981dc298",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465128672,
+        "stop" : 1650465128813,
+        "duration" : 141
+      }
+    } ]
+  },
+  "9273dabdfee51b2500c240e649490709" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "565da1d338bc344d",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/565da1d338bc344d",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465257117,
+        "stop" : 1650465274876,
+        "duration" : 17759
+      }
+    } ]
+  },
+  "199ff8a37ba7eccafdae4cc3e3bdc181" : {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 1,
+      "unknown" : 0,
+      "total" : 1
+    },
+    "items" : [ {
+      "uid" : "280bf4a0029023f5",
+      "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/280bf4a0029023f5",
+      "status" : "passed",
+      "time" : {
+        "start" : 1650465139347,
+        "stop" : 1650465139488,
+        "duration" : 141
+      }
+    } ]
+  }
+}

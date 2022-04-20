@@ -1,0 +1,391 @@
+{
+  "uid" : "9fae701ac143b109",
+  "name" : "test_eth_get_block_by_number_via_numbers",
+  "fullName" : "integration.tests.basic.test_rpc_calls.TestRpcCalls#test_eth_get_block_by_number_via_numbers",
+  "historyId" : "e934ff18d7963eef63124ce75e94c2d0",
+  "time" : {
+    "start" : 1650465128817,
+    "stop" : 1650465130636,
+    "duration" : 1819
+  },
+  "description" : "Verify implemented rpc calls work eth_getBlockByNumber",
+  "descriptionHtml" : "<p>Verify implemented rpc calls work eth_getBlockByNumber</p>\n",
+  "status" : "passed",
+  "flaky" : false,
+  "newFailed" : false,
+  "newBroken" : false,
+  "newPassed" : false,
+  "retriesCount" : 0,
+  "retriesStatusChange" : false,
+  "beforeStages" : [ {
+    "name" : "pytestconfig",
+    "time" : {
+      "start" : 1650465108458,
+      "stop" : 1650465108459,
+      "duration" : 1
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "web3_client",
+    "time" : {
+      "start" : 1650465108459,
+      "stop" : 1650465108460,
+      "duration" : 1
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "allure_environment",
+    "time" : {
+      "start" : 1650465108460,
+      "stop" : 1650465109361,
+      "duration" : 901
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "operator",
+    "time" : {
+      "start" : 1650465109362,
+      "stop" : 1650465109362,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "json_rpc_client",
+    "time" : {
+      "start" : 1650465109362,
+      "stop" : 1650465109362,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "sol_client",
+    "time" : {
+      "start" : 1650465109362,
+      "stop" : 1650465109362,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1650465109362,
+      "stop" : 1650465117046,
+      "duration" : 7684
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Create account for tests",
+      "time" : {
+        "start" : 1650465109363,
+        "stop" : 1650465109374,
+        "duration" : 11
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Request 1000 NEON from faucet for 0x9908e6b1AD53078d25ac7C817FB28E20e9F65325",
+      "time" : {
+        "start" : 1650465109374,
+        "stop" : 1650465110500,
+        "duration" : 1126
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Operator initial balance: 0.007481543798565687900288 NEON 61381.0867204 SOL",
+      "time" : {
+        "start" : 1650465117046,
+        "stop" : 1650465117046,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 3,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "faucet",
+    "time" : {
+      "start" : 1650465109362,
+      "stop" : 1650465109362,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "prepare_env",
+    "time" : {
+      "start" : 1650465128816,
+      "stop" : 1650465128816,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "prepare",
+    "time" : {
+      "start" : 1650465128816,
+      "stop" : 1650465128816,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1650465128816,
+      "stop" : 1650465128816,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "testStage" : {
+    "description" : "Verify implemented rpc calls work eth_getBlockByNumber",
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Sending 0.02 from 0x63173dD5a886f24A35CE51Bc4926DF23e6E5Df65 to 0xda38381E2f90FD0c41697E6B9979F42DE8f92D82",
+      "time" : {
+        "start" : 1650465128817,
+        "stop" : 1650465130490,
+        "duration" : 1673
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Request params: {'id': 97, 'method': 'eth_getBlockByNumber', 'params': [4581620, True], 'jsonrpc': '2.0'}",
+      "time" : {
+        "start" : 1650465130490,
+        "stop" : 1650465130635,
+        "duration" : 145
+      },
+      "status" : "passed",
+      "steps" : [ {
+        "name" : "Response data: {'jsonrpc': '2.0', 'id': 97, 'result': {'gasUsed': '0xaf8c1a4', 'hash': '0x0dfa7da62c19fb3e7ea1b1aac914277d69472fbfcdc47d7699ddea54088624ce', 'number': '0x45e8f4', 'parentHash': '0xd28692a8de1e1a648e0d41b926414c501233513954ac76c54189adf4894f443e', 'timestamp': '0x62601969', 'transactions': [{'blockHash': '0x0dfa7da62c19fb3e7ea1b1aac914277d69472fbfcdc47d7699ddea54088624ce', 'blockNumber': '0x45e8f4', 'hash': '0xd91c31aad231eb863bc50fe5d398b8bff72ba81aa0935e91a8395466aca4e138', 'transactionIndex': '0x0', 'from': '0x63173dd5a886f24a35ce51bc4926df23e6e5df65', 'nonce': '0x1', 'gasPrice': '0x7887aa2bc0', 'gas': '0x5208', 'to': '0xda38381e2f90fd0c41697e6b9979f42de8f92d82', 'value': '0x470de4df820000', 'input': '0x', 'v': '0x101', 'r': '0x6a55263d102cdb4e9f00e2e63df0b71450da5c6f04907bdcb5e554dd66289d56', 's': '0x5210f055a41dde1164b96ba88a0b8aa5c31b4bc3fd001545db78dd0a65fed654'}, {'blockHash': '0x0dfa7da62c19fb3e7ea1b1aac914277d69472fbfcdc47d7699ddea54088624ce', 'blockNumber': '0x45e8f4', 'hash': '0x0fa6bfa68c23c77b0fc66dc41b07bd86c2238a812420195c3ad802f07a43cb7c', 'transactionIndex': '0x0', 'from': '0x10205545eef667b95014b79a4ec50581d57922b7', 'nonce': '0x21d', 'gasPrice': '0x7887aa2bc0', 'gas': '0xb08a998', 'to': None, 'value': '0x0', 'input': '0x6080604052731820a4b7618bde71dce8cdc73aab6c95905fad24600160026101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555034801561006557600080fd5b50611184806100756000396000f3fe608060405234801561001057600080fd5b50600436106100a85760003560e01c806375ab97821161007157806375ab97821461014d578063a8badaa514610169578063c97e18fc14610185578063d2de6474146101a1578063e0eb2180146101bd578063e1ecbd30146101d9576100a8565b806223de29146100ad578063249cb3fa146100c95780633836ef89146100f957806344d17187146101155780634e4ae5a514610131575b600080fd5b6100c760048036038101906100c29190610a68565b6101f5565b005b6100e360048036038101906100de9190610b6d565b61036d565b6040516100f09190610bbc565b60405180910390f35b610113600480360381019061010e9190610d56565b610403565b005b61012f600480360381019061012a9190610dd9565b610478565b005b61014b60048036038101906101469190610e80565b6104ea565b005b61016760048036038101906101629190610a68565b610507565b005b610183600480360381019061017e9190610ead565b610681565b005b61019f600480360381019061019a9190610e80565b610735565b005b6101bb60048036038101906101b69190610ead565b610751565b005b6101d760048036038101906101d29190610ead565b6107c2565b005b6101f360048036038101906101ee9190610ead565b610833565b005b60018054906101000a900460ff161561020d57600080fd5b60006102176108e7565b905060008173ffffffffffffffffffffffffffffffffffffffff166370a082318a6040518263ffffffff1660e01b81526004016102549190610ee9565b602060405180830381865afa158015610271573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906102959190610f19565b905060008273ffffffffffffffffffffffffffffffffffffffff166370a082318a6040518263ffffffff1660e01b81526004016102d29190610ee9565b602060405180830381865afa1580156102ef573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906103139190610f19565b90507f47e915878c47f3ec4d7ff646a2becb229f64fd2abe4d2b5e2bb4275b0cf50d4e8b8b8b8b8b8b8b8b8b8b8b6040516103589b9a99989796959493929190610f93565b60405180910390a15050505050505050505050565b600080600084815260200190815260200160002060008373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060009054906101000a900460ff166103d9576000801b6103fb565b7fa2ef4600d742022d532d4747cb3547474667d6f13804902513b2ec01c848f4b45b905092915050565b8373ffffffffffffffffffffffffffffffffffffffff16639bd9bbc68484846040518463ffffffff1660e01b8152600401610440939291906110a9565b600060405180830381600087803b15801561045a57600080fd5b505af115801561046e573d6000803e3d6000fd5b5050505050505050565b8273ffffffffffffffffffffffffffffffffffffffff1663fe9d930383836040518363ffffffff1660e01b81526004016104b39291906110e7565b600060405180830381600087803b1580156104cd57600080fd5b505af11580156104e1573d6000803e3d6000fd5b50505050505050565b80600160006101000a81548160ff02191690831515021790555050565b600160009054906101000a900460ff161561052157600080fd5b600061052b6108e7565b905060008173ffffffffffffffffffffffffffffffffffffffff166370a082318a6040518263ffffffff1660e01b81526004016105689190610ee9565b602060405180830381865afa158015610585573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906105a99190610f19565b905060008273ffffffffffffffffffffffffffffffffffffffff166370a082318a6040518263ffffffff1660e01b81526004016105e69190610ee9565b602060405180830381865afa158015610603573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906106279190610f19565b90507faa3e88aca472e90221daf7d3d601abafb62b120319089d7a2c2f63588da855298b8b8b8b8b8b8b8b8b8b8b60405161066c9b9a99989796959493929190610f93565b60405180910390a15050505050505050505050565b600160029054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166329965a1d307fb281fc8c12954d22544db45de3159a39272895b169a852b314f9cc762e44c53b846040518463ffffffff1660e01b815260040161070093929190611117565b600060405180830381600087803b15801561071a57600080fd5b505af115801561072e573d6000803e3d6000fd5b5050505050565b806001806101000a81548160ff02191690831515021790555050565b61077b7f29ddb589b1fb5fc7cf394961c1adf5f8c6454761adf795e67fe149f658abe895826108ef565b60003090508073ffffffffffffffffffffffffffffffffffffffff168273ffffffffffffffffffffffffffffffffffffffff1614156107be576107bd81610833565b5b5050565b6107ec7fb281fc8c12954d22544db45de3159a39272895b169a852b314f9cc762e44c53b826108ef565b60003090508073ffffffffffffffffffffffffffffffffffffffff168273ffffffffffffffffffffffffffffffffffffffff16141561082f5761082e81610681565b5b5050565b600160029054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166329965a1d307f29ddb589b1fb5fc7cf394961c1adf5f8c6454761adf795e67fe149f658abe895846040518463ffffffff1660e01b81526004016108b293929190611117565b600060405180830381600087803b1580156108cc57600080fd5b505af11580156108e0573d6000803e3d6000fd5b5050505050565b600033905090565b600160008084815260200190815260200160002060008373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060006101000a81548160ff0219169083151502179055505050565b6000604051905090565b600080fd5b600080fd5b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b600061099a8261096f565b9050919050565b6109aa8161098f565b81146109b557600080fd5b50565b6000813590506109c7816109a1565b92915050565b6000819050919050565b6109e0816109cd565b81146109eb57600080fd5b50565b6000813590506109fd816109d7565b92915050565b600080fd5b600080fd5b600080fd5b60008083601f840112610a2857610a27610a03565b5b8235905067ffffffffffffffff811115610a4557610a44610a08565b5b602083019150836001820283011115610a6157610a60610a0d565b5b9250929050565b60008060008060008060008060c0898b031215610a8857610a87610965565b5b6000610a968b828c016109b8565b9850506020610aa78b828c016109b8565b9750506040610ab88b828c016109b8565b9650506060610ac98b828c016109ee565b955050608089013567ffffffffffffffff811115610aea57610ae961096a565b5b610af68b828c01610a12565b945094505060a089013567ffffffffffffffff811115610b1957610b1861096a565b5b610b258b828c01610a12565b92509250509295985092959890939650565b6000819050919050565b610b4a81610b37565b8114610b5557600080fd5b50565b600081359050610b6781610b41565b92915050565b60008060408385031215610b8457610b83610965565b5b6000610b9285828601610b58565b9250506020610ba3858286016109b8565b9150509250929050565b610bb681610b37565b82525050565b6000602082019050610bd16000830184610bad565b92915050565b6000610be28261098f565b9050919050565b610bf281610bd7565b8114610bfd57600080fd5b50565b600081359050610c0f81610be9565b92915050565b600080fd5b6000601f19601f8301169050919050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b610c6382610c1a565b810181811067ffffffffffffffff82111715610c8257610c81610c2b565b5b80604052505050565b6000610c9561095b565b9050610ca18282610c5a565b919050565b600067ffffffffffffffff821115610cc157610cc0610c2b565b5b610cca82610c1a565b9050602081019050919050565b82818337600083830152505050565b6000610cf9610cf484610ca6565b610c8b565b905082815260208101848484011115610d1557610d14610c15565b5b610d20848285610cd7565b509392505050565b600082601f830112610d3d57610d3c610a03565b5b8135610d4d848260208601610ce6565b91505092915050565b60008060008060808587031215610d7057610d6f610965565b5b6000610d7e87828801610c00565b9450506020610d8f878288016109b8565b9350506040610da0878288016109ee565b925050606085013567ffffffffffffffff811115610dc157610dc061096a565b5b610dcd87828801610d28565b91505092959194509250565b600080600060608486031215610df257610df1610965565b5b6000610e0086828701610c00565b9350506020610e11868287016109ee565b925050604084013567ffffffffffffffff811115610e3257610e3161096a565b5b610e3e86828701610d28565b9150509250925092565b60008115159050919050565b610e5d81610e48565b8114610e6857600080fd5b50565b600081359050610e7a81610e54565b92915050565b600060208284031215610e9657610e95610965565b5b6000610ea484828501610e6b565b91505092915050565b600060208284031215610ec357610ec2610965565b5b6000610ed1848285016109b8565b91505092915050565b610ee38161098f565b82525050565b6000602082019050610efe6000830184610eda565b92915050565b600081519050610f13816109d7565b92915050565b600060208284031215610f2f57610f2e610965565b5b6000610f3d84828501610f04565b91505092915050565b610f4f816109cd565b82525050565b600082825260208201905092915050565b6000610f728385610f55565b9350610f7f838584610cd7565b610f8883610c1a565b840190509392505050565b600061012082019050610fa9600083018e610eda565b610fb6602083018d610eda565b610fc3604083018c610eda565b610fd0606083018b610f46565b8181036080830152610fe381898b610f66565b905081810360a0830152610ff8818789610f66565b905061100760c0830186610eda565b61101460e0830185610f46565b611022610100830184610f46565b9c9b505050505050505050505050565b600081519050919050565b60005b8381101561105b578082015181840152602081019050611040565b8381111561106a576000848401525b50505050565b600061107b82611032565b6110858185610f55565b935061109581856020860161103d565b61109e81610c1a565b840191505092915050565b60006060820190506110be6000830186610eda565b6110cb6020830185610f46565b81810360408301526110dd8184611070565b9050949350505050565b60006040820190506110fc6000830185610f46565b818103602083015261110e8184611070565b90509392505050565b600060608201905061112c6000830186610eda565b6111396020830185610bad565b6111466040830184610eda565b94935050505056fea2646970667358221220a245f2fe01c0d946331bcfb36172db9e78e1209786dd4ee5ee6a797d5a27b67464736f6c634300080a0033', 'v': '0x102', 'r': '0x4274d1cece216cac23e6a9176602db6cc94a98ff887a1b05a31dfdb9e547df08', 's': '0x70e7965f2f17af5edf07831037e4cb82e4da4f2364f11460bff1e585d287ea31'}, {'blockHash': '0x0dfa7da62c19fb3e7ea1b1aac914277d69472fbfcdc47d7699ddea54088624ce', 'blockNumber': '0x45e8f4', 'hash': '0xceee0e60615c77b4ac12ba3f77269afe93007b1573b37014936aedeffdc3a25f', 'transactionIndex': '0x0', 'from': '0x7f801fc828186f63d6dd391d6e14d959de983e54', 'nonce': '0x16f', 'gasPrice': '0x7887aa2bc0', 'gas': '0xb20fc', 'to': '0x545163a417312bca19f71356398ce64b104a4504', 'value': '0x0', 'input': '0x42842e0e0000000000000000000000007f801fc828186f63d6dd391d6e14d959de983e54000000000000000000000000c6211d100f0f359f3f460438428553467bfddfdc00000000000000000000000000000000000000000000000000000000000013b2', 'v': '0x101', 'r': '0xf1d492c68606eb82d7768aeccfc771c02d492ec305c4bc4239d4bb96cf5c5097', 's': '0x5ea5170a6d521c8d99be066df59605a15bd343df4f667014cba6f857c6db859d'}], 'logsBloom': '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000', 'gasLimit': '0x6691b7'}}",
+        "time" : {
+          "start" : 1650465130635,
+          "stop" : 1650465130635,
+          "duration" : 0
+        },
+        "status" : "passed",
+        "steps" : [ ],
+        "attachments" : [ ],
+        "parameters" : [ ],
+        "stepsCount" : 0,
+        "attachmentsCount" : 0,
+        "shouldDisplayMessage" : false,
+        "hasContent" : false
+      } ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 1,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 3,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  },
+  "afterStages" : [ {
+    "name" : "prepare_account::0",
+    "time" : {
+      "start" : 1650465140077,
+      "stop" : 1650465146763,
+      "duration" : 6686
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Operator end balance: 0.007483804772483651839488 NEON 61377.14388944 SOL",
+      "time" : {
+        "start" : 1650465146612,
+        "stop" : 1650465146612,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Account end balance: 1000 NEON",
+      "time" : {
+        "start" : 1650465146763,
+        "stop" : 1650465146763,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 2,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "allure_environment::0",
+    "time" : {
+      "start" : 1650465331182,
+      "stop" : 1650465331182,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "labels" : [ {
+    "name" : "story",
+    "value" : "Basic: Json-RPC call tests"
+  }, {
+    "name" : "parentSuite",
+    "value" : "integration.tests.basic"
+  }, {
+    "name" : "suite",
+    "value" : "test_rpc_calls"
+  }, {
+    "name" : "subSuite",
+    "value" : "TestRpcCalls"
+  }, {
+    "name" : "host",
+    "value" : "fv-az123-634"
+  }, {
+    "name" : "thread",
+    "value" : "1781-MainThread"
+  }, {
+    "name" : "framework",
+    "value" : "pytest"
+  }, {
+    "name" : "language",
+    "value" : "cpython3"
+  }, {
+    "name" : "package",
+    "value" : "integration.tests.basic.test_rpc_calls"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure2"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "retry" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ ],
+    "categories" : [ ],
+    "tags" : [ ]
+  },
+  "source" : "9fae701ac143b109.json",
+  "parameterValues" : [ ]
+}

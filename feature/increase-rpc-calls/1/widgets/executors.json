@@ -1,0 +1,10 @@
+[ {
+  "name" : "GitHub Actions",
+  "type" : "github",
+  "url" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls",
+  "buildOrder" : 1,
+  "buildName" : "GitHub Actions Run #2196351753",
+  "buildUrl" : "https://github.com/neonlabsorg/neon-tests/actions/runs/2196351753",
+  "reportName" : "Allure Report with history",
+  "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1/"
+} ]

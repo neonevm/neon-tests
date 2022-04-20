@@ -1,0 +1,13 @@
+[ {
+  "buildOrder" : 1,
+  "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1/",
+  "reportName" : "Allure Report with history",
+  "data" : {
+    "failed" : 0,
+    "broken" : 0,
+    "skipped" : 10,
+    "passed" : 112,
+    "unknown" : 0,
+    "total" : 122
+  }
+} ]

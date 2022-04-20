@@ -1,6 +1,7 @@
 import os
 import boto3
 import pathlib
+import mimetypes
 
 NEON_TESTS_NUCKET_NAME = os.environ.get("AWS_S3_BUCKET", "neon-test-allure")
 
@@ -28,12 +29,7 @@ def upload(source, destination, bucket=NEON_TESTS_NUCKET_NAME):
     for f in source.glob("**/*"):
         if not f.is_file():
             continue
-        if f.name.endswith("html"):
-            mimetype = "text/html"
-        elif f.name.endswith("json"):
-            mimetype = "application/json"
-        else:
-            mimetype = "text/plain"
+        mimetype = mimetypes.guess_type(f.name)[0]
         client.upload_file(str(f), bucket, str(destination / f.relative_to(source)),
                            ExtraArgs={"ContentType": mimetype})
 

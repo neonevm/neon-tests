@@ -234,7 +234,7 @@ def ozreport():
     "--run-time",
     type=int,
     help="Stop after the specified amount of time, e.g. (300s, 20m, 3h, 1h30m, etc.). "
-         "Only used together without Locust Web UI. [default: always run]",
+    "Only used together without Locust Web UI. [default: always run]",
 )
 @click.option(
     "-T",
@@ -284,9 +284,9 @@ def get_allure_history(name: str, network: str, destination: str = "./allure-res
     path = pathlib.Path(name) / network / branch
 
     runs = []
-    previous_runs = cloud.client.list_objects_v2(Bucket=cloud.NEON_TESTS_BUCKET_NAME,
-                                                 Prefix=f"{path}/",
-                                                 Delimiter="/").get("CommonPrefixes", [])
+    previous_runs = cloud.client.list_objects_v2(
+        Bucket=cloud.NEON_TESTS_BUCKET_NAME, Prefix=f"{path}/", Delimiter="/"
+    ).get("CommonPrefixes", [])
     for run in previous_runs:
         run_id = re.findall(r"(\d+)", run["Prefix"])
         if len(run_id) > 0:

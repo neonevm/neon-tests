@@ -30,13 +30,11 @@ def upload(source, destination, bucket=NEON_TESTS_BUCKET_NAME):
         if not f.is_file():
             continue
         mimetype = mimetypes.guess_type(f.name)[0]
-        client.upload_file(str(f), bucket, str(destination / f.relative_to(source)),
-                           ExtraArgs={"ContentType": mimetype})
+        client.upload_file(
+            str(f), bucket, str(destination / f.relative_to(source)), ExtraArgs={"ContentType": mimetype}
+        )
 
 
 def list_bucket(directory, bucket=NEON_TESTS_BUCKET_NAME):
-    result = client.list_objects_v2(
-        Bucket=bucket,
-        Prefix=str(directory)
-    )
+    result = client.list_objects_v2(Bucket=bucket, Prefix=str(directory))
     return result.get("Contents", [])

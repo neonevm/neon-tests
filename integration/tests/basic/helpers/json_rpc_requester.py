@@ -40,6 +40,3 @@ class JsonRpcClient:
                 response = JsonRpcResponse(**json_doc)
         return response
 
-    @property
-    def is_devnet(self) -> bool:
-        return "devnet" in self._url

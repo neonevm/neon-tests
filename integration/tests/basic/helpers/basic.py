@@ -24,14 +24,26 @@ DEVNET_SENDER_KEY = "269bc1dd17e8cbfd4280a0f58d67a0ca4631a2a8debebb88b6017083fc9
 class BaseMixin(BaseTests):
 
     json_rpc_client: JsonRpcClient = None
-    sender_account: Account = None
-    recipient_account: Account = None
+    _sender_account: Account = None
+    _recipient_account: Account = None
 
     @pytest.fixture(autouse=True)
     def prepare_env(self, json_rpc_client):
         self.json_rpc_client = json_rpc_client
-        self.sender_account = self.create_account_with_balance()
-        self.recipient_account = self.create_account_with_balance(is_sender=False)
+
+    @property
+    def sender_account(self):
+        if not BaseMixin._sender_account:
+            account = self.create_account_with_balance()
+            BaseMixin._sender_account = account
+        return BaseMixin._sender_account
+
+    @property
+    def recipient_account(self):
+        if not BaseMixin._recipient_account:
+            account = self.create_account_with_balance(is_sender=False)
+            BaseMixin._recipient_account = account
+        return BaseMixin._recipient_account
 
     @staticmethod
     def assert_expected_raises(
@@ -59,12 +71,9 @@ class BaseMixin(BaseTests):
         self, amount: int = InputData.FAUCET_1ST_REQUEST_AMOUNT.value, is_sender: bool = True
     ) -> Account:
         """Creates a new account with balance"""
-        if self.json_rpc_client.is_devnet and is_sender:
-            account = AccountData(address=DEVNET_SENDER_ADDRESS, key=DEVNET_SENDER_KEY)
-        else:
-            account = self.create_account()
-            if not self.json_rpc_client.is_devnet:
-                self.request_faucet_neon(account.address, amount)
+        account = self.create_account()
+        if is_sender:
+            self.request_faucet_neon(account.address, amount)
         return account
 
     # @allure.step("requesting faucet for ERC20")
@@ -109,12 +118,10 @@ class BaseMixin(BaseTests):
             sender_account, recipient_account, amount, ErrorMessage.EXPECTING_VALUE.value
         )
 
-    def assert_balance(self, address: str, expected_amount: float):
+    def assert_balance(self, address: str, expected_amount: float, rnd_dig: int = None):
         """Compares balance of an account with expectation"""
-        if self.json_rpc_client.is_devnet:
-            return
-        balance = self.web3_client.fromWei(self.get_balance(address), "ether")
-        self.check_balance(expected_amount, balance)
+        balance = float(self.web3_client.fromWei(self.get_balance(address), "ether"))
+        self.check_balance(expected_amount, balance, rnd_dig=rnd_dig)
 
     @allure.step("deploying an ERC_20 conract")
     def deploy_contract(self):
@@ -146,9 +153,9 @@ class BaseMixin(BaseTests):
         return isinstance(actual_result, JsonRpcResponse)
 
     @staticmethod
-    def check_balance(expected: float, actual: Decimal):
+    def check_balance(expected: float, actual: Decimal, rnd_dig: int = InputData.ROUND_DIGITS.value):
         """Compares the balance with expectation"""
-        expected_dec = round(expected, InputData.ROUND_DIGITS.value)
-        actual_dec = float(round(actual, InputData.ROUND_DIGITS.value))
+        expected_dec = round(expected, rnd_dig)
+        actual_dec = round(actual, rnd_dig)
 
         assert actual_dec == expected_dec, f"expected balance = {expected_dec}, actual balance = {actual_dec}"

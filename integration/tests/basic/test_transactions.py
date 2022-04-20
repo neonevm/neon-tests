@@ -30,8 +30,7 @@ from integration.tests.basic.test_data.input_data import InputData
 
 @allure.story("Basic: Json-RPC call tests - transactions")
 class TestRpcCallsTransactions(BaseMixin):
-
-    def test_rpc_call_eth_getTransactionCount(self):
+    def test_rpc_call_eth_get_transaction_count(self):
         """Verify implemented rpc calls work eth_getTransactionCount"""
 
         self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
@@ -43,10 +42,11 @@ class TestRpcCallsTransactions(BaseMixin):
         assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
         assert "0x" in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
 
-    def test_rpc_call_eth_sendRawTransaction(self):
+    def test_rpc_call_eth_send_raw_transaction(self):
         """Verify implemented rpc calls work eth_sendRawTransaction"""
 
         # TODO: chain id
+        recipient_balance = float(self.web3_client.fromWei(self.get_balance(self.recipient_account.address), "ether"))
         transaction = {
             "from": self.sender_account.address,
             "to": self.recipient_account.address,
@@ -68,18 +68,9 @@ class TestRpcCallsTransactions(BaseMixin):
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
         assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
         assert "0x" in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
+        self.assert_balance(self.recipient_account.address, recipient_balance + InputData.SAMPLE_AMOUNT.value)
 
-        # TODO: calculate sender's amount
-        # self.assert_balance(
-        #     self.sender_account.address,
-        #     InputData.FAUCET_1ST_REQUEST_AMOUNT.value -
-        #     InputData.SAMPLE_AMOUNT.value -
-        #     self.calculate_trx_gas(tx_receipt=actual_result.result))
-        self.assert_balance(
-            self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value + InputData.SAMPLE_AMOUNT.value
-        )
-
-    def test_rpc_call_eth_getTransactionByHash(self):
+    def test_rpc_call_eth_get_transaction_by_hash(self):
         """Verify implemented rpc calls work eth_getTransactionByHash"""
 
         tx_receipt = self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
@@ -92,7 +83,7 @@ class TestRpcCallsTransactions(BaseMixin):
         assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
         assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
-    def test_rpc_call_eth_getTransactionReceipt(self):
+    def test_rpc_call_eth_get_transaction_receipt(self):
         """Verify implemented rpc calls work eth_getTransactionReceipt"""
 
         tx_receipt = self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)

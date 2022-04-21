@@ -1,0 +1,5 @@
+"Epic","Feature","Story","FAILED","BROKEN","PASSED","SKIPPED","UNKNOWN"
+"","","Basic: Json-RPC call tests","0","0","86","0","0"
+"","","Basic: Json-RPC call tests - transactions","0","0","4","0","0"
+"","","Basic: transfer tests","0","0","10","8","0"
+"","","Basic: single user tests","0","0","12","2","0"

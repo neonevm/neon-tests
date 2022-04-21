@@ -1,0 +1,15 @@
+{
+  "total" : 1,
+  "items" : [ {
+    "uid" : "acaaad9c7bf7d62ffd0e57a3b4d71dac",
+    "name" : "integration.tests.basic",
+    "statistic" : {
+      "failed" : 1,
+      "broken" : 0,
+      "skipped" : 10,
+      "passed" : 111,
+      "unknown" : 0,
+      "total" : 122
+    }
+  } ]
+}

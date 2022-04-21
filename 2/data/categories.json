@@ -1,0 +1,30 @@
+{
+  "uid" : "4b4757e66a1912dae1a509f688f20b0f",
+  "children" : [ {
+    "name" : "Product defects",
+    "children" : [ {
+      "name" : "AssertionError: rpc call is failed: bad block hash 0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b\nassert False\n +  where False = isinstance(JsonRpcErrorResponse(id=81, error={'code': -32602, 'message': 'bad block hash 0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b'}, jsonrpc='2.0'), <class 'integration.tests.basic.model.model.JsonRpcResponse'>)\n +    where <class 'integration.tests.basic.model.model.JsonRpcResponse'> = request_models.JsonRpcResponse",
+      "children" : [ {
+        "name" : "test_eth_get_block_transaction_count_by_hash[32-False]",
+        "uid" : "c83689e52204a0d8",
+        "parentUid" : "79a881d1960357c22da7df7f08b34f16",
+        "status" : "failed",
+        "time" : {
+          "start" : 1650529859207,
+          "stop" : 1650529859371,
+          "duration" : 164
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "newPassed" : false,
+        "newBroken" : false,
+        "retriesCount" : 0,
+        "retriesStatusChange" : false,
+        "parameters" : [ "32", "False" ]
+      } ],
+      "uid" : "79a881d1960357c22da7df7f08b34f16"
+    } ],
+    "uid" : "8fb3a91ba5aaf9de24cc8a92edc82b5d"
+  } ],
+  "name" : "categories"
+}

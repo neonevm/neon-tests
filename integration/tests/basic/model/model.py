@@ -1,7 +1,7 @@
 from dataclasses import dataclass
+from typing import Any, List, Union
 
 from dataclasses_json import CatchAll, LetterCase, dataclass_json, Undefined
-from typing import Any, List, Union
 
 
 @dataclass_json(letter_case=LetterCase.CAMEL)
@@ -32,7 +32,7 @@ class JsonRpcRequestParams(List):
 
 
 @dataclass
-class JsonRpcRequest():
+class JsonRpcRequest:
     id: int
     method: str
     params: JsonRpcRequestParams

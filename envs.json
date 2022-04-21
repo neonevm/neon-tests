@@ -60,7 +60,7 @@
     "proxy_url": "https://proxy.devnet.neonlabs.org/solana",
     "network_id": 245022926,
     "solana_url": "http://neon.devnet.rpcpool.com/c7710a7b633cbadb9be9900c7946/",
-    "faucet_url": "https://proxy.devnet.neonlabs.org/",
+    "faucet_url": "http://3.13.67.238/request_neon",
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
     "operator_neon_rewards_address": [

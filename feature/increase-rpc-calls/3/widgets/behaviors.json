@@ -1,0 +1,48 @@
+{
+  "total" : 4,
+  "items" : [ {
+    "uid" : "91eeeef4c11708e830d9a20e42caef88",
+    "name" : "Basic: Json-RPC call tests",
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 86,
+      "unknown" : 0,
+      "total" : 86
+    }
+  }, {
+    "uid" : "29e54252fe6ffc106d5ee35f266f3997",
+    "name" : "Basic: single user tests",
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 2,
+      "passed" : 12,
+      "unknown" : 0,
+      "total" : 14
+    }
+  }, {
+    "uid" : "ca14c9fa181eea6dabe50042eacfcb7c",
+    "name" : "Basic: transfer tests",
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 8,
+      "passed" : 10,
+      "unknown" : 0,
+      "total" : 18
+    }
+  }, {
+    "uid" : "3b6b935194c9c0ea3ce94eb73183c96f",
+    "name" : "Basic: Json-RPC call tests - transactions",
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 0,
+      "skipped" : 0,
+      "passed" : 4,
+      "unknown" : 0,
+      "total" : 4
+    }
+  } ]
+}

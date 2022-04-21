@@ -1,0 +1,411 @@
+{
+  "uid" : "fdfb74dda5b6759c",
+  "name" : "test_rpc_call_eth_get_transaction_by_hash",
+  "fullName" : "integration.tests.basic.test_transactions.TestRpcCallsTransactions#test_rpc_call_eth_get_transaction_by_hash",
+  "historyId" : "4e69597368a146947ff66a7bab892077",
+  "time" : {
+    "start" : 1650535139639,
+    "stop" : 1650535141009,
+    "duration" : 1370
+  },
+  "description" : "Verify implemented rpc calls work eth_getTransactionByHash",
+  "descriptionHtml" : "<p>Verify implemented rpc calls work eth_getTransactionByHash</p>\n",
+  "status" : "passed",
+  "flaky" : false,
+  "newFailed" : false,
+  "newBroken" : false,
+  "newPassed" : false,
+  "retriesCount" : 0,
+  "retriesStatusChange" : false,
+  "beforeStages" : [ {
+    "name" : "pytestconfig",
+    "time" : {
+      "start" : 1650534986953,
+      "stop" : 1650534986953,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "web3_client",
+    "time" : {
+      "start" : 1650534986953,
+      "stop" : 1650534986955,
+      "duration" : 2
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "allure_environment",
+    "time" : {
+      "start" : 1650534986955,
+      "stop" : 1650534987571,
+      "duration" : 616
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "json_rpc_client",
+    "time" : {
+      "start" : 1650534987572,
+      "stop" : 1650534987572,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "operator",
+    "time" : {
+      "start" : 1650534987572,
+      "stop" : 1650534987572,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "faucet",
+    "time" : {
+      "start" : 1650534987572,
+      "stop" : 1650534987572,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "sol_client",
+    "time" : {
+      "start" : 1650534987572,
+      "stop" : 1650534987572,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1650535131377,
+      "stop" : 1650535136567,
+      "duration" : 5190
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Create account for tests",
+      "time" : {
+        "start" : 1650535131377,
+        "stop" : 1650535131382,
+        "duration" : 5
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Request 1000 NEON from faucet for 0x1BC2dCaE88117c809A6844f2dE84e73608cB576c",
+      "time" : {
+        "start" : 1650535131382,
+        "stop" : 1650535132103,
+        "duration" : 721
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Operator initial balance: 0.007635208180698750232128 NEON 61092.0646512 SOL",
+      "time" : {
+        "start" : 1650535136567,
+        "stop" : 1650535136567,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 3,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1650535139639,
+      "stop" : 1650535139639,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "prepare",
+    "time" : {
+      "start" : 1650535139639,
+      "stop" : 1650535139639,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "prepare_env",
+    "time" : {
+      "start" : 1650535139639,
+      "stop" : 1650535139639,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "testStage" : {
+    "description" : "Verify implemented rpc calls work eth_getTransactionByHash",
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Sending 0.02 from 0x9D956745561Faee0bE6e16eB4A31a0F5d8C3Ea68 to 0xaaCb28E84720e5dd732E27b9c000612892023Ba2",
+      "time" : {
+        "start" : 1650535139640,
+        "stop" : 1650535140906,
+        "duration" : 1266
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Request params: {'id': 6, 'method': 'eth_getTransactionByHash', 'params': ['0x76306eacc83e5c513ae056ea8fc4593bbf676bc6a65271fc06a0d2d1158b0136'], 'jsonrpc': '2.0'}",
+      "time" : {
+        "start" : 1650535140906,
+        "stop" : 1650535141009,
+        "duration" : 103
+      },
+      "status" : "passed",
+      "steps" : [ {
+        "name" : "Response data: {'jsonrpc': '2.0', 'id': 6, 'result': {'blockHash': '0xa21ce449328f5ad3ba1a3df5ce9c2ffe27a44ca0ae9920db9738870901501c43', 'blockNumber': '0x4878ee', 'hash': '0x76306eacc83e5c513ae056ea8fc4593bbf676bc6a65271fc06a0d2d1158b0136', 'transactionIndex': '0x0', 'from': '0x9d956745561faee0be6e16eb4a31a0f5d8c3ea68', 'nonce': '0x4', 'gasPrice': '0x76da031500', 'gas': '0x5208', 'to': '0xaacb28e84720e5dd732e27b9c000612892023ba2', 'value': '0x470de4df820000', 'input': '0x', 'v': '0x101', 'r': '0xf4895686b292bb626ad8248f611d1cba3233cb29e89dda13fe19a6099a0688c0', 's': '0x7621c9b729e446c7855c27a8be0e9150a0d6026acfba25a8354b9cb98839758b'}}",
+        "time" : {
+          "start" : 1650535141008,
+          "stop" : 1650535141009,
+          "duration" : 1
+        },
+        "status" : "passed",
+        "steps" : [ ],
+        "attachments" : [ ],
+        "parameters" : [ ],
+        "stepsCount" : 0,
+        "attachmentsCount" : 0,
+        "shouldDisplayMessage" : false,
+        "hasContent" : false
+      } ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 1,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 3,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  },
+  "afterStages" : [ {
+    "name" : "prepare_account::0",
+    "time" : {
+      "start" : 1650535142298,
+      "stop" : 1650535146832,
+      "duration" : 4534
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Operator end balance: 0.007635208196012663512128 NEON 61092.0646212 SOL",
+      "time" : {
+        "start" : 1650535146730,
+        "stop" : 1650535146730,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    }, {
+      "name" : "Account end balance: 1000 NEON",
+      "time" : {
+        "start" : 1650535146832,
+        "stop" : 1650535146832,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false,
+      "hasContent" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 2,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  }, {
+    "name" : "allure_environment::0",
+    "time" : {
+      "start" : 1650535167941,
+      "stop" : 1650535167941,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "labels" : [ {
+    "name" : "story",
+    "value" : "Basic: Json-RPC call tests - transactions"
+  }, {
+    "name" : "parentSuite",
+    "value" : "integration.tests.basic"
+  }, {
+    "name" : "suite",
+    "value" : "test_transactions"
+  }, {
+    "name" : "subSuite",
+    "value" : "TestRpcCallsTransactions"
+  }, {
+    "name" : "host",
+    "value" : "fv-az28-854"
+  }, {
+    "name" : "thread",
+    "value" : "1789-MainThread"
+  }, {
+    "name" : "framework",
+    "value" : "pytest"
+  }, {
+    "name" : "language",
+    "value" : "cpython3"
+  }, {
+    "name" : "package",
+    "value" : "integration.tests.basic.test_transactions"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure2"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "retry" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ ],
+    "categories" : [ ],
+    "history" : {
+      "statistic" : {
+        "failed" : 0,
+        "broken" : 0,
+        "skipped" : 0,
+        "passed" : 2,
+        "unknown" : 0,
+        "total" : 2
+      },
+      "items" : [ {
+        "uid" : "a9f92f7081e6dab9",
+        "reportUrl" : "https://neonlabsorg.github.io/neon-tests/feature/increase-rpc-calls/1//#testresult/a9f92f7081e6dab9",
+        "status" : "passed",
+        "time" : {
+          "start" : 1650465292383,
+          "stop" : 1650465294123,
+          "duration" : 1740
+        }
+      } ]
+    },
+    "tags" : [ ]
+  },
+  "source" : "fdfb74dda5b6759c.json",
+  "parameterValues" : [ ]
+}

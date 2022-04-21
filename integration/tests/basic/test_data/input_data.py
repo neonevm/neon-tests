@@ -1,4 +1,5 @@
 from enum import Enum
+import os
 
 
 class InputData(Enum):
@@ -15,3 +16,13 @@ class InputData(Enum):
 
     def get_default_initial_amount(self) -> int:
         return self.FAUCET_1ST_REQUEST_AMOUNT.value
+
+
+def gen_hash_of_block(size: int) -> str:
+    """Generates a block hash of the given size"""
+    try:
+        block_hash = hex(int.from_bytes(os.urandom(size), "big"))
+        if bytes.fromhex(block_hash[2:]):
+            return block_hash
+    except ValueError:
+        return gen_hash_of_block(size)

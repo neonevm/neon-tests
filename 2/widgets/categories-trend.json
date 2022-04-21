@@ -6,5 +6,12 @@
     "Product defects" : 1
   }
 }, {
+  "buildOrder" : 2,
+  "reportUrl" : "https://neonlabsorg.github.io/neon-tests/2/",
+  "reportName" : "Allure Report with history",
+  "data" : {
+    "Product defects" : 1
+  }
+}, {
   "data" : { }
 } ]

@@ -11,6 +11,18 @@
     "total" : 122
   }
 }, {
+  "buildOrder" : 2,
+  "reportUrl" : "https://neonlabsorg.github.io/neon-tests/2/",
+  "reportName" : "Allure Report with history",
+  "data" : {
+    "failed" : 1,
+    "broken" : 0,
+    "skipped" : 10,
+    "passed" : 111,
+    "unknown" : 0,
+    "total" : 122
+  }
+}, {
   "data" : {
     "failed" : 0,
     "broken" : 0,

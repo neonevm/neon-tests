@@ -1,0 +1,384 @@
+{
+  "uid" : "7089de73697a1b7d",
+  "name" : "test_eth_get_block_transaction_count_by_hash[32-False]",
+  "fullName" : "integration.tests.basic.test_rpc_calls.TestRpcCalls#test_eth_get_block_transaction_count_by_hash",
+  "historyId" : "ce7c67466b838afbede55fa8828139e2",
+  "time" : {
+    "start" : 1650529859207,
+    "stop" : 1650529859371,
+    "duration" : 164
+  },
+  "description" : "Verify implemented rpc calls work eth_getBlockTransactionCountByHash",
+  "descriptionHtml" : "<p>Verify implemented rpc calls work eth_getBlockTransactionCountByHash</p>\n",
+  "status" : "failed",
+  "statusMessage" : "AssertionError: rpc call is failed: bad block hash 0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b\nassert False\n +  where False = isinstance(JsonRpcErrorResponse(id=81, error={'code': -32602, 'message': 'bad block hash 0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b'}, jsonrpc='2.0'), <class 'integration.tests.basic.model.model.JsonRpcResponse'>)\n +    where <class 'integration.tests.basic.model.model.JsonRpcResponse'> = request_models.JsonRpcResponse",
+  "statusTrace" : "self = <integration.tests.basic.test_rpc_calls.TestRpcCalls object at 0x7efe39a29610>\nparams = '0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b'\nraises = False\n\n    @pytest.mark.parametrize(\n        \"params, raises\",\n        [(32, False), (16, True), (None, True)],\n    )\n    def test_eth_get_block_transaction_count_by_hash(self, params, raises):\n        \"\"\"Verify implemented rpc calls work eth_getBlockTransactionCountByHash\"\"\"\n        if params:\n            params = hex(int.from_bytes(os.urandom(params), \"big\"))\n>       response = self.assert_rpc_response(method=\"eth_getBlockTransactionCountByHash\", params=params, raises=raises)\n\nintegration/tests/basic/test_rpc_calls.py:326: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <integration.tests.basic.test_rpc_calls.TestRpcCalls object at 0x7efe39a29610>\nmethod = 'eth_getBlockTransactionCountByHash'\nparams = ['0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b']\nerr_message = '', raises = False\n\n    def assert_rpc_response(\n        self,\n        method: str,\n        params: tp.Optional[tp.Any] = None,\n        err_message: str = \"\",\n        raises: bool = False,\n    ) -> tp.Union[request_models.JsonRpcResponse, request_models.JsonRpcErrorResponse]:\n        \"\"\"Verify eth endpoints responses\"\"\"\n        if not isinstance(params, tp.List):\n            params = [params]\n        payloads = getattr(RpcRequestFactory(), method)(*params)\n        response = self.json_rpc_client.do_call(payloads)\n        if raises:\n            if err_message and not isinstance(err_message, str):\n                err_message = err_message.value\n            self.assert_expected_raises(response, err_message)\n        else:\n>           assert isinstance(\n                response, request_models.JsonRpcResponse\n            ), f\"rpc call is failed: {response.error.get('message')}\"\nE           AssertionError: rpc call is failed: bad block hash 0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b\nE           assert False\nE            +  where False = isinstance(JsonRpcErrorResponse(id=81, error={'code': -32602, 'message': 'bad block hash 0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b'}, jsonrpc='2.0'), <class 'integration.tests.basic.model.model.JsonRpcResponse'>)\nE            +    where <class 'integration.tests.basic.model.model.JsonRpcResponse'> = request_models.JsonRpcResponse\n\nintegration/tests/basic/test_rpc_calls.py:116: AssertionError",
+  "flaky" : false,
+  "newFailed" : false,
+  "newBroken" : false,
+  "newPassed" : false,
+  "retriesCount" : 0,
+  "retriesStatusChange" : false,
+  "beforeStages" : [ {
+    "name" : "web3_client",
+    "time" : {
+      "start" : 1650529833016,
+      "stop" : 1650529833018,
+      "duration" : 2
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "hasContent" : false,
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false
+  }, {
+    "name" : "pytestconfig",
+    "time" : {
+      "start" : 1650529833016,
+      "stop" : 1650529833016,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "hasContent" : false,
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false
+  }, {
+    "name" : "allure_environment",
+    "time" : {
+      "start" : 1650529833018,
+      "stop" : 1650529834084,
+      "duration" : 1066
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "hasContent" : false,
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false
+  }, {
+    "name" : "faucet",
+    "time" : {
+      "start" : 1650529834085,
+      "stop" : 1650529834085,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "hasContent" : false,
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false
+  }, {
+    "name" : "operator",
+    "time" : {
+      "start" : 1650529834085,
+      "stop" : 1650529834085,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "hasContent" : false,
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false
+  }, {
+    "name" : "json_rpc_client",
+    "time" : {
+      "start" : 1650529834085,
+      "stop" : 1650529834085,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "hasContent" : false,
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false
+  }, {
+    "name" : "sol_client",
+    "time" : {
+      "start" : 1650529834085,
+      "stop" : 1650529834086,
+      "duration" : 1
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "hasContent" : false,
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1650529834086,
+      "stop" : 1650529842945,
+      "duration" : 8859
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Create account for tests",
+      "time" : {
+        "start" : 1650529834086,
+        "stop" : 1650529834100,
+        "duration" : 14
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "hasContent" : false,
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false
+    }, {
+      "name" : "Request 1000 NEON from faucet for 0x00B0EA0c86A824d4A101e5266277AD45053C1EcF",
+      "time" : {
+        "start" : 1650529834100,
+        "stop" : 1650529835339,
+        "duration" : 1239
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "hasContent" : false,
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false
+    }, {
+      "name" : "Operator initial balance: 0.007635204877938700022208 NEON 61092.6208304 SOL",
+      "time" : {
+        "start" : 1650529842945,
+        "stop" : 1650529842945,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "hasContent" : false,
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "hasContent" : true,
+    "stepsCount" : 3,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false
+  }, {
+    "name" : "prepare",
+    "time" : {
+      "start" : 1650529859206,
+      "stop" : 1650529859206,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "hasContent" : false,
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false
+  }, {
+    "name" : "prepare_env",
+    "time" : {
+      "start" : 1650529859206,
+      "stop" : 1650529859206,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "hasContent" : false,
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false
+  }, {
+    "name" : "prepare_account",
+    "time" : {
+      "start" : 1650529859206,
+      "stop" : 1650529859206,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "hasContent" : false,
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false
+  } ],
+  "testStage" : {
+    "description" : "Verify implemented rpc calls work eth_getBlockTransactionCountByHash",
+    "status" : "failed",
+    "statusMessage" : "AssertionError: rpc call is failed: bad block hash 0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b\nassert False\n +  where False = isinstance(JsonRpcErrorResponse(id=81, error={'code': -32602, 'message': 'bad block hash 0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b'}, jsonrpc='2.0'), <class 'integration.tests.basic.model.model.JsonRpcResponse'>)\n +    where <class 'integration.tests.basic.model.model.JsonRpcResponse'> = request_models.JsonRpcResponse",
+    "statusTrace" : "self = <integration.tests.basic.test_rpc_calls.TestRpcCalls object at 0x7efe39a29610>\nparams = '0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b'\nraises = False\n\n    @pytest.mark.parametrize(\n        \"params, raises\",\n        [(32, False), (16, True), (None, True)],\n    )\n    def test_eth_get_block_transaction_count_by_hash(self, params, raises):\n        \"\"\"Verify implemented rpc calls work eth_getBlockTransactionCountByHash\"\"\"\n        if params:\n            params = hex(int.from_bytes(os.urandom(params), \"big\"))\n>       response = self.assert_rpc_response(method=\"eth_getBlockTransactionCountByHash\", params=params, raises=raises)\n\nintegration/tests/basic/test_rpc_calls.py:326: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <integration.tests.basic.test_rpc_calls.TestRpcCalls object at 0x7efe39a29610>\nmethod = 'eth_getBlockTransactionCountByHash'\nparams = ['0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b']\nerr_message = '', raises = False\n\n    def assert_rpc_response(\n        self,\n        method: str,\n        params: tp.Optional[tp.Any] = None,\n        err_message: str = \"\",\n        raises: bool = False,\n    ) -> tp.Union[request_models.JsonRpcResponse, request_models.JsonRpcErrorResponse]:\n        \"\"\"Verify eth endpoints responses\"\"\"\n        if not isinstance(params, tp.List):\n            params = [params]\n        payloads = getattr(RpcRequestFactory(), method)(*params)\n        response = self.json_rpc_client.do_call(payloads)\n        if raises:\n            if err_message and not isinstance(err_message, str):\n                err_message = err_message.value\n            self.assert_expected_raises(response, err_message)\n        else:\n>           assert isinstance(\n                response, request_models.JsonRpcResponse\n            ), f\"rpc call is failed: {response.error.get('message')}\"\nE           AssertionError: rpc call is failed: bad block hash 0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b\nE           assert False\nE            +  where False = isinstance(JsonRpcErrorResponse(id=81, error={'code': -32602, 'message': 'bad block hash 0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b'}, jsonrpc='2.0'), <class 'integration.tests.basic.model.model.JsonRpcResponse'>)\nE            +    where <class 'integration.tests.basic.model.model.JsonRpcResponse'> = request_models.JsonRpcResponse\n\nintegration/tests/basic/test_rpc_calls.py:116: AssertionError",
+    "steps" : [ {
+      "name" : "Request params: {'id': 81, 'method': 'eth_getBlockTransactionCountByHash', 'params': ['0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b'], 'jsonrpc': '2.0'}",
+      "time" : {
+        "start" : 1650529859207,
+        "stop" : 1650529859371,
+        "duration" : 164
+      },
+      "status" : "passed",
+      "steps" : [ {
+        "name" : "Response data: {'jsonrpc': '2.0', 'id': 81, 'error': {'code': -32602, 'message': 'bad block hash 0x775dd6a328a372a3800b2862bec7083143c32f4fad027092c020e1ac45eb92b'}}",
+        "time" : {
+          "start" : 1650529859371,
+          "stop" : 1650529859371,
+          "duration" : 0
+        },
+        "status" : "passed",
+        "steps" : [ ],
+        "attachments" : [ ],
+        "parameters" : [ ],
+        "hasContent" : false,
+        "stepsCount" : 0,
+        "attachmentsCount" : 0,
+        "shouldDisplayMessage" : false
+      } ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "hasContent" : true,
+      "stepsCount" : 1,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "hasContent" : true,
+    "stepsCount" : 2,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : true
+  },
+  "afterStages" : [ {
+    "name" : "prepare_account::0",
+    "time" : {
+      "start" : 1650529868007,
+      "stop" : 1650529875596,
+      "duration" : 7589
+    },
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "Operator end balance: 0.007635205688009678240448 NEON 61092.605175 SOL",
+      "time" : {
+        "start" : 1650529875427,
+        "stop" : 1650529875427,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "hasContent" : false,
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false
+    }, {
+      "name" : "Account end balance: 1000 NEON",
+      "time" : {
+        "start" : 1650529875596,
+        "stop" : 1650529875596,
+        "duration" : 0
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ ],
+      "parameters" : [ ],
+      "hasContent" : false,
+      "stepsCount" : 0,
+      "attachmentsCount" : 0,
+      "shouldDisplayMessage" : false
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "hasContent" : true,
+    "stepsCount" : 2,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false
+  }, {
+    "name" : "allure_environment::0",
+    "time" : {
+      "start" : 1650530074019,
+      "stop" : 1650530074019,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "hasContent" : false,
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false
+  } ],
+  "labels" : [ {
+    "name" : "story",
+    "value" : "Basic: Json-RPC call tests"
+  }, {
+    "name" : "parentSuite",
+    "value" : "integration.tests.basic"
+  }, {
+    "name" : "suite",
+    "value" : "test_rpc_calls"
+  }, {
+    "name" : "subSuite",
+    "value" : "TestRpcCalls"
+  }, {
+    "name" : "host",
+    "value" : "fv-az200-116"
+  }, {
+    "name" : "thread",
+    "value" : "1771-MainThread"
+  }, {
+    "name" : "framework",
+    "value" : "pytest"
+  }, {
+    "name" : "language",
+    "value" : "cpython3"
+  }, {
+    "name" : "package",
+    "value" : "integration.tests.basic.test_rpc_calls"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure2"
+  } ],
+  "parameters" : [ {
+    "name" : "params",
+    "value" : "32"
+  }, {
+    "name" : "raises",
+    "value" : "False"
+  } ],
+  "links" : [ ],
+  "hidden" : true,
+  "retry" : true,
+  "extra" : {
+    "categories" : [ ],
+    "tags" : [ ]
+  },
+  "source" : "7089de73697a1b7d.json",
+  "parameterValues" : [ "32", "False" ]
+}

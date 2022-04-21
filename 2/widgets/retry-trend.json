@@ -4,6 +4,14 @@
   "reportName" : "Allure Report with history",
   "data" : {
     "run" : 122,
+    "retry" : 122
+  }
+}, {
+  "buildOrder" : 2,
+  "reportUrl" : "https://neonlabsorg.github.io/neon-tests/2/",
+  "reportName" : "Allure Report with history",
+  "data" : {
+    "run" : 122,
     "retry" : 0
   }
 }, {

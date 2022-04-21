@@ -1,4 +1,3 @@
-import os
 import typing as tp
 
 import allure
@@ -10,7 +9,7 @@ from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactor
 from integration.tests.basic.helpers.rpc_request_params_factory import RpcRequestParamsFactory
 from integration.tests.basic.model import model as request_models
 from integration.tests.basic.model.tags import Tag
-from integration.tests.basic.test_data.input_data import InputData
+from integration.tests.basic.test_data import input_data
 
 """
 12.	Verify implemented rpc calls work
@@ -233,7 +232,9 @@ class TestRpcCalls(BaseMixin):
     def test_eth_get_block_by_hash(self):
         """Verify implemented rpc calls work eth_getBlockByHash"""
 
-        tx_receipt = self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
+        tx_receipt = self.transfer_neon(
+            self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
+        )
 
         params = [tx_receipt.blockHash.hex(), True]
         payloads = RpcRequestFactory.get_block_by_hash(params=params)
@@ -256,7 +257,9 @@ class TestRpcCalls(BaseMixin):
     def test_eth_get_block_by_number_via_numbers(self):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
 
-        tx_receipt = self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
+        tx_receipt = self.transfer_neon(
+            self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
+        )
 
         params = RpcRequestParamsFactory.get_block_by_number(tx_receipt.blockNumber, True)
         payloads = RpcRequestFactory.get_block_by_number(params=params)
@@ -322,7 +325,7 @@ class TestRpcCalls(BaseMixin):
     def test_eth_get_block_transaction_count_by_hash(self, params, raises):
         """Verify implemented rpc calls work eth_getBlockTransactionCountByHash"""
         if params:
-            params = hex(int.from_bytes(os.urandom(params), "big"))
+            params = input_data.gen_hash_of_block(params)
         response = self.assert_rpc_response(method="eth_getBlockTransactionCountByHash", params=params, raises=raises)
         if not raises:
             assert self.is_hex(response.result), f"Invalid response: {response.result}"
@@ -346,7 +349,7 @@ class TestRpcCalls(BaseMixin):
     def test_eth_get_transaction_by_block_hash_and_index(self, params, raises):
         """Verify implemented rpc calls work eth_getTransactionByBlockHashAndIndex"""
         if params:
-            params[0] = hex(int.from_bytes(os.urandom(params[0]), "big"))
+            params[0] = input_data.gen_hash_of_block(params[0])
         response = self.assert_rpc_response(
             method="eth_getTransactionByBlockHashAndIndex", params=params, raises=raises
         )

@@ -1,8 +1,6 @@
 name: "OpenZeppelin"
 
 on:
-  schedule:
-    - cron: "0 2,5 * * *"
   workflow_dispatch:
     inputs:
       network:

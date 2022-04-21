@@ -193,7 +193,6 @@ class TestRpcCalls(BaseMixin):
         params = [sender_account.address, Tag.LATEST.value]
         payloads = RpcRequestFactory.get_balance(params=params)
         actual_result = self.json_rpc_client.do_call(payloads)
-        print(actual_result)
 
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
         assert self.is_hex(actual_result.result), AssertMessage.WRONG_AMOUNT.value

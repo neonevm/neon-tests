@@ -158,6 +158,8 @@ class BaseMixin(BaseTests):
 # =======
         recipient_account: tp.Union[Account, AccountData],
         amount: int,
+        gas: Optional[int] = 0,
+        gas_price: Optional[int] = None,
         error_message: str = "",
     ) -> tp.Union[web3.types.TxReceipt, None]:
         """Processes transaction, expects a failure"""
@@ -241,6 +243,7 @@ class BaseMixin(BaseTests):
     def check_balance(expected: float, actual: Decimal, rnd_dig: int = InputData.ROUND_DIGITS.value):
         """Compares the balance with expectation"""
         expected_dec = round(expected, rnd_dig)
-        actual_dec = round(actual, rnd_dig)
+        # TODO: added float()
+        actual_dec =float( round(actual, rnd_dig))
 
         assert actual_dec == expected_dec, f"expected balance = {expected_dec}, actual balance = {actual_dec}"

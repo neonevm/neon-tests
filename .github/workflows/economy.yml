@@ -68,15 +68,10 @@ jobs:
     runs-on: ${{ needs.prepare-env.outputs.runner }}
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.9'
-      - name: "Install click"
-        run: "pip install click"
       - name: "Install deps"
-        run: "./clickfile.py requirements"
+        uses: ./.github/actions/requirements
       - name: "Run economy tests"
-        run: "./clickfile.py run economy"
+        run: "./clickfile.py run economy --network ${{ needs.prepare-env.outputs.network }}"
       - uses: actions/upload-artifact@v2
         if: always()
         with:

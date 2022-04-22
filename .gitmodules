@@ -1,0 +1,3 @@
+[submodule "compatibility/openzeppelin-contracts"]
+	path = compatibility/openzeppelin-contracts
+	url = https://github.com/neonlabsorg/openzeppelin-contracts.git

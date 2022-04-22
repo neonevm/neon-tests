@@ -39,9 +39,9 @@ TRANSFER_AMOUNT_DATA = [(0.01), (1), (1.1)]
 GAS_LIMIT_AND_PRICE_DATA = (
     [1, None, ErrorMessage.GAS_LIMIT_REACHED.value],
     [U64_MAX + 1, None, ErrorMessage.INSUFFICIENT_FUNDS.value],
-    [0, U64_MAX + 1, ErrorMessage.INSUFFICIENT_FUNDS.value],
-    [1, (U64_MAX + 1), ErrorMessage.INSUFFICIENT_FUNDS.value],
-    [1000, int((U64_MAX + 100) / 1000), ErrorMessage.INSUFFICIENT_FUNDS.value],
+    [0, U64_MAX + 1, ErrorMessage.INSUFFICIENT_FUNDS.value], # ErrorMessage.GAS_LIMIT_REACHED.value], # ErrorMessage.INSUFFICIENT_FUNDS.value],
+    [1, (U64_MAX + 1), ErrorMessage.GAS_LIMIT_REACHED.value], # ErrorMessage.INSUFFICIENT_FUNDS.value],
+    [1000, int((U64_MAX + 100) / 1000), ErrorMessage.GAS_LIMIT_REACHED.value],
 )
 
 
@@ -219,21 +219,28 @@ class TestTransfer(BaseMixin):
 
     def test_check_erc_1820_transaction(self):
         """Check ERC-1820 transaction (without chain_id in sign)"""
-        amount = 2
+        #
+        amount = 100
+        sender_account = self.create_account_with_balance(amount)
+        recipient_account = self.create_account_with_balance()
+        transfer_amount=2
+        #
         transaction = {
-            "from": self.sender_account.address,
-            "to": self.recipient_account.address,
-            "value": self.web3_client.toWei(amount, "ether"),
+            # "from": self.sender_account.address,
+            # "to": self.recipient_account.address,
+            "from": sender_account.address,
+            "to": recipient_account.address,
+            "value": self.web3_client.toWei(transfer_amount, "ether"),
             "gasPrice": self.web3_client.gas_price(),
             "gas": 0,
-            "nonce": self.web3_client.eth.get_transaction_count(self.sender_account.address),
+            # "nonce": self.web3_client.eth.get_transaction_count(self.sender_account.address),
+            "nonce": self.web3_client.eth.get_transaction_count(sender_account.address),
         }
         transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
-
-        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+        # signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
 
         params = [signed_tx.rawTransaction.hex()]
-
         model = RpcRequestFactory.get_send_raw_trx(params=params)
         actual_result = self.json_rpc_client.do_call(model)
         # actual_result = self.json_rpc_client.deserialize_response(response)
@@ -243,7 +250,9 @@ class TestTransfer(BaseMixin):
         assert "0x" in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
 
         # self.assert_balance(self.sender_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value - amount)
-        self.assert_balance(self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value + amount)
+        # self.assert_balance(self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value + amount)
+        self.assert_balance(sender_account.address,amount- transfer_amount)
+        self.assert_balance(recipient_account.address,InputData.FAUCET_1ST_REQUEST_AMOUNT.value + transfer_amount)
 
 
 @allure.story("Basic: transactions validation")
@@ -259,7 +268,7 @@ class TestTransactionsValidation(BaseMixin):
         """
 
         #
-        amount = 0
+        amount = 100
         sender_account = self.create_account_with_balance(amount)
         recipient_account = self.create_account_with_balance()
         #
@@ -277,6 +286,7 @@ class TestTransactionsValidation(BaseMixin):
 
         # self.assert_balance(self.sender_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
         # self.assert_balance(self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+
         self.assert_balance(sender_account.address, amount)
         self.assert_balance(recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
 
@@ -285,11 +295,9 @@ class TestTransactionsValidation(BaseMixin):
         amount = 2
 
         transaction = self.create_tx_object(amount, 1_000_000_000)
-
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
 
         params = [signed_tx.rawTransaction.hex()]
-
         model = RpcRequestFactory.get_send_raw_trx(params=params)
         actual_result = self.json_rpc_client.do_call(model)
         # actual_result = self.json_rpc_client.deserialize_response(response)
@@ -300,7 +308,7 @@ class TestTransactionsValidation(BaseMixin):
         ), AssertMessage.DOES_NOT_CONTAIN_TOO_HIGH.value
 
         # self.assert_balance(self.sender_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value - amount-self.calculate_trx_gas(tx_receipt=tx_receipt))
-        self.assert_balance(self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+        # self.assert_balance(self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
 
     def test_send_with_old_nonce(self):
         """Nonce is too low"""
@@ -311,22 +319,18 @@ class TestTransactionsValidation(BaseMixin):
         transaction = self.create_tx_object(
             amount, self.web3_client.eth.get_transaction_count(self.sender_account.address)
         )
-
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
 
         params = [signed_tx.rawTransaction.hex()]
-
         model = RpcRequestFactory.get_send_raw_trx(params=params)
         actual_result = self.json_rpc_client.do_call(model)
         # actual_result = self.json_rpc_client.deserialize_response(response)
 
         # 2nd transaction (with low nonce)
         transaction = self.create_tx_object(amount, 0)
-
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
 
         params = [signed_tx.rawTransaction.hex()]
-
         model = RpcRequestFactory.get_send_raw_trx(params=params)
         actual_result = self.json_rpc_client.do_call(model)
         # actual_result = self.json_rpc_client.deserialize_response(response)

@@ -28,13 +28,7 @@ class BaseMixin(BaseTests):
     _sender_account: Account = None
     _recipient_account: Account = None
 
-# <<<<<<< HEAD
-#     @pytest.fixture
-#     def prepare_accounts(self):
-#         self.sender_account = self.create_account_with_balance()
-#         self.recipient_account = self.create_account_with_balance()
-#         yield
-# =======
+
     @pytest.fixture(autouse=True)
     def prepare_env(self, json_rpc_client):
         self.json_rpc_client = json_rpc_client
@@ -62,7 +56,7 @@ class BaseMixin(BaseTests):
             assert isinstance(response, JsonRpcResponse), response.error.get("message")
         if err_message:
             assert err_message in str(excinfo.value)
-# >>>>>>> develop
+
 
     def create_account(self) -> Account:
         """Creates a new account"""
@@ -187,7 +181,7 @@ class BaseMixin(BaseTests):
     ) -> tp.Union[web3.types.TxReceipt, None]:
         """Checks in case the balance is less than required"""
         return self.process_transaction_with_failure(
-            sender_account, recipient_account, amount, ErrorMessage.EXPECTING_VALUE.value
+            sender_account, recipient_account, amount, ErrorMessage.INSUFFICIENT_FUNDS.value
         )
 # >>>>>>> develop
 

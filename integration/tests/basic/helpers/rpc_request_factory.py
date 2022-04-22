@@ -38,69 +38,6 @@ class RpcRequestFactory:
         return random.randint(0, 100)
 
     @classmethod
-# <<<<<<< HEAD
-#     def get_block_by_hash(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-#         return JsonRpcRequest(id=cls.get_random_value(), method=cls.GET_BLOCK_BY_HASH, params=params)
-
-#     @classmethod
-#     def get_block_by_number(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-#         return JsonRpcRequest(id=cls.get_random_value(), method=cls.GET_BLOCK_BY_NUMBER, params=params)
-
-#     @classmethod
-#     def get_block_number(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-#         return JsonRpcRequest(id=cls.get_random_value(), method=cls.BLOCK_NUMBER, params=params)
-
-#     @classmethod
-#     def get_call(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-#         return JsonRpcRequest(id=cls.get_random_value(), method=cls.CALL, params=params)
-
-#     @classmethod
-#     def get_estimate_gas(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-#         return JsonRpcRequest(id=cls.get_random_value(), method=cls.ESTIMATE_GAS, params=params)
-
-#     @classmethod
-#     def get_gas_price(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-#         return JsonRpcRequest(id=cls.get_random_value(), method=cls.GAS_PRICE, params=params)
-
-#     @classmethod
-#     def get_logs(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-#         return JsonRpcRequest(id=cls.get_random_value(), method=cls.GET_LOGS, params=params)
-
-#     @classmethod
-#     def get_balance(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-#         return JsonRpcRequest(id=cls.get_random_value(), method=cls.GET_BALANCE, params=params)
-
-#     @classmethod
-#     def get_trx_count(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-#         return JsonRpcRequest(id=cls.get_random_value(), method=cls.GET_TRX_COUNT, params=params)
-
-#     @classmethod
-#     def get_code(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-#         return JsonRpcRequest(id=cls.get_random_value(), method=cls.GET_CODE, params=params)
-
-#     @classmethod
-#     def get_send_raw_trx(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-#         return JsonRpcRequest(id=cls.get_random_value(), method=cls.SEND_RAW_TRX, params=params)
-
-#     @classmethod
-#     def get_trx_by_hash(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-#         return JsonRpcRequest(id=cls.get_random_value(), method=cls.GET_TRX_BY_HASH, params=params)
-
-#     @classmethod
-#     def get_trx_receipt(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-#         return JsonRpcRequest(id=cls.get_random_value(), method=cls.GET_TRX_RECEIPT, params=params)
-
-#     @classmethod
-#     def get_storage_at(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-#         return JsonRpcRequest(id=cls.get_random_value(), method=cls.GET_STORAGE_AT, params=params)
-
-#     @classmethod
-#     def get_web3_client_version(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-#         return JsonRpcRequest(id=cls.get_random_value(), method=cls.WEB3_CLIENT_VERSION, params=params)
-
-#     @classmethod
-#     def get_net_version(cls, params: Union[List, JsonRpcRequestParams]) -> JsonRpcRequest:
-# =======
     def get_block_by_hash(cls, params: tp.Union[tp.List, JsonRpcRequestParams]) -> JsonRpcRequest:
         return JsonRpcRequest(id=cls.get_random_value(), method=cls.GET_BLOCK_BY_HASH, params=params)
 
@@ -162,5 +99,4 @@ class RpcRequestFactory:
 
     @classmethod
     def get_net_version(cls, params: tp.Union[tp.List, JsonRpcRequestParams]) -> JsonRpcRequest:
-# >>>>>>> develop
         return JsonRpcRequest(id=cls.get_random_value(), method=cls.NET_VERSION, params=params)

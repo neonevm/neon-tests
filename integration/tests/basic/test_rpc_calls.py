@@ -1,18 +1,11 @@
-import typing as tp
-
 import allure
 import pytest
-
+import typing as tp
 from integration.tests.basic.helpers.assert_message import AssertMessage
-
-# <<<<<<< HEAD
-# from integration.tests.basic.helpers.basic import WAITING_FOR_CONTRACT_SUPPORT, BasicTests
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.model.model import CallRequest, GetLogsRequest, TrxReceiptResponse, TrxResponse
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.test_data.input_data import InputData
-
-# =======
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.helpers.rpc_request_params_factory import RpcRequestParamsFactory
@@ -20,7 +13,6 @@ from integration.tests.basic.model import model as request_models
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.test_data import input_data
 
-# >>>>>>> develop
 
 """
 12.	Verify implemented rpc calls work
@@ -206,15 +198,9 @@ class TestRpcCalls(BaseMixin):
             request_models.GetLogsRequest(from_block=from_block, to_block=to_block, address=sender_account.address)
         ]
         payloads = RpcRequestFactory.get_logs(params=params)
-        # >>>>>>> develop
-
         actual_result = self.json_rpc_client.do_call(payloads)
 
-        # <<<<<<< HEAD
-        #         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        # =======
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
-        # >>>>>>> develop
         assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
         assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
@@ -317,7 +303,8 @@ class TestRpcCalls(BaseMixin):
     def test_rpc_call_eth_get_transaction_count(self):
         """Verify implemented rpc calls work eth_getTransactionCount"""
 
-        self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
+        # self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
+        self.process_transaction(self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value)
 
         params = [self.sender_account.address, Tag.LATEST.value]
         model = RpcRequestFactory.get_trx_count(params=params)
@@ -357,7 +344,10 @@ class TestRpcCalls(BaseMixin):
     def test_rpc_call_eth_get_transaction_by_hash(self):
         """Verify implemented rpc calls work eth_getTransactionByHash"""
 
-        tx_receipt = self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
+        # tx_receipt = self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
+        tx_receipt = self.process_transaction(
+            self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
+        )
 
         params = [tx_receipt.transactionHash.hex()]
         model = RpcRequestFactory.get_trx_by_hash(params=params)
@@ -370,7 +360,10 @@ class TestRpcCalls(BaseMixin):
     def test_rpc_call_eth_get_transaction_receipt(self):
         """Verify implemented rpc calls work eth_getTransactionReceipt"""
 
-        tx_receipt = self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
+        # tx_receipt = self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
+        tx_receipt = self.process_transaction(
+            self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
+        )
 
         params = [tx_receipt.transactionHash.hex()]
         model = RpcRequestFactory.get_trx_receipt(params=params)
@@ -383,7 +376,10 @@ class TestRpcCalls(BaseMixin):
     def test_eth_get_block_by_hash(self):
         """Verify implemented rpc calls work eth_getBlockByHash"""
 
-        tx_receipt = self.transfer_neon(
+        # tx_receipt = self.transfer_neon(
+        #     self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
+        # )
+        tx_receipt = self.process_transaction(
             self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
         )
 
@@ -408,7 +404,10 @@ class TestRpcCalls(BaseMixin):
     def test_eth_get_block_by_number_via_numbers(self):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
 
-        tx_receipt = self.transfer_neon(
+        # tx_receipt = self.transfer_neon(
+        #     self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
+        # )
+        tx_receipt = self.process_transaction(
             self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
         )
 

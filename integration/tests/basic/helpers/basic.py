@@ -124,11 +124,11 @@ class BaseMixin(BaseTests):
                 assert error_message in str(error_info.value)
             return tx
 
-    def transfer_neon(
-        self, sender_account: Account, recipient_account: Account, amount: int
-    ) -> tp.Union[web3.types.TxReceipt, None]:
-        """Transfers tokens"""
-        return self.process_transaction(sender_account, recipient_account, amount)
+    # def transfer_neon(
+    #     self, sender_account: Account, recipient_account: Account, amount: int
+    # ) -> tp.Union[web3.types.TxReceipt, None]:
+    #     """Transfers tokens"""
+    #     return self.process_transaction(sender_account, recipient_account, amount)
 
     def check_value_error_if_less_than_required(
         self, sender_account: Account, recipient_account: Account, amount: int

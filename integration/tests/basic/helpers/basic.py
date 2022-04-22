@@ -1,17 +1,10 @@
-import typing as tp
-from decimal import Decimal
-
 import allure
 import pytest
+import typing as tp
 import web3
+from decimal import Decimal
 from eth_account import Account
-
-# <<<<<<< HEAD
 from typing import Optional, Union
-
-# =======
-
-# >>>>>>> develop
 from integration.tests.base import BaseTests
 from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.json_rpc_client import JsonRpcClient
@@ -44,7 +37,7 @@ class BaseMixin(BaseTests):
     @property
     def recipient_account(self):
         if not BaseMixin._recipient_account:
-            account = self.create_account_with_balance(is_sender=False)
+            account = self.create_account_with_balance()
             BaseMixin._recipient_account = account
         return BaseMixin._recipient_account
 
@@ -70,26 +63,10 @@ class BaseMixin(BaseTests):
         """Requests faucet for Neon"""
         self.faucet.request_neon(wallet, amount=amount)
 
-    # <<<<<<< HEAD
-    #     def create_account_with_balance(self, amount: int = InputData.FAUCET_1ST_REQUEST_AMOUNT.value) -> Account:
-    #         """Creates a new account with balance"""
-
-    #         account = self.create_account()
-    #         self.request_faucet_neon(account.address, amount)
-    #         return account
-
-    #     @allure.step("deploying an ERC_20 conract")
-    #     def deploy_contract(self):
-    #         """Deploys an ERC-20 contract"""
-    #         pass
-    # =======
-    def create_account_with_balance(
-        self, amount: int = InputData.FAUCET_1ST_REQUEST_AMOUNT.value, is_sender: bool = True
-    ) -> Account:
+    def create_account_with_balance(self, amount: int = InputData.FAUCET_1ST_REQUEST_AMOUNT.value) -> Account:
         """Creates a new account with balance"""
         account = self.create_account()
-        if is_sender:
-            self.request_faucet_neon(account.address, amount)
+        self.request_faucet_neon(account.address, amount)
         return account
 
     # >>>>>>> develop
@@ -99,18 +76,6 @@ class BaseMixin(BaseTests):
     #     self.faucet.request_sol(wallet, amount=amount)
 
     def process_transaction(
-        # <<<<<<< HEAD
-        #         self,
-        #         sender_account: Account,
-        #         recipient_account: Account,
-        #         amount: float = 0.0,
-        #         gas: Optional[int] = 0,
-        #         gas_price: Optional[int] = None,
-        #     ) -> Union[web3.types.TxReceipt, None]:
-        #         """Processes transaction"""
-        #         with allure.step(f"Sending {amount} from {sender_account.address} to {recipient_account.address}"):
-        #             return self.web3_client.send_neon(sender_account, recipient_account, amount, gas, gas_price)
-        # =======
         self,
         sender_account: Account,
         recipient_account: Account,
@@ -142,17 +107,6 @@ class BaseMixin(BaseTests):
         #                     assert error_message in str(error_info), f"Expected {error_message} to be in {error_info}"
         #                 assert None != error_info, "Transaction failed"
         #             return tx
-        #     def check_value_error_if_less_than_required(
-        #         self, sender_account: Account, recipient_account: Account, amount: int
-        #     ) -> Union[web3.types.TxReceipt, None]:
-        #         """Checks in case the balance is less than required"""
-        #         return self.process_transaction_with_failure(
-        #             sender_account, recipient_account, amount, error_message=ErrorMessage.INSUFFICIENT_FUNDS.value
-        #         )
-        #     def check_balance(self, expected: float, actual: Decimal):
-        #         """Compares the balance with expectation"""
-        #         expected_dec = round(expected, InputData.ROUND_DIGITS.value)
-        #         actual_dec = float(round(actual, InputData.ROUND_DIGITS.value))
         # =======
         recipient_account: tp.Union[Account, AccountData],
         amount: int,
@@ -184,8 +138,6 @@ class BaseMixin(BaseTests):
             sender_account, recipient_account, amount, ErrorMessage.INSUFFICIENT_FUNDS.value
         )
 
-    # >>>>>>> develop
-
     def assert_balance(self, address: str, expected_amount: float, rnd_dig: int = None):
         """Compares balance of an account with expectation"""
         balance = float(self.web3_client.fromWei(self.get_balance(address), "ether"))
@@ -208,7 +160,7 @@ class BaseMixin(BaseTests):
     #     def assert_is_successful_response(self, actual_result: Union[JsonRpcResponse, JsonRpcErrorResponse]) -> bool:
     #         return isinstance(actual_result, JsonRpcResponse)
     # =======
-    @allure.step("deploying an ERC_20 conract")
+    @allure.step("deploying an ERC_20 contract")
     def deploy_contract(self):
         """Deploys an ERC-20 contract"""
         pass
@@ -222,8 +174,6 @@ class BaseMixin(BaseTests):
     def assert_result_object(data: JsonRpcResponse) -> bool:
         """Checks that the result sub object is present"""
         return hasattr(data, "result")
-
-    # >>>>>>> develop
 
     @allure.step("calculating gas")
     def calculate_trx_gas(self, tx_receipt: web3.types.TxReceipt) -> float:
@@ -240,10 +190,17 @@ class BaseMixin(BaseTests):
         return isinstance(actual_result, JsonRpcResponse)
 
     @staticmethod
-    def check_balance(expected: float, actual: Decimal, rnd_dig: int = InputData.ROUND_DIGITS.value):
+    def check_balance(expected: float, actual: float, rnd_dig: int = InputData.ROUND_DIGITS.value):
         """Compares the balance with expectation"""
         expected_dec = round(expected, rnd_dig)
         # TODO: added float()
-        actual_dec = float(round(actual, rnd_dig))
+        # actual_dec = float(round(actual, rnd_dig))
+        actual_dec = round(actual, rnd_dig)
 
         assert actual_dec == expected_dec, f"expected balance = {expected_dec}, actual balance = {actual_dec}"
+
+        # TODO: this was mine
+        #     def check_balance(self, expected: float, actual: Decimal):
+        #         """Compares the balance with expectation"""
+        #         expected_dec = round(expected, InputData.ROUND_DIGITS.value)
+        #         actual_dec = float(round(actual, InputData.ROUND_DIGITS.value))

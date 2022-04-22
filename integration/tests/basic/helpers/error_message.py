@@ -8,3 +8,6 @@ class ErrorMessage(Enum):
     INVALID_FIELDS_GAS = "Transaction had invalid fields: {'gas'"
     NONCE_TOO_LOW = "nonce too low"
     NONCE_TOO_HIGH = "nonce too high"
+    # TODO: replace it with insufficient funds
+    EXPECTING_VALUE = "insufficient funds for transfer"
+

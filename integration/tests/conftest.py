@@ -1,8 +1,8 @@
 import json
-import random
-import string
-import shutil
 import pathlib
+import random
+import shutil
+import string
 import time
 import typing as tp
 from dataclasses import dataclass
@@ -11,17 +11,14 @@ import allure
 import pytest
 import solana
 import solana.rpc.api
-
 from _pytest.config import Config
-from integration.tests.basic.helpers.json_rpc_requester import JsonRpcRequester
-
-from utils.operator import Operator
-from utils.faucet import Faucet
-from utils.web3client import NeonWeb3Client
-from utils.erc20wrapper import ERC20Wrapper
-
 from solana.keypair import Keypair
 
+from integration.tests.basic.helpers.json_rpc_requester import JsonRpcClient
+from utils.erc20wrapper import ERC20Wrapper
+from utils.faucet import Faucet
+from utils.operator import Operator
+from utils.web3client import NeonWeb3Client
 
 LAMPORT_PER_SOL = 1_000_000_000
 
@@ -57,9 +54,10 @@ def pytest_configure(config: Config):
 def faucet(pytestconfig: Config) -> Faucet:
     return Faucet(pytestconfig.environment.faucet_url)
 
+
 @pytest.fixture(scope="session", autouse=True)
-def jsonrpc_requester(pytestconfig: Config) -> JsonRpcRequester:
-    return JsonRpcRequester(pytestconfig.environment.proxy_url)
+def json_rpc_client(pytestconfig: Config) -> JsonRpcClient:
+    return JsonRpcClient(pytestconfig.environment.proxy_url)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -83,7 +81,7 @@ def operator(pytestconfig: Config, web3_client: NeonWeb3Client) -> Operator:
         pytestconfig.environment.operator_neon_rewards_address,
         pytestconfig.environment.spl_neon_mint,
         pytestconfig.environment.operator_keys,
-        web3_client=web3_client
+        web3_client=web3_client,
     )
 
 
@@ -92,7 +90,7 @@ def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
     opts = {
         "Proxy.Version": web3_client.get_proxy_version()["result"],
         "EVM.Version": web3_client.get_evm_version()["result"],
-        "CLI.Version": web3_client.get_cli_version()["result"]
+        "CLI.Version": web3_client.get_cli_version()["result"],
     }
 
     allure_path = pytestconfig.getoption("--alluredir")
@@ -116,21 +114,26 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
         assert web3_client.get_balance(acc) == 1000
     start_neon_balance = operator.get_neon_balance()
     start_sol_balance = operator.get_solana_balance()
-    with allure.step(f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"):
+    with allure.step(
+        f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
+    ):
         pass
     yield acc
     end_neon_balance = operator.get_neon_balance()
     end_sol_balance = operator.get_solana_balance()
-    with allure.step(f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"):
-        pass
     with allure.step(
-            f"Account end balance: {web3_client.get_balance(acc)} NEON"):
+        f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
+    ):
+        pass
+    with allure.step(f"Account end balance: {web3_client.get_balance(acc)} NEON"):
         pass
 
 
 @pytest.fixture(scope="session")
 def erc20wrapper(sol_client, web3_client: NeonWeb3Client, faucet, pytestconfig: Config):
-    wrapper = ERC20Wrapper(web3_client, sol_client, pytestconfig.environment.evm_loader, pytestconfig.environment.spl_neon_mint)
+    wrapper = ERC20Wrapper(
+        web3_client, sol_client, pytestconfig.environment.evm_loader, pytestconfig.environment.spl_neon_mint
+    )
     owner = Keypair.generate()
 
     sol_client.request_airdrop(owner.public_key, 10000000000)
@@ -148,10 +151,7 @@ def erc20wrapper(sol_client, web3_client: NeonWeb3Client, faucet, pytestconfig: 
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
 
     contract, address = wrapper.deploy_wrapper(
-        name=f"Test {symbol}",
-        symbol=symbol,
-        account=eth_user,
-        mint_address=token.pubkey
+        name=f"Test {symbol}", symbol=symbol, account=eth_user, mint_address=token.pubkey
     )
 
     wrapper.mint_tokens(eth_user.address, owner, token.pubkey, address)

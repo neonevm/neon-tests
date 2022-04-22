@@ -1,7 +1,7 @@
 import allure
 import pytest
 
-from integration.tests.basic.helpers.basic import WAITING_FOR_ERC20, WAITING_FOR_MS, BasicTests
+from integration.tests.basic.helpers.basic import WAITING_FOR_ERC20, WAITING_FOR_MS, BaseMixin
 from integration.tests.basic.test_data.input_data import InputData
 
 """
@@ -69,7 +69,7 @@ FAUCET_REQUEST_MESSAGE = "requesting faucet for Neon"
 
 
 @allure.story("Basic: single user tests")
-class TestSingleClient(BasicTests):
+class TestSingleClient(BaseMixin):
     @pytest.mark.only_stands
     def test_create_account_and_get_balance(self):
         """Create account and get balance"""

@@ -39,5 +39,3 @@ class JsonRpcClient:
                     json_doc.update(dict(result=model.from_dict(json_doc["result"])))
                 response = JsonRpcResponse(**json_doc)
         return response
-
-

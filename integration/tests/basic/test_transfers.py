@@ -2,13 +2,16 @@ from typing import Union
 
 import allure
 import pytest
+
 # <<<<<<< HEAD
 # from typing import Union
 from integration.tests.basic.helpers.assert_message import AssertMessage
+
 # from integration.tests.basic.helpers.basic import WAITING_FOR_ERC20, WAITING_FOR_MS, BasicTests
 # =======
 
 from integration.tests.basic.helpers.basic import WAITING_FOR_ERC20, WAITING_FOR_MS, BaseMixin
+
 # >>>>>>> develop
 from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
@@ -45,18 +48,18 @@ GAS_LIMIT_AND_PRICE_DATA = (
 @allure.story("Basic: transfer tests")
 class TestTransfer(BaseMixin):
     @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
-# <<<<<<< HEAD
-#     def test_send_neon_from_one_account_to_another(self, amount: Union[int, float]):
-#         """Send neon from one account to another"""
+    # <<<<<<< HEAD
+    #     def test_send_neon_from_one_account_to_another(self, amount: Union[int, float]):
+    #         """Send neon from one account to another"""
 
-#         tx_receipt = self.process_transaction(self.sender_account, self.recipient_account, amount)
+    #         tx_receipt = self.process_transaction(self.sender_account, self.recipient_account, amount)
 
-#         self.assert_balance(
-#             self.sender_account.address,
-#             InputData.FAUCET_1ST_REQUEST_AMOUNT.value - amount - self.calculate_trx_gas(tx_receipt=tx_receipt),
-#         )
-#         self.assert_balance(self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value + amount)
-# =======
+    #         self.assert_balance(
+    #             self.sender_account.address,
+    #             InputData.FAUCET_1ST_REQUEST_AMOUNT.value - amount - self.calculate_trx_gas(tx_receipt=tx_receipt),
+    #         )
+    #         self.assert_balance(self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value + amount)
+    # =======
     def test_send_neon_from_one_account_to_another(self, amount: Union[int, float]):
         """Send neon from one account to another"""
         sender_balance = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
@@ -68,8 +71,9 @@ class TestTransfer(BaseMixin):
             rnd_dig=3,
         )
         self.assert_balance(self.recipient_account.address, recipient_balance + amount, rnd_dig=3)
-# >>>>>>> develop
-# TODO: changed rnd_dig from 1 to 3
+
+    # >>>>>>> develop
+    # TODO: changed rnd_dig from 1 to 3
 
     @pytest.mark.skip(WAITING_FOR_MS)
     def test_send_spl_wrapped_account_from_one_account_to_another(self):
@@ -77,15 +81,15 @@ class TestTransfer(BaseMixin):
         pass
 
     @pytest.mark.parametrize("amount", WRONG_TRANSFER_AMOUNT_DATA)
-# <<<<<<< HEAD
-#     def test_send_more_than_exist_on_account_neon(self, amount: Union[int, float]):
-#         """Send more than exist on account: neon"""
+    # <<<<<<< HEAD
+    #     def test_send_more_than_exist_on_account_neon(self, amount: Union[int, float]):
+    #         """Send more than exist on account: neon"""
 
-#         self.check_value_error_if_less_than_required(self.sender_account, self.recipient_account, amount)
+    #         self.check_value_error_if_less_than_required(self.sender_account, self.recipient_account, amount)
 
-#         self.assert_balance(self.sender_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-#         self.assert_balance(self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-# =======
+    #         self.assert_balance(self.sender_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+    #         self.assert_balance(self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+    # =======
     def test_send_more_than_exist_on_account_neon(self, amount: Union[int, float]):
         """Send more than exist on account: neon"""
 
@@ -95,7 +99,8 @@ class TestTransfer(BaseMixin):
 
         self.assert_balance(self.sender_account.address, sender_balance, rnd_dig=1)
         self.assert_balance(self.recipient_account.address, recipient_balance, rnd_dig=1)
-# >>>>>>> develop
+
+    # >>>>>>> develop
 
     @pytest.mark.skip(WAITING_FOR_MS)
     @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
@@ -111,15 +116,15 @@ class TestTransfer(BaseMixin):
     def test_zero_neon(self):
         """Send zero: neon"""
 
-# <<<<<<< HEAD
-#         tx_receipt = self.process_transaction(self.sender_account, self.recipient_account)
+        # <<<<<<< HEAD
+        #         tx_receipt = self.process_transaction(self.sender_account, self.recipient_account)
 
-#         self.assert_balance(
-#             self.sender_account.address,
-#             InputData.FAUCET_1ST_REQUEST_AMOUNT.value - self.calculate_trx_gas(tx_receipt=tx_receipt),
-#         )
-#         self.assert_balance(self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-# =======
+        #         self.assert_balance(
+        #             self.sender_account.address,
+        #             InputData.FAUCET_1ST_REQUEST_AMOUNT.value - self.calculate_trx_gas(tx_receipt=tx_receipt),
+        #         )
+        #         self.assert_balance(self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+        # =======
         sender_balance = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
         recipient_balance = float(self.web3_client.fromWei(self.get_balance(self.recipient_account.address), "ether"))
         tx_receipt = self.process_transaction(self.sender_account, self.recipient_account)
@@ -128,7 +133,8 @@ class TestTransfer(BaseMixin):
             self.sender_account.address, sender_balance - self.calculate_trx_gas(tx_receipt=tx_receipt), rnd_dig=1
         )
         self.assert_balance(self.recipient_account.address, recipient_balance, rnd_dig=1)
-# >>>>>>> develop
+
+    # >>>>>>> develop
 
     @pytest.mark.skip(WAITING_FOR_MS)
     def test_zero_spl(self):
@@ -149,19 +155,19 @@ class TestTransfer(BaseMixin):
             self.sender_account,
             self.recipient_account,
             InputData.NEGATIVE_AMOUNT.value,
-# <<<<<<< HEAD
-#             error_message=ErrorMessage.NEGATIVE_VALUE.value,
-#         )
-
-#         self.assert_balance(self.sender_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-#         self.assert_balance(self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-# =======
+            # <<<<<<< HEAD
+            #             error_message=ErrorMessage.NEGATIVE_VALUE.value,
+            #         )
+            #         self.assert_balance(self.sender_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+            #         self.assert_balance(self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+            # =======
             ErrorMessage.NEGATIVE_VALUE.value,
         )
 
         self.assert_balance(self.sender_account.address, sender_balance, rnd_dig=1)
         self.assert_balance(self.recipient_account.address, recipient_balance, rnd_dig=1)
-# >>>>>>> develop
+
+    # >>>>>>> develop
 
     @pytest.mark.skip(WAITING_FOR_MS)
     def test_send_negative_sum_from_account_spl(self):
@@ -178,24 +184,27 @@ class TestTransfer(BaseMixin):
         sender_account = self.create_account_with_balance()
         balance_before = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
         self.process_transaction_with_failure(
-# <<<<<<< HEAD
-#             sender_account, INVALID_ADDRESS, InputData.DEFAULT_TRANSFER_AMOUNT.value, error_message=ENS_NAME_ERROR
-#         )
-
-#         self.assert_balance(sender_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-# =======
-            sender_account, INVALID_ADDRESS, InputData.DEFAULT_TRANSFER_AMOUNT.value, ENS_NAME_ERROR
+            # <<<<<<< HEAD
+            #             sender_account, INVALID_ADDRESS, InputData.DEFAULT_TRANSFER_AMOUNT.value, error_message=ENS_NAME_ERROR
+            #         )
+            #         self.assert_balance(sender_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+            # =======
+            sender_account,
+            INVALID_ADDRESS,
+            InputData.DEFAULT_TRANSFER_AMOUNT.value,
+            ENS_NAME_ERROR,
         )
         balance_after = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
 
         assert balance_before == balance_after
-# >>>>>>> develop
+
+    # >>>>>>> develop
 
     def test_send_more_token_to_non_existing_address(self):
         """Send token to a non-existing address"""
         sender_account = self.create_account_with_balance()
         recipient_address = AccountData(address=sender_account.address.replace("1", "2").replace("3", "4"))
-# <<<<<<< HEAD
+        # <<<<<<< HEAD
 
         self.process_transaction_with_failure(
             sender_account,
@@ -246,11 +255,11 @@ class TestTransactionsValidation(BaseMixin):
         Too high gas_price > u64::max
         Too high gas_limit * gas_price > u64::max
         """
-        
+
         #
         amount = 0
         sender_account = self.create_account_with_balance(amount)
-        recipient_account =self.create_account_with_balance()
+        recipient_account = self.create_account_with_balance()
         #
 
         self.process_transaction_with_failure(
@@ -328,22 +337,25 @@ class TestTransactionsValidation(BaseMixin):
         sender_account = self.create_account_with_balance(sender_amount)
         recipient_account = self.web3_client.create_account()
         amount = 0.9
-# =======
-# >>>>>>> develop
+        # =======
+        # >>>>>>> develop
 
         # balance_before = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
         balance_before = float(self.web3_client.fromWei(self.get_balance(sender_account.address), "ether"))
         self.process_transaction_with_failure(
-# <<<<<<< HEAD
+            # <<<<<<< HEAD
             # self.sender_account, self.recipient_account, amount, error_message=ErrorMessage.INSUFFICIENT_FUNDS.value
-            sender_account, recipient_account, amount, error_message=ErrorMessage.INSUFFICIENT_FUNDS.value
+            sender_account,
+            recipient_account,
+            amount,
+            error_message=ErrorMessage.INSUFFICIENT_FUNDS.value,
         )
 
         # self.assert_balance(self.sender_account.address, sender_amount)
         # self.assert_balance(self.recipient_account.address, 0)
         self.assert_balance(sender_account.address, sender_amount)
         self.assert_balance(recipient_account.address, 0)
-    
+
     def test_there_are_not_enough_neons_for_transfer(self):
         """There are not enough Neons for transfer"""
         sender_amount = 1
@@ -355,7 +367,10 @@ class TestTransactionsValidation(BaseMixin):
 
         self.process_transaction_with_failure(
             # self.sender_account, self.recipient_account, amount, error_message=ErrorMessage.INSUFFICIENT_FUNDS.value
-            sender_account, recipient_account, amount, error_message=ErrorMessage.INSUFFICIENT_FUNDS.value
+            sender_account,
+            recipient_account,
+            amount,
+            error_message=ErrorMessage.INSUFFICIENT_FUNDS.value,
         )
 
         # self.assert_balance(self.sender_account.address, sender_amount)
@@ -374,9 +389,11 @@ class TestTransactionsValidation(BaseMixin):
         }
         transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
         return transaction
+
+
 # =======
-        #     sender_account, recipient_address, InputData.DEFAULT_TRANSFER_AMOUNT.value, EIP55_INVALID_CHECKUM
-        # )
-        # balance_after = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
-        # assert balance_before == balance_after
+#     sender_account, recipient_address, InputData.DEFAULT_TRANSFER_AMOUNT.value, EIP55_INVALID_CHECKUM
+# )
+# balance_after = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
+# assert balance_before == balance_after
 # >>>>>>> develop

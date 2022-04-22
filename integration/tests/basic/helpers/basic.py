@@ -119,9 +119,9 @@ class BaseMixin(BaseTests):
         with allure.step(f"Sending {amount} from {sender_account.address} to {recipient_account.address}"):
             with pytest.raises(Exception) as error_info:
                 tx = self.web3_client.send_neon(sender_account, recipient_account, amount)
-            assert error_info, "Transaction failed"
+            assert error_info, "Transaction not failed"
             if error_message:
-                assert error_message in str(error_info.value)
+                assert error_message in str(error_info.value), f"Expected {error_message} to be in {error_info}"
             return tx
 
     # def transfer_neon(

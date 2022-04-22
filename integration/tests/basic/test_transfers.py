@@ -23,7 +23,7 @@ ENS_NAME_ERROR = f"ENS name: '{INVALID_ADDRESS.address}' is invalid."
 # EIP55_INVALID_CHECKSUM = (
 #     "'Address has an invalid EIP-55 checksum. After looking up the address from the original source, try again.'"
 # )
-# U64_MAX = 18_446_744_073_709_551_615
+U64_MAX = 18_446_744_073_709_551_615
 # =======
 EIP55_INVALID_CHECKUM = (
     "'Address has an invalid EIP-55 checksum. After looking up the address from the original source, try again.'"

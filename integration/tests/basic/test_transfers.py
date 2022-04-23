@@ -39,8 +39,12 @@ TRANSFER_AMOUNT_DATA = [(0.01), (1), (1.1)]
 GAS_LIMIT_AND_PRICE_DATA = (
     [1, None, ErrorMessage.GAS_LIMIT_REACHED.value],
     [U64_MAX + 1, None, ErrorMessage.INSUFFICIENT_FUNDS.value],
-    [0, U64_MAX + 1, ErrorMessage.INSUFFICIENT_FUNDS.value], # ErrorMessage.GAS_LIMIT_REACHED.value], # ErrorMessage.INSUFFICIENT_FUNDS.value],
-    [1, (U64_MAX + 1), ErrorMessage.GAS_LIMIT_REACHED.value], # ErrorMessage.INSUFFICIENT_FUNDS.value],
+    [
+        0,
+        U64_MAX + 1,
+        ErrorMessage.INSUFFICIENT_FUNDS.value,
+    ],  # ErrorMessage.GAS_LIMIT_REACHED.value], # ErrorMessage.INSUFFICIENT_FUNDS.value],
+    [1, (U64_MAX + 1), ErrorMessage.GAS_LIMIT_REACHED.value],  # ErrorMessage.INSUFFICIENT_FUNDS.value],
     [1000, int((U64_MAX + 100) / 1000), ErrorMessage.GAS_LIMIT_REACHED.value],
 )
 
@@ -64,13 +68,13 @@ class TestTransfer(BaseMixin):
         """Send neon from one account to another"""
         sender_balance = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
         recipient_balance = float(self.web3_client.fromWei(self.get_balance(self.recipient_account.address), "ether"))
-        # tx_receipt = self.transfer_neon(self.sender_account, self.recipient_account, amount)
+
         tx_receipt = self.process_transaction(self.sender_account, self.recipient_account, amount)
         self.assert_balance(
             self.sender_account.address,
             sender_balance - amount - self.calculate_trx_gas(tx_receipt=tx_receipt),
-            # TODO: from 3 to 2
-            rnd_dig=2,
+            # TODO: from 3 to 2 to 1
+            rnd_dig=1,
         )
         self.assert_balance(self.recipient_account.address, recipient_balance + amount, rnd_dig=3)
 
@@ -223,7 +227,7 @@ class TestTransfer(BaseMixin):
         amount = 100
         sender_account = self.create_account_with_balance(amount)
         recipient_account = self.create_account_with_balance()
-        transfer_amount=2
+        transfer_amount = 2
         #
         transaction = {
             # "from": self.sender_account.address,
@@ -251,8 +255,8 @@ class TestTransfer(BaseMixin):
 
         # self.assert_balance(self.sender_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value - amount)
         # self.assert_balance(self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value + amount)
-        self.assert_balance(sender_account.address,amount- transfer_amount)
-        self.assert_balance(recipient_account.address,InputData.FAUCET_1ST_REQUEST_AMOUNT.value + transfer_amount)
+        self.assert_balance(sender_account.address, amount - transfer_amount)
+        self.assert_balance(recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value + transfer_amount)
 
 
 @allure.story("Basic: transactions validation")

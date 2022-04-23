@@ -303,7 +303,6 @@ class TestRpcCalls(BaseMixin):
     def test_rpc_call_eth_get_transaction_count(self):
         """Verify implemented rpc calls work eth_getTransactionCount"""
 
-        # self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
         self.process_transaction(self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value)
 
         params = [self.sender_account.address, Tag.LATEST.value]
@@ -344,7 +343,6 @@ class TestRpcCalls(BaseMixin):
     def test_rpc_call_eth_get_transaction_by_hash(self):
         """Verify implemented rpc calls work eth_getTransactionByHash"""
 
-        # tx_receipt = self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
         tx_receipt = self.process_transaction(
             self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
         )
@@ -360,7 +358,6 @@ class TestRpcCalls(BaseMixin):
     def test_rpc_call_eth_get_transaction_receipt(self):
         """Verify implemented rpc calls work eth_getTransactionReceipt"""
 
-        # tx_receipt = self.transfer_neon(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
         tx_receipt = self.process_transaction(
             self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
         )
@@ -376,9 +373,6 @@ class TestRpcCalls(BaseMixin):
     def test_eth_get_block_by_hash(self):
         """Verify implemented rpc calls work eth_getBlockByHash"""
 
-        # tx_receipt = self.transfer_neon(
-        #     self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
-        # )
         tx_receipt = self.process_transaction(
             self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
         )
@@ -404,9 +398,6 @@ class TestRpcCalls(BaseMixin):
     def test_eth_get_block_by_number_via_numbers(self):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
 
-        # tx_receipt = self.transfer_neon(
-        #     self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
-        # )
         tx_receipt = self.process_transaction(
             self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
         )

@@ -85,29 +85,9 @@ class BaseMixin(BaseTests):
         with allure.step(f"Sending {amount} from {sender_account.address} to {recipient_account.address}"):
             return self.web3_client.send_neon(sender_account, recipient_account, amount)
 
-    # >>>>>>> develop
-
     def process_transaction_with_failure(
         self,
         sender_account: Account,
-        # <<<<<<< HEAD
-        #         recipient_account: Union[Account, AccountData],
-        #         amount: int,
-        #         gas: Optional[int] = 0,
-        #         gas_price: Optional[int] = None,
-        #         error_message: str = "",
-        #     ) -> Union[web3.types.TxReceipt, None]:
-        #         """Processes transaction, expects a failure"""
-        #         tx: Union[web3.types.TxReceipt, None] = None
-        #         with allure.step(f"Sending {amount} from {sender_account.address} to {recipient_account.address}"):
-        #             with pytest.raises(Exception) as error_info:
-        #                 tx = self.web3_client.send_neon(sender_account, recipient_account, amount, gas, gas_price)
-        #             if error_info != None:
-        #                 if error_message:
-        #                     assert error_message in str(error_info), f"Expected {error_message} to be in {error_info}"
-        #                 assert None != error_info, "Transaction failed"
-        #             return tx
-        # =======
         recipient_account: tp.Union[Account, AccountData],
         amount: int,
         gas: Optional[int] = 0,
@@ -124,12 +104,6 @@ class BaseMixin(BaseTests):
                 assert error_message in str(error_info.value), f"Expected {error_message} to be in {error_info}"
             return tx
 
-    # def transfer_neon(
-    #     self, sender_account: Account, recipient_account: Account, amount: int
-    # ) -> tp.Union[web3.types.TxReceipt, None]:
-    #     """Transfers tokens"""
-    #     return self.process_transaction(sender_account, recipient_account, amount)
-
     def check_value_error_if_less_than_required(
         self, sender_account: Account, recipient_account: Account, amount: int
     ) -> tp.Union[web3.types.TxReceipt, None]:
@@ -143,23 +117,6 @@ class BaseMixin(BaseTests):
         balance = float(self.web3_client.fromWei(self.get_balance(address), "ether"))
         self.check_balance(expected_amount, balance, rnd_dig=rnd_dig)
 
-    # <<<<<<< HEAD
-    #     def assert_balance(self, address: str, expected_amount: float):
-    #         """Compares balance of an account with expectation"""
-    #         balance = self.web3_client.fromWei(self.get_balance(address), "ether")
-    #         self.check_balance(expected_amount, balance)
-
-    #     def assert_result_object(self, data: JsonRpcResponse) -> bool:
-    #         """Checks that the result subobject is present"""
-    #         return hasattr(data, "result")
-
-    #     def assert_no_error_object(self, data: JsonRpcErrorResponse) -> bool:
-    #         """Checks that the error subobject is not present"""
-    #         return not hasattr(data, "error")
-
-    #     def assert_is_successful_response(self, actual_result: Union[JsonRpcResponse, JsonRpcErrorResponse]) -> bool:
-    #         return isinstance(actual_result, JsonRpcResponse)
-    # =======
     @allure.step("deploying an ERC_20 contract")
     def deploy_contract(self):
         """Deploys an ERC-20 contract"""
@@ -193,14 +150,6 @@ class BaseMixin(BaseTests):
     def check_balance(expected: float, actual: float, rnd_dig: int = InputData.ROUND_DIGITS.value):
         """Compares the balance with expectation"""
         expected_dec = round(expected, rnd_dig)
-        # TODO: added float()
-        # actual_dec = float(round(actual, rnd_dig))
         actual_dec = round(actual, rnd_dig)
 
         assert actual_dec == expected_dec, f"expected balance = {expected_dec}, actual balance = {actual_dec}"
-
-        # TODO: this was mine
-        #     def check_balance(self, expected: float, actual: Decimal):
-        #         """Compares the balance with expectation"""
-        #         expected_dec = round(expected, InputData.ROUND_DIGITS.value)
-        #         actual_dec = float(round(actual, InputData.ROUND_DIGITS.value))

@@ -3,7 +3,7 @@ import pytest
 import typing as tp
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
-from integration.tests.basic.model.model import CallRequest, GetLogsRequest, TrxReceiptResponse, TrxResponse
+from integration.tests.basic.model.model import TrxReceiptResponse, TrxResponse
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.test_data.input_data import InputData
 from integration.tests.basic.helpers.basic import BaseMixin
@@ -87,11 +87,6 @@ UNSUPPORTED_METHODS = [
     "shh_version",
 ]
 
-# <<<<<<< HEAD
-# self.process_transaction(self.sender_account, self.recipient_account, InputData.SAMPLE_AMOUNT.value)
-# =======
-# >>>>>>> develop
-
 
 @allure.story("Basic: Json-RPC call tests")
 class TestRpcCalls(BaseMixin):
@@ -173,23 +168,11 @@ class TestRpcCalls(BaseMixin):
         payloads = RpcRequestFactory.get_gas_price(params=[])
         actual_result = self.json_rpc_client.do_call(payloads)
 
-        # <<<<<<< HEAD
-        #         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        # =======
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
-        # >>>>>>> develop
         assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
         assert "0x" in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
 
     @pytest.mark.parametrize("from_block,to_block", GET_LOGS_TEST_DATA)
-    # <<<<<<< HEAD
-    #     def test_rpc_call_eth_getLogs_via_tags(self, from_block: Tag, to_block: Tag):
-    #         """Verify implemented rpc calls work eth_getLogs"""
-    #         # TODO: use contract instead of account
-    #         sender_account = self.create_account_with_balance()
-    #         params = [GetLogsRequest(from_block=from_block, to_block=to_block, address=sender_account.address)]
-    #         model = RpcRequestFactory.get_logs(params=params)
-    # =======
     def test_eth_get_logs_via_tags(self, from_block: Tag, to_block: Tag):
         """Verify implemented rpc calls work eth_getLogs"""
         # TODO: use contract instead of account
@@ -209,23 +192,14 @@ class TestRpcCalls(BaseMixin):
         # TODO: use contract instead of account
         sender_account = self.create_account_with_balance()
         # TOOD: variants
-        # <<<<<<< HEAD
-        #         params = [GetLogsRequest(from_block=1, to_block=Tag.LATEST.value, address=sender_account.address)]
-        #         model = RpcRequestFactory.get_logs(params=params)
-        # =======
+
         params = [
             request_models.GetLogsRequest(from_block=1, to_block=Tag.LATEST.value, address=sender_account.address)
         ]
         payloads = RpcRequestFactory.get_logs(params=params)
-        # >>>>>>> develop
-
         actual_result = self.json_rpc_client.do_call(payloads)
 
-        # <<<<<<< HEAD
-        #         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        # =======
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
-        # >>>>>>> develop
         assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
         assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
@@ -247,20 +221,6 @@ class TestRpcCalls(BaseMixin):
         sender_account = self.create_account_with_balance()
 
         params = [sender_account.address, Tag.LATEST.value]
-        # <<<<<<< HEAD
-        #         model = RpcRequestFactory.get_code(params=params)
-        #         actual_result = self.json_rpc_client.do_call(model)
-        #         # actual_result = self.json_rpc_client.deserialize_response(response)
-
-        #         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        #         assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
-        #         assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
-
-        #     @pytest.mark.skip(WAITING_FOR_CONTRACT_SUPPORT)
-        #     def test_rpc_call_eht_getStorageAt(self):
-        #         """Verify implemented rpc calls work eht_getStorageAt"""
-        #         pass
-        # =======
         payloads = RpcRequestFactory.get_code(params=params)
         actual_result = self.json_rpc_client.do_call(payloads)
 
@@ -268,18 +228,12 @@ class TestRpcCalls(BaseMixin):
         assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
         assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
-    # >>>>>>> develop
-
     def test_web3_client_version(self):
         """Verify implemented rpc calls work web3_clientVersion"""
         payloads = RpcRequestFactory.get_web3_client_version(params=[])
         actual_result = self.json_rpc_client.do_call(payloads)
 
-        # <<<<<<< HEAD
-        #         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        # =======
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
-        # >>>>>>> develop
         assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
         assert "Neon" in actual_result.result, "version does not contain 'Neon'"
 
@@ -288,17 +242,11 @@ class TestRpcCalls(BaseMixin):
         payloads = RpcRequestFactory.get_net_version(params=[])
         actual_result = self.json_rpc_client.do_call(payloads)
 
-        # <<<<<<< HEAD
-        #         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        # =======
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
-        # >>>>>>> develop
         assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
         assert actual_result.result == str(
             self.web3_client._chain_id
         ), f"net version is not {self.web3_client._chain_id}"
-
-    # <<<<<<< HEAD
 
     def test_rpc_call_eth_get_transaction_count(self):
         """Verify implemented rpc calls work eth_getTransactionCount"""
@@ -315,7 +263,6 @@ class TestRpcCalls(BaseMixin):
     def test_rpc_call_eth_send_raw_transaction(self):
         """Verify implemented rpc calls work eth_sendRawTransaction"""
 
-        # TODO: chain id
         recipient_balance = float(self.web3_client.fromWei(self.get_balance(self.recipient_account.address), "ether"))
         transaction = {
             "from": self.sender_account.address,

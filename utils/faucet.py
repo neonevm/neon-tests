@@ -13,4 +13,4 @@ class Faucet:
         assert address.startswith("0x")
         url = urllib.parse.urljoin(self._url, "request_neon")
         resp = self._session.post(url, json={"amount": amount, "wallet": address})
-        assert resp.status_code == 200
+        assert resp.status_code == 200, resp.text

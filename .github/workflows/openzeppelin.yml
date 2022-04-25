@@ -1,6 +1,8 @@
 name: "OpenZeppelin"
 
 on:
+  schedule:
+    - cron: "0 0,3 * * *"
   workflow_dispatch:
     inputs:
       network:
@@ -16,7 +18,7 @@ on:
           - testnet
       runner:
         type: choice
-        default: ubuntu-20.04
+        default: neon-hosted
         required: true
         description: "Where to run tests (our runner or github)"
         options:
@@ -27,3 +29,80 @@ on:
         description: "Count of parallel jobs"
         required: true
         default: "8"
+
+env:
+  JOBS_NUMBER: "8"
+  NETWORK: night-stand
+  RUNNER: neon-hosted
+
+jobs:
+  prepare-env:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Setup env
+        id: setup
+        run: |
+          # $1 - inputs
+          # $2 - env.VAR
+          function setVar {
+            if [ -z "$1" ]
+              then
+                RESULT="$2"
+              else
+                RESULT="$1"
+            fi
+            echo $RESULT
+          }
+          
+          NETWORK=$( setVar "${{ github.event.inputs.network }}" "${{ env.NETWORK }}" )
+          RUNNER=$( setVar "${{ github.event.inputs.runner }}" "${{ env.RUNNER }}" )
+          JOBS_NUMBER=$( setVar "${{ github.event.inputs.jobsNumber }}" "${{ env.JOBS_NUMBER }}" )
+          
+          echo "Network: ${NETWORK}"
+          echo "Runner: ${RUNNER}"
+          echo "Jobs: ${JOBS_NUMBER}"
+
+          echo "::set-output name=network::${NETWORK}"
+          echo "::set-output name=runner::${RUNNER}"
+          echo "::set-output name=jobs::${JOBS_NUMBER}"
+    outputs:
+      network: ${{ steps.setup.outputs.network }}
+      runner: ${{ steps.setup.outputs.runner }}
+      jobs: ${{ steps.setup.outputs.jobs }}
+
+  tests:
+    name: "OpenZeppelin tests"
+    needs:
+      - prepare-env
+    runs-on: ${{ needs.prepare-env.outputs.runner }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Update openzeppelin
+        run: git submodule update --init --recursive
+      - name: "Install deps"
+        uses: ./.github/actions/requirements
+      - name: "Run OpenZeppelin tests"
+        run: "./clickfile.py run oz --network ${{ needs.prepare-env.outputs.network }} --jobs ${{ needs.prepare-env.outputs.jobs }}"
+      - name: "Print OpenZeppelin report"
+        run: "./clickfile.py ozreport"
+      - name: "Archive report"
+        run: tar -czf allure-results.tar.gz allure-results
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: "allure-results.tar.gz"
+          path: allure-results.tar.gz
+      - name: "Download allure history"
+        run: "./clickfile.py get-allure-history economy --network ${{ needs.prepare-env.outputs.network }}"
+        env:
+          AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+      - name: "Generate allure report"
+        uses: QuintilianoNery/action-allure-report-V2@master
+      - name: "Fix permissions"
+        run: sudo chown deploy:deploy -R allure-report
+      - name: "Upload allure history"
+        run: "./clickfile.py upload-allure-report economy --network ${{ needs.prepare-env.outputs.network }}"
+        env:
+          AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"

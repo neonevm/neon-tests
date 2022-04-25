@@ -29,6 +29,13 @@ Please use clickfile.py to install deps because our web3 has conflicts with sola
 ./clickfile.py requirements
 ```
 
+##Run OpenZeppelin tests
+
+To run OpenZeppelin tests just use next command:
+```bash
+./clickfile.py run oz --network <your-stand> --jobs 8
+```
+
 
 ##Run tests manual
 

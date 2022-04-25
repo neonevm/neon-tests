@@ -109,9 +109,9 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
     """Create new account for tests and save operator pre/post balances"""
     with allure.step("Create account for tests"):
         acc = web3_client.eth.account.create()
-    with allure.step(f"Request 1000 NEON from faucet for {acc.address}"):
-        faucet.request_neon(acc.address, 1000)
-        assert web3_client.get_balance(acc) == 1000
+    with allure.step(f"Request 5000 NEON from faucet for {acc.address}"):
+        faucet.request_neon(acc.address, 5000)
+        assert web3_client.get_balance(acc) == 5000
     start_neon_balance = operator.get_neon_balance()
     start_sol_balance = operator.get_solana_balance()
     with allure.step(

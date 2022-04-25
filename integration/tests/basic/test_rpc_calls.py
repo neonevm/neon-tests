@@ -146,24 +146,7 @@ class TestRpcCalls(BaseMixin):
         if params:
             assert self.is_hex(response.result)
 
-    # <<<<<<< HEAD
-    #         # TOOD: variants
-    #         data = CallRequest(from_=self.sender_account.address, to=self.recipient_account.address, value=hex(1))
-    #         params = [data]
-    #         model = RpcRequestFactory.get_estimate_gas(params=params)
-    #         actual_result = self.json_rpc_client.do_call(model)
-    #         # actual_result = self.json_rpc_client.deserialize_response(response)
-
-    #         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-    #         # assert self.assert_no_error_object(
-    #         #     actual_result), AssertMessage.CONTAINS_ERROR
-    #         # assert self.assert_result_object(
-    #         #     actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
-
-    #     def test_rpc_call_eth_gasPrice(self):
-    # =======
     def test_eth_gas_price(self):
-        # >>>>>>> develop
         """Verify implemented rpc calls work eth_gasPrice"""
         payloads = RpcRequestFactory.get_gas_price(params=[])
         actual_result = self.json_rpc_client.do_call(payloads)
@@ -191,8 +174,7 @@ class TestRpcCalls(BaseMixin):
         """Verify implemented rpc calls work eth_getLogs"""
         # TODO: use contract instead of account
         sender_account = self.create_account_with_balance()
-        # TOOD: variants
-
+        # TODO: variants
         params = [
             request_models.GetLogsRequest(from_block=1, to_block=Tag.LATEST.value, address=sender_account.address)
         ]
@@ -481,6 +463,3 @@ class TestRpcCalls(BaseMixin):
             err_message = getattr(response, "error", dict()).get("message")
             assert isinstance(response, request_models.JsonRpcResponse)
             assert err_message != f"method {method} is not supported"
-
-
-# >>>>>>> develop

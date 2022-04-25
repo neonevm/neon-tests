@@ -37,18 +37,6 @@ GAS_LIMIT_AND_PRICE_DATA = (
 @allure.story("Basic: transfer tests")
 class TestTransfer(BaseMixin):
     @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
-    # <<<<<<< HEAD
-    #     def test_send_neon_from_one_account_to_another(self, amount: Union[int, float]):
-    #         """Send neon from one account to another"""
-
-    #         tx_receipt = self.process_transaction(self.sender_account, self.recipient_account, amount)
-
-    #         self.assert_balance(
-    #             self.sender_account.address,
-    #             InputData.FAUCET_1ST_REQUEST_AMOUNT.value - amount - self.calculate_trx_gas(tx_receipt=tx_receipt),
-    #         )
-    #         self.assert_balance(self.recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value + amount)
-    # =======
     def test_send_neon_from_one_account_to_another(self, amount: Union[int, float]):
         """Send neon from one account to another"""
         sender_balance = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
@@ -58,12 +46,9 @@ class TestTransfer(BaseMixin):
         self.assert_balance(
             self.sender_account.address,
             sender_balance - amount - self.calculate_trx_gas(tx_receipt=tx_receipt),
-            # TODO: from 3 to 2 to 1
             rnd_dig=1,
         )
         self.assert_balance(self.recipient_account.address, recipient_balance + amount, rnd_dig=3)
-
-    # TODO: changed rnd_dig from 1 to 3
 
     @pytest.mark.skip(WAITING_FOR_MS)
     def test_send_spl_wrapped_account_from_one_account_to_another(self):
@@ -152,8 +137,6 @@ class TestTransfer(BaseMixin):
         balance_after = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
 
         assert balance_before == balance_after
-
-    # >>>>>>> develop
 
     def test_send_more_token_to_non_existing_address(self):
         """Send token to a non-existing address"""

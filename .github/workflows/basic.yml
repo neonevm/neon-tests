@@ -33,7 +33,7 @@ env:
 
 jobs:
   prepare-env:
-    runs-on: env.RUNNER
+    runs-on: ubuntu-20.04
     if: always()
     steps:
       - name: Setup `night-stand` by cron schedule

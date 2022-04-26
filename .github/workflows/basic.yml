@@ -37,12 +37,12 @@ jobs:
     if: always()
     steps:
       - name: Setup `night-stand` by cron schedule
-        id: setup night-stand
+        id: setup_night_stand
         if: github.event.schedule=='* 23,2 * * *'
         run: |
           echo "NETWORK=night-stand" >> $GITHUB_ENV
       - name: Setup `devnet` by cron schedule
-        id: setup devnet
+        id: setup_devnet
         if: github.event.schedule=='*/5 * * * *'
         run: |
           echo "NETWORK=devnet" >> $GITHUB_ENV

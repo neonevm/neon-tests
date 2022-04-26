@@ -1,7 +1,7 @@
 import allure
 import pytest
 
-from integration.tests.basic.helpers.basic import WAITING_FOR_ERC20, WAITING_FOR_MS, BaseMixin
+from integration.tests.basic.helpers.basic import WAITING_FOR_MS, BaseMixin
 from integration.tests.basic.test_data.input_data import InputData
 
 """
@@ -30,7 +30,7 @@ from integration.tests.basic.test_data.input_data import InputData
 	 - double request
 # 10.	Interact with simple contract
 # 11.	Deploy erc20 contract with tokens and mint this token
-# 12.	Verify implemented rpc calls work
+12.	Verify implemented rpc calls work
 # 13.	Speed up transaction by increase gas
 # 14.	Cancel transaction when gasprice setted very small for tx
 15.	Send token to an invalid address
@@ -48,20 +48,6 @@ from integration.tests.basic.test_data.input_data import InputData
 25.	Too high gas_limit * gas_price > u64::max		
 26.	There are not enough Neons for gas fee		
 27.	There are not enough Neons for transfer
-
-Есть много известных вариантов, описать все не очень реалистично.
-Самые простые:
-Слишком маленький gas_limit
-Слишком большой gas_limit > u64::max
-Слишком большой gas_price > u64::max
-Слишком большой gas_limit * gas_price > u64::max
-Недостаточно неонов на оплату газа
-Недостаточно неонов на трансфер
-Размер эфировской транзакции больше лимита, лимит точно не известен, 256кб точно больше
-Размер солановской транзакции больше лимита, вызов другого контракта из контракта или erc20 wrapper увеличивает размер транзакции
-Выделение памяти в транзакции больше лимита, нужны специальные контракты
-Запись в storage больше лимита, лимит ~9мб
-stack overflow и stack underflow
 """
 
 FAUCET_TEST_DATA = [(1), (5), (999), (1_0000), (20_000)]
@@ -87,12 +73,17 @@ class TestSingleClient(BaseMixin):
     @pytest.mark.skip(WAITING_FOR_MS)
     def test_check_tokens_in_wallet_spl(self):
         """Check tokens in wallet: spl"""
-        pass
+        assert 1 == 2
 
-    @pytest.mark.skip(WAITING_FOR_ERC20)
-    def test_check_tokens_in_wallet_ERC20(self):
+    def test_check_tokens_in_wallet_ERC20(self, erc20wrapper):
         """Check tokens in wallet: ERC20"""
-        pass
+        erc20_amount = 20
+        account = self.create_account_with_balance()
+        contract, contract_deploy_tx = self.deploy_and_get_contract(
+            "ERC20", "0.6.6", account, constructor_args=[erc20_amount]
+        )
+
+        assert contract.functions.balanceOf(account.address).call() == erc20_amount
 
     @pytest.mark.only_stands
     @pytest.mark.parametrize("amount", FAUCET_TEST_DATA)

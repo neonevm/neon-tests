@@ -1,8 +1,12 @@
 import allure
+from marshmallow import ValidationError
 import pytest
 from typing import Union
+
+import web3
 from integration.tests.basic.helpers.assert_message import AssertMessage
-from integration.tests.basic.helpers.basic import WAITING_FOR_ERC20, WAITING_FOR_MS, BaseMixin
+from integration.tests.basic.helpers.assert_message import AssertMessage
+from integration.tests.basic.helpers.basic import WAITING_FOR_MS, BaseMixin
 from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.model.model import AccountData
@@ -49,10 +53,23 @@ class TestTransfer(BaseMixin):
         )
         self.assert_balance(self.recipient_account.address, recipient_balance + amount, rnd_dig=3)
 
+    def test_send_erc20_token_from_one_account_to_another(self, erc20wrapper):
+        """Send erc20 token from one account to another"""
+        transfer_amount = 5
+
+        contract, spl_owner = erc20wrapper
+        initial_balance = contract.functions.balanceOf(self.recipient_account.address).call()
+
+        transfer_tx = self.web3_client.send_erc20(
+            spl_owner, self.recipient_account, transfer_amount, contract.address, abi=contract.abi
+        )
+
+        assert contract.functions.balanceOf(self.recipient_account.address).call() == initial_balance + transfer_amount
+
     @pytest.mark.skip(WAITING_FOR_MS)
-    def test_send_spl_wrapped_account_from_one_account_to_another(self):
+    def test_send_spl_wrapped_account_from_one_account_to_another(self):  # , erc20wrapper):
         """Send spl wrapped account from one account to another"""
-        pass
+        assert 1 == 2
 
     @pytest.mark.parametrize("amount", WRONG_TRANSFER_AMOUNT_DATA)
     def test_send_more_than_exist_on_account_neon(self, amount: Union[int, float]):
@@ -69,12 +86,23 @@ class TestTransfer(BaseMixin):
     @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
     def test_send_more_than_exist_on_account_spl(self, amount):
         """Send more than exist on account: spl (with different precision)"""
-        pass
+        assert 1 == 2
 
-    @pytest.mark.skip(WAITING_FOR_ERC20)
-    def test_send_more_than_exist_on_account_erc20(self):
+    def test_send_more_than_exist_on_account_erc20(self, erc20wrapper):
         """Send more than exist on account: ERC20"""
-        pass
+        transfer_amount = 1_000_000_000_000_000_000_000
+
+        contract, spl_owner = erc20wrapper
+        initial_amount = contract.functions.balanceOf(self.recipient_account.address).call()
+
+        with pytest.raises(web3.exceptions.ContractLogicError) as error_info:
+            transfer_tx = self.web3_client.send_erc20(
+                spl_owner, self.recipient_account, transfer_amount, contract.address, abi=contract.abi
+            )
+
+        assert error_info, AssertMessage.TRX_NOT_FAILED.value
+
+        assert contract.functions.balanceOf(self.recipient_account.address).call() == initial_amount
 
     def test_zero_neon(self):
         """Send zero: neon"""
@@ -91,12 +119,20 @@ class TestTransfer(BaseMixin):
     @pytest.mark.skip(WAITING_FOR_MS)
     def test_zero_spl(self):
         """Send zero: spl (with different precision)"""
-        pass
+        assert 1 == 2
 
-    @pytest.mark.xfail()
-    def test_zero_erc20(self):
+    def test_zero_erc20(self, erc20wrapper):
         """Send zero: ERC20"""
-        pass
+        transfer_amount = 0
+
+        contract, spl_owner = erc20wrapper
+        initial_balance = contract.functions.balanceOf(self.recipient_account.address).call()
+
+        transfer_tx = self.web3_client.send_erc20(
+            spl_owner, self.recipient_account, transfer_amount, contract.address, abi=contract.abi
+        )
+
+        assert contract.functions.balanceOf(self.recipient_account.address).call() == initial_balance
 
     def test_send_negative_sum_from_account_neon(self):
         """Send negative sum from account: neon"""
@@ -116,12 +152,23 @@ class TestTransfer(BaseMixin):
     @pytest.mark.skip(WAITING_FOR_MS)
     def test_send_negative_sum_from_account_spl(self):
         """Send negative sum from account: spl (with different precision)"""
-        pass
+        assert 1 == 2
 
-    @pytest.mark.skip(WAITING_FOR_ERC20)
-    def test_send_negative_sum_from_account_erc20(self):
+    def test_send_negative_sum_from_account_erc20(self, erc20wrapper):
         """Send negative sum from account: ERC20"""
-        pass
+        transfer_amount = -1
+
+        contract, spl_owner = erc20wrapper
+        initial_balance = contract.functions.balanceOf(self.recipient_account.address).call()
+
+        with pytest.raises(web3.exceptions.ValidationError) as error_info:
+            transfer_tx = self.web3_client.send_erc20(
+                spl_owner, self.recipient_account, transfer_amount, contract.address, abi=contract.abi
+            )
+
+        assert error_info, AssertMessage.TRX_NOT_FAILED.value
+
+        assert contract.functions.balanceOf(self.recipient_account.address).call() == initial_balance
 
     def test_send_token_to_an_invalid_address(self):
         """Send token to an invalid address"""

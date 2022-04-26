@@ -4,12 +4,14 @@ import typing as tp
 import web3
 from decimal import Decimal
 from eth_account import Account
-from typing import Optional, Union
+from typing import Any, Optional, Tuple, Union
 from integration.tests.base import BaseTests
+from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.json_rpc_client import JsonRpcClient
 from integration.tests.basic.model.model import AccountData, JsonRpcErrorResponse, JsonRpcResponse
 from integration.tests.basic.test_data.input_data import InputData
+from utils import helpers
 
 WAITING_FOR_MS = "waiting for MS"
 
@@ -69,7 +71,10 @@ class BaseMixin(BaseTests):
         self.request_faucet_neon(account.address, amount)
         return account
 
-    # >>>>>>> develop
+    @allure.step("deploying an ERC_20 contract")
+    def deploy_contract(self):
+        """Deploys an ERC-20 contract"""
+        pass
 
     # @allure.step("requesting faucet for ERC20")
     # def request_faucet_erc20(self, wallet: str, amount: int):
@@ -99,7 +104,7 @@ class BaseMixin(BaseTests):
         with allure.step(f"Sending {amount} from {sender_account.address} to {recipient_account.address}"):
             with pytest.raises(Exception) as error_info:
                 tx = self.web3_client.send_neon(sender_account, recipient_account, amount, gas, gas_price)
-            assert error_info, "Transaction not failed"
+            assert error_info, AssertMessage.TRX_NOT_FAILED.value
             if error_message:
                 assert error_message in str(error_info.value), f"Expected {error_message} to be in {error_info}"
             return tx
@@ -153,3 +158,58 @@ class BaseMixin(BaseTests):
         actual_dec = round(actual, rnd_dig)
 
         assert actual_dec == expected_dec, f"expected balance = {expected_dec}, actual balance = {actual_dec}"
+
+    # TODO: check it
+    def deploy_and_get_contract(
+        self,
+        contract_name: str,
+        version: str,
+        account: Account,
+        constructor_args: Optional[Any] = None,
+        gas: Optional[int] = 0,
+    ) -> Tuple[Any, web3.types.TxReceipt]:
+        contract_interface = helpers.get_contract_interface(contract_name, version)
+
+        contract_deploy_tx = self.web3_client.deploy_contract(
+            account,
+            abi=contract_interface["abi"],
+            bytecode=contract_interface["bin"],
+            constructor_args=constructor_args,
+            gas=gas,
+        )
+
+        contract = self.web3_client.eth.contract(
+            address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
+        )
+
+        return contract, contract_deploy_tx
+
+    # TODO: probe
+    def deploy_contract(
+        self,
+        name: str,
+        version: str,
+        account: Account,  # "eth_account.signers.local.LocalAccount",
+        constructor_args: Optional[Any] = None,
+        gas: Optional[int] = 0,
+    ) -> "web3._utils.datatypes.Contract":
+        """contract deployments"""
+
+        # contract_interface = self._compile_contract_interface(name, version)
+        contract_interface = helpers.get_contract_interface(name, version)
+        contract_deploy_tx = self._web3_client.deploy_contract(
+            account,
+            abi=contract_interface["abi"],
+            bytecode=contract_interface["bin"],
+            constructor_args=constructor_args,
+            gas=gas,
+        )
+
+        if not (contract_deploy_tx and contract_interface):
+            return None, None
+
+        contract = self._web3_client.eth.contract(
+            address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
+        )
+
+        return contract, contract_deploy_tx

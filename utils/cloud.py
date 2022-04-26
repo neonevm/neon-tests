@@ -23,7 +23,8 @@ def upload(source, destination, bucket=NEON_TESTS_BUCKET_NAME):
     destination = pathlib.Path(destination)
 
     if source.is_file():
-        client.upload_file(str(source), bucket, str(destination / source.name))
+        mimetype = mimetypes.guess_type(source.name)[0]
+        client.upload_file(str(source), bucket, str(destination / source.name), ExtraArgs={"ContentType": mimetype})
         return
 
     for f in source.glob("**/*"):

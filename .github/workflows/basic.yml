@@ -3,7 +3,7 @@ name: "Basic tests"
 on:
   schedule:
     - cron: "0 23,2 * * *"
-    - cron: "*/1 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
       network:
@@ -43,7 +43,7 @@ jobs:
           echo "NETWORK=night-stand" >> $GITHUB_ENV
       - name: Setup `devnet` by cron schedule
         id: setup devnet
-        if: github.event.schedule=='*/1 * * * *'
+        if: github.event.schedule=='*/5 * * * *'
         run: |
           echo "NETWORK=devnet" >> $GITHUB_ENV
       - name: Setup `Runner` by cron schedule

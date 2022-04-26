@@ -47,7 +47,7 @@ jobs:
         run: |
           echo "NETWORK=devnet" >> $GITHUB_ENV
       - name: Setup `Runner` by cron schedule
-        id: setup runner
+        id: setup_runner
         if: ${{ github.event_name == 'schedule' }}
         run: |
           echo "RUNNER=ubuntu-20.04" >> $GITHUB_ENV

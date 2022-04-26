@@ -1,6 +1,9 @@
 name: "Basic tests"
 
 on:
+  schedule:
+    - cron: "0 23,2 * * *"
+    - cron: "/1 * * * *"
   workflow_dispatch:
     inputs:
       network:
@@ -33,6 +36,21 @@ jobs:
     runs-on: ubuntu-20.04
     if: always()
     steps:
+      - name: Setup `night-stand` by cron schedule
+        id: setup night-stand
+        if: github.event.schedule=='* 23,2 * * *'
+        run: |
+          echo "NETWORK=night-stand" >> $GITHUB_ENV
+      - name: Setup `devnet` by cron schedule
+        id: setup devnet
+        if: github.event.schedule=='/1 * * * *'
+        run: |
+          echo "NETWORK=devnet" >> $GITHUB_ENV
+      - name: Setup `Runner` by cron schedule
+        id: setup runner
+        if: ${{ github.event_name == 'schedule' }}
+        run: |
+          echo "RUNNER=ubuntu-20.04" >> $GITHUB_ENV
       - name: Setup env
         id: setup
         run: |

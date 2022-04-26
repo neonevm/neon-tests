@@ -26,10 +26,9 @@ on:
           - neon-hosted
           - aws-hosted
           - ubuntu-20.04
-
 env:
   NETWORK: night-stand
-  RUNNER: neon-hosted
+  RUNNER: ubuntu-20.04
 
 jobs:
   prepare-env:
@@ -37,20 +36,15 @@ jobs:
     if: always()
     steps:
       - name: Setup `night-stand` by cron schedule
-        id: setup night-stand
+        id: setup_night_stand
         if: github.event.schedule=='* 23,2 * * *'
         run: |
           echo "NETWORK=night-stand" >> $GITHUB_ENV
       - name: Setup `devnet` by cron schedule
-        id: setup devnet
+        id: setup_devnet
         if: github.event.schedule=='*/5 * * * *'
         run: |
           echo "NETWORK=devnet" >> $GITHUB_ENV
-      - name: Setup `Runner` by cron schedule
-        id: setup runner
-        if: ${{ github.event_name == 'schedule' }}
-        run: |
-          echo "RUNNER=ubuntu-20.04" >> $GITHUB_ENV
       - name: Setup env
         id: setup
         run: |
@@ -84,20 +78,36 @@ jobs:
     needs:
       - prepare-env
     runs-on: ${{ needs.prepare-env.outputs.runner }}
+    env:
+      NETWORK: ${{ needs.prepare-env.outputs.network }}
+      RUNNER: ${{ needs.prepare-env.outputs.runner }}
+    if: always()
     steps:
       - uses: actions/checkout@v2
       - name: "Install deps"
         uses: ./.github/actions/requirements
       - name: "Run basic tests"
-        run: "./clickfile.py run 'basic' -n ${{ needs.prepare-env.outputs.network }}"
+        run: "./clickfile.py run 'basic' -n ${{ env.NETWORK }}"
       - uses: actions/upload-artifact@v2
-        if: always()
         with:
           name: "Allure results"
           path: allure-results
+  notify-on-fail:
+    name: "Notify on Basic tests failed."
+    needs:
+      - prepare-env
+      - tests
+    runs-on: ${{ needs.prepare-env.outputs.runner }}
+    if: ${{ failure() }}
+    steps:
+      - name: "get traceback"
+        id: get_traceback
+        run: echo "::set-output name=traceback::$(if [ -e ./click_err.log ]; then cat ./click_err.log; fi)"
+      - name: "notify on fail to slack"
+        run: echo ${{ steps.get_traceback.outputs.traceback }}
 
   allure:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ needs.prepare-env.outputs.runner }}
     if: always()
     needs:
       - prepare-env

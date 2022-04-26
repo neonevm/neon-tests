@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-import os
-import re
+import functools
 import glob
 import json
-import shutil
-import sys
-import subprocess
+import os
 import pathlib
+import re
+import shutil
+import subprocess
+import sys
+import typing as tp
 from multiprocessing.dummy import Pool
-from typing import Dict, List
+
+import requests
 
 try:
     import click
@@ -22,6 +25,31 @@ try:
     from utils import cloud
 except ImportError:
     pass
+
+
+def catch_traceback(func: tp.Callable) -> tp.Callable:
+    """Catch traceback to file"""
+
+    @functools.wraps(func)
+    def wrap(*args, **kwargs) -> tp.Any:
+        try:
+            result = func(*args, **kwargs)
+        except Exception as e:
+            print(f"{10*'+'}{e}")
+            print(f"{10*'+'}{e.args}")
+            print(f"{10*'+'} stderr {e.stderr}")
+            print(f"{10*'+'} stdout {e.stdout}")
+            print(f"{10*'+'} output {e.output}")
+            print(f"{10*'+'} tb {e.__traceback__}")
+            print(f"{10*'+'}{dir(e)}")
+            with open(f"click_err.log", "a") as fd:
+                fd.write(str(e))
+            raise
+
+        return result
+
+    return wrap
+
 
 networks = []
 with open("./envs.json", "r") as f:
@@ -124,7 +152,7 @@ def parse_openzeppelin_results():
     return test_report, skipped_files
 
 
-def print_test_suite_results(test_report: Dict[str, int], skipped_files: List[str]):
+def print_test_suite_results(test_report: tp.Dict[str, int], skipped_files: tp.List[str]):
     print("Summarize result:\n")
     for state in test_report:
         print("    {} - {}".format(state.capitalize(), test_report[state]))
@@ -153,7 +181,9 @@ def install_python_requirements():
 
 def install_oz_requirements():
     cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
-    subprocess.check_call("npm ci", shell=True, cwd=cwd)
+    # cmd = "if [ -e package-lock.json ]; then npm i; else npm ci; fi"
+    cmd = "npm ci"
+    subprocess.check_call(cmd, shell=True, cwd=cwd)
 
 
 @click.group()
@@ -162,6 +192,7 @@ def cli():
 
 
 @cli.command(help="Update base python requirements")
+@catch_traceback
 def requirements():
     install_python_requirements()
     install_oz_requirements()
@@ -173,6 +204,7 @@ def requirements():
 )
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
 @click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz"]))
+@catch_traceback
 def run(name, network, jobs):
     if pathlib.Path("./allure-results").exists():
         shutil.rmtree("./allure-results", ignore_errors=True)
@@ -316,6 +348,15 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
         )
     cloud.upload("/tmp/index.html", path)
     print(f"Allure report link: {report_url}")
+
+
+@cli.command(help="Send notification to slack")
+@click.option("-u", "--url", help="slack app endpoint")
+@click.option("-t", "--text", help="notification text")
+def send_notification(url, text):
+    headers = {"Content-type: application/json"}
+    json_doc = {"text": text}
+    requests.post(url=url, headers=headers, data=json.dumps(json_doc))
 
 
 if __name__ == "__main__":

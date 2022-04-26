@@ -13,7 +13,7 @@ runs:
       with:
         node-version: 16.x
     - name: "Install click"
-      run: "pip install click"
+      run: "pip install click requests"
       shell: bash
     - name: "Install deps"
       run: "./clickfile.py requirements"

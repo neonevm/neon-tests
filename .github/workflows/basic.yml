@@ -1,4 +1,4 @@
-name: "Basic tests"
+name: "Basic-tests"
 
 on:
   schedule:

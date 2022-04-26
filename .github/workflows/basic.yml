@@ -33,7 +33,7 @@ env:
 
 jobs:
   prepare-env:
-    runs-on: ${{ env.RUNNER }}
+    runs-on: env.RUNNER
     if: always()
     steps:
       - name: Setup `night-stand` by cron schedule

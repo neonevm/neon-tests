@@ -153,7 +153,8 @@ def install_python_requirements():
 
 def install_oz_requirements():
     cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
-    subprocess.check_call("npm ci", shell=True, cwd=cwd)
+    cmd = "if [ -e package-lock.json ]; then npm ci else npm i fi"
+    subprocess.check_call(cmd, shell=True, cwd=cwd)
 
 
 @click.group()

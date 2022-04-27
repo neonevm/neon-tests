@@ -100,8 +100,11 @@ jobs:
     runs-on: ${{ needs.prepare-env.outputs.runner }}
     if: ${{ failure() }}
     steps:
+      - name: "get traceback"
+          id: get_traceback
+          run: echo "::set-output name=traceback::$(if [ -e ./click_err.log ]; then cat ./click_err.log;)"
       - name: "notify on fail to slack"
-        run: echo $(if [ -e ./click_err.log ]; then cat ./click_err.log;)
+        run: echo ${{ steps.get_traceback.outputs.traceback }}
 
   allure:
     runs-on: ${{ needs.prepare-env.outputs.runner }}

@@ -11,6 +11,7 @@ import sys
 import typing as tp
 from multiprocessing.dummy import Pool
 
+import requests
 
 try:
     import click
@@ -349,7 +350,6 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
 @click.option("-u", "--url", help="slack app endpoint")
 @click.option("-t", "--text", help="notification text")
 def send_notification(url, text):
-    import requests
     headers = {"Content-type: application/json"}
     json_doc = {"text": text}
     requests.post(url=url, headers=headers, data=json.dumps(json_doc))

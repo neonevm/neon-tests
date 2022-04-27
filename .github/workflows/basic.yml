@@ -98,7 +98,7 @@ jobs:
       - prepare-env
       - tests
     runs-on: ${{ needs.prepare-env.outputs.runner }}
-    if: always() && needs.tests.result == 'failure'
+    if: ${{ failure() }} 
     steps:
       - name: "Notify"
         run: "echo 'Job is failed'"

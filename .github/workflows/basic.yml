@@ -92,6 +92,16 @@ jobs:
         with:
           name: "Allure results"
           path: allure-results
+  notify-on-fail:
+    name: "Notify on Basic tests failed."
+    needs:
+      - prepare-env
+      - tests
+    runs-on: ${{ needs.prepare-env.outputs.runner }}
+    if: always() && needs.tests.result == 'failure'
+    steps:
+      - name: "Notify"
+        run: "echo 'Job is failed'"
 
   allure:
     runs-on: ${{ needs.prepare-env.outputs.runner }}

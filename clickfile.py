@@ -37,9 +37,12 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
         except Exception as e:
             print(f"{10*'+'}{e}")
             print(f"{10*'+'}{e.args}")
+            print(f"{10*'+'} stderr {e.stderr}")
+            print(f"{10*'+'} stdout {e.stdout}")
+            print(f"{10*'+'} output {e.output}")
             print(f"{10*'+'}{dir(e)}")
-            #with open(f"click_err.log", "a") as fd:
-            #    fd.write(e.args[0])
+            with open(f"click_err.log", "a") as fd:
+                fd.write(e)
             raise
 
         return result

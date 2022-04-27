@@ -40,9 +40,10 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
             print(f"{10*'+'} stderr {e.stderr}")
             print(f"{10*'+'} stdout {e.stdout}")
             print(f"{10*'+'} output {e.output}")
+            print(f"{10*'+'} tb {e.__traceback__}")
             print(f"{10*'+'}{dir(e)}")
             with open(f"click_err.log", "a") as fd:
-                fd.write(e)
+                fd.write(str(e))
             raise
 
         return result

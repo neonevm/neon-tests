@@ -11,6 +11,8 @@ import sys
 import typing as tp
 from multiprocessing.dummy import Pool
 
+import requests
+
 try:
     import click
 except ImportError:
@@ -33,8 +35,11 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
         try:
             result = func(*args, **kwargs)
         except Exception as e:
-            with open(f"click_err.log", "a") as fd:
-                fd.write(e.args[0])
+            print(f"{10*'+'}{e}")
+            print(f"{10*'+'}{e.args}")
+            print(f"{10*'+'}{dir(e)}")
+            #with open(f"click_err.log", "a") as fd:
+            #    fd.write(e.args[0])
             raise
 
         return result
@@ -339,6 +344,15 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
         )
     cloud.upload("/tmp/index.html", path)
     print(f"Allure report link: {report_url}")
+
+
+@cli.command(help="Send notification to slack")
+@click.option("-u", "--url", help="slack app endpoint")
+@click.option("-t", "--traceback", help="notification text")
+def send_notification(url, text):
+    headers = {"Content-type: application/json"}
+    json_doc = {"text": text}
+    requests.post(url=url, header=headers, data=json.dump(json_doc))
 
 
 if __name__ == "__main__":

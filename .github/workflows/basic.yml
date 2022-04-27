@@ -75,7 +75,6 @@ jobs:
 
   tests:
     name: "Basic tests"
-    continue-on-error: true
     needs:
       - prepare-env
     runs-on: ${{ needs.prepare-env.outputs.runner }}
@@ -89,8 +88,6 @@ jobs:
         uses: ./.github/actions/requirements
       - name: "Run basic tests"
         run: "./clickfile.py run 'basic' -n ${{ env.NETWORK }}"
-      - name: "Get steps traceback"
-        run: echo ::set-output name=traceback::$(if [ -e ./click_err.log ]; then cat ./click_err.log;)
       - uses: actions/upload-artifact@v2
         with:
           name: "Allure results"
@@ -104,7 +101,7 @@ jobs:
     if: ${{ failure() }}
     steps:
       - name: "notify on fail to slack"
-        run: echo ${{ needs.tests.outputs.traceback }}
+        run: echo $(if [ -e ./click_err.log ]; then cat ./click_err.log;)
 
   allure:
     runs-on: ${{ needs.prepare-env.outputs.runner }}

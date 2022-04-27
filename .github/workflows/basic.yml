@@ -26,14 +26,21 @@ on:
           - neon-hosted
           - aws-hosted
           - ubuntu-20.04
-
 env:
   NETWORK: night-stand
   RUNNER: ubuntu-20.04 
 
 jobs:
-  prepare-env:
+  set_runner:
     runs-on: ubuntu-20.04
+    outputs:
+      runner: ${{ steps.runner.outputs.runner }}
+    steps:
+    - id: set_runner
+      run: echo "::set-output name=runner::${RUNNER}"
+  prepare-env:
+    needs: [set_runner]
+    runs-on: ${{ needs.set_runner.outputs.runner}}
     if: always()
     steps:
       - name: Setup `night-stand` by cron schedule

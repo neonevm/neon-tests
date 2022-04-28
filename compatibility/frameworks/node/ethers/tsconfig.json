@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+//    "esModuleInterop": true,
+    "lib": ["es2015"],
+//    "module": "es2020",
+//    "preserveConstEnums": true,
+//    "moduleResolution": "node",
+//    "strict": true,
+//    "sourceMap": true,
+    "target": "es2017",
+//    "types": ["node"],
+//    "outDir": "dist"
+  }
+}

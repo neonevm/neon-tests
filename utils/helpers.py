@@ -27,5 +27,9 @@ def get_contract_interface(contract_name: str, version: str):
 
     compiled = solcx.compile_files([contract_path], output_values=["abi", "bin"], solc_version=version)
     contract_interface = get_contract_abi(contract_name, compiled)
+    print("COMPILED")
+    print(compiled)
+    print("ABI")
+    print(contract_interface)
 
     return contract_interface

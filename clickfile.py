@@ -7,6 +7,7 @@ import shutil
 import sys
 import subprocess
 import pathlib
+import requests
 from multiprocessing.dummy import Pool
 from typing import Dict, List
 
@@ -88,6 +89,7 @@ def run_openzeppelin_tests(network, jobs=8):
         "Proxy.Version": web3_client.get_proxy_version()["result"],
         "EVM.Version": web3_client.get_evm_version()["result"],
         "CLI.Version": web3_client.get_cli_version()["result"],
+        "Solana.Version": requests.post(settings["solana_url"], json={"jsonrpc": "2.0", "id": 1, "method": "getVersion"}).text,
     }
     with open("./allure-results/environment.properties", "w+") as f:
         f.write("\n".join(map(lambda x: f"{x[0]}={x[1]}", opts.items())))

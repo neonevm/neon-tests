@@ -66,6 +66,7 @@ jobs:
 
           echo "Network: ${NETWORK}"
           echo "Runner: ${RUNNER}"
+          echo "Build url: ${BUILD_URL}"
 
           echo "::set-output name=network::${NETWORK}"
           echo "::set-output name=runner::${RUNNER}"
@@ -95,15 +96,8 @@ jobs:
         with:
           name: "Allure results"
           path: allure-results
-  notify-on-fail:
-    name: "Notify on Basic tests failed."
-    needs:
-      - prepare-env
-      - tests
-    runs-on: ${{ needs.prepare-env.outputs.runner }}
-    if: ${{ failure() }}
-    steps:
-      - name: "notify on fail to slack"
+      - name: "Notify on Basic tests failed."
+        if: ${{ failure() }}
         run: "./clickfile.py send-notification -u ${{ secrets.SLACK_URL }} -b ${{ needs.prepare-env.outputs.build_url }}"
   allure:
     runs-on: ${{ needs.prepare-env.outputs.runner }}

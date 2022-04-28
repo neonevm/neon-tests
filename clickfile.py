@@ -355,14 +355,18 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
 
 @cli.command(help="Send notification to slack")
 @click.option("-u", "--url", help="slack app endpoint url.")
-def send_notification(url):
-    #headers = {"Content-type: application/json"}
-    #json_doc = {"text": text}
-    #requests.post(url=url, headers=headers, data=json.dumps(json_doc))
+@click.option("-b", "--build", help="github action, test build url.")
+def send_notification(url, build):
+    # headers = {"Content-type: application/json"}
+    # json_doc = {"text": text}
+    # requests.post(url=url, headers=headers, data=json.dumps(json_doc))
+
+    print(f"{10*'+'} Build: {build}")
     print(f"{10*'+'} URL: {url}")
-    p = pathlib.Path('.')
+    p = pathlib.Path(".")
     list_files = sorted([f.name for f in p.iterdir() if f.is_file()])
     print(f"{10*'+'} Local files list: {list_files}")
+
 
 if __name__ == "__main__":
     cli()

@@ -62,6 +62,7 @@ jobs:
 
           NETWORK=$( setVar "${{ github.event.inputs.network }}" "${{ env.NETWORK }}" )
           RUNNER=$( setVar "${{ github.event.inputs.runner }}" "${{ env.RUNNER }}" )
+          BUILD_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           echo "Network: ${NETWORK}"
           echo "Runner: ${RUNNER}"
@@ -69,6 +70,8 @@ jobs:
           echo "::set-output name=network::${NETWORK}"
           echo "::set-output name=runner::${RUNNER}"
           echo "::set-output name=jobs::${JOBS_NUMBER}"
+          echo "::set-output name=build_url::${BUILD_URL}"
+
     outputs:
       network: ${{ steps.setup.outputs.network }}
       runner: ${{ steps.setup.outputs.runner }}
@@ -101,8 +104,7 @@ jobs:
     if: ${{ failure() }}
     steps:
       - name: "notify on fail to slack"
-        run: "./clickfile.py send-notification -u ${{ secrets.SLACK_URL }}"
-
+        run: "./clickfile.py send-notification -u ${{ secrets.SLACK_URL }} -b ${{ needs.prepare-env.outputs.build_url }}"
   allure:
     runs-on: ${{ needs.prepare-env.outputs.runner }}
     if: always()

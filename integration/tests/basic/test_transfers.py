@@ -1,14 +1,13 @@
 import allure
-from marshmallow import ValidationError
 import pytest
-from typing import Union
-
 import web3
+from typing import Union
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.assert_message import AssertMessage
-from integration.tests.basic.helpers.basic import WAITING_FOR_MS, BaseMixin
+from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
+from integration.tests.basic.helpers.unit import Unit
 from integration.tests.basic.model.model import AccountData
 from integration.tests.basic.test_data.input_data import InputData
 
@@ -19,6 +18,7 @@ EIP55_INVALID_CHECKSUM = (
     "'Address has an invalid EIP-55 checksum. After looking up the address from the original source, try again.'"
 )
 U64_MAX = 18_446_744_073_709_551_615
+DEFAULT_ERC20_BALANCE = 1000
 
 
 WRONG_TRANSFER_AMOUNT_DATA = [(11000_501), (10000_000.1)]
@@ -39,28 +39,66 @@ GAS_LIMIT_AND_PRICE_DATA = (
 
 @allure.story("Basic: transfer tests")
 class TestTransfer(BaseMixin):
-    @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
-    def test_send_neon_from_one_account_to_another(self, amount: Union[int, float]):
+    @pytest.mark.parametrize("transfer_amount", TRANSFER_AMOUNT_DATA)
+    def test_send_neon_from_one_account_to_another(self, transfer_amount: Union[int, float]):
         """Send neon from one account to another"""
-        sender_balance = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
-        recipient_balance = float(self.web3_client.fromWei(self.get_balance(self.recipient_account.address), "ether"))
+        sender_balance = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER))
+        recipient_balance = float(
+            self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)
+        )
 
-        tx_receipt = self.process_transaction(self.sender_account, self.recipient_account, amount)
+        tx_receipt = self.process_transaction(self.sender_account, self.recipient_account, transfer_amount)
         self.assert_balance(
             self.sender_account.address,
-            sender_balance - amount - self.calculate_trx_gas(tx_receipt=tx_receipt),
+            sender_balance - transfer_amount - self.calculate_trx_gas(tx_receipt=tx_receipt),
             rnd_dig=1,
         )
-        self.assert_balance(self.recipient_account.address, recipient_balance + amount, rnd_dig=3)
+        self.assert_balance(self.recipient_account.address, recipient_balance + transfer_amount, rnd_dig=3)
 
-    @pytest.mark.skip(WAITING_FOR_MS)
-    def test_send_erc20_token_from_one_account_to_another(self):
-        """Send erc20 token from one account to another"""
-        assert 1 == 2
+    @pytest.mark.parametrize("transfer_amount", [(1), (10), (100), (0)])
+    def test_send_erc20_token_from_one_account_to_another(self, transfer_amount: Union[int, float]):
+        """Send erc20 token from one account to another
+        Send zero: ERC20
+        """
 
-    def test_send_spl_wrapped_account_from_one_account_to_another(self, erc20wrapper):
+        initial_sender_neon_balance = float(
+            self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER)
+        )
+        initial_recipient_neon_balance = float(
+            self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)
+        )
+
+        contract, contract_deploy_tx = self.deploy_and_get_contract(
+            "ERC20", "0.6.6", self.sender_account, constructor_args=[DEFAULT_ERC20_BALANCE]
+        )
+        assert contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
+
+        tx_receipt = self.web3_client.send_erc20(
+            self.sender_account,
+            self.recipient_account.address,
+            transfer_amount,
+            contract_deploy_tx["contractAddress"],
+            abi=contract.abi,
+        )
+
+        # ERC20 balance
+        assert (
+            contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE - transfer_amount,
+            AssertMessage.CONTRACT_BALANCE_IS_WRONG.value,
+        )
+
+        # Neon balance
+        assert initial_sender_neon_balance >= float(
+            self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER)
+        ), AssertMessage.BALANCE_HAS_INCREASED.value
+        assert initial_recipient_neon_balance >= float(
+            self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)
+        ), AssertMessage.BALANCE_HAS_INCREASED.value
+
+    @pytest.mark.parametrize("transfer_amount", [(1), (10), (100), (0)])
+    def test_send_spl_wrapped_account_from_one_account_to_another(self, transfer_amount: int, erc20wrapper):
         """Send spl wrapped account from one account to another"""
-        transfer_amount = 5
+        # transfer_amount = 5
 
         contract, spl_owner = erc20wrapper
         initial_balance = contract.functions.balanceOf(self.recipient_account.address).call()
@@ -75,8 +113,10 @@ class TestTransfer(BaseMixin):
     def test_send_more_than_exist_on_account_neon(self, amount: Union[int, float]):
         """Send more than exist on account: neon"""
 
-        sender_balance = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
-        recipient_balance = float(self.web3_client.fromWei(self.get_balance(self.recipient_account.address), "ether"))
+        sender_balance = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER))
+        recipient_balance = float(
+            self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)
+        )
         self.check_value_error_if_less_than_required(self.sender_account, self.recipient_account, amount)
 
         self.assert_balance(self.sender_account.address, sender_balance, rnd_dig=1)
@@ -97,16 +137,52 @@ class TestTransfer(BaseMixin):
         assert error_info, AssertMessage.TRX_NOT_FAILED.value
         assert contract.functions.balanceOf(self.recipient_account.address).call() == initial_amount
 
-    @pytest.mark.skip(WAITING_FOR_MS)
     def test_send_more_than_exist_on_account_erc20(self):
         """Send more than exist on account: ERC20"""
-        assert 1 == 2
+
+        initial_sender_neon_balance = float(
+            self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER)
+        )
+        initial_recipient_neon_balance = float(
+            self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)
+        )
+
+        contract, contract_deploy_tx = self.deploy_and_get_contract(
+            "ERC20", "0.6.6", self.sender_account, constructor_args=[DEFAULT_ERC20_BALANCE]
+        )
+        assert contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
+
+        with pytest.raises(web3.exceptions.ContractLogicError) as error_info:
+            tx_receipt = self.web3_client.send_erc20(
+                self.sender_account,
+                self.recipient_account.address,
+                100_000,
+                contract_deploy_tx["contractAddress"],
+                abi=contract.abi,
+            )
+
+        assert error_info, AssertMessage.TRX_NOT_FAILED.value
+
+        # ERC20 balance
+        assert (
+            contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
+        ), AssertMessage.CONTRACT_BALANCE_IS_WRONG.value
+
+        # Neon balance
+        assert initial_sender_neon_balance >= float(
+            self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER)
+        ), AssertMessage.BALANCE_HAS_INCREASED.value
+        assert initial_recipient_neon_balance >= float(
+            self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)
+        ), AssertMessage.BALANCE_HAS_INCREASED.value
 
     def test_zero_neon(self):
         """Send zero: neon"""
 
-        sender_balance = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
-        recipient_balance = float(self.web3_client.fromWei(self.get_balance(self.recipient_account.address), "ether"))
+        sender_balance = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER))
+        recipient_balance = float(
+            self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)
+        )
         tx_receipt = self.process_transaction(self.sender_account, self.recipient_account)
 
         self.assert_balance(
@@ -114,29 +190,13 @@ class TestTransfer(BaseMixin):
         )
         self.assert_balance(self.recipient_account.address, recipient_balance, rnd_dig=1)
 
-    def test_zero_spl(self, erc20wrapper):
-        """Send zero: spl (with different precision)"""
-        transfer_amount = 0
-
-        contract, spl_owner = erc20wrapper
-        initial_balance = contract.functions.balanceOf(self.recipient_account.address).call()
-
-        transfer_tx = self.web3_client.send_erc20(
-            spl_owner, self.recipient_account, transfer_amount, contract.address, abi=contract.abi
-        )
-
-        assert contract.functions.balanceOf(self.recipient_account.address).call() == initial_balance
-
-    @pytest.mark.skip(WAITING_FOR_MS)
-    def test_zero_erc20(self):
-        """Send zero: ERC20"""
-        pass
-
     def test_send_negative_sum_from_account_neon(self):
         """Send negative sum from account: neon"""
 
-        sender_balance = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
-        recipient_balance = float(self.web3_client.fromWei(self.get_balance(self.recipient_account.address), "ether"))
+        sender_balance = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER))
+        recipient_balance = float(
+            self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)
+        )
         self.process_transaction_with_failure(
             self.sender_account,
             self.recipient_account,
@@ -163,15 +223,49 @@ class TestTransfer(BaseMixin):
 
         assert contract.functions.balanceOf(self.recipient_account.address).call() == initial_balance
 
-    @pytest.mark.skip(WAITING_FOR_MS)
     def test_send_negative_sum_from_account_erc20(self):
         """Send negative sum from account: ERC20"""
-        assert 1 == 2
+
+        initial_sender_neon_balance = float(
+            self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER)
+        )
+        initial_recipient_neon_balance = float(
+            self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)
+        )
+
+        contract, contract_deploy_tx = self.deploy_and_get_contract(
+            "ERC20", "0.6.6", self.sender_account, constructor_args=[DEFAULT_ERC20_BALANCE]
+        )
+        assert contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
+
+        with pytest.raises(web3.exceptions.ValidationError) as error_info:
+            tx_receipt = self.web3_client.send_erc20(
+                self.sender_account,
+                self.recipient_account.address,
+                -1,
+                contract_deploy_tx["contractAddress"],
+                abi=contract.abi,
+            )
+
+        assert error_info, AssertMessage.TRX_NOT_FAILED.value
+
+        # ERC20 balance
+        assert (
+            contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
+        ), AssertMessage.CONTRACT_BALANCE_IS_WRONG.value
+
+        # Neon balance
+        assert initial_sender_neon_balance >= float(
+            self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER)
+        ), AssertMessage.BALANCE_HAS_INCREASED.value
+        assert initial_recipient_neon_balance >= float(
+            self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)
+        ), AssertMessage.BALANCE_HAS_INCREASED.value
 
     def test_send_token_to_self(self):
         """Send token to self"""
         transfer_amount = 2
-        balance_before = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
+        balance_before = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER))
 
         tx_receipt = self.process_transaction(self.sender_account, self.recipient_account, transfer_amount)
         self.assert_balance(
@@ -183,14 +277,14 @@ class TestTransfer(BaseMixin):
     def test_send_token_to_an_invalid_address(self):
         """Send token to an invalid address"""
         sender_account = self.create_account_with_balance()
-        balance_before = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
+        balance_before = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER))
         self.process_transaction_with_failure(
             sender_account,
             INVALID_ADDRESS,
             InputData.DEFAULT_TRANSFER_AMOUNT.value,
             ENS_NAME_ERROR,
         )
-        balance_after = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
+        balance_after = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER))
 
         assert balance_before == balance_after
 
@@ -219,7 +313,7 @@ class TestTransfer(BaseMixin):
         transaction = {
             "from": sender_account.address,
             "to": recipient_account.address,
-            "value": self.web3_client.toWei(transfer_amount, "ether"),
+            "value": self.web3_client.toWei(transfer_amount, Unit.ETHER),
             "gasPrice": self.web3_client.gas_price(),
             "gas": 0,
             "nonce": self.web3_client.eth.get_transaction_count(sender_account.address),
@@ -318,7 +412,7 @@ class TestTransactionsValidation(BaseMixin):
         recipient_account = self.web3_client.create_account()
         amount = 0.9
 
-        balance_before = float(self.web3_client.fromWei(self.get_balance(sender_account.address), "ether"))
+        balance_before = float(self.web3_client.fromWei(self.get_balance(sender_account.address), Unit.ETHER))
         self.process_transaction_with_failure(
             sender_account,
             recipient_account,
@@ -350,7 +444,7 @@ class TestTransactionsValidation(BaseMixin):
         transaction = {
             "from": self.sender_account.address,
             "to": self.recipient_account.address,
-            "value": self.web3_client.toWei(amount, "ether"),
+            "value": self.web3_client.toWei(amount, Unit.ETHER),
             "chainId": self.web3_client._chain_id,
             "gasPrice": self.web3_client.gas_price(),
             "gas": 0,

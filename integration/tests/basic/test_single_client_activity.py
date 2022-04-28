@@ -1,8 +1,10 @@
 import allure
 import pytest
-
+from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
+from integration.tests.basic.helpers.unit import Unit
 from integration.tests.basic.test_data.input_data import InputData
+from integration.tests.basic.test_transfers import DEFAULT_ERC20_BALANCE
 
 """
 1.	Create account and get balance
@@ -78,12 +80,22 @@ class TestSingleClient(BaseMixin):
             "ERC20", "0.6.6", account, constructor_args=[erc20_amount]
         )
 
-        assert contract.functions.balanceOf(account.address).call() == erc20_amount
+        assert (
+            contract.functions.balanceOf(account.address).call() == erc20_amount
+        ), AssertMessage.CONTRACT_BALANCE_IS_WRONG.value
 
-    @pytest.mark.skip("TODO")
     def test_check_tokens_in_wallet_ERC20(self):
         """Check tokens in wallet: ERC20"""
-        assert 1 == 2
+        initial_sender_neon_balance = float(
+            self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER)
+        )
+
+        contract, contract_deploy_tx = self.deploy_and_get_contract(
+            "ERC20", "0.6.6", self.sender_account, constructor_args=[DEFAULT_ERC20_BALANCE]
+        )
+        assert (
+            contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
+        ), AssertMessage.CONTRACT_BALANCE_IS_WRONG.value
 
     @pytest.mark.only_stands
     @pytest.mark.parametrize("amount", FAUCET_TEST_DATA)

@@ -9,6 +9,7 @@ from integration.tests.base import BaseTests
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.json_rpc_client import JsonRpcClient
+from integration.tests.basic.helpers.unit import Unit
 from integration.tests.basic.model.model import AccountData, JsonRpcErrorResponse, JsonRpcResponse
 from integration.tests.basic.test_data.input_data import InputData
 from utils import helpers
@@ -76,10 +77,6 @@ class BaseMixin(BaseTests):
         """Deploys an ERC-20 contract"""
         pass
 
-    # @allure.step("requesting faucet for ERC20")
-    # def request_faucet_erc20(self, wallet: str, amount: int):
-    #     self.faucet.request_sol(wallet, amount=amount)
-
     def process_transaction(
         self,
         sender_account: Account,
@@ -119,7 +116,7 @@ class BaseMixin(BaseTests):
 
     def assert_balance(self, address: str, expected_amount: float, rnd_dig: int = None):
         """Compares balance of an account with expectation"""
-        balance = float(self.web3_client.fromWei(self.get_balance(address), "ether"))
+        balance = float(self.web3_client.fromWei(self.get_balance(address), Unit.ETHER))
         self.check_balance(expected_amount, balance, rnd_dig=rnd_dig)
 
     @allure.step("deploying an ERC_20 contract")
@@ -129,7 +126,9 @@ class BaseMixin(BaseTests):
 
     @allure.step("calculating gas")
     def calculate_trx_gas(self, tx_receipt: web3.types.TxReceipt) -> float:
-        gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.fromWei(self.web3_client.gas_price(), "ether")
+        gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.fromWei(
+            self.web3_client.gas_price(), Unit.ETHER
+        )
         return float(round(gas_used_in_tx, InputData.ROUND_DIGITS.value))
 
     @staticmethod
@@ -139,7 +138,9 @@ class BaseMixin(BaseTests):
 
     @allure.step("calculating gas")
     def calculate_trx_gas(self, tx_receipt: web3.types.TxReceipt) -> float:
-        gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.fromWei(self.web3_client.gas_price(), "ether")
+        gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.fromWei(
+            self.web3_client.gas_price(), Unit.ETHER
+        )
         return float(round(gas_used_in_tx, InputData.ROUND_DIGITS.value))
 
     @staticmethod
@@ -185,31 +186,31 @@ class BaseMixin(BaseTests):
         return contract, contract_deploy_tx
 
     # TODO: probe
-    def deploy_contract(
-        self,
-        name: str,
-        version: str,
-        account: Account,  # "eth_account.signers.local.LocalAccount",
-        constructor_args: Optional[Any] = None,
-        gas: Optional[int] = 0,
-    ) -> "web3._utils.datatypes.Contract":
-        """contract deployments"""
+    # def deploy_contract(
+    #     self,
+    #     name: str,
+    #     version: str,
+    #     account: Account,  # "eth_account.signers.local.LocalAccount",
+    #     constructor_args: Optional[Any] = None,
+    #     gas: Optional[int] = 0,
+    # ) -> "web3._utils.datatypes.Contract":
+    #     """contract deployments"""
 
-        # contract_interface = self._compile_contract_interface(name, version)
-        contract_interface = helpers.get_contract_interface(name, version)
-        contract_deploy_tx = self._web3_client.deploy_contract(
-            account,
-            abi=contract_interface["abi"],
-            bytecode=contract_interface["bin"],
-            constructor_args=constructor_args,
-            gas=gas,
-        )
+    #     # contract_interface = self._compile_contract_interface(name, version)
+    #     contract_interface = helpers.get_contract_interface(name, version)
+    #     contract_deploy_tx = self._web3_client.deploy_contract(
+    #         account,
+    #         abi=contract_interface["abi"],
+    #         bytecode=contract_interface["bin"],
+    #         constructor_args=constructor_args,
+    #         gas=gas,
+    #     )
 
-        if not (contract_deploy_tx and contract_interface):
-            return None, None
+    #     if not (contract_deploy_tx and contract_interface):
+    #         return None, None
 
-        contract = self._web3_client.eth.contract(
-            address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
-        )
+    #     contract = self._web3_client.eth.contract(
+    #         address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
+    #     )
 
-        return contract, contract_deploy_tx
+    #     return contract, contract_deploy_tx

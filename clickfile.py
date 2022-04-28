@@ -28,6 +28,16 @@ except ImportError:
 
 CMD_ERROR_LOG = "click_cmd_err.log"
 
+ERR_MSG_TPL = {
+    "blocks": [
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": ""},
+        },
+        {"type": "divider"},
+    ]
+}
+
 
 def catch_traceback(func: tp.Callable) -> tp.Callable:
     """Catch traceback to file"""
@@ -44,7 +54,7 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
             print(f"{10*'+'} output {e.output}")
             print(f"{10*'+'} tb {dir(e.__traceback__)}")
             print(f"{10*'+'}{dir(e)}")
-            err_msg = f"Job `{func.__name__}` is failed: {e}"
+            err_msg = f"*Job `{func.__name__}` is failed:*\n{e}"
             with open(CMD_ERROR_LOG, "a") as fd:
                 fd.write(err_msg)
             raise
@@ -355,17 +365,14 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
 
 @cli.command(help="Send notification to slack")
 @click.option("-u", "--url", help="slack app endpoint url.")
-@click.option("-b", "--build", help="github action test build url.")
-def send_notification(url, build):
-    # headers = {"Content-type: application/json"}
-    # json_doc = {"text": text}
-    # requests.post(url=url, headers=headers, data=json.dumps(json_doc))
-
-    print(f"{10*'+'} Build: {build}")
-    print(f"{10*'+'} URL: {url}")
-    p = pathlib.Path(".")
-    list_files = sorted([f.name for f in p.iterdir() if f.is_file()])
-    print(f"{10*'+'} Local files list: {list_files}")
+@click.option("-b", "--build_url", help="github action test build url.")
+def send_notification(url, build_url):
+    p = pathlib.Path(f"./{CMD_ERROR_LOG}")
+    trace_back = p.read_text()
+    json_doc = ERR_MSG_TPL["blocks"][0]["text"]["text"] = f"{trace_back}\n\n[View details]({build_url})"
+    print(json_doc)
+    headers = {"Content-type: application/json"}
+    requests.post(url=url, headers=headers, data=json.dumps(json_doc))
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ name: "Basic tests"
 on:
   schedule:
     - cron: "0 23,2 * * *"
-    - cron: "*/5 * * * *"
+    - cron: "* */4 * * *"
   workflow_dispatch:
     inputs:
       network:
@@ -29,6 +29,7 @@ on:
 env:
   NETWORK: night-stand
   RUNNER: ubuntu-20.04
+  BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
 jobs:
   prepare-env:
@@ -62,7 +63,7 @@ jobs:
 
           NETWORK=$( setVar "${{ github.event.inputs.network }}" "${{ env.NETWORK }}" )
           RUNNER=$( setVar "${{ github.event.inputs.runner }}" "${{ env.RUNNER }}" )
-          BUILD_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          BUILD_URL=${{ env.BUILD_URL}}
 
           echo "Network: ${NETWORK}"
           echo "Runner: ${RUNNER}"

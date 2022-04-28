@@ -367,12 +367,10 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
 @click.option("-u", "--url", help="slack app endpoint url.")
 @click.option("-b", "--build_url", help="github action test build url.")
 def send_notification(url, build_url):
-    p = pathlib.Path(f"./{CMD_ERROR_LOG}")
-    trace_back = p.read_text()
-    json_doc = ERR_MSG_TPL["blocks"][0]["text"]["text"] = f"{trace_back}\n\n[View details]({build_url})"
-    print(json_doc)
-    headers = {"Content-type: application/json"}
-    requests.post(url=url, headers=headers, data=json.dumps(json_doc))
+    trace_back = pathlib.Path(f"./{CMD_ERROR_LOG}").read_text()
+    ERR_MSG_TPL["blocks"][0]["text"]["text"] = f"{trace_back}\n\n[View details]({build_url})"
+    print(ERR_MSG_TPL)
+    requests.post(url=url, headers={"Content-type: application/json"}, data=json.dumps(ERR_MSG_TPL))
 
 
 if __name__ == "__main__":

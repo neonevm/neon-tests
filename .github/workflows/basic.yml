@@ -85,6 +85,7 @@ jobs:
     env:
       NETWORK: ${{ needs.prepare-env.outputs.network }}
       RUNNER: ${{ needs.prepare-env.outputs.runner }}
+      BUILD_URL: ${{ needs.prepare-env.outputs.build_url }}
     if: always()
     steps:
       - uses: actions/checkout@v2
@@ -98,7 +99,7 @@ jobs:
           path: allure-results
       - name: "Notify on Basic tests failed."
         if: ${{ failure() }}
-        run: "./clickfile.py send-notification -u ${{ secrets.SLACK_URL }} -b ${{ needs.prepare-env.outputs.build_url }}"
+        run: "./clickfile.py send-notification -u ${{ secrets.SLACK_URL }} -b ${{ env.BUILD_URL }}"
   allure:
     runs-on: ${{ needs.prepare-env.outputs.runner }}
     if: always()

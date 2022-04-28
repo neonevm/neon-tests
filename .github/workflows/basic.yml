@@ -95,7 +95,7 @@ jobs:
         with:
           name: "Allure results"
           path: allure-results
-      - name: "Notify on Basic tests failed."
+      - name: "Notify on failure."
         if: ${{ failure() }}
         run: "./clickfile.py send-notification -u ${{ secrets.SLACK_URL }} -b ${{ env.BUILD_URL }}"
   allure:

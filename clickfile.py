@@ -10,6 +10,7 @@ import subprocess
 import sys
 import typing as tp
 from multiprocessing.dummy import Pool
+from urllib.parse import urlparse
 
 import requests
 
@@ -54,7 +55,7 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
             print(f"{10*'+'} output {e.output}")
             print(f"{10*'+'} tb {dir(e.__traceback__)}")
             print(f"{10*'+'}{dir(e)}")
-            err_msg = f"*Job `{func.__name__}` is failed:*\n{e}"
+            err_msg = f"*unsuccessful job: `{func.__name__}`*\n{e}"
             with open(CMD_ERROR_LOG, "a") as fd:
                 fd.write(err_msg)
             raise
@@ -367,10 +368,14 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
 @click.option("-u", "--url", help="slack app endpoint url.")
 @click.option("-b", "--build_url", help="github action test build url.")
 def send_notification(url, build_url):
+    parsed_build_url = urlparse(build_url).path.split("/")
+    build_id = parsed_build_url[-1]
+    repo_name = f"{parsed_build_url[1]}/{parsed_build_url[2]}"
     trace_back = pathlib.Path(f"./{CMD_ERROR_LOG}").read_text()
-    ERR_MSG_TPL["blocks"][0]["text"]["text"] = f"{trace_back}\n\n[View details]({build_url})"
-    print(ERR_MSG_TPL)
-    requests.post(url=url, headers={"Content-type: application/json"}, data=json.dumps(ERR_MSG_TPL))
+    ERR_MSG_TPL["blocks"][0]["text"][
+        "text"
+    ] = f"*Build `{build_id}` of repository `{repo_name}` is failed, {trace_back}\n<{build_url}[View build details>"
+    requests.post(url=url, data=json.dumps(ERR_MSG_TPL))
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 import allure
 import pytest
 
-from integration.tests.basic.helpers.basic import WAITING_FOR_MS, BaseMixin
+from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.test_data.input_data import InputData
 
 """
@@ -70,13 +70,8 @@ class TestSingleClient(BaseMixin):
             self.request_faucet_neon(account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
         self.assert_balance(account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
 
-    @pytest.mark.skip(WAITING_FOR_MS)
-    def test_check_tokens_in_wallet_spl(self):
+    def test_check_tokens_in_wallet_spl(self, erc20wrapper):
         """Check tokens in wallet: spl"""
-        assert 1 == 2
-
-    def test_check_tokens_in_wallet_ERC20(self, erc20wrapper):
-        """Check tokens in wallet: ERC20"""
         erc20_amount = 20
         account = self.create_account_with_balance()
         contract, contract_deploy_tx = self.deploy_and_get_contract(
@@ -84,6 +79,11 @@ class TestSingleClient(BaseMixin):
         )
 
         assert contract.functions.balanceOf(account.address).call() == erc20_amount
+
+    @pytest.mark.skip("TODO")
+    def test_check_tokens_in_wallet_ERC20(self):
+        """Check tokens in wallet: ERC20"""
+        assert 1 == 2
 
     @pytest.mark.only_stands
     @pytest.mark.parametrize("amount", FAUCET_TEST_DATA)

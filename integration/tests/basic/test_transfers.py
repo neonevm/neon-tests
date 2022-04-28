@@ -53,8 +53,13 @@ class TestTransfer(BaseMixin):
         )
         self.assert_balance(self.recipient_account.address, recipient_balance + amount, rnd_dig=3)
 
-    def test_send_erc20_token_from_one_account_to_another(self, erc20wrapper):
+    @pytest.mark.skip(WAITING_FOR_MS)
+    def test_send_erc20_token_from_one_account_to_another(self):
         """Send erc20 token from one account to another"""
+        assert 1 == 2
+
+    def test_send_spl_wrapped_account_from_one_account_to_another(self, erc20wrapper):
+        """Send spl wrapped account from one account to another"""
         transfer_amount = 5
 
         contract, spl_owner = erc20wrapper
@@ -65,11 +70,6 @@ class TestTransfer(BaseMixin):
         )
 
         assert contract.functions.balanceOf(self.recipient_account.address).call() == initial_balance + transfer_amount
-
-    @pytest.mark.skip(WAITING_FOR_MS)
-    def test_send_spl_wrapped_account_from_one_account_to_another(self):  # , erc20wrapper):
-        """Send spl wrapped account from one account to another"""
-        assert 1 == 2
 
     @pytest.mark.parametrize("amount", WRONG_TRANSFER_AMOUNT_DATA)
     def test_send_more_than_exist_on_account_neon(self, amount: Union[int, float]):
@@ -82,14 +82,8 @@ class TestTransfer(BaseMixin):
         self.assert_balance(self.sender_account.address, sender_balance, rnd_dig=1)
         self.assert_balance(self.recipient_account.address, recipient_balance, rnd_dig=1)
 
-    @pytest.mark.skip(WAITING_FOR_MS)
-    @pytest.mark.parametrize("amount", TRANSFER_AMOUNT_DATA)
-    def test_send_more_than_exist_on_account_spl(self, amount):
+    def test_send_more_than_exist_on_account_spl(self, erc20wrapper):
         """Send more than exist on account: spl (with different precision)"""
-        assert 1 == 2
-
-    def test_send_more_than_exist_on_account_erc20(self, erc20wrapper):
-        """Send more than exist on account: ERC20"""
         transfer_amount = 1_000_000_000_000_000_000_000
 
         contract, spl_owner = erc20wrapper
@@ -101,8 +95,12 @@ class TestTransfer(BaseMixin):
             )
 
         assert error_info, AssertMessage.TRX_NOT_FAILED.value
-
         assert contract.functions.balanceOf(self.recipient_account.address).call() == initial_amount
+
+    @pytest.mark.skip(WAITING_FOR_MS)
+    def test_send_more_than_exist_on_account_erc20(self):
+        """Send more than exist on account: ERC20"""
+        assert 1 == 2
 
     def test_zero_neon(self):
         """Send zero: neon"""
@@ -116,13 +114,8 @@ class TestTransfer(BaseMixin):
         )
         self.assert_balance(self.recipient_account.address, recipient_balance, rnd_dig=1)
 
-    @pytest.mark.skip(WAITING_FOR_MS)
-    def test_zero_spl(self):
+    def test_zero_spl(self, erc20wrapper):
         """Send zero: spl (with different precision)"""
-        assert 1 == 2
-
-    def test_zero_erc20(self, erc20wrapper):
-        """Send zero: ERC20"""
         transfer_amount = 0
 
         contract, spl_owner = erc20wrapper
@@ -133,6 +126,11 @@ class TestTransfer(BaseMixin):
         )
 
         assert contract.functions.balanceOf(self.recipient_account.address).call() == initial_balance
+
+    @pytest.mark.skip(WAITING_FOR_MS)
+    def test_zero_erc20(self):
+        """Send zero: ERC20"""
+        pass
 
     def test_send_negative_sum_from_account_neon(self):
         """Send negative sum from account: neon"""
@@ -149,13 +147,8 @@ class TestTransfer(BaseMixin):
         self.assert_balance(self.sender_account.address, sender_balance, rnd_dig=1)
         self.assert_balance(self.recipient_account.address, recipient_balance, rnd_dig=1)
 
-    @pytest.mark.skip(WAITING_FOR_MS)
-    def test_send_negative_sum_from_account_spl(self):
+    def test_send_negative_sum_from_account_spl(self, erc20wrapper):
         """Send negative sum from account: spl (with different precision)"""
-        assert 1 == 2
-
-    def test_send_negative_sum_from_account_erc20(self, erc20wrapper):
-        """Send negative sum from account: ERC20"""
         transfer_amount = -1
 
         contract, spl_owner = erc20wrapper
@@ -169,6 +162,23 @@ class TestTransfer(BaseMixin):
         assert error_info, AssertMessage.TRX_NOT_FAILED.value
 
         assert contract.functions.balanceOf(self.recipient_account.address).call() == initial_balance
+
+    @pytest.mark.skip(WAITING_FOR_MS)
+    def test_send_negative_sum_from_account_erc20(self):
+        """Send negative sum from account: ERC20"""
+        assert 1 == 2
+
+    def test_send_token_to_self(self):
+        """Send token to self"""
+        transfer_amount = 2
+        balance_before = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), "ether"))
+
+        tx_receipt = self.process_transaction(self.sender_account, self.recipient_account, transfer_amount)
+        self.assert_balance(
+            self.sender_account.address,
+            balance_before - transfer_amount - self.calculate_trx_gas(tx_receipt=tx_receipt),
+            rnd_dig=1,
+        )
 
     def test_send_token_to_an_invalid_address(self):
         """Send token to an invalid address"""

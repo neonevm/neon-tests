@@ -355,7 +355,7 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
 
 @cli.command(help="Send notification to slack")
 @click.option("-u", "--url", help="slack app endpoint url.")
-@click.option("-b", "--build", help="github action, test build url.")
+@click.option("-b", "--build", help="github action test build url.")
 def send_notification(url, build):
     # headers = {"Content-type: application/json"}
     # json_doc = {"text": text}

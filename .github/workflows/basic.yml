@@ -63,16 +63,14 @@ jobs:
 
           NETWORK=$( setVar "${{ github.event.inputs.network }}" "${{ env.NETWORK }}" )
           RUNNER=$( setVar "${{ github.event.inputs.runner }}" "${{ env.RUNNER }}" )
-          BUILD_URL=${{ env.BUILD_URL}}
 
           echo "Network: ${NETWORK}"
           echo "Runner: ${RUNNER}"
-          echo "Build url: ${BUILD_URL}"
+          echo "Build url: ${{ env.BUILD_URL }}"
 
           echo "::set-output name=network::${NETWORK}"
           echo "::set-output name=runner::${RUNNER}"
           echo "::set-output name=jobs::${JOBS_NUMBER}"
-          echo "::set-output name=build_url::${BUILD_URL}"
 
     outputs:
       network: ${{ steps.setup.outputs.network }}
@@ -86,7 +84,6 @@ jobs:
     env:
       NETWORK: ${{ needs.prepare-env.outputs.network }}
       RUNNER: ${{ needs.prepare-env.outputs.runner }}
-      BUILD_URL: ${{ needs.prepare-env.outputs.build_url }}
     if: always()
     steps:
       - uses: actions/checkout@v2

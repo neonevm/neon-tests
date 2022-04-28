@@ -48,13 +48,8 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
         try:
             result = func(*args, **kwargs)
         except Exception as e:
-            print(f"{10*'+'}{e}")
-            print(f"{10*'+'}{e.args}")
-            print(f"{10*'+'} stderr {e.stderr}")
-            print(f"{10*'+'} stdout {e.stdout}")
-            print(f"{10*'+'} output {e.output}")
             print(f"{10*'+'} tb {dir(e.__traceback__)}")
-            print(f"{10*'+'}{dir(e)}")
+            print(f"{10*'+'} tb {e.__traceback__.tb_frame}")
             err_msg = f"\n*Unsuccessful job: `{func.__name__}`*\n{e}\n"
             with open(CMD_ERROR_LOG, "a") as fd:
                 fd.write(err_msg)
@@ -194,10 +189,12 @@ def install_python_requirements():
 
 
 def install_oz_requirements():
-    cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
-    # cmd = "if [ -e package-lock.json ]; then npm i; else npm ci; fi"
-    cmd = "npm ci"
-    subprocess.check_call(cmd, shell=True, cwd=cwd)
+    cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts")
+    if list(cwd.glob('*lock*')):
+        cmd = "npm ci"
+    else:
+        cmd = "npm install npm@latest -g"
+    subprocess.check_call(cmd, shell=True, cwd=cwd.absolute())
 
 
 @click.group()
@@ -368,15 +365,19 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
 @click.option("-u", "--url", help="slack app endpoint url.")
 @click.option("-b", "--build_url", help="github action test build url.")
 def send_notification(url, build_url):
+    p = pathlib.Path(f"./{CMD_ERROR_LOG}")
+    trace_back = p.read_text() if p.exists() else ""
+    tpl = ERR_MSG_TPL.copy()
+
     parsed_build_url = urlparse(build_url).path.split("/")
     build_id = parsed_build_url[-1]
     repo_name = f"{parsed_build_url[1]}/{parsed_build_url[2]}"
-    p = pathlib.Path(f"./{CMD_ERROR_LOG}")
-    trace_back = p.read_text() if p.exists() else ""
-    ERR_MSG_TPL["blocks"][0]["text"][
+
+    tpl["blocks"][0]["text"][
         "text"
     ] = f"*Build <{build_url}|`{build_id}`> of repository `{repo_name}` is failed.*{trace_back}\n<{build_url}|View build details>"
-    requests.post(url=url, data=json.dumps(ERR_MSG_TPL))
+    # requests.post(url=url, data=json.dumps(tpl))
+    print(f"{30*'='}{tpl}")
 
 
 if __name__ == "__main__":

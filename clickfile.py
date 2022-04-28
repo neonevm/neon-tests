@@ -55,7 +55,7 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
             print(f"{10*'+'} output {e.output}")
             print(f"{10*'+'} tb {dir(e.__traceback__)}")
             print(f"{10*'+'}{dir(e)}")
-            err_msg = f"*unsuccessful job: `{func.__name__}`*\n{e}"
+            err_msg = f"*unsuccessful job: `{func.__name__}`*\n{e}\n"
             with open(CMD_ERROR_LOG, "a") as fd:
                 fd.write(err_msg)
             raise
@@ -374,7 +374,7 @@ def send_notification(url, build_url):
     trace_back = pathlib.Path(f"./{CMD_ERROR_LOG}").read_text()
     ERR_MSG_TPL["blocks"][0]["text"][
         "text"
-    ] = f"*Build `{build_id}` of repository `{repo_name}` is failed, {trace_back}\n<{build_url}[View build details>"
+    ] = f"*Build `{build_id}` of repository `{repo_name}` is failed*, _{trace_back}_\n<{build_url}View build details>"
     requests.post(url=url, data=json.dumps(ERR_MSG_TPL))
 
 

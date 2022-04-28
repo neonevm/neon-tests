@@ -130,6 +130,7 @@ class TestRpcCalls(BaseMixin):
         response = self.assert_rpc_response("eth_call", params=request_data, raises=raises)
         if params:
             assert response.result == "0x", f"Invalid response result, `{response.result}`"
+        raise AssertionError("dsfgwerqeryewry")
 
     @pytest.mark.parametrize(
         "params, raises",

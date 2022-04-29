@@ -211,7 +211,7 @@ def requirements():
 
 @cli.command(help="Run any type of tests")
 @click.option(
-    "-n", "--network", default="n ight-stand", type=click.Choice(networks.keys()), help="In which stand run tests"
+    "-n", "--network", default="night-stand", type=click.Choice(networks.keys()), help="In which stand run tests"
 )
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
 @click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz"]))
@@ -230,7 +230,7 @@ def run(name, network, jobs):
     else:
         raise click.ClickException("Unknown test name")
 
-    command += f" --network={network}"
+    command += f" --network={network} --make-report"
     cmd = subprocess.run(command, shell=True)
     shutil.copyfile("./allure/categories.json", "./allure-results/categories.json")
 
@@ -376,8 +376,7 @@ def send_notification(url, build_url):
     tpl["blocks"][0]["text"][
         "text"
     ] = f"*Build <{build_url}|`{build_id}`> of repository `{repo_name}` is failed.*{trace_back}\n<{build_url}|View build details>"
-    # requests.post(url=url, data=json.dumps(tpl))
-    print(f"{30*'='}{tpl}")
+    requests.post(url=url, data=json.dumps(tpl))
 
 
 if __name__ == "__main__":

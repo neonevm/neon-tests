@@ -14,11 +14,6 @@ from integration.tests.basic.model.model import AccountData, JsonRpcErrorRespons
 from integration.tests.basic.test_data.input_data import InputData
 from utils import helpers
 
-WAITING_FOR_MS = "waiting for MS"
-
-WAITING_FOR_ERC20 = "ERC20 is in progress"
-WAITING_FOR_CONTRACT_SUPPORT = "no contracts are yet done"
-
 
 class BaseMixin(BaseTests):
 

@@ -297,6 +297,7 @@ class TestTransfer(BaseMixin):
         )
 
         # ERC20 balance
+        # TODO: should the ERC20 balance be decreased or be the same as before the transaction?
         assert (
             contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE - transfer_amount,
             AssertMessage.CONTRACT_BALANCE_IS_WRONG.value,

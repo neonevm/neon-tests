@@ -12,7 +12,4 @@ class AssertMessage(Enum):
     DOES_NOT_CONTAIN_RESULT = "Does not contain the result data"
     DOES_NOT_CONTAIN_TOO_LOW = f"Message does not contain '{ErrorMessage.NONCE_TOO_LOW.value}'"
     DOES_NOT_CONTAIN_TOO_HIGH = f"Message does not contain '{ErrorMessage.NONCE_TOO_HIGH.value}'"
-    TRX_NOT_FAILED = "Transaction has not failed"
-    BALANCE_HAS_INCREASED = "Balance has increased"
-    BALANCE_HAS_CHANGED = "Balance has changed"
     CONTRACT_BALANCE_IS_WRONG = "Contract balance is wrong"

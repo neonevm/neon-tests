@@ -43,17 +43,28 @@ ERR_MSG_TPL = {
 def catch_traceback(func: tp.Callable) -> tp.Callable:
     """Catch traceback to file"""
 
+    def create_report(func_name, exc):
+        path = pathlib.Path(CMD_ERROR_LOG)
+        data = ""
+        if path.exists() and path.stat().st_size != 0:
+            with path.open("r") as fd:
+                data = f"{fd.read()}\n"
+            path.unlink()
+        err_msg = f"*Unsuccessful job: `{func_name}`*\n{exc}\n{data}"
+        with open(CMD_ERROR_LOG, "w") as fd:
+            fd.write(err_msg)
+
     @functools.wraps(func)
     def wrap(*args, **kwargs) -> tp.Any:
         try:
             result = func(*args, **kwargs)
         except Exception as e:
-            print(f"{10*'+'} tb {dir(e.__traceback__)}")
-            print(f"{10*'+'} tb {e.__traceback__.tb_frame}")
-            err_msg = f"\n*Unsuccessful job: `{func.__name__}`*\n{e}\n"
-            with open(CMD_ERROR_LOG, "a") as fd:
-                fd.write(err_msg)
+            create_report(func.__name__, e)
             raise
+        finally:
+            e = sys.exc_info()
+            if e[0] and e[0].__name__ == "SystemExit" and e[1] != 0:
+                create_report(func.__name__, e[:2])
 
         return result
 
@@ -189,8 +200,8 @@ def install_python_requirements():
 
 
 def install_oz_requirements():
-    cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts")
-    if list(cwd.glob('*lock*')):
+    cwd = pathlib.Path().parent / "compatibility/openzeppelin-contracts"
+    if list(cwd.glob("*lock*")):
         cmd = "npm ci"
     else:
         cmd = "npm install npm@latest -g"
@@ -222,7 +233,7 @@ def run(name, network, jobs):
     if name == "economy":
         command = "py.test integration/tests/economy/test_economics.py"
     elif name == "basic":
-        command = "py.test integration/tests/basic/"
+        command = "py.test integration/tests/basic/test_rpc_calls.py"
     elif name == "oz":
         run_openzeppelin_tests(network, jobs=int(jobs))
         shutil.copyfile("./allure/categories.json", "./allure-results/categories.json")
@@ -375,7 +386,7 @@ def send_notification(url, build_url):
 
     tpl["blocks"][0]["text"][
         "text"
-    ] = f"*Build <{build_url}|`{build_id}`> of repository `{repo_name}` is failed.*{trace_back}\n<{build_url}|View build details>"
+    ] = f"*Build <{build_url}|`{build_id}`> of repository `{repo_name}` is failed.* \n{trace_back}\n<{build_url}|View build details>"
     requests.post(url=url, data=json.dumps(tpl))
 
 

@@ -96,8 +96,10 @@ jobs:
           name: "Allure results"
           path: allure-results
       - name: "Notify on failure."
+        env:
+          STEPS_CONTEXT: ${{ toJson(steps) }}
         if: ${{ failure() }}
-        run: "./clickfile.py send-notification -u ${{ secrets.SLACK_URL }} -b ${{ env.BUILD_URL }}"
+        run: "./clickfile.py send-notification -u ${{ secrets.SLACK_URL }} -b ${{ env.BUILD_URL }} -s ${{ env.STEPS_CONTEXT }}"
   allure:
     runs-on: ${{ needs.prepare-env.outputs.runner }}
     if: always()

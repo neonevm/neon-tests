@@ -27,5 +27,5 @@ def pytest_runtest_protocol(item, nextitem):
         with path.open("a") as fd:
             for report in reports:
                 if report.when == "call" and report.outcome == "failed":
-                    fd.write(f"{report.outcome.upper()} {item.nodeid}\n")
+                    fd.write(f"`{report.outcome.upper()}` {item.nodeid}\n")
         return True

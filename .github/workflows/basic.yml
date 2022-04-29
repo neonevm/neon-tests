@@ -97,7 +97,7 @@ jobs:
           path: allure-results
       - name: "Notify on failure."
         if: ${{ failure() }}
-        run: "./clickfile.py send-notification -u ${{ secrets.SLACK_URL }} -b ${{ env.BUILD_URL }} -s ${{ toJSON(github) }}"
+        run: "./clickfile.py send-notification -u ${{ secrets.SLACK_URL }} -b ${{ env.BUILD_URL }} -s ${{ toJSON(job) }}"
   allure:
     runs-on: ${{ needs.prepare-env.outputs.runner }}
     if: always()

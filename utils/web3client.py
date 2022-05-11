@@ -74,6 +74,7 @@ class NeonWeb3Client:
 
         signed_tx = self._web3.eth.account.sign_transaction(transaction, from_.key)
         tx = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        self._web3.eth.send_transaction()
         return self._web3.eth.wait_for_transaction_receipt(tx)
 
     def deploy_contract(

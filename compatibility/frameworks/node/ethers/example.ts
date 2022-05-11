@@ -32,8 +32,10 @@ async function exampleContract() {
     // const contract = contractFactory.attach(receipt.contractAddress).connect(provider);
     // console.log(await contract.get());
     await provider.getBlock("latest");
-    // const deployTx = await contractFactory.deploy();
-    // console.log(deployTx);
+    const contract = await contractFactory.deploy();
+    await contract.deployTransaction.wait();
+    await contract.inc();
+    console.log(await contract.get());
 
 }
 

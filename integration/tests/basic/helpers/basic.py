@@ -144,27 +144,3 @@ class BaseMixin(BaseTests):
         actual_dec = round(actual, rnd_dig)
 
         assert actual_dec == expected_dec, f"expected balance = {expected_dec}, actual balance = {actual_dec}"
-
-    def deploy_and_get_contract(
-        self,
-        contract_name: str,
-        version: str,
-        account: Account,
-        constructor_args: Optional[Any] = None,
-        gas: Optional[int] = 0,
-    ) -> Tuple[Any, web3.types.TxReceipt]:
-        contract_interface = helpers.get_contract_interface(contract_name, version)
-
-        contract_deploy_tx = self.web3_client.deploy_contract(
-            account,
-            abi=contract_interface["abi"],
-            bytecode=contract_interface["bin"],
-            constructor_args=constructor_args,
-            gas=gas,
-        )
-
-        contract = self.web3_client.eth.contract(
-            address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
-        )
-
-        return contract, contract_deploy_tx

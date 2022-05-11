@@ -62,7 +62,7 @@ class TestTransfer(BaseMixin):
         Send zero: ERC20
         """
 
-        contract, contract_deploy_tx = self.deploy_and_get_contract(
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
             "ERC20", "0.6.6", self.sender_account, constructor_args=[DEFAULT_ERC20_BALANCE]
         )
         assert contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
@@ -148,7 +148,7 @@ class TestTransfer(BaseMixin):
     def test_send_more_than_exist_on_account_erc20(self):
         """Send more than exist on account: ERC20"""
 
-        contract, contract_deploy_tx = self.deploy_and_get_contract(
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
             "ERC20", "0.6.6", self.sender_account, constructor_args=[DEFAULT_ERC20_BALANCE]
         )
         assert contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
@@ -215,7 +215,7 @@ class TestTransfer(BaseMixin):
     def test_send_negative_sum_from_account_erc20(self):
         """Send negative sum from account: ERC20"""
 
-        contract, contract_deploy_tx = self.deploy_and_get_contract(
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
             "ERC20", "0.6.6", self.sender_account, constructor_args=[DEFAULT_ERC20_BALANCE]
         )
         assert contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
@@ -259,7 +259,7 @@ class TestTransfer(BaseMixin):
         """Send token to self: ERC20"""
 
         transfer_amount = 10
-        contract, contract_deploy_tx = self.deploy_and_get_contract(
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
             "ERC20", "0.6.6", self.sender_account, constructor_args=[DEFAULT_ERC20_BALANCE]
         )
         assert contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE

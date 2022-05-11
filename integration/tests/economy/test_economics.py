@@ -56,34 +56,6 @@ class TestEconomics(BaseTests):
         with allure.step(msg):
             assert neon_cost > sol_cost, msg
 
-    def deploy_and_get_contract(
-        self,
-        contract_name: str,
-        version: str,
-        account: tp.Optional[eth_account.signers.local.LocalAccount] = None,
-        constructor_args: tp.Optional[tp.Any] = None,
-        gas: tp.Optional[int] = 0,
-    ):
-
-        if account is None:
-            account = self.acc
-
-        contract_interface = helpers.get_contract_interface(contract_name, version)
-
-        contract_deploy_tx = self.web3_client.deploy_contract(
-            account,
-            abi=contract_interface["abi"],
-            bytecode=contract_interface["bin"],
-            constructor_args=constructor_args,
-            gas=gas,
-        )
-
-        contract = self.web3_client.eth.contract(
-            address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
-        )
-
-        return contract, contract_deploy_tx
-
     @pytest.mark.only_stands
     def test_account_creation(self):
         """Verify account creation spend SOL"""
@@ -281,7 +253,9 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        contract, contract_deploy_tx = self.deploy_and_get_contract("ERC20", "0.6.6", constructor_args=[1000])
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
+            "ERC20", "0.6.6", account=self.acc, constructor_args=[1000]
+        )
 
         assert contract.functions.balanceOf(self.acc.address).call() == 1000
 
@@ -294,7 +268,9 @@ class TestEconomics(BaseTests):
 
     def test_erc20_transfer(self):
         """Verify ERC20 token send"""
-        contract, contract_deploy_tx = self.deploy_and_get_contract("ERC20", "0.6.6", constructor_args=[1000])
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
+            "ERC20", "0.6.6", account=self.acc, constructor_args=[1000]
+        )
 
         assert contract.functions.balanceOf(self.acc.address).call() == 1000
 
@@ -319,7 +295,7 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=self.acc)
 
         sol_balance_after_deploy = self.operator.get_solana_balance()
         neon_balance_after_deploy = self.operator.get_neon_balance()
@@ -348,7 +324,7 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10", gas=1000)
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", gas=1000)
 
         assert contract_deploy_tx["status"] == 0
 
@@ -367,7 +343,7 @@ class TestEconomics(BaseTests):
         neon_balance_before = self.operator.get_neon_balance()
 
         with pytest.raises(ValueError, match="The account balance is less than required"):
-            contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
+            contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
 
         sol_balance_after_deploy = self.operator.get_solana_balance()
         neon_balance_after_deploy = self.operator.get_neon_balance()
@@ -383,10 +359,10 @@ class TestEconomics(BaseTests):
         self.web3_client.send_neon(self.acc, acc2, 0.001)
 
         with pytest.raises(ValueError, match="The account balance is less than required"):
-            self.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
+            self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
 
         self.web3_client.send_neon(self.acc, acc2, 50)
-        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
@@ -397,7 +373,7 @@ class TestEconomics(BaseTests):
 
     def test_contract_get_is_free(self):
         """Verify that get contract calls is free"""
-        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=self.acc)
 
         sol_balance_after_deploy = self.operator.get_solana_balance()
         neon_balance_after_deploy = self.operator.get_neon_balance()
@@ -417,7 +393,9 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        contract, contract_deploy_tx = self.deploy_and_get_contract("IncreaseStorage", "0.8.10")
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
+            "IncreaseStorage", "0.8.10", account=self.acc
+        )
 
         sol_balance_before_increase = self.operator.get_solana_balance()
         neon_balance_before_increase = self.operator.get_neon_balance()
@@ -441,7 +419,9 @@ class TestEconomics(BaseTests):
 
     def test_cost_resize_account_less_neon(self):
         """Verify how much cost account resize"""
-        contract, contract_deploy_tx = self.deploy_and_get_contract("IncreaseStorage", "0.8.10")
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
+            "IncreaseStorage", "0.8.10", account=self.acc
+        )
 
         acc2 = self.web3_client.create_account()
         self.web3_client.send_neon(self.acc, acc2, 0.001)
@@ -494,7 +474,7 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=self.acc)
 
         sol_balance_before_instruction = self.operator.get_solana_balance()
         neon_balance_before_instruction = self.operator.get_neon_balance()
@@ -521,7 +501,7 @@ class TestEconomics(BaseTests):
     @pytest.mark.xfail(reason="Strange when more 200000 instructions")
     def test_contract_interact_more_500000_bpf(self):
         """Deploy a contract with more 500000 bpf"""
-        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=self.acc)
 
         sol_balance_before_instruction = self.operator.get_solana_balance()
         neon_balance_before_instruction = self.operator.get_neon_balance()
@@ -549,7 +529,7 @@ class TestEconomics(BaseTests):
     @pytest.mark.xfail(reason="Strange when more 200000 instructions")
     def test_contract_interact_more_500000_bpf_less_gas(self):
         """Deploy a contract with more 500000 bpf"""
-        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10")
 
         sol_balance_before_instruction = self.operator.get_solana_balance()
         neon_balance_before_instruction = self.operator.get_neon_balance()
@@ -574,7 +554,7 @@ class TestEconomics(BaseTests):
 
     def test_contract_interact_more_500000_bpf_less_neon(self):
         """Deploy a contract with more 500000 bpf"""
-        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=self.acc)
 
         acc2 = self.web3_client.create_account()
         self.web3_client.send_neon(self.acc, acc2, 0.001)
@@ -603,7 +583,7 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=self.acc)
 
         sol_balance_before_instruction = self.operator.get_solana_balance()
         neon_balance_before_instruction = self.operator.get_neon_balance()
@@ -646,7 +626,7 @@ class TestEconomics(BaseTests):
 
     def test_tx_interact_more_1kb_less_neon(self):
         """Send to contract a big text (tx more than 1 kb) when less neon"""
-        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=self.acc)
 
         acc2 = self.web3_client.create_account()
         self.web3_client.send_neon(self.acc, acc2, 0.001)
@@ -689,7 +669,7 @@ class TestEconomics(BaseTests):
     @pytest.mark.xfail(AssertionError, reason="This tx unprofitable because we create accounts before check gas")
     def test_tx_interact_more_1kb_less_gas(self):
         """Send to contract a big text (tx more than 1 kb)"""
-        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=self.acc)
 
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
@@ -733,7 +713,7 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        contract, contract_deploy_tx = self.deploy_and_get_contract("Fat", "0.8.10")
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Fat", "0.8.10", account=self.acc)
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
@@ -751,7 +731,7 @@ class TestEconomics(BaseTests):
         neon_balance_before = self.operator.get_neon_balance()
 
         with pytest.raises(ValueError, match="The account balance is less than required"):
-            contract, contract_deploy_tx = self.deploy_and_get_contract("Fat", "0.8.10", account=acc2)
+            contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Fat", "0.8.10", account=acc2)
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
@@ -763,7 +743,9 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        contract, contract_deploy_tx = self.deploy_and_get_contract("Fat", "0.8.10", gas=1000)
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
+            "Fat", "0.8.10", account=self.acc, gas=1000
+        )
 
         assert contract_deploy_tx["status"] == 0
 
@@ -785,7 +767,7 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=self.acc)
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
@@ -808,7 +790,7 @@ class TestEconomics(BaseTests):
 
         self.web3_client.send_neon(acc2, contract_address, 1, gas=1)
 
-        self.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
+        self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
 
         sol_balance_after_deploy = self.operator.get_solana_balance()
         neon_balance_after_deploy = self.operator.get_neon_balance()
@@ -826,7 +808,7 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        contract, contract_deploy_tx = self.deploy_and_get_contract("Counter", "0.8.10")
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=self.acc)
 
         sol_balance_after_deploy = self.operator.get_solana_balance()
         neon_balance_after_deploy = self.operator.get_neon_balance()

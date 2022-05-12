@@ -506,7 +506,6 @@ class TestEconomics(BaseTests):
                 "gasPrice": self.web3_client.gas_price(),
             }
         )
-
         instruction_receipt = self.web3_client.send_transaction(self.acc, instruction_tx)
 
         sol_balance_after = self.operator.get_solana_balance()

@@ -88,8 +88,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: "Install deps"
+        id: requirements
         uses: ./.github/actions/requirements
       - name: "Run basic tests"
+        id: basic
         run: "./clickfile.py run 'basic' -n ${{ env.NETWORK }}"
       - uses: actions/upload-artifact@v2
         with:
@@ -97,7 +99,7 @@ jobs:
           path: allure-results
       - name: "Notify on failure."
         if: ${{ failure() }}
-        run: "./clickfile.py send-notification -u ${{ secrets.SLACK_URL }} -b ${{ env.BUILD_URL }} -s ${{ job.tests.name }}"
+        run: "./clickfile.py send-notification -u ${{ secrets.SLACK_URL }} -b ${{ env.BUILD_URL }}"
   allure:
     runs-on: ${{ needs.prepare-env.outputs.runner }}
     if: always()

@@ -39,6 +39,8 @@ ERR_MSG_TPL = {
     ]
 }
 
+ERR_MESSAGES = {"run": "Tests executing is failed.", "requirements": "Requirements installation is failed."}
+
 
 def catch_traceback(func: tp.Callable) -> tp.Callable:
     """Catch traceback to file"""
@@ -50,7 +52,7 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
             with path.open("r") as fd:
                 data = f"{fd.read()}\n"
             path.unlink()
-        err_msg = f"*Unsuccessful execution click command: `{func_name}`*\n{exc}\n{data}"
+        err_msg = f"*{ERR_MESSAGES.get(func_name)}*\n*Error:* {exc}\n{data}"
         with open(CMD_ERROR_LOG, "w") as fd:
             fd.write(err_msg)
 
@@ -375,21 +377,19 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
 @cli.command(help="Send notification to slack")
 @click.option("-u", "--url", help="slack app endpoint url.")
 @click.option("-b", "--build_url", help="github action test build url.")
-@click.option("-s", "--steps", help="steeps context")
-def send_notification(url, build_url, steps):
-    print(steps)
-    #p = pathlib.Path(f"./{CMD_ERROR_LOG}")
-    #trace_back = p.read_text() if p.exists() else ""
-    #tpl = ERR_MSG_TPL.copy()
+def send_notification(url, build_url):
+    p = pathlib.Path(f"./{CMD_ERROR_LOG}")
+    trace_back = p.read_text() if p.exists() else ""
+    tpl = ERR_MSG_TPL.copy()
 
-    #parsed_build_url = urlparse(build_url).path.split("/")
-    #build_id = parsed_build_url[-1]
-    #repo_name = f"{parsed_build_url[1]}/{parsed_build_url[2]}"
+    parsed_build_url = urlparse(build_url).path.split("/")
+    build_id = parsed_build_url[-1]
+    repo_name = f"{parsed_build_url[1]}/{parsed_build_url[2]}"
 
-    #tpl["blocks"][0]["text"][
-    #    "text"
-    #] = f"*Build <{build_url}|`{build_id}`> of repository `{repo_name}` is failed.* \n{trace_back}\n<{build_url}|View build details>"
-    #requests.post(url=url, data=json.dumps(tpl))
+    tpl["blocks"][0]["text"][
+        "text"
+    ] = f"*Build <{build_url}|`{build_id}`> of repository `{repo_name}` is failed.* \n{trace_back}\n<{build_url}|View build details>"
+    requests.post(url=url, data=json.dumps(tpl))
 
 
 if __name__ == "__main__":

@@ -21,6 +21,7 @@ from utils.operator import Operator
 from utils.web3client import NeonWeb3Client
 
 LAMPORT_PER_SOL = 1_000_000_000
+NEON_AIRDROP_AMOUNT = 10_000
 
 
 @dataclass
@@ -109,9 +110,9 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
     """Create new account for tests and save operator pre/post balances"""
     with allure.step("Create account for tests"):
         acc = web3_client.eth.account.create()
-    with allure.step(f"Request 5000 NEON from faucet for {acc.address}"):
-        faucet.request_neon(acc.address, 5000)
-        assert web3_client.get_balance(acc) == 5000
+    with allure.step(f"Request {NEON_AIRDROP_AMOUNT} NEON from faucet for {acc.address}"):
+        faucet.request_neon(acc.address, NEON_AIRDROP_AMOUNT)
+        assert web3_client.get_balance(acc) == NEON_AIRDROP_AMOUNT
     start_neon_balance = operator.get_neon_balance()
     start_sol_balance = operator.get_solana_balance()
     with allure.step(

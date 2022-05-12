@@ -342,10 +342,8 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-
         with pytest.raises(ValueError, match="The account balance is less than required"):
             contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
-
 
         sol_balance_after_deploy = self.operator.get_solana_balance()
         neon_balance_after_deploy = self.operator.get_neon_balance()
@@ -360,10 +358,8 @@ class TestEconomics(BaseTests):
         acc2 = self.web3_client.create_account()
         self.web3_client.send_neon(self.acc, acc2, 0.001)
 
-
         with pytest.raises(ValueError, match="The account balance is less than required"):
             self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
-
 
         self.web3_client.send_neon(self.acc, acc2, 50)
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
@@ -534,7 +530,6 @@ class TestEconomics(BaseTests):
         """Deploy a contract with more 500000 bpf"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10")
 
-
         sol_balance_before_instruction = self.operator.get_solana_balance()
         neon_balance_before_instruction = self.operator.get_neon_balance()
 
@@ -556,11 +551,9 @@ class TestEconomics(BaseTests):
         assert sol_balance_after > sol_balance_before_instruction, "SOL Balance didn't change"
         assert neon_balance_after > neon_balance_before_instruction, "NEON Balance incorrect"
 
-
     def test_contract_interact_more_500000_bpf_less_neon(self):
         """Deploy a contract with more 500000 bpf"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=self.acc)
-
 
         acc2 = self.web3_client.create_account()
         self.web3_client.send_neon(self.acc, acc2, 0.001)
@@ -736,10 +729,8 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-
         with pytest.raises(ValueError, match="The account balance is less than required"):
             contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Fat", "0.8.10", account=acc2)
-
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
@@ -754,9 +745,6 @@ class TestEconomics(BaseTests):
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
             "Fat", "0.8.10", account=self.acc, gas=1000
         )
-
-        assert contract_deploy_tx["status"] == 0
-
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()

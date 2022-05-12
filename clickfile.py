@@ -45,14 +45,15 @@ ERR_MESSAGES = {"run": "Tests executing is failed.", "requirements": "Requiremen
 def catch_traceback(func: tp.Callable) -> tp.Callable:
     """Catch traceback to file"""
 
-    def create_report(func_name, exc):
-        path = pathlib.Path(CMD_ERROR_LOG)
+    def create_report(func_name, exc=None):
         data = ""
+        exc = f"\n*Error:* {exc}" if exc else ""
+        path = pathlib.Path(CMD_ERROR_LOG)
         if path.exists() and path.stat().st_size != 0:
             with path.open("r") as fd:
                 data = f"{fd.read()}\n"
             path.unlink()
-        err_msg = f"*{ERR_MESSAGES.get(func_name)}*\n*Error:* {exc}\n{data}"
+        err_msg = f"*{ERR_MESSAGES.get(func_name)}*{exc}\n{data}"
         with open(CMD_ERROR_LOG, "w") as fd:
             fd.write(err_msg)
 
@@ -66,7 +67,7 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
         finally:
             e = sys.exc_info()
             if e[0] and e[0].__name__ == "SystemExit" and e[1] != 0:
-                create_report(func.__name__, e[:2])
+                create_report(func.__name__)
 
         return result
 
@@ -386,9 +387,10 @@ def send_notification(url, build_url):
     build_id = parsed_build_url[-1]
     repo_name = f"{parsed_build_url[1]}/{parsed_build_url[2]}"
 
-    tpl["blocks"][0]["text"][
-        "text"
-    ] = f"*Build <{build_url}|`{build_id}`> of repository `{repo_name}` is failed.* \n{trace_back}\n<{build_url}|View build details>"
+    tpl["blocks"][0]["text"]["text"] = (
+        f"*Build <{build_url}|`{build_id}`> of repository `{repo_name}` is failed.* \n{trace_back}"
+        f"\n<{build_url}|View build details>"
+    )
     requests.post(url=url, data=json.dumps(tpl))
 
 

@@ -43,7 +43,7 @@ jobs:
           echo "NETWORK=night-stand" >> $GITHUB_ENV
       - name: Setup `devnet` by cron schedule
         id: setup_devnet
-        if: github.event.schedule=='*/5 * * * *'
+        if: github.event.schedule=='* */4 * * *'
         run: |
           echo "NETWORK=devnet" >> $GITHUB_ENV
       - name: Setup env

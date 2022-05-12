@@ -197,7 +197,7 @@ def generate_allure_environment(network_name: str):
 
 
 def install_python_requirements():
-    command = "pip3 install --upgrade -r deploy/requirements/prod.txt1  -r deploy/requirements/devel.txt1"
+    command = "pip3 install --upgrade -r deploy/requirements/prod.txt  -r deploy/requirements/devel.txt"
     subprocess.check_call(command, shell=True)
     subprocess.check_call("pip3 install --no-deps -r deploy/requirements/nodeps.txt", shell=True)
 
@@ -236,7 +236,7 @@ def run(name, network, jobs):
     if name == "economy":
         command = "py.test integration/tests/economy/test_economics.py"
     elif name == "basic":
-        command = "py.test integration/tests/basic"
+        command = "py.test integration/tests/basic/test_rpc_calls.py"
     elif name == "oz":
         run_openzeppelin_tests(network, jobs=int(jobs))
         shutil.copyfile("./allure/categories.json", "./allure-results/categories.json")

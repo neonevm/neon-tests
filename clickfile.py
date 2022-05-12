@@ -39,7 +39,7 @@ ERR_MSG_TPL = {
     ]
 }
 
-ERR_MESSAGES = {"run": "Tests executing is failed.", "requirements": "Requirements installation is failed."}
+ERR_MESSAGES = {"run": "Unsuccessful tests executing.", "requirements": "Unsuccessful requirements installation."}
 
 
 def catch_traceback(func: tp.Callable) -> tp.Callable:

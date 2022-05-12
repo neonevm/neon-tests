@@ -72,3 +72,20 @@ structure:
       it and use good practices for each language.
 3. Loadtesting - future tests for load testing
 4. Integration - integration tests for base functionalitiy; operator economy and so
+
+
+## Useful tips
+
+To get neon operator reward address from solana private, we need to use:
+```python
+import os
+import json
+from solana.account import Account
+from common_neon.address import EthereumAddress
+
+keys = []
+for f in os.listdir("operator-keypairs"):
+    with open(f"operator-keypairs/{f}", "r") as key:
+        a = Account(json.load(key)[:32])
+        keys.append(str(EthereumAddress.from_private_key(a.secret_key())))
+```

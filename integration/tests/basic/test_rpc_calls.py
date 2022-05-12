@@ -384,7 +384,6 @@ class TestRpcCalls(BaseMixin):
         response = self.assert_rpc_response(method="eth_hashrate", params=params, raises=raises)
         if not raises:
             assert self.is_hex(response.result), f"Invalid response result: {response.result}"
-        assert False
 
     @pytest.mark.parametrize("method", UNSUPPORTED_METHODS)
     def test_check_unsupported_methods(self, method):

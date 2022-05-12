@@ -219,6 +219,7 @@ def cli():
 @cli.command(help="Update base python requirements")
 @catch_traceback
 def requirements():
+    raise RuntimeError("Debug exception messages")
     install_python_requirements()
     install_oz_requirements()
 
@@ -236,7 +237,7 @@ def run(name, network, jobs):
     if name == "economy":
         command = "py.test integration/tests/economy/test_economics.py"
     elif name == "basic":
-        command = "py.test integration/tests/basic/test_rpc_calls.py"
+        command = "py.test integration/tests/basic"
     elif name == "oz":
         run_openzeppelin_tests(network, jobs=int(jobs))
         shutil.copyfile("./allure/categories.json", "./allure-results/categories.json")

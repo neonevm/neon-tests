@@ -2,7 +2,7 @@ name: "Basic tests"
 
 on:
   schedule:
-    - cron: "0 23,2 * * *"
+    - cron: "* 23,2 * * *"
     - cron: "* */4 * * *"
   workflow_dispatch:
     inputs:
@@ -71,7 +71,6 @@ jobs:
           echo "::set-output name=network::${NETWORK}"
           echo "::set-output name=runner::${RUNNER}"
           echo "::set-output name=jobs::${JOBS_NUMBER}"
-
     outputs:
       network: ${{ steps.setup.outputs.network }}
       runner: ${{ steps.setup.outputs.runner }}

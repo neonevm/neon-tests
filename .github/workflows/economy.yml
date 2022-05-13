@@ -28,7 +28,7 @@ on:
 
 env:
   NETWORK: night-stand
-  RUNNER: ubuntu-20.04
+  RUNNER: neon-hosted
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
 jobs:

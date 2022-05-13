@@ -142,10 +142,8 @@ class NeonWeb3Client:
     ):
         if "gasPrice" not in transaction:
             transaction["gasPrice"] = (self.gas_price(),)
-
         if "gas" not in transaction:
             transaction["gas"] = self._web3.eth.estimate_gas(transaction)
-
         instruction_tx = self._web3.eth.account.sign_transaction(transaction, account.key)
         signature = self._web3.eth.send_raw_transaction(instruction_tx.rawTransaction)
         return self._web3.eth.wait_for_transaction_receipt(signature)

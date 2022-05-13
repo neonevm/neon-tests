@@ -219,6 +219,7 @@ def cli():
 @cli.command(help="Update base python requirements")
 @catch_traceback
 def requirements():
+    raise RuntimeError('Debug')
     install_python_requirements()
     install_oz_requirements()
 

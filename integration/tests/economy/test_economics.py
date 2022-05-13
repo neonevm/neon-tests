@@ -87,6 +87,7 @@ class TestEconomics(BaseTests):
     @pytest.mark.only_stands
     def test_account_creation(self):
         """Verify account creation spend SOL"""
+        raise RuntimeError('Debug')
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
         acc = self.web3_client.eth.account.create()

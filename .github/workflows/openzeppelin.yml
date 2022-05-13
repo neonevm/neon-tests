@@ -53,11 +53,11 @@ jobs:
             fi
             echo $RESULT
           }
-          
+
           NETWORK=$( setVar "${{ github.event.inputs.network }}" "${{ env.NETWORK }}" )
           RUNNER=$( setVar "${{ github.event.inputs.runner }}" "${{ env.RUNNER }}" )
           JOBS_NUMBER=$( setVar "${{ github.event.inputs.jobsNumber }}" "${{ env.JOBS_NUMBER }}" )
-          
+
           echo "Network: ${NETWORK}"
           echo "Runner: ${RUNNER}"
           echo "Jobs: ${JOBS_NUMBER}"
@@ -100,6 +100,7 @@ jobs:
       - name: "Generate allure report"
         uses: QuintilianoNery/action-allure-report-V2@master
       - name: "Fix permissions"
+        if: env.RUNNER == 'neon-hosted'
         run: sudo chown deploy:deploy -R allure-report
       - name: "Upload allure history"
         run: "./clickfile.py upload-allure-report openzeppelin --network ${{ needs.prepare-env.outputs.network }}"

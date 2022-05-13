@@ -124,6 +124,7 @@ class TestRpcCalls(BaseMixin):
     )
     def test_eth_call(self, params, raises):
         """Verify implemented rpc calls work eth_call"""
+        raise RuntimeError('Debug')
         if params:
             params.update({"to": self.recipient_account.address, "data": hex(pow(10, 14))})
         request_data = [request_models.CallRequest(**params), Tag.LATEST.value]

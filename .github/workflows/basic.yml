@@ -71,7 +71,6 @@ jobs:
           echo "::set-output name=network::${NETWORK}"
           echo "::set-output name=runner::${RUNNER}"
           echo "::set-output name=jobs::${JOBS_NUMBER}"
-
     outputs:
       network: ${{ steps.setup.outputs.network }}
       runner: ${{ steps.setup.outputs.runner }}

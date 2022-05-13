@@ -2,7 +2,7 @@ name: "Basic tests"
 
 on:
   schedule:
-    - cron: "0 23,2 * * *"
+    - cron: "* 23,2 * * *"
     - cron: "* */4 * * *"
   workflow_dispatch:
     inputs:
@@ -71,7 +71,6 @@ jobs:
           echo "::set-output name=network::${NETWORK}"
           echo "::set-output name=runner::${RUNNER}"
           echo "::set-output name=jobs::${JOBS_NUMBER}"
-
     outputs:
       network: ${{ steps.setup.outputs.network }}
       runner: ${{ steps.setup.outputs.runner }}
@@ -115,6 +114,7 @@ jobs:
       - name: "Generate allure report"
         uses: QuintilianoNery/action-allure-report-V2@master
       - name: "Fix permissions"
+        if: env.RUNNER == 'neon-hosted'
         run: sudo chown deploy:deploy -R allure-report
       - name: "Upload allure history"
         run: "./clickfile.py upload-allure-report basic --network ${{ needs.prepare-env.outputs.network }}"

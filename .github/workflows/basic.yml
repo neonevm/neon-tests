@@ -2,7 +2,7 @@ name: "Basic tests"
 
 on:
   schedule:
-    - cron: "0 23,2 * * *"
+    - cron: "* 23,2 * * *"
     - cron: "* */4 * * *"
   workflow_dispatch:
     inputs:

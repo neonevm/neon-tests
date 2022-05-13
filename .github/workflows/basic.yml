@@ -99,7 +99,7 @@ jobs:
           path: allure-results
       - name: "Notify on failure."
         if: ${{ failure() }}
-        run: "./clickfile.py send-notification -u ${{ secrets.SLACK_URL }} -b ${{ env.BUILD_URL }}"
+        run: "./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }}"
       - name: "Archive report"
         run: tar -czf allure-results.tar.gz allure-results
       - uses: actions/upload-artifact@v2

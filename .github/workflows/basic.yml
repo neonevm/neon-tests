@@ -1,6 +1,9 @@
 name: "Basic tests"
 
 on:
+  schedule:
+    - cron: "0 23,2 * * *"
+    - cron: "0 0,4,8,12,16,20 * * *"
   workflow_dispatch:
     inputs:
       network:
@@ -23,16 +26,26 @@ on:
           - neon-hosted
           - aws-hosted
           - ubuntu-20.04
-
 env:
   NETWORK: night-stand
-  RUNNER: neon-hosted
+  RUNNER: ubuntu-20.04
+  BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
 jobs:
   prepare-env:
     runs-on: ubuntu-20.04
     if: always()
     steps:
+      - name: Setup `night-stand` by cron schedule
+        id: setup_night_stand
+        if: github.event.schedule=='0 23,2 * * *'
+        run: |
+          echo "NETWORK=night-stand" >> $GITHUB_ENV
+      - name: Setup `devnet` by cron schedule
+        id: setup_devnet
+        if: github.event.schedule=='0 0,4,8,12,16,20 * * *'
+        run: |
+          echo "NETWORK=devnet" >> $GITHUB_ENV
       - name: Setup env
         id: setup
         run: |
@@ -53,6 +66,7 @@ jobs:
 
           echo "Network: ${NETWORK}"
           echo "Runner: ${RUNNER}"
+          echo "Build url: ${{ env.BUILD_URL }}"
 
           echo "::set-output name=network::${NETWORK}"
           echo "::set-output name=runner::${RUNNER}"
@@ -66,74 +80,44 @@ jobs:
     needs:
       - prepare-env
     runs-on: ${{ needs.prepare-env.outputs.runner }}
+    env:
+      NETWORK: ${{ needs.prepare-env.outputs.network }}
+      RUNNER: ${{ needs.prepare-env.outputs.runner }}
+    if: always()
     steps:
       - uses: actions/checkout@v2
       - name: "Install deps"
+        id: requirements
         uses: ./.github/actions/requirements
       - name: "Run basic tests"
-        run: "./clickfile.py run 'basic' -n ${{ needs.prepare-env.outputs.network }}"
+        id: basic
+        run: "./clickfile.py run basic -n ${{ env.NETWORK }}"
+      - uses: actions/upload-artifact@v2
+        with:
+          name: "Allure results"
+          path: allure-results
+      - name: "Notify on failure."
+        if: ${{ failure() }}
+        run: "./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }}"
+      - name: "Archive report"
+        run: tar -czf allure-results.tar.gz allure-results
       - uses: actions/upload-artifact@v2
         if: always()
         with:
-          name: "Allure results"
-          path: allure-results
-
-  allure:
-    runs-on: ubuntu-20.04
-    if: always()
-    needs:
-      - prepare-env
-      - tests
-    env:
-      NETWORK: ${{ needs.prepare-env.outputs.network }}
-    steps:
-      - name: Download all workflow run artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: "Allure results"
-          path: allure-results
-
-      - name: Get Allure history
-        uses: actions/checkout@v2
-        continue-on-error: true
-        with:
-          ref: gh-pages
-          path: gh-pages
-
-      - name: Create a path for report
-        run: |
-          path=""
-          network="${{ env.NETWORK }}"
-          ref_name="${{ github.ref_name }}"
-          if [[ "$network" != "night-stand" ]]; then
-            path="$network"
-          fi
-          if [[ "$ref_name" != "develop" ]]; then
-            if [ ${#path} -gt 0 ]; then
-              path="$path/$ref_name"
-            else
-              path="$ref_name"
-            fi
-          fi
-          echo "ALLURE_SUBDIR=$path" >> $GITHUB_ENV
-
-      - name: Allure Report action from marketplace
-        uses: neonlabsorg/allure-report-action@master
-        if: always()
-        with:
-          allure_results: allure-results
-          gh_pages: gh-pages
-          subfolder: ${{ env.ALLURE_SUBDIR }}
-          allure_report: allure-report
-          allure_history: allure-history
-          keep_reports: 50
-
-      - name: Deploy report to Github Pages
-        if: always()
-        uses: peaceiris/actions-gh-pages@v2
+          name: "allure-results.tar.gz"
+          path: allure-results.tar.gz
+      - name: "Download allure history"
+        run: "./clickfile.py get-allure-history basic --network ${{ needs.prepare-env.outputs.network }}"
         env:
-          PERSONAL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PUBLISH_BRANCH: gh-pages
-          PUBLISH_DIR: allure-history
-    outputs:
-      subdir: ${{ env.ALLURE_SUBDIR }}
+          AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+      - name: "Generate allure report"
+        uses: QuintilianoNery/action-allure-report-V2@master
+      - name: "Fix permissions"
+        if: env.RUNNER == 'neon-hosted'
+        run: sudo chown deploy:deploy -R allure-report
+      - name: "Upload allure history"
+        run: "./clickfile.py upload-allure-report basic --network ${{ needs.prepare-env.outputs.network }}"
+        env:
+          AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"

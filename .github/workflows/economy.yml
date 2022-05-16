@@ -2,7 +2,7 @@ name: "Operator economy"
 
 on:
   schedule:
-    - cron: "* 6 * * *"
+    - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
       network:
@@ -38,7 +38,7 @@ jobs:
     steps:
       - name: Setup `night-stand` by cron schedule
         id: setup_night_stand
-        if: github.event.schedule=='* 6 * * *'
+        if: github.event.schedule=='0 6 * * *'
         run: |
           echo "NETWORK=night-stand" >> $GITHUB_ENV
       - name: Setup env

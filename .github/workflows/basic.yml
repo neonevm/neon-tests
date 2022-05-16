@@ -2,8 +2,8 @@ name: "Basic tests"
 
 on:
   schedule:
-    - cron: "* 23,2 * * *"
-    - cron: "* */4 * * *"
+    - cron: "0 23,2 * * *"
+    - cron: "0 0,4,8,12,16,20 * * *"
   workflow_dispatch:
     inputs:
       network:
@@ -38,12 +38,12 @@ jobs:
     steps:
       - name: Setup `night-stand` by cron schedule
         id: setup_night_stand
-        if: github.event.schedule=='* 23,2 * * *'
+        if: github.event.schedule=='0 23,2 * * *'
         run: |
           echo "NETWORK=night-stand" >> $GITHUB_ENV
       - name: Setup `devnet` by cron schedule
         id: setup_devnet
-        if: github.event.schedule=='* */4 * * *'
+        if: github.event.schedule=='0 0,4,8,12,16,20 * * *'
         run: |
           echo "NETWORK=devnet" >> $GITHUB_ENV
       - name: Setup env

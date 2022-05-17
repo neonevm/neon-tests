@@ -7,7 +7,7 @@ from integration.tests.basic.test_data.input_data import InputData
 from integration.tests.basic.test_transfers import DEFAULT_ERC20_BALANCE
 
 
-FAUCET_TEST_DATA = [(1), (5), (999), (1_0000), (20_000)]
+FAUCET_TEST_DATA = [(1), (10_001)]
 FAUCET_REQUEST_MESSAGE = "requesting faucet for Neon"
 
 

@@ -1,4 +1,6 @@
 import allure
+from busypie import ONE_SECOND, wait_at_most
+from busypie.durations import TWO_SECONDS
 import pytest
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
@@ -7,7 +9,6 @@ from integration.tests.basic.test_data.input_data import InputData
 from integration.tests.basic.test_transfers import DEFAULT_ERC20_BALANCE
 
 
-FAUCET_TEST_DATA = [(1), (10_001)]
 FAUCET_REQUEST_MESSAGE = "requesting faucet for Neon"
 
 
@@ -27,24 +28,25 @@ class TestSingleClient(BaseMixin):
             self.request_faucet_neon(account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
         self.assert_balance(account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
 
-    @pytest.mark.only_stands
-    @pytest.mark.parametrize("amount", FAUCET_TEST_DATA)
+    @pytest.mark.parametrize("amount", [(1), (10_001)])
     def test_verify_faucet_work_single_request(self, amount: int):
         """Verify faucet work (request drop for several accounts): single request"""
-        for _ in range(10):
+        for _ in range(3):
             account = self.create_account()
             with allure.step(FAUCET_REQUEST_MESSAGE):
                 self.request_faucet_neon(account.address, amount)
+            wait_at_most(TWO_SECONDS).poll_delay(TWO_SECONDS).until(lambda: True)
             self.assert_balance(account.address, amount)
 
-    @pytest.mark.only_stands
-    @pytest.mark.parametrize("amount", FAUCET_TEST_DATA)
-    def test_verify_faucet_work_multiple_requests(self, amount: int):
+    def test_verify_faucet_work_multiple_requests(self):
         """Verify faucet work (request drop for several accounts): double request"""
-        for _ in range(10):
+        initial_amount = InputData.FAUCET_1ST_REQUEST_AMOUNT.value
+        for _ in range(3):
             account = self.create_account()
             with allure.step(FAUCET_REQUEST_MESSAGE):
-                self.request_faucet_neon(account.address, amount)
+                self.request_faucet_neon(account.address, initial_amount)
+            wait_at_most(ONE_SECOND).poll_delay(ONE_SECOND).until(lambda: True)
             with allure.step(FAUCET_REQUEST_MESSAGE):
                 self.request_faucet_neon(account.address, InputData.FAUCET_2ND_REQUEST_AMOUNT.value)
-            self.assert_balance(account.address, amount + InputData.FAUCET_2ND_REQUEST_AMOUNT.value)
+            wait_at_most(TWO_SECONDS).poll_delay(TWO_SECONDS).until(lambda: True)
+            self.assert_balance(account.address, initial_amount + InputData.FAUCET_2ND_REQUEST_AMOUNT.value)

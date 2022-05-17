@@ -8,6 +8,7 @@ locust==2.8.3
 pythclient==0.0.2
 dataclasses-json==0.5.6
 boto3==1.21.40
+busypie==0.4.5
 
 # deps for web3
 aiohttp>=3.7.4.post0,<4

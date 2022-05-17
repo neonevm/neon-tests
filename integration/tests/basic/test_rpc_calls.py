@@ -1,15 +1,19 @@
-import typing as tp
-
 import allure
 import pytest
-
+import typing as tp
 from integration.tests.basic.helpers.assert_message import AssertMessage
+from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
+from integration.tests.basic.helpers.unit import Unit
+from integration.tests.basic.model.model import TrxReceiptResponse, TrxResponse
+from integration.tests.basic.model.tags import Tag
+from integration.tests.basic.test_data.input_data import InputData
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.helpers.rpc_request_params_factory import RpcRequestParamsFactory
 from integration.tests.basic.model import model as request_models
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.test_data import input_data
+
 
 """
 12.	Verify implemented rpc calls work
@@ -145,7 +149,7 @@ class TestRpcCalls(BaseMixin):
 
     def test_eth_gas_price(self):
         """Verify implemented rpc calls work eth_gasPrice"""
-        payloads = RpcRequestFactory.get_gas_price(params=[])
+        payloads = RpcRequestFactory.build_gas_price(params=[])
         actual_result = self.json_rpc_client.do_call(payloads)
 
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
@@ -160,8 +164,7 @@ class TestRpcCalls(BaseMixin):
         params = [
             request_models.GetLogsRequest(from_block=from_block, to_block=to_block, address=sender_account.address)
         ]
-        payloads = RpcRequestFactory.get_logs(params=params)
-
+        payloads = RpcRequestFactory.build_get_logs(params=params)
         actual_result = self.json_rpc_client.do_call(payloads)
 
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
@@ -172,12 +175,11 @@ class TestRpcCalls(BaseMixin):
         """Verify implemented rpc calls work eth_getLogs"""
         # TODO: use contract instead of account
         sender_account = self.create_account_with_balance()
-        # TOOD: variants
+        # TODO: variants
         params = [
             request_models.GetLogsRequest(from_block=1, to_block=Tag.LATEST.value, address=sender_account.address)
         ]
-        payloads = RpcRequestFactory.get_logs(params=params)
-
+        payloads = RpcRequestFactory.build_get_logs(params=params)
         actual_result = self.json_rpc_client.do_call(payloads)
 
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
@@ -190,7 +192,7 @@ class TestRpcCalls(BaseMixin):
         sender_account = self.create_account_with_balance()
 
         params = [sender_account.address, Tag.LATEST.value]
-        payloads = RpcRequestFactory.get_balance(params=params)
+        payloads = RpcRequestFactory.build_get_balance(params=params)
         actual_result = self.json_rpc_client.do_call(payloads)
 
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
@@ -202,7 +204,7 @@ class TestRpcCalls(BaseMixin):
         sender_account = self.create_account_with_balance()
 
         params = [sender_account.address, Tag.LATEST.value]
-        payloads = RpcRequestFactory.get_code(params=params)
+        payloads = RpcRequestFactory.build_get_code(params=params)
         actual_result = self.json_rpc_client.do_call(payloads)
 
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
@@ -211,7 +213,7 @@ class TestRpcCalls(BaseMixin):
 
     def test_web3_client_version(self):
         """Verify implemented rpc calls work web3_clientVersion"""
-        payloads = RpcRequestFactory.get_web3_client_version(params=[])
+        payloads = RpcRequestFactory.build_web3_client_version(params=[])
         actual_result = self.json_rpc_client.do_call(payloads)
 
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
@@ -220,7 +222,7 @@ class TestRpcCalls(BaseMixin):
 
     def test_net_version(self):
         """Verify implemented rpc calls work work net_version"""
-        payloads = RpcRequestFactory.get_net_version(params=[])
+        payloads = RpcRequestFactory.build_net_version(params=[])
         actual_result = self.json_rpc_client.do_call(payloads)
 
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
@@ -229,15 +231,86 @@ class TestRpcCalls(BaseMixin):
             self.web3_client._chain_id
         ), f"net version is not {self.web3_client._chain_id}"
 
+    def test_rpc_call_eth_get_transaction_count(self):
+        """Verify implemented rpc calls work eth_getTransactionCount"""
+
+        self.process_transaction(self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value)
+
+        params = [self.sender_account.address, Tag.LATEST.value]
+        model = RpcRequestFactory.build_trx_count(params=params)
+        actual_result = self.json_rpc_client.do_call(model)
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
+        assert "0x" in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
+
+    def test_rpc_call_eth_send_raw_transaction(self):
+        """Verify implemented rpc calls work eth_sendRawTransaction"""
+
+        recipient_balance = float(
+            self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)
+        )
+        transaction = {
+            "from": self.sender_account.address,
+            "to": self.recipient_account.address,
+            "value": self.web3_client.toWei(InputData.SAMPLE_AMOUNT.value, Unit.ETHER),
+            "chainId": self.web3_client._chain_id,
+            "gasPrice": self.web3_client.gas_price(),
+            "gas": 0,
+            "nonce": self.web3_client.eth.get_transaction_count(self.sender_account.address),
+        }
+        transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
+
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+
+        params = [signed_tx.rawTransaction.hex()]
+
+        model = RpcRequestFactory.build_send_raw_trx(params=params)
+        actual_result = self.json_rpc_client.do_call(model)
+
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
+        assert "0x" in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
+        self.assert_balance(self.recipient_account.address, recipient_balance + InputData.SAMPLE_AMOUNT.value)
+
+    def test_rpc_call_eth_get_transaction_by_hash(self):
+        """Verify implemented rpc calls work eth_getTransactionByHash"""
+
+        tx_receipt = self.process_transaction(
+            self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
+        )
+
+        params = [tx_receipt.transactionHash.hex()]
+        model = RpcRequestFactory.build_trx_by_hash(params=params)
+        actual_result = self.json_rpc_client.do_call(model, TrxResponse)
+
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
+        assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
+
+    def test_rpc_call_eth_get_transaction_receipt(self):
+        """Verify implemented rpc calls work eth_getTransactionReceipt"""
+
+        tx_receipt = self.process_transaction(
+            self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
+        )
+
+        params = [tx_receipt.transactionHash.hex()]
+        model = RpcRequestFactory.build_trx_receipt(params=params)
+        actual_result = self.json_rpc_client.do_call(model, TrxReceiptResponse)
+
+        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
+        assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
+        assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
+
     def test_eth_get_block_by_hash(self):
         """Verify implemented rpc calls work eth_getBlockByHash"""
 
-        tx_receipt = self.transfer_neon(
+        tx_receipt = self.process_transaction(
             self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
         )
 
         params = [tx_receipt.blockHash.hex(), True]
-        payloads = RpcRequestFactory.get_block_by_hash(params=params)
+        payloads = RpcRequestFactory.build_block_by_hash(params=params)
 
         actual_result = self.json_rpc_client.do_call(payloads, request_models.BlockResponse)
 
@@ -246,10 +319,10 @@ class TestRpcCalls(BaseMixin):
         assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
     @pytest.mark.parametrize("quantity_tag,full_trx", TAGS_TEST_DATA)
-    def test_eth_get_block_by_umber_via_tags(self, quantity_tag: tp.Union[int, Tag], full_trx: bool):
+    def test_eth_get_block_by_number_via_tags(self, quantity_tag: tp.Union[int, Tag], full_trx: bool):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
         params = RpcRequestParamsFactory.get_block_by_number(quantity_tag, full_trx)
-        payloads = RpcRequestFactory.get_block_by_number(params=params)
+        payloads = RpcRequestFactory.build_block_by_number(params=params)
 
         actual_result = self.json_rpc_client.do_call(payloads, request_models.BlockResponse)
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
@@ -257,12 +330,12 @@ class TestRpcCalls(BaseMixin):
     def test_eth_get_block_by_number_via_numbers(self):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
 
-        tx_receipt = self.transfer_neon(
+        tx_receipt = self.process_transaction(
             self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
         )
 
         params = RpcRequestParamsFactory.get_block_by_number(tx_receipt.blockNumber, True)
-        payloads = RpcRequestFactory.get_block_by_number(params=params)
+        payloads = RpcRequestFactory.build_block_by_number(params=params)
 
         actual_result = self.json_rpc_client.do_call(payloads, request_models.BlockResponse)
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
@@ -271,7 +344,7 @@ class TestRpcCalls(BaseMixin):
 
     def test_eth_block_number(self):
         """Verify implemented rpc calls work work eth_blockNumber"""
-        payloads = RpcRequestFactory.get_block_number(params=[])
+        payloads = RpcRequestFactory.build_block_number(params=[])
         actual_result = self.json_rpc_client.do_call(payloads)
 
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value

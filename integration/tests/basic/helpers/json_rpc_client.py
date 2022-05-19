@@ -1,8 +1,7 @@
-import dataclasses
-import typing as tp
-
 import allure
+import dataclasses
 import requests
+import typing as tp
 from requests.models import Response
 
 from integration.tests.basic.model.model import JsonRpcErrorResponse, JsonRpcResponse
@@ -39,4 +38,3 @@ class JsonRpcClient:
                     json_doc.update(dict(result=model.from_dict(json_doc["result"])))
                 response = JsonRpcResponse(**json_doc)
         return response
-

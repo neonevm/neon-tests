@@ -1,12 +1,7 @@
 import allure
-from busypie import ONE_SECOND, wait_at_most
-from busypie.durations import TWO_SECONDS
 import pytest
-from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
-from integration.tests.basic.helpers.unit import Unit
 from integration.tests.basic.test_data.input_data import InputData
-from integration.tests.basic.test_transfers import DEFAULT_ERC20_BALANCE
 
 
 FAUCET_REQUEST_MESSAGE = "requesting faucet for Neon"
@@ -35,7 +30,6 @@ class TestSingleClient(BaseMixin):
             account = self.create_account()
             with allure.step(FAUCET_REQUEST_MESSAGE):
                 self.request_faucet_neon(account.address, amount)
-            wait_at_most(TWO_SECONDS).poll_delay(TWO_SECONDS).until(lambda: True)
             self.assert_balance(account.address, amount)
 
     def test_verify_faucet_work_multiple_requests(self):
@@ -45,8 +39,6 @@ class TestSingleClient(BaseMixin):
             account = self.create_account()
             with allure.step(FAUCET_REQUEST_MESSAGE):
                 self.request_faucet_neon(account.address, initial_amount)
-            wait_at_most(ONE_SECOND).poll_delay(ONE_SECOND).until(lambda: True)
             with allure.step(FAUCET_REQUEST_MESSAGE):
                 self.request_faucet_neon(account.address, InputData.FAUCET_2ND_REQUEST_AMOUNT.value)
-            wait_at_most(TWO_SECONDS).poll_delay(TWO_SECONDS).until(lambda: True)
             self.assert_balance(account.address, initial_amount + InputData.FAUCET_2ND_REQUEST_AMOUNT.value)

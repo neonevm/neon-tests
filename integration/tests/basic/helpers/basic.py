@@ -4,15 +4,12 @@ import typing as tp
 import web3
 from decimal import Decimal
 from eth_account import Account
-from typing import Any, Optional, Tuple, Union
 from integration.tests.base import BaseTests
-from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.json_rpc_client import JsonRpcClient
 from integration.tests.basic.helpers.unit import Unit
 from integration.tests.basic.model.model import AccountData, JsonRpcErrorResponse, JsonRpcResponse
 from integration.tests.basic.test_data.input_data import InputData
-from utils import helpers
 
 
 class BaseMixin(BaseTests):
@@ -87,8 +84,8 @@ class BaseMixin(BaseTests):
         sender_account: Account,
         recipient_account: tp.Union[Account, AccountData],
         amount: int,
-        gas: Optional[int] = 0,
-        gas_price: Optional[int] = None,
+        gas: tp.Optional[int] = 0,
+        gas_price: tp.Optional[int] = None,
         error_message: str = "",
     ) -> tp.Union[web3.types.TxReceipt, None]:
         """Processes transaction, expects a failure"""

@@ -1,33 +1,32 @@
+import typing as tp
 from dataclasses import dataclass
-from typing import Any, List, Union
-
 from dataclasses_json import CatchAll, LetterCase, dataclass_json, Undefined
 
 
 @dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
 class CallRequest:
-    from_: List[str] = None
-    to: List[str] = None
+    from_: tp.List[str] = None
+    to: tp.List[str] = None
     gas: int = None
     gas_price: int = None
     value: int = None
-    data: List[str] = None
+    data: tp.List[str] = None
 
 
 @dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
 class GetLogsRequest:
-    from_block: Union[int, str] = None
-    to_block: Union[int, str] = None
-    address: Union[str, List[str]] = None
-    topics: List[str] = None
-    blockhash: List[str] = None
+    from_block: tp.Union[int, str] = None
+    to_block: tp.Union[int, str] = None
+    address: tp.Union[str, tp.List[str]] = None
+    topics: tp.List[str] = None
+    blockhash: tp.List[str] = None
 
 
 # TODO: decide whether to use this class or satisfy using just a list
 @dataclass
-class JsonRpcRequestParams(List):
+class JsonRpcRequestParams(tp.List):
     pass
 
 
@@ -57,7 +56,7 @@ class JsonRpcErrorResponse:
 @dataclass
 class TrxResponse:
     block_hash: str
-    block_number: Union[int, None]
+    block_number: tp.Union[int, None]
     from_: CatchAll
     gas: int
     gas_price: int
@@ -65,7 +64,7 @@ class TrxResponse:
     input: str
     nonce: int
     to: str
-    transaction_index: Union[int, None]
+    transaction_index: tp.Union[int, None]
     value: int
     v: int
     r: str
@@ -76,8 +75,8 @@ class TrxResponse:
 @dataclass_json(letter_case=LetterCase.CAMEL, undefined=Undefined.INCLUDE)
 @dataclass(frozen=True)
 class BlockResponse:
-    number: Union[int, None]
-    hash: Union[str, None]
+    number: tp.Union[int, None]
+    hash: tp.Union[str, None]
     parent_hash: str
     # nonce: Optional[Union[int, None]]
     # sha3_uncles: Optional[str]
@@ -109,8 +108,8 @@ class TrxReceiptResponse:
     to: str
     cumulative_gas_used: int
     gas_used: int
-    contract_address: Union[str, None]
-    logs: List[Any]
+    contract_address: tp.Union[str, None]
+    logs: tp.List[tp.Any]
     logs_bloom: str
     # root: Any
     status: int

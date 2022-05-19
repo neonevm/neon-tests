@@ -8,3 +8,6 @@ class ErrorMessage(Enum):
     INVALID_FIELDS_GAS = "Transaction had invalid fields: {'gas'"
     NONCE_TOO_LOW = "nonce too low"
     NONCE_TOO_HIGH = "nonce too high"
+    EIP55_INVALID_CHECKSUM = (
+        "'Address has an invalid EIP-55 checksum. After looking up the address from the original source, try again.'"
+    )

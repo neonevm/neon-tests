@@ -1,8 +1,8 @@
 import allure
 import pytest
+import typing as tp
 import web3
 from decimal import Decimal
-from typing import Tuple, Union
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
@@ -15,9 +15,6 @@ from integration.tests.basic.test_data.input_data import InputData
 
 INVALID_ADDRESS = AccountData(address="0x12345")
 ENS_NAME_ERROR = f"ENS name: '{INVALID_ADDRESS.address}' is invalid."
-EIP55_INVALID_CHECKSUM = (
-    "'Address has an invalid EIP-55 checksum. After looking up the address from the original source, try again.'"
-)
 U64_MAX = 18_446_744_073_709_551_615
 DEFAULT_ERC20_BALANCE = 1000
 
@@ -41,7 +38,7 @@ GAS_LIMIT_AND_PRICE_DATA = (
 @allure.story("Basic: transfer tests")
 class TestTransfer(BaseMixin):
     @pytest.mark.parametrize("transfer_amount", TRANSFER_AMOUNT_DATA)
-    def test_send_neon_from_one_account_to_another(self, transfer_amount: Union[int, float]):
+    def test_send_neon_from_one_account_to_another(self, transfer_amount: tp.Union[int, float]):
         """Send neon from one account to another
         Send zero: Neon
         """
@@ -57,7 +54,7 @@ class TestTransfer(BaseMixin):
         self.assert_balance(self.recipient_account.address, initial_recipient_balance + transfer_amount, rnd_dig=3)
 
     @pytest.mark.parametrize("transfer_amount", [(1), (10), (100), (0)])
-    def test_send_erc20_token_from_one_account_to_another(self, transfer_amount: Union[int, float]):
+    def test_send_erc20_token_from_one_account_to_another(self, transfer_amount: tp.Union[int, float]):
         """Send erc20 token from one account to another
         Send zero: ERC20
         """
@@ -114,7 +111,7 @@ class TestTransfer(BaseMixin):
         self.assert_balance(self.recipient_account.address, initial_neon_balance, rnd_dig=3)
 
     @pytest.mark.parametrize("amount", WRONG_TRANSFER_AMOUNT_DATA)
-    def test_send_more_than_exist_on_account_neon(self, amount: Union[int, float]):
+    def test_send_more_than_exist_on_account_neon(self, amount: tp.Union[int, float]):
         """Send more than exist on account: neon"""
 
         sender_balance, recipient_balance = self.get_initial_balances()
@@ -305,7 +302,7 @@ class TestTransfer(BaseMixin):
             sender_account=sender_account,
             recipient_account=recipient_address,
             amount=InputData.DEFAULT_TRANSFER_AMOUNT.value,
-            error_message=EIP55_INVALID_CHECKSUM,
+            error_message=ErrorMessage.EIP55_INVALID_CHECKSUM.value,
         )
 
         self.assert_balance(sender_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
@@ -340,7 +337,7 @@ class TestTransfer(BaseMixin):
         self.assert_balance(sender_account.address, amount - transfer_amount)
         self.assert_balance(recipient_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value + transfer_amount)
 
-    def get_initial_balances(self) -> Tuple[Union[int, float, Decimal], Union[int, float, Decimal]]:
+    def get_initial_balances(self) -> tp.Tuple[tp.Union[int, float, Decimal], tp.Union[int, float, Decimal]]:
         sender_balance = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER))
         recipient_balance = float(
             self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)

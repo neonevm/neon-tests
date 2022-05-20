@@ -12,8 +12,10 @@ import pytest
 import solana
 import solana.rpc.api
 from _pytest.config import Config
+from _pytest.runner import runtestprotocol
 from solana.keypair import Keypair
 
+import clickfile
 from integration.tests.basic.helpers.json_rpc_requester import JsonRpcClient
 from utils.erc20wrapper import ERC20Wrapper
 from utils.faucet import Faucet
@@ -40,6 +42,24 @@ class EnvironmentConfig:
 def pytest_addoption(parser):
     parser.addoption("--network", action="store", default="night-stand", help="Which stand use")
     parser.addoption("--envs", action="store", default="envs.json", help="Filename with environments")
+    parser.addoption("--make-report", action="store_true", default=False, help="Store tests result to file")
+
+
+def pytest_sessionstart(session):
+    path = pathlib.Path(f"{clickfile.CMD_ERROR_LOG}")
+    if path.exists():
+        path.unlink()
+
+
+def pytest_runtest_protocol(item, nextitem):
+    if item.config.getoption("--make-report"):
+        path = pathlib.Path(f"{clickfile.CMD_ERROR_LOG}")
+        reports = runtestprotocol(item, nextitem=nextitem)
+        with path.open("a") as fd:
+            for report in reports:
+                if report.when == "call" and report.outcome == "failed":
+                    fd.write(f"`{report.outcome.upper()}` {item.nodeid}\n")
+        return True
 
 
 def pytest_configure(config: Config):

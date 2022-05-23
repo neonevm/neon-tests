@@ -10,8 +10,10 @@ class Button:
         page: Page,
         text: tp.Optional[str] = None,
         selector: tp.Optional[str] = None,
+        timeout: int = 300
     ):
         self.page = page
+        self._timeout = timeout
         if text:
             self._selector = f'//button[text()="{text}"]'
         elif selector:
@@ -20,7 +22,7 @@ class Button:
             raise AssertionError("Provide text or icon name for button")
 
     def click(self):
-        self.page.wait_for_selector(self._selector).click()
+        self.page.wait_for_selector(self._selector, timeout=self._timeout).click()
 
 
 class Input:

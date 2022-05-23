@@ -4,32 +4,51 @@ Created on 2021-10-01
 @author: Eugeny Kurkovich
 """
 
+import os
 import pathlib
-import typing as tp
-import uuid
 import time
+import typing as tp
 
 import pytest
 from playwright.sync_api import BrowserContext
 from playwright.sync_api import BrowserType
 
+from ui.pages import metamask, neon_faucet
 from ui.plugins import browser
 
-from ui.pages import metamask
-
-BASE_USER_DATA_DIR = "/tmp"
+BASE_USER_DATA_DIR = "user_data"
 """Path to a User Data Directory, which stores browser session data like cookies and local storage.
 """
 
-USER_DATA_DIR = "~/Library/ApplicationSupport/Google/Chrome/Default"
-"""Path to a User Data Directory, which stores browser session data like cookies and local storage.
+METAMASK_EXT_DIR = "extensions/chrome/metamask"
+"""Relative path to MetaMask extension source
+"""
+try:
+    METAMASK_PASSWORD = os.environ["METAMASK_PASSWORD"]
+except KeyError:
+    raise AssertionError("Please set the `METAMASK_PASSWORD` environment variable to connect to the wallet.")
+# "1234Neon5678"
+
+
+NEON_FAUCET_URL = "https://neonfaucet.org/"
+"""Neon Test Airdrops
 """
 
-METAMASK_EXT_DIR = (
-    "~/Library/ApplicationSupport/Google/Chrome/Default/Extensions/nkbihfbeogaeaoehlefnkodbefgpgknn/10.14.6_0"
-)
-"""Path to Chrome extension source
+NEON_DEV_NET = "NeonEVM DevNet"
+"""Development stend name
 """
+
+
+@pytest.fixture(scope="session")
+def metamask_dir(chrome_extension_base_path) -> pathlib.Path:
+    """Path to MetaMask extension source"""
+    return chrome_extension_base_path / METAMASK_EXT_DIR
+
+
+@pytest.fixture(scope="session")
+def metamask_user_data(metamask_dir: pathlib.Path) -> pathlib.Path:
+    """Path to MetaMask extension user data"""
+    return metamask_dir / BASE_USER_DATA_DIR
 
 
 @pytest.fixture(autouse=True)
@@ -43,14 +62,16 @@ def context(
     browser_type: BrowserType,
     browser_context_args: tp.Dict,
     browser_type_launch_args: tp.Dict,
+    metamask_dir: pathlib.Path,
+    metamask_user_data: pathlib.Path,
 ) -> BrowserContext:
     """Override default context for MetaMasks load"""
     context = browser.create_persistent_context(
         browser_type,
         browser_context_args,
         browser_type_launch_args,
-        ext_source=METAMASK_EXT_DIR,
-        user_data_dir=USER_DATA_DIR,
+        ext_source=metamask_dir,
+        user_data_dir=metamask_user_data,
     )
     yield context
     context.close()
@@ -59,13 +80,24 @@ def context(
 class TestMetaMaskPipeLIne:
     """Tests NeonEVM proxy functionality via MetaMask"""
 
-    @pytest.fixture(autouse=True)
-    def prepare_env(self, page):
+    @pytest.fixture
+    def metamask_page(self, page):
         login_page = metamask.MetaMaskLoginPage(page)
-        login_page.login(password="12345678")
+        return login_page.login(password=METAMASK_PASSWORD)
 
-    def test_launch_metamask(self) -> None:
-        time.sleep(7200)
+    @pytest.fixture
+    def neon_faucet_page(self, context: BrowserContext) -> neon_faucet.NeonTestAirdropsPage:
+        page = context.new_page()
+        page.goto(NEON_FAUCET_URL)
+        yield neon_faucet.NeonTestAirdropsPage(page)
+        page.cose()
+
+    def test_connect_metamask_to_neon_faucet(
+        self, metamask_page: metamask.MetaMaskAccountsPage, neon_faucet_page: neon_faucet.NeonTestAirdropsPage
+    ) -> None:
+        metamask_page.change_network(NEON_DEV_NET)
+        neon_faucet_page.connect_wallet()
+        time.sleep(600)
 
 
 '''

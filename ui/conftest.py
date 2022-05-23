@@ -8,6 +8,11 @@ from _pytest.config import Config
 from playwright.sync_api import Page
 
 
+@pytest.fixture(scope="session")
+def chrome_extension_base_path() -> pathlib.Path:
+    return pathlib.Path(__file__).parent
+
+
 @pytest.fixture
 def use_persistent_context() -> bool:
     """Flag used for Chrome extensions load"""

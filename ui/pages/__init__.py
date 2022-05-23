@@ -37,46 +37,28 @@ class BasePage:
 
 
 class Menu:
-    menu_selector = "a.x-btn-scalr"
-    item_selector = ".x-box-item:not(.x-menu-item-separator)"
+    _menu_selector: str = None
+    _header_selector: str = None
 
-    def __init__(self, page: Page):
+    def __init__(self, page: Page, header_selector: str, menu_selector: str):
         self.page = page
-        self._menu_id = None
+        self._menu_selector = menu_selector
+        self._header_selector = header_selector
 
-    def _get_menu_id(self):
-        return self.page.get_attribute(self.menu_selector, "aria-owns")
-
-    @property
-    def menu_id(self):
-        if self._menu_id is None:
-            self._menu_id = self._get_menu_id()
-        return self._menu_id
-
-    def get_items(self):
-        self.open()
-        menu = self.page.wait_for_selector(f'[data-componentid="{self.menu_id}"]', timeout=500)
-        items = menu.query_selector_all(self.item_selector)
-        self.close()
-        time.sleep(0.3)
-        return items
+    def select_item(self, selector: str) -> None:
+        if not self.is_open():
+            self.open()
+        self.page.click(selector)
 
     def is_open(self):
-        return self.page.is_visible(f"{self.menu_selector}.x-btn-menu-active", timeout=0)
+        return self.page.is_visible(self._header_selector, timeout=0)
 
     def open(self):
         if not self.is_open():
-            self.page.wait_for_selector(
-                f"{self.menu_selector}:not(.x-btn-menu-active)", timeout=1000
-            )
-            self.page.click(self.menu_selector)
-            self.page.wait_for_selector(
-                f'[data-componentid="{self.menu_id}"]', state="visible", timeout=5000
-            )
+            self.page.click(self._menu_selector)
+            self.page.wait_for_selector(self._header_selector, state="visible", timeout=50)
 
     def close(self):
         if self.is_open():
-            self.page.click(self.menu_selector)
-            self.page.wait_for_selector(
-                f'[data-componentid="{self.menu_id}"]', state="hidden", timeout=1000
-            )
+            self.page.click(self._menu_selector)
+            self.page.wait_for_selector(self._header_selector, state="hidden", timeout=10)

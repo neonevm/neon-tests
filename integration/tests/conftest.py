@@ -16,7 +16,7 @@ from _pytest.runner import runtestprotocol
 from solana.keypair import Keypair
 
 import clickfile
-from integration.tests.basic.helpers.json_rpc_requester import JsonRpcClient
+from integration.tests.basic.helpers.json_rpc_client import JsonRpcClient
 from utils.erc20wrapper import ERC20Wrapper
 from utils.faucet import Faucet
 from utils.operator import Operator

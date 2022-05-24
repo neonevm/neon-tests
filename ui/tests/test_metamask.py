@@ -104,14 +104,14 @@ class TestMetaMaskPipeLIne:
         page = context.new_page()
         page.goto(NEON_FAUCET_URL)
         yield neon_faucet.NeonTestAirdropsPage(page)
-        page.cose()
+        page.close()
 
     def test_connect_metamask_to_neon_faucet(
         self, metamask_page: metamask.MetaMaskAccountsPage, neon_faucet_page: neon_faucet.NeonTestAirdropsPage
     ) -> None:
         metamask_page.change_network(NEON_DEV_NET)
         neon_faucet_page.connect_wallet()
-        time.sleep(6000)
+        time.sleep(10)
 
 
 '''

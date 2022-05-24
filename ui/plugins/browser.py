@@ -207,6 +207,6 @@ def pytest_addoption(parser: tp.Any) -> None:
     group.addoption(
         "--slowmo",
         default=0,
-        type="int",
+        type=int,
         help="Run tests in slow mo",
     )

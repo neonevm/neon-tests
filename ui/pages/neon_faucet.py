@@ -15,5 +15,6 @@ class NeonTestAirdropsPage(BasePage):
     def page_loaded(self) -> None:
         self.page.wait_for_selector("//div[text()='Connect your wallet to get tokens']")
 
-    def connect_wallet(self) -> None:
+    def connect_wallet(self, timeout: int = 300) -> None:
         components.Button(self.page, selector="//div[@id='root']/descendant ::span[text()='Connect Wallet']").click()
+        self.page.wait_for_selector("//h1[text()='Token dropper for test environment']", timeout=timeout)

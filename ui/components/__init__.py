@@ -48,3 +48,31 @@ class Input:
             el.fill(text)
             return
         raise AssertionError(f"Input element with selector: '{self._selector}' not found")
+
+
+class Menu:
+    _menu_selector: str = None
+    _header_selector: str = None
+
+    def __init__(self, page: Page, header_selector: str, menu_selector: str):
+        self.page = page
+        self._menu_selector = menu_selector
+        self._header_selector = header_selector
+
+    def select_item(self, selector: str) -> None:
+        if not self.is_open():
+            self.open()
+        self.page.click(selector)
+
+    def is_open(self):
+        return self.page.is_visible(self._header_selector, timeout=0)
+
+    def open(self):
+        if not self.is_open():
+            self.page.click(self._menu_selector)
+            self.page.wait_for_selector(self._header_selector, state="visible", timeout=50)
+
+    def close(self):
+        if self.is_open():
+            self.page.click(self._menu_selector)
+            self.page.wait_for_selector(self._header_selector, state="hidden", timeout=10)

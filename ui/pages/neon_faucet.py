@@ -3,10 +3,9 @@
 Created on 2022-05-19
 @author: Eugeny Kurkovich
 """
-import typing as tp
 
-from . import BasePage, Menu
 from ui import components
+from . import BasePage
 
 
 class NeonTestAirdropsPage(BasePage):
@@ -18,5 +17,3 @@ class NeonTestAirdropsPage(BasePage):
 
     def connect_wallet(self) -> None:
         components.Button(self.page, selector="//div[@id='root']/descendant ::span[text()='Connect Wallet']").click()
-
-

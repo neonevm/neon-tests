@@ -3,10 +3,9 @@
 Created on 2022-05-19
 @author: Eugeny Kurkovich
 """
-import typing as tp
 
-from . import BasePage, Menu
 from ui import components
+from . import BasePage
 
 
 class MetaMaskWelcomePage(BasePage):
@@ -35,7 +34,7 @@ class MetaMaskLoginPage(BasePage):
 
 class MetaMaskAccountsPage(BasePage):
 
-    _networks_menu: Menu = None
+    _networks_menu: components.Menu = None
 
     def __init__(self, *args, **kwargs) -> None:
         super(MetaMaskAccountsPage, self).__init__(*args, **kwargs)
@@ -46,9 +45,9 @@ class MetaMaskAccountsPage(BasePage):
         )
 
     @property
-    def networks_menu(self) -> Menu:
+    def networks_menu(self) -> components.Menu:
         if not self._networks_menu:
-            self._networks_menu = Menu(
+            self._networks_menu = components.Menu(
                 self.page,
                 header_selector="//div[@class='network-dropdown-title' and text()='Networks']",
                 menu_selector="//div[contains(@class, 'network-display--clickable') and @role='button']",

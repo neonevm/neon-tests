@@ -4,13 +4,8 @@ from playwright.sync_api import Page
 
 
 class Button:
-
     def __init__(
-        self,
-        page: Page,
-        text: tp.Optional[str] = None,
-        selector: tp.Optional[str] = None,
-        timeout: int = 300
+        self, page: Page, text: tp.Optional[str] = None, selector: tp.Optional[str] = None, timeout: int = 300
     ):
         self.page = page
         self._timeout = timeout
@@ -26,7 +21,6 @@ class Button:
 
 
 class Input:
-
     def __init__(
         self,
         page: Page,
@@ -76,3 +70,49 @@ class Menu:
         if self.is_open():
             self.page.click(self._menu_selector)
             self.page.wait_for_selector(self._header_selector, state="hidden", timeout=10)
+
+
+class CheckBox:
+    def __init__(self, page: Page, selector: str) -> None:
+        self.page = page
+        self._selector = selector
+
+    def check(self) -> None:
+        self.page.click(selector=self._selector)
+
+    @property
+    def is_checked(self) -> bool:
+        return self.page.query_selector(selector=self._selector).is_checked()
+
+
+class Combobox:
+    elems_selector = '//div[contains(@class, "style__menuContainer")]'
+
+    def __init__(
+        self,
+        page: Page,
+        selector: tp.Optional[str] = None,
+    ) -> None:
+        self.page = page
+        self._component = self.page.query_selector(selector)
+
+    def open(self) -> None:
+        if not self.is_open():
+            self._component.wait_for_selector('//*[contains(@class, "style__loader")]', state="detached")
+            self._component.click()
+
+    def is_open(self) -> bool:
+        return bool(self.page.query_selector(self.elems_selector))
+
+    def close(self) -> None:
+        if self.is_open():
+            self._component.click()
+
+    def get_items(self) -> tp.List["ElementHandle"]:
+        if not self.is_open():
+            self.open()
+        return self.page.query_selector_all('//div[contains(@class, "style__option")]/span')
+
+    def set_item(self, name: str) -> None:
+        self.open()
+        self.page.click(f'//div[contains(@class, "style__option")]/span[text()="{name}"]')

@@ -6,21 +6,16 @@ Created on 2021-10-01
 
 import os
 import pathlib
-import shutil
 import time
 import typing as tp
-import uuid
 
 import pytest
 from playwright.sync_api import BrowserContext
 from playwright.sync_api import BrowserType
 
+from ui import libs
 from ui.pages import metamask, neon_faucet
 from ui.plugins import browser
-
-BASE_USER_DATA_DIR = "user_data"
-"""Path to a User Data Directory, which stores browser session data like cookies and local storage.
-"""
 
 METAMASK_EXT_DIR = "extensions/chrome/metamask"
 """Relative path to MetaMask extension source
@@ -50,19 +45,9 @@ def metamask_dir(chrome_extension_base_path) -> pathlib.Path:
 @pytest.fixture(scope="session")
 def metamask_user_data(metamask_dir: pathlib.Path) -> pathlib.Path:
     """Path to MetaMask extension user data"""
-
-    def rm_tree(p: pathlib.Path) -> None:
-        """Remove user data"""
-        if p.is_file():
-            p.unlink()
-        else:
-            for child in p.iterdir():
-                rm_tree(child)
-            p.rmdir()
-
-    user_data = shutil.copytree(metamask_dir / BASE_USER_DATA_DIR, metamask_dir / uuid.uuid4().hex)
+    user_data = libs.clone_user_data(metamask_dir)
     yield user_data
-    rm_tree(user_data)
+    libs.rm_tree(user_data)
 
 
 @pytest.fixture(autouse=True)

@@ -18,13 +18,6 @@ def use_persistent_context() -> bool:
     """Flag used for Chrome extensions load"""
     return False
 
-#@pytest.fixture
-#def metamask_login(context: BrowserContext, page: Page) -> login.LoginPage:
-#    """Return scalr login page without authorization"""
-#    context.clear_cookies()
-#    page.goto("/")
-#    return login.LoginPage(page)
-
 
 @pytest.fixture(autouse=True)
 def save_screenshot_on_fail(request: pytest.FixtureRequest, page: Page):
@@ -39,11 +32,6 @@ def save_screenshot_on_fail(request: pytest.FixtureRequest, page: Page):
             attachment_type=allure.attachment_type.PNG,
             extension="png",
         )
-
-
-# placeholder for invite_new_user test
-def pytest_configure():
-    pytest.user = None
 
 
 def pytest_generate_tests(metafunc: tp.Any) -> None:

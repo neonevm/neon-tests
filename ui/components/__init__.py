@@ -87,15 +87,16 @@ class CheckBox:
 
 
 class Combobox:
-    elems_selector = '//div[contains(@class, "style__menuContainer")]'
 
     def __init__(
         self,
         page: Page,
-        selector: tp.Optional[str] = None,
+        component_selector: str,
+        element_selector: str,
     ) -> None:
         self.page = page
-        self._component = self.page.query_selector(selector)
+        self._component = self.page.query_selector(component_selector)
+        self._element_selector = element_selector
 
     def open(self) -> None:
         if not self.is_open():

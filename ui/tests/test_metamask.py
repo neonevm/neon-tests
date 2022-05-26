@@ -104,9 +104,15 @@ class TestMetaMaskPipeLIne:
         yield neon_faucet.NeonTestAirdropsPage(page)
         page.close()
 
-    def test_connect_metamask_to_neon_faucet(
-        self, metamask_page: metamask.MetaMaskAccountsPage, neon_faucet_page: neon_faucet.NeonTestAirdropsPage
+    @pytest.mark.parametrize("token", ["NEON", "USDC"])
+    def test_get_tokens_from_faucet(
+        self,
+        metamask_page: metamask.MetaMaskAccountsPage,
+        neon_faucet_page: neon_faucet.NeonTestAirdropsPage,
+        token: str,
     ) -> None:
         balance_before = metamask_page.active_account_balance
         neon_faucet_page.connect_wallet()
-        time.sleep(10000)
+        neon_faucet_page.test_airdrop(token, 100)
+        balance_after = metamask_page.active_account_balance
+        print(f"{10*'+'} Before: {balance_before}, After: {balance_after}")

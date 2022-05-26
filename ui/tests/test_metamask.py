@@ -35,6 +35,17 @@ NEON_DEV_NET = "NeonEVM DevNet"
 """Development stend name
 """
 
+ACC_1 = "Account 1"
+"Account 1 name"
+
+
+ACC_2 = "Account 2"
+"Account 2 name"
+
+
+ACC_3 = "Account 3"
+"Account 3 name"
+
 
 @pytest.fixture(scope="session")
 def metamask_dir(chrome_extension_base_path) -> pathlib.Path:
@@ -80,9 +91,11 @@ class TestMetaMaskPipeLIne:
     """Tests NeonEVM proxy functionality via MetaMask"""
 
     @pytest.fixture
-    def metamask_page(self, page):
+    def metamask_page(self, page, network: str):
         login_page = metamask.MetaMaskLoginPage(page)
-        return login_page.login(password=METAMASK_PASSWORD)
+        mm_page = login_page.login(password=METAMASK_PASSWORD)
+        mm_page.change_network(network)
+        return mm_page
 
     @pytest.fixture
     def neon_faucet_page(self, context: BrowserContext) -> neon_faucet.NeonTestAirdropsPage:
@@ -94,6 +107,6 @@ class TestMetaMaskPipeLIne:
     def test_connect_metamask_to_neon_faucet(
         self, metamask_page: metamask.MetaMaskAccountsPage, neon_faucet_page: neon_faucet.NeonTestAirdropsPage
     ) -> None:
-        metamask_page.change_network(NEON_DEV_NET)
+        balance_before = metamask_page.active_account_balance
         neon_faucet_page.connect_wallet()
-        time.sleep(10)
+        time.sleep(10000)

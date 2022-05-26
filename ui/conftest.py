@@ -8,6 +8,21 @@ from _pytest.config import Config
 from playwright.sync_api import Page
 
 
+EVM_NETWORKS = {
+    "night-stand": "NEON EVM night-stand",
+    "devnet": "NeonEVM DevNet",
+}
+
+
+def pytest_addoption(parser):
+    parser.addoption("--network", action="store", default="devnet", help="Which stand use")
+
+
+@pytest.fixture(scope="session")
+def network(pytestconfig: tp.Any) -> tp.Optional[str]:
+    return EVM_NETWORKS.get(pytestconfig.getoption("--network"), EVM_NETWORKS["devnet"])
+
+
 @pytest.fixture(scope="session")
 def chrome_extension_base_path() -> pathlib.Path:
     return pathlib.Path(__file__).parent

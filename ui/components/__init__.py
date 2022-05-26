@@ -57,6 +57,7 @@ class Menu:
         if not self.is_open():
             self.open()
         self.page.click(selector)
+        self.close()
 
     def is_open(self):
         return self.page.is_visible(self._header_selector, timeout=0)

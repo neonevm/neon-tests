@@ -3,6 +3,7 @@
 Created on 2022-05-19
 @author: Eugeny Kurkovich
 """
+import pyperclip3 as clipboard
 
 from ui import components
 from . import BasePage
@@ -35,6 +36,7 @@ class MetaMaskLoginPage(BasePage):
 class MetaMaskAccountsPage(BasePage):
 
     _networks_menu: components.Menu = None
+    _accounts_menu: components.Menu = None
 
     def __init__(self, *args, **kwargs) -> None:
         super(MetaMaskAccountsPage, self).__init__(*args, **kwargs)
@@ -55,10 +57,49 @@ class MetaMaskAccountsPage(BasePage):
         return self._networks_menu
 
     @property
+    def accounts_menu(self) -> components.Menu:
+        if not self._accounts_menu:
+            self._accounts_menu = components.Menu(
+                self.page,
+                header_selector="//div[contains(@class, 'account-menu__header') and text()='My Accounts']",
+                menu_selector="//div[@class='account-menu__icon']",
+            )
+        return self._accounts_menu
+
+    @property
     def current_network(self) -> str:
         return self.page.query_selector("//div[contains(@class, 'network-display')]/span").text_content()
 
-    def change_network(self, name) -> None:
+    @property
+    def active_account(self) -> str:
+        return self.page.query_selector("//div[@class='selected-account__name']").text_content()
+
+    @property
+    def active_account_address(self) -> str:
+        clipboard.clear()
+        components.Button(self.page, selector="//button[@class='selected-account__clickable']").click()
+        return clipboard.paste()
+
+    @property
+    def active_account_balance(self) -> float:
+        return self.get_balance(self.active_account)
+
+    def change_network(self, network: str) -> None:
         """Select EVM network"""
-        if self.current_network != name:
-            self.networks_menu.select_item(f"//li[@class='dropdown-menu-item']/span[text()='{name}']")
+        if self.current_network != network:
+            self.networks_menu.select_item(f"//li[@class='dropdown-menu-item']/span[text()='{network}']")
+
+    def change_account(self, account: str) -> None:
+        """Select account"""
+        if self.active_account != account:
+            self.accounts_menu.select_item(f"//div[@class='account-menu__name' and text()='{account}']")
+
+    def get_balance(self, account: str) -> float:
+        """Return `neon` balance on account"""
+        if self.active_account != account:
+            self.change_account(account)
+        return float(
+            self.page.query_selector(
+                "//div[contains(@class, 'currency-display-component')]/span[@class='currency-display-component__text']"
+            ).text_content()
+        )

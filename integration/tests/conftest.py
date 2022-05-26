@@ -40,9 +40,8 @@ class EnvironmentConfig:
 
 
 def pytest_addoption(parser):
-    parser.addoption("--network", action="store", default="night-stand", help="Which stand use")
     parser.addoption("--envs", action="store", default="envs.json", help="Filename with environments")
-    parser.addoption("--make-report", action="store_true", default=False, help="Store tests result to file")
+    parser.addoption("--network", action="store", default="night-stand", help="Which stand use")
 
 
 def pytest_sessionstart(session):

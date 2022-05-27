@@ -99,6 +99,7 @@ class TestMetaMaskPipeLIne:
     def metamask_page(self, page, network: str):
         login_page = metamask.MetaMaskLoginPage(page)
         mm_page = login_page.login(password=METAMASK_PASSWORD)
+        mm_page.check_funds_protection()
         mm_page.change_network(network)
         # wait MetaMask initialization
         libs.try_until(lambda: int(mm_page.active_account_neon_balance) != BASE_NEON_BALANCE)

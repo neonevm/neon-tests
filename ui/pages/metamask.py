@@ -109,3 +109,8 @@ class MetaMaskAccountsPage(BasePage):
             ).text_content()
         )
 
+    def check_funds_protection(self) -> None:
+        """Check MetaMask funds protection"""
+        el = self.page.query_selector("//h2[text()='Protect your funds']/following::button[text()='Got it']")
+        if el:
+            el.click()

@@ -39,3 +39,4 @@ class NeonTestAirdropsPage(BasePage):
         return bool(
             self.page.query_selector("//div[not(contains(@class, 'button--disabled')) and text()='test airdrop']")
         )
+

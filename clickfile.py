@@ -273,11 +273,11 @@ def run(name, jobs, network=None):
             raise click.ClickException(
                 red("Please set the `METAMASK_PASSWORD` environment variable to connect to the wallet.")
             )
-        command = "py.test ui/tests"
+        command = "py.test ui/tests --slowmo=1000"
     else:
         raise click.ClickException("Unknown test name")
 
-    command += f" -s --network={network} --make-report"
+    command += f" -sx --network={network} --make-report"
     cmd = subprocess.run(command, shell=True)
     shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
 

@@ -128,8 +128,9 @@ class TestMetaMaskPipeLIne:
         libs.try_until(
             lambda: balance_before_airdrop_test + 100
             == int(getattr(metamask_page, f"active_account_{tokens.lower()}_balance")),
-            timeout=60,
+            timeout=90,
             interval=5,
+            error_msg=f"{tokens} balance was not changed after airdrop",
         )
         # Wait next airdrop was enabled
         libs.try_until(lambda: neon_faucet_page.is_airdrop_enabled, timeout=90, interval=5)

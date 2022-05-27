@@ -108,3 +108,4 @@ class MetaMaskAccountsPage(BasePage):
                 f"//button[contains(@title, '{token}')]/descendant::span[@class='asset-list-item__token-value']"
             ).text_content()
         )
+

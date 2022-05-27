@@ -1,3 +1,3 @@
-2022/05/25-16:06:53.347 4e03 Reusing MANIFEST /Users/stunko/NeonLabs/neon-tests/ui/extensions/chrome/metamask/user_data/Default/Local Storage/leveldb/MANIFEST-000001
-2022/05/25-16:06:53.348 4e03 Recovering log #3
-2022/05/25-16:06:53.349 4e03 Reusing old log /Users/stunko/NeonLabs/neon-tests/ui/extensions/chrome/metamask/user_data/Default/Local Storage/leveldb/000003.log 
+2022/05/27-12:22:40.032 2e03 Reusing MANIFEST /Users/stunko/NeonLabs/neon-tests/ui/extensions/chrome/metamask/user_data/Default/Local Storage/leveldb/MANIFEST-000001
+2022/05/27-12:22:40.033 2e03 Recovering log #3
+2022/05/27-12:22:40.034 2e03 Reusing old log /Users/stunko/NeonLabs/neon-tests/ui/extensions/chrome/metamask/user_data/Default/Local Storage/leveldb/000003.log 

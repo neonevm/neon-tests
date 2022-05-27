@@ -2,6 +2,16 @@ import pathlib
 import shutil
 import uuid
 
+
+from dataclasses import dataclass
+
+
+@dataclass
+class Tokens:
+    neon: str = "NEON"
+    usdt: str = "USDT"
+
+
 BASE_USER_DATA_DIR = "user_data"
 """Path to a Chrome extensions User Data Directory, which stores browser session data like cookies and local storage.
 """

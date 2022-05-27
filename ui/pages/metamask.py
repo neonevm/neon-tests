@@ -5,6 +5,7 @@ Created on 2022-05-19
 """
 import pyperclip3 as clipboard
 
+from ui import libs
 from ui import components
 from . import BasePage
 
@@ -81,8 +82,12 @@ class MetaMaskAccountsPage(BasePage):
         return clipboard.paste()
 
     @property
-    def active_account_balance(self) -> float:
-        return self.get_balance(self.active_account)
+    def active_account_neon_balance(self) -> float:
+        return self._get_balance(self.active_account, libs.Tokens.neon)
+
+    @property
+    def active_account_usdt_balance(self) -> float:
+        return self._get_balance(self.active_account, libs.Tokens.usdt)
 
     def change_network(self, network: str) -> None:
         """Select EVM network"""
@@ -94,12 +99,12 @@ class MetaMaskAccountsPage(BasePage):
         if self.active_account != account:
             self.accounts_menu.select_item(f"//div[@class='account-menu__name' and text()='{account}']")
 
-    def get_balance(self, account: str) -> float:
-        """Return `neon` balance on account"""
+    def _get_balance(self, account: str, token: str) -> float:
+        """Return token balance on account"""
         if self.active_account != account:
             self.change_account(account)
         return float(
-            self.page.query_selector(
-                "//div[contains(@class, 'currency-display-component')]/span[@class='currency-display-component__text']"
+            self.page.wait_for_selector(
+                f"//button[contains(@title, '{token}')]/descendant::span[@class='asset-list-item__token-value']"
             ).text_content()
         )

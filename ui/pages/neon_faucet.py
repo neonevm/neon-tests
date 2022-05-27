@@ -23,7 +23,7 @@ class NeonTestAirdropsPage(BasePage):
 
     def _choose_token(self, token: str) -> None:
         self.page.query_selector("//span[text()='Choose Token']/parent::div[contains(@class, 'p-4')]").click()
-        self.page.query_selector(f"//div[@class='text-lg mb-2' and text()='{token}']").click()
+        self.page.wait_for_selector(f"//div[@class='text-lg mb-2' and text()='{token}']").click()
 
     def _set_amount(self, amount: tp.Union[int, str]) -> None:
         self.page.query_selector("//input[@title='Token Amount']").fill(str(amount))
@@ -33,4 +33,3 @@ class NeonTestAirdropsPage(BasePage):
         self._set_amount(amount)
         self.page.wait_for_selector("//div[contains(@class, 'button--light')]").click()
         self.page.wait_for_selector("//div[text()='Transferred successfully']")
-        self.page.close()

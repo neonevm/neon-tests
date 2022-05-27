@@ -12,19 +12,23 @@ import typing as tp
 import pytest
 from playwright.sync_api import BrowserContext
 from playwright.sync_api import BrowserType
+from dataclasses import dataclass
 
 from ui import libs
 from ui.pages import metamask, neon_faucet
 from ui.plugins import browser
 
-METAMASK_EXT_DIR = "extensions/chrome/metamask"
-"""Relative path to MetaMask extension source
-"""
+
 try:
     METAMASK_PASSWORD = os.environ["METAMASK_PASSWORD"]
 except KeyError:
     raise AssertionError("Please set the `METAMASK_PASSWORD` environment variable to connect to the wallet.")
 # "1234Neon5678"
+
+
+METAMASK_EXT_DIR = "extensions/chrome/metamask"
+"""Relative path to MetaMask extension source
+"""
 
 
 NEON_FAUCET_URL = "https://neonfaucet.org/"
@@ -35,16 +39,14 @@ NEON_DEV_NET = "NeonEVM DevNet"
 """Development stend name
 """
 
-ACC_1 = "Account 1"
-"Account 1 name"
 
+@dataclass
+class Accounts:
+    """MetaMask used accounts"""
 
-ACC_2 = "Account 2"
-"Account 2 name"
-
-
-ACC_3 = "Account 3"
-"Account 3 name"
+    acc_1 = "Account 1"
+    acc_2 = "Account 2"
+    acc_3 = "Account 3"
 
 
 @pytest.fixture(scope="session")
@@ -104,15 +106,24 @@ class TestMetaMaskPipeLIne:
         yield neon_faucet.NeonTestAirdropsPage(page)
         page.close()
 
-    @pytest.mark.parametrize("token", ["NEON", "USDC"])
+    @staticmethod
+    def get_balance(wallet: tp.Any, token: str) -> int:
+        """Get token balance from wallet"""
+        return getattr(wallet, f"active_account_{token.lower()}_balance")
+
+    @pytest.mark.parametrize(
+        "tokens",
+        [libs.Tokens.neon, libs.Tokens.usdt],
+    )
     def test_get_tokens_from_faucet(
         self,
         metamask_page: metamask.MetaMaskAccountsPage,
         neon_faucet_page: neon_faucet.NeonTestAirdropsPage,
-        token: str,
+        tokens: str,
     ) -> None:
-        balance_before = metamask_page.active_account_balance
+        balance_before = self.get_balance(metamask_page, tokens)
         neon_faucet_page.connect_wallet()
-        neon_faucet_page.test_airdrop(token, 100)
-        balance_after = metamask_page.active_account_balance
-        print(f"{10*'+'} Before: {balance_before}, After: {balance_after}")
+        neon_faucet_page.test_airdrop(tokens, 100)
+        # balance_after = metamask_page.active_account_balance
+        print(f"{10*'+'} Before: {balance_before}")
+        # $time.sleep(7200)

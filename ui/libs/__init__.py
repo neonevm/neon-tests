@@ -1,9 +1,17 @@
+import itertools
+import logging
 import pathlib
 import shutil
+import sys
+import time
 import uuid
-
-
 from dataclasses import dataclass
+
+import six
+
+from ui.libs import exc
+
+LOG = logging.getLogger(__name__)
 
 
 @dataclass
@@ -46,3 +54,38 @@ def rm_tree(p: pathlib.Path) -> None:
 def clone_user_data(extensions_dir: pathlib.Path) -> pathlib.Path:
     """Clone chrome extension user data"""
     return shutil.copytree(extensions_dir / BASE_USER_DATA_DIR, extensions_dir / uuid.uuid4().hex)
+
+
+def try_until(func, try_msg=None, error_msg=None, log=None, interval=1, timeout=360, times=None):
+    """
+    repeat call func while it returns False
+    raises exc.TimeoutError if timeout expired or call times reached
+    """
+    log = log or LOG
+    begin_msg = "Trying {0} until (timeout: {1} interval: {2} times: {3})".format(
+        func, timeout, interval, times or "unlimited"
+    )
+    try_msg = try_msg or "{0} returns false".format(func)
+    error_msg = error_msg or "Try {0} Failed!".format(try_msg)
+
+    start_time = time.monotonic()
+    log.debug(begin_msg)
+    for num in itertools.count(1):
+        log.debug("%s (%s) ...", try_msg, num)
+        try:
+            result = func()
+            if result:
+                return result
+        except Exception as e:
+            msg = "{0}: got error: {1}".format(error_msg, e)
+            six.reraise(exc.Error, exc.Error(msg), sys.exc_info()[2])
+        else:
+            if time.monotonic() - start_time > timeout:
+                msg = "{0}: timeout {1} seconds exceeded".format(error_msg, timeout)
+                raise exc.TimeoutError(msg)
+            if times and num >= times:
+                msg = "{0}: call count {1} times exceeded".format(error_msg, times)
+                raise exc.TimeoutError(msg)
+
+        log.debug("Wait {:.2f} seconds before the next attempt".format(interval))
+        time.sleep(interval)

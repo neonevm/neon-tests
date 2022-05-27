@@ -8,16 +8,15 @@ import os
 import pathlib
 import time
 import typing as tp
+from dataclasses import dataclass
 
 import pytest
 from playwright.sync_api import BrowserContext
 from playwright.sync_api import BrowserType
-from dataclasses import dataclass
 
 from ui import libs
 from ui.pages import metamask, neon_faucet
 from ui.plugins import browser
-
 
 try:
     METAMASK_PASSWORD = os.environ["METAMASK_PASSWORD"]
@@ -37,6 +36,10 @@ NEON_FAUCET_URL = "https://neonfaucet.org/"
 
 NEON_DEV_NET = "NeonEVM DevNet"
 """Development stend name
+"""
+
+BASE_NEON_BALANCE = 4300
+"""Balance saved in MetaMask extension by default
 """
 
 
@@ -97,6 +100,8 @@ class TestMetaMaskPipeLIne:
         login_page = metamask.MetaMaskLoginPage(page)
         mm_page = login_page.login(password=METAMASK_PASSWORD)
         mm_page.change_network(network)
+        # wait MetaMask initialization
+        libs.try_until(lambda: int(mm_page.active_account_neon_balance) != BASE_NEON_BALANCE)
         return mm_page
 
     @pytest.fixture
@@ -105,11 +110,6 @@ class TestMetaMaskPipeLIne:
         page.goto(NEON_FAUCET_URL)
         yield neon_faucet.NeonTestAirdropsPage(page)
         page.close()
-
-    @staticmethod
-    def get_balance(wallet: tp.Any, token: str) -> int:
-        """Get token balance from wallet"""
-        return getattr(wallet, f"active_account_{token.lower()}_balance")
 
     @pytest.mark.parametrize(
         "tokens",
@@ -121,9 +121,15 @@ class TestMetaMaskPipeLIne:
         neon_faucet_page: neon_faucet.NeonTestAirdropsPage,
         tokens: str,
     ) -> None:
-        balance_before = self.get_balance(metamask_page, tokens)
+        """Checks Neon faucet pipeline"""
+        balance_before_airdrop_test = int(getattr(metamask_page, f"active_account_{tokens.lower()}_balance"))
         neon_faucet_page.connect_wallet()
         neon_faucet_page.test_airdrop(tokens, 100)
-        # balance_after = metamask_page.active_account_balance
-        print(f"{10*'+'} Before: {balance_before}")
-        # $time.sleep(7200)
+        libs.try_until(
+            lambda: balance_before_airdrop_test + 100
+            == int(getattr(metamask_page, f"active_account_{tokens.lower()}_balance")),
+            timeout=60,
+            interval=5,
+        )
+        # Wait next airdrop was enabled
+        libs.try_until(lambda: neon_faucet_page.is_airdrop_enabled, timeout=90, interval=5)

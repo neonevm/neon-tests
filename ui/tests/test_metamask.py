@@ -102,7 +102,12 @@ class TestMetaMaskPipeLIne:
         mm_page.check_funds_protection()
         mm_page.change_network(network)
         # wait MetaMask initialization
-        libs.try_until(lambda: int(mm_page.active_account_neon_balance) != BASE_NEON_BALANCE)
+        libs.try_until(
+            lambda: int(mm_page.active_account_neon_balance) != BASE_NEON_BALANCE,
+            times=5,
+            interval=2,
+            raise_on_timeout=False,
+        )
         return mm_page
 
     @pytest.fixture
@@ -135,4 +140,3 @@ class TestMetaMaskPipeLIne:
         )
         # Wait next airdrop was enabled
         libs.try_until(lambda: neon_faucet_page.is_airdrop_enabled, timeout=90, interval=5)
-        time.sleep(60)

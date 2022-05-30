@@ -53,12 +53,10 @@ def rm_tree(p: pathlib.Path) -> None:
 
 def clone_user_data(extensions_dir: pathlib.Path) -> pathlib.Path:
     """Clone chrome extension user data"""
-    return shutil.copytree(
-        extensions_dir / BASE_USER_DATA_DIR, extensions_dir / BASE_USER_DATA_DIR / "tmp" / uuid.uuid4().hex
-    )
+    return shutil.copytree(extensions_dir / BASE_USER_DATA_DIR, extensions_dir / "tmp" / uuid.uuid4().hex)
 
 
-def try_until(func, try_msg=None, error_msg=None, log=None, interval=1, timeout=360, times=None):
+def try_until(func, try_msg=None, error_msg=None, log=None, interval=1, timeout=360, times=None, raise_on_timeout=True):
     """
     repeat call func while it returns False
     raises exc.TimeoutError if timeout expired or call times reached
@@ -83,11 +81,17 @@ def try_until(func, try_msg=None, error_msg=None, log=None, interval=1, timeout=
             six.reraise(exc.Error, exc.Error(msg), sys.exc_info()[2])
         else:
             if time.monotonic() - start_time > timeout:
-                msg = "{0}: timeout {1} seconds exceeded".format(error_msg, timeout)
-                raise exc.TimeoutError(msg)
+                if not raise_on_timeout:
+                    return
+                else:
+                    msg = "{0}: timeout {1} seconds exceeded".format(error_msg, timeout)
+                    raise exc.TimeoutError(msg)
             if times and num >= times:
-                msg = "{0}: call count {1} times exceeded".format(error_msg, times)
+                if not raise_on_timeout:
+                    return
+                else:
+                    msg = "{0}: call count {1} times exceeded".format(error_msg, times)
+                    raise exc.TimeoutError(msg)
                 raise exc.TimeoutError(msg)
-
         log.debug("Wait {:.2f} seconds before the next attempt".format(interval))
         time.sleep(interval)

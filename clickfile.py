@@ -256,10 +256,13 @@ def cli():
 
 
 @cli.command(help="Update base python requirements")
+@click.option("-d", "--dep", default='all', type=click.Choice(['all', 'python', 'oz']), help="Which deps install")
 @catch_traceback
-def requirements():
-    install_python_requirements()
-    install_oz_requirements()
+def requirements(dep):
+    if dep in ["all", "python"]:
+        install_python_requirements()
+    if dep in ["all", "oz"]:
+        install_oz_requirements()
 
 
 @cli.command(help="Run any type of tests")

@@ -20,7 +20,7 @@ class Tokens:
     usdt: str = "USDT"
 
 
-BASE_USER_DATA_DIR = "user_data/tmp"
+BASE_USER_DATA_DIR = "user_data"
 """Path to a Chrome extensions User Data Directory, which stores browser session data like cookies and local storage.
 """
 
@@ -53,8 +53,9 @@ def rm_tree(p: pathlib.Path) -> None:
 
 def clone_user_data(extensions_dir: pathlib.Path) -> pathlib.Path:
     """Clone chrome extension user data"""
-    #return shutil.copytree(extensions_dir / BASE_USER_DATA_DIR, extensions_dir / uuid.uuid4().hex)
-    return extensions_dir / 'user_data'
+    return shutil.copytree(
+        extensions_dir / BASE_USER_DATA_DIR, extensions_dir / BASE_USER_DATA_DIR / "tmp" / uuid.uuid4().hex
+    )
 
 
 def try_until(func, try_msg=None, error_msg=None, log=None, interval=1, timeout=360, times=None):

@@ -38,7 +38,7 @@ NEON_DEV_NET = "NeonEVM DevNet"
 """Development stend name
 """
 
-BASE_NEON_BALANCE = 4300
+BASE_NEON_BALANCE = 7000
 """Balance saved in MetaMask extension by default
 """
 
@@ -99,7 +99,6 @@ class TestMetaMaskPipeLIne:
     def metamask_page(self, page, network: str):
         login_page = metamask.MetaMaskLoginPage(page)
         mm_page = login_page.login(password=METAMASK_PASSWORD)
-        time.sleep(7200)
         mm_page.check_funds_protection()
         mm_page.change_network(network)
         # wait MetaMask initialization
@@ -136,3 +135,4 @@ class TestMetaMaskPipeLIne:
         )
         # Wait next airdrop was enabled
         libs.try_until(lambda: neon_faucet_page.is_airdrop_enabled, timeout=90, interval=5)
+        time.sleep(60)

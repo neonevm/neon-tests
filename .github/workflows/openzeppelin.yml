@@ -76,6 +76,8 @@ jobs:
       - prepare-env
     runs-on: ${{ needs.prepare-env.outputs.runner }}
     steps:
+      - name: "Cleanup"
+        run: sudo rm -rf allure-report
       - uses: actions/checkout@v2
       - name: Update openzeppelin
         run: git submodule update --init --recursive

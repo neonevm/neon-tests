@@ -1,7 +1,14 @@
 import allure
 import pytest
 import typing as tp
+from brownie import network, AdvancedCollectible, SimpleCollectible, convert, chain
 from integration.tests.basic.helpers.assert_message import AssertMessage
+from integration.tests.basic.helpers.eips.nft import (
+    LOCAL_BLOCKCHAIN_ENVIRONMENTS,
+    get_account,
+    get_contract,
+    listen_for_event,
+)
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.helpers.unit import Unit
 from integration.tests.basic.model.model import TrxReceiptResponse, TrxResponse
@@ -35,5 +42,58 @@ class TestEip(TestTransfer):
         )
         self.assert_balance(self.recipient_account.address, initial_recipient_balance + transfer_amount, rnd_dig=3)
 
-    def test_nft_erc721(self):
-        pass
+
+def test_erc721_can_create_advanced_collectible_integration(
+    get_keyhash,
+    chainlink_fee,
+):
+    # Arrange
+    if network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
+        pytest.skip("Only for integration testing")
+    advanced_collectible = AdvancedCollectible.deploy(
+        get_contract("vrf_coordinator").address,
+        get_contract("link_token").address,
+        get_keyhash,
+        {"from": get_account()},
+    )
+    get_contract("link_token").transfer(advanced_collectible.address, chainlink_fee * 3, {"from": get_account()})
+    # Act
+    advanced_collectible.createCollectible("None", {"from": get_account()})
+    # time.sleep(75)
+    listen_for_event(advanced_collectible, "ReturnedCollectible", timeout=200, poll_interval=10)
+    # Assert
+    assert advanced_collectible.tokenCounter() > 0
+
+
+def test_укс721_can_create_simple_collectible():
+    if network.show_active() not in ["development"] or "fork" in network.show_active():
+        pytest.skip("Only for local testing")
+    simple_collectible = SimpleCollectible.deploy({"from": get_account(), "gas_price": chain.base_fee})
+    simple_collectible.createCollectible("None", {"from": get_account(), "gas_price": chain.base_fee})
+    assert simple_collectible.ownerOf(0) == get_account()
+
+
+def test_укс721_can_create_advanced_collectible(
+    get_keyhash,
+    chainlink_fee,
+):
+    # Arrange
+    if network.show_active() not in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
+        pytest.skip("Only for local testing")
+    advanced_collectible = AdvancedCollectible.deploy(
+        get_contract("vrf_coordinator").address,
+        get_contract("link_token").address,
+        get_keyhash,
+        {"from": get_account()},
+    )
+    get_contract("link_token").transfer(advanced_collectible.address, chainlink_fee * 3, {"from": get_account()})
+    # Act
+    transaction_receipt = advanced_collectible.createCollectible("None", {"from": get_account()})
+    requestId = transaction_receipt.events["RequestedCollectible"]["requestId"]
+    assert isinstance(transaction_receipt.txid, str)
+    get_contract("vrf_coordinator").callBackWithRandomness(
+        requestId, 777, advanced_collectible.address, {"from": get_account()}
+    )
+    # Assert
+    assert advanced_collectible.tokenCounter() > 0
+    assert isinstance(advanced_collectible.tokenCounter(), int)

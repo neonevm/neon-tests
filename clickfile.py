@@ -44,6 +44,13 @@ ERR_MESSAGES = {"run": "Unsuccessful tests executing.", "requirements": "Unsucce
 SRC_ALLURE_CATEGORIES = pathlib.Path("./allure/categories.json")
 DST_ALLURE_CATEGORIES = pathlib.Path("./allure-results/categories.json")
 
+BASE_EXTENSIONS_TPL_DATA = "ui/extensions/data"
+"""Relative path where ui tests extensions data stored
+"""
+
+EXTENSIONS_PATH = "ui/extensions/chrome/plugins"
+EXTENSIONS_USER_DATA_PATH = "ui/extensions/chrome/user_data"
+
 
 def green(s):
     return click.style(s, fg="green")
@@ -224,6 +231,14 @@ def install_python_requirements():
             ),
             color=True,
         )
+    # prepare ui tests extensions and extensions user_data
+    base_path = pathlib.Path(__file__).parent
+    for item in (base_path / BASE_EXTENSIONS_TPL_DATA).iterdir():
+        if "extension" in item.name:
+            cmd = f"tar -xf {item.as_posix()} -C {base_path / EXTENSIONS_PATH}"
+        elif "user_data" in item.name:
+            cmd = f"tar -xf {item.as_posix()} -C {base_path / EXTENSIONS_USER_DATA_PATH}"
+        subprocess.check_call(cmd, shell=True)
 
 
 def install_oz_requirements():

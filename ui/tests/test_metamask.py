@@ -25,10 +25,9 @@ except KeyError:
 # "1234Neon5678"
 
 
-METAMASK_EXT_DIR = "extensions/chrome/metamask"
+METAMASK_EXT_DIR = "extensions/chrome/plugins/metamask"
 """Relative path to MetaMask extension source
 """
-
 
 NEON_FAUCET_URL = "https://neonfaucet.org/"
 """Neon Test Airdrops
@@ -61,12 +60,9 @@ def metamask_dir(chrome_extension_base_path) -> pathlib.Path:
 @pytest.fixture(scope="session")
 def metamask_user_data(metamask_dir: pathlib.Path) -> pathlib.Path:
     """Path to MetaMask extension user data"""
-    #user_data = libs.clone_user_data(metamask_dir)
-    #yield user_data
-    #libs.rm_tree(user_data)
-    user_dat = metamask_dir / 'user_data'
-    print(f"{30*'!'}{user_dat}")
-    return user_dat
+    user_data = libs.clone_user_data(metamask_dir.parent.parent)
+    yield user_data
+    libs.rm_tree(user_data)
 
 
 @pytest.fixture(autouse=True)
@@ -100,7 +96,6 @@ class TestMetaMaskPipeLIne:
 
     @pytest.fixture
     def metamask_page(self, page, network: str):
-        time.sleep(7200)
         login_page = metamask.MetaMaskLoginPage(page)
         mm_page = login_page.login(password=METAMASK_PASSWORD)
         mm_page.check_funds_protection()
@@ -132,8 +127,6 @@ class TestMetaMaskPipeLIne:
         tokens: str,
     ) -> None:
         """Checks Neon faucet pipeline"""
-        time.sleep(60)
-        return
         balance_before_airdrop_test = int(getattr(metamask_page, f"active_account_{tokens.lower()}_balance"))
         neon_faucet_page.connect_wallet()
         neon_faucet_page.test_airdrop(tokens, 100)

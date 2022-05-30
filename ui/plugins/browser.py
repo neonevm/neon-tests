@@ -34,6 +34,7 @@ def create_persistent_context(
         **browser_type_launch_args,
         **browser_context_args,
     }
+    print(f"{30*'!'}{launch_options}")
     return browser_type.launch_persistent_context(**launch_options)
 
 

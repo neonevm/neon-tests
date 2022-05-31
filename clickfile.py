@@ -41,6 +41,33 @@ ERR_MSG_TPL = {
 
 ERR_MESSAGES = {"run": "Unsuccessful tests executing.", "requirements": "Unsuccessful requirements installation."}
 
+SRC_ALLURE_CATEGORIES = pathlib.Path("./allure/categories.json")
+""" Allure report config tpl
+"""
+
+DST_ALLURE_CATEGORIES = pathlib.Path("./allure-results/categories.json")
+""" Allure report config
+"""
+
+BASE_EXTENSIONS_TPL_DATA = "ui/extensions/data"
+"""Relative path where ui tests extensions data stored
+"""
+
+EXTENSIONS_PATH = "ui/extensions/chrome/plugins"
+EXTENSIONS_USER_DATA_PATH = "ui/extensions/chrome/user_data"
+
+
+def green(s):
+    return click.style(s, fg="green")
+
+
+def yellow(s):
+    return click.style(s, fg="yellow")
+
+
+def red(s):
+    return click.style(s, fg="red")
+
 
 def catch_traceback(func: tp.Callable) -> tp.Callable:
     """Catch traceback to file"""
@@ -200,6 +227,23 @@ def install_python_requirements():
     command = "pip3 install --upgrade -r deploy/requirements/prod.txt  -r deploy/requirements/devel.txt"
     subprocess.check_call(command, shell=True)
     subprocess.check_call("pip3 install --no-deps -r deploy/requirements/nodeps.txt", shell=True)
+    # install ui test deps, download the Playwright package and install browser binaries for Chromium, Firefox and WebKit.
+    subprocess.check_call("playwright install", shell=True)
+    if sys.platform in ["linux", "linux2"]:
+        click.echo(
+            red(
+                f"{10*'!'} Warning: Linux requires `xclip` to work. Install with your package manager, e.g. `sudo apt install xclip` {10*'!'}"
+            ),
+            color=True,
+        )
+    # prepare ui tests extensions and extensions user_data
+    base_path = pathlib.Path(__file__).parent
+    for item in (base_path / BASE_EXTENSIONS_TPL_DATA).iterdir():
+        if "extension" in item.name:
+            cmd = f"tar -xf {item.as_posix()} -C {base_path / EXTENSIONS_PATH}"
+        elif "user_data" in item.name:
+            cmd = f"tar -xf {item.as_posix()} -C {base_path / EXTENSIONS_USER_DATA_PATH}"
+        subprocess.check_call(cmd, shell=True)
 
 
 def install_oz_requirements():
@@ -217,36 +261,48 @@ def cli():
 
 
 @cli.command(help="Update base python requirements")
+@click.option("-d", "--dep", default='all', type=click.Choice(['all', 'python', 'oz']), help="Which deps install")
 @catch_traceback
-def requirements():
-    install_python_requirements()
-    install_oz_requirements()
+def requirements(dep):
+    if dep in ["all", "python"]:
+        install_python_requirements()
+    if dep in ["all", "oz"]:
+        install_oz_requirements()
 
 
 @cli.command(help="Run any type of tests")
-@click.option(
-    "-n", "--network", default="night-stand", type=click.Choice(networks.keys()), help="In which stand run tests"
-)
+@click.option("-n", "--network", default=None, type=click.Choice(networks.keys()), help="In which stand run tests")
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
-@click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz"]))
+@click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz", "ui"]))
 @catch_traceback
-def run(name, network, jobs):
-    if pathlib.Path("./allure-results").exists():
-        shutil.rmtree("./allure-results", ignore_errors=True)
+def run(name, jobs, network=None):
+    if not network and name == "ui":
+        network = "devnet"
+    elif not network:
+        network = "night-stand"
+    if DST_ALLURE_CATEGORIES.parent.exists():
+        shutil.rmtree(DST_ALLURE_CATEGORIES.parent, ignore_errors=True)
+    DST_ALLURE_CATEGORIES.parent.mkdir()
     if name == "economy":
         command = "py.test integration/tests/economy/test_economics.py"
     elif name == "basic":
         command = "py.test integration/tests/basic"
     elif name == "oz":
         run_openzeppelin_tests(network, jobs=int(jobs))
-        shutil.copyfile("./allure/categories.json", "./allure-results/categories.json")
+        shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
         return
+    elif name == "ui":
+        if not os.environ.get("METAMASK_PASSWORD"):
+            raise click.ClickException(
+                red("Please set the `METAMASK_PASSWORD` environment variable to connect to the wallet.")
+            )
+        command = "py.test ui/tests --slowmo=2000"
     else:
         raise click.ClickException("Unknown test name")
 
-    command += f" --network={network} --make-report"
+    command += f" -s --network={network} --make-report"
     cmd = subprocess.run(command, shell=True)
-    shutil.copyfile("./allure/categories.json", "./allure-results/categories.json")
+    shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
 
     if cmd.returncode != 0:
         sys.exit(cmd.returncode)

@@ -1,4 +1,3 @@
-import json
 import pathlib
 import random
 import shutil
@@ -24,31 +23,11 @@ LAMPORT_PER_SOL = 1_000_000_000
 NEON_AIRDROP_AMOUNT = 10_000
 
 
-@dataclass
-class EnvironmentConfig:
-    evm_loader: str
-    proxy_url: str
-    solana_url: str
-    faucet_url: str
-    network_id: int
-    operator_neon_rewards_address: tp.List[str]
-    spl_neon_mint: str
-    neon_erc20wrapper_address: str
-    operator_keys: tp.List[str]
+
 
 
 def pytest_addoption(parser):
     parser.addoption("--network", action="store", default="night-stand", help="Which stand use")
-    parser.addoption("--envs", action="store", default="envs.json", help="Filename with environments")
-
-
-def pytest_configure(config: Config):
-    network_name = config.getoption("--network")
-    envs_file = config.getoption("--envs")
-    with open(pathlib.Path().parent.parent / envs_file, "r+") as f:
-        environments = json.load(f)
-    assert network_name in environments, f"Environment {network_name} doesn't exist in envs.json"
-    config.environment = EnvironmentConfig(**environments[network_name])
 
 
 @pytest.fixture(scope="session", autouse=True)

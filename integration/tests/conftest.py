@@ -45,6 +45,7 @@ def pytest_addoption(parser):
 
 
 def pytest_sessionstart(session):
+    """Hook for clearing the error log used by the slack notifications utility"""
     path = pathlib.Path(f"{clickfile.CMD_ERROR_LOG}")
     if path.exists():
         path.unlink()

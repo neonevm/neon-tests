@@ -6,7 +6,6 @@ Created on 2021-10-01
 
 import os
 import pathlib
-import time
 import typing as tp
 from dataclasses import dataclass
 
@@ -52,17 +51,9 @@ class Accounts:
 
 
 @pytest.fixture(scope="session")
-def metamask_dir(chrome_extension_base_path) -> pathlib.Path:
+def extension_dir(chrome_extension_base_path) -> pathlib.Path:
     """Path to MetaMask extension source"""
     return chrome_extension_base_path / METAMASK_EXT_DIR
-
-
-@pytest.fixture(scope="session")
-def metamask_user_data(metamask_dir: pathlib.Path) -> pathlib.Path:
-    """Path to MetaMask extension user data"""
-    user_data = libs.clone_user_data(metamask_dir.parent.parent)
-    yield user_data
-    libs.rm_tree(user_data)
 
 
 @pytest.fixture(autouse=True)
@@ -76,16 +67,16 @@ def context(
     browser_type: BrowserType,
     browser_context_args: tp.Dict,
     browser_type_launch_args: tp.Dict,
-    metamask_dir: pathlib.Path,
-    metamask_user_data: pathlib.Path,
+    extension_dir,
+    chrome_extension_user_data: pathlib.Path,
 ) -> BrowserContext:
     """Override default context for MetaMasks load"""
     context = browser.create_persistent_context(
         browser_type,
         browser_context_args,
         browser_type_launch_args,
-        ext_source=metamask_dir,
-        user_data_dir=metamask_user_data.as_posix(),
+        ext_source=extension_dir,
+        user_data_dir=chrome_extension_user_data.as_posix(),
     )
     yield context
     context.close()
@@ -130,6 +121,7 @@ class TestMetaMaskPipeLIne:
         balance_before_airdrop_test = int(getattr(metamask_page, f"active_account_{tokens.lower()}_balance"))
         neon_faucet_page.connect_wallet()
         neon_faucet_page.test_airdrop(tokens, 100)
+        # wait new balance
         libs.try_until(
             lambda: balance_before_airdrop_test + 100
             == int(getattr(metamask_page, f"active_account_{tokens.lower()}_balance")),

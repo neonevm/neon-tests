@@ -7,6 +7,7 @@ import pytest
 from _pytest.config import Config
 from playwright.sync_api import Page
 
+from ui import libs
 
 EVM_NETWORKS = {
     "night-stand": "NEON EVM night-stand",
@@ -26,6 +27,14 @@ def network(pytestconfig: tp.Any) -> tp.Optional[str]:
 @pytest.fixture(scope="session")
 def chrome_extension_base_path() -> pathlib.Path:
     return pathlib.Path(__file__).parent
+
+
+@pytest.fixture(scope="session")
+def chrome_extension_user_data(extension_dir) -> pathlib.Path:
+    """Path to Chrome extension user data"""
+    user_data = libs.clone_user_data(extension_dir.parent.parent)
+    yield user_data
+    libs.rm_tree(user_data)
 
 
 @pytest.fixture

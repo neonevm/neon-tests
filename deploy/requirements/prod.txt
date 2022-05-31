@@ -25,4 +25,4 @@ protobuf>=3.10.0,<4
 
 # deps for ui tests
 playwright>=1.22
-pyperclip3
+pyperclip3==0.4.1

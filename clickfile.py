@@ -42,7 +42,12 @@ ERR_MSG_TPL = {
 ERR_MESSAGES = {"run": "Unsuccessful tests executing.", "requirements": "Unsuccessful requirements installation."}
 
 SRC_ALLURE_CATEGORIES = pathlib.Path("./allure/categories.json")
+""" Allure report config tpl
+"""
+
 DST_ALLURE_CATEGORIES = pathlib.Path("./allure-results/categories.json")
+""" Allure report config
+"""
 
 BASE_EXTENSIONS_TPL_DATA = "ui/extensions/data"
 """Relative path where ui tests extensions data stored

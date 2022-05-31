@@ -1,4 +1,3 @@
-import json
 import pathlib
 import random
 import shutil
@@ -12,10 +11,8 @@ import pytest
 import solana
 import solana.rpc.api
 from _pytest.config import Config
-from _pytest.runner import runtestprotocol
 from solana.keypair import Keypair
 
-import clickfile
 from integration.tests.basic.helpers.json_rpc_client import JsonRpcClient
 from utils.erc20wrapper import ERC20Wrapper
 from utils.faucet import Faucet
@@ -26,49 +23,11 @@ LAMPORT_PER_SOL = 1_000_000_000
 NEON_AIRDROP_AMOUNT = 10_000
 
 
-@dataclass
-class EnvironmentConfig:
-    evm_loader: str
-    proxy_url: str
-    solana_url: str
-    faucet_url: str
-    network_id: int
-    operator_neon_rewards_address: tp.List[str]
-    spl_neon_mint: str
-    neon_erc20wrapper_address: str
-    operator_keys: tp.List[str]
+
 
 
 def pytest_addoption(parser):
-    parser.addoption("--envs", action="store", default="envs.json", help="Filename with environments")
     parser.addoption("--network", action="store", default="night-stand", help="Which stand use")
-
-
-def pytest_sessionstart(session):
-    """Hook for clearing the error log used by the slack notifications utility"""
-    path = pathlib.Path(f"{clickfile.CMD_ERROR_LOG}")
-    if path.exists():
-        path.unlink()
-
-
-def pytest_runtest_protocol(item, nextitem):
-    if item.config.getoption("--make-report"):
-        path = pathlib.Path(f"{clickfile.CMD_ERROR_LOG}")
-        reports = runtestprotocol(item, nextitem=nextitem)
-        with path.open("a") as fd:
-            for report in reports:
-                if report.when == "call" and report.outcome == "failed":
-                    fd.write(f"`{report.outcome.upper()}` {item.nodeid}\n")
-        return True
-
-
-def pytest_configure(config: Config):
-    network_name = config.getoption("--network")
-    envs_file = config.getoption("--envs")
-    with open(pathlib.Path().parent.parent / envs_file, "r+") as f:
-        environments = json.load(f)
-    assert network_name in environments, f"Environment {network_name} doesn't exist in envs.json"
-    config.environment = EnvironmentConfig(**environments[network_name])
 
 
 @pytest.fixture(scope="session", autouse=True)

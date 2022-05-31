@@ -39,8 +39,8 @@ def chrome_extension_user_data(extension_dir) -> pathlib.Path:
 
 @pytest.fixture
 def use_persistent_context() -> bool:
-    """Flag used for Chrome extensions load"""
-    return False
+    """Flag used for Chrome extensions load, set to False for standard pages not extensions"""
+    return True
 
 
 @pytest.fixture(autouse=True)

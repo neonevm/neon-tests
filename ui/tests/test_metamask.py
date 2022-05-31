@@ -32,10 +32,6 @@ NEON_FAUCET_URL = "https://neonfaucet.org/"
 """Neon Test Airdrops
 """
 
-NEON_DEV_NET = "NeonEVM DevNet"
-"""Development stend name
-"""
-
 BASE_NEON_BALANCE = 7000
 """Balance saved in MetaMask extension by default
 """
@@ -54,12 +50,6 @@ class Accounts:
 def extension_dir(chrome_extension_base_path) -> pathlib.Path:
     """Path to MetaMask extension source"""
     return chrome_extension_base_path / METAMASK_EXT_DIR
-
-
-@pytest.fixture(autouse=True)
-def use_persistent_context() -> bool:
-    """Flag used to load Chrome extensions overridden to load MetaMasks"""
-    return True
 
 
 @pytest.fixture
@@ -120,7 +110,7 @@ class TestMetaMaskPipeLIne:
         """Checks Neon faucet pipeline"""
         balance_before_airdrop_test = int(getattr(metamask_page, f"active_account_{tokens.lower()}_balance"))
         neon_faucet_page.connect_wallet()
-        neon_faucet_page.test_airdrop(tokens, 100)
+        neon_faucet_page.send_tokens(tokens, 100)
         # wait new balance
         libs.try_until(
             lambda: balance_before_airdrop_test + 100

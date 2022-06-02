@@ -225,3 +225,7 @@ cython_debug/
 # allure report
 allure-report/
 allure-results/
+
+# chrome extensions
+ui/extensions/chrome/plugins/
+ui/extensions/chrome/user_data/

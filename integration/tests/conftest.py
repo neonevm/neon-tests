@@ -3,8 +3,6 @@ import random
 import shutil
 import string
 import time
-import typing as tp
-from dataclasses import dataclass
 
 import allure
 import pytest
@@ -21,9 +19,6 @@ from utils.web3client import NeonWeb3Client
 
 LAMPORT_PER_SOL = 1_000_000_000
 NEON_AIRDROP_AMOUNT = 10_000
-
-
-
 
 
 def pytest_addoption(parser):
@@ -115,13 +110,15 @@ def erc20wrapper(sol_client, web3_client: NeonWeb3Client, faucet, pytestconfig: 
         web3_client, sol_client, pytestconfig.environment.evm_loader, pytestconfig.environment.spl_neon_mint
     )
     owner = Keypair.generate()
+    sol_client.request_airdrop(owner.public_key, 1000000000)
 
-    sol_client.request_airdrop(owner.public_key, 10000000000)
-
-    for _ in range(10):
-        if sol_client.get_balance(owner.public_key)["result"]["value"] == 10000000000:
+    for _ in range(20):
+        balance = sol_client.get_balance(owner.public_key)["result"]["value"]
+        if balance == 1000000000:
             break
         time.sleep(5)
+    else:
+        raise AssertionError(f"Request airdrop for {owner.public_key} is failed, balance is {balance}.")
 
     token = wrapper.create_spl(owner)
 

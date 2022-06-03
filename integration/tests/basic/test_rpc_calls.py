@@ -1,19 +1,18 @@
+import typing as tp
+
 import allure
 import pytest
-import typing as tp
+
 from integration.tests.basic.helpers.assert_message import AssertMessage
-from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
-from integration.tests.basic.helpers.unit import Unit
-from integration.tests.basic.model.model import TrxReceiptResponse, TrxResponse
-from integration.tests.basic.model.tags import Tag
-from integration.tests.basic.test_data.input_data import InputData
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.helpers.rpc_request_params_factory import RpcRequestParamsFactory
+from integration.tests.basic.helpers.unit import Unit
 from integration.tests.basic.model import model as request_models
+from integration.tests.basic.model.model import TrxReceiptResponse, TrxResponse
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.test_data import input_data
-
+from integration.tests.basic.test_data.input_data import InputData
 
 """
 12.	Verify implemented rpc calls work
@@ -370,9 +369,11 @@ class TestRpcCalls(BaseMixin):
         """Verify implemented rpc calls work eth_syncing"""
         response = self.assert_rpc_response(method="eth_syncing", params=params, raises=raises)
         if not params:
-            assert all(
-                isinstance(block, int) for block in response.result.values()
-            ), f"Invalid response: {response.result}"
+            err_msg = f"Invalid response: {response.result}"
+            if not isinstance(response.result, bool):
+                assert all(isinstance(block, int) for block in response.result.values()), err_msg
+            else:
+                assert not response.result, err_msg
 
     @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
     def test_net_peer_count(self, params, raises):

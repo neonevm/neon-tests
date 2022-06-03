@@ -1,9 +1,10 @@
+import typing as tp
+from decimal import Decimal
+
 import allure
 import pytest
-import typing as tp
 import web3
-from decimal import Decimal
-from integration.tests.basic.helpers.assert_message import AssertMessage
+
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.error_message import ErrorMessage
@@ -11,7 +12,6 @@ from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactor
 from integration.tests.basic.helpers.unit import Unit
 from integration.tests.basic.model.model import AccountData
 from integration.tests.basic.test_data.input_data import InputData
-
 
 INVALID_ADDRESS = AccountData(address="0x12345")
 ENS_NAME_ERROR = f"ENS name: '{INVALID_ADDRESS.address}' is invalid."

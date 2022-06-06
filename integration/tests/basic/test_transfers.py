@@ -20,7 +20,7 @@ DEFAULT_ERC20_BALANCE = 1000
 
 
 WRONG_TRANSFER_AMOUNT_DATA = [(11_000_501), (10_000_000.1)]
-TRANSFER_AMOUNT_DATA = [(0.01), (1), (1.1), (0)]
+TRANSFER_AMOUNT_DATA = [(0.1), (1), (1.1), (0)]
 
 GAS_LIMIT_AND_PRICE_DATA = (
     [1, None, ErrorMessage.GAS_LIMIT_REACHED.value],
@@ -42,15 +42,9 @@ class TestTransfer(BaseMixin):
         """Send neon from one account to another
         Send zero: Neon
         """
-
         initial_sender_balance, initial_recipient_balance = self.get_initial_balances()
-
-        tx_receipt = self.process_transaction(self.sender_account, self.recipient_account, transfer_amount)
-        self.assert_balance(
-            self.sender_account.address,
-            initial_sender_balance - transfer_amount - self.calculate_trx_gas(tx_receipt=tx_receipt),
-            rnd_dig=1,
-        )
+        self.process_transaction(self.sender_account, self.recipient_account, transfer_amount)
+        self.assert_balance_less(self.sender_account.address, initial_sender_balance - transfer_amount)
         self.assert_balance(self.recipient_account.address, initial_recipient_balance + transfer_amount, rnd_dig=3)
 
     @pytest.mark.parametrize("transfer_amount", [(1), (10), (100), (0)])
@@ -77,12 +71,8 @@ class TestTransfer(BaseMixin):
         assert (
             contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE - transfer_amount
         ), AssertMessage.CONTRACT_BALANCE_IS_WRONG.value
-
-        # Neon balance
-        self.assert_balance(
-            self.sender_account.address,
-            initial_sender_neon_balance - self.calculate_trx_gas(tx_receipt=tx_receipt),
-            rnd_dig=1,
+        self.assert_balance_less(
+            self.sender_account.address, initial_sender_neon_balance - self.calculate_trx_gas(tx_receipt=tx_receipt)
         )
         self.assert_balance(self.recipient_account.address, initial_recipient_neon_balance, rnd_dig=3)
 
@@ -98,7 +88,7 @@ class TestTransfer(BaseMixin):
             self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)
         )
 
-        transfer_tx = self.web3_client.send_erc20(
+        self.web3_client.send_erc20(
             spl_owner, self.recipient_account, transfer_amount, contract.address, abi=contract.abi
         )
 
@@ -130,8 +120,8 @@ class TestTransfer(BaseMixin):
             self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)
         )
 
-        with pytest.raises(web3.exceptions.ContractLogicError) as error_info:
-            transfer_tx = self.web3_client.send_erc20(
+        with pytest.raises(web3.exceptions.ContractLogicError):
+            self.web3_client.send_erc20(
                 spl_owner, self.recipient_account, transfer_amount, contract.address, abi=contract.abi
             )
 
@@ -150,8 +140,8 @@ class TestTransfer(BaseMixin):
         assert contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
         initial_sender_neon_balance, initial_recipient_neon_balance = self.get_initial_balances()
 
-        with pytest.raises(web3.exceptions.ContractLogicError) as error_info:
-            tx_receipt = self.web3_client.send_erc20(
+        with pytest.raises(web3.exceptions.ContractLogicError):
+            self.web3_client.send_erc20(
                 self.sender_account,
                 self.recipient_account.address,
                 100_000,
@@ -168,7 +158,7 @@ class TestTransfer(BaseMixin):
         self.assert_balance(
             self.sender_account.address,
             initial_sender_neon_balance,
-            rnd_dig=1,
+            rnd_dig=0,
         )
         self.assert_balance(self.recipient_account.address, initial_recipient_neon_balance, rnd_dig=3)
 
@@ -184,7 +174,7 @@ class TestTransfer(BaseMixin):
             error_message=ErrorMessage.NEGATIVE_VALUE.value,
         )
 
-        self.assert_balance(self.sender_account.address, sender_balance, rnd_dig=1)
+        self.assert_balance(self.sender_account.address, sender_balance, rnd_dig=0)
         self.assert_balance(self.recipient_account.address, recipient_balance, rnd_dig=1)
 
     def test_send_negative_sum_from_account_spl(self, erc20wrapper):
@@ -197,8 +187,8 @@ class TestTransfer(BaseMixin):
             self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)
         )
 
-        with pytest.raises(web3.exceptions.ValidationError) as error_info:
-            transfer_tx = self.web3_client.send_erc20(
+        with pytest.raises(web3.exceptions.ValidationError):
+            self.web3_client.send_erc20(
                 spl_owner, self.recipient_account, transfer_amount, contract.address, abi=contract.abi
             )
 
@@ -217,8 +207,8 @@ class TestTransfer(BaseMixin):
         assert contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
         initial_sender_neon_balance, initial_recipient_neon_balance = self.get_initial_balances()
 
-        with pytest.raises(web3.exceptions.ValidationError) as error_info:
-            tx_receipt = self.web3_client.send_erc20(
+        with pytest.raises(web3.exceptions.ValidationError):
+            self.web3_client.send_erc20(
                 self.sender_account,
                 self.recipient_account.address,
                 -1,
@@ -235,7 +225,7 @@ class TestTransfer(BaseMixin):
         self.assert_balance(
             self.sender_account.address,
             initial_sender_neon_balance,
-            rnd_dig=1,
+            rnd_dig=0,
         )
         self.assert_balance(self.recipient_account.address, initial_recipient_neon_balance, rnd_dig=3)
 
@@ -244,11 +234,10 @@ class TestTransfer(BaseMixin):
         transfer_amount = 2
         balance_before = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER))
 
-        tx_receipt = self.process_transaction(self.sender_account, self.recipient_account, transfer_amount)
-        self.assert_balance(
+        self.process_transaction(self.sender_account, self.recipient_account, transfer_amount)
+        self.assert_balance_less(
             self.sender_account.address,
-            balance_before - transfer_amount - self.calculate_trx_gas(tx_receipt=tx_receipt),
-            rnd_dig=1,
+            balance_before - transfer_amount,
         )
 
     def test_send_token_to_self_erc20(self):
@@ -263,7 +252,7 @@ class TestTransfer(BaseMixin):
             self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER)
         )
 
-        tx_receipt = self.web3_client.send_erc20(
+        self.web3_client.send_erc20(
             self.sender_account,
             self.sender_account.address,
             transfer_amount,
@@ -402,7 +391,7 @@ class TestTransactionsValidation(BaseMixin):
 
         params = [signed_tx.rawTransaction.hex()]
         model = RpcRequestFactory.build_send_raw_trx(params=params)
-        actual_result = self.json_rpc_client.do_call(model)
+        self.json_rpc_client.do_call(model)
 
         # 2nd transaction (with low nonce)
         transaction = self.create_tx_object(amount, 0)
@@ -424,7 +413,7 @@ class TestTransactionsValidation(BaseMixin):
         recipient_account = self.web3_client.create_account()
         amount = 0.9
 
-        balance_before = float(self.web3_client.fromWei(self.get_balance(sender_account.address), Unit.ETHER))
+        float(self.web3_client.fromWei(self.get_balance(sender_account.address), Unit.ETHER))
         self.process_transaction_with_failure(
             sender_account=sender_account,
             recipient_account=recipient_account,

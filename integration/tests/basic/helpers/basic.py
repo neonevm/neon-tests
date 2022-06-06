@@ -111,6 +111,17 @@ class BaseMixin(BaseTests):
         balance = float(self.web3_client.fromWei(self.get_balance(address), Unit.ETHER))
         self.check_balance(expected_amount, balance, rnd_dig=rnd_dig)
 
+    def assert_balance_less(
+        self,
+        address: str,
+        calculated_balance: float,
+    ):
+        """Compares balance of an account, balance must be less than init balance"""
+        balance = float(self.web3_client.fromWei(self.get_balance(address), Unit.ETHER))
+        assert round(balance) <= round(
+            calculated_balance
+        ), f"Balance after transferring {balance} must be less or equal {calculated_balance}"
+
     @allure.step("calculating gas")
     def calculate_trx_gas(self, tx_receipt: web3.types.TxReceipt) -> float:
         gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.fromWei(

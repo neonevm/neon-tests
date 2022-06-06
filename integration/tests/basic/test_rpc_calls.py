@@ -153,7 +153,7 @@ class TestRpcCalls(BaseMixin):
 
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
         assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
-        assert "0x" in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
+        assert self.is_hex(actual_result.result), AssertMessage.DOES_NOT_START_WITH_0X.value
 
     @pytest.mark.parametrize("from_block,to_block", GET_LOGS_TEST_DATA)
     def test_eth_get_logs_via_tags(self, from_block: Tag, to_block: Tag):
@@ -240,14 +240,11 @@ class TestRpcCalls(BaseMixin):
         actual_result = self.json_rpc_client.do_call(model)
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
         assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
-        assert "0x" in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
+        assert self.is_hex(actual_result.result), AssertMessage.DOES_NOT_START_WITH_0X.value
 
     def test_rpc_call_eth_send_raw_transaction(self):
         """Verify implemented rpc calls work eth_sendRawTransaction"""
 
-        recipient_balance = float(
-            self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER)
-        )
         transaction = {
             "from": self.sender_account.address,
             "to": self.recipient_account.address,
@@ -268,8 +265,7 @@ class TestRpcCalls(BaseMixin):
 
         assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
         assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
-        assert "0x" in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
-        self.assert_balance(self.recipient_account.address, recipient_balance + InputData.SAMPLE_AMOUNT.value)
+        assert self.is_hex(actual_result.result), AssertMessage.DOES_NOT_START_WITH_0X.value
 
     @pytest.mark.parametrize(
         "params, raises",
@@ -347,7 +343,7 @@ class TestRpcCalls(BaseMixin):
 
         assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
         assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
-        assert "0x" in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
+        assert self.is_hex(actual_result.result), AssertMessage.DOES_NOT_START_WITH_0X.value
 
     @pytest.mark.parametrize("params, raises", [(["latest"], False), ([], True)])
     def test_eth_get_storage_at(self, params, raises):

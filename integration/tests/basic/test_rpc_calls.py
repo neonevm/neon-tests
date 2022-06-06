@@ -9,7 +9,7 @@ from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactor
 from integration.tests.basic.helpers.rpc_request_params_factory import RpcRequestParamsFactory
 from integration.tests.basic.helpers.unit import Unit
 from integration.tests.basic.model import model as request_models
-from integration.tests.basic.model.model import TrxReceiptResponse, TrxResponse
+from integration.tests.basic.model.model import TrxReceiptResponse
 from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.test_data import input_data
 from integration.tests.basic.test_data.input_data import InputData
@@ -271,20 +271,19 @@ class TestRpcCalls(BaseMixin):
         assert "0x" in actual_result.result, AssertMessage.DOES_NOT_START_WITH_0X.value
         self.assert_balance(self.recipient_account.address, recipient_balance + InputData.SAMPLE_AMOUNT.value)
 
-    def test_rpc_call_eth_get_transaction_by_hash(self):
+    @pytest.mark.parametrize(
+        "params, raises",
+        [(32, False), (16, True), ([], True)],
+    )
+    def test_rpc_call_eth_get_transaction_by_hash(self, params, raises):
         """Verify implemented rpc calls work eth_getTransactionByHash"""
 
-        tx_receipt = self.process_transaction(
-            self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
-        )
+        if params:
+            params = input_data.gen_hash_of_block(params)
+        response = self.assert_rpc_response(method="eth_getTransactionByHash", params=params, raises=raises)
 
-        params = [tx_receipt.transactionHash.hex()]
-        model = RpcRequestFactory.build_trx_by_hash(params=params)
-        actual_result = self.json_rpc_client.do_call(model, TrxResponse)
-
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
-        assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
+        if not raises:
+            assert response.result is None, f"Invalid response: {response.result}"
 
     def test_rpc_call_eth_get_transaction_receipt(self):
         """Verify implemented rpc calls work eth_getTransactionReceipt"""

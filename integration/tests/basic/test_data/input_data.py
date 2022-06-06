@@ -5,9 +5,9 @@ import os
 class InputData(Enum):
     FAUCET_1ST_REQUEST_AMOUNT = 1_000
     FAUCET_2ND_REQUEST_AMOUNT = 3
-    DEFAULT_TRANSFER_AMOUNT = 0.01
+    DEFAULT_TRANSFER_AMOUNT = 0.1
     NEGATIVE_AMOUNT = -0.1
-    SAMPLE_AMOUNT = 0.02
+    SAMPLE_AMOUNT = 0.5
     ROUND_DIGITS = 3
 
     def get_transfer_amount(self) -> int:

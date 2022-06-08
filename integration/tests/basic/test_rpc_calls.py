@@ -1,4 +1,5 @@
 import typing as tp
+from enum import Enum
 
 import allure
 import pytest
@@ -6,13 +7,9 @@ import pytest
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
-from integration.tests.basic.helpers.rpc_request_params_factory import RpcRequestParamsFactory
 from integration.tests.basic.helpers.unit import Unit
 from integration.tests.basic.model import model as request_models
-from integration.tests.basic.model.model import TrxReceiptResponse
-from integration.tests.basic.model.tags import Tag
 from integration.tests.basic.test_data import input_data
-from integration.tests.basic.test_data.input_data import InputData
 
 """
 12.	Verify implemented rpc calls work
@@ -34,22 +31,19 @@ from integration.tests.basic.test_data.input_data import InputData
 12.63.	net_version
 """
 
+
+class Tag(Enum):
+    EARLIEST = "earliest"
+    LATEST = "latest"
+    PENDING = "pending"
+
+
 GET_LOGS_TEST_DATA = [
     (Tag.LATEST.value, Tag.LATEST.value),
     (Tag.EARLIEST.value, Tag.LATEST.value),
     (Tag.PENDING.value, Tag.LATEST.value),
     (Tag.LATEST.value, Tag.EARLIEST.value),
     (Tag.LATEST.value, Tag.PENDING.value),
-]
-
-# TODO: fix earliest and penging if possible
-TAGS_TEST_DATA = [
-    (Tag.EARLIEST, True),
-    (Tag.EARLIEST, False),
-    (Tag.LATEST, True),
-    (Tag.LATEST, False),
-    (Tag.PENDING, True),
-    (Tag.PENDING, False),
 ]
 
 UNSUPPORTED_METHODS = [
@@ -123,124 +117,104 @@ class TestRpcCalls(BaseMixin):
 
     @pytest.mark.parametrize(
         "params, raises",
-        [({"to": None, "data": None}, False), ({}, True)],
+        [(Tag.LATEST, False), (Tag.PENDING, False), (Tag.EARLIEST, False), ({}, True)],
     )
-    def test_eth_call(self, params, raises):
+    def test_eth_call(self, params: Tag, raises: bool):
         """Verify implemented rpc calls work eth_call"""
         if params:
-            params.update({"to": self.recipient_account.address, "data": hex(pow(10, 14))})
-        request_data = [request_models.CallRequest(**params), Tag.LATEST.value]
-        response = self.assert_rpc_response("eth_call", params=request_data, raises=raises)
+            params = [{"to": self.recipient_account.address, "data": hex(pow(10, 14))}, params.value]
+        response = self.assert_rpc_response("eth_call", params=params, raises=raises)
         if params:
             assert response.result == "0x", f"Invalid response result, `{response.result}`"
 
     @pytest.mark.parametrize(
         "params, raises",
-        [({"from": None, "to": None, "value": hex(1)}, False), ({}, True)],
+        [(hex(1), False), (None, True)],
     )
-    def test_eth_estimate_gas(self, params, raises):
+    def test_eth_estimate_gas(self, params: str, raises: bool):
         """Verify implemented rpc calls work eth_estimateGas"""
         if params:
-            params.update({"from": self.sender_account.address, "to": self.recipient_account.address})
+            params = {"from": self.sender_account.address, "to": self.recipient_account.address, "value": params}
         response = self.assert_rpc_response("eth_estimateGas", params=params, raises=raises)
         if params:
-            assert self.is_hex(response.result)
+            assert self.is_hex(response.result), f"Invalid the amount {response.result} of gas used"
 
-    def test_eth_gas_price(self):
+    @pytest.mark.parametrize(
+        "params, raises",
+        [(None, False), ("param", True)],
+    )
+    def test_eth_gas_price(self, params: tp.Union[str, None], raises: bool):
         """Verify implemented rpc calls work eth_gasPrice"""
-        payloads = RpcRequestFactory.build_gas_price(params=[])
-        actual_result = self.json_rpc_client.do_call(payloads)
+        response = self.assert_rpc_response("eth_gasPrice", params=params, raises=raises)
+        if not params:
+            assert self.is_hex(response.result), f"Invalid current gas price `{response.result}` in wei"
 
-        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
-        assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
-        assert self.is_hex(actual_result.result), AssertMessage.DOES_NOT_START_WITH_0X.value
-
-    @pytest.mark.parametrize("from_block,to_block", GET_LOGS_TEST_DATA)
-    def test_eth_get_logs_via_tags(self, from_block: Tag, to_block: Tag):
+    @pytest.mark.parametrize("params, raises", [(Tag.LATEST, False), (Tag.PENDING, False), (Tag.EARLIEST, False)])
+    def test_eth_get_logs_via_tags(self, params: Tag, raises: bool):
         """Verify implemented rpc calls work eth_getLogs"""
-        # TODO: use contract instead of account
-        sender_account = self.create_account_with_balance()
-        params = [
-            request_models.GetLogsRequest(from_block=from_block, to_block=to_block, address=sender_account.address)
-        ]
-        payloads = RpcRequestFactory.build_get_logs(params=params)
-        actual_result = self.json_rpc_client.do_call(payloads)
+        params = {"fromBlock": params.value, "toBlock": params.value, "address": self.sender_account.address}
+        self.assert_rpc_response("eth_getLogs", params=params, raises=raises)
 
-        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
-        assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
-        assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
-
-    def test_eth_get_logs_via_numbers(self):
+    @pytest.mark.parametrize("params, raises", [(Tag.LATEST, False), (Tag.PENDING, False), (Tag.EARLIEST, False)])
+    def test_eth_get_logs_via_numbers(self, params: Tag, raises: bool):
         """Verify implemented rpc calls work eth_getLogs"""
-        # TODO: use contract instead of account
-        sender_account = self.create_account_with_balance()
-        # TODO: variants
-        params = [
-            request_models.GetLogsRequest(from_block=1, to_block=Tag.LATEST.value, address=sender_account.address)
-        ]
-        payloads = RpcRequestFactory.build_get_logs(params=params)
-        actual_result = self.json_rpc_client.do_call(payloads)
+        params = {"fromBlock": 1, "toBlock": params.value, "address": self.sender_account.address}
+        self.assert_rpc_response("eth_getLogs", params=params, raises=raises)
 
-        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
-        assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
-        assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
-
+    @pytest.mark.parametrize(
+        "params, raises",
+        [(Tag.LATEST, False), (Tag.PENDING, False), (Tag.EARLIEST, False), (None, True)],
+    )
     @pytest.mark.only_stands
-    def test_eth_get_balance(self):
+    def test_eth_get_balance(self, params: Tag, raises: bool):
         """Verify implemented rpc calls work eth_getBalance"""
-        sender_account = self.create_account_with_balance()
+        response = self.assert_rpc_response(
+            "eth_getBalance", params=[self.sender_account.address, params.value if params else params], raises=raises
+        )
+        if params:
+            assert self.is_hex(response.result), AssertMessage.WRONG_AMOUNT.value
 
-        params = [sender_account.address, Tag.LATEST.value]
-        payloads = RpcRequestFactory.build_get_balance(params=params)
-        actual_result = self.json_rpc_client.do_call(payloads)
-
-        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
-        assert self.is_hex(actual_result.result), AssertMessage.WRONG_AMOUNT.value
-
-    def test_eth_get_code(self):
+    @pytest.mark.parametrize(
+        "params, raises",
+        [(Tag.LATEST, False), (Tag.PENDING, False), (Tag.EARLIEST, False), (None, True)],
+    )
+    def test_eth_get_code(self, params, raises):
         """Verify implemented rpc calls work eth_getCode"""
-        # TODO: use contract instead of account?
-        sender_account = self.create_account_with_balance()
+        response = self.assert_rpc_response(
+            "eth_getCode", params=[self.sender_account.address, params.value if params else params], raises=raises
+        )
+        if params:
+            assert response.result == "0x", f"Invalid result code {response.result} at a given address."
 
-        params = [sender_account.address, Tag.LATEST.value]
-        payloads = RpcRequestFactory.build_get_code(params=params)
-        actual_result = self.json_rpc_client.do_call(payloads)
-
-        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
-        assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
-        assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
-
-    def test_web3_client_version(self):
+    @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
+    def test_web3_client_version(self, params: tp.Union[str, None], raises: bool):
         """Verify implemented rpc calls work web3_clientVersion"""
-        payloads = RpcRequestFactory.build_web3_client_version(params=[])
-        actual_result = self.json_rpc_client.do_call(payloads)
+        response = self.assert_rpc_response("web3_clientVersion", params=params, raises=raises)
+        if not params:
+            assert "Neon" in response.result, "Invalid response result"
 
-        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
-        assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
-        assert "Neon" in actual_result.result, "version does not contain 'Neon'"
-
-    def test_net_version(self):
+    @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
+    def test_net_version(self, params: tp.Union[str, None], raises: bool):
         """Verify implemented rpc calls work work net_version"""
-        payloads = RpcRequestFactory.build_net_version(params=[])
-        actual_result = self.json_rpc_client.do_call(payloads)
+        response = self.assert_rpc_response("net_version", params=params, raises=raises)
+        if not params:
+            response.result == self.web3_client._chain_id, f"Invalid response result {response.result}"
 
-        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
-        assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
-        assert actual_result.result == str(
-            self.web3_client._chain_id
-        ), f"net version is not {self.web3_client._chain_id}"
-
-    def test_rpc_call_eth_get_transaction_count(self):
+    @pytest.mark.parametrize(
+        "params, raises",
+        [(Tag.LATEST, False), (Tag.PENDING, False), (Tag.EARLIEST, False), (None, True)],
+    )
+    def test_rpc_call_eth_get_transaction_count(self, params: tp.Union[Tag, None], raises: bool):
         """Verify implemented rpc calls work eth_getTransactionCount"""
 
-        self.process_transaction(self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value)
-
-        params = [self.sender_account.address, Tag.LATEST.value]
-        model = RpcRequestFactory.build_trx_count(params=params)
-        actual_result = self.json_rpc_client.do_call(model)
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
-        assert self.is_hex(actual_result.result), AssertMessage.DOES_NOT_START_WITH_0X.value
+        self.process_transaction(self.sender_account, self.recipient_account, 1)
+        response = self.assert_rpc_response(
+            "eth_getTransactionCount",
+            params=[self.sender_account.address, params.value if params else params],
+            raises=raises,
+        )
+        if params:
+            assert self.is_hex(response.result), AssertMessage.DOES_NOT_START_WITH_0X.value
 
     def test_rpc_call_eth_send_raw_transaction(self):
         """Verify implemented rpc calls work eth_sendRawTransaction"""
@@ -248,24 +222,18 @@ class TestRpcCalls(BaseMixin):
         transaction = {
             "from": self.sender_account.address,
             "to": self.recipient_account.address,
-            "value": self.web3_client.toWei(InputData.SAMPLE_AMOUNT.value, Unit.ETHER),
+            "value": self.web3_client.toWei(1, Unit.ETHER),
             "chainId": self.web3_client._chain_id,
             "gasPrice": self.web3_client.gas_price(),
             "gas": 0,
             "nonce": self.web3_client.eth.get_transaction_count(self.sender_account.address),
         }
         transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
-
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
-
-        params = [signed_tx.rawTransaction.hex()]
-
-        model = RpcRequestFactory.build_send_raw_trx(params=params)
-        actual_result = self.json_rpc_client.do_call(model)
-
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
-        assert self.is_hex(actual_result.result), AssertMessage.DOES_NOT_START_WITH_0X.value
+        response = self.assert_rpc_response(
+            "eth_sendRawTransaction", params=signed_tx.rawTransaction.hex(), raises=False
+        )
+        assert self.is_hex(response.result), f"Invalid response result {response.result}"
 
     @pytest.mark.parametrize(
         "params, raises",
@@ -284,73 +252,63 @@ class TestRpcCalls(BaseMixin):
     def test_rpc_call_eth_get_transaction_receipt(self):
         """Verify implemented rpc calls work eth_getTransactionReceipt"""
 
-        tx_receipt = self.process_transaction(
-            self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
+        tx_receipt = self.process_transaction(self.sender_account, self.recipient_account, 10)
+        response = self.assert_rpc_response(
+            method="eth_getTransactionReceipt", params=tx_receipt.transactionHash.hex(), raises=False
         )
-
-        params = [tx_receipt.transactionHash.hex()]
-        model = RpcRequestFactory.build_trx_receipt(params=params)
-        actual_result = self.json_rpc_client.do_call(model, TrxReceiptResponse)
-
-        assert actual_result.id == model.id, AssertMessage.WRONG_ID.value
-        assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
-        assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
+        assert self.assert_result_object(response), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
     def test_eth_get_block_by_hash(self):
         """Verify implemented rpc calls work eth_getBlockByHash"""
 
-        tx_receipt = self.process_transaction(
-            self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
-        )
+        tx_receipt = self.process_transaction(self.sender_account, self.recipient_account, 10)
 
         params = [tx_receipt.blockHash.hex(), True]
-        payloads = RpcRequestFactory.build_block_by_hash(params=params)
+        response = self.assert_rpc_response(method="eth_getBlockByHash", params=params, raises=False)
+        assert self.assert_result_object(response), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
-        actual_result = self.json_rpc_client.do_call(payloads, request_models.BlockResponse)
-
-        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
-        assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
-        assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
-
-    @pytest.mark.parametrize("quantity_tag,full_trx", TAGS_TEST_DATA)
-    def test_eth_get_block_by_number_via_tags(self, quantity_tag: tp.Union[int, Tag], full_trx: bool):
+    @pytest.mark.parametrize(
+        "quantity_tag,full_trx,raises",
+        [
+            (Tag.EARLIEST, True, False),
+            (Tag.EARLIEST, False, True),
+            (Tag.LATEST, True, False),
+            (Tag.LATEST, False, True),
+            (Tag.PENDING, True, False),
+            (Tag.PENDING, False, True),
+        ],
+    )
+    def test_eth_get_block_by_number_via_tags(self, quantity_tag: Tag, full_trx: bool, raises: bool):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
-        params = RpcRequestParamsFactory.get_block_by_number(quantity_tag, full_trx)
-        payloads = RpcRequestFactory.build_block_by_number(params=params)
-
-        actual_result = self.json_rpc_client.do_call(payloads, request_models.BlockResponse)
-        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
+        params = [quantity_tag.value, full_trx]
+        response = self.assert_rpc_response(method="eth_getBlockByNumber", params=params, raises=raises)
+        if full_trx:
+            assert self.assert_result_object(response), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
     def test_eth_get_block_by_number_via_numbers(self):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
 
-        tx_receipt = self.process_transaction(
-            self.sender_account, self.recipient_account, input_data.InputData.SAMPLE_AMOUNT.value
+        tx_receipt = self.process_transaction(self.sender_account, self.recipient_account, 10)
+        response = self.assert_rpc_response(
+            method="eth_getBlockByNumber", params=[tx_receipt.blockNumber, True], raises=False
         )
+        assert self.assert_result_object(response), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
-        params = RpcRequestParamsFactory.get_block_by_number(tx_receipt.blockNumber, True)
-        payloads = RpcRequestFactory.build_block_by_number(params=params)
-
-        actual_result = self.json_rpc_client.do_call(payloads, request_models.BlockResponse)
-        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
-        assert self.assert_no_error_object(actual_result), AssertMessage.CONTAINS_ERROR
-        assert self.assert_result_object(actual_result), AssertMessage.DOES_NOT_CONTAIN_RESULT
-
-    def test_eth_block_number(self):
+    @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
+    def test_eth_block_number(self, params: tp.Union[str, bool], raises: bool):
         """Verify implemented rpc calls work work eth_blockNumber"""
-        payloads = RpcRequestFactory.build_block_number(params=[])
-        actual_result = self.json_rpc_client.do_call(payloads)
+        response = self.assert_rpc_response(method="eth_blockNumber", params=params, raises=raises)
+        if not params:
+            assert self.is_hex(response.result), f"Invalid response result {response.result}"
 
-        assert actual_result.id == payloads.id, AssertMessage.WRONG_ID.value
-        assert self.assert_is_successful_response(actual_result), AssertMessage.WRONG_TYPE.value
-        assert self.is_hex(actual_result.result), AssertMessage.DOES_NOT_START_WITH_0X.value
-
-    @pytest.mark.parametrize("params, raises", [(["latest"], False), ([], True)])
-    def test_eth_get_storage_at(self, params, raises):
+    @pytest.mark.parametrize(
+        "params, raises", [(Tag.LATEST, False), (Tag.PENDING, False), (Tag.EARLIEST, False), (None, True)]
+    )
+    def test_eth_get_storage_at(self, params: tp.Union[Tag, bool], raises: bool):
         """Verify implemented rpc calls work eht_getStorageAt"""
         if params:
-            params = [self.sender_account.address, hex(1)] + params
-        response = self.assert_rpc_response(method="eth_getStorageAt", params=params, raises=raises)
+            data = [self.sender_account.address, hex(1), params.value]
+        response = self.assert_rpc_response(method="eth_getStorageAt", params=data if params else params, raises=raises)
         if params:
             assert self.is_hex(response.result), f"Invalid response: {response.result}"
 
@@ -401,7 +359,7 @@ class TestRpcCalls(BaseMixin):
 
     @pytest.mark.parametrize(
         "params, raises",
-        [(32, False), ("earliest", False), ("param", True), (None, True)],
+        [(32, False), (Tag.EARLIEST.value, False), ("param", True), (None, True)],
     )
     def test_eth_get_block_transaction_count_by_number(self, params, raises):
         """Verify implemented rpc calls work eth_getBlockTransactionCountByNumber"""
@@ -413,7 +371,7 @@ class TestRpcCalls(BaseMixin):
 
     @pytest.mark.parametrize(
         "params, raises",
-        [([32, 1], False), ([32, "earliest"], False), ([16, 1], True), ([], True)],
+        [([32, 1], False), ([32, Tag.EARLIEST.value], False), ([16, 1], True), ([], True)],
     )
     def test_eth_get_transaction_by_block_hash_and_index(self, params, raises):
         """Verify implemented rpc calls work eth_getTransactionByBlockHashAndIndex"""
@@ -427,7 +385,7 @@ class TestRpcCalls(BaseMixin):
 
     @pytest.mark.parametrize(
         "params, raises",
-        [([32, 1], False), (["earliest", 0], False), (["param", 1], True), ([], True)],
+        [([32, 1], False), ([Tag.EARLIEST.value, 0], False), (["param", 1], True), ([], True)],
     )
     def test_eth_get_transaction_by_block_number_and_index(self, params, raises):
         """Verify implemented rpc calls work eth_getTransactionByBlockNumberAndIndex"""

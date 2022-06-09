@@ -1,15 +1,24 @@
+import typing as tp
+from dataclasses import dataclass
+from decimal import Decimal
+
 import allure
 import pytest
-import typing as tp
 import web3
-from decimal import Decimal
 from eth_account import Account
+
 from integration.tests.base import BaseTests
 from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.json_rpc_client import JsonRpcClient
 from integration.tests.basic.helpers.unit import Unit
-from integration.tests.basic.model.model import AccountData, JsonRpcErrorResponse, JsonRpcResponse
-from integration.tests.basic.test_data.input_data import InputData
+from integration.tests.basic.model.model import JsonRpcErrorResponse, JsonRpcResponse
+from integration.tests.basic.test_data import input_data
+
+
+@dataclass
+class AccountData:
+    address: str
+    key: str = ""
 
 
 class BaseMixin(BaseTests):
@@ -17,6 +26,7 @@ class BaseMixin(BaseTests):
     json_rpc_client: JsonRpcClient = None
     _sender_account: Account = None
     _recipient_account: Account = None
+    _invalid_account: AccountData = None
 
     @pytest.fixture(autouse=True)
     def prepare_env(self, json_rpc_client):
@@ -35,6 +45,13 @@ class BaseMixin(BaseTests):
             account = self.create_account_with_balance()
             BaseMixin._recipient_account = account
         return BaseMixin._recipient_account
+
+    @property
+    def invalid_account(self):
+        if not BaseMixin._recipient_account:
+            account = self.create_invalid_account()
+            BaseMixin._invalid_account = account
+        return BaseMixin._invalid_account
 
     @pytest.fixture(autouse=True)
     def prepare_account(self):
@@ -63,11 +80,18 @@ class BaseMixin(BaseTests):
         """Requests faucet for Neon"""
         self.faucet.request_neon(wallet, amount=amount)
 
-    def create_account_with_balance(self, amount: int = InputData.FAUCET_1ST_REQUEST_AMOUNT.value) -> Account:
+    def create_account_with_balance(
+        self, amount: int = input_data.InputData.FAUCET_1ST_REQUEST_AMOUNT.value
+    ) -> Account:
         """Creates a new account with balance"""
         account = self.create_account()
         self.request_faucet_neon(account.address, amount)
         return account
+
+    @staticmethod
+    def create_invalid_account() -> AccountData:
+        """Create non existing account"""
+        return AccountData(address=input_data.gen_hash_of_block(20))
 
     def process_transaction(
         self,
@@ -86,12 +110,14 @@ class BaseMixin(BaseTests):
         amount: int,
         gas: tp.Optional[int] = 0,
         gas_price: tp.Optional[int] = None,
-        error_message: str = "",
+        error_message: str = None,
+        exception: tp.Any = None,
     ) -> tp.Union[web3.types.TxReceipt, None]:
         """Processes transaction, expects a failure"""
         tx: tp.Union[web3.types.TxReceipt, None] = None
+        exception = exception or Exception
         with allure.step(f"Sending {amount} from {sender_account.address} to {recipient_account.address}"):
-            with pytest.raises(Exception, match=error_message):
+            with pytest.raises(exception, match=error_message):
                 tx = self.web3_client.send_neon(sender_account, recipient_account, amount, gas, gas_price)
             return tx
 
@@ -127,7 +153,7 @@ class BaseMixin(BaseTests):
         gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.fromWei(
             self.web3_client.gas_price(), Unit.ETHER
         )
-        return float(round(gas_used_in_tx, InputData.ROUND_DIGITS.value))
+        return float(round(gas_used_in_tx, input_data.InputData.ROUND_DIGITS.value))
 
     @staticmethod
     def assert_result_object(data: JsonRpcResponse) -> bool:
@@ -139,7 +165,7 @@ class BaseMixin(BaseTests):
         gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.fromWei(
             self.web3_client.gas_price(), Unit.ETHER
         )
-        return float(round(gas_used_in_tx, InputData.ROUND_DIGITS.value))
+        return float(round(gas_used_in_tx, input_data.InputData.ROUND_DIGITS.value))
 
     @staticmethod
     def assert_no_error_object(data: JsonRpcErrorResponse) -> bool:
@@ -151,7 +177,7 @@ class BaseMixin(BaseTests):
         return isinstance(actual_result, JsonRpcResponse)
 
     @staticmethod
-    def check_balance(expected: float, actual: float, rnd_dig: int = InputData.ROUND_DIGITS.value):
+    def check_balance(expected: float, actual: float, rnd_dig: int = input_data.InputData.ROUND_DIGITS.value):
         """Compares the balance with expectation"""
         expected_dec = round(expected, rnd_dig)
         actual_dec = round(actual, rnd_dig)

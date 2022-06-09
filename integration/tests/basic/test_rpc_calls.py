@@ -117,27 +117,27 @@ class TestRpcCalls(BaseMixin):
 
     @pytest.mark.parametrize(
         "params, raises",
-        [(Tag.LATEST, False), (Tag.PENDING, False), (Tag.EARLIEST, False), ({}, True)],
+        [(Tag.LATEST, False), (Tag.PENDING, False), (Tag.EARLIEST, False), (None, True)],
     )
-    def test_eth_call(self, params: Tag, raises: bool):
+    def test_eth_call(self, params: tp.Union[Tag, None], raises: bool):
         """Verify implemented rpc calls work eth_call"""
         if params:
             params = [{"to": self.recipient_account.address, "data": hex(pow(10, 14))}, params.value]
         response = self.assert_rpc_response("eth_call", params=params, raises=raises)
-        if params:
+        if hasattr(response, "result"):
             assert response.result == "0x", f"Invalid response result, `{response.result}`"
 
     @pytest.mark.parametrize(
         "params, raises",
         [(hex(1), False), (None, True)],
     )
-    def test_eth_estimate_gas(self, params: str, raises: bool):
+    def test_eth_estimate_gas(self, params: tp.Union[str, None], raises: bool):
         """Verify implemented rpc calls work eth_estimateGas"""
         if params:
             params = {"from": self.sender_account.address, "to": self.recipient_account.address, "value": params}
         response = self.assert_rpc_response("eth_estimateGas", params=params, raises=raises)
-        if params:
-            assert self.is_hex(response.result), f"Invalid the amount {response.result} of gas used"
+        if hasattr(response, "result"):
+            assert self.is_hex(response.result), f"Invalid the amount {response.result} of gas used."
 
     @pytest.mark.parametrize(
         "params, raises",
@@ -146,7 +146,7 @@ class TestRpcCalls(BaseMixin):
     def test_eth_gas_price(self, params: tp.Union[str, None], raises: bool):
         """Verify implemented rpc calls work eth_gasPrice"""
         response = self.assert_rpc_response("eth_gasPrice", params=params, raises=raises)
-        if not params:
+        if hasattr(response, "result"):
             assert self.is_hex(response.result), f"Invalid current gas price `{response.result}` in wei"
 
     @pytest.mark.parametrize("params, raises", [(Tag.LATEST, False), (Tag.PENDING, False), (Tag.EARLIEST, False)])
@@ -166,38 +166,38 @@ class TestRpcCalls(BaseMixin):
         [(Tag.LATEST, False), (Tag.PENDING, False), (Tag.EARLIEST, False), (None, True)],
     )
     @pytest.mark.only_stands
-    def test_eth_get_balance(self, params: Tag, raises: bool):
+    def test_eth_get_balance(self, params: tp.Union[Tag, str], raises: bool):
         """Verify implemented rpc calls work eth_getBalance"""
         response = self.assert_rpc_response(
             "eth_getBalance", params=[self.sender_account.address, params.value if params else params], raises=raises
         )
-        if params:
+        if hasattr(response, "result"):
             assert self.is_hex(response.result), AssertMessage.WRONG_AMOUNT.value
 
     @pytest.mark.parametrize(
         "params, raises",
         [(Tag.LATEST, False), (Tag.PENDING, False), (Tag.EARLIEST, False), (None, True)],
     )
-    def test_eth_get_code(self, params, raises):
+    def test_eth_get_code(self, params: tp.Union[Tag, None], raises: bool):
         """Verify implemented rpc calls work eth_getCode"""
-        response = self.assert_rpc_response(
-            "eth_getCode", params=[self.sender_account.address, params.value if params else params], raises=raises
-        )
         if params:
+            params = [self.sender_account.address, params.value]
+        response = self.assert_rpc_response("eth_getCode", params=params, raises=raises)
+        if hasattr(response, "result"):
             assert response.result == "0x", f"Invalid result code {response.result} at a given address."
 
     @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
     def test_web3_client_version(self, params: tp.Union[str, None], raises: bool):
         """Verify implemented rpc calls work web3_clientVersion"""
         response = self.assert_rpc_response("web3_clientVersion", params=params, raises=raises)
-        if not params:
+        if hasattr(response, "result"):
             assert "Neon" in response.result, "Invalid response result"
 
     @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
     def test_net_version(self, params: tp.Union[str, None], raises: bool):
         """Verify implemented rpc calls work work net_version"""
         response = self.assert_rpc_response("net_version", params=params, raises=raises)
-        if not params:
+        if hasattr(response, "result"):
             response.result == self.web3_client._chain_id, f"Invalid response result {response.result}"
 
     @pytest.mark.parametrize(
@@ -206,14 +206,16 @@ class TestRpcCalls(BaseMixin):
     )
     def test_rpc_call_eth_get_transaction_count(self, params: tp.Union[Tag, None], raises: bool):
         """Verify implemented rpc calls work eth_getTransactionCount"""
+        if params:
+            self.process_transaction(self.sender_account, self.recipient_account, 1)
+            params = [self.sender_account.address, params.value]
 
-        self.process_transaction(self.sender_account, self.recipient_account, 1)
         response = self.assert_rpc_response(
             "eth_getTransactionCount",
-            params=[self.sender_account.address, params.value if params else params],
+            params=params,
             raises=raises,
         )
-        if params:
+        if hasattr(response, "result"):
             assert self.is_hex(response.result), AssertMessage.DOES_NOT_START_WITH_0X.value
 
     def test_rpc_call_eth_send_raw_transaction(self):
@@ -237,16 +239,14 @@ class TestRpcCalls(BaseMixin):
 
     @pytest.mark.parametrize(
         "params, raises",
-        [(32, False), (16, True), ([], True)],
+        [(32, False), (16, True), (None, True)],
     )
-    def test_rpc_call_eth_get_transaction_by_hash(self, params, raises):
+    def test_rpc_call_eth_get_transaction_by_hash(self, params: tp.Union[int, None], raises: bool):
         """Verify implemented rpc calls work eth_getTransactionByHash"""
-
         if params:
             params = input_data.gen_hash_of_block(params)
         response = self.assert_rpc_response(method="eth_getTransactionByHash", params=params, raises=raises)
-
-        if not raises:
+        if hasattr(response, "result"):
             assert response.result is None, f"Invalid response: {response.result}"
 
     def test_rpc_call_eth_get_transaction_receipt(self):
@@ -282,12 +282,11 @@ class TestRpcCalls(BaseMixin):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
         params = [quantity_tag.value, full_trx]
         response = self.assert_rpc_response(method="eth_getBlockByNumber", params=params, raises=raises)
-        if full_trx:
+        if hasattr(response, "result"):
             assert self.assert_result_object(response), AssertMessage.DOES_NOT_CONTAIN_RESULT
 
     def test_eth_get_block_by_number_via_numbers(self):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
-
         tx_receipt = self.process_transaction(self.sender_account, self.recipient_account, 10)
         response = self.assert_rpc_response(
             method="eth_getBlockByNumber", params=[tx_receipt.blockNumber, True], raises=False
@@ -298,7 +297,7 @@ class TestRpcCalls(BaseMixin):
     def test_eth_block_number(self, params: tp.Union[str, bool], raises: bool):
         """Verify implemented rpc calls work work eth_blockNumber"""
         response = self.assert_rpc_response(method="eth_blockNumber", params=params, raises=raises)
-        if not params:
+        if hasattr(response, "result"):
             assert self.is_hex(response.result), f"Invalid response result {response.result}"
 
     @pytest.mark.parametrize(
@@ -307,9 +306,9 @@ class TestRpcCalls(BaseMixin):
     def test_eth_get_storage_at(self, params: tp.Union[Tag, bool], raises: bool):
         """Verify implemented rpc calls work eht_getStorageAt"""
         if params:
-            data = [self.sender_account.address, hex(1), params.value]
-        response = self.assert_rpc_response(method="eth_getStorageAt", params=data if params else params, raises=raises)
-        if params:
+            params = [self.sender_account.address, hex(1), params.value]
+        response = self.assert_rpc_response(method="eth_getStorageAt", params=params, raises=raises)
+        if hasattr(response, "result"):
             assert self.is_hex(response.result), f"Invalid response: {response.result}"
 
     @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
@@ -318,10 +317,10 @@ class TestRpcCalls(BaseMixin):
         self.assert_rpc_response(method="eth_mining", params=params, raises=raises)
 
     @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
-    def test_eth_syncing(self, params, raises):
+    def test_eth_syncing(self, params: tp.Union[str, None], raises: bool):
         """Verify implemented rpc calls work eth_syncing"""
         response = self.assert_rpc_response(method="eth_syncing", params=params, raises=raises)
-        if not params:
+        if hasattr(response, "result"):
             err_msg = f"Invalid response: {response.result}"
             if not isinstance(response.result, bool):
                 assert all(isinstance(block, int) for block in response.result.values()), err_msg
@@ -329,90 +328,90 @@ class TestRpcCalls(BaseMixin):
                 assert not response.result, err_msg
 
     @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
-    def test_net_peer_count(self, params, raises):
+    def test_net_peer_count(self, params: tp.Union[str, None], raises: bool):
         """Verify implemented rpc calls work net_peerCount"""
         response = self.assert_rpc_response(method="net_peerCount", params=params, raises=raises)
-        if not params:
+        if hasattr(response, "result"):
             assert self.is_hex(response.result), f"Invalid response: {response.result}"
 
     @pytest.mark.parametrize(
         "params, raises",
         [("0x6865", False), ("param", True), (None, True)],
     )
-    def test_web3_sha3(self, params, raises):
+    def test_web3_sha3(self, params: tp.Union[str, None], raises: bool):
         """Verify implemented rpc calls work web3_sha3"""
         response = self.assert_rpc_response(method="web3_sha3", params=params, raises=raises)
-        if self.is_hex(params):
+        if hasattr(response, "result"):
             assert response.result.startswith("e5105")
 
     @pytest.mark.parametrize(
         "params, raises",
         [(32, False), (16, True), (None, True)],
     )
-    def test_eth_get_block_transaction_count_by_hash(self, params, raises):
+    def test_eth_get_block_transaction_count_by_hash(self, params: tp.Union[int, None], raises: bool):
         """Verify implemented rpc calls work eth_getBlockTransactionCountByHash"""
         if params:
             params = input_data.gen_hash_of_block(params)
         response = self.assert_rpc_response(method="eth_getBlockTransactionCountByHash", params=params, raises=raises)
-        if not raises:
+        if hasattr(response, "result"):
             assert self.is_hex(response.result), f"Invalid response: {response.result}"
 
     @pytest.mark.parametrize(
         "params, raises",
         [(32, False), (Tag.EARLIEST.value, False), ("param", True), (None, True)],
     )
-    def test_eth_get_block_transaction_count_by_number(self, params, raises):
+    def test_eth_get_block_transaction_count_by_number(self, params: tp.Union[int, str, None], raises: bool):
         """Verify implemented rpc calls work eth_getBlockTransactionCountByNumber"""
-        if params and isinstance(params, int):
+        if isinstance(params, int):
             params = hex(params)
         response = self.assert_rpc_response(method="eth_getBlockTransactionCountByNumber", params=params, raises=raises)
-        if not raises:
+        if hasattr(response, "result"):
             assert self.is_hex(response.result), f"Invalid response: {response.result}"
 
     @pytest.mark.parametrize(
         "params, raises",
         [([32, 1], False), ([32, Tag.EARLIEST.value], False), ([16, 1], True), ([], True)],
     )
-    def test_eth_get_transaction_by_block_hash_and_index(self, params, raises):
+    def test_eth_get_transaction_by_block_hash_and_index(self, params: tp.List[tp.Union[int, str]], raises: bool):
         """Verify implemented rpc calls work eth_getTransactionByBlockHashAndIndex"""
         if params:
             params[0] = input_data.gen_hash_of_block(params[0])
         response = self.assert_rpc_response(
             method="eth_getTransactionByBlockHashAndIndex", params=params, raises=raises
         )
-        if not raises:
+        if hasattr(response, "result"):
             assert response.result is None, f"Invalid response: {response.result}"
 
     @pytest.mark.parametrize(
         "params, raises",
         [([32, 1], False), ([Tag.EARLIEST.value, 0], False), (["param", 1], True), ([], True)],
     )
-    def test_eth_get_transaction_by_block_number_and_index(self, params, raises):
+    def test_eth_get_transaction_by_block_number_and_index(self, params: tp.List[tp.Union[int, str]], raises: bool):
         """Verify implemented rpc calls work eth_getTransactionByBlockNumberAndIndex"""
         if params:
             params = list(map(lambda i: hex(i) if isinstance(i, int) else i, params))
         response = self.assert_rpc_response(
             method="eth_getTransactionByBlockNumberAndIndex", params=params, raises=raises
         )
-        if not raises:
+        if hasattr(response, "result"):
             assert response.result is None, f"Invalid response: {response.result}"
 
     @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
-    def test_eth_get_work(self, params, raises):
+    def test_eth_get_work(self, params: tp.Union[str, None], raises: bool):
         """Verify implemented rpc calls work eth_getWork"""
         response = self.assert_rpc_response(method="eth_getWork", params=params, raises=raises)
-        if not raises:
+        if hasattr(response, "result"):
             assert len(response.result) >= 3, f"Invalid response result: {response.result}"
 
     @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
-    def test_eth_hash_rate(self, params, raises):
+    def test_eth_hash_rate(self, params: tp.Union[str, None], raises: bool):
         """Verify implemented rpc calls work eth_hashrate"""
         response = self.assert_rpc_response(method="eth_hashrate", params=params, raises=raises)
-        if not raises:
+        if hasattr(response, "result"):
             assert self.is_hex(response.result), f"Invalid response result: {response.result}"
 
     @pytest.mark.parametrize("method", UNSUPPORTED_METHODS)
-    def test_check_unsupported_methods(self, method):
+    def test_check_unsupported_methods(self, method: str):
         """Check that endpoint was not implemented"""
         with pytest.raises(AssertionError):
             payloads = getattr(RpcRequestFactory(), method)()

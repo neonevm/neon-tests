@@ -10,11 +10,8 @@ from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.error_message import ErrorMessage
 from integration.tests.basic.helpers.rpc_request_factory import RpcRequestFactory
 from integration.tests.basic.helpers.unit import Unit
-from integration.tests.basic.model.model import AccountData
 from integration.tests.basic.test_data.input_data import InputData
 
-INVALID_ADDRESS = AccountData(address="0x12345")
-ENS_NAME_ERROR = f"ENS name: '{INVALID_ADDRESS.address}' is invalid."
 U64_MAX = 18_446_744_073_709_551_615
 DEFAULT_ERC20_BALANCE = 1000
 
@@ -269,14 +266,13 @@ class TestTransfer(BaseMixin):
 
     def test_send_token_to_an_invalid_address(self):
         """Send token to an invalid address"""
-        sender_account = self.create_account_with_balance()
         balance_before = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER))
 
         self.process_transaction_with_failure(
-            sender_account=sender_account,
-            recipient_account=INVALID_ADDRESS,
+            sender_account=self.sender_account,
+            recipient_account=self.invalid_account,
             amount=InputData.DEFAULT_TRANSFER_AMOUNT.value,
-            error_message=ENS_NAME_ERROR,
+            exception=web3.exceptions.InvalidAddress,
         )
 
         balance_after = float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER))
@@ -284,17 +280,14 @@ class TestTransfer(BaseMixin):
 
     def test_send_more_token_to_non_existing_address(self):
         """Send token to a non-existing address"""
-        sender_account = self.create_account_with_balance()
-        recipient_address = AccountData(address=sender_account.address.replace("1", "2").replace("3", "4"))
-
         self.process_transaction_with_failure(
-            sender_account=sender_account,
-            recipient_account=recipient_address,
+            sender_account=self.sender_account,
+            recipient_account=self.invalid_account,
             amount=InputData.DEFAULT_TRANSFER_AMOUNT.value,
-            error_message=ErrorMessage.EIP55_INVALID_CHECKSUM.value,
+            exception=web3.exceptions.InvalidAddress,
         )
 
-        self.assert_balance(sender_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
+        self.assert_balance(self.sender_account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
 
     def test_check_erc_1820_transaction(self):
         """Check ERC-1820 transaction (without chain_id in sign)"""

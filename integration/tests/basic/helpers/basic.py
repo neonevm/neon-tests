@@ -1,3 +1,4 @@
+import time
 import typing as tp
 from dataclasses import dataclass
 from decimal import Decimal
@@ -74,6 +75,7 @@ class BaseMixin(BaseTests):
 
     def get_balance(self, address: str) -> Decimal:
         """Gets balance of account"""
+        time.sleep(5)
         return self.web3_client.eth.get_balance(address)
 
     def request_faucet_neon(self, wallet: str, amount: int):

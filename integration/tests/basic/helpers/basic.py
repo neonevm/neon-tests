@@ -54,6 +54,14 @@ class BaseMixin(BaseTests):
             BaseMixin._invalid_account = account
         return BaseMixin._invalid_account
 
+    @property
+    def sender_account_balance(self):
+        return float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER))
+
+    @property
+    def recipient_account_balance(self):
+        return float(self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER))
+
     @pytest.fixture(autouse=True)
     def prepare_account(self):
         """Prevents calling to a fixture with the same name from operators' tests"""
@@ -75,7 +83,6 @@ class BaseMixin(BaseTests):
 
     def get_balance(self, address: str) -> Decimal:
         """Gets balance of account"""
-        time.sleep(5)
         return self.web3_client.eth.get_balance(address)
 
     def request_faucet_neon(self, wallet: str, amount: int):

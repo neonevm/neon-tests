@@ -281,7 +281,6 @@ class TestTransfer(BaseMixin):
     def test_send_more_token_to_non_existing_address(self):
         """Send token to a non-existing address"""
         balance_before = self.sender_account_balance
-        print(f"before {balance_before}")
         self.process_transaction_with_failure(
             sender_account=self.sender_account,
             recipient_account=self.invalid_account,
@@ -289,7 +288,6 @@ class TestTransfer(BaseMixin):
             exception=web3.exceptions.InvalidAddress,
         )
         balance_after = self.sender_account_balance
-        print(f"after {balance_after}")
         assert (
             balance_before == balance_after
         ), f"Initial balance {balance_before} != balance after missing send {balance_after}"

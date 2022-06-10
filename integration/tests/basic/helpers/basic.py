@@ -33,6 +33,11 @@ class BaseMixin(BaseTests):
     def prepare_env(self, json_rpc_client):
         self.json_rpc_client = json_rpc_client
 
+    @pytest.fixture(autouse=True)
+    def wait(self):
+        """Wait for nonce updated"""
+        time.sleep(3)
+
     @property
     def sender_account(self):
         if not BaseMixin._sender_account:

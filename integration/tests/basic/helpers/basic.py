@@ -33,6 +33,7 @@ class BaseMixin(BaseTests):
     def prepare_env(self, json_rpc_client):
         self.json_rpc_client = json_rpc_client
 
+    # TODO: Fix nonce to small error and remove it
     @pytest.fixture(autouse=True)
     def wait(self):
         """Wait for nonce updated"""

@@ -226,16 +226,32 @@ def generate_allure_environment(network_name: str):
 def install_python_requirements():
     command = "pip3 install --upgrade -r deploy/requirements/prod.txt  -r deploy/requirements/devel.txt"
     subprocess.check_call(command, shell=True)
-    subprocess.check_call("pip3 install --no-deps -r deploy/requirements/nodeps.txt", shell=True)
-    # install ui test deps, download the Playwright package and install browser binaries for Chromium, Firefox and WebKit.
-    subprocess.check_call("playwright install", shell=True)
+    command = "pip3 install --no-deps -r deploy/requirements/nodeps.txt"
+    subprocess.check_call(command, shell=True)
+
+
+def install_ui_requirements():
+    click.echo(green("Install python requirements for Playwright"))
+    command = "pip3 install --upgrade -r deploy/requirements/ui.txt"
+    subprocess.check_call(command, shell=True)
+    # On Linux Playwright require `xclip` to work.
     if sys.platform in ["linux", "linux2"]:
-        click.echo(
-            red(
-                f"{10*'!'} Warning: Linux requires `xclip` to work. Install with your package manager, e.g. `sudo apt install xclip` {10*'!'}"
-            ),
-            color=True,
-        )
+        try:
+            command = "apt update && apt install xclip"
+            subprocess.check_call(command, shell=True)
+        except Exception:
+            click.echo(
+                red(
+                    f"{10*'!'} Warning: Linux requires `xclip` to work. "
+                    f"Install with your package manager, e.g. `sudo apt install xclip` {10*'!'}"
+                ),
+                color=True,
+            )
+    # install ui test deps,
+    # download the Playwright package and install browser binaries for Chromium, Firefox and WebKit.
+    click.echo(green("Install browser binaries for Chromium, Firefox and WebKit."))
+    subprocess.check_call("playwright install", shell=True)
+    click.echo(green("prepare ui tests extensions and extensions user_data"))
     # prepare ui tests extensions and extensions user_data
     base_path = pathlib.Path(__file__).parent
     for item in (base_path / BASE_EXTENSIONS_TPL_DATA).iterdir():
@@ -261,13 +277,17 @@ def cli():
 
 
 @cli.command(help="Update base python requirements")
-@click.option("-d", "--dep", default='all', type=click.Choice(['all', 'python', 'oz']), help="Which deps install")
+@click.option(
+    "-d", "--dep", default="devel", type=click.Choice(["devel", "python", "oz", "ui"]), help="Which deps install"
+)
 @catch_traceback
 def requirements(dep):
-    if dep in ["all", "python"]:
+    if dep in ["devel", "python"]:
         install_python_requirements()
-    if dep in ["all", "oz"]:
+    if dep in ["devel", "oz"]:
         install_oz_requirements()
+    if dep == "ui":
+        install_ui_requirements()
 
 
 @cli.command(help="Run any type of tests")

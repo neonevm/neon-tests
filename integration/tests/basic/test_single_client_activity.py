@@ -26,19 +26,17 @@ class TestSingleClient(BaseMixin):
     @pytest.mark.parametrize("amount", [(1), (10_001)])
     def test_verify_faucet_work_single_request(self, amount: int):
         """Verify faucet work (request drop for several accounts): single request"""
-        for _ in range(3):
-            account = self.create_account()
-            with allure.step(FAUCET_REQUEST_MESSAGE):
-                self.request_faucet_neon(account.address, amount)
-            self.assert_balance(account.address, amount)
+        account = self.create_account()
+        with allure.step(FAUCET_REQUEST_MESSAGE):
+            self.request_faucet_neon(account.address, amount)
+        self.assert_balance(account.address, amount)
 
     def test_verify_faucet_work_multiple_requests(self):
         """Verify faucet work (request drop for several accounts): double request"""
         initial_amount = InputData.FAUCET_1ST_REQUEST_AMOUNT.value
-        for _ in range(3):
-            account = self.create_account()
-            with allure.step(FAUCET_REQUEST_MESSAGE):
-                self.request_faucet_neon(account.address, initial_amount)
-            with allure.step(FAUCET_REQUEST_MESSAGE):
-                self.request_faucet_neon(account.address, InputData.FAUCET_2ND_REQUEST_AMOUNT.value)
-            self.assert_balance(account.address, initial_amount + InputData.FAUCET_2ND_REQUEST_AMOUNT.value)
+        account = self.create_account()
+        with allure.step(FAUCET_REQUEST_MESSAGE):
+            self.request_faucet_neon(account.address, initial_amount)
+        with allure.step(FAUCET_REQUEST_MESSAGE):
+            self.request_faucet_neon(account.address, InputData.FAUCET_2ND_REQUEST_AMOUNT.value)
+        self.assert_balance(account.address, initial_amount + InputData.FAUCET_2ND_REQUEST_AMOUNT.value)

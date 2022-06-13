@@ -61,7 +61,7 @@ class NeonWeb3Client:
         gas_price: tp.Optional[int] = None,
     ) -> web3.types.TxReceipt:
         to_addr = to if isinstance(to, str) else to.address
-        gas_price = gas_price or self.gas_price()
+        nonce = self._web3.eth.get_transaction_count(from_.address)
         transaction = {
             "from": from_.address,
             "to": to_addr,
@@ -69,7 +69,7 @@ class NeonWeb3Client:
             "chainId": self._chain_id,
             "gasPrice": gas_price or self.gas_price(),
             "gas": gas,
-            "nonce": self._web3.eth.get_transaction_count(from_.address),
+            "nonce": nonce,
         }
         if transaction["gas"] == 0:
             transaction["gas"] = self._web3.eth.estimate_gas(transaction)
@@ -160,7 +160,7 @@ class NeonWeb3Client:
     ) -> tp.Tuple[tp.Any, web3.types.TxReceipt]:
         if account is None:
             raise Exception("account parameter is None")
-        
+
         contract_interface = helpers.get_contract_interface(contract_name, version)
 
         contract_deploy_tx = self.deploy_contract(
@@ -171,8 +171,6 @@ class NeonWeb3Client:
             gas=gas,
         )
 
-        contract = self.eth.contract(
-            address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
-        )
+        contract = self.eth.contract(address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"])
 
         return contract, contract_deploy_tx

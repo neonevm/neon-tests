@@ -22,7 +22,3 @@ ipfshttpclient==0.8.0a2
 jsonschema>=3.2.0,<4.0.0
 lru-dict>=1.1.6,<2.0.0
 protobuf>=3.10.0,<4
-
-# deps for ui tests
-playwright>=1.22
-pyperclip3==0.4.1

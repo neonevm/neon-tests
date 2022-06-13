@@ -1,0 +1,3 @@
+# deps for ui tests
+playwright>=1.22
+pyperclip3==0.4.1

@@ -1,4 +1,4 @@
-import typing as tp
+import os
 from decimal import Decimal, getcontext
 
 import allure
@@ -16,7 +16,7 @@ from solana.transaction import Transaction
 from spl.token.instructions import create_associated_token_account, get_associated_token_address
 
 from ..base import BaseTests
-from utils import helpers
+from utils import helpers, web3client
 
 NEON_PRICE = 0.25
 
@@ -25,6 +25,17 @@ DECIMAL_CONTEXT = getcontext()
 DECIMAL_CONTEXT.prec = 9
 
 SOLCX_VERSIONS = ["0.6.6", "0.8.6", "0.8.10"]
+
+
+@pytest.fixture(scope="session", autouse=True)
+def heat_stand(web3_client: web3client.NeonWeb3Client, faucet):
+    """After redeploy stand, first 10-20 requests spend more sols than expected."""
+    if "CI" not in os.environ:
+        return
+    acc = web3_client.eth.account.create()
+    faucet.request_neon(acc.address, 100)
+    for _ in range(50):
+        web3_client.send_neon(acc, web3_client.eth.account.create(), 1)
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -3,6 +3,9 @@ import pytest
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.test_data.input_data import InputData
 
+from busypie import FIVE_SECONDS, wait_at_most
+from busypie.durations import SECOND
+
 
 FAUCET_REQUEST_MESSAGE = "requesting faucet for Neon"
 
@@ -39,4 +42,7 @@ class TestSingleClient(BaseMixin):
             self.request_faucet_neon(account.address, initial_amount)
         with allure.step(FAUCET_REQUEST_MESSAGE):
             self.request_faucet_neon(account.address, InputData.FAUCET_2ND_REQUEST_AMOUNT.value)
-        self.assert_balance(account.address, initial_amount + InputData.FAUCET_2ND_REQUEST_AMOUNT.value)
+        wait_at_most(30*SECOND).poll_interval(FIVE_SECONDS).until(
+            lambda: self.get_balance_from_wei(account.address)
+            == initial_amount + InputData.FAUCET_2ND_REQUEST_AMOUNT.value
+        )

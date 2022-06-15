@@ -16,21 +16,18 @@ class TestSingleClient(BaseMixin):
         account = self.create_account()
         self.assert_balance(account.address, 0)
 
-    @pytest.mark.only_stands
-    def test_check_tokens_in_wallet_neon(self):
-        """Check tokens in wallet: neon"""
-        account = self.create_account()
-        with allure.step(FAUCET_REQUEST_MESSAGE):
-            self.request_faucet_neon(account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-        self.assert_balance(account.address, InputData.FAUCET_1ST_REQUEST_AMOUNT.value)
-
     @pytest.mark.parametrize("amount", [(1), (10_001)])
     def test_verify_faucet_work_single_request(self, amount: int):
         """Verify faucet work (request drop for several accounts): single request"""
         account = self.create_account()
         with allure.step(FAUCET_REQUEST_MESSAGE):
             self.request_faucet_neon(account.address, amount)
-        self.assert_balance(account.address, amount)
+        try_until(
+            lambda: self.get_balance_from_wei(account.address) == amount,
+            interval=3,
+            timeout=30,
+            error_msg=f"Expected balance mismatch " f"{self.get_balance_from_wei(account.address)} != {amount}",
+        )
 
     def test_verify_faucet_work_multiple_requests(self):
         """Verify faucet work (request drop for several accounts): double request"""

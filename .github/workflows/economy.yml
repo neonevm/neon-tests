@@ -113,7 +113,7 @@ jobs:
         uses: QuintilianoNery/action-allure-report-V2@master
       - name: "Fix permissions"
         if: env.RUNNER == 'neon-hosted'
-        run: sudo chown deploy:deploy -R allure-report
+        run: sudo chown deploy:deploy -R /home/deploy/actions-runner/_work/neon-tests/neon-tests/allure-report
       - name: "Upload allure history"
         if: always()
         run: "./clickfile.py upload-allure-report economy --network ${{ needs.prepare-env.outputs.network }}"

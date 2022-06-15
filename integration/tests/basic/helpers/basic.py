@@ -62,11 +62,11 @@ class BaseMixin(BaseTests):
 
     @property
     def sender_account_balance(self):
-        return float(self.web3_client.fromWei(self.get_balance(self.sender_account.address), Unit.ETHER))
+        return self.get_balance_from_wei(self.sender_account.address)
 
     @property
     def recipient_account_balance(self):
-        return float(self.web3_client.fromWei(self.get_balance(self.recipient_account.address), Unit.ETHER))
+        return self.get_balance_from_wei(self.recipient_account.address)
 
     @pytest.fixture(autouse=True)
     def prepare_account(self):
@@ -90,6 +90,10 @@ class BaseMixin(BaseTests):
     def get_balance(self, address: str) -> Decimal:
         """Gets balance of account"""
         return self.web3_client.eth.get_balance(address)
+
+    def get_balance_from_wei(self, address: str) -> float:
+        """Gets balance from Wei"""
+        return float(self.web3_client.fromWei(self.get_balance(address), Unit.ETHER))
 
     def request_faucet_neon(self, wallet: str, amount: int):
         """Requests faucet for Neon"""
@@ -149,7 +153,7 @@ class BaseMixin(BaseTests):
 
     def assert_balance(self, address: str, expected_amount: float, rnd_dig: int = None):
         """Compares balance of an account with expectation"""
-        balance = float(self.web3_client.fromWei(self.get_balance(address), Unit.ETHER))
+        balance = self.get_balance_from_wei(address)
         self.check_balance(expected_amount, balance, rnd_dig=rnd_dig)
 
     def assert_balance_less(
@@ -158,7 +162,7 @@ class BaseMixin(BaseTests):
         calculated_balance: float,
     ):
         """Compares balance of an account, balance must be less than init balance"""
-        balance = float(self.web3_client.fromWei(self.get_balance(address), Unit.ETHER))
+        balance = self.get_balance_from_wei(address)
         assert round(balance) <= round(
             calculated_balance
         ), f"Balance after transferring {balance} must be less or equal {calculated_balance}"

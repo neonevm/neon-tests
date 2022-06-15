@@ -8,7 +8,7 @@ class Faucet:
         self._url = faucet_url
         self._session = session or requests.Session()
 
-    def request_neon(self, address: str, amount: int = 100):
+    def request_neon(self, address: str, amount: int = 100) -> requests.Response:
         assert address.startswith("0x")
         url = urllib.parse.urljoin(self._url, "request_neon")
         response = self._session.post(url, json={"amount": amount, "wallet": address})

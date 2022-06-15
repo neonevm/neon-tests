@@ -114,7 +114,7 @@ jobs:
       - name: "Fix permissions"
         if: always()
         continue-on-error: true
-        run: sudo chown deploy:deploy -R /home/deploy/actions-runner/_work/neon-tests/neon-tests/allure-report
+        run: sudo chown deploy:deploy -R allure-report
       - name: "Upload allure history"
         if: always()
         run: "./clickfile.py upload-allure-report economy --network ${{ needs.prepare-env.outputs.network }}"

@@ -26,6 +26,9 @@ DECIMAL_CONTEXT.prec = 9
 
 SOLCX_VERSIONS = ["0.6.6", "0.8.6", "0.8.10"]
 
+INSUFFICIENT_FUNDS_ERROR = "insufficient funds for"
+GAS_LIMIT_ERROR = "gas limit reached"
+
 
 @pytest.fixture(scope="session", autouse=True)
 def heat_stand(web3_client: web3client.NeonWeb3Client, faucet):
@@ -97,7 +100,7 @@ class TestEconomics(BaseTests):
         assert sol_balance_before > sol_balance_after, "Operator balance after getBalance doesn't changed"
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    @pytest.mark.only_stands
+    @pytest.mark.skip(reason="https://github.com/neonlabsorg/neon-evm/issues/701")
     def test_send_neon_to_exist_account(self):
         """Verify how many cost neon send to use who was already initialized"""
         acc2 = self.web3_client.create_account()
@@ -117,7 +120,7 @@ class TestEconomics(BaseTests):
 
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    def test_send_when_not_enough_for_gas(self):
+    def test_send_when_not_enough_neon_to_gas(self):
         acc2 = self.web3_client.create_account()
 
         assert self.web3_client.get_balance(acc2) == 0
@@ -129,7 +132,7 @@ class TestEconomics(BaseTests):
 
         acc3 = self.web3_client.create_account()
 
-        with pytest.raises(ValueError, match=r"insufficient funds for") as e:
+        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR) as e:
             self.web3_client.send_neon(acc2, acc3, 1)
 
         sol_balance_after = self.operator.get_solana_balance()
@@ -138,6 +141,7 @@ class TestEconomics(BaseTests):
         assert sol_balance_before == sol_balance_after
         assert neon_balance_before == neon_balance_after
 
+    @pytest.mark.skip(reason="https://github.com/neonlabsorg/neon-evm/issues/701")
     def test_erc20wrapper_transfer(self, erc20wrapper):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
@@ -147,8 +151,10 @@ class TestEconomics(BaseTests):
         assert contract.functions.balanceOf(self.acc.address).call() == 0
 
         transfer_tx = self.web3_client.send_erc20(spl_owner, self.acc, 25, contract.address, abi=contract.abi)
+        print(transfer_tx)
 
         assert contract.functions.balanceOf(self.acc.address).call() == 25
+        time.sleep(90)
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
 
@@ -353,7 +359,7 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        with pytest.raises(ValueError, match="The account balance is less than required"):
+        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
             contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
 
         sol_balance_after_deploy = self.operator.get_solana_balance()
@@ -369,7 +375,7 @@ class TestEconomics(BaseTests):
         acc2 = self.web3_client.create_account()
         self.web3_client.send_neon(self.acc, acc2, 0.001)
 
-        with pytest.raises(ValueError, match="The account balance is less than required"):
+        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
             self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
 
         self.web3_client.send_neon(self.acc, acc2, 50)
@@ -399,6 +405,7 @@ class TestEconomics(BaseTests):
         assert sol_balance_after_deploy == sol_balance_after
         assert neon_balance_after_deploy == neon_balance_after
 
+    @pytest.mark.xfail(ValueError, reason="A lot of accounts, wait for fix")
     def test_cost_resize_account(self):
         """Verify how much cost account resize"""
         sol_balance_before = self.operator.get_solana_balance()
@@ -448,7 +455,7 @@ class TestEconomics(BaseTests):
             }
         )
 
-        with pytest.raises(ValueError, match="insufficient funds for"):
+        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
             self.web3_client.send_transaction(acc2, inc_tx)
 
         sol_balance_after = self.operator.get_solana_balance()
@@ -579,7 +586,7 @@ class TestEconomics(BaseTests):
                 "gasPrice": self.web3_client.gas_price(),
             }
         )
-        with pytest.raises(ValueError, match="insufficient funds for"):
+        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
             self.web3_client.send_transaction(acc2, instruction_tx)
 
         sol_balance_after = self.operator.get_solana_balance()
@@ -667,7 +674,7 @@ class TestEconomics(BaseTests):
                 "gasPrice": self.web3_client.gas_price(),
             }
         )
-        with pytest.raises(ValueError, match="insufficient funds for"):
+        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
             instruction_receipt = self.web3_client.send_transaction(acc2, instruction_tx)
 
         sol_balance_after = self.operator.get_solana_balance()
@@ -719,6 +726,7 @@ class TestEconomics(BaseTests):
         assert neon_balance_after > neon_balance_before, "NEON Balance incorrect"
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
+    @pytest.mark.xfail(ValueError, reason="A lot of accounts, wait for fix")
     def test_deploy_contract_more_1kb(self):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
@@ -740,7 +748,7 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        with pytest.raises(ValueError, match="The account balance is less than required"):
+        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
             contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Fat", "0.8.10", account=acc2)
 
         sol_balance_after = self.operator.get_solana_balance()
@@ -753,9 +761,10 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "Fat", "0.8.10", account=self.acc, gas=1000
-        )
+        with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
+            self.web3_client.deploy_and_get_contract(
+                "Fat", "0.8.10", account=self.acc, gas=1000
+            )
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
@@ -795,7 +804,7 @@ class TestEconomics(BaseTests):
         contract_address = self.web3_client.toChecksumAddress(
             self.web3_client.keccak(rlp.encode((bytes.fromhex(acc2.address[2:]), nonce)))[-20:].hex()
         )
-        with pytest.raises(ValueError, match="gas limit reached"):
+        with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
             self.web3_client.send_neon(acc2, contract_address, 1, gas=1)
 
         self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=acc2)

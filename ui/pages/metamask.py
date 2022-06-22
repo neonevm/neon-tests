@@ -99,6 +99,14 @@ class MetaMaskAccountsPage(BasePage):
         if self.active_account != account:
             self.accounts_menu.select_item(f"//div[@class='account-menu__name' and text()='{account}']")
 
+    def switch_assets(self) -> None:
+        """Switch to assets tab"""
+        self.page.query_selector("//button[text()='Assets']").click()
+
+    def switch_activity(self) -> None:
+        """Switch to assets tab"""
+        self.page.query_selector("//button[text()='Activity']").click()
+
     def _get_balance(self, account: str, token: str) -> float:
         """Return token balance on account"""
         if self.active_account != account:

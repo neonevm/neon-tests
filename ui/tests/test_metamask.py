@@ -4,7 +4,6 @@ Created on 2021-10-01
 @author: Eugeny Kurkovich
 """
 
-import os
 import pathlib
 import typing as tp
 from dataclasses import dataclass
@@ -16,17 +15,6 @@ from playwright.sync_api import BrowserType
 from ui import libs
 from ui.pages import metamask, neon_faucet
 from ui.plugins import browser
-
-try:
-    METAMASK_PASSWORD = os.environ["METAMASK_PASSWORD"]
-except KeyError:
-    raise AssertionError("Please set the `METAMASK_PASSWORD` environment variable to connect to the wallet.")
-# "1234Neon5678"
-
-
-METAMASK_EXT_DIR = "extensions/chrome/plugins/metamask"
-"""Relative path to MetaMask extension source
-"""
 
 NEON_FAUCET_URL = "https://neonfaucet.org/"
 """Neon Test Airdrops
@@ -47,9 +35,8 @@ class Accounts:
 
 
 @pytest.fixture(scope="session")
-def extension_dir(chrome_extension_base_path) -> pathlib.Path:
-    """Path to MetaMask extension source"""
-    return chrome_extension_base_path / METAMASK_EXT_DIR
+def required_extensions() -> tp.List:
+    return "metamask"
 
 
 @pytest.fixture
@@ -57,7 +44,7 @@ def context(
     browser_type: BrowserType,
     browser_context_args: tp.Dict,
     browser_type_launch_args: tp.Dict,
-    extension_dir,
+    chrome_extensions_path: pathlib.Path,
     chrome_extension_user_data: pathlib.Path,
 ) -> BrowserContext:
     """Override default context for MetaMasks load"""
@@ -65,7 +52,7 @@ def context(
         browser_type,
         browser_context_args,
         browser_type_launch_args,
-        ext_source=extension_dir,
+        ext_source=chrome_extensions_path,
         user_data_dir=chrome_extension_user_data.as_posix(),
     )
     yield context
@@ -76,11 +63,12 @@ class TestMetaMaskPipeLIne:
     """Tests NeonEVM proxy functionality via MetaMask"""
 
     @pytest.fixture
-    def metamask_page(self, page, network: str):
+    def metamask_page(self, page, network: str, chrome_extension_password):
         login_page = metamask.MetaMaskLoginPage(page)
-        mm_page = login_page.login(password=METAMASK_PASSWORD)
+        mm_page = login_page.login(password=chrome_extension_password)
         mm_page.check_funds_protection()
         mm_page.change_network(network)
+        mm_page.switch_assets()
         # wait MetaMask initialization
         libs.try_until(
             lambda: int(mm_page.active_account_neon_balance) != BASE_NEON_BALANCE,

@@ -136,7 +136,7 @@ def _handle_page_goto(page: Page, args: tp.List[tp.Any], kwargs: tp.Dict[str, tp
 @pytest.fixture
 def page(context: BrowserContext, base_url: str, use_persistent_context: bool) -> tp.Generator[Page, None, None]:
     if use_persistent_context:
-        page = context.wait_for_event("page")
+        page = context.wait_for_event("page", timeout=60000)
     else:
         page = context.new_page()
     page._goto = page.goto  # type: ignore

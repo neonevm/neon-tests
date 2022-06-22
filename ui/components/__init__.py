@@ -5,7 +5,7 @@ from playwright.sync_api import Page
 
 class Button:
     def __init__(
-        self, page: Page, text: tp.Optional[str] = None, selector: tp.Optional[str] = None, timeout: int = 300
+        self, page: Page, text: tp.Optional[str] = None, selector: tp.Optional[str] = None, timeout: int = 3000
     ):
         self.page = page
         self._timeout = timeout
@@ -27,6 +27,8 @@ class Input:
         element_id: tp.Optional[str] = None,
         label: tp.Optional[str] = None,
         selector: tp.Optional[str] = None,
+        placeholder: tp.Optional[str] = None,
+        name: tp.Optional[str] = None,
     ) -> None:
         self.page = page
         if selector:
@@ -35,6 +37,10 @@ class Input:
             self._selector = f'//input[@id="{element_id}"]'
         elif label:
             self._selector = f'//label[text()="{label}"]/following-sibling::div//input'
+        elif placeholder:
+            self._selector = f'//input[@placeholder="{placeholder}"]'
+        elif name:
+            self._selector = f'//input[@name="{name}"]'
 
     def fill(self, text: str) -> None:
         el = self.page.query_selector(self._selector)
@@ -87,7 +93,6 @@ class CheckBox:
 
 
 class Combobox:
-
     def __init__(
         self,
         page: Page,

@@ -1,3 +1,4 @@
+import os
 import pathlib
 import typing as tp
 from datetime import datetime
@@ -15,6 +16,15 @@ EVM_NETWORKS = {
 }
 
 
+CHROME_EXT_DIR = "extensions/chrome/plugins"
+"""Relative path to Chrome extension source
+"""
+
+CHROME_USER_DATA_DIR = "user_data"
+"""Relative path to Chrome extensions user data
+"""
+
+
 def pytest_addoption(parser):
     parser.addoption("--network", action="store", default="devnet", help="Which stand use")
 
@@ -25,16 +35,35 @@ def network(pytestconfig: tp.Any) -> tp.Optional[str]:
 
 
 @pytest.fixture(scope="session")
-def chrome_extension_base_path() -> pathlib.Path:
-    return pathlib.Path(__file__).parent
+def chrome_extensions_path(required_extensions: tp.Union[tp.List, str]) -> pathlib.Path:
+    path = ""
+    if isinstance(required_extensions, str):
+        required_extensions = [required_extensions]
+    for ext in required_extensions:
+        source = pathlib.Path(__file__).parent / CHROME_EXT_DIR / ext
+        if not path:
+            path = source
+        else:
+            path = path / f",{source}"
+    return path
+
+
+@pytest.fixture(scope="session", autouse=True)
+def chrome_extension_user_data() -> pathlib.Path:
+    """Path to Chrome extension user data"""
+    path = (pathlib.Path(__file__).parent / CHROME_EXT_DIR).parent / CHROME_USER_DATA_DIR
+    user_data = libs.clone_user_data(path)
+    yield user_data
+    libs.rm_tree(user_data)
 
 
 @pytest.fixture(scope="session")
-def chrome_extension_user_data(extension_dir) -> pathlib.Path:
-    """Path to Chrome extension user data"""
-    user_data = libs.clone_user_data(extension_dir.parent.parent)
-    yield user_data
-    libs.rm_tree(user_data)
+def chrome_extension_password() -> str:
+    """Chrome extensions password `1234Neon5678`"""
+    try:
+        return os.environ["CHROME_EXT_PASSWORD"]
+    except KeyError:
+        raise AssertionError("Please set the `CHROME_EXT_PASSWORD` environment variable to login into extension")
 
 
 @pytest.fixture
@@ -43,7 +72,7 @@ def use_persistent_context() -> bool:
     return True
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def save_screenshot_on_fail(request: pytest.FixtureRequest, page: Page):
     fail_count = request.session.testsfailed
     yield

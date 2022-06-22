@@ -154,13 +154,10 @@ class NeonWeb3Client:
         self,
         contract_name: str,
         version: str,
-        account: tp.Optional[eth_account.signers.local.LocalAccount] = None,
+        account: eth_account.signers.local.LocalAccount,
         constructor_args: tp.Optional[tp.Any] = None,
         gas: tp.Optional[int] = 0,
     ) -> tp.Tuple[tp.Any, web3.types.TxReceipt]:
-        if account is None:
-            raise Exception("account parameter is None")
-
         contract_interface = helpers.get_contract_interface(contract_name, version)
 
         contract_deploy_tx = self.deploy_contract(

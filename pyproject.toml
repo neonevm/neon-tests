@@ -4,6 +4,7 @@ target-version = ['py39']
 
 [tool.pytest.ini_options]
 markers = [
-    "only_stands: this tests work only on test stands",
+    "only_stands: this tests works only on test stands",
+    "only_devnet: this tests works only on devnet env"
 ]
 addopts = "--alluredir=allure-results"

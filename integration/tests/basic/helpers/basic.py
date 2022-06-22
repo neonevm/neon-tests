@@ -6,14 +6,13 @@ from decimal import Decimal
 import allure
 import pytest
 import web3
-from eth_account import Account
+import eth_account.signers.local
 
+from utils.consts import Unit, InputTestConstants
+from utils.helpers import gen_hash_of_block
+from utils.apiclient import JsonRPCSession
 from integration.tests.base import BaseTests
-from integration.tests.basic.helpers.error_message import ErrorMessage
-from integration.tests.basic.helpers.json_rpc_client import JsonRpcClient
-from integration.tests.basic.helpers.unit import Unit
-from integration.tests.basic.model.model import JsonRpcErrorResponse, JsonRpcResponse
-from integration.tests.basic.test_data import input_data
+from integration.tests.basic.helpers.assert_message import ErrorMessage
 
 
 @dataclass
@@ -24,9 +23,9 @@ class AccountData:
 
 class BaseMixin(BaseTests):
 
-    json_rpc_client: JsonRpcClient = None
-    _sender_account: Account = None
-    _recipient_account: Account = None
+    json_rpc_client: JsonRPCSession = None
+    _sender_account: eth_account.signers.local.LocalAccount = None
+    _recipient_account: eth_account.signers.local.LocalAccount = None
     _invalid_account: AccountData = None
 
     @pytest.fixture(autouse=True)
@@ -75,7 +74,7 @@ class BaseMixin(BaseTests):
 
     @staticmethod
     def assert_expected_raises(
-        response: tp.Union[JsonRpcResponse, JsonRpcErrorResponse], err_message: str = None
+        response, err_message: str = None
     ) -> None:
         """Assertions about expected exceptions"""
         with pytest.raises(AssertionError) as excinfo:
@@ -83,7 +82,7 @@ class BaseMixin(BaseTests):
         if err_message:
             assert err_message in str(excinfo.value)
 
-    def create_account(self) -> Account:
+    def create_account(self):
         """Creates a new account"""
         return self.web3_client.create_account()
 
@@ -100,8 +99,8 @@ class BaseMixin(BaseTests):
         self.faucet.request_neon(wallet, amount=amount)
 
     def create_account_with_balance(
-        self, amount: int = input_data.InputData.FAUCET_1ST_REQUEST_AMOUNT.value
-    ) -> Account:
+        self, amount: int = InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value
+    ):
         """Creates a new account with balance"""
         account = self.create_account()
         self.request_faucet_neon(account.address, amount)
@@ -110,23 +109,23 @@ class BaseMixin(BaseTests):
     @staticmethod
     def create_invalid_account() -> AccountData:
         """Create non existing account"""
-        return AccountData(address=input_data.gen_hash_of_block(20))
+        return AccountData(address=gen_hash_of_block(20))
 
-    def process_transaction(
+    def send_neon(
         self,
-        sender_account: Account,
-        recipient_account: Account,
+        sender_account: eth_account.signers.local.LocalAccount,
+        recipient_account: eth_account.signers.local.LocalAccount,
         amount: float = 0.0,
     ) -> tp.Union[web3.types.TxReceipt, None]:
         """Processes transaction"""
         with allure.step(f"Sending {amount} from {sender_account.address} to {recipient_account.address}"):
             return self.web3_client.send_neon(sender_account, recipient_account, amount)
 
-    def process_transaction_with_failure(
+    def send_neon_with_failure(
         self,
-        sender_account: Account,
-        recipient_account: tp.Union[Account, AccountData],
-        amount: int,
+        sender_account: eth_account.signers.local.LocalAccount,
+        recipient_account: tp.Union[eth_account.signers.local.LocalAccount, AccountData],
+        amount: tp.Union[int, float, Decimal],
         gas: tp.Optional[int] = 0,
         gas_price: tp.Optional[int] = None,
         error_message: str = None,
@@ -141,10 +140,11 @@ class BaseMixin(BaseTests):
             return tx
 
     def check_value_error_if_less_than_required(
-        self, sender_account: Account, recipient_account: Account, amount: int
+        self, sender_account: eth_account.signers.local.LocalAccount,
+            recipient_account: eth_account.signers.local.LocalAccount, amount: int
     ) -> tp.Union[web3.types.TxReceipt, None]:
         """Checks in case the balance is less than required"""
-        return self.process_transaction_with_failure(
+        return self.send_neon_with_failure(
             sender_account=sender_account,
             recipient_account=recipient_account,
             amount=amount,
@@ -172,31 +172,22 @@ class BaseMixin(BaseTests):
         gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.fromWei(
             self.web3_client.gas_price(), Unit.ETHER
         )
-        return float(round(gas_used_in_tx, input_data.InputData.ROUND_DIGITS.value))
-
-    @staticmethod
-    def assert_result_object(data: JsonRpcResponse) -> bool:
-        """Checks that the result sub object is present"""
-        return hasattr(data, "result")
+        return float(round(gas_used_in_tx, InputTestConstants.ROUND_DIGITS.value))
 
     @allure.step("calculating gas")
     def calculate_trx_gas(self, tx_receipt: web3.types.TxReceipt) -> float:
         gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.fromWei(
             self.web3_client.gas_price(), Unit.ETHER
         )
-        return float(round(gas_used_in_tx, input_data.InputData.ROUND_DIGITS.value))
+        return float(round(gas_used_in_tx, InputTestConstants.ROUND_DIGITS.value))
 
     @staticmethod
-    def assert_no_error_object(data: JsonRpcErrorResponse) -> bool:
+    def assert_no_error_object(data) -> bool:
         """Checks that the error sub object is not present"""
         return not hasattr(data, "error")
 
     @staticmethod
-    def assert_is_successful_response(actual_result: tp.Union[JsonRpcResponse, JsonRpcErrorResponse]) -> bool:
-        return isinstance(actual_result, JsonRpcResponse)
-
-    @staticmethod
-    def check_balance(expected: float, actual: float, rnd_dig: int = input_data.InputData.ROUND_DIGITS.value):
+    def check_balance(expected: float, actual: float, rnd_dig: int = InputTestConstants.ROUND_DIGITS.value):
         """Compares the balance with expectation"""
         expected_dec = round(expected, rnd_dig)
         actual_dec = round(actual, rnd_dig)

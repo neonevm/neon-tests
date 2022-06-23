@@ -66,11 +66,9 @@ class TestTransfer(BaseMixin):
         )
         self.assert_balance(self.recipient_account.address, initial_recipient_neon_balance, rnd_dig=3)
 
-    @pytest.mark.parametrize("transfer_amount", [(1), (10), (100), (0)])
+    @pytest.mark.parametrize("transfer_amount", [0, 1, 10, 100])
     def test_send_spl_wrapped_account_from_one_account_to_another(self, transfer_amount: int, erc20wrapper):
-        """Send spl wrapped account from one account to another
-        Send zero: spl
-        """
+        """Send spl wrapped account from one account to another"""
 
         contract, spl_owner = erc20wrapper
         initial_spl_balance = contract.functions.balanceOf(self.recipient_account.address).call()
@@ -269,20 +267,6 @@ class TestTransfer(BaseMixin):
         balance_after = self.sender_account_balance
         assert balance_before == balance_after
 
-    def test_send_more_token_to_non_existing_address(self):
-        """Send token to a non-existing address"""
-        balance_before = self.sender_account_balance
-        self.send_neon_with_failure(
-            sender_account=self.sender_account,
-            recipient_account=self.invalid_account,
-            amount=InputTestConstants.DEFAULT_TRANSFER_AMOUNT.value,
-            exception=web3.exceptions.InvalidAddress,
-        )
-        balance_after = self.sender_account_balance
-        assert (
-            balance_before == balance_after
-        ), f"Initial balance {balance_before} != balance after missing send {balance_after}"
-
     def test_check_erc_1820_transaction(self):
         """Check ERC-1820 transaction (without chain_id in sign)"""
 
@@ -396,12 +380,11 @@ class TestTransactionsValidation(BaseMixin):
         sender_amount = 1
         sender_account = self.create_account_with_balance(sender_amount)
         recipient_account = self.web3_client.create_account()
-        amount = 0.9
 
         self.send_neon_with_failure(
             sender_account=sender_account,
             recipient_account=recipient_account,
-            amount=amount,
+            amount=sender_amount,
             error_message=ErrorMessage.INSUFFICIENT_FUNDS.value,
         )
 

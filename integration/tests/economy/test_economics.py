@@ -99,7 +99,6 @@ class TestEconomics(BaseTests):
         assert sol_balance_before > sol_balance_after, "Operator balance after getBalance doesn't changed"
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    @pytest.mark.xfail(reason="https://github.com/neonlabsorg/neon-evm/issues/701", raises=AssertionError)
     def test_send_neon_to_exist_account(self):
         """Verify how many cost neon send to use who was already initialized"""
         acc2 = self.web3_client.create_account()
@@ -140,7 +139,6 @@ class TestEconomics(BaseTests):
         assert sol_balance_before == sol_balance_after
         assert neon_balance_before == neon_balance_after
 
-    @pytest.mark.xfail(reason="https://github.com/neonlabsorg/neon-evm/issues/701", raises=AssertionError)
     def test_erc20wrapper_transfer(self, erc20wrapper):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
@@ -305,7 +303,6 @@ class TestEconomics(BaseTests):
 
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    @pytest.mark.xfail(reason="https://github.com/neonlabsorg/neon-evm/issues/701", raises=AssertionError)
     def test_deploy_small_contract_less_100tx(self, sol_price):
         """Verify we are bill minimum for 100 instruction"""
         sol_balance_before = self.operator.get_solana_balance()
@@ -509,15 +506,14 @@ class TestEconomics(BaseTests):
             sol_balance_before_instruction - sol_balance_after, neon_balance_after - neon_balance_before_instruction
         )
 
-    @pytest.mark.xfail(reason="Strange when more 200000 instructions")
-    def test_contract_interact_more_500000_bpf(self):
+    def test_contract_interact_more_steps(self):
         """Deploy a contract with more 500000 bpf"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=self.acc)
 
         sol_balance_before_instruction = self.operator.get_solana_balance()
         neon_balance_before_instruction = self.operator.get_neon_balance()
 
-        instruction_tx = contract.functions.moreInstruction(0, 5000).buildTransaction(
+        instruction_tx = contract.functions.moreInstruction(0, 1500).buildTransaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
@@ -537,10 +533,9 @@ class TestEconomics(BaseTests):
             sol_balance_before_instruction - sol_balance_after, neon_balance_after - neon_balance_before_instruction
         )
 
-    @pytest.mark.xfail(reason="Strange when more 200000 instructions")
-    def test_contract_interact_more_500000_bpf_less_gas(self):
+    def test_contract_interact_more_steps_less_gas(self):
         """Deploy a contract with more 500000 bpf"""
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10")
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=self.acc)
 
         sol_balance_before_instruction = self.operator.get_solana_balance()
         neon_balance_before_instruction = self.operator.get_neon_balance()
@@ -550,20 +545,19 @@ class TestEconomics(BaseTests):
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
                 "gasPrice": self.web3_client.gas_price(),
+                "gas": 1000
             }
         )
-
-        receipt = self.web3_client.send_transaction(self.acc, instruction_tx, gas=1000)
-
-        assert receipt["status"] == 0
+        with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
+            receipt = self.web3_client.send_transaction(self.acc, instruction_tx)
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
 
-        assert sol_balance_after > sol_balance_before_instruction, "SOL Balance didn't change"
-        assert neon_balance_after > neon_balance_before_instruction, "NEON Balance incorrect"
+        assert sol_balance_after == sol_balance_before_instruction, "SOL Balance changes"
+        assert neon_balance_after == neon_balance_before_instruction, "NEON Balance incorrect"
 
-    def test_contract_interact_more_500000_bpf_less_neon(self):
+    def test_contract_interact_more_steps_less_neon(self):
         """Deploy a contract with more 500000 bpf"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=self.acc)
 
@@ -589,7 +583,7 @@ class TestEconomics(BaseTests):
         assert sol_balance_before_instruction == sol_balance_after, "SOL Balance changed"
         assert neon_balance_after == neon_balance_before_instruction, "NEON Balance incorrect"
 
-    @pytest.mark.xfail(reason="https://github.com/neonlabsorg/neon-evm/issues/701", raises=AssertionError)
+    @pytest.mark.xfail(reason="Unprofitable transaction, because we create account not in evm (will be fixed)")
     def test_tx_interact_more_1kb(self):
         """Send to contract a big text (tx more than 1 kb)"""
         sol_balance_before = self.operator.get_solana_balance()
@@ -678,7 +672,6 @@ class TestEconomics(BaseTests):
         assert sol_balance_before_instruction == sol_balance_after, "SOL Balance changed"
         assert neon_balance_after == neon_balance_before_instruction, "NEON Balance incorrect"
 
-    @pytest.mark.xfail(AssertionError, reason="This tx unprofitable because we create accounts before check gas")
     def test_tx_interact_more_1kb_less_gas(self):
         """Send to contract a big text (tx more than 1 kb)"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=self.acc)
@@ -710,18 +703,15 @@ class TestEconomics(BaseTests):
                 "gas": 100,
             }
         )
-        receipt = self.web3_client.send_transaction(self.acc, instruction_tx, gas=100)
-
-        assert receipt["status"] == 0
+        with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
+            receipt = self.web3_client.send_transaction(self.acc, instruction_tx)
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
 
-        assert sol_balance_before > sol_balance_after, "SOL Balance changed"
-        assert neon_balance_after > neon_balance_before, "NEON Balance incorrect"
-        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
+        assert sol_balance_before == sol_balance_after, "SOL Balance changed"
+        assert neon_balance_after == neon_balance_before, "NEON Balance incorrect"
 
-    @pytest.mark.xfail(reason="A lot of accounts, wait for fix", raises=ValueError)
     def test_deploy_contract_more_1kb(self):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
@@ -813,7 +803,6 @@ class TestEconomics(BaseTests):
             sol_balance_before - sol_balance_after_deploy, neon_balance_after_deploy - neon_balance_before
         )
 
-    @pytest.mark.xfail(reason="https://github.com/neonlabsorg/neon-evm/issues/701", raises=AssertionError)
     def test_interact_with_contract_from_non_payed_user(self):
         acc2 = self.web3_client.create_account()
         self.faucet.request_neon(acc2.address, 10)

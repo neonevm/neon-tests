@@ -9,7 +9,7 @@ import os
 from playwright._impl._api_types import TimeoutError
 
 from ui import components
-from ui.pages import phantom
+from ui.pages import phantom, metamask
 from . import BasePage
 
 
@@ -27,6 +27,37 @@ class NeonPassPage(BasePage):
         phantom_page.page_loaded()
         phantom_page.unlock(os.environ.get("CHROME_EXT_PASSWORD"))
 
+    @staticmethod
+    def _handle_withdraw_confirm(page) -> None:
+        """MetaMask withdraw confirm"""
+        page.wait_for_load_state()
+        try:
+            mm_confirm_page = metamask.MetaMaskWithdrawConfirmPage(page)
+            mm_confirm_page.withdraw_confirm()
+        except TimeoutError:
+            phantom_confirm_page = phantom.PhantomWithdrawConfirmPage(page)
+            phantom_confirm_page.withdraw_confirm()
+
+    @property
+    def _is_source_tab_loaded(self) -> bool:
+        """Waiting for source tab"""
+        try:
+            return self.page.wait_for_selector(
+                selector="//h3[text()='Source']/following::span[text()='From']", timeout=5000
+            )
+        except TimeoutError:
+            return False
+
+    @property
+    def _is_target_tab_loaded(self) -> bool:
+        """Waiting for target tab"""
+        try:
+            return self.page.wait_for_selector(
+                selector="//h3[text()='Target']/following::span[text()='To']", timeout=5000
+            )
+        except TimeoutError:
+            return False
+
     def change_transfer_source(self, source: str) -> None:
         """Change transfer source"""
         selector = f"//span[text()='From']/following-sibling::span[text()='{source}']"
@@ -37,7 +68,11 @@ class NeonPassPage(BasePage):
             ).click()
             self.page.wait_for_selector(selector)
 
-    def _connect_wallet(self, timeout: float = 5000):
+    def connect_wallet(self, timeout: float = 5000) -> None:
+        # Wait page laded
+        if self._is_source_tab_loaded or self._is_target_tab_loaded:
+            pass
+        # Connect to Wallet
         try:
             with self.page.context.expect_page(timeout=timeout) as phantom_page_info:
                 components.Button(
@@ -55,16 +90,6 @@ class NeonPassPage(BasePage):
                 "//div[@class='dropdown']/descendant::div[contains(text(), '0x4701')]", timeout=timeout
             )
 
-    def connect_source_wallet(self, timeout: float = 5000) -> None:
-        """Connect to source wallet to Neon"""
-        self.page.wait_for_selector(selector="//h3[text()='Source']/following::span[text()='From']")
-        self._connect_wallet(timeout=timeout)
-
-    def connect_destination_wallet(self, timeout: float = 5000) -> None:
-        """Connect destination wallet to Neon"""
-        self.page.wait_for_selector(selector="//h3[text()='Target']/following::span[text()='To']")
-        self._connect_wallet(timeout=timeout)
-
     def set_source_token(self, token: str, amount: float) -> None:
         """Set source token and amount ti transfer"""
         components.Button(
@@ -75,4 +100,19 @@ class NeonPassPage(BasePage):
         self.page.wait_for_selector(selector=f"//div[contains(@class, 'text-lg') and text()='{token}']").click()
         self.page.wait_for_selector(selector="//span[contains(text(), 'Balance:')]")
         components.Input(self.page, selector="//input[@value='0.0']").fill(str(amount))
-        self.page.wait_for_selector(selector="//div[contains(@class, 'button') and text()='Next']").click()
+
+    def next_tab(self) -> None:
+        """Got to next tab"""
+        button = self.page.wait_for_selector(selector="//div[contains(@class, 'button') and text()='Next']")
+        button.click()
+
+    def confirm_tokens_transfer(self, timeout: float = 5000) -> None:
+        """Confirm tokens withdraw"""
+        # Confirm withdraw
+        with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
+            self.page.wait_for_selector(selector="//div[contains(@class, 'button') and text()='Confirm']").click()
+        confirm_page = confirm_page_info.value
+        self._handle_withdraw_confirm(confirm_page)
+        self.page.wait_for_selector(selector="//div[text()='Transfer complete']")
+        components.Button(self.page, selector="//div/*[contains(@class, 'self-end')]").click()
+        self._is_source_tab_loaded

@@ -14,7 +14,7 @@ import requests
 from playwright.sync_api import BrowserContext
 from playwright.sync_api import BrowserType
 
-from ui.pages import metamask, phantom, neonpass
+from ui.pages import metamask, neonpass
 from ui.plugins import browser
 from ui import libs
 
@@ -94,40 +94,37 @@ class TestPhantomPipeLIne:
         mm_page = login_page.login(password=chrome_extension_password)
         mm_page.check_funds_protection()
         mm_page.change_network(network)
+        mm_page.switch_assets()
 
     @pytest.fixture
-    def phantom_page(self, page, network: str, chrome_extension_password: str):
-        # login_page = phantom.PhantomLoginPage(page)
-        # phantom_page = login_page.login(password=chrome_extension_password)
-        # mm_page.check_funds_protection()
-        # mm_page.change_network(network)
-        # wait MetaMask initialization
-        # libs.try_until(
-        #    lambda: int(mm_page.active_account_neon_balance) != BASE_NEON_BALANCE,
-        #    times=5,
-        #    interval=2,
-        #    raise_on_timeout=False,
-        # )
-        # return phantom_page
-        pass
-
-    @pytest.fixture
-    def neon_pass_page(self, context: BrowserContext) -> neonpass.NeonPassPage:
+    def neonpass_page(self, context: BrowserContext) -> neonpass.NeonPassPage:
         page = context.new_page()
         page.goto(NEON_PASS_URL)
         yield neonpass.NeonPassPage(page)
         page.close()
 
-    @pytest.fixture
-    def prepare_env(
-        self, request_sol: requests.Response, metamask_page: tp.Any, neon_pass_page: neonpass.NeonPassPage
+    @pytest.mark.parametrize(
+        "evm, tokens",
+        [
+            (EVM.solana, libs.Tokens.neon),
+            (EVM.solana, libs.Tokens.usdt),
+            (EVM.neon, libs.Tokens.neon),
+            (EVM.neon, libs.Tokens.usdt),
+        ],
+    )
+    def test_send_tokens(
+        self,
+        request_sol: requests.Response,
+        metamask_page: tp.Any,
+        neonpass_page: neonpass.NeonPassPage,
+        evm: str,
+        tokens: str,
     ) -> None:
         """Prepare test environment"""
-        neon_pass_page.change_transfer_source(EVM.neon)
-        neon_pass_page.connect_source_wallet()
-        neon_pass_page.set_source_token(libs.Tokens.neon, 10)
-        neon_pass_page.connect_destination_wallet()
-
-    def test_login(self, prepare_env) -> None:
-
-        time.sleep(7200)
+        neonpass_page.change_transfer_source(evm)
+        neonpass_page.connect_wallet()
+        neonpass_page.set_source_token(tokens, 1)
+        neonpass_page.next_tab()
+        neonpass_page.connect_wallet()
+        neonpass_page.next_tab()
+        neonpass_page.confirm_tokens_transfer()

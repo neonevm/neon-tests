@@ -33,21 +33,6 @@ class EVM:
     neon: str = "Neon"
 
 
-@dataclass
-class Wallet:
-    name: str
-    address: str = None
-
-
-@dataclass
-class Wallets:
-    """Phantom used wallets"""
-
-    wall_1 = Wallet("Wallet 1", "B4t7nCPsqKm38SZfV6k3pfrY7moQqYy7EBeMc7LgwYQ8")
-    wall_2 = Wallet("Wallet 2")
-    wall_3 = Wallet("Wallet 3")
-
-
 @pytest.fixture(scope="session")
 def required_extensions() -> tp.List:
     return ["metamask", "phantom"]

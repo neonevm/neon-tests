@@ -1,3 +1,4 @@
+import time
 import typing as tp
 
 import allure
@@ -56,7 +57,7 @@ class TestTransfer(BaseMixin):
             contract_deploy_tx["contractAddress"],
             abi=contract.abi,
         )
-
+        time.sleep(1) # FIXME: It's a temporary fix for devnet
         # ERC20 balance
         assert (
             contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE - transfer_amount
@@ -92,7 +93,8 @@ class TestTransfer(BaseMixin):
         """Send more than exist on account: neon"""
 
         sender_balance, recipient_balance = self.sender_account_balance, self.recipient_account_balance
-        self.check_value_error_if_less_than_required(self.sender_account, self.recipient_account, amount)
+        self.send_neon_with_failure(self.sender_account, self.recipient_account, amount,
+                                    error_message=ErrorMessage.INSUFFICIENT_FUNDS.value)
 
         self.assert_balance(self.sender_account.address, sender_balance, rnd_dig=1)
         self.assert_balance(self.recipient_account.address, recipient_balance, rnd_dig=1)
@@ -288,7 +290,7 @@ class TestTransfer(BaseMixin):
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
 
         params = [signed_tx.rawTransaction.hex()]
-        actual_result = self.json_rpc_client.send_rpc("eth_sendRawTransaction", params)
+        actual_result = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
 
         assert "0x" in actual_result["result"], AssertMessage.DOES_NOT_START_WITH_0X.value
 
@@ -345,7 +347,7 @@ class TestTransactionsValidation(BaseMixin):
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
 
         params = [signed_tx.rawTransaction.hex()]
-        actual_result = self.json_rpc_client.send_rpc("eth_sendRawTransaction", params)
+        actual_result = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
 
         assert (
             ErrorMessage.NONCE_TOO_HIGH.value in actual_result["error"]["message"]
@@ -363,14 +365,14 @@ class TestTransactionsValidation(BaseMixin):
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
 
         params = [signed_tx.rawTransaction.hex()]
-        self.json_rpc_client.send_rpc("eth_sendRawTransaction", params)
+        self.proxy_api.send_rpc("eth_sendRawTransaction", params)
 
         # 2nd transaction (with low nonce)
         transaction = self.create_tx_object(amount, 0)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
 
         params = [signed_tx.rawTransaction.hex()]
-        actual_result = self.json_rpc_client.send_rpc("eth_sendRawTransaction", params)
+        actual_result = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
 
         assert (
             ErrorMessage.NONCE_TOO_LOW.value in actual_result["error"]["message"]

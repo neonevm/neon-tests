@@ -117,8 +117,7 @@ class BaseMixin(BaseTests):
         exception = exception or Exception
         with allure.step(f"Sending {amount} from {sender_account.address} to {recipient_account.address}"):
             with pytest.raises(exception, match=error_message):
-                tx = self.web3_client.send_neon(sender_account, recipient_account, amount, gas, gas_price)
-            return tx
+                return self.web3_client.send_neon(sender_account, recipient_account, amount, gas, gas_price)
 
     def assert_balance(self, address: str, expected_amount: float, rnd_dig: int = None):
         """Compares balance of an account with expectation"""

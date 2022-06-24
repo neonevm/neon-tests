@@ -86,6 +86,7 @@ class TestTransfer(BaseMixin):
         # Neon balance
         self.assert_balance(self.recipient_account.address, initial_neon_balance, rnd_dig=3)
 
+    @pytest.mark.xfail(reason="https://github.com/neonlabsorg/proxy-model.py/issues/813")
     @pytest.mark.parametrize("amount", [11_000_501, 10_000_000.1])
     def test_send_more_than_exist_on_account_neon(self, amount: tp.Union[int, float]):
         """Send more than exist on account: neon"""
@@ -391,6 +392,7 @@ class TestTransactionsValidation(BaseMixin):
         self.assert_balance(sender_account.address, sender_amount)
         self.assert_balance(recipient_account.address, 0)
 
+    @pytest.mark.xfail(reason="https://github.com/neonlabsorg/proxy-model.py/issues/813")
     def test_there_are_not_enough_neons_for_transfer(self):
         """There are not enough Neons for transfer"""
         sender_amount = 1

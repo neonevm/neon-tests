@@ -12,10 +12,7 @@ on:
         description: "Stand name"
         options:
           - night-stand
-          - release-stand
-          - devnet-aws
           - devnet
-          - testnet
       runner:
         type: choice
         default: ubuntu-20.04

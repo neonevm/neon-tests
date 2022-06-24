@@ -15,9 +15,15 @@ LOG = logging.getLogger(__name__)
 
 
 @dataclass
+class Token:
+    name: str
+    address: str = None
+
+
+@dataclass
 class Tokens:
-    neon: str = "NEON"
-    usdt: str = "USDT"
+    neon = Token("NEON", "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g")
+    usdt = Token("USDT", "3vxj94fSd3jrhaGAwaEKGDPEwn5Yqs81Ay5j1BcdMqSZ")
 
 
 BASE_USER_DATA_DIR = "user_data"

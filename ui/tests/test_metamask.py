@@ -71,7 +71,7 @@ class TestMetaMaskPipeLIne:
         mm_page.switch_assets()
         # wait MetaMask initialization
         libs.try_until(
-            lambda: int(mm_page.active_account_neon_balance) != BASE_NEON_BALANCE,
+            lambda: int(mm_page.neon_balance) != BASE_NEON_BALANCE,
             times=5,
             interval=2,
             raise_on_timeout=False,
@@ -87,7 +87,7 @@ class TestMetaMaskPipeLIne:
 
     @pytest.mark.parametrize(
         "tokens",
-        [libs.Tokens.neon, libs.Tokens.usdt],
+        [libs.Tokens.neon.name, libs.Tokens.usdt.name],
     )
     def test_get_tokens_from_faucet(
         self,
@@ -96,13 +96,12 @@ class TestMetaMaskPipeLIne:
         tokens: str,
     ) -> None:
         """Checks Neon faucet pipeline"""
-        balance_before_airdrop_test = int(getattr(metamask_page, f"active_account_{tokens.lower()}_balance"))
+        balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
         neon_faucet_page.connect_wallet()
         neon_faucet_page.send_tokens(tokens, 100)
         # wait new balance
         libs.try_until(
-            lambda: balance_before_airdrop_test + 100
-            == int(getattr(metamask_page, f"active_account_{tokens.lower()}_balance")),
+            lambda: balance_before_airdrop_test + 100 == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
             timeout=90,
             interval=5,
             error_msg=f"{tokens} balance was not changed after airdrop",

@@ -54,7 +54,7 @@ BASE_EXTENSIONS_TPL_DATA = "ui/extensions/data"
 """
 
 EXTENSIONS_PATH = "ui/extensions/chrome/plugins"
-EXTENSIONS_USER_DATA_PATH = "ui/extensions/chrome/user_data"
+EXTENSIONS_USER_DATA_PATH = "ui/extensions/chrome"
 
 
 def green(s):
@@ -253,7 +253,7 @@ def install_ui_requirements():
     subprocess.check_call("playwright install", shell=True)
     click.echo(green("prepare ui tests extensions and extensions user_data"))
     # prepare ui tests extensions and extensions user_data
-    base_path = pathlib.Path(__file__).parent
+    base_path = pathlib.Path(__file__).absolute().parent
     for item in (base_path / BASE_EXTENSIONS_TPL_DATA).iterdir():
         if "extension" in item.name:
             cmd = f"tar -xf {item.as_posix()} -C {base_path / EXTENSIONS_PATH}"

@@ -3,7 +3,6 @@
 Created on 2022-06-16
 @author: Eugeny Kurkovich
 """
-import time
 import pathlib
 import typing as tp
 import uuid
@@ -14,10 +13,9 @@ import requests
 from playwright.sync_api import BrowserContext
 from playwright.sync_api import BrowserType
 
+from ui import libs
 from ui.pages import metamask, neonpass
 from ui.plugins import browser
-from ui import libs
-
 
 NEON_PASS_URL = "https://neonpass.live/"
 """tokens transfer service
@@ -31,6 +29,21 @@ SOL_API_URL = "https://api.devnet.solana.com/"
 class EVM:
     solana: str = "Solana"
     neon: str = "Neon"
+
+
+@dataclass
+class Wallet:
+    name: str
+    address: str = None
+
+
+@dataclass
+class Wallets:
+    """Phantom used wallets"""
+
+    wall_1 = Wallet("Wallet 1", "B4t7nCPsqKm38SZfV6k3pfrY7moQqYy7EBeMc7LgwYQ8")
+    wall_2 = Wallet("Wallet 2")
+    wall_3 = Wallet("Wallet 3")
 
 
 @pytest.fixture(scope="session")
@@ -73,6 +86,15 @@ def request_sol() -> None:
 class TestPhantomPipeLIne:
     """Tests NeonPass functionality via Phantom"""
 
+    @staticmethod
+    def check_balance(init_balance: float, page: metamask.MetaMaskAccountsPage, evm: str, token: str) -> bool:
+        """Compare balance"""
+        balance = float(getattr(page, f"{token.name.lower()}_balance"))
+        if evm == EVM.neon:
+            return init_balance > balance
+        elif evm == EVM.solana:
+            return init_balance < balance
+
     @pytest.fixture
     def metamask_page(self, page, network: str, chrome_extension_password):
         login_page = metamask.MetaMaskLoginPage(page)
@@ -80,6 +102,8 @@ class TestPhantomPipeLIne:
         mm_page.check_funds_protection()
         mm_page.change_network(network)
         mm_page.switch_assets()
+        yield mm_page
+        page.close()
 
     @pytest.fixture
     def neonpass_page(self, context: BrowserContext) -> neonpass.NeonPassPage:
@@ -100,16 +124,29 @@ class TestPhantomPipeLIne:
     def test_send_tokens(
         self,
         request_sol: requests.Response,
-        metamask_page: tp.Any,
+        metamask_page: metamask.MetaMaskAccountsPage,
         neonpass_page: neonpass.NeonPassPage,
         evm: str,
         tokens: str,
     ) -> None:
         """Prepare test environment"""
+
+        def get_balance() -> float:
+            return float(getattr(metamask_page, f"{tokens.name.lower()}_balance"))
+
+        init_balance = get_balance()
         neonpass_page.change_transfer_source(evm)
         neonpass_page.connect_wallet()
-        neonpass_page.set_source_token(tokens, 1)
+        neonpass_page.set_source_token(tokens.name, 1)
         neonpass_page.next_tab()
         neonpass_page.connect_wallet()
         neonpass_page.next_tab()
         neonpass_page.confirm_tokens_transfer()
+        metamask_page.page.bring_to_front()
+        # check balance
+        libs.try_until(
+            lambda: init_balance < get_balance() if evm == EVM.solana else init_balance > get_balance(),
+            timeout=60,
+            interval=5,
+            error_msg=f"{tokens.name} balance was not changed after tokens transfer",
+        )

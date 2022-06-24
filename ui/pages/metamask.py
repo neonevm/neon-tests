@@ -85,12 +85,14 @@ class MetaMaskAccountsPage(BasePage):
         return clipboard.paste()
 
     @property
-    def active_account_neon_balance(self) -> float:
-        return self._get_balance(self.active_account, libs.Tokens.neon)
+    def neon_balance(self) -> float:
+        self.switch_assets()
+        return self._get_balance(self.active_account, libs.Tokens.neon.name)
 
     @property
-    def active_account_usdt_balance(self) -> float:
-        return self._get_balance(self.active_account, libs.Tokens.usdt)
+    def usdt_balance(self) -> float:
+        self.switch_assets()
+        return self._get_balance(self.active_account, libs.Tokens.usdt.name)
 
     def change_network(self, network: str) -> None:
         """Select EVM network"""
@@ -131,7 +133,7 @@ class MetaMaskWithdrawConfirmPage(BasePage):
     def page_loaded(self):
         self.page.wait_for_selector(
             selector=f"//div[@class='confirm-page-container-header']/descendant::span[text()='{EVM_NETWORKS['devnet']}']",
-            timeout=10000
+            timeout=10000,
         )
 
     def _close_withdraw_notice_box(self):

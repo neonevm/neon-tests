@@ -51,7 +51,7 @@ def chrome_extensions_path(required_extensions: tp.Union[tp.List, str]) -> pathl
 @pytest.fixture(scope="session", autouse=True)
 def chrome_extension_user_data() -> pathlib.Path:
     """Path to Chrome extension user data"""
-    path = (pathlib.Path(__file__).parent / CHROME_EXT_DIR).parent / CHROME_USER_DATA_DIR
+    path = (pathlib.Path(__file__).absolute().parent / CHROME_EXT_DIR).parent / CHROME_USER_DATA_DIR
     user_data = libs.clone_user_data(path)
     yield user_data
     libs.rm_tree(user_data)

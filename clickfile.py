@@ -54,7 +54,7 @@ BASE_EXTENSIONS_TPL_DATA = "ui/extensions/data"
 """
 
 EXTENSIONS_PATH = "ui/extensions/chrome/plugins"
-EXTENSIONS_USER_DATA_PATH = "ui/extensions/chrome/user_data"
+EXTENSIONS_USER_DATA_PATH = "ui/extensions/chrome"
 
 
 def green(s):
@@ -253,7 +253,7 @@ def install_ui_requirements():
     subprocess.check_call("playwright install", shell=True)
     click.echo(green("prepare ui tests extensions and extensions user_data"))
     # prepare ui tests extensions and extensions user_data
-    base_path = pathlib.Path(__file__).parent
+    base_path = pathlib.Path(__file__).absolute().parent
     for item in (base_path / BASE_EXTENSIONS_TPL_DATA).iterdir():
         if "extension" in item.name:
             cmd = f"tar -xf {item.as_posix()} -C {base_path / EXTENSIONS_PATH}"
@@ -293,9 +293,10 @@ def requirements(dep):
 @cli.command(help="Run any type of tests")
 @click.option("-n", "--network", default=None, type=click.Choice(networks.keys()), help="In which stand run tests")
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
+@click.option("--ui-item", default="all", type=click.Choice(["faucet", "neonpass", "all"]), help="Which UI test run")
 @click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz", "ui"]))
 @catch_traceback
-def run(name, jobs, network=None):
+def run(name, jobs, ui_item, network=None):
     if not network and name == "ui":
         network = "devnet"
     elif not network:
@@ -312,11 +313,13 @@ def run(name, jobs, network=None):
         shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
         return
     elif name == "ui":
-        if not os.environ.get("METAMASK_PASSWORD"):
+        if not os.environ.get("CHROME_EXT_PASSWORD"):
             raise click.ClickException(
-                red("Please set the `METAMASK_PASSWORD` environment variable to connect to the wallet.")
+                red("Please set the `CHROME_EXT_PASSWORD` environment variable (password for wallets).")
             )
-        command = "py.test ui/tests --slowmo=2000"
+        command = "py.test ui/tests"
+        if ui_item != "all":
+            command = command + f"/test_{ui_item}.py"
     else:
         raise click.ClickException("Unknown test name")
 

@@ -4,9 +4,12 @@ Created on 2022-05-19
 @author: Eugeny Kurkovich
 """
 import pyperclip3 as clipboard
+from playwright._impl._api_types import TimeoutError
 
-from ui import libs
 from ui import components
+from ui import libs
+from ui.conftest import EVM_NETWORKS
+from ui.pages import phantom
 from . import BasePage
 
 
@@ -82,12 +85,14 @@ class MetaMaskAccountsPage(BasePage):
         return clipboard.paste()
 
     @property
-    def active_account_neon_balance(self) -> float:
-        return self._get_balance(self.active_account, libs.Tokens.neon)
+    def neon_balance(self) -> float:
+        self.switch_assets()
+        return self._get_balance(self.active_account, libs.Tokens.neon.name)
 
     @property
-    def active_account_usdt_balance(self) -> float:
-        return self._get_balance(self.active_account, libs.Tokens.usdt)
+    def usdt_balance(self) -> float:
+        self.switch_assets()
+        return self._get_balance(self.active_account, libs.Tokens.usdt.name)
 
     def change_network(self, network: str) -> None:
         """Select EVM network"""
@@ -98,6 +103,14 @@ class MetaMaskAccountsPage(BasePage):
         """Select account"""
         if self.active_account != account:
             self.accounts_menu.select_item(f"//div[@class='account-menu__name' and text()='{account}']")
+
+    def switch_assets(self) -> None:
+        """Switch to assets tab"""
+        self.page.query_selector("//button[text()='Assets']").click()
+
+    def switch_activity(self) -> None:
+        """Switch to assets tab"""
+        self.page.query_selector("//button[text()='Activity']").click()
 
     def _get_balance(self, account: str, token: str) -> float:
         """Return token balance on account"""
@@ -114,3 +127,49 @@ class MetaMaskAccountsPage(BasePage):
         el = self.page.query_selector("//h2[text()='Protect your funds']/following::button[text()='Got it']")
         if el:
             el.click()
+
+
+class MetaMaskWithdrawConfirmPage(BasePage):
+    def page_loaded(self):
+        self.page.wait_for_selector(
+            selector=f"//div[@class='confirm-page-container-header']/descendant::span[text()='{EVM_NETWORKS['devnet']}']",
+            timeout=10000,
+        )
+
+    def _close_withdraw_notice_box(self):
+        """Close New gas experience box"""
+        try:
+            self.page.wait_for_selector(
+                selector="//div[contains(@class, 'send__dialog') and contains(text(), 'New address detected')]"
+            )
+            components.Button(
+                self.page,
+                selector="//div[contains(@class, 'dialog--message')]/button[contains(@class, 'notice__close-button')]",
+            ).click()
+        except TimeoutError:
+            pass
+
+    def withdraw_confirm(self, timeout: float = 10000) -> None:
+        """Confirm token transfer via neonpass"""
+        self._close_withdraw_notice_box()
+        try:
+            with self.page.context.expect_page(timeout=timeout) as phantom_page_info:
+                self.page.wait_for_selector(
+                    selector="//button[contains(@class, 'button') and text()='Confirm']"
+                ).click()
+                phantom_page = phantom_page_info.value
+                self._handle_phantom_approve(phantom_page)
+        except TimeoutError as e:
+            if 'waiting for event "page"' not in e.message:
+                raise e
+
+    def withdraw_reject(self) -> None:
+        """Reject token transfer via neonpass"""
+        self._close_withdraw_notice_box()
+        self.page.wait_for_selector(selector="//button[contains(@class, 'button') and text()='Reject']").click()
+
+    @staticmethod
+    def _handle_phantom_approve(page):
+        page.wait_for_load_state()
+        phantom_confirm_page = phantom.PhantomWithdrawConfirmPage(page)
+        phantom_confirm_page.withdraw_confirm()

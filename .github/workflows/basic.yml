@@ -13,10 +13,7 @@ on:
         description: "Stand name"
         options:
           - night-stand
-          - release-stand
-          - devnet-aws
           - devnet
-          - testnet
       runner:
         type: choice
         default: ubuntu-20.04
@@ -28,7 +25,7 @@ on:
           - ubuntu-20.04
 env:
   NETWORK: night-stand
-  RUNNER: ubuntu-20.04
+  RUNNER: neon-hosted
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
 jobs:

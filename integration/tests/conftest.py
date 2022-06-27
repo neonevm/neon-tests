@@ -11,11 +11,11 @@ import solana.rpc.api
 from _pytest.config import Config
 from solana.keypair import Keypair
 
-from integration.tests.basic.helpers.json_rpc_client import JsonRpcClient
 from utils.erc20wrapper import ERC20Wrapper
 from utils.faucet import Faucet
 from utils.operator import Operator
 from utils.web3client import NeonWeb3Client
+from utils.apiclient import JsonRPCSession
 
 LAMPORT_PER_SOL = 1_000_000_000
 NEON_AIRDROP_AMOUNT = 10_000
@@ -30,9 +30,9 @@ def faucet(pytestconfig: Config) -> Faucet:
     return Faucet(pytestconfig.environment.faucet_url)
 
 
-@pytest.fixture(scope="session", autouse=True)
-def json_rpc_client(pytestconfig: Config) -> JsonRpcClient:
-    return JsonRpcClient(pytestconfig.environment.proxy_url)
+@pytest.fixture(scope="session")
+def json_rpc_client(pytestconfig: Config) -> JsonRPCSession:
+    return JsonRPCSession(pytestconfig.environment.proxy_url)
 
 
 @pytest.fixture(scope="session", autouse=True)

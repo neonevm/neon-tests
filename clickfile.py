@@ -293,7 +293,7 @@ def requirements(dep):
 @cli.command(help="Run any type of tests")
 @click.option("-n", "--network", default=None, type=click.Choice(networks.keys()), help="In which stand run tests")
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
-@click.option("--ui_item", default="all", type=click.Choice(["faucet", "neonpass", "all"]), help="Which UI test run")
+@click.option("--ui-item", default="all", type=click.Choice(["faucet", "neonpass", "all"]), help="Which UI test run")
 @click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz", "ui"]))
 @catch_traceback
 def run(name, jobs, ui_item, network=None):

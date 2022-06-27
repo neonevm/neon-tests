@@ -1,9 +1,4 @@
-# coding: utf-8
-"""
-Created on 2022-03-15
-@author: Eugeny Kurkovich
-"""
-
+import os
 import pathlib
 
 import solcx
@@ -29,3 +24,13 @@ def get_contract_interface(contract_name: str, version: str):
     contract_interface = get_contract_abi(contract_name, compiled)
 
     return contract_interface
+
+
+def gen_hash_of_block(size: int) -> str:
+    """Generates a block hash of the given size"""
+    try:
+        block_hash = hex(int.from_bytes(os.urandom(size), "big"))
+        if bytes.fromhex(block_hash[2:]):
+            return block_hash
+    except ValueError:
+        return gen_hash_of_block(size)

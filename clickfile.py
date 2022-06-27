@@ -293,7 +293,7 @@ def requirements(dep):
 @cli.command(help="Run any type of tests")
 @click.option("-n", "--network", default=None, type=click.Choice(networks.keys()), help="In which stand run tests")
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
-@click.option("--ui_item", default="all", type=click.Choice(["metamask", "phantom", "all"]), help="Which UI test run")
+@click.option("--ui_item", default="all", type=click.Choice(["faucet", "neonpass", "all"]), help="Which UI test run")
 @click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz", "ui"]))
 @catch_traceback
 def run(name, jobs, ui_item, network=None):
@@ -315,9 +315,9 @@ def run(name, jobs, ui_item, network=None):
     elif name == "ui":
         if not os.environ.get("CHROME_EXT_PASSWORD"):
             raise click.ClickException(
-                red("Please set the `CHROME_EXT_PASSWORD` environment variable to connect to the wallet.")
+                red("Please set the `CHROME_EXT_PASSWORD` environment variable (password for wallets).")
             )
-        command = "py.test --slowmo=2000 ui/tests"
+        command = "py.test ui/tests"
         if ui_item != "all":
             command = command + f"/test_{ui_item}.py"
     else:

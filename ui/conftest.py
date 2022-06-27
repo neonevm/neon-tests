@@ -63,7 +63,7 @@ def chrome_extension_password() -> str:
     try:
         return os.environ["CHROME_EXT_PASSWORD"]
     except KeyError:
-        raise AssertionError("Please set the `CHROME_EXT_PASSWORD` environment variable to login into extension")
+        raise AssertionError("Please set the `CHROME_EXT_PASSWORD` environment variable (password for wallets).")
 
 
 @pytest.fixture

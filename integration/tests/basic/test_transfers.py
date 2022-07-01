@@ -33,9 +33,10 @@ class TestTransfer(BaseMixin):
     def test_send_neon_from_one_account_to_another(self, transfer_amount: tp.Union[int, float]):
         """Send neon from one account to another"""
         initial_sender_balance, initial_recipient_balance = self.sender_account_balance, self.recipient_account_balance
+        assert initial_recipient_balance > 0
         self.send_neon(self.sender_account, self.recipient_account, transfer_amount)
-        self.assert_balance_less(self.sender_account.address, initial_sender_balance - transfer_amount)
-        self.assert_balance(self.recipient_account.address, initial_recipient_balance + transfer_amount, rnd_dig=3)
+        assert self.sender_account_balance < (initial_sender_balance - transfer_amount)
+        assert self.recipient_account_balance == (initial_recipient_balance + transfer_amount)
 
     @pytest.mark.parametrize("transfer_amount", [0, 1, 10, 100])
     def test_send_erc20_token_from_one_account_to_another(self, transfer_amount: tp.Union[int, float]):
@@ -57,7 +58,7 @@ class TestTransfer(BaseMixin):
             contract_deploy_tx["contractAddress"],
             abi=contract.abi,
         )
-        time.sleep(1) # FIXME: It's a temporary fix for devnet
+        time.sleep(3)  # FIXME: It's a temporary fix for devnet
         # ERC20 balance
         assert (
             contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE - transfer_amount

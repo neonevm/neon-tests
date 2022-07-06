@@ -66,7 +66,8 @@ class TestTransfer(BaseMixin):
         self.assert_balance_less(
             self.sender_account.address, initial_sender_neon_balance - self.calculate_trx_gas(tx_receipt=tx_receipt)
         )
-        self.assert_balance(self.recipient_account.address, initial_recipient_neon_balance, rnd_dig=3)
+        assert initial_sender_neon_balance > self.get_balance_from_wei(self.sender_account.address)
+        assert initial_recipient_neon_balance == self.get_balance_from_wei(self.recipient_account.address)
 
     @pytest.mark.parametrize("transfer_amount", [0, 1, 10, 100])
     def test_send_spl_wrapped_account_from_one_account_to_another(self, transfer_amount: int, erc20wrapper):
@@ -255,7 +256,7 @@ class TestTransfer(BaseMixin):
             contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
         ), AssertMessage.CONTRACT_BALANCE_IS_WRONG.value
         # Neon balance
-        self.assert_balance(self.sender_account.address, initial_sender_neon_balance, rnd_dig=0)
+        assert initial_sender_neon_balance > self.get_balance_from_wei(self.sender_account.address)
 
     def test_send_token_to_an_invalid_address(self):
         """Send token to an invalid address"""

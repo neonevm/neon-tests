@@ -32,12 +32,6 @@ class BaseMixin(BaseTests):
     def prepare_env(self, json_rpc_client):
         self.proxy_api = json_rpc_client
 
-    # TODO: Fix nonce to small error and remove it
-    @pytest.fixture(autouse=True)
-    def wait(self):
-        """Wait for nonce updated"""
-        time.sleep(3)
-
     @property
     def sender_account(self):
         if not self._sender_account:
@@ -85,7 +79,12 @@ class BaseMixin(BaseTests):
     ):
         """Creates a new account with balance"""
         account = self.create_account()
+        balance_before = self.get_balance_from_wei(account.address)
         self.faucet.request_neon(account.address, amount=amount)
+        for _ in range(10):
+            if self.get_balance_from_wei(account.address) >= (balance_before + amount):
+                break
+            time.sleep(1)
         return account
 
     @staticmethod

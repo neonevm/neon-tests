@@ -46,7 +46,7 @@ class Wallets:
     wall_3 = Wallet("Wallet 3")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def required_extensions() -> tp.List:
     return ["metamask", "phantom"]
 

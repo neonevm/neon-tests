@@ -34,7 +34,7 @@ def network(pytestconfig: tp.Any) -> tp.Optional[str]:
     return EVM_NETWORKS.get(pytestconfig.getoption("--network"), EVM_NETWORKS["devnet"])
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def chrome_extensions_path(required_extensions: tp.Union[tp.List, str]) -> pathlib.Path:
     path = ""
     if isinstance(required_extensions, str):

@@ -34,7 +34,7 @@ class Accounts:
     acc_3 = "Account 3"
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def required_extensions() -> tp.List:
     return "metamask"
 

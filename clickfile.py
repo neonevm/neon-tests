@@ -56,6 +56,21 @@ BASE_EXTENSIONS_TPL_DATA = "ui/extensions/data"
 EXTENSIONS_PATH = "ui/extensions/chrome/plugins"
 EXTENSIONS_USER_DATA_PATH = "ui/extensions/chrome"
 
+EXPANDED_ENVS = [
+    "NETWORK_NAME",
+    "PROXY_URL",
+    "NETWORK_ID",
+    "FAUCET_URL",
+    "SOLANA_URL",
+    "FTS_JOBS_NUMBER",
+]
+"""Test environment settings passed to the container
+"""
+
+OZ_FTS = "oz-fts"
+"""Default network name for docker container
+"""
+
 
 def green(s):
     return click.style(s, fg="green")
@@ -104,6 +119,8 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
 networks = []
 with open("./envs.json", "r") as f:
     networks = json.load(f)
+    if OZ_FTS not in networks.keys():
+        networks.update({OZ_FTS: {}})
 
 
 def prepare_wallets_with_balance(network, count=8, airdrop_amount=20000):
@@ -124,9 +141,29 @@ def prepare_wallets_with_balance(network, count=8, airdrop_amount=20000):
     return private_keys
 
 
-def run_openzeppelin_tests(network, jobs=8):
+def dump_vars():
+    """Import network settings form environment"""
+    global networks
+    network_name = os.environ.get("NETWORK_NAME", OZ_FTS)
+    environments = {network_name: {}}
+    for item in EXPANDED_ENVS:
+        if item != "NETWORK_NAME":
+            environments[network_name].update({item.lower(): os.environ.get(item, "")})
+    with open("./envs.json", "r+") as fd:
+        networks = json.load(fd)
+        networks.update(environments)
+        fd.seek(0)  # <- This is the missing piece
+        fd.truncate()
+        json.dump(networks, fd, sort_keys=True, indent=4)
+
+
+def run_openzeppelin_tests(network, jobs=8, dump=False):
+    if dump:
+        dump_vars()
     print(f"Running OpenZeppelin tests in {jobs} jobs on {network}")
     cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
+    if not list(cwd.glob("*")):
+        subprocess.check_call("git submodule init && git submodule update", shell=True, cwd=cwd)
     subprocess.check_call("npx hardhat compile", shell=True, cwd=cwd)
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
     keys_env = [prepare_wallets_with_balance(network) for i in range(jobs)]
@@ -263,12 +300,12 @@ def install_ui_requirements():
 
 
 def install_oz_requirements():
-    cwd = pathlib.Path().parent / "compatibility/openzeppelin-contracts"
+    cwd = pathlib.Path().absolute() / "compatibility/openzeppelin-contracts"
     if list(cwd.glob("*lock*")):
         cmd = "npm ci"
     else:
         cmd = "npm install npm@latest -g"
-    subprocess.check_call(cmd, shell=True, cwd=cwd.absolute())
+    subprocess.check_call(cmd, shell=True, cwd=cwd.as_posix())
 
 
 @click.group()
@@ -294,9 +331,10 @@ def requirements(dep):
 @click.option("-n", "--network", default=None, type=click.Choice(networks.keys()), help="In which stand run tests")
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
 @click.option("--ui-item", default="all", type=click.Choice(["faucet", "neonpass", "all"]), help="Which UI test run")
+@click.option("-d", "--dump", default=False, help="Dump environment to envs.json file")
 @click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz", "ui"]))
 @catch_traceback
-def run(name, jobs, ui_item, network=None):
+def run(name, jobs, ui_item, dump, network=None):
     if not network and name == "ui":
         network = "devnet"
     elif not network:
@@ -309,7 +347,7 @@ def run(name, jobs, ui_item, network=None):
     elif name == "basic":
         command = "py.test integration/tests/basic"
     elif name == "oz":
-        run_openzeppelin_tests(network, jobs=int(jobs))
+        run_openzeppelin_tests(network, jobs=int(jobs), dump=bool(dump))
         shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
         return
     elif name == "ui":

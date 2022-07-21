@@ -10,6 +10,7 @@ ENV FAUCET_URL ""
 ENV SOLANA_URL ""
 ENV FTS_JOBS_NUMBER 8
 ENV DUMP_ENVS True
+ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt update
 # Install common dependencies

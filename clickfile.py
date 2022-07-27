@@ -57,17 +57,15 @@ EXTENSIONS_PATH = "ui/extensions/chrome/plugins"
 EXTENSIONS_USER_DATA_PATH = "ui/extensions/chrome"
 
 EXPANDED_ENVS = [
-    "NETWORK_NAME",
     "PROXY_URL",
     "NETWORK_ID",
     "FAUCET_URL",
     "SOLANA_URL",
-    "FTS_JOBS_NUMBER",
 ]
 """Test environment settings passed to the container
 """
 
-OZ_FTS = "oz-fts"
+OZ_FTS = "full_test_suite"
 """Default network name for docker container
 """
 
@@ -146,9 +144,8 @@ def dump_vars():
     global networks
     network_name = os.environ.get("NETWORK_NAME", OZ_FTS)
     environments = {network_name: {}}
-    for item in EXPANDED_ENVS:
-        if item != "NETWORK_NAME":
-            environments[network_name].update({item.lower(): os.environ.get(item, "")})
+    for var in EXPANDED_ENVS:
+        environments[network_name].update({var.lower(): os.environ.get(var, "")})
     with open("./envs.json", "r+") as fd:
         networks = json.load(fd)
         networks.update(environments)
@@ -157,7 +154,7 @@ def dump_vars():
         json.dump(networks, fd, sort_keys=True, indent=4)
 
 
-def run_openzeppelin_tests(network, jobs=8, dump=False):
+def run_openzeppelin_tests(network, jobs=8, dump=False, amount=20000, users=8):
     if dump:
         dump_vars()
     print(f"Running OpenZeppelin tests in {jobs} jobs on {network}")
@@ -166,7 +163,7 @@ def run_openzeppelin_tests(network, jobs=8, dump=False):
         subprocess.check_call("git submodule init && git submodule update", shell=True, cwd=cwd)
     subprocess.check_call("npx hardhat compile", shell=True, cwd=cwd)
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
-    keys_env = [prepare_wallets_with_balance(network) for i in range(jobs)]
+    keys_env = [prepare_wallets_with_balance(network, count=users, airdrop_amount=amount) for i in range(jobs)]
 
     tests = subprocess.check_output("find \"test\" -name '*.test.js'", shell=True, cwd=cwd).decode().splitlines()
 
@@ -330,11 +327,13 @@ def requirements(dep):
 @cli.command(help="Run any type of tests")
 @click.option("-n", "--network", default=None, type=click.Choice(networks.keys()), help="In which stand run tests")
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
+@click.option("-a", "--amount", default=200000, help="Requested amount from faucet")
+@click.option("-u", "--users", default=8, help="Accounts numbers used in OZ tests")
 @click.option("--ui-item", default="all", type=click.Choice(["faucet", "neonpass", "all"]), help="Which UI test run")
 @click.option("-d", "--dump", default=False, help="Dump environment to envs.json file")
 @click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz", "ui"]))
 @catch_traceback
-def run(name, jobs, ui_item, dump, network=None):
+def run(name, jobs, ui_item, dump, amount, users, network=None):
     if not network and name == "ui":
         network = "devnet"
     elif not network:
@@ -347,7 +346,7 @@ def run(name, jobs, ui_item, dump, network=None):
     elif name == "basic":
         command = "py.test integration/tests/basic"
     elif name == "oz":
-        run_openzeppelin_tests(network, jobs=int(jobs), dump=bool(dump))
+        run_openzeppelin_tests(network, jobs=int(jobs), dump=bool(dump), amount=int(amount), users=int(users))
         shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
         return
     elif name == "ui":

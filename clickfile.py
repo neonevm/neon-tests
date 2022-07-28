@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import typing as tp
+from collections import defaultdict
 from multiprocessing.dummy import Pool
 from urllib.parse import urlparse
 
@@ -65,7 +66,7 @@ EXPANDED_ENVS = [
 """Test environment settings passed to the container
 """
 
-OZ_FTS = "full_test_suite"
+NETWORK_NAME = os.environ.get("NETWORK_NAME", "full_test_suite")
 """Default network name for docker container
 """
 
@@ -117,8 +118,8 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
 networks = []
 with open("./envs.json", "r") as f:
     networks = json.load(f)
-    if OZ_FTS not in networks.keys():
-        networks.update({OZ_FTS: {}})
+    if NETWORK_NAME not in networks.keys():
+        networks.update({NETWORK_NAME: {}})
 
 
 def prepare_wallets_with_balance(network, count=8, airdrop_amount=20000):
@@ -142,10 +143,9 @@ def prepare_wallets_with_balance(network, count=8, airdrop_amount=20000):
 def dump_vars():
     """Import network settings form environment"""
     global networks
-    network_name = os.environ.get("NETWORK_NAME", OZ_FTS)
-    environments = {network_name: {}}
+    environments = defaultdict(dict)
     for var in EXPANDED_ENVS:
-        environments[network_name].update({var.lower(): os.environ.get(var, "")})
+        environments[NETWORK_NAME].update({var.lower(): os.environ.get(var, "")})
     with open("./envs.json", "r+") as fd:
         networks = json.load(fd)
         networks.update(environments)

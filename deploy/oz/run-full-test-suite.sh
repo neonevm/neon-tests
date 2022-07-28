@@ -11,7 +11,7 @@ python3 clickfile.py ozreport
 
 # "Archive report"
 ALLURE_RESULT_DIR=/opt/allure-results
-if [[ -f "$ALLURE_RESULT_DIR" ]]; then
-    tar -czf /opt/allure-results.tar.gz $ALLURE_RESULT_DIR
+if [[ -d "$ALLURE_RESULT_DIR" ]]; then
+    tar -czvf /opt/allure-results.tar.gz $ALLURE_RESULT_DIR
 fi
 

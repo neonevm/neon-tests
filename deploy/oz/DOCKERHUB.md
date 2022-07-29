@@ -10,9 +10,6 @@
 # Quick reference
 * **Where to file issues**: https://github.com/neonlabsorg/neon-compatibility/issues
 * **Supported architectures**: ([more info](https://github.com/docker-library/official-images#architectures-other-than-amd64)) [`amd64`](https://hub.docker.com/r/amd64/node/), [`arm32v6`](https://hub.docker.com/r/arm32v6/node/), [`arm32v7`](https://hub.docker.com/r/arm32v7/node/), [`arm64v8`](https://hub.docker.com/r/arm64v8/node/), [`ppc64le`](https://hub.docker.com/r/ppc64le/node/), [`s390x`](https://hub.docker.com/r/s390x/node/)
-* **Published image artifact details**: 
-* **Image updates**: [official image repo's `full_test_suite` label](https://github.com/neonlabsorg/neon-compatibility/pulls?q=label%3Afull_test_suite)
-* **Source of this description**: [docs repo's `full_test_suite/` directory](https://github.com/neonlabsorg/neon-compatibility/tree/develop/full_test_suite) ([history](https://github.com/neonlabsorg/neon-compatibility/commits/develop/full_test_suite))
 
 ## What is Neon Full Test Suite?
 
@@ -91,7 +88,7 @@ networks:
 
 License
 
-View license information for [Full Test Suite](https://github.com/neonlabsorg/neon-compatibility/blob/develop/LICENSE) in [neonlabsorg/neon-compatibility](https://github.com/neonlabsorg/neon-compatibility/) project.
+View license information for [Full Test Suite]() in [neonlabsorg/neon-tests]() project.
 
 As with all Docker images, these likely also contain other software which may be under other licenses (such as Bash, etc from the base distribution, along with any direct or indirect dependencies of the primary software being contained).
 

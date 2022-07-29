@@ -20,7 +20,7 @@ jobs:
         run: |
           delimeter=$(printf "%0.s-" {1..30})
           echo " ${delimeter} Build new docker image ${{ env.IMAGE_ID }} ${delimeter}"
-          docker build . --file ./deploy/oz/Dockerfile --tag ${{ env.IMAGE_ID }}:latest --tag ${{ env.IMAGE_ID }}:${GITHUB_SHA::8}
+          docker build . --file ./deploy/oz/Dockerfile --tag ${{ env.IMAGE_ID }}:develop --tag ${{ env.IMAGE_ID }}:${GITHUB_SHA::8}
           echo "${delimeter} Login into Docker registry ${delimeter}"
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
           echo "${delimeter} Push image ${{ env.IMAGE_ID }} to Docker registry ${delimeter}"

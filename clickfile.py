@@ -118,8 +118,11 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
 networks = []
 with open("./envs.json", "r") as f:
     networks = json.load(f)
-    if NETWORK_NAME not in networks.keys():
-        networks.update({NETWORK_NAME: {}})
+    if NETWORK_NAME not in networks.keys() and os.environ.get("DUMP_ENVS"):
+        environments = defaultdict(dict)
+        for var in EXPANDED_ENVS:
+            environments[NETWORK_NAME].update({var.lower(): os.environ.get(var, "")})
+        networks.update(environments)
 
 
 def prepare_wallets_with_balance(network, count=8, airdrop_amount=20000):
@@ -140,23 +143,7 @@ def prepare_wallets_with_balance(network, count=8, airdrop_amount=20000):
     return private_keys
 
 
-def dump_vars():
-    """Import network settings form environment"""
-    global networks
-    environments = defaultdict(dict)
-    for var in EXPANDED_ENVS:
-        environments[NETWORK_NAME].update({var.lower(): os.environ.get(var, "")})
-    with open("./envs.json", "r+") as fd:
-        networks = json.load(fd)
-        networks.update(environments)
-        fd.seek(0)  # <- This is the missing piece
-        fd.truncate()
-        json.dump(networks, fd, sort_keys=True, indent=4)
-
-
-def run_openzeppelin_tests(network, jobs=8, dump=False, amount=20000, users=8):
-    if dump:
-        dump_vars()
+def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     print(f"Running OpenZeppelin tests in {jobs} jobs on {network}")
     cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
     if not list(cwd.glob("*")):
@@ -330,10 +317,9 @@ def requirements(dep):
 @click.option("-a", "--amount", default=200000, help="Requested amount from faucet")
 @click.option("-u", "--users", default=8, help="Accounts numbers used in OZ tests")
 @click.option("--ui-item", default="all", type=click.Choice(["faucet", "neonpass", "all"]), help="Which UI test run")
-@click.option("-d", "--dump", default=False, help="Dump environment to envs.json file")
 @click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz", "ui"]))
 @catch_traceback
-def run(name, jobs, ui_item, dump, amount, users, network=None):
+def run(name, jobs, ui_item, amount, users, network=None):
     if not network and name == "ui":
         network = "devnet"
     elif not network:
@@ -346,7 +332,7 @@ def run(name, jobs, ui_item, dump, amount, users, network=None):
     elif name == "basic":
         command = "py.test integration/tests/basic"
     elif name == "oz":
-        run_openzeppelin_tests(network, jobs=int(jobs), dump=bool(dump), amount=int(amount), users=int(users))
+        run_openzeppelin_tests(network, jobs=int(jobs), amount=int(amount), users=int(users))
         shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
         return
     elif name == "ui":

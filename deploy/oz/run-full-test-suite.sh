@@ -4,7 +4,7 @@ rm -rf /opt/allure-report
 cd /opt
 
 # "Run OpenZeppelin tests"
-python3 clickfile.py run oz --dump=${DUMP_ENVS} --network=${NETWORK_NAME} --jobs=${FTS_JOBS_NUMBER} --amount=${REQUEST_AMOUNT} --users=${FTS_USERS_NUMBER}
+python3 clickfile.py run oz --network=${NETWORK_NAME} --jobs=${FTS_JOBS_NUMBER} --amount=${REQUEST_AMOUNT} --users=${FTS_USERS_NUMBER}
 
 # "Print OpenZeppelin report"
 python3 clickfile.py ozreport

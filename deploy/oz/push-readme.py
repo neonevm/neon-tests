@@ -40,7 +40,7 @@ try:
     headers["Authorization"] = "Bearer " + token
     headers["Content-Type"] = "application/json"
     logger.debug(f"Open {README}")
-    with open(pathlib.path(__file__).parent / README) as readme_file:
+    with open(pathlib.Path(__file__).parent / README) as readme_file:
         readme_data = readme_file.read()
         url = "https://hub.docker.com/v2/repositories/neonlabsorg/full_test_suite/"
         logger.debug("Request (patch) to update full_description at " + url)

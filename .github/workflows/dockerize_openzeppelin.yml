@@ -18,7 +18,7 @@ jobs:
         uses: shioyang/check-pr-labels-on-push-action@v1.0.3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          labels: '["full_test_suite1"]'
+          labels: '["full_test_suite"]'
       - uses: actions/checkout@v3
       - name: Build and push OpenZeppelin full test suite Docker image
         if: ${{ steps.check_pr_labels.outputs.result == true }}

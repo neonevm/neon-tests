@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check PR labels
-          id: check_pr_labels
-          uses: shioyang/check-pr-labels-on-push-action@v1.0.3
-          with:
-            labels: '["full_test_suite"]'
+        id: check_pr_labels
+        uses: shioyang/check-pr-labels-on-push-action@v1.0.3
+        with:
+          labels: '["full_test_suite"]'
       - uses: actions/checkout@v3
       - name: Build and push OpenZeppelin full test suite Docker image
         id: docker_pipeline

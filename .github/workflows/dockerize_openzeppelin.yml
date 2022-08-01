@@ -4,7 +4,7 @@ on:
   push:
     branches: ["develop", feature/NDEV-368]
   pull_request:
-    types: [labeled ]
+    types: [ labeled ]
 
 env:
   IMAGE_ID: neonlabsorg/full_test_suite
@@ -15,7 +15,7 @@ env:
 jobs:
 
   dockerize:
-    if: ${{ github.event.pull_request.label ==  env.PR_LABEL }}
+    if: ${{ github.event.pull_request.label.name }} ==  ${{ env.PR_LABEL }}
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3

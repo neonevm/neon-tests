@@ -1,4 +1,4 @@
-# Quick reference ...
+# Quick reference
 
 * **Maintained by:**: The [Neon Labs company](https://neon-labs.org/)
 * **Where to get help**: [Dicscord channel](https://discord.com/channels/839825320639332362), [Twitter](https://twitter.com/neonlabsorg), [GitHub](https://github.com/neonlabsorg)

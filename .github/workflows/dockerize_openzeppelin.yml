@@ -26,3 +26,5 @@ jobs:
         run: |
           delimeter=$(printf "%0.s-" {1..30})
           echo " ${delimeter}  "${{ steps.check_pr_labels.outputs.result }}" ${delimeter}"
+          echo ${{ toJson(github.event.pull_request.labels.*.name) }}
+

@@ -8,14 +8,13 @@ on:
 
 env:
   IMAGE_ID: neonlabsorg/full_test_suite
-  PR_LABEL: full_test_suite
   DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   DOCKER_HUB_USER: ${{ secrets.DOCKER_USERNAME }}
 
 jobs:
 
   dockerize:
-    if: ${{ github.event.pull_request.label.name }} ==  ${{ env.PR_LABEL }}
+    if: ${{ github.event.pull_request.label.name }} == 'full_test_suite'
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3

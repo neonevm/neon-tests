@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import typing as tp
+from collections import defaultdict
 from multiprocessing.dummy import Pool
 from urllib.parse import urlparse
 
@@ -55,6 +56,19 @@ BASE_EXTENSIONS_TPL_DATA = "ui/extensions/data"
 
 EXTENSIONS_PATH = "ui/extensions/chrome/plugins"
 EXTENSIONS_USER_DATA_PATH = "ui/extensions/chrome"
+
+EXPANDED_ENVS = [
+    "PROXY_URL",
+    "NETWORK_ID",
+    "FAUCET_URL",
+    "SOLANA_URL",
+]
+"""Test environment settings passed to the container
+"""
+
+NETWORK_NAME = os.environ.get("NETWORK_NAME", "full_test_suite")
+"""Default network name for docker container
+"""
 
 
 def green(s):
@@ -104,6 +118,11 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
 networks = []
 with open("./envs.json", "r") as f:
     networks = json.load(f)
+    if NETWORK_NAME not in networks.keys() and os.environ.get("DUMP_ENVS"):
+        environments = defaultdict(dict)
+        for var in EXPANDED_ENVS:
+            environments[NETWORK_NAME].update({var.lower(): os.environ.get(var, "")})
+        networks.update(environments)
 
 
 def prepare_wallets_with_balance(network, count=8, airdrop_amount=20000):
@@ -124,12 +143,14 @@ def prepare_wallets_with_balance(network, count=8, airdrop_amount=20000):
     return private_keys
 
 
-def run_openzeppelin_tests(network, jobs=8):
+def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     print(f"Running OpenZeppelin tests in {jobs} jobs on {network}")
     cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
+    if not list(cwd.glob("*")):
+        subprocess.check_call("git submodule init && git submodule update", shell=True, cwd=cwd)
     subprocess.check_call("npx hardhat compile", shell=True, cwd=cwd)
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
-    keys_env = [prepare_wallets_with_balance(network) for i in range(jobs)]
+    keys_env = [prepare_wallets_with_balance(network, count=users, airdrop_amount=amount) for i in range(jobs)]
 
     tests = subprocess.check_output("find \"test\" -name '*.test.js'", shell=True, cwd=cwd).decode().splitlines()
 
@@ -263,12 +284,12 @@ def install_ui_requirements():
 
 
 def install_oz_requirements():
-    cwd = pathlib.Path().parent / "compatibility/openzeppelin-contracts"
+    cwd = pathlib.Path().absolute() / "compatibility/openzeppelin-contracts"
     if list(cwd.glob("*lock*")):
         cmd = "npm ci"
     else:
         cmd = "npm install npm@latest -g"
-    subprocess.check_call(cmd, shell=True, cwd=cwd.absolute())
+    subprocess.check_call(cmd, shell=True, cwd=cwd.as_posix())
 
 
 @click.group()
@@ -293,10 +314,12 @@ def requirements(dep):
 @cli.command(help="Run any type of tests")
 @click.option("-n", "--network", default=None, type=click.Choice(networks.keys()), help="In which stand run tests")
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
+@click.option("-a", "--amount", default=200000, help="Requested amount from faucet")
+@click.option("-u", "--users", default=8, help="Accounts numbers used in OZ tests")
 @click.option("--ui-item", default="all", type=click.Choice(["faucet", "neonpass", "all"]), help="Which UI test run")
 @click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz", "ui"]))
 @catch_traceback
-def run(name, jobs, ui_item, network=None):
+def run(name, jobs, ui_item, amount, users, network=None):
     if not network and name == "ui":
         network = "devnet"
     elif not network:
@@ -309,7 +332,7 @@ def run(name, jobs, ui_item, network=None):
     elif name == "basic":
         command = "py.test integration/tests/basic"
     elif name == "oz":
-        run_openzeppelin_tests(network, jobs=int(jobs))
+        run_openzeppelin_tests(network, jobs=int(jobs), amount=int(amount), users=int(users))
         shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
         return
     elif name == "ui":

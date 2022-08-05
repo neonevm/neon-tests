@@ -1,3 +1,5 @@
+import time
+import sha3
 import typing as tp
 from enum import Enum
 
@@ -80,8 +82,36 @@ UNSUPPORTED_METHODS = [
 ]
 
 
+def get_event_signatures(abi: tp.List[tp.Dict]) -> tp.List[str]:
+    """Get topics as keccak256 from abi Events"""
+    topics = []
+    for event in filter(lambda item: item["type"] == "event", abi):
+        input_types = str()
+        for event_input in event["inputs"]:
+            input_types = input_types + f"{event_input['type']},"
+        keccak256 = sha3.keccak_256()
+        keccak256.update(f"{event['name']}({input_types[:-1]})".encode())
+        topics.append(f"0x{keccak256.hexdigest()}")
+    return topics
+
+
 @allure.story("Basic: Json-RPC call tests")
 class TestRpcCalls(BaseMixin):
+    @pytest.fixture
+    def send_erc20(self) -> tp.Any:
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
+            "ERC20", "0.6.6", self.sender_account, constructor_args=[1000]
+        )
+        tx_receipt = self.web3_client.send_erc20(
+            self.sender_account,
+            self.recipient_account.address,
+            amount=1,
+            address=contract_deploy_tx["contractAddress"],
+            abi=contract.abi,
+        )
+        time.sleep(3)  # FIXME: It's a temporary fix for devnet
+        yield contract, contract_deploy_tx, tx_receipt
+
     @staticmethod
     def is_hex(hex_data: str) -> bool:
         try:
@@ -113,7 +143,7 @@ class TestRpcCalls(BaseMixin):
     )
     def test_eth_estimate_gas(self, params: tp.Union[str, None], raises: bool):
         """Verify implemented rpc calls work eth_estimateGas"""
-        #TODO: Make separate complex test for this method
+        # TODO: Make separate complex test for this method
         if params:
             params = {"from": self.sender_account.address, "to": self.recipient_account.address, "value": params}
         response = self.proxy_api.send_rpc("eth_estimateGas", params=params)
@@ -137,19 +167,20 @@ class TestRpcCalls(BaseMixin):
             assert self.is_hex(response["result"]), f"Invalid current gas price `{response['result']}` in wei"
 
     # FIXME: Make more complex test
-    # @pytest.mark.parametrize("params", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST])
-    # def test_eth_get_logs_via_tags(self, params: Tag):
-    #     """Verify implemented rpc calls work eth_getLogs"""
-    #     params = {"fromBlock": params.value, "toBlock": params.value, "address": self.sender_account.address}
-    #     response = self.json_rpc_client.send_rpc("eth_getLogs", params=params)
-    #     print(response)
-    #     assert "error" not in response
-    #
-    # @pytest.mark.parametrize("params, raises", [(Tag.LATEST, False), (Tag.PENDING, False), (Tag.EARLIEST, False)])
-    # def test_eth_get_logs_via_numbers(self, params: Tag, raises: bool):
-    #     """Verify implemented rpc calls work eth_getLogs"""
-    #     params = {"fromBlock": 1, "toBlock": params.value, "address": self.sender_account.address}
-    #     self.assert_rpc_response("eth_getLogs", params=params, raises=raises)
+    @pytest.mark.parametrize("params", [Tag.LATEST, Tag.PENDING])
+    def test_eth_get_logs_via_tags(self, params: Tag, send_erc20: tp.Any):
+        """Verify implemented rpc calls work eth_getLogs"""
+        contract, deploy_tx, _ = send_erc20
+        topics = get_event_signatures(contract.abi)
+        params = {
+            "fromBlock": Tag.EARLIEST.value,
+            "toBlock": params.value,
+            "address": deploy_tx.contractAddress,
+            "topics": topics,
+        }
+        response = self.proxy_api.send_rpc("eth_getLogs", params=params)
+        assert "error" not in response
+        assert any(topic in response["result"][0]["topics"] for topic in topics)
 
     @pytest.mark.parametrize(
         "params, raises",
@@ -200,7 +231,9 @@ class TestRpcCalls(BaseMixin):
             assert "error" in response, "Error not in response"
         else:
             assert "error" not in response
-            assert int(response["result"]) == self.web3_client._chain_id, f"Invalid response result {response['result']}"
+            assert (
+                int(response["result"]) == self.web3_client._chain_id
+            ), f"Invalid response result {response['result']}"
 
     @pytest.mark.parametrize(
         "params, raises",
@@ -212,10 +245,7 @@ class TestRpcCalls(BaseMixin):
             self.send_neon(self.sender_account, self.recipient_account, 1)
             params = [self.sender_account.address, params.value]
 
-        response = self.proxy_api.send_rpc(
-            "eth_getTransactionCount",
-            params=params
-        )
+        response = self.proxy_api.send_rpc("eth_getTransactionCount", params=params)
         if raises:
             assert "error" in response, "Error not in response"
         else:
@@ -236,9 +266,7 @@ class TestRpcCalls(BaseMixin):
         }
         transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
-        response = self.proxy_api.send_rpc(
-            "eth_sendRawTransaction", params=signed_tx.rawTransaction.hex()
-        )
+        response = self.proxy_api.send_rpc("eth_sendRawTransaction", params=signed_tx.rawTransaction.hex())
         assert "error" not in response
         assert self.is_hex(response["result"]), f"Invalid response result {response['result']}"
 
@@ -262,9 +290,7 @@ class TestRpcCalls(BaseMixin):
         # FIXME: Add more logic to check data
 
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
-        response = self.proxy_api.send_rpc(
-            method="eth_getTransactionReceipt", params=tx_receipt.transactionHash.hex()
-        )
+        response = self.proxy_api.send_rpc(method="eth_getTransactionReceipt", params=tx_receipt.transactionHash.hex())
         assert "error" not in response
         assert "result" in response, AssertMessage.DOES_NOT_CONTAIN_RESULT
 
@@ -304,9 +330,7 @@ class TestRpcCalls(BaseMixin):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
         # FIXME: More logic
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
-        response = self.proxy_api.send_rpc(
-            method="eth_getBlockByNumber", params=[tx_receipt.blockNumber, True]
-        )
+        response = self.proxy_api.send_rpc(method="eth_getBlockByNumber", params=[tx_receipt.blockNumber, True])
         assert "error" not in response
         assert "result" in response, AssertMessage.DOES_NOT_CONTAIN_RESULT
 

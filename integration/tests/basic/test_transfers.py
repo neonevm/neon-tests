@@ -294,7 +294,15 @@ class TestTransfer(BaseMixin):
         params = [signed_tx.rawTransaction.hex()]
         actual_result = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
 
-        assert "0x" in actual_result["result"], AssertMessage.DOES_NOT_START_WITH_0X.value
+        for _ in range(10):
+            receipt = self.proxy_api.send_rpc("eth_getTransactionReceipt", [actual_result["result"]])
+            if receipt["result"] is None:
+                time.sleep(3)
+                continue
+            actual_result = receipt
+            break
+
+        assert actual_result["result"]["status"] == "0x1", "Transaction status must be 0x1"
 
         self.assert_balance(sender_account.address, amount - transfer_amount)
         self.assert_balance(recipient_account.address, InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value + transfer_amount)

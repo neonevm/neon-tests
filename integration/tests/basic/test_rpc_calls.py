@@ -1,15 +1,16 @@
 import time
-import sha3
 import typing as tp
 from enum import Enum
 
 import allure
 import pytest
+import sha3
 
-from utils.consts import Unit
-from utils.helpers import gen_hash_of_block
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
+from utils import helpers
+from utils.consts import Unit
+from utils.helpers import gen_hash_of_block
 
 """
 12.	Verify implemented rpc calls work
@@ -86,11 +87,9 @@ def get_event_signatures(abi: tp.List[tp.Dict]) -> tp.List[str]:
     """Get topics as keccak256 from abi Events"""
     topics = []
     for event in filter(lambda item: item["type"] == "event", abi):
-        input_types = str()
-        for event_input in event["inputs"]:
-            input_types = input_types + f"{event_input['type']},"
+        input_types = ",".join(i["type"] for i in event["inputs"])
         keccak256 = sha3.keccak_256()
-        keccak256.update(f"{event['name']}({input_types[:-1]})".encode())
+        keccak256.update(f"{event['name']}({input_types})".encode())
         topics.append(f"0x{keccak256.hexdigest()}")
     return topics
 
@@ -495,3 +494,64 @@ class TestRpcCalls(BaseMixin):
         assert "error" in response
         assert "message" in response["error"]
         assert response["error"]["message"] == f"method {method} is not supported", response
+
+
+@allure.story("Basic: Json-RPC call tests - `eth_estimateGas`")
+class TestRpcCallsMoreComplex(TestRpcCalls):
+
+    account: "eth_account.signers.local.LocalAccount" = None
+
+    @pytest.fixture(params=[(850000, 15000), (8500000, 150000), (85000000, 1500000)])
+    def constructor_args(self, request: tp.Any) -> tp.List[int]:
+        return request.param
+
+    @pytest.fixture(params=["BigGasFactory", "BigGas"])
+    def deploy_contract(self, request: tp.Any, constructor_args: tp.List[int]) -> "web3._utils.datatypes.Contract":
+        """Deploy contracts"""
+        self.account = self.sender_account
+        #  contract
+        contract_interface = helpers.get_contract_interface(
+            contract="NDEV49", version="0.8.10", contract_name=request.param
+        )
+        counter = self.web3_client.eth.contract(abi=contract_interface["abi"], bytecode=contract_interface["bin"])
+        # Build transaction
+        transaction = counter.constructor(*constructor_args).buildTransaction(
+            {
+                "chainId": self.web3_client._chain_id,
+                "gas": 0,
+                "gasPrice": self.web3_client.gas_price(),
+                "nonce": self.web3_client.eth.get_transaction_count(self.account.address),
+                "value": 0,
+            }
+        )
+        del transaction["to"]
+        # Check Base contract eth_estimateGas
+        response = self.proxy_api.send_rpc(method="eth_estimateGas", params=transaction)
+        assert "error" not in response
+        assert self.is_hex(response["result"]), f"Invalid response result, `{response['result']}`"
+        transaction["gas"] = int(response["result"], 16)
+        # Deploy contract
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.account.key)
+        tx = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)
+        contract_deploy_tx = self.web3_client.eth.wait_for_transaction_receipt(tx)
+        return self.web3_client.eth.contract(
+            address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
+        )
+
+    def test_check_eth_estimate_gas_with_big_int(self, deploy_contract: tp.Any) -> None:
+        """Check eth_estimateGas request on contracts with big int"""
+        big_gas_contract = deploy_contract
+        trx_big_gas = big_gas_contract.functions.checkBigGasRequirements().buildTransaction(
+            {
+                "chainId": self.web3_client._chain_id,
+                "from": self.account.address,
+                "nonce": self.web3_client.eth.get_transaction_count(self.account.address),
+                "gas": 0,
+                "gasPrice": self.web3_client.gas_price(),
+                "value": 0,
+            }
+        )
+        # Check Base contract eth_estimateGas
+        response = self.proxy_api.send_rpc(method="eth_estimateGas", params=trx_big_gas)
+        assert "error" not in response
+        assert self.is_hex(response["result"]), f"Invalid response result, `{response['result']}`"

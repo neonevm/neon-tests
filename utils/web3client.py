@@ -152,13 +152,14 @@ class NeonWeb3Client:
 
     def deploy_and_get_contract(
         self,
-        contract_name: str,
+        contract: str,
         version: str,
         account: eth_account.signers.local.LocalAccount,
+        contract_name: tp.Optional[str] = None,
         constructor_args: tp.Optional[tp.Any] = None,
         gas: tp.Optional[int] = 0,
     ) -> tp.Tuple[tp.Any, web3.types.TxReceipt]:
-        contract_interface = helpers.get_contract_interface(contract_name, version)
+        contract_interface = helpers.get_contract_interface(contract, version, contract_name=contract_name)
 
         contract_deploy_tx = self.deploy_contract(
             account,

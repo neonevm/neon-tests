@@ -26,12 +26,12 @@ contract BigGasFactory {
 
     function checkBigGasRequirements() public returns (uint256) {
     // Create new contract form Factory and check big int requirements
+        require(gasleft() >= PROCESS_GAS + RESERVE_GAS, "!gas");
         BigGas big_gas = new BigGas(
             PROCESS_GAS,
             RESERVE_GAS
         );
         _big_gas.push(big_gas);
-        require(gasleft() >= PROCESS_GAS + RESERVE_GAS, "!gas");
         return 1;
     }
 

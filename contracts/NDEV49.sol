@@ -7,9 +7,10 @@ pragma solidity >=0.7.0 <0.9.0;
  * @dev Implements voting process along with vote delegation
  */
 
-contract BigGasFactory {
 
-    BigGas[] private _big_gas;
+contract BigGasFactory1 {
+
+    BigGasFactory2[] private _big_gas;
     uint256 public immutable PROCESS_GAS;
     uint256 public immutable RESERVE_GAS;
 
@@ -27,7 +28,7 @@ contract BigGasFactory {
     function checkBigGasRequirements() public returns (uint256) {
     // Create new contract form Factory and check big int requirements
         require(gasleft() >= PROCESS_GAS + RESERVE_GAS, "!gas");
-        BigGas big_gas = new BigGas(
+        BigGasFactory2 big_gas = new BigGasFactory2(
             PROCESS_GAS,
             RESERVE_GAS
         );
@@ -35,17 +36,18 @@ contract BigGasFactory {
         return 1;
     }
 
-    function allBigGas() public returns (BigGas[] memory coll) {
+    function allBigGas() public returns (BigGasFactory2[] memory coll) {
         return coll;
     }
 }
 
-contract BigGas {
 
+contract BigGasFactory2 {
+
+    Test[] private _test;
     uint256 public immutable PROCESS_GAS;
     uint256 public immutable RESERVE_GAS;
-    address public owner;
-    uint public gas_price;
+    uint public counter;
 
     constructor(
         uint256 _processGas,
@@ -56,14 +58,28 @@ contract BigGas {
         require(_reserveGas >= 15_000, "!reserve gas");
         PROCESS_GAS = _processGas;
         RESERVE_GAS = _reserveGas;
-        owner = msg.sender;
-        gas_price = tx.gasprice;
+        counter = 0;
     }
 
-    function checkBigGasRequirements() public view returns (uint256) {
+    function checkBigGasRequirements() public returns (uint256) {
     // Check big int requirements
         require(gasleft() >= PROCESS_GAS + RESERVE_GAS, "!gas");
-        return 1;
+        do {
+            Test test = new Test();
+            _test.push(test);
+            counter++;
+        } while (counter != 5 );
+        return counter;
     }
 }
 
+contract Test {
+
+    address public owner;
+    uint public gas_price;
+
+    constructor() {
+        owner = msg.sender;
+        gas_price = tx.gasprice;
+    }
+}

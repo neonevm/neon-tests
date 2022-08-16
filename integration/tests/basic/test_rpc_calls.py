@@ -150,20 +150,43 @@ class TestRpcCalls(BaseMixin):
             assert "error" not in response
             assert self.is_hex(response["result"]), f"Invalid current gas price `{response['result']}` in wei"
 
-    @pytest.mark.parametrize("params", [Tag.LATEST, Tag.PENDING])
-    def test_eth_get_logs_via_tags(self, params: Tag, send_erc20: tp.Any):
+    @pytest.mark.parametrize(
+        "tag1, tag2",
+        [
+            (None, None),
+            (None, Tag.LATEST),
+            (None, Tag.PENDING),
+            (None, Tag.EARLIEST),
+            (Tag.LATEST, Tag.LATEST),
+            (Tag.LATEST, Tag.PENDING),
+            (Tag.LATEST, Tag.EARLIEST),
+            (Tag.LATEST, None),
+            (Tag.PENDING, Tag.PENDING),
+            (Tag.PENDING, Tag.LATEST),
+            (Tag.PENDING, Tag.EARLIEST),
+            (Tag.PENDING, None),
+            (Tag.EARLIEST, Tag.EARLIEST),
+            (Tag.EARLIEST, Tag.PENDING),
+            (Tag.EARLIEST, Tag.LATEST),
+            (Tag.EARLIEST, None)
+        ],
+    )
+    def test_eth_get_logs_via_tags(self, tag1: Tag, tag2: Tag, send_erc20: tp.Any):
         """Verify implemented rpc calls work eth_getLogs"""
         contract, deploy_tx, _ = send_erc20
         topics = get_event_signatures(contract.abi)
         params = {
-            "fromBlock": Tag.EARLIEST.value,
-            "toBlock": params.value,
             "address": deploy_tx.contractAddress,
             "topics": topics,
         }
+        if tag1:
+            params["fromBlock"] = tag1.value
+        if tag2:
+            params["toBlock"] = tag2.value
         response = self.proxy_api.send_rpc("eth_getLogs", params=params)
         assert "error" not in response
-        assert any(topic in response["result"][0]["topics"] for topic in topics)
+        if response["result"]:
+            assert any(topic in response["result"][0]["topics"] for topic in topics)
 
     @pytest.mark.parametrize(
         "params, raises",

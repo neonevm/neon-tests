@@ -54,7 +54,7 @@ def pytest_runtest_protocol(item, nextitem):
 
 
 def pytest_configure(config: Config):
-    network_name = config.getoption("--network")
+    network_name = config.getoption("--network", default="night-stand")
     envs_file = config.getoption("--envs")
     with open(pathlib.Path().parent.parent / envs_file, "r+") as f:
         environments = json.load(f)

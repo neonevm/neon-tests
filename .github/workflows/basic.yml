@@ -115,7 +115,7 @@ jobs:
         if: always()
         uses: QuintilianoNery/action-allure-report-V2@master
       - name: "Fix permissions"
-        if: "${{ env.RUNNER == 'neon-hosted' }}"
+        if: "${{ env.RUNNER == 'neon-hosted' && steps.basic.conclusion == 'failure' or steps.basic.conclusion == 'success'}}"
         continue-on-error: true
         run: sudo chown deploy:deploy -R allure-report
       - name: "Upload allure history"

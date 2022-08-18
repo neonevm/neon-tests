@@ -126,7 +126,6 @@ class TestRpcCalls(BaseMixin):
     )
     def test_eth_call(self, params: tp.Union[Tag, None], raises: bool):
         """Verify implemented rpc calls work eth_call"""
-        raise AssertionError("Test")
         if params:
             params = [{"to": self.recipient_account.address, "data": hex(pow(10, 14))}, params.value]
 

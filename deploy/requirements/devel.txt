@@ -1,1 +1,2 @@
 black==21.12b0
+ipython==8.1.1

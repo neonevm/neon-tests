@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Locale
+export LC_ALL=C.UTF-8
+export LANG=C.UTF-8
+
+# Docker
+export DOCKER_HOST=unix:///var/run/docker.sock
+
+# Python
+export PYTHONPATH=${PYTHONPATH:-.}:/neon-tests
+export PYTHONDONTWRITEBYTECODE=1
+
+# Aliases
+export SOURCE_DIR="/neon-tests"
+alias cli=${SOURCE_DIR}/clickfile.py

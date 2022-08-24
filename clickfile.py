@@ -597,7 +597,8 @@ def create_devbox(prefix="", tag="latest"):
     if not docker_utils.docker_inspect(box_name):
         box_image = f"{prefix}/{box_name}:{tag}"
         if not docker_utils.docker_image_exists(box_image):
-            return print(env.yellow(f"No {box_image} image found, run `devbox build` command"))
+            print(env.yellow(f"No {box_image} image found, run `devbox build` command"))
+            exit()
         # Run devbox in user-defined network and link it for test containers
         if not docker_utils.docker_inspect_network(network_name):
             env.shell(f"docker network create {network_name}")
@@ -610,9 +611,9 @@ def create_devbox(prefix="", tag="latest"):
             args = []
 
             # neon client
-            neon_cli_path = f"{cwd}/deploy/infra/neon-cli/neon-cli"
-            if os.path.exists(neon_cli_path):
-                args.append(f"-v {neon_cli_path}:/usr/local/bin")
+            neon_cli_path = f"{cwd}/deploy/infra/tools/neon-cli"
+            if os.path.isfile(neon_cli_path):
+                args.append(f"-v {neon_cli_path}:/usr/local/bin/neon-cli")
             else:
                 print(env.yellow(f"copy file `neon-cli` to {neon_cli_path} for load tests to work properly"))
             # pip/pip-tools cache
@@ -664,7 +665,6 @@ def create_devbox(prefix="", tag="latest"):
             " -v /var/run/docker.sock:/var/run/docker.sock"
             # For pytest fileutil mount shared fixtures in /tmp/fatmouse
             " -v /tmp:/tmp"
-            #
             f" {var_args()} {box_image} {workspace}/deploy/infra/devbox/startup.sh",
             capture=True,
         )

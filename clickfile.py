@@ -516,14 +516,13 @@ def send_notification(url, build_url):
 @cli.group()
 @click.pass_context
 def devbox(ctx):
-    """Commands for devbox"""
+    """Commands for devbox manipulation."""
 
 
-@devbox.command('rm')
+@devbox.command("rm")
 @click.pass_context
 def rm(ctx):
-    """Terminate.
-    """
+    """Terminate existing devbox."""
     if docker_utils.docker_inspect(DEVBOX_NAME):
         env.shell(f"docker rm -f {DEVBOX_NAME}")
         print(env.green("Terminated devbox"))
@@ -531,7 +530,7 @@ def rm(ctx):
         print(env.green("DevBox not running, nothing to terminate"))
 
 
-@devbox.command('build')
+@devbox.command("build")
 @click.pass_context
 @click.option(
     "-p",
@@ -571,7 +570,7 @@ def rm(ctx):
 )
 @click.option("--dry-run", is_flag=True, default=False, help="Dry run")
 def build(ctx, image_path, image_name, tag, quick, dry_run=None):
-    """Build docker images."""
+    """Build devbox docker image."""
     env.header("Prepare docker images build...")
     image = docker_utils.Image(pathlib.Path(image_path), image_name, tag)
     build_args = ()
@@ -606,8 +605,7 @@ def create_devbox(prefix="", tag="latest"):
         home = os.path.expanduser("~")
 
         def var_args():
-            """Variatic arguments
-            """
+            """Variatic arguments"""
             args = []
 
             # neon client
@@ -616,6 +614,12 @@ def create_devbox(prefix="", tag="latest"):
                 args.append(f"-v {neon_cli_path}:/usr/local/bin/neon-cli")
             else:
                 print(env.yellow(f"copy file `neon-cli` to {neon_cli_path} for load tests to work properly"))
+            # solana operator keys
+            operator_keys_path = f"{cwd}/loadtesting/synthetic/operator-keypairs"
+            if os.path.exists(operator_keys_path):
+                args.append(f"-v {operator_keys_path}:/root/.config/solana")
+            else:
+                print(env.yellow(f"copy solana operator keys to {operator_keys_path} for load tests to work properly"))
             # pip/pip-tools cache
             if os.path.exists(f"{home}/.cache"):
                 args.append(f"-v {home}/.cache:/root/.cache")
@@ -629,15 +633,10 @@ def create_devbox(prefix="", tag="latest"):
                 args.append(f"-v {home}/.ssh:/root/.ssh")
             # pass ssh-agent to container
             if "SSH_AUTH_SOCK" in os.environ and platform.system() == "Linux":
-                args.append(
-                    f" -v {os.environ['SSH_AUTH_SOCK']}:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent "
-                )
+                args.append(f" -v {os.environ['SSH_AUTH_SOCK']}:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent ")
             elif platform.system() == "Darwin":
                 sock_path = os.environ.get("SSH_AUTH_SOCK", "/run/host-services/ssh-auth.sock")
-                args.append(
-                    f" --mount type=bind,src={sock_path},target=/ssh-agent -e "
-                    "SSH_AUTH_SOCK=/ssh-agent "
-                )
+                args.append(f" --mount type=bind,src={sock_path},target=/ssh-agent -e " "SSH_AUTH_SOCK=/ssh-agent ")
 
             shell_history_path = f"{cwd}/deploy/infra/devbox/.bash_history"
             # Ensure .bash_history exists
@@ -657,15 +656,13 @@ def create_devbox(prefix="", tag="latest"):
             f" -w {workspace}"
             f" -v {cwd}:{workspace}"
             # SSH for remote debugging
-            f" -p {provide_ssh_port}"
-            f" -v {cwd}/deploy/infra/devbox/ssh/id_ed25519.pub:/root/.ssh/authorized_keys"
+            f" -p {provide_ssh_port}" f" -v {cwd}/deploy/infra/devbox/ssh/id_ed25519.pub:/root/.ssh/authorized_keys"
             # Bash profile and history
             f" -v {cwd}/deploy/infra/devbox/.bash-profile:/etc/profile.d/neontests.sh"
             # Docker host socket
             " -v /var/run/docker.sock:/var/run/docker.sock"
-            # For pytest fileutil mount shared fixtures in /tmp/fatmouse
-            " -v /tmp:/tmp"
-            f" {var_args()} {box_image} {workspace}/deploy/infra/devbox/startup.sh",
+            # For pytest fileutil mount shared fixtures
+            " -v /tmp:/tmp" f" {var_args()} {box_image} {workspace}/deploy/infra/devbox/startup.sh",
             capture=True,
         )
         print(env.green("Started devbox"))
@@ -674,11 +671,10 @@ def create_devbox(prefix="", tag="latest"):
     return box_name
 
 
-@devbox.command('up')
+@devbox.command("up")
 @click.pass_context
 def up(ctx):
-    """Start new or attach.
-    """
+    """Start new devbox or attach existing."""
     box_name = create_devbox()
     # Attach to running container
     env.shell(f"docker exec -it {box_name} bash --login; exit 0")

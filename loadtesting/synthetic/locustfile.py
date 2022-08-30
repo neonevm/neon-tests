@@ -315,11 +315,6 @@ class SOLClient(SolanaClient):
             self.send_transaction(trx, signer.keypair())
         return storage
 
-    def get_confirmed_transaction(self, tx_sig):
-        res = super(SOLClient, self).get_confirmed_transaction(tx_sig)
-        print(f"{30*'_'}{res}")
-        return res
-
     def send_transaction(self, trx, acc, wait_status=utils.SOLCommitmentState.CONFIRMED):
         tx_sig = super(SOLClient, self).send_transaction(
             trx, acc, opts=TxOpts(skip_confirmation=True, preflight_commitment=wait_status)

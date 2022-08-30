@@ -1,3 +1,4 @@
+import collections
 import functools
 import json
 import logging
@@ -8,13 +9,14 @@ import sys
 import time
 import typing as tp
 import uuid
+from functools import lru_cache
 
 import gevent
 import requests
 import solana
+import web3
 from locust import User, TaskSet, between, task, events, tag
 from solana.keypair import Keypair
-from functools import lru_cache
 
 from utils import helpers
 from utils.erc20wrapper import ERC20Wrapper
@@ -51,6 +53,16 @@ NEON_TOKEN_VERSION = "0.8.10"
 """Neon tokens contract version
 """
 
+DEFAULT_PICKLED_FILE = "pickled_data/transaction.json"
+"""Default file name for transaction history
+"""
+
+# init global transaction history
+global _transaction_history
+_transaction_history = collections.defaultdict(list)
+"""Transactions storage {account: [{blockNumber, blockHash, contractAddress},]}
+"""
+
 
 def init_session(size: int) -> requests.Session:
     """init request session with extended connection pool size"""
@@ -85,6 +97,18 @@ def load_credentials(environment, **kwargs):
         global credentials
         f = json.load(fp)
         credentials = f.get(network, f[DEFAULT_NETWORK])
+
+
+@events.test_stop.add_listener
+def teardown(**kwargs) -> None:
+    """Called when a User stops executing this TaskSet or interrupt() is called or when the User is killed"""
+    if _transaction_history:
+        pickled_path = pathlib.Path(__file__).parent / DEFAULT_PICKLED_FILE
+        pickled_path.parents[0].mkdir(parents=True, exist_ok=True)
+        with open(pickled_path, "w") as fp:
+            fp.truncate(0)
+            LOG.info(f"Pickle transaction history to `{pickled_path.as_posix()}`")
+            json.dump(_transaction_history, fp=fp, indent=4, sort_keys=True)
 
 
 class LocustEventHandler(object):
@@ -158,7 +182,7 @@ class NeonWeb3ClientExt(NeonWeb3Client):
         try:
             attr = object.__getattribute__(self, item)
         except AttributeError:
-            attr = super(NeonWeb3ClientExt, self).__getattribute__(item)
+            attr = super(NeonWeb3ClientExt, self).__getattr__(item)
         if callable(attr) and item not in ignore_list:
             attr = statistics_collector(attr)
         return attr
@@ -338,7 +362,7 @@ class BaseResizingTasksSet(NeonProxyTasksSet):
                 }
             )
             getattr(self._web3_client, f"{item}_account")(self.account, tx)
-            #self._web3_client.send_transaction(self.account, tx)
+            # self._web3_client.send_transaction(self.account, tx)
             return
         self.log.debug(f"no `{self._contract_name}` contracts found, account {item}rease canceled.")
 
@@ -400,13 +424,14 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
             self.log.info(
                 f"Send `{self._contract_name.lower()}` tokens from {str(contract.address)[:8]} to {str(recipient.address)[:8]}."
             )
-            if self._web3_client.send_erc20(self.account, recipient, 1, contract.address, abi=contract.abi):
+            tx_receipt = self._web3_client.send_erc20(self.account, recipient, 1, contract.address, abi=contract.abi)
+            if tx_receipt:
                 self._buffer.setdefault(recipient.address, set()).add(contract)
             # remove contracts without balance
             if contract.functions.balanceOf(self.account.address).call() < 1:
                 self.log.info(f"Remove contract `{contract.address[:8]}` with empty balance from buffer.")
                 contracts.remove(contract)
-            return
+            return tx_receipt
         self.log.info(f"no `{self._contract_name.upper()}` contracts found, send is cancel.")
 
 
@@ -419,7 +444,15 @@ def extend_task(*attrs) -> tp.Callable:
         def task_wrapper(self, *args, **kwargs) -> tp.Any:
             for attr in attrs:
                 getattr(self, attr)(*args, **kwargs)
-            func(self, *args, **kwargs)
+            tx_receipt = func(self, *args, **kwargs)
+            if tx_receipt and isinstance(tx_receipt, web3.datastructures.AttributeDict):
+                _transaction_history[str(tx_receipt["to"])].append(
+                    {
+                        "blockHash": tx_receipt["blockHash"].hex(),
+                        "blockNumber": tx_receipt["blockNumber"],
+                        "contractAddress": tx_receipt["contractAddress"],
+                    }
+                )
 
         return task_wrapper
 
@@ -432,12 +465,12 @@ class NeonTasksSet(NeonProxyTasksSet):
 
     @task
     @extend_task("task_block_number", "task_keeps_balance")
-    def task_send_neon(self) -> None:
+    def task_send_neon(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Transferring funds to a random account"""
         # add credits to account
         recipient = random.choice(self._accounts)
         self.log.info(f"Send `neon` from {str(self.account.address)[:8]} to {str(recipient.address)[:8]}.")
-        self._web3_client.send_neon(self.account, recipient, amount=1)
+        return self._web3_client.send_neon(self.account, recipient, amount=1)
 
 
 @tag("erc20")
@@ -458,9 +491,9 @@ class ERC20TasksSet(ERC20BaseTasksSet):
 
     @task(5)
     @extend_task("task_block_number", "task_keeps_balance")
-    def task_send_erc20(self) -> None:
+    def task_send_erc20(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Send ERC20 tokens"""
-        super(ERC20TasksSet, self).task_send_tokens()
+        return super(ERC20TasksSet, self).task_send_tokens()
 
 
 @tag("spl")

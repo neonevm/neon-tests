@@ -53,13 +53,13 @@ NEON_TOKEN_VERSION = "0.8.10"
 """Neon tokens contract version
 """
 
-DEFAULT_PICKLED_FILE = "pickled_data/transaction.json"
+DEFAULT_DUMP_FILE = "dumped_data/transaction.json"
 """Default file name for transaction history
 """
 
 # init global transaction history
-global _transaction_history
-_transaction_history = collections.defaultdict(list)
+global transaction_history
+transaction_history = collections.defaultdict(list)
 """Transactions storage {account: [{blockNumber, blockHash, contractAddress},]}
 """
 
@@ -102,13 +102,12 @@ def load_credentials(environment, **kwargs):
 @events.test_stop.add_listener
 def teardown(**kwargs) -> None:
     """Called when a User stops executing this TaskSet or interrupt() is called or when the User is killed"""
-    if _transaction_history:
-        pickled_path = pathlib.Path(__file__).parent / DEFAULT_PICKLED_FILE
-        pickled_path.parents[0].mkdir(parents=True, exist_ok=True)
-        with open(pickled_path, "w") as fp:
-            fp.truncate(0)
-            LOG.info(f"Pickle transaction history to `{pickled_path.as_posix()}`")
-            json.dump(_transaction_history, fp=fp, indent=4, sort_keys=True)
+    if transaction_history:
+        dumped_path = pathlib.Path(__file__).parent / DEFAULT_DUMP_FILE
+        dumped_path.parents[0].mkdir(parents=True, exist_ok=True)
+        with open(dumped_path, "w") as fp:
+            LOG.info(f"Dumped transaction history to `{dumped_path.as_posix()}`")
+            json.dump(transaction_history, fp=fp, indent=4, sort_keys=True)
 
 
 class LocustEventHandler(object):
@@ -446,7 +445,7 @@ def extend_task(*attrs) -> tp.Callable:
                 getattr(self, attr)(*args, **kwargs)
             tx_receipt = func(self, *args, **kwargs)
             if tx_receipt and isinstance(tx_receipt, web3.datastructures.AttributeDict):
-                _transaction_history[str(tx_receipt["to"])].append(
+                transaction_history[str(tx_receipt["to"])].append(
                     {
                         "blockHash": tx_receipt["blockHash"].hex(),
                         "blockNumber": tx_receipt["blockNumber"],

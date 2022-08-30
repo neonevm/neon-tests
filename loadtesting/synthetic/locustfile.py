@@ -12,23 +12,23 @@ import pathlib
 import random
 import subprocess
 import typing as tp
-from dataclasses import dataclass
+from hashlib import sha256
 
 import requests
 import web3
-from solana.account import Account as SOLAccount
-from solana.keypair import Keypair
-from solana.publickey import PublicKey
-from solana.rpc import commitment
-from solana.rpc.api import Client as SolanaClient
 
 # from solana.transaction import AccountMeta, TransactionInstruction  # , Transaction
 from eth_keys import keys as eth_keys
+from solana.account import Account as SOLAccount
+from solana.keypair import Keypair
+from solana.publickey import PublicKey
+from solana.rpc.api import Client as SolanaClient
 from solana.rpc.providers import http
-from construct import Bytes, Int8ul, Struct
+from solana.rpc.types import TxOpts
 
 from ui.libs import try_until
 from utils import faucet
+from . import utils
 
 LOG = logging.getLogger("sol-client")
 
@@ -59,38 +59,6 @@ SYS_INSTRUCT_ADDRESS = "Sysvar1nstructions1111111111111111111111111"
 """
 """
 
-ACCOUNT_INFO_LAYOUT = Struct(
-    "type" / Int8ul,
-    "ether" / Bytes(20),
-    "nonce" / Int8ul,
-    "trx_count" / Bytes(8),
-    "balance" / Bytes(32),
-    "code_account" / Bytes(32),
-    "is_rw_blocked" / Int8ul,
-    "ro_blocked_cnt" / Int8ul,
-)
-
-
-@dataclass
-class AccountInfo:
-    ether: eth_keys.PublicKey
-    code_account: PublicKey
-    trx_count: int
-
-    @staticmethod
-    def from_bytes(data: bytes):
-        cont = ACCOUNT_INFO_LAYOUT.parse(data)
-        return AccountInfo(cont.ether, PublicKey(cont.code_account), cont.trx_count)
-
-
-@dataclass
-class SOLCommitmentState:
-    """Bank states to solana query"""
-
-    CONFIRMED: str = commitment.Confirmed
-    FINALIZED: str = commitment.Finalized
-    PROCESSED: str = commitment.Processed
-
 
 def init_session(size: int) -> requests.Session:
     """init request session with extended connection pool size"""
@@ -114,6 +82,7 @@ def handle_failed_requests(func: tp.Callable) -> tp.Callable:
 
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs) -> tp.Any:
+        print(f"{30*'_'} Make extended request")
         resp = func(self, *args, **kwargs)
         if resp.get("error"):
             raise AssertionError(
@@ -127,7 +96,6 @@ def handle_failed_requests(func: tp.Callable) -> tp.Callable:
 class ExtendedHTTPProvider(http.HTTPProvider):
     @handle_failed_requests
     def make_request(self, *args, **kwargs) -> tp.Dict:
-        print(f"{30*'_'} Make extended request")
         return super(ExtendedHTTPProvider, self).make_request(*args, **kwargs)
 
 
@@ -153,7 +121,7 @@ class NeonClient:
         cmd = (
             f"neon-cli {self._verbose_flags} "
             f"-vvv "
-            f"--commitment={SOLCommitmentState.PROCESSED} "
+            f"--commitment={utils.SOLCommitmentState.PROCESSED} "
             f"--url {self._solana_url} "
             f"--evm_loader {self._loader_id} "
             f"{comand.replace('_','-')} {''.join(map(str, args))}"
@@ -179,6 +147,10 @@ class OperatorAccount(SOLAccount):
     def get_path(self) -> str:
         """Return operator key storage path"""
         return self._path.as_posix()
+
+    @property
+    def eth_address(self) -> str:
+        return eth_keys.PrivateKey(self.secret_key()[:32]).public_key.to_canonical_address()
 
 
 class EvmLoader:
@@ -214,6 +186,7 @@ class SOLClient(SolanaClient):
         self._evm_loader = EvmLoader(credentials["evm_loader"], credentials["solana_url"])
         super(SOLClient, self).__init__()
         self._provider = ExtendedHTTPProvider(credentials["solana_url"], timeout=timeout)
+        self._credentials = credentials
 
     def wait_confirmation(self, tx_sig: str, confirmations: tp.Optional[int] = 0) -> bool:
         """"""
@@ -225,8 +198,8 @@ class SOLClient(SolanaClient):
                 confirmation_status = result["confirmationStatus"]
                 confirmation_count = result["confirmations"] or 0
                 return (
-                    confirmation_status == SOLCommitmentState.FINALIZED
-                    or confirmation_status == SOLCommitmentState.CONFIRMED
+                    confirmation_status == utils.SOLCommitmentState.FINALIZED
+                    or confirmation_status == utils.SOLCommitmentState.CONFIRMED
                 ) and confirmation_count >= confirmations
             return False
 
@@ -243,7 +216,7 @@ class SOLClient(SolanaClient):
     def get_sol_balance(
         self,
         address: tp.Union[str, "eth_account.signers.local.LocalAccount"],
-        state: str = SOLCommitmentState.CONFIRMED,
+        state: str = utils.SOLCommitmentState.CONFIRMED,
     ) -> int:
         if isinstance(address, PublicKey):
             address = str(address)
@@ -255,7 +228,7 @@ class SOLClient(SolanaClient):
         self,
         address: tp.Union[OperatorAccount, str],
         amount: int = DEFAULT_SOL_AMOUNT,
-        state: str = SOLCommitmentState.CONFIRMED,
+        state: str = utils.SOLCommitmentState.CONFIRMED,
     ) -> tp.Any:
         """Requests sol to account"""
         if isinstance(address, OperatorAccount):
@@ -264,16 +237,16 @@ class SOLClient(SolanaClient):
             address = str(address)
         return self.request_airdrop(pubkey=address, lamports=amount, commitment=state)
 
-    def get_account_data(
+    def _get_account_data(
         self,
         account: tp.Union[str, PublicKey, Keypair, OperatorAccount],
-        expected_length: int = ACCOUNT_INFO_LAYOUT.sizeof(),
+        expected_length: int = utils.ACCOUNT_INFO_LAYOUT.sizeof(),
     ) -> bytes:
         if isinstance(account, Keypair):
             account = account.public_key
         elif isinstance(account, OperatorAccount):
             account = account.public_key()
-        resp = self.get_account_info(account, commitment=SOLCommitmentState.CONFIRMED).get("value")
+        resp = self.get_account_info(account, commitment=utils.SOLCommitmentState.CONFIRMED).get("value")
         if not resp:
             raise Exception(f"Can't get information about {account}")
         data = base64.b64decode(resp["data"][0])
@@ -282,12 +255,84 @@ class SOLClient(SolanaClient):
         return data
 
     def get_transaction_count(self, account: tp.Union[str, PublicKey, OperatorAccount]) -> int:
-        if isinstance(account, Keypair):
-            account = account.public_key
-        elif isinstance(account, OperatorAccount):
-            account = account.public_key()
-        info = AccountInfo.from_bytes(self.get_account_data(account))
+        info = utils.AccountInfo.from_bytes(self._get_account_data(account))
         return int.from_bytes(info.trx_count, "little")
+
+    def make_eth_transaction(
+        self, to_addr: str, data: bytes, signer: OperatorAccount, from_solana_user: PublicKey, user_eth_address: bytes
+    ):
+        def make_instruction_data_from_tx(instruction, private_key=None):
+            if instruction["chainId"] is None:
+                raise Exception("chainId value is needed in input dict")
+            if private_key is None:
+                raise Exception("Needed private key for transaction creation from fields")
+
+            signed_tx = self._web3.eth.account.sign_transaction(instruction, private_key)
+            _trx = utils.Trx.from_string(signed_tx.rawTransaction)
+
+            raw_msg = _trx.get_msg(instruction["chainId"])
+            sig = eth_keys.Signature(vrs=[1 if _trx.v % 2 == 0 else 0, _trx.r, _trx.s])
+            pub = sig.recover_public_key_from_msg_hash(_trx.hash())
+
+            return pub.to_canonical_address(), sig.to_bytes(), raw_msg
+
+        nonce = self.get_transaction_count(from_solana_user)
+        tx = {
+            "to": to_addr,
+            "value": 0,
+            "gas": 9999999999,
+            "gasPrice": 0,
+            "nonce": nonce,
+            "data": data,
+            "chainId": self._credentials["network_id"],
+        }
+        (from_addr, sign, msg) = make_instruction_data_from_tx(tx, signer.secret_key()[:32])
+        assert from_addr == user_eth_address, (from_addr, user_eth_address)
+        return from_addr, sign, msg, nonce
+
+    def create_storage_account(
+        self, signer: OperatorAccount, seed: bytes = None, size: int = None, fund: int = None
+    ) -> PublicKey:
+        if size is None:
+            size = 128 * 1024
+        if fund is None:
+            fund = 10 ** 9
+        if seed is None:
+            seed = str(random.randrange(1000000))
+        storage = PublicKey(
+            sha256(
+                bytes(signer.public_key()) + bytes(seed, "utf8") + bytes(PublicKey(self._credentials["evm_loader"]))
+            ).digest()
+        )
+
+        if self.get_sol_balance(storage).get("value") == 0:
+            trx = utils.TransactionWithComputeBudget()
+            trx.add(
+                utils.create_account_with_seed(
+                    signer.public_key(), signer.public_key(), seed, fund, size, self._credentials["evm_loader"]
+                )
+            )
+            self.send_transaction(trx, signer.keypair())
+        return storage
+
+    def get_confirmed_transaction(self, tx_sig):
+        res = super(SOLClient, self).get_confirmed_transaction(tx_sig)
+        print(f"{30*'_'}{res}")
+        return res
+
+    def send_transaction(self, trx, acc, wait_status=utils.SOLCommitmentState.CONFIRMED):
+        tx_sig = super(SOLClient, self).send_transaction(
+            trx, acc, opts=TxOpts(skip_confirmation=True, preflight_commitment=wait_status)
+        )
+        print(f"{30*'_'}{tx_sig}")
+        confirmation = self.wait_confirmation(tx_sig)
+        print(f"{30*'_'}{confirmation}")
+        return try_until(
+            lambda: self.get_confirmed_transaction(tx_sig) is not None,
+            interval=10,
+            timeout=60,
+            error_msg=f"Can't get confirmed transaction {tx_sig}",
+        )
 
     """
     def make_PartialCallOrContinueFromRawEthereumTX(
@@ -337,10 +382,23 @@ sol_client = SOLClient()
 
 
 def create_transaction():
+    # Create transaction signer
     operator = OperatorAccount(random.choice(range(2, 31)))
-    tx_sig = sol_client.request_airdrop(operator, 1000)
+    tx_sig = sol_client.request_sol(operator, 1000)
     sol_client.wait_confirmation(tx_sig)
-    eth_account_address = sol_client.create_eth_account().address
-    sol_account_address = sol_client.create_solana_program(eth_account_address)[0]
-    sol_client.request_airdrop(sol_account_address, 1000)
-    sol_client.wait_confirmation(tx_sig)
+    operator_sol_program = sol_client.create_solana_program(operator.eth_address)[0]
+    # Create sender account
+    from_eth_account_address = sol_client.create_eth_account().address
+    from_sol_account_address = sol_client.create_solana_program(from_eth_account_address)[0]
+    # Create one more account to receive neons
+    to_eth_account_address = sol_client.create_eth_account().address
+    to_sol_account_address = sol_client.create_solana_program(to_eth_account_address)[0]
+
+    eth_transaction = sol_client.make_eth_transaction(
+        to_eth_account_address,
+        data=b"",
+        signer=operator,
+        from_solana_user=operator_sol_program,
+        user_eth_address=operator.eth_address,
+    )
+    storage_account = sol_client.create_storage_account(operator)

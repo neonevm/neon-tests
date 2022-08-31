@@ -101,7 +101,7 @@ def load_credentials(environment, **kwargs):
 
 @events.test_stop.add_listener
 def teardown(**kwargs) -> None:
-    """Called when a User stops executing this TaskSet or interrupt() is called or when the User is killed"""
+    """Test stop event handler"""
     if transaction_history:
         dumped_path = pathlib.Path(__file__).parent / DEFAULT_DUMP_FILE
         dumped_path.parents[0].mkdir(parents=True, exist_ok=True)

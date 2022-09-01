@@ -445,11 +445,12 @@ def extend_task(*attrs) -> tp.Callable:
                 getattr(self, attr)(*args, **kwargs)
             tx_receipt = func(self, *args, **kwargs)
             if tx_receipt and isinstance(tx_receipt, web3.datastructures.AttributeDict):
-                transaction_history[str(tx_receipt["to"])].append(
+                transaction_history[str(tx_receipt["from"])].append(
                     {
                         "blockHash": tx_receipt["blockHash"].hex(),
                         "blockNumber": tx_receipt["blockNumber"],
                         "contractAddress": tx_receipt["contractAddress"],
+                        "to": str(tx_receipt["to"])
                     }
                 )
 

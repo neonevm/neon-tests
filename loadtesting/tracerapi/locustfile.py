@@ -3,19 +3,20 @@
 Created on 2022-08-31
 @author: Eugeny Kurkovich
 """
-import os
 import functools
 import json
 import logging
+import os
 import pathlib
+import random
 import sys
 import time
 import typing as tp
 import uuid
-import random
 
 import gevent
 import requests
+import web3
 from locust import User, TaskSet, between, task, events, tag
 
 from utils import apiclient
@@ -64,33 +65,23 @@ def arg_parser(parser):
 @events.test_start.add_listener
 def load_requirements(environment, **kwargs):
     """Test start event handler"""
-    print(f"{30 * '_'} 1")
     # load test env credentials
-    root_path = list(pathlib.Path(__file__).parents)[-2]
+    root_path = list(pathlib.Path(__file__).parents)[2]
     path_to_credentials = root_path / environment.parsed_options.credentials
     network = environment.parsed_options.host
     if not (path_to_credentials.exists() and path_to_credentials.is_file()):
         path_to_credentials = root_path / ENV_FILE
-    print(f"{30 * '_'} 2")
-    print(f"{30 * '_'} {path_to_credentials}")
-    exit()
     with open(path_to_credentials, "r") as fp:
         global credentials
         f = json.load(fp)
         credentials = f.get(network, f[DEFAULT_NETWORK])
-        print(f"{30 * '_'} 2")
-        exit()
     # load transaction history
-    print(f"{30 * '_'} 3")
-    exit()
     path = pathlib.Path(__file__).parents[1] / DUMPED_DATA
     if not path.exists():
         raise FileExistsError(f"No transaction history found `{DUMPED_DATA}` to spawn users")
     with open(path, "r") as fp:
         global transaction_history
         transaction_history = json.load(fp)
-        print(f"{30*'_'}{transaction_history}")
-        exit()
 
 
 @events.test_stop.add_listener
@@ -145,12 +136,16 @@ def statistics_collector(func: tp.Callable) -> tp.Callable:
     @functools.wraps(func)
     def wrap(*args, **kwargs) -> tp.Any:
         task_id = str(uuid.uuid4())
-        request_type = f"`{func.__name__.replace('_', ' ')}`"
-        event: tp.Dict[str, tp.Any] = dict(task_id=task_id, request_type=request_type)
+        request_type = f"`{args[1].rsplit('_')[1]}`"
+        event: tp.Dict[str, tp.Any] = dict(
+            task_id=task_id, request_type=request_type, task_name=f"[{kwargs.pop('req_type')}]"
+        )
         locust_events_handler.init_event(**event)
         response = None
         try:
             response = func(*args, **kwargs)
+            if "error" in response:
+                raise web3.exceptions.ValidationError(response["error"])
             event = dict(response=response, response_length=sys.getsizeof(response), event_type="success")
         except Exception as err:
             event = dict(event_type="failure", exception=err)
@@ -171,13 +166,18 @@ class ExtJsonRPCSession(apiclient.JsonRPCSession):
         self.mount("http://", adapter)
         self.mount("https://", adapter)
 
+    @statistics_collector
+    def send_rpc(self, *args, **kwargs) -> tp.Dict:
+        """Extended `send_rpc` for statistics collection"""
+        return super(ExtJsonRPCSession, self).send_rpc(*args, **kwargs)
+
 
 class BaseEthRPCATasksSet(TaskSet):
 
     """Implements base behavior for task set measured by the maximum request rates
     for EIP-1898 methods implemented inside Tracer API"""
 
-    wait_time = between(1, 3)
+    wait_time = between(3, 5)
 
     _setup_class_locker = gevent.threading.Lock()
     _setup_class_done = False
@@ -197,16 +197,16 @@ class BaseEthRPCATasksSet(TaskSet):
     @staticmethod
     def setup_class() -> None:
         """Base initialization, run once for all users"""
-        pass
-
-    def setup(self) -> None:
-        """Prepare data requirements"""
-        self._transaction_history = transaction_history
-        self._rpc_endpoint = credentials.get("neon_rpc", NEON_RPC)
-        if not self._rpc_endpoint:
+        BaseEthRPCATasksSet._transaction_history = transaction_history
+        BaseEthRPCATasksSet._rpc_endpoint = credentials.get("neon_rpc", NEON_RPC)
+        if not BaseEthRPCATasksSet._rpc_endpoint:
             raise KeyError(
                 f"Entry point to access Neon-RPC not found. Set env `NEON_RPC` or pass `neon_rpc` to {ENV_FILE}"
             )
+
+    def setup(self) -> None:
+        """Prepare data requirements"""
+        pass
 
     def on_start(self) -> None:
         """on_start is called when a Locust start before any task is scheduled"""
@@ -237,11 +237,10 @@ class BaseEthRPCATasksSet(TaskSet):
 class EthGetBalanceTasksSet(BaseEthRPCATasksSet):
     """task set measures the maximum request rate for the eth_getBalance method"""
 
-    def _get_balance(self, param: str) -> tp.Dict:
+    def _eth_get_balance(self, param: str) -> tp.Dict:
         tr_x = self._get_random_transaction()
         response = self._rpc_client.send_rpc(
-            "eth_getBalance",
-            params=[tr_x["from"], {param: tr_x[param]}]
+            "eth_getBalance", req_type=param, params=[tr_x["from"], {param: tr_x[param]}]
         )
         self.log.info(f"Get balance by `{param}`: {tr_x[param]}")
         return response
@@ -250,13 +249,13 @@ class EthGetBalanceTasksSet(BaseEthRPCATasksSet):
     @task
     def task_eth_get_balance_by_hash(self) -> tp.Dict:
         """the eth_getBalance method by blockHash"""
-        return self._get_balance("blockHash")
+        self._eth_get_balance("blockHash")
 
     @tag("getBalance_by_num")
     @task
     def task_eth_get_balance_by_num(self) -> tp.Dict:
         """the eth_getBalance method by blockNumber"""
-        return self._get_balance("blockNumber")
+        self._eth_get_balance("blockNumber")
 
 
 class EthRPCAPICallUsers(User):

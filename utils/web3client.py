@@ -140,12 +140,15 @@ class NeonWeb3Client:
         return self._web3.eth.wait_for_transaction_receipt(tx)
 
     def send_transaction(
-        self, account: eth_account.signers.local.LocalAccount, transaction
+        self, account: eth_account.signers.local.LocalAccount, transaction: tp.Dict,
+            gas_multiplier: tp.Optional[float] = None  # fix for some event depends transactions
     ):
         if "gasPrice" not in transaction:
             transaction["gasPrice"] = self.gas_price()
         if "gas" not in transaction:
             transaction["gas"] = self._web3.eth.estimate_gas(transaction)
+        if gas_multiplier is not None:
+            transaction["gas"] = int(transaction["gas"] * gas_multiplier)
         instruction_tx = self._web3.eth.account.sign_transaction(transaction, account.key)
         signature = self._web3.eth.send_raw_transaction(instruction_tx.rawTransaction)
         return self._web3.eth.wait_for_transaction_receipt(signature)
@@ -157,9 +160,12 @@ class NeonWeb3Client:
         account: eth_account.signers.local.LocalAccount,
         contract_name: tp.Optional[str] = None,
         constructor_args: tp.Optional[tp.Any] = None,
+        import_remapping: tp.Optional[dict] = None,
         gas: tp.Optional[int] = 0,
     ) -> tp.Tuple[tp.Any, web3.types.TxReceipt]:
-        contract_interface = helpers.get_contract_interface(contract, version, contract_name=contract_name)
+        contract_interface = helpers.get_contract_interface(contract, version,
+                                                            contract_name=contract_name,
+                                                            import_remapping=import_remapping)
 
         contract_deploy_tx = self.deploy_contract(
             account,

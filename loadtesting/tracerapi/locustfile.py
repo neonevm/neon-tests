@@ -41,15 +41,6 @@ The function of this service is so route requests between Tracer API and Neon Pr
 """
 
 
-def init_session(size: int) -> requests.Session:
-    """init request session with extended connection pool size"""
-    adapter = requests.adapters.HTTPAdapter(pool_connections=size, pool_maxsize=size, pool_block=True)
-    session = requests.Session()
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    return session
-
-
 @events.init_command_line_parser.add_listener
 def arg_parser(parser):
     """Add custom command line arguments to Locust"""
@@ -58,6 +49,13 @@ def arg_parser(parser):
         type=str,
         env_var="NEON_CRED",
         default=ENV_FILE,
+        help="Relative path to environment credentials file.",
+    )
+    parser.add_argument(
+        "--neon_rpc",
+        type=str,
+        env_var="NEON_RPC",
+        default=None,
         help="Relative path to environment credentials file.",
     )
 
@@ -77,11 +75,10 @@ def load_requirements(environment, **kwargs):
         credentials = f.get(network, f[DEFAULT_NETWORK])
     # load transaction history
     path = pathlib.Path(__file__).parents[1] / DUMPED_DATA
-    if not path.exists():
-        raise FileExistsError(f"No transaction history found `{DUMPED_DATA}` to spawn users")
-    with open(path, "r") as fp:
-        global transaction_history
-        transaction_history = json.load(fp)
+    if path.exists():
+        with open(path, "r") as fp:
+            global transaction_history
+            transaction_history = json.load(fp)
 
 
 @events.test_stop.add_listener
@@ -195,14 +192,20 @@ class BaseEthRPCATasksSet(TaskSet):
     _transaction_history: tp.Optional[tp.Dict] = None
 
     @staticmethod
-    def setup_class() -> None:
+    def setup_class(environment: tp.Any = None) -> None:
         """Base initialization, run once for all users"""
-        BaseEthRPCATasksSet._transaction_history = transaction_history
-        BaseEthRPCATasksSet._rpc_endpoint = credentials.get("neon_rpc", NEON_RPC)
+        try:
+            BaseEthRPCATasksSet._transaction_history = transaction_history
+        except NameError:
+            LOG.error(f"No transaction history found `{DUMPED_DATA}` to spawn locust users, exited.")
+            exit()
+        BaseEthRPCATasksSet._rpc_endpoint = credentials.get("neon_rpc", NEON_RPC) or environment.parsed_options.neon_rpc
         if not BaseEthRPCATasksSet._rpc_endpoint:
-            raise KeyError(
-                f"Entry point to access Neon-RPC not found. Set env `NEON_RPC` or pass `neon_rpc` to {ENV_FILE}"
+            LOG.error(
+                f"Entry point to access Neon-RPC not found. "
+                f"Set env `NEON_RPC` or pass `neon_rpc` to {ENV_FILE} or send via command line arguments."
             )
+            exit()
 
     def setup(self) -> None:
         """Prepare data requirements"""
@@ -213,7 +216,7 @@ class BaseEthRPCATasksSet(TaskSet):
         # setup class once
         with self._setup_class_locker:
             if not BaseEthRPCATasksSet._setup_class_done:
-                self.setup_class()
+                self.setup_class(self.user.environment)
                 BaseEthRPCATasksSet._setup_class_done = True
             BaseEthRPCATasksSet._last_consumer_id += 1
             self.rpc_consumer_id = BaseEthRPCATasksSet._last_consumer_id
@@ -232,33 +235,51 @@ class BaseEthRPCATasksSet(TaskSet):
         params["from"] = key
         return params
 
+    def _do_call(self, method: str, filter_name: str, params: tp.Optional[tp.Dict] = None) -> tp.Dict:
+        tr_x = self._get_random_transaction()
+        filters = {filter_name: tr_x[filter_name]}
+        if params:
+            filters.update(params)
+        response = self._rpc_client.send_rpc(method, req_type=filter_name, params=[tr_x["from"], filters])
+        self.log.info(f"Get balance by `{filter_name}`: {tr_x[filter_name]}")
+        return response
+
 
 @tag("getBalance")
 class EthGetBalanceTasksSet(BaseEthRPCATasksSet):
     """task set measures the maximum request rate for the eth_getBalance method"""
 
-    def _eth_get_balance(self, param: str) -> tp.Dict:
-        tr_x = self._get_random_transaction()
-        response = self._rpc_client.send_rpc(
-            "eth_getBalance", req_type=param, params=[tr_x["from"], {param: tr_x[param]}]
-        )
-        self.log.info(f"Get balance by `{param}`: {tr_x[param]}")
-        return response
-
     @tag("getBalance_by_hash")
     @task
     def task_eth_get_balance_by_hash(self) -> tp.Dict:
         """the eth_getBalance method by blockHash"""
-        self._eth_get_balance("blockHash")
+        self._do_call(method="eth_getBalance", filter_name="blockHash")
 
     @tag("getBalance_by_num")
     @task
     def task_eth_get_balance_by_num(self) -> tp.Dict:
         """the eth_getBalance method by blockNumber"""
-        self._eth_get_balance("blockNumber")
+        self._do_call(method="eth_getBalance", filter_name="blockNumber")
+
+
+@tag("getStorageAt")
+class EthGetStorageAtTasksSet(BaseEthRPCATasksSet):
+    """task set measures the maximum request rate for the eth_StorageAt method"""
+
+    @tag("getStorage_by_hash")
+    @task
+    def task_eth_get_storage_by_hash(self) -> tp.Dict:
+        """the eth_getStorageAt method by blockHash"""
+        self._do_call(method="eth_getStorageAt", filter_name="blockHash")
+
+    @tag("getStorage_by_num")
+    @task
+    def task_eth_get_storage_by_num(self) -> tp.Dict:
+        """the eth_getStorageAt method by blockNumber"""
+        self._do_call(method="eth_getStorageAt", filter_name="blockNumber")
 
 
 class EthRPCAPICallUsers(User):
     """class represents extended ETH RPC API calls by one user"""
 
-    tasks = {EthGetBalanceTasksSet: 1}
+    tasks = {EthGetBalanceTasksSet: 1, EthGetStorageAtTasksSet: 1}

@@ -88,7 +88,7 @@ def arg_parser(parser):
 @events.test_start.add_listener
 def load_credentials(environment, **kwargs):
     """Test start event handler"""
-    base_path = pathlib.Path(__file__).parent.parent
+    base_path = pathlib.Path(__file__).parent.parent.parent
     path = base_path / environment.parsed_options.credentials
     network = environment.parsed_options.host
     if not (path.exists() and path.is_file()):
@@ -103,7 +103,7 @@ def load_credentials(environment, **kwargs):
 def teardown(**kwargs) -> None:
     """Test stop event handler"""
     if transaction_history:
-        dumped_path = pathlib.Path(__file__).parent / DEFAULT_DUMP_FILE
+        dumped_path = pathlib.Path(__file__).parent.parent / DEFAULT_DUMP_FILE
         dumped_path.parents[0].mkdir(parents=True, exist_ok=True)
         with open(dumped_path, "w") as fp:
             LOG.info(f"Dumped transaction history to `{dumped_path.as_posix()}`")

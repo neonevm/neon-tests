@@ -52,11 +52,11 @@ def arg_parser(parser):
         help="Relative path to environment credentials file.",
     )
     parser.add_argument(
-        "--neon_rpc",
+        "--neon-rpc",
         type=str,
         env_var="NEON_RPC",
         default=None,
-        help="Relative path to environment credentials file.",
+        help="Entry point to NEON RPC.",
     )
 
 

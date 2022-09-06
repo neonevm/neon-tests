@@ -364,9 +364,9 @@ def ozreport():
 @click.option(
     "-f",
     "--locustfile",
-    type=str,
-    default="loadtesting/locustfile.py",
-    help="Python module to import. It's sub-folder and file name.",
+    type=click.Choice(["proxy", "synthetic", "tracerapi"]),
+    default="proxy",
+    help="Load test type. It's sub-folder name to import.",
     show_default=True,
 )
 @click.option(
@@ -374,6 +374,12 @@ def ozreport():
     "--credentials",
     type=str,
     help="Relative path to credentials module.",
+    show_default=True,
+)
+@click.option(
+    "--neon-rpc",
+    type=str,
+    help="NEON RPC entry point.",
     show_default=True,
 )
 @click.option(
@@ -393,7 +399,7 @@ def ozreport():
     "--run-time",
     type=int,
     help="Stop after the specified amount of time, e.g. (300s, 20m, 3h, 1h30m, etc.). "
-    "Only used together without Locust Web UI. [default: always run]",
+         "Only used together without Locust Web UI. [default: always run]",
 )
 @click.option(
     "-T",
@@ -408,12 +414,12 @@ def ozreport():
     default=True,
     help="Enable the web interface. " "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
 )
-def locust(locustfile, credentials, host, users, spawn_rate, run_time, tag, web_ui):
+def locust(locustfile, credentials, neon_rpc, host, users, spawn_rate, run_time, tag, web_ui):
     """Run `Neon` pipeline performance test
 
     path it's sub-folder and file name  `loadtesting/locustfile.py`.
     """
-    path = pathlib.Path(__file__).parent / locustfile
+    path = pathlib.Path(__file__).parent / f"loadtesting/{locustfile}/locustfile.py"
     if not (path.exists() and path.is_file()):
         raise FileNotFoundError(f"path doe's not exists. {path.resolve()}")
     command = f"locust -f {path.as_posix()} --host={host} --users={users} --spawn-rate={spawn_rate}"
@@ -421,6 +427,8 @@ def locust(locustfile, credentials, host, users, spawn_rate, run_time, tag, web_
         command += f" --credentials={credentials}"
     if run_time:
         command += f" --run-time={run_time}"
+    if neon_rpc and locustfile == "tracerapi":
+        command += f" --neon-rpc={neon_rpc}"
     if tag:
         command += f" --tags {' '.join(tag)}"
     if not web_ui:

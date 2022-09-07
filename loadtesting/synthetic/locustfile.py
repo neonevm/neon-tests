@@ -16,9 +16,9 @@ from hashlib import sha256
 
 import requests
 import web3
-# from solana.transaction import AccountMeta, TransactionInstruction  # , Transaction
+
+from solana.transaction import Transaction
 from eth_keys import keys as eth_keys
-from solana.account import Account as SOLAccount
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
 from solana.rpc.api import Client as SolanaClient
@@ -132,11 +132,11 @@ class NeonClient:
             raise
 
 
-class OperatorAccount(SOLAccount):
+class OperatorAccount(Keypair):
     """Implements operator Account"""
 
-    def __init__(self, key_id: tp.Optional[int] = None) -> None:
-        self._path = CWD / f"operator-keypairs/id{key_id or ''}.json"
+    def __init__(self, key_id: tp.Optional[int] = "") -> None:
+        self._path = CWD / f"operator-keypairs/id{key_id}.json"
         if not self._path.exists():
             raise FileExistsError(f"Operator key `{self._path}` not exists")
         with open(self._path) as fd:
@@ -149,7 +149,7 @@ class OperatorAccount(SOLAccount):
 
     @property
     def eth_address(self) -> str:
-        return eth_keys.PrivateKey(self.secret_key()[:32]).public_key.to_canonical_address()
+        return eth_keys.PrivateKey(self.secret_key[:32]).public_key.to_canonical_address()
 
 
 class EvmLoader:
@@ -227,25 +227,24 @@ class SOLClient(SolanaClient):
         self,
         address: tp.Union[OperatorAccount, str],
         amount: int = DEFAULT_SOL_AMOUNT,
-        state: str = utils.SOLCommitmentState.CONFIRMED,
+        state: tp.Optional[str] = utils.SOLCommitmentState.CONFIRMED,
     ) -> tp.Any:
         """Requests sol to account"""
         if isinstance(address, OperatorAccount):
-            address = address.public_key()
+            address = address.public_key
         elif isinstance(address, PublicKey):
             address = str(address)
         return self.request_airdrop(pubkey=address, lamports=amount, commitment=state)
 
     def _get_account_data(
         self,
-        account: tp.Union[str, PublicKey, Keypair, OperatorAccount],
+        account: tp.Union[str, PublicKey, OperatorAccount],
         expected_length: int = utils.ACCOUNT_INFO_LAYOUT.sizeof(),
+        state: tp.Optional[str] = utils.SOLCommitmentState.CONFIRMED,
     ) -> bytes:
-        if isinstance(account, Keypair):
+        if isinstance(account, OperatorAccount):
             account = account.public_key
-        elif isinstance(account, OperatorAccount):
-            account = account.public_key()
-        resp = self.get_account_info(account, commitment=utils.SOLCommitmentState.CONFIRMED).get("value")
+        resp = self.get_account_info(account, commitment=state).get("value")
         if not resp:
             raise Exception(f"Can't get information about {account}")
         data = base64.b64decode(resp["data"][0])
@@ -260,11 +259,9 @@ class SOLClient(SolanaClient):
     def make_eth_transaction(
         self, to_addr: str, data: bytes, signer: OperatorAccount, from_solana_user: PublicKey, user_eth_address: bytes
     ):
-        def make_instruction_data_from_tx(instruction, private_key=None):
+        def make_instruction_data_from_tx(instruction, private_key):
             if instruction["chainId"] is None:
                 raise Exception("chainId value is needed in input dict")
-            if private_key is None:
-                raise Exception("Needed private key for transaction creation from fields")
 
             signed_tx = self._web3.eth.account.sign_transaction(instruction, private_key)
             _trx = utils.Trx.from_string(signed_tx.rawTransaction)
@@ -285,7 +282,7 @@ class SOLClient(SolanaClient):
             "data": data,
             "chainId": self._credentials["network_id"],
         }
-        (from_addr, sign, msg) = make_instruction_data_from_tx(tx, signer.secret_key()[:32])
+        (from_addr, sign, msg) = make_instruction_data_from_tx(tx, signer.secret_key[:32])
         assert from_addr == user_eth_address, (from_addr, user_eth_address)
         return from_addr, sign, msg, nonce
 
@@ -300,21 +297,20 @@ class SOLClient(SolanaClient):
             seed = str(random.randrange(1000000))
         storage = PublicKey(
             sha256(
-                bytes(signer.public_key()) + bytes(seed, "utf8") + bytes(PublicKey(self._credentials["evm_loader"]))
+                bytes(signer.public_key) + bytes(seed, "utf8") + bytes(PublicKey(self._credentials["evm_loader"]))
             ).digest()
         )
 
         if self.get_sol_balance(storage).get("value") == 0:
-            trx = utils.TransactionWithComputeBudget()
-            trx.add(
+            trx = Transaction().add(
                 utils.create_account_with_seed(
-                    signer.public_key(), signer.public_key(), seed, fund, size, self._credentials["evm_loader"]
+                    signer.public_key, signer.public_key, seed, fund, size, self._credentials["evm_loader"]
                 )
             )
-            self.send_transaction(trx, signer.keypair())
+            self.send_transaction(trx, signer)
         return storage
 
-    def send_transaction(self, trx, acc, wait_status=utils.SOLCommitmentState.CONFIRMED):
+    def send_transaction(self, trx, acc, wait_status: tp.Optional[str] = utils.SOLCommitmentState.CONFIRMED):
         tx_sig = super(SOLClient, self).send_transaction(
             trx, acc, opts=TxOpts(skip_confirmation=True, preflight_commitment=wait_status)
         )

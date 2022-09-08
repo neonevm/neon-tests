@@ -87,7 +87,7 @@ def handle_failed_requests(func: tp.Callable) -> tp.Callable:
             raise AssertionError(
                 f"Request {func.__name__} is failed: {resp['error']['code']} - {resp['error']['message']}"
             )
-        return resp["result"]
+        return resp
 
     return wrapper
 
@@ -178,21 +178,20 @@ class SOLClient(SolanaClient):
     """"""
 
     def __init__(self, credentials: tp.Dict = None, session: tp.Optional[tp.Any] = None, timeout: float = 10) -> None:
-        credentials = credentials or load_credentials()
+        self._credentials = credentials or load_credentials()
         self._web3 = web3.Web3(web3.HTTPProvider(""))
         self._session = session or init_session(DEFAULT_USER_NUM)
-        self._faucet = faucet.Faucet(credentials["faucet_url"], self._session)
-        self._evm_loader = EvmLoader(credentials["evm_loader"], credentials["solana_url"])
-        super(SOLClient, self).__init__()
-        self._provider = ExtendedHTTPProvider(credentials["solana_url"], timeout=timeout)
-        self._credentials = credentials
+        self._faucet = faucet.Faucet(self._credentials["faucet_url"], self._session)
+        self._evm_loader = EvmLoader(self._credentials["evm_loader"], self._credentials["solana_url"])
+        self._client = SolanaClient()
+        self._client._provider = ExtendedHTTPProvider(credentials["solana_url"], timeout=timeout)
 
     def wait_confirmation(self, tx_sig: str, confirmations: tp.Optional[int] = 0) -> bool:
         """"""
 
         def get_signature_status():
-            resp = self.get_signature_statuses([tx_sig])
-            result = resp.get("value", [None])[0]
+            resp = self._client.get_signature_statuses([tx_sig])
+            result = resp["result"].get("value", [None])[0]
             if result:
                 confirmation_status = result["confirmationStatus"]
                 confirmation_count = result["confirmations"] or 0
@@ -221,7 +220,7 @@ class SOLClient(SolanaClient):
             address = str(address)
         elif not isinstance(address, str):
             address = address.address
-        return self.get_balance(address, commitment=state)
+        return self._client.get_balance(address, commitment=state)["result"]
 
     def request_sol(
         self,
@@ -234,7 +233,7 @@ class SOLClient(SolanaClient):
             address = address.public_key
         elif isinstance(address, PublicKey):
             address = str(address)
-        return self.request_airdrop(pubkey=address, lamports=amount, commitment=state)
+        return self._client.request_airdrop(pubkey=address, lamports=amount, commitment=state)["result"]
 
     def _get_account_data(
         self,
@@ -244,7 +243,7 @@ class SOLClient(SolanaClient):
     ) -> bytes:
         if isinstance(account, OperatorAccount):
             account = account.public_key
-        resp = self.get_account_info(account, commitment=state).get("value")
+        resp = self._client.get_account_info(account, commitment=state)["result"].get("value")
         if not resp:
             raise Exception(f"Can't get information about {account}")
         data = base64.b64decode(resp["data"][0])
@@ -302,17 +301,17 @@ class SOLClient(SolanaClient):
         )
 
         if self.get_sol_balance(storage).get("value") == 0:
-            trx = Transaction().add(
+            txn = Transaction().add(
                 utils.create_account_with_seed(
                     signer.public_key, signer.public_key, seed, fund, size, self._credentials["evm_loader"]
                 )
             )
-            self.send_transaction(trx, signer)
+            self.send_transaction(txn, signer)
         return storage
 
-    def send_transaction(self, trx, acc, wait_status: tp.Optional[str] = utils.SOLCommitmentState.CONFIRMED):
-        tx_sig = super(SOLClient, self).send_transaction(
-            trx, acc, opts=TxOpts(skip_confirmation=True, preflight_commitment=wait_status)
+    def send_transaction(self, txn, acc, wait_status: tp.Optional[str] = utils.SOLCommitmentState.CONFIRMED):
+        tx_sig = self._client.send_transaction(
+            txn, acc, opts=TxOpts(skip_confirmation=True, preflight_commitment=wait_status)
         )
         print(f"{30*'_'}{tx_sig}")
         confirmation = self.wait_confirmation(tx_sig)

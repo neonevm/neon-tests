@@ -22,7 +22,7 @@ NEON_AIRDROP_AMOUNT = 10_000
 
 
 def pytest_addoption(parser):
-    parser.addoption("--network", action="store", default="local", help="Which stand use")
+    parser.addoption("--network", action="store", default="night-stand", help="Which stand use")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -62,7 +62,6 @@ def operator(pytestconfig: Config, web3_client: NeonWeb3Client) -> Operator:
 
 @pytest.fixture(scope="session", autouse=True)
 def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
-    print(web3_client.get_proxy_version())
     opts = {
         "Proxy.Version": web3_client.get_proxy_version()["result"],
         "EVM.Version": web3_client.get_evm_version()["result"],

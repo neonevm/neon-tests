@@ -174,7 +174,7 @@ class EvmLoader:
         return items[0], int(items[1])
 
 
-class SOLClient(SolanaClient):
+class SOLClient:
     """"""
 
     def __init__(self, credentials: tp.Dict = None, session: tp.Optional[tp.Any] = None, timeout: float = 10) -> None:
@@ -184,7 +184,7 @@ class SOLClient(SolanaClient):
         self._faucet = faucet.Faucet(self._credentials["faucet_url"], self._session)
         self._evm_loader = EvmLoader(self._credentials["evm_loader"], self._credentials["solana_url"])
         self._client = SolanaClient()
-        self._client._provider = ExtendedHTTPProvider(credentials["solana_url"], timeout=timeout)
+        self._client._provider = ExtendedHTTPProvider(self._credentials["solana_url"], timeout=timeout)
 
     def wait_confirmation(self, tx_sig: str, confirmations: tp.Optional[int] = 0) -> bool:
         """"""
@@ -312,12 +312,12 @@ class SOLClient(SolanaClient):
     def send_transaction(self, txn, acc, wait_status: tp.Optional[str] = utils.SOLCommitmentState.CONFIRMED):
         tx_sig = self._client.send_transaction(
             txn, acc, opts=TxOpts(skip_confirmation=True, preflight_commitment=wait_status)
-        )
+        )["result"]
         print(f"{30*'_'}{tx_sig}")
         confirmation = self.wait_confirmation(tx_sig)
         print(f"{30*'_'}{confirmation}")
         return try_until(
-            lambda: self.get_confirmed_transaction(tx_sig) is not None,
+            lambda: self._client.get_confirmed_transaction(tx_sig) is not None,
             interval=10,
             timeout=60,
             error_msg=f"Can't get confirmed transaction {tx_sig}",
@@ -355,15 +355,6 @@ class SOLClient(SolanaClient):
             )
 
         return TransactionInstruction(program_id=EVM_LOADER, data=d, keys=accounts)
-
-    def make_eth_transaction(to_addr: str, data: bytes, signer: Keypair, from_solana_user: PublicKey,
-                             user_eth_address: bytes):
-        nonce = get_transaction_count(solana_client, from_solana_user)
-        tx = {'to': to_addr, 'value': 0, 'gas': 9999999999, 'gasPrice': 0,
-              'nonce': nonce, 'data': data, 'chainId': 111}
-        (from_addr, sign, msg) = make_instruction_data_from_tx(tx, signer.secret_key[:32])
-        assert from_addr == user_eth_address, (from_addr, user_eth_address)
-        return from_addr, sign, msg, nonce
     """
 
 

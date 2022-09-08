@@ -52,6 +52,10 @@ class NeonWeb3Client:
     def get_block_number(self):
         return self._web3.eth.get_block_number()
 
+    def get_nonce(self, address: tp.Union[eth_account.signers.local.LocalAccount, str], block: str = "pending"):
+        address = address if isinstance(address, str) else address.address
+        return self._web3.eth.get_transaction_count(address, block)
+
     def send_neon(
         self,
         from_: eth_account.signers.local.LocalAccount,
@@ -61,7 +65,7 @@ class NeonWeb3Client:
         gas_price: tp.Optional[int] = None,
     ) -> web3.types.TxReceipt:
         to_addr = to if isinstance(to, str) else to.address
-        nonce = self._web3.eth.get_transaction_count(from_.address)
+        nonce = self.get_nonce(from_)
         transaction = {
             "from": from_.address,
             "to": to_addr,
@@ -98,7 +102,7 @@ class NeonWeb3Client:
                 "from": from_.address,
                 "gas": gas,
                 "gasPrice": gas_price,
-                "nonce": self._web3.eth.get_transaction_count(from_.address),
+                "nonce": self.get_nonce(from_),
             }
         )
 
@@ -127,7 +131,7 @@ class NeonWeb3Client:
                 "chainId": self._chain_id,
                 "gas": gas,
                 "gasPrice": gas_price,
-                "nonce": self._web3.eth.get_transaction_count(from_.address),
+                "nonce": self.get_nonce(from_),
                 "from": from_.address,
             }
         )

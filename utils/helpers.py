@@ -34,7 +34,9 @@ def get_contract_interface(contract: str, version: str, contract_name: tp.Option
                                    output_values=["abi", "bin"],
                                    solc_version=version,
                                    import_remappings=import_remapping,
-                                   allow_paths=["."])  # this allow_paths isn't very good...
+                                   allow_paths=["."],
+                                   optimize=True
+                                   )  # this allow_paths isn't very good...
     contract_interface = get_contract_abi(contract_name, compiled)
 
     return contract_interface

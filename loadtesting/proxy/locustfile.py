@@ -448,7 +448,7 @@ def extend_task(*attrs) -> tp.Callable:
                 transaction_history[str(tx_receipt["from"])].append(
                     {
                         "blockHash": tx_receipt["blockHash"].hex(),
-                        "blockNumber": tx_receipt["blockNumber"],
+                        "blockNumber": hex(tx_receipt["blockNumber"]),
                         "contractAddress": tx_receipt["contractAddress"],
                         "to": str(tx_receipt["to"])
                     }

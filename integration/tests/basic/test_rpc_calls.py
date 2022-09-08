@@ -9,7 +9,7 @@ import web3
 
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
-import integration.tests.basic.helpers.rpc_checks as rpc_checks
+from integration.tests.basic.helpers import rpc_checks
 from utils import helpers
 from utils.consts import Unit
 from utils.helpers import gen_hash_of_block

@@ -293,12 +293,35 @@ class TestRpcCalls(BaseMixin):
 
     def test_rpc_call_eth_get_transaction_receipt(self):
         """Verify implemented rpc calls work eth_getTransactionReceipt"""
-        # FIXME: Add more logic to check data
-
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
-        response = self.proxy_api.send_rpc(method="eth_getTransactionReceipt", params=tx_receipt.transactionHash.hex())
+        transaction_hash = tx_receipt.transactionHash.hex()
+        response = self.proxy_api.send_rpc(method="eth_getTransactionReceipt", params=transaction_hash)
         assert "error" not in response
         assert "result" in response, AssertMessage.DOES_NOT_CONTAIN_RESULT
+        result = response["result"]
+        expected_hex_fields = ['transactionHash', 'transactionIndex', 'blockNumber', 'blockHash', 'cumulativeGasUsed',
+                               'gasUsed', 'logsBloom', 'status']
+        for field in expected_hex_fields:
+            assert self.is_hex(result[field])
+        assert result["status"] == '0x1', "Transaction status must be 0x1"
+        assert result["transactionHash"] == transaction_hash
+        assert result["blockHash"] == tx_receipt.blockHash.hex()
+        assert result["from"].upper() == tx_receipt['from'].upper()
+        assert result["to"].upper() == tx_receipt['to'].upper()
+        assert result["contractAddress"] is None
+        assert result["logs"] == []
+
+    def test_rpc_call_eth_get_transaction_receipt_when_hash_doesnt_exist(self):
+        """Verify implemented rpc calls work eth_getTransactionReceipt when transaction hash doesn't exist"""
+        response = self.proxy_api.send_rpc(method="eth_getTransactionReceipt", params=gen_hash_of_block(32))
+        assert response['result'] is None, "Result should be None"
+
+    def test_rpc_call_eth_get_transaction_receipt_with_incorrect_hash(self):
+        """Verify implemented rpc calls work eth_getTransactionReceipt when transaction hash is not correct"""
+        transaction_hash = gen_hash_of_block(31)
+        response = self.proxy_api.send_rpc(method="eth_getTransactionReceipt", params=transaction_hash)
+        assert "error" in response
+        assert response["error"]["message"] == "transaction-id is not hex"
 
     def test_eth_get_block_by_hash(self):
         """Verify implemented rpc calls work eth_getBlockByHash"""

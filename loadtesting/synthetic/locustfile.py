@@ -16,14 +16,14 @@ from hashlib import sha256
 
 import requests
 import web3
-
-from solana.transaction import Transaction
 from eth_keys import keys as eth_keys
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
 from solana.rpc.api import Client as SolanaClient
 from solana.rpc.providers import http
 from solana.rpc.types import TxOpts
+from solana.system_program import SYS_PROGRAM_ID
+from solana.transaction import AccountMeta, Transaction, TransactionInstruction
 
 from ui.libs import try_until
 from utils import faucet
@@ -81,11 +81,10 @@ def handle_failed_requests(func: tp.Callable) -> tp.Callable:
 
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs) -> tp.Any:
-        print(f"{30*'_'} Make extended request")
         resp = func(self, *args, **kwargs)
         if resp.get("error"):
             raise AssertionError(
-                f"Request {func.__name__} is failed: {resp['error']['code']} - {resp['error']['message']}"
+                f"Request `{args[0]}` is failed! [{resp['error']['code']}]:{resp['error']['message']}.\n{args[1:]}"
             )
         return resp
 
@@ -186,6 +185,10 @@ class SOLClient:
         self._client = SolanaClient()
         self._client._provider = ExtendedHTTPProvider(self._credentials["solana_url"], timeout=timeout)
 
+    @property
+    def evm_loader_id(self) -> str:
+        return self._evm_loader.loader_id
+
     def wait_confirmation(self, tx_sig: str, confirmations: tp.Optional[int] = 0) -> bool:
         """"""
 
@@ -240,12 +243,16 @@ class SOLClient:
         account: tp.Union[str, PublicKey, OperatorAccount],
         expected_length: int = utils.ACCOUNT_INFO_LAYOUT.sizeof(),
         state: tp.Optional[str] = utils.SOLCommitmentState.CONFIRMED,
+        timeout: tp.Optional[int] = 60,
     ) -> bytes:
         if isinstance(account, OperatorAccount):
             account = account.public_key
-        resp = self._client.get_account_info(account, commitment=state)["result"].get("value")
-        if not resp:
-            raise Exception(f"Can't get information about {account}")
+        resp = try_until(
+            lambda: self._client.get_account_info(account, commitment=state)["result"].get("value"),
+            error_msg=f"Can't get information about {account}\n{self._client.get_account_info(account, commitment=state)} ",
+            interval=1,
+            timeout=timeout,
+        )
         data = base64.b64decode(resp["data"][0])
         if len(data) < expected_length:
             raise Exception(f"Wrong data length for account data {account}")
@@ -281,9 +288,10 @@ class SOLClient:
             "data": data,
             "chainId": self._credentials["network_id"],
         }
-        (from_addr, sign, msg) = make_instruction_data_from_tx(tx, signer.secret_key[:32])
-        assert from_addr == user_eth_address, (from_addr, user_eth_address)
-        return from_addr, sign, msg, nonce
+        # (from_addr, sign, msg) = make_instruction_data_from_tx(tx, signer.secret_key[:32])
+        # assert from_addr == user_eth_address, (from_addr, user_eth_address)
+        # return from_addr, sign, msg, nonce
+        return self._web3.eth.account.sign_transaction(tx, signer.secret_key[:32])
 
     def create_storage_account(
         self, signer: OperatorAccount, seed: bytes = None, size: int = None, fund: int = None
@@ -295,15 +303,13 @@ class SOLClient:
         if seed is None:
             seed = str(random.randrange(1000000))
         storage = PublicKey(
-            sha256(
-                bytes(signer.public_key) + bytes(seed, "utf8") + bytes(PublicKey(self._credentials["evm_loader"]))
-            ).digest()
+            sha256(bytes(signer.public_key) + bytes(seed, "utf8") + bytes(PublicKey(self.evm_loader_id))).digest()
         )
 
         if self.get_sol_balance(storage).get("value") == 0:
             txn = Transaction().add(
                 utils.create_account_with_seed(
-                    signer.public_key, signer.public_key, seed, fund, size, self._credentials["evm_loader"]
+                    signer.public_key, signer.public_key, seed, fund, size, self.evm_loader_id
                 )
             )
             self.send_transaction(txn, signer)
@@ -313,22 +319,18 @@ class SOLClient:
         tx_sig = self._client.send_transaction(
             txn, acc, opts=TxOpts(skip_confirmation=True, preflight_commitment=wait_status)
         )["result"]
-        print(f"{30*'_'}{tx_sig}")
-        confirmation = self.wait_confirmation(tx_sig)
-        print(f"{30*'_'}{confirmation}")
+        self.wait_confirmation(tx_sig)
         return try_until(
-            lambda: self._client.get_confirmed_transaction(tx_sig) is not None,
+            lambda: self._client.get_confirmed_transaction(tx_sig)["result"] is not None,
             interval=10,
             timeout=60,
             error_msg=f"Can't get confirmed transaction {tx_sig}",
         )
 
-    """
     def make_PartialCallOrContinueFromRawEthereumTX(
         self,
         instruction: bytes,
         operator: Keypair,
-        evm_loader: "EvmLoader",
         storage_address: PublicKey,
         treasury_address: PublicKey,
         treasury_buffer: bytes,
@@ -344,36 +346,38 @@ class SOLClient:
             AccountMeta(pubkey=SYS_INSTRUCT_ADDRESS, is_signer=False, is_writable=True),
             AccountMeta(pubkey=operator.public_key, is_signer=True, is_writable=True),
             AccountMeta(pubkey=treasury_address, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=evm_loader.ether2program(operator_ether)[0], is_signer=False, is_writable=True),
+            AccountMeta(pubkey=self._evm_loader.ether2program(operator_ether)[0], is_signer=False, is_writable=True),
             AccountMeta(SYS_PROGRAM_ID, is_signer=False, is_writable=True),
             # Neon EVM account
-            AccountMeta(EVM_LOADER, is_signer=False, is_writable=False),
+            AccountMeta(self.evm_loader_id, is_signer=False, is_writable=False),
         ]
         for acc in additional_accounts:
             accounts.append(
                 AccountMeta(acc, is_signer=False, is_writable=True),
             )
 
-        return TransactionInstruction(program_id=EVM_LOADER, data=d, keys=accounts)
-    """
+        return TransactionInstruction(program_id=self.evm_loader_id, data=d, keys=accounts)
 
 
 sol_client = SOLClient()
 
 
 def create_transaction():
-    # Create transaction signer
+    print("# # Create transaction signer `operator`")
     operator = OperatorAccount(random.choice(range(2, 31)))
+    print("# # request SOL to transaction signer")
     tx_sig = sol_client.request_sol(operator, 1000)
     sol_client.wait_confirmation(tx_sig)
+    print("# # Create solana program from `operator` eth address")
     operator_sol_program = sol_client.create_solana_program(operator.eth_address)[0]
-    # Create sender account
+    print("# # Create sender eth account")
     from_eth_account_address = sol_client.create_eth_account().address
+    print("# # Create solana program from `sender` eth address")
     from_sol_account_address = sol_client.create_solana_program(from_eth_account_address)[0]
-    # Create one more account to receive neons
+    print("# # Create one more account to receive neons")
     to_eth_account_address = sol_client.create_eth_account().address
     to_sol_account_address = sol_client.create_solana_program(to_eth_account_address)[0]
-
+    print("# # create eth transaction")
     eth_transaction = sol_client.make_eth_transaction(
         to_eth_account_address,
         data=b"",
@@ -381,4 +385,21 @@ def create_transaction():
         from_solana_user=operator_sol_program,
         user_eth_address=operator.eth_address,
     )
+    print("# # Create storage account")
     storage_account = sol_client.create_storage_account(operator)
+    treasury_pool = utils.create_treasury_pool_address(DEFAULT_NETWORK, sol_client.evm_loader_id)
+    print("# # Create transaction")
+    trx = Transaction().add(
+        sol_client.make_PartialCallOrContinueFromRawEthereumTX(
+            eth_transaction.rawTransaction,
+            operator,
+            storage_account,
+            treasury_pool.account,
+            treasury_pool.buffer,
+            100,
+            [PublicKey(from_sol_account_address), PublicKey(to_sol_account_address)],
+        )
+    )
+    print("# # Send transaction")
+    receipt = sol_client.send_transaction(trx, operator)
+    return receipt

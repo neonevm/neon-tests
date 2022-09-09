@@ -7,10 +7,11 @@ class ErrorMessage(Enum):
     GAS_LIMIT_REACHED = "gas limit reached"
     INVALID_FIELDS_GAS = "Transaction had invalid fields: {'gas'"
     NONCE_TOO_LOW = "nonce too low"
-    NONCE_TOO_HIGH = "nonce too high"
     EIP55_INVALID_CHECKSUM = (
         "'Address has an invalid EIP-55 checksum. After looking up the address from the original source, try again.'"
     )
+    ALREADY_KNOWN = "already known"
+    REPLACEMENT_UNDERPRICED = "replacement transaction underpriced"
 
 
 class AssertMessage(Enum):
@@ -21,5 +22,4 @@ class AssertMessage(Enum):
     CONTAINS_ERROR = "Contains the error data"
     DOES_NOT_CONTAIN_RESULT = "Does not contain the result data"
     DOES_NOT_CONTAIN_TOO_LOW = f"Message does not contain '{ErrorMessage.NONCE_TOO_LOW.value}'"
-    DOES_NOT_CONTAIN_TOO_HIGH = f"Message does not contain '{ErrorMessage.NONCE_TOO_HIGH.value}'"
     CONTRACT_BALANCE_IS_WRONG = "Contract balance is wrong"

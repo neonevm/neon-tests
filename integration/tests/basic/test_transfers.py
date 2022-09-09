@@ -5,6 +5,7 @@ import allure
 import pytest
 import web3
 
+from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.assert_message import ErrorMessage
@@ -12,7 +13,6 @@ from utils.consts import Unit, InputTestConstants
 
 U64_MAX = 18_446_744_073_709_551_615
 DEFAULT_ERC20_BALANCE = 1000
-
 
 GAS_LIMIT_AND_PRICE_DATA = (
     [1, None, ErrorMessage.GAS_LIMIT_REACHED.value],
@@ -310,13 +310,15 @@ class TestTransfer(BaseMixin):
 
 @allure.story("Basic: transactions validation")
 class TestTransactionsValidation(BaseMixin):
-    def create_tx_object(self, amount, nonce):
+    def create_tx_object(self, amount, nonce, gas_price=None):
+        if gas_price is None:
+            gas_price = self.web3_client.gas_price()
         transaction = {
             "from": self.sender_account.address,
             "to": self.recipient_account.address,
             "value": self.web3_client.toWei(amount, Unit.ETHER),
             "chainId": self.web3_client._chain_id,
-            "gasPrice": self.web3_client.gas_price(),
+            "gasPrice": gas_price,
             "gas": 0,
             "nonce": nonce,
         }
@@ -349,44 +351,89 @@ class TestTransactionsValidation(BaseMixin):
         self.assert_balance(sender_account.address, amount)
         self.assert_balance(recipient_account.address, InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value)
 
-    def test_send_with_big_nonce(self):
-        """Nonce is too high"""
+    def test_send_the_same_transactions_if_accepted(self):
+        """Transaction cannot be sent again if it was accepted"""
         amount = 2
-
-        transaction = self.create_tx_object(amount, 1_000_000_000)
+        transaction = self.create_tx_object(amount,
+                                            self.web3_client.eth.get_transaction_count(self.sender_account.address))
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
-
         params = [signed_tx.rawTransaction.hex()]
-        actual_result = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
+        response = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
+        self.wait_transaction_accepted(response['result'])
+        response = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
+        assert ErrorMessage.ALREADY_KNOWN.value in response["error"]["message"]
+        assert response["error"]["code"] == -32000
 
-        assert (
-            ErrorMessage.NONCE_TOO_HIGH.value in actual_result["error"]["message"]
-        ), AssertMessage.DOES_NOT_CONTAIN_TOO_HIGH.value
-
-    def test_send_with_old_nonce(self):
-        """Nonce is too low"""
-
+    def test_send_the_same_transactions_if_not_accepted(self):
+        """Transaction can be sent again if it was not accepted"""
         amount = 2
-
-        # 1st transaction
-        transaction = self.create_tx_object(
-            amount, self.web3_client.eth.get_transaction_count(self.sender_account.address)
-        )
+        transaction = self.create_tx_object(amount,
+                                            self.web3_client.eth.get_transaction_count(self.sender_account.address))
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
-
         params = [signed_tx.rawTransaction.hex()]
         self.proxy_api.send_rpc("eth_sendRawTransaction", params)
+        response = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
+        assert "error" not in response
+        assert "result" in response
 
-        # 2nd transaction (with low nonce)
-        transaction = self.create_tx_object(amount, 0)
+    def test_send_transaction_with_low_nonce_after_high(self):
+        """Check that transaction with a higher nonce is waiting for its turn in the mempool"""
+        amount = 2
+        nonce = self.web3_client.eth.get_transaction_count(self.sender_account.address) + 1
+        transaction = self.create_tx_object(amount, nonce)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+        response_trx1 = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
+        transaction = self.create_tx_object(amount, nonce - 1)
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+        response_trx2 = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
+        for result in (response_trx2['result'], response_trx1['result']):
+            self.wait_transaction_accepted(result)
+            assert rpc_checks.is_hex(result)
 
-        params = [signed_tx.rawTransaction.hex()]
-        actual_result = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
+    def test_send_transaction_with_the_same_nonce_and_lower_gas(self):
+        """Check that transaction with a low gas and the same nonce can't be sent"""
+        amount = 2
+        nonce = self.web3_client.eth.get_transaction_count(self.sender_account.address) + 1
+        gas = self.web3_client.gas_price()
+        transaction = self.create_tx_object(amount, nonce, gas)
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+        self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
+        transaction = self.create_tx_object(amount, nonce, gas - 1)
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+        response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
+        assert ErrorMessage.REPLACEMENT_UNDERPRICED.value in response["error"]["message"]
+        assert response["error"]["code"] == -32000
 
-        assert (
-            ErrorMessage.NONCE_TOO_LOW.value in actual_result["error"]["message"]
-        ), AssertMessage.DOES_NOT_CONTAIN_TOO_LOW.value
+    def test_send_transaction_with_the_same_nonce_and_higher_gas(self):
+        """Check that transaction with higher gas and the same nonce can be sent"""
+        amount = 2
+        nonce = self.web3_client.eth.get_transaction_count(self.sender_account.address) + 1
+        gas = self.web3_client.gas_price()
+        transaction = self.create_tx_object(amount, nonce, gas)
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+        self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
+        transaction = self.create_tx_object(amount, nonce, gas * 10)
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+        response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
+        assert "error" not in response
+        assert "result" in response
+
+    def test_send_transaction_with_old_nonce(self):
+        """Check that transaction with old nonce can't be sent"""
+        amount = 1
+        for _ in range(2):
+            transaction = self.create_tx_object(amount,
+                                                self.web3_client.eth.get_transaction_count(self.sender_account.address))
+            signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+            response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
+            self.wait_transaction_accepted(response["result"])
+
+        nonce = self.web3_client.eth.get_transaction_count(self.sender_account.address) - 2
+        transaction = self.create_tx_object(amount, nonce)
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+        response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
+        assert ErrorMessage.NONCE_TOO_LOW.value in response["error"]["message"]
+        assert response["error"]["code"] == -32002
 
     def test_there_are_not_enough_neons_for_gas_fee(self):
         """There are not enough Neons for gas fee"""

@@ -20,6 +20,11 @@ from utils import helpers, web3client
 
 NEON_PRICE = 0.25
 
+TRANSFER_TO_EXIST_ACC_SOL = 10_000
+TRANSFER_TO_UNEXIST_ACC_SOL = 1_574_040
+TRANSFER_ERC20_SOL = 1_130_560
+TRANSFER_ERC20_WRAPPED_SOL = 2_049_280
+DEPLOY_SMALL_CONTRACT_SOL = 48_999_680
 LAMPORT_PER_SOL = 1_000_000_000
 DECIMAL_CONTEXT = getcontext()
 DECIMAL_CONTEXT.prec = 9
@@ -95,9 +100,11 @@ class TestEconomics(BaseTests):
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
+        sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after, "Operator balance after getBalance doesn't changed"
-        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
+        assert sol_diff == TRANSFER_TO_UNEXIST_ACC_SOL, "Unexpected amount of SOL for the operation"
+        self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
     def test_send_neon_to_exist_account(self):
         """Verify how many cost neon send to use who was already initialized"""
@@ -114,9 +121,11 @@ class TestEconomics(BaseTests):
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
-        assert sol_balance_before > sol_balance_after, "Operator balance after send tx doesn't changed"
+        sol_diff = sol_balance_before - sol_balance_after
 
-        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
+        assert sol_balance_before > sol_balance_after, "Operator balance after send tx doesn't changed"
+        assert sol_diff == TRANSFER_TO_EXIST_ACC_SOL, "Unexpected amount of SOL for the operation"
+        self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
     def test_send_when_not_enough_neon_to_gas(self):
         acc2 = self.web3_client.create_account()
@@ -153,10 +162,12 @@ class TestEconomics(BaseTests):
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
+        sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after
+        assert sol_diff == TRANSFER_ERC20_WRAPPED_SOL, "Unexpected amount of SOL for the operation"
 
-        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
+        self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
     def test_withdraw_neon_unexisting_ata(self, pytestconfig: Config):
         sol_user = SolanaAccount()
@@ -274,10 +285,12 @@ class TestEconomics(BaseTests):
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
+        sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after
+        assert sol_diff == DEPLOY_SMALL_CONTRACT_SOL, "Unexpected amount of SOL for the operation"
 
-        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
+        self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
     def test_erc20_transfer(self):
         """Verify ERC20 token send"""
@@ -297,11 +310,13 @@ class TestEconomics(BaseTests):
         )
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
+        sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after
+        assert sol_diff == TRANSFER_ERC20_SOL, "Unexpected amount of SOL for the operation"
         assert neon_balance_after > neon_balance_before
 
-        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
+        self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
     def test_deploy_small_contract_less_100tx(self, sol_price):
         """Verify we are bill minimum for 100 instruction"""

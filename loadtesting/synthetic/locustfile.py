@@ -315,9 +315,20 @@ class SOLClient:
             self.send_transaction(txn, signer)
         return storage
 
-    def send_transaction(self, txn, acc, wait_status: tp.Optional[str] = utils.SOLCommitmentState.CONFIRMED):
+    def send_transaction(
+        self,
+        txn,
+        acc,
+        skip_confirmation: bool = True,
+        skip_preflight: bool = False,
+        wait_status: tp.Optional[str] = utils.SOLCommitmentState.CONFIRMED,
+    ):
         tx_sig = self._client.send_transaction(
-            txn, acc, opts=TxOpts(skip_confirmation=True, preflight_commitment=wait_status)
+            txn,
+            acc,
+            opts=TxOpts(
+                skip_confirmation=skip_confirmation, skip_preflight=skip_preflight, preflight_commitment=wait_status
+            ),
         )["result"]
         self.wait_confirmation(tx_sig)
         return try_until(

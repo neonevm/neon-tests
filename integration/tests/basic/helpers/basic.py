@@ -160,3 +160,12 @@ class BaseMixin(BaseTests):
         actual_dec = round(actual, rnd_dig)
 
         assert actual_dec == expected_dec, f"expected balance = {expected_dec}, actual balance = {actual_dec}"
+
+    def wait_transaction_accepted(self, transaction, timeout=20):
+        started = time.time()
+        while (time.time() - started) < timeout:
+            receipt = self.proxy_api.send_rpc(method="eth_getTransactionReceipt", params=[transaction])
+            if receipt['result'] is not None:
+                return receipt
+            time.sleep(1)
+        raise TimeoutError(f"Transaction is not accepted for {timeout} seconds")

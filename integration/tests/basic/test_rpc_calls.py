@@ -325,7 +325,7 @@ class TestRpcCalls(BaseMixin):
         response = self.proxy_api.send_rpc(method="eth_getBlockByHash", params=params)
         rpc_checks.assert_block_fields(response, full_trx, tx_receipt)
 
-    @pytest.mark.xfail("NDEV-605")
+    @pytest.mark.xfail(reason="NDEV-605")
     @pytest.mark.parametrize("hash, full_trx, msg",
                              [(gen_hash_of_block(31), False, "Key not found in database"),
                               (gen_hash_of_block(32), True, "Key not found in database"),
@@ -347,7 +347,7 @@ class TestRpcCalls(BaseMixin):
                                            params=[tx_receipt.blockNumber, full_trx])
         rpc_checks.assert_block_fields(response, full_trx, tx_receipt)
 
-    @pytest.mark.xfail("NDEV-605")
+    @pytest.mark.xfail(reason="NDEV-605")
     @pytest.mark.parametrize("number, full_trx, msg",
                              [(gen_hash_of_block(31), False, "Key not found in database"),
                               (1, True, "Key not found in database"),

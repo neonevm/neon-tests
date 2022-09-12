@@ -169,3 +169,24 @@ class BaseMixin(BaseTests):
                 return receipt
             time.sleep(1)
         raise TimeoutError(f"Transaction is not accepted for {timeout} seconds")
+
+    def create_tx_object(self, sender=None, recipient=None, amount=2, nonce=None, gas_price=None):
+        if gas_price is None:
+            gas_price = self.web3_client.gas_price()
+        if sender is None:
+            sender = self.sender_account.address
+        if recipient is None:
+            recipient = self.recipient_account.address
+        if nonce is None:
+            nonce = self.web3_client.eth.get_transaction_count(sender)
+        transaction = {
+            "from": sender,
+            "to": recipient,
+            "value": self.web3_client.toWei(amount, Unit.ETHER),
+            "chainId": self.web3_client._chain_id,
+            "gasPrice": gas_price,
+            "gas": 0,
+            "nonce": nonce,
+        }
+        transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
+        return transaction

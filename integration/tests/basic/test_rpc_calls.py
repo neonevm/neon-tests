@@ -111,7 +111,7 @@ class TestRpcCalls(BaseMixin):
             address=contract_deploy_tx["contractAddress"],
             abi=contract.abi,
         )
-        time.sleep(3)  # FIXME: It's a temporary fix for devnet
+        self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
         yield contract, contract_deploy_tx, tx_receipt
 
     @pytest.mark.parametrize(
@@ -254,17 +254,7 @@ class TestRpcCalls(BaseMixin):
 
     def test_rpc_call_eth_send_raw_transaction(self):
         """Verify implemented rpc calls work eth_sendRawTransaction"""
-
-        transaction = {
-            "from": self.sender_account.address,
-            "to": self.recipient_account.address,
-            "value": self.web3_client.toWei(1, Unit.ETHER),
-            "chainId": self.web3_client._chain_id,
-            "gasPrice": self.web3_client.gas_price(),
-            "gas": 0,
-            "nonce": self.web3_client.eth.get_transaction_count(self.sender_account.address),
-        }
-        transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
+        transaction = self.create_tx_object(amount=1)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
         response = self.proxy_api.send_rpc("eth_sendRawTransaction", params=signed_tx.rawTransaction.hex())
         assert "error" not in response

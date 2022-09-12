@@ -6,7 +6,7 @@ import solcx
 
 def get_contract_abi(name, compiled):
     for key in compiled.keys():
-        if name == key.rsplit(":")[1]:
+        if name == key.rsplit(":")[-1]:
             return compiled[key]
 
 

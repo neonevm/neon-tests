@@ -20,11 +20,13 @@ from utils import helpers, web3client
 
 NEON_PRICE = 0.25
 
-TRANSFER_TO_EXIST_ACC_SOL = 10_000
-TRANSFER_TO_UNEXIST_ACC_SOL = 1_574_040
+TX_COST = 5000
+STORAGE_COST = 6960
+
 TRANSFER_ERC20_SOL = 1_130_560
 TRANSFER_ERC20_WRAPPED_SOL = 2_049_280
 DEPLOY_SMALL_CONTRACT_SOL = 48_999_680
+
 LAMPORT_PER_SOL = 1_000_000_000
 DECIMAL_CONTEXT = getcontext()
 DECIMAL_CONTEXT.prec = 9
@@ -75,6 +77,16 @@ class TestEconomics(BaseTests):
         with allure.step(msg):
             assert neon_cost > sol_cost, msg
 
+    @allure.step("Get single transaction gas")
+    def get_single_transaction_gas(self):
+        """ One TX_COST to verify Solana signature plus another one TX_COST to pay to Governance"""
+        return TX_COST*2
+
+    @allure.step("Get account creation gas")
+    def get_acc_creation_gas(self, size):
+        """Size in bytes"""
+        return size*STORAGE_COST + TX_COST
+
     @pytest.mark.only_stands
     def test_account_creation(self):
         """Verify account creation spend SOL"""
@@ -88,7 +100,8 @@ class TestEconomics(BaseTests):
         assert sol_balance_after == sol_balance_before
 
     def test_send_neon_to_unexist_account(self):
-        """Verify how many cost neon send to new user"""
+        """Verify how many cost neon send to new user.
+        Predefined future account size is 224 bytes."""
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
@@ -103,7 +116,8 @@ class TestEconomics(BaseTests):
         sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after, "Operator balance after getBalance doesn't changed"
-        assert sol_diff == TRANSFER_TO_UNEXIST_ACC_SOL, "Unexpected amount of SOL for the operation"
+        assert sol_diff == self.get_acc_creation_gas(224) + self.get_single_transaction_gas(), \
+            "Unexpected amount of SOL for the operation"
         self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
     def test_send_neon_to_exist_account(self):
@@ -124,7 +138,7 @@ class TestEconomics(BaseTests):
         sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after, "Operator balance after send tx doesn't changed"
-        assert sol_diff == TRANSFER_TO_EXIST_ACC_SOL, "Unexpected amount of SOL for the operation"
+        assert sol_diff == self.get_single_transaction_gas(), "Unexpected amount of SOL for the operation"
         self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
     def test_send_when_not_enough_neon_to_gas(self):

@@ -265,19 +265,6 @@ class SOLClient:
     def make_eth_transaction(
         self, to_addr: str, data: bytes, signer: OperatorAccount, from_solana_user: PublicKey, user_eth_address: bytes
     ):
-        def make_instruction_data_from_tx(instruction, private_key):
-            if instruction["chainId"] is None:
-                raise Exception("chainId value is needed in input dict")
-
-            signed_tx = self._web3.eth.account.sign_transaction(instruction, private_key)
-            _trx = utils.Trx.from_string(signed_tx.rawTransaction)
-
-            raw_msg = _trx.get_msg(instruction["chainId"])
-            sig = eth_keys.Signature(vrs=[1 if _trx.v % 2 == 0 else 0, _trx.r, _trx.s])
-            pub = sig.recover_public_key_from_msg_hash(_trx.hash())
-
-            return pub.to_canonical_address(), sig.to_bytes(), raw_msg
-
         nonce = self.get_transaction_count(from_solana_user)
         tx = {
             "to": to_addr,
@@ -288,9 +275,6 @@ class SOLClient:
             "data": data,
             "chainId": self._credentials["network_id"],
         }
-        # (from_addr, sign, msg) = make_instruction_data_from_tx(tx, signer.secret_key[:32])
-        # assert from_addr == user_eth_address, (from_addr, user_eth_address)
-        # return from_addr, sign, msg, nonce
         return self._web3.eth.account.sign_transaction(tx, signer.secret_key[:32])
 
     def create_storage_account(
@@ -331,12 +315,13 @@ class SOLClient:
             ),
         )["result"]
         self.wait_confirmation(tx_sig)
-        return try_until(
-            lambda: self._client.get_confirmed_transaction(tx_sig)["result"] is not None,
+        trx = try_until(
+            lambda: self._client.get_confirmed_transaction(tx_sig)["result"],
             interval=10,
             timeout=60,
             error_msg=f"Can't get confirmed transaction {tx_sig}",
         )
+        return tx_sig, trx
 
     def make_PartialCallOrContinueFromRawEthereumTX(
         self,
@@ -412,5 +397,5 @@ def create_transaction():
         )
     )
     print("# # Send transaction")
-    receipt = sol_client.send_transaction(trx, operator)
+    receipt = sol_client.send_transaction(trx, operator, skip_preflight=True)
     return receipt

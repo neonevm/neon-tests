@@ -379,18 +379,19 @@ class NeonProxyTasksSet(TaskSet):
         # create new account for each simulating user
         self.account = self.web3_client.create_account()
         self.task_keeps_balance()
-        self.user.environment.accounts.append(self.account)
+        self.user.environment.shared.accounts.append(self.account)
+        LOG.info(f"New account {self.account.address} created")
 
     def on_start(self) -> None:
         """on_start is called when a Locust start before any task is scheduled"""
         # setup class once
-        self.setup()
         session = init_session(
             self.user.environment.parsed_options.num_users or self.user.environment.runner.target_user_count
         )
         self.faucet = Faucet(credentials["faucet_url"], session=session)
+        LOG.info(f"Create web3 client to: {credentials['proxy_url']}")
         self.web3_client = NeonWeb3ClientExt(credentials["proxy_url"], credentials["network_id"], session=session)
-
+        self.setup()
         self.log = logging.getLogger("neon-consumer[%s]" % self.account.address[-8:])
 
     def task_block_number(self) -> None:

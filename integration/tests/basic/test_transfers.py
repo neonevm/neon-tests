@@ -443,14 +443,13 @@ class TestTransactionsValidation(BaseMixin):
 
     def test_send_transaction_with_old_nonce(self):
         """Check that transaction with old nonce can't be sent"""
-        for _ in range(2):
-            transaction = self.create_tx_object()
-            signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
-            response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
-            self.wait_transaction_accepted(response["result"])
+        transaction = self.create_tx_object(amount=1)
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+        response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
+        self.wait_transaction_accepted(response["result"])
 
-        nonce = self.web3_client.eth.get_transaction_count(self.sender_account.address) - 2
-        transaction = self.create_tx_object(nonce=nonce)
+        nonce = self.web3_client.eth.get_transaction_count(self.sender_account.address) - 1
+        transaction = self.create_tx_object(amount=2, nonce=nonce)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
         response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
         assert ErrorMessage.NONCE_TOO_LOW.value in response["error"]["message"]

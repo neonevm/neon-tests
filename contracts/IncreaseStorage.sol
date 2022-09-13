@@ -1,6 +1,6 @@
 pragma solidity >=0.5.12;
 
-contract Increase_storage {
+contract IncreaseStorage {
     mapping(address => mapping(uint256 => uint256)) data;
     uint256 count = 0;
 

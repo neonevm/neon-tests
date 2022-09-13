@@ -441,31 +441,31 @@ class NeonProxyTasksSet(TaskSet):
 class BaseResizingTasksSet(NeonProxyTasksSet):
     """Implements resize accounts base pipeline tasks"""
 
-    buffer: tp.Optional[tp.List] = None
+    _buffer: tp.Optional[tp.List] = None
     contract_name: tp.Optional[str] = None
-    _solc_version: tp.Optional[str] = None
+    version: tp.Optional[str] = None
 
     @task(1)
     @execute_before("task_block_number", "task_keeps_balance")
     def task_deploy_contract(self) -> None:
         """Deploy contract"""
         self.log.info(f"`{self.contract_name}`: deploy contract.")
-        contract, _ = self.deploy_contract(self.contract_name, self._solc_version, self.account)
+        contract, _ = self.deploy_contract(self.contract_name, self.version, self.account)
         if not contract:
             self.log.error(f"`{self.contract_name}` contract deployment failed.")
             return
-        self.buffer.append(contract)
+        self._buffer.append(contract)
 
     def task_resize(self, item: str) -> None:
         """Account resize"""
-        if self.buffer:
-            contract = random.choice(self.buffer)
+        if self._buffer:
+            contract = random.choice(self._buffer)
             if hasattr(contract.functions, "get") and item == "dec":
                 if contract.functions.get().call() == 0:
-                    self.log.debug(f"Can't {item}rease account `{str(self.account.address)[:8]}`, counter is zero.")
+                    self.log.debug(f"Can't {item}rease contract `{str(self.account.address)[:8]}`, counter is zero.")
                     return
             func = getattr(contract.functions, item)
-            self.log.info(f"`{self.contract_name}`: {item}rease account `{str(contract.address)[:8]}`.")
+            self.log.info(f"`{self.contract_name}`: {item}rease in contract `{str(contract.address)[:8]}`.")
             tx = func().buildTransaction(
                 {
                     "from": self.account.address,
@@ -528,6 +528,8 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
         contract = self._erc20wrapper_client.get_wrapper_contract(address)
         return contract
 
+    @task(1)
+    @execute_before("task_block_number", "task_keeps_balance")
     def task_deploy_contract(self) -> None:
         """Deploy ERC20 or ERC20Wrapper contract"""
         self.log.info(f"Deploy `{self.contract_name.lower()}` contract.")
@@ -544,13 +546,13 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
             contract = random.choice(tuple(contracts))
             recipient = random.choice(self.user.environment.shared.accounts)
             self.log.info(
-                f"Send `{self.contract_name.lower()}` tokens from {str(contract.address)[:8]} to {str(recipient.address)[:8]}."
+                f"Send `{self.contract_name.lower()}` tokens from contract {str(contract.address)[-8:]} to {str(recipient.address)[-8:]}."
             )
             if self.web3_client.send_erc20(self.account, recipient, 1, contract.address, abi=contract.abi):
                 self._buffer.setdefault(recipient.address, set()).add(contract)
             # remove contracts without balance
             if contract.functions.balanceOf(self.account.address).call() < 1:
-                self.log.info(f"Remove contract `{contract.address[:8]}` with empty balance from buffer.")
+                self.log.info(f"Remove contract `{contract.address[:8]}` because user has empty balance")
                 contracts.remove(contract)
             return
         self.log.info(f"no `{self.contract_name.upper()}` contracts found, send is cancel.")
@@ -565,8 +567,8 @@ class NeonTasksSet(NeonProxyTasksSet):
     def task_send_neon(self) -> None:
         """Transferring funds to a random account"""
         # add credits to account
-        recipient = random.choice(self._accounts)
-        self.log.info(f"Send `neon` from {str(self.account.address)[:8]} to {str(recipient.address)[:8]}.")
+        recipient = random.choice(self.user.environment.shared.accounts)
+        self.log.info(f"Send `neon` from {str(self.account.address)[-8:]} to {str(recipient.address)[-8:]}.")
         self.web3_client.send_neon(self.account, recipient, amount=1)
 
 
@@ -576,8 +578,8 @@ class ERC20TasksSet(ERC20BaseTasksSet):
 
     def on_start(self) -> None:
         super(ERC20TasksSet, self).on_start()
-        self._version = ERC20_VERSION
-        self._contract_name = "ERC20"
+        self.version = ERC20_VERSION
+        self.contract_name = "ERC20"
         self._buffer = self.user.environment.shared.erc20_contracts
 
     @task(1)
@@ -599,45 +601,15 @@ class ERC20WrappedTasksSet(ERC20BaseTasksSet):
 
     def on_start(self) -> None:
         super(ERC20WrappedTasksSet, self).on_start()
-        self._version = ERC20_WRAPPER_VERSION
-        self._contract_name = "erc20wrapper"
-        self._buffer = self._erc20_wrapper_contracts
-
-    @task(1)
-    @execute_before("task_block_number", "task_keeps_balance")
-    def task_deploy_contract(self) -> None:
-        """Deploy SPL contract"""
-        super(ERC20WrappedTasksSet, self).task_deploy_contract()
+        self.version = ERC20_WRAPPER_VERSION
+        self.contract_name = "erc20wrapper"
+        self._buffer = self.user.environment.shared.erc20_wrapper_contracts
 
     @task(5)
     @execute_before("task_block_number", "task_keeps_balance")
-    def task_send_erc20(self) -> None:
+    def task_send_erc20_wrapped(self) -> None:
         """Send ERC20 tokens"""
         super(ERC20WrappedTasksSet, self).task_send_tokens()
-
-
-@tag("storage")
-@tag("contract")
-class IncreaseStorageTasksSet(BaseResizingTasksSet):
-    """Implements `IncreaseStorage`contracts base pipeline tasks"""
-
-    def on_start(self) -> None:
-        super(IncreaseStorageTasksSet, self).on_start()
-        self._buffer = self._increase_storage_contracts
-        self._contract_name = "IncreaseStorage"
-        self._storage_version = INCREASE_STORAGE_VERSION
-
-    # @task(1)
-    # @execute_before("task_block_number", "task_keeps_balance")
-    # def task_deploy_contract(self) -> None:
-    #     """Deploy IncreaseStorage contract"""
-    #     super(IncreaseStorageTasksSet, self).task_deploy_contract()
-
-    @task(5)
-    @execute_before("task_block_number", "task_keeps_balance")
-    def task_increase_storage_account(self) -> None:
-        """Accounts increase"""
-        super(IncreaseStorageTasksSet, self).task_resize("inc")
 
 
 @tag("counter")
@@ -647,17 +619,11 @@ class CounterTasksSet(BaseResizingTasksSet):
 
     def on_start(self) -> None:
         super(CounterTasksSet, self).on_start()
-        self._buffer = self._counter_contracts
-        self._contract_name = "Counter"
-        self._storage_version = COUNTER_VERSION
+        self._buffer = self.user.environment.shared.counter_contracts
+        self.contract_name = "Counter"
+        self.version = COUNTER_VERSION
 
-    # @task(1)
-    # @execute_before("task_block_number", "task_keeps_balance")
-    # def task_deploy_contract(self) -> None:
-    #     """Deploy Counter contract"""
-    #     super(CounterTasksSet, self).task_deploy_contract()
-
-    @task(5)
+    @task(4)
     @execute_before("task_block_number", "task_keeps_balance")
     def task_increase_counter(self) -> None:
         """Accounts increase"""
@@ -682,7 +648,7 @@ class WithDrawTasksSet(NeonProxyTasksSet):
     def task_withdraw_tokens(self) -> None:
         """withdraw Ethereum tokens to Solana"""
         keys = Keypair.generate()
-        contract_interface = self._compile_contract_interface(self._contract_name, self._version)
+        contract_interface = self._compile_contract_interface(self.contract_name, self.version)
         erc20wrapper_address = credentials.get("neon_erc20wrapper_address")
         if erc20wrapper_address:
             self.log.info(f"withdraw tokens to Solana from {self.account.address[:8]}")
@@ -750,7 +716,7 @@ class UniswapTransaction(NeonProxyTasksSet):
         router = self.user.environment.uniswap["router"]
         token_a = self.user.environment.uniswap["tokenA"]
         token_b = self.user.environment.uniswap["tokenB"]
-
+        self.log.info("Swap token direct")
         swap_trx = router.functions.swapExactTokensForTokens(
             web3.Web3.toWei(1, "ether"),
             0,
@@ -772,7 +738,7 @@ class UniswapTransaction(NeonProxyTasksSet):
         token_a = self.user.environment.uniswap["tokenA"]
         token_b = self.user.environment.uniswap["tokenB"]
         token_c = self.user.environment.uniswap["tokenC"]
-
+        self.log.info("Swap token via 2 pools")
         swap_trx = router.functions.swapExactTokensForTokens(
             web3.Web3.toWei(1, "ether"),
             0,
@@ -792,13 +758,11 @@ class UniswapTransaction(NeonProxyTasksSet):
 class NeonPipelineUser(User):
     """Class represents a base Neon pipeline by one user"""
 
-    # wait_time = between(1, 3)
     tasks = {
         CounterTasksSet: 3,
         ERC20TasksSet: 1,
         ERC20WrappedTasksSet: 2,
-        IncreaseStorageTasksSet: 2,
         NeonTasksSet: 10,
-        WithDrawTasksSet: 5,
+        # WithDrawTasksSet: 5,  Disable this, because withdraw instruction changed
         UniswapTransaction: 5
     }

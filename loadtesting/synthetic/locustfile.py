@@ -59,6 +59,43 @@ SYS_INSTRUCT_ADDRESS = "Sysvar1nstructions1111111111111111111111111"
 """
 
 
+DEFAULT_UNITS = 500 * 1000
+DEFAULT_HEAP_FRAME = 256 * 1024
+DEFAULT_ADDITIONAL_FEE = 0
+COMPUTE_BUDGET_ID: PublicKey = PublicKey("ComputeBudget111111111111111111111111111111")
+
+
+class ComputeBudget:
+    @staticmethod
+    def request_units(units, additional_fee):
+        return TransactionInstruction(
+            program_id=COMPUTE_BUDGET_ID,
+            keys=[],
+            data=bytes.fromhex("00") + units.to_bytes(4, "little") + additional_fee.to_bytes(4, "little")
+        )
+
+    @staticmethod
+    def request_heap_frame(heap_frame):
+        return TransactionInstruction(
+            program_id=COMPUTE_BUDGET_ID,
+            keys=[],
+            data=bytes.fromhex("01") + heap_frame.to_bytes(4, "little")
+        )
+
+
+class TransactionWithComputeBudget(Transaction):
+    def __init__(self,
+                 units=DEFAULT_UNITS,
+                 additional_fee=DEFAULT_ADDITIONAL_FEE,
+                 heap_frame=DEFAULT_HEAP_FRAME,
+                 *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # if units:
+        #     self.instructions.append(ComputeBudget.request_units(units, additional_fee))
+        if heap_frame:
+            self.instructions.append(ComputeBudget.request_heap_frame(heap_frame))
+
+
 def init_session(size: int) -> requests.Session:
     """init request session with extended connection pool size"""
     adapter = requests.adapters.HTTPAdapter(pool_connections=size, pool_maxsize=size, pool_block=True)
@@ -263,12 +300,12 @@ class SOLClient:
         return int.from_bytes(info.trx_count, "little")
 
     def make_eth_transaction(
-        self, to_addr: str, data: bytes, signer: OperatorAccount, from_solana_user: PublicKey, user_eth_address: bytes
+        self, to_addr: str, signer: OperatorAccount, from_solana_user: PublicKey, value: int = 0, data: bytes = b"",
     ):
         nonce = self.get_transaction_count(from_solana_user)
         tx = {
             "to": to_addr,
-            "value": 0,
+            "value": value,
             "gas": 9999999999,
             "gasPrice": 0,
             "nonce": nonce,
@@ -323,26 +360,23 @@ class SOLClient:
         )
         return tx_sig, trx
 
-    def make_PartialCallOrContinueFromRawEthereumTX(
+    def make_TransactionExecuteFromInstruction(
         self,
         instruction: bytes,
         operator: Keypair,
-        storage_address: PublicKey,
         treasury_address: PublicKey,
         treasury_buffer: bytes,
-        step_count: int,
         additional_accounts: tp.List[PublicKey],
     ):
-        code = 13
-        d = code.to_bytes(1, "little") + treasury_buffer + step_count.to_bytes(8, byteorder="little") + instruction
+        code = 31
+        d = code.to_bytes(1, "little") + treasury_buffer + instruction
         operator_ether = eth_keys.PrivateKey(operator.secret_key[:32]).public_key.to_canonical_address()
 
         accounts = [
-            AccountMeta(pubkey=storage_address, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=SYS_INSTRUCT_ADDRESS, is_signer=False, is_writable=True),
             AccountMeta(pubkey=operator.public_key, is_signer=True, is_writable=True),
             AccountMeta(pubkey=treasury_address, is_signer=False, is_writable=True),
             AccountMeta(pubkey=self._evm_loader.ether2program(operator_ether)[0], is_signer=False, is_writable=True),
+            # AccountMeta(pubkey=PublicKey("7TUndyBSqVx4zeXVPMh2ChFNDCZBJpq7ADiDEWzqQUCw"), is_signer=False, is_writable=True),
             AccountMeta(SYS_PROGRAM_ID, is_signer=False, is_writable=True),
             # Neon EVM account
             AccountMeta(self.evm_loader_id, is_signer=False, is_writable=False),
@@ -360,39 +394,44 @@ sol_client = SOLClient()
 
 def create_transaction():
     print("# # Create transaction signer `operator`")
-    operator = OperatorAccount(random.choice(range(2, 31)))
+    # operator = OperatorAccount(random.choice(range(2, 31)))
+    operator = OperatorAccount(2)
     print("# # request SOL to transaction signer")
     tx_sig = sol_client.request_sol(operator, 1000)
     sol_client.wait_confirmation(tx_sig)
     print("# # Create solana program from `operator` eth address")
     operator_sol_program = sol_client.create_solana_program(operator.eth_address)[0]
+    print(f"Operator sol address {operator_sol_program} / public {operator.public_key}")
     print("# # Create sender eth account")
     from_eth_account_address = sol_client.create_eth_account().address
+    print(f"From ethereum address: {from_eth_account_address}")
     print("# # Create solana program from `sender` eth address")
     from_sol_account_address = sol_client.create_solana_program(from_eth_account_address)[0]
+    print(f"Solana from addr: {from_sol_account_address}")
     print("# # Create one more account to receive neons")
     to_eth_account_address = sol_client.create_eth_account().address
+    print(f"From ethereum address: {to_eth_account_address}")
     to_sol_account_address = sol_client.create_solana_program(to_eth_account_address)[0]
+    print(f"Solana to addr: {to_sol_account_address}")
     print("# # create eth transaction")
     eth_transaction = sol_client.make_eth_transaction(
         to_eth_account_address,
         data=b"",
         signer=operator,
-        from_solana_user=operator_sol_program,
-        user_eth_address=operator.eth_address,
+        from_solana_user=from_sol_account_address,
     )
     print("# # Create storage account")
-    storage_account = sol_client.create_storage_account(operator)
     treasury_pool = utils.create_treasury_pool_address(DEFAULT_NETWORK, sol_client.evm_loader_id)
     print("# # Create transaction")
-    trx = Transaction().add(
-        sol_client.make_PartialCallOrContinueFromRawEthereumTX(
+
+    print(f"ETH transaction {eth_transaction.hash}")
+
+    trx = TransactionWithComputeBudget().add(
+        sol_client.make_TransactionExecuteFromInstruction(
             eth_transaction.rawTransaction,
             operator,
-            storage_account,
             treasury_pool.account,
             treasury_pool.buffer,
-            100,
             [PublicKey(from_sol_account_address), PublicKey(to_sol_account_address)],
         )
     )

@@ -1,3 +1,5 @@
+import random
+import re
 import time
 import typing as tp
 
@@ -7,9 +9,10 @@ import web3
 
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
-from integration.tests.basic.helpers.basic import BaseMixin
+from integration.tests.basic.helpers.basic import BaseMixin, AccountData
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from utils.consts import Unit, InputTestConstants
+from utils.helpers import gen_hash_of_block
 
 U64_MAX = 18_446_744_073_709_551_615
 DEFAULT_ERC20_BALANCE = 1000
@@ -62,7 +65,8 @@ class TestTransfer(BaseMixin):
 
         # ERC20 balance
         assert (
-            contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE - transfer_amount
+                contract.functions.balanceOf(
+                    self.sender_account.address).call() == DEFAULT_ERC20_BALANCE - transfer_amount
         ), AssertMessage.CONTRACT_BALANCE_IS_WRONG.value
         self.assert_balance_less(
             self.sender_account.address, initial_sender_neon_balance - self.calculate_trx_gas(tx_receipt=tx_receipt)
@@ -84,7 +88,8 @@ class TestTransfer(BaseMixin):
 
         # Spl balance
         assert (
-            contract.functions.balanceOf(self.recipient_account.address).call() == initial_spl_balance + transfer_amount
+                contract.functions.balanceOf(
+                    self.recipient_account.address).call() == initial_spl_balance + transfer_amount
         )
 
         # Neon balance
@@ -144,7 +149,7 @@ class TestTransfer(BaseMixin):
 
         # ERC20 balance
         assert (
-            contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
+                contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
         ), AssertMessage.CONTRACT_BALANCE_IS_WRONG.value
 
         # Neon balance
@@ -246,7 +251,7 @@ class TestTransfer(BaseMixin):
 
         # ERC20 balance
         assert (
-            contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
+                contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
         ), AssertMessage.CONTRACT_BALANCE_IS_WRONG.value
 
         # Neon balance
@@ -288,18 +293,19 @@ class TestTransfer(BaseMixin):
 
         # ERC20 balance (now the balance is the same as before the transfer)
         assert (
-            contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
+                contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
         ), AssertMessage.CONTRACT_BALANCE_IS_WRONG.value
         # Neon balance
         assert initial_sender_neon_balance > self.get_balance_from_wei(self.sender_account.address)
 
-    def test_send_token_to_an_invalid_address(self):
-        """Send token to an invalid address"""
+    @pytest.mark.parametrize("size", [4, 20])
+    def test_send_token_to_an_invalid_address(self, size):
+        """Send token to an invalid and not-existing address"""
         balance_before = self.sender_account_balance
-
+        invalid_account = AccountData(address=gen_hash_of_block(size))
         self.send_neon_with_failure(
             sender_account=self.sender_account,
-            recipient_account=self.invalid_account,
+            recipient_account=invalid_account,
             amount=InputTestConstants.DEFAULT_TRANSFER_AMOUNT.value,
             exception=web3.exceptions.InvalidAddress,
         )
@@ -328,7 +334,8 @@ class TestTransfer(BaseMixin):
         assert actual_result["result"]["status"] == "0x1", "Transaction status must be 0x1"
 
         self.assert_balance(sender_account.address, amount - transfer_amount)
-        self.assert_balance(recipient_account.address, InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value + transfer_amount)
+        self.assert_balance(recipient_account.address,
+                            InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value + transfer_amount)
 
 
 @allure.story("Basic: transactions validation")
@@ -386,6 +393,11 @@ class TestTransactionsValidation(BaseMixin):
         transaction = self.create_tx_object(nonce=nonce)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
         response_trx1 = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
+
+        time.sleep(10) # transaction with n+1 nonce should wait when transaction with nonce = n will be accepted
+        receipt_trx1 = self.proxy_api.send_rpc(method="eth_getTransactionReceipt", params=[response_trx1["result"]])
+        assert receipt_trx1["result"] is None, "Transaction shouldn't be accepted"
+
         transaction = self.create_tx_object(nonce=nonce - 1)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
         response_trx2 = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
@@ -419,17 +431,37 @@ class TestTransactionsValidation(BaseMixin):
         assert "error" not in response
         assert "result" in response
 
+    def test_send_transaction_with_small_gas_amount(self):
+        """Check that transaction can't be sent if gas value is too small"""
+        gas_price = random.randint(0, 10000)
+        transaction = self.create_tx_object(gas_price=gas_price)
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+        response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
+        pattern = str.format(ErrorMessage.TRANSACTION_UNDERPRICED.value, gas_price) + r" \d.*"
+        assert re.match(pattern, response["error"]["message"])
+        assert response["error"]["code"] == -32000
+
     def test_send_transaction_with_old_nonce(self):
         """Check that transaction with old nonce can't be sent"""
-        for _ in range(2):
-            transaction = self.create_tx_object()
-            signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
-            response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
-            self.wait_transaction_accepted(response["result"])
+        transaction = self.create_tx_object(amount=1)
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+        response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
+        self.wait_transaction_accepted(response["result"])
 
-        nonce = self.web3_client.eth.get_transaction_count(self.sender_account.address) - 2
-        transaction = self.create_tx_object(nonce=nonce)
+        nonce = self.web3_client.eth.get_transaction_count(self.sender_account.address) - 1
+        transaction = self.create_tx_object(amount=2, nonce=nonce)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
         response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
         assert ErrorMessage.NONCE_TOO_LOW.value in response["error"]["message"]
         assert response["error"]["code"] == -32002
+
+    def test_send_too_big_transaction(self):
+        """Transaction size is too big"""
+        transaction = self.create_tx_object()
+        transaction["data"] = gen_hash_of_block(256 * 1024)
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+        params = [signed_tx.rawTransaction.hex()]
+        response = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
+        assert ErrorMessage.TOO_BIG_TRANSACTION.value in response["error"]["message"]
+        assert response["error"]["code"] == -32000
+

@@ -12,6 +12,8 @@ class ErrorMessage(Enum):
     )
     ALREADY_KNOWN = "already known"
     REPLACEMENT_UNDERPRICED = "replacement transaction underpriced"
+    TOO_BIG_TRANSACTION = "transaction size is too big"
+    TRANSACTION_UNDERPRICED = "transaction underpriced: have {} want"
 
 
 class AssertMessage(Enum):

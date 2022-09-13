@@ -11,6 +11,7 @@ import os
 import pathlib
 import random
 import subprocess
+import time
 import typing as tp
 from hashlib import sha256
 
@@ -43,7 +44,7 @@ DEFAULT_USER_NUM = 10
 """
 """
 
-DEFAULT_NEON_AMOUNT = 100
+DEFAULT_NEON_AMOUNT = 10000
 """
 """
 DEFAULT_SOL_AMOUNT = 1000000 * 10 ** 9
@@ -300,7 +301,7 @@ class SOLClient:
         return int.from_bytes(info.trx_count, "little")
 
     def make_eth_transaction(
-        self, to_addr: str, signer: OperatorAccount, from_solana_user: PublicKey, value: int = 0, data: bytes = b"",
+        self, to_addr: str, signer: "eth_account.local.LocalAccount", from_solana_user: PublicKey, value: int = 0, data: bytes = b"",
     ):
         nonce = self.get_transaction_count(from_solana_user)
         tx = {
@@ -312,7 +313,7 @@ class SOLClient:
             "data": data,
             "chainId": self._credentials["network_id"],
         }
-        return self._web3.eth.account.sign_transaction(tx, signer.secret_key[:32])
+        return self._web3.eth.account.sign_transaction(tx, signer.privateKey)
 
     def create_storage_account(
         self, signer: OperatorAccount, seed: bytes = None, size: int = None, fund: int = None
@@ -371,12 +372,14 @@ class SOLClient:
         code = 31
         d = code.to_bytes(1, "little") + treasury_buffer + instruction
         operator_ether = eth_keys.PrivateKey(operator.secret_key[:32]).public_key.to_canonical_address()
+        print(f"Operator ether {operator_ether.hex()}")
+        operator_ether_solana = self._evm_loader.ether2program(operator_ether)[0]
+        print(f"Operator ether solana {operator_ether_solana}")
 
         accounts = [
             AccountMeta(pubkey=operator.public_key, is_signer=True, is_writable=True),
             AccountMeta(pubkey=treasury_address, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=self._evm_loader.ether2program(operator_ether)[0], is_signer=False, is_writable=True),
-            # AccountMeta(pubkey=PublicKey("7TUndyBSqVx4zeXVPMh2ChFNDCZBJpq7ADiDEWzqQUCw"), is_signer=False, is_writable=True),
+            AccountMeta(pubkey=operator_ether_solana, is_signer=False, is_writable=True),
             AccountMeta(SYS_PROGRAM_ID, is_signer=False, is_writable=True),
             # Neon EVM account
             AccountMeta(self.evm_loader_id, is_signer=False, is_writable=False),
@@ -403,7 +406,8 @@ def create_transaction():
     operator_sol_program = sol_client.create_solana_program(operator.eth_address)[0]
     print(f"Operator sol address {operator_sol_program} / public {operator.public_key}")
     print("# # Create sender eth account")
-    from_eth_account_address = sol_client.create_eth_account().address
+    from_eth_account = sol_client.create_eth_account()
+    from_eth_account_address = from_eth_account.address
     print(f"From ethereum address: {from_eth_account_address}")
     print("# # Create solana program from `sender` eth address")
     from_sol_account_address = sol_client.create_solana_program(from_eth_account_address)[0]
@@ -417,7 +421,7 @@ def create_transaction():
     eth_transaction = sol_client.make_eth_transaction(
         to_eth_account_address,
         data=b"",
-        signer=operator,
+        signer=from_eth_account,
         from_solana_user=from_sol_account_address,
     )
     print("# # Create storage account")

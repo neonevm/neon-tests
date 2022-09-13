@@ -21,8 +21,7 @@ from utils import helpers, web3client
 NEON_PRICE = 0.25
 
 TX_COST = 5000
-STORAGE_COST = 6960
-
+TRANSFER_TO_UNEXIST_ACC_SOL = 1_574_040
 TRANSFER_ERC20_SOL = 1_130_560
 TRANSFER_ERC20_WRAPPED_SOL = 2_049_280
 DEPLOY_SMALL_CONTRACT_SOL = 48_999_680
@@ -82,11 +81,6 @@ class TestEconomics(BaseTests):
         """ One TX_COST to verify Solana signature plus another one TX_COST to pay to Governance"""
         return TX_COST*2
 
-    @allure.step("Get account creation gas")
-    def get_acc_creation_gas(self, size):
-        """Size in bytes"""
-        return size*STORAGE_COST + TX_COST
-
     @pytest.mark.only_stands
     def test_account_creation(self):
         """Verify account creation spend SOL"""
@@ -116,8 +110,7 @@ class TestEconomics(BaseTests):
         sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after, "Operator balance after getBalance doesn't changed"
-        assert sol_diff == self.get_acc_creation_gas(224) + self.get_single_transaction_gas(), \
-            "Unexpected amount of SOL for the operation"
+        assert sol_diff == TRANSFER_TO_UNEXIST_ACC_SOL, "Unexpected amount of SOL for the operation"
         self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
     def test_send_neon_to_exist_account(self):

@@ -94,8 +94,7 @@ class TestEconomics(BaseTests):
         assert sol_balance_after == sol_balance_before
 
     def test_send_neon_to_unexist_account(self):
-        """Verify how many cost neon send to new user.
-        Predefined future account size is 224 bytes."""
+        """Verify how many cost neon send to new user"""
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 

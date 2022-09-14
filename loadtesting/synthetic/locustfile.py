@@ -9,11 +9,8 @@ import json
 import logging
 import os
 import pathlib
-import random
 import subprocess
-import time
 import typing as tp
-from hashlib import sha256
 
 import requests
 import web3
@@ -24,7 +21,7 @@ from solana.rpc.api import Client as SolanaClient
 from solana.rpc.providers import http
 from solana.rpc.types import TxOpts
 from solana.system_program import SYS_PROGRAM_ID
-from solana.transaction import AccountMeta, Transaction, TransactionInstruction
+from solana.transaction import AccountMeta, TransactionInstruction
 
 from ui.libs import try_until
 from utils import faucet
@@ -41,60 +38,30 @@ ENV_FILE = "envs.json"
 """
 
 DEFAULT_USER_NUM = 10
-"""
+"""Default peak number of concurrent Locust users.
 """
 
 DEFAULT_NEON_AMOUNT = 10000
+"""Default airdropped NEON amount 
 """
-"""
+
 DEFAULT_SOL_AMOUNT = 1000000 * 10 ** 9
+"""Default airdropped SOL amount 
+"""
 
 CWD = pathlib.Path(__file__).parent
-"""Current working directory"""
+"""Current working directory
+"""
 
 BASE_PATH = CWD.parent.parent
-"""Project root directory"""
+"""Project root directory
+"""
 
 SYS_INSTRUCT_ADDRESS = "Sysvar1nstructions1111111111111111111111111"
 """
 """
 
-
-DEFAULT_UNITS = 500 * 1000
-DEFAULT_HEAP_FRAME = 256 * 1024
-DEFAULT_ADDITIONAL_FEE = 0
-COMPUTE_BUDGET_ID: PublicKey = PublicKey("ComputeBudget111111111111111111111111111111")
-
-
-class ComputeBudget:
-    @staticmethod
-    def request_units(units, additional_fee):
-        return TransactionInstruction(
-            program_id=COMPUTE_BUDGET_ID,
-            keys=[],
-            data=bytes.fromhex("00") + units.to_bytes(4, "little") + additional_fee.to_bytes(4, "little")
-        )
-
-    @staticmethod
-    def request_heap_frame(heap_frame):
-        return TransactionInstruction(
-            program_id=COMPUTE_BUDGET_ID,
-            keys=[],
-            data=bytes.fromhex("01") + heap_frame.to_bytes(4, "little")
-        )
-
-
-class TransactionWithComputeBudget(Transaction):
-    def __init__(self,
-                 units=DEFAULT_UNITS,
-                 additional_fee=DEFAULT_ADDITIONAL_FEE,
-                 heap_frame=DEFAULT_HEAP_FRAME,
-                 *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # if units:
-        #     self.instructions.append(ComputeBudget.request_units(units, additional_fee))
-        if heap_frame:
-            self.instructions.append(ComputeBudget.request_heap_frame(heap_frame))
+DEFAULT_OPERATOR_KEY_PAIR_ID = 2
 
 
 def init_session(size: int) -> requests.Session:
@@ -301,7 +268,12 @@ class SOLClient:
         return int.from_bytes(info.trx_count, "little")
 
     def make_eth_transaction(
-        self, to_addr: str, signer: "eth_account.local.LocalAccount", from_solana_user: PublicKey, value: int = 0, data: bytes = b"",
+        self,
+        to_addr: str,
+        signer: "eth_account.local.LocalAccount",
+        from_solana_user: PublicKey,
+        value: int = 0,
+        data: bytes = b"",
     ):
         nonce = self.get_transaction_count(from_solana_user)
         tx = {
@@ -314,28 +286,6 @@ class SOLClient:
             "chainId": self._credentials["network_id"],
         }
         return self._web3.eth.account.sign_transaction(tx, signer.privateKey)
-
-    def create_storage_account(
-        self, signer: OperatorAccount, seed: bytes = None, size: int = None, fund: int = None
-    ) -> PublicKey:
-        if size is None:
-            size = 128 * 1024
-        if fund is None:
-            fund = 10 ** 9
-        if seed is None:
-            seed = str(random.randrange(1000000))
-        storage = PublicKey(
-            sha256(bytes(signer.public_key) + bytes(seed, "utf8") + bytes(PublicKey(self.evm_loader_id))).digest()
-        )
-
-        if self.get_sol_balance(storage).get("value") == 0:
-            txn = Transaction().add(
-                utils.create_account_with_seed(
-                    signer.public_key, signer.public_key, seed, fund, size, self.evm_loader_id
-                )
-            )
-            self.send_transaction(txn, signer)
-        return storage
 
     def send_transaction(
         self,
@@ -398,7 +348,7 @@ sol_client = SOLClient()
 def create_transaction():
     print("# # Create transaction signer `operator`")
     # operator = OperatorAccount(random.choice(range(2, 31)))
-    operator = OperatorAccount(2)
+    operator = OperatorAccount(DEFAULT_OPERATOR_KEY_PAIR_ID)
     print("# # request SOL to transaction signer")
     tx_sig = sol_client.request_sol(operator, 1000)
     sol_client.wait_confirmation(tx_sig)
@@ -430,7 +380,7 @@ def create_transaction():
 
     print(f"ETH transaction {eth_transaction.hash}")
 
-    trx = TransactionWithComputeBudget().add(
+    trx = utils.TransactionWithComputeBudget().add(
         sol_client.make_TransactionExecuteFromInstruction(
             eth_transaction.rawTransaction,
             operator,
@@ -440,5 +390,5 @@ def create_transaction():
         )
     )
     print("# # Send transaction")
-    receipt = sol_client.send_transaction(trx, operator, skip_preflight=True)
+    receipt = sol_client.send_transaction(trx, operator, skip_preflight=False)
     return receipt

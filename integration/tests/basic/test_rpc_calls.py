@@ -5,9 +5,11 @@ from enum import Enum
 import allure
 import pytest
 import sha3
+import web3
 
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
+from integration.tests.basic.helpers import rpc_checks
 from utils import helpers
 from utils.consts import Unit
 from utils.helpers import gen_hash_of_block
@@ -109,16 +111,8 @@ class TestRpcCalls(BaseMixin):
             address=contract_deploy_tx["contractAddress"],
             abi=contract.abi,
         )
-        time.sleep(3)  # FIXME: It's a temporary fix for devnet
+        self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
         yield contract, contract_deploy_tx, tx_receipt
-
-    @staticmethod
-    def is_hex(hex_data: str) -> bool:
-        try:
-            int(hex_data, 16)
-            return True
-        except (ValueError, TypeError):
-            return False
 
     @pytest.mark.parametrize(
         "params, raises",
@@ -148,7 +142,7 @@ class TestRpcCalls(BaseMixin):
             assert "error" in response, "Error not in response"
         else:
             assert "error" not in response
-            assert self.is_hex(response["result"]), f"Invalid current gas price `{response['result']}` in wei"
+            assert rpc_checks.is_hex(response["result"]), f"Invalid current gas price `{response['result']}` in wei"
 
     @pytest.mark.parametrize(
         "tag1, tag2",
@@ -202,7 +196,7 @@ class TestRpcCalls(BaseMixin):
             assert "error" in response, "Error not in response"
         else:
             assert "error" not in response
-            assert self.is_hex(response["result"]), AssertMessage.WRONG_AMOUNT.value
+            assert rpc_checks.is_hex(response["result"]), AssertMessage.WRONG_AMOUNT.value
 
     @pytest.mark.parametrize(
         "params, raises",
@@ -238,7 +232,7 @@ class TestRpcCalls(BaseMixin):
         else:
             assert "error" not in response
             assert (
-                int(response["result"]) == self.web3_client._chain_id
+                    int(response["result"]) == self.web3_client._chain_id
             ), f"Invalid response result {response['result']}"
 
     @pytest.mark.parametrize(
@@ -256,25 +250,15 @@ class TestRpcCalls(BaseMixin):
             assert "error" in response, "Error not in response"
         else:
             assert "error" not in response
-            assert self.is_hex(response["result"]), AssertMessage.DOES_NOT_START_WITH_0X.value
+            assert rpc_checks.is_hex(response["result"]), AssertMessage.DOES_NOT_START_WITH_0X.value
 
     def test_rpc_call_eth_send_raw_transaction(self):
         """Verify implemented rpc calls work eth_sendRawTransaction"""
-
-        transaction = {
-            "from": self.sender_account.address,
-            "to": self.recipient_account.address,
-            "value": self.web3_client.toWei(1, Unit.ETHER),
-            "chainId": self.web3_client._chain_id,
-            "gasPrice": self.web3_client.gas_price(),
-            "gas": 0,
-            "nonce": self.web3_client.eth.get_transaction_count(self.sender_account.address),
-        }
-        transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
+        transaction = self.create_tx_object(amount=1)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
         response = self.proxy_api.send_rpc("eth_sendRawTransaction", params=signed_tx.rawTransaction.hex())
         assert "error" not in response
-        assert self.is_hex(response["result"]), f"Invalid response result {response['result']}"
+        assert rpc_checks.is_hex(response["result"]), f"Invalid response result {response['result']}"
 
     @pytest.mark.parametrize(
         "params, raises",
@@ -293,30 +277,82 @@ class TestRpcCalls(BaseMixin):
 
     def test_rpc_call_eth_get_transaction_receipt(self):
         """Verify implemented rpc calls work eth_getTransactionReceipt"""
-        # FIXME: Add more logic to check data
-
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
-        response = self.proxy_api.send_rpc(method="eth_getTransactionReceipt", params=tx_receipt.transactionHash.hex())
+        transaction_hash = tx_receipt.transactionHash.hex()
+        response = self.proxy_api.send_rpc(method="eth_getTransactionReceipt", params=transaction_hash)
         assert "error" not in response
         assert "result" in response, AssertMessage.DOES_NOT_CONTAIN_RESULT
+        result = response["result"]
+        expected_hex_fields = ['transactionHash', 'transactionIndex', 'blockNumber', 'blockHash', 'cumulativeGasUsed',
+                               'gasUsed', 'logsBloom', 'status']
+        for field in expected_hex_fields:
+            assert rpc_checks.is_hex(result[field])
+        assert result["status"] == '0x1', "Transaction status must be 0x1"
+        assert result["transactionHash"] == transaction_hash
+        assert result["blockHash"] == tx_receipt.blockHash.hex()
+        assert result["from"].upper() == tx_receipt['from'].upper()
+        assert result["to"].upper() == tx_receipt['to'].upper()
+        assert result["contractAddress"] is None
+        assert result["logs"] == []
 
-    def test_eth_get_block_by_hash(self):
+    def test_rpc_call_eth_get_transaction_receipt_when_hash_doesnt_exist(self):
+        """Verify implemented rpc calls work eth_getTransactionReceipt when transaction hash doesn't exist"""
+        response = self.proxy_api.send_rpc(method="eth_getTransactionReceipt", params=gen_hash_of_block(32))
+        assert response['result'] is None, "Result should be None"
+
+    def test_rpc_call_eth_get_transaction_receipt_with_incorrect_hash(self):
+        """Verify implemented rpc calls work eth_getTransactionReceipt when transaction hash is not correct"""
+        transaction_hash = gen_hash_of_block(31)
+        response = self.proxy_api.send_rpc(method="eth_getTransactionReceipt", params=transaction_hash)
+        assert "error" in response
+        assert response["error"]["message"] == "transaction-id is not hex"
+
+    @pytest.mark.parametrize("full_trx", [False, True])
+    def test_eth_get_block_by_hash(self, full_trx: bool):
         """Verify implemented rpc calls work eth_getBlockByHash"""
-        # FIXME: Add more logic to check data
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
-
-        params = [tx_receipt.blockHash.hex(), True]
+        params = [tx_receipt.blockHash.hex(), full_trx]
         response = self.proxy_api.send_rpc(method="eth_getBlockByHash", params=params)
-        assert "error" not in response
-        assert "result" in response, AssertMessage.DOES_NOT_CONTAIN_RESULT
+        rpc_checks.assert_block_fields(response, full_trx, tx_receipt)
 
-    def test_eth_get_block_by_number_via_numbers(self):
+    @pytest.mark.xfail(reason="NDEV-605")
+    @pytest.mark.parametrize("hash, full_trx, msg",
+                             [(gen_hash_of_block(31), False, "Key not found in database"),
+                              (gen_hash_of_block(32), True, "Key not found in database"),
+                              ("bad_hash", True, "Invalid `blockNumber`: \"bad_hash\"")])
+    def test_eth_get_block_by_hash_with_incorrect_hash(self, hash, full_trx, msg):
+        """Verify implemented rpc calls work eth_getBlockByHash with incorrect hash"""
+        params = [hash, full_trx]
+        response = self.proxy_api.send_rpc(method="eth_getBlockByHash", params=params)
+        assert "error" in response, "Error not in response"
+        assert response["error"]["code"] == -32000
+        assert msg in response["error"]["message"]
+        assert msg in response["error"]["data"]
+
+    @pytest.mark.parametrize("full_trx", [False, True])
+    def test_eth_get_block_by_number_via_numbers(self, full_trx):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
-        # FIXME: More logic
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
-        response = self.proxy_api.send_rpc(method="eth_getBlockByNumber", params=[tx_receipt.blockNumber, True])
-        assert "error" not in response
-        assert "result" in response, AssertMessage.DOES_NOT_CONTAIN_RESULT
+        response = self.proxy_api.send_rpc(method="eth_getBlockByNumber",
+                                           params=[tx_receipt.blockNumber, full_trx])
+        rpc_checks.assert_block_fields(response, full_trx, tx_receipt)
+
+    @pytest.mark.xfail(reason="NDEV-605")
+    @pytest.mark.parametrize("number, full_trx, msg",
+                             [(gen_hash_of_block(31), False, "Key not found in database"),
+                              (1, True, "Key not found in database"),
+                              (1, True, "Invalid `blockNumber`: \"1\""),
+                              ("bad_tag", True, "Invalid `blockNumber`: \"bad_hash\"")])
+    def test_eth_get_block_by_number_with_incorrect_data(self, number, full_trx, msg):
+        """Verify implemented rpc calls work eth_getBlockByNumber"""
+        tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
+        response = self.proxy_api.send_rpc(method="eth_getBlockByNumber",
+                                           params=[tx_receipt.blockNumber, full_trx])
+        rpc_checks.assert_block_fields(response, full_trx, tx_receipt)
+        assert "error" in response, "Error not in response"
+        assert response["error"]["code"] == -32000
+        assert msg in response["error"]["message"]
+        assert msg in response["error"]["data"]
 
     @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
     def test_eth_block_number(self, params: tp.Union[str, bool], raises: bool):
@@ -326,7 +362,7 @@ class TestRpcCalls(BaseMixin):
             assert "error" in response, "Error not in response"
         else:
             assert "error" not in response
-            assert self.is_hex(response["result"]), f"Invalid response result {response['result']}"
+            assert rpc_checks.is_hex(response["result"]), f"Invalid response result {response['result']}"
 
     @pytest.mark.parametrize(
         "params, raises", [(Tag.LATEST, False), (Tag.PENDING, False), (Tag.EARLIEST, False), (None, True)]
@@ -340,7 +376,7 @@ class TestRpcCalls(BaseMixin):
             assert "error" in response, "Error not in response"
         else:
             assert "error" not in response
-            assert self.is_hex(response["result"]), f"Invalid response: {response['result']}"
+            assert rpc_checks.is_hex(response["result"]), f"Invalid response: {response['result']}"
 
     @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
     def test_eth_mining(self, params, raises):
@@ -371,7 +407,7 @@ class TestRpcCalls(BaseMixin):
             assert "error" in response, "Error not in response"
         else:
             assert "error" not in response
-            assert self.is_hex(response["result"]), f"Invalid response: {response['result']}"
+            assert rpc_checks.is_hex(response["result"]), f"Invalid response: {response['result']}"
 
     @pytest.mark.parametrize(
         "params, raises",
@@ -399,7 +435,7 @@ class TestRpcCalls(BaseMixin):
             assert "error" in response, "Error not in response"
         else:
             assert "error" not in response
-            assert self.is_hex(response["result"]), f"Invalid response: {response['result']}"
+            assert rpc_checks.is_hex(response["result"]), f"Invalid response: {response['result']}"
 
     @pytest.mark.parametrize(
         "params, raises",
@@ -414,7 +450,7 @@ class TestRpcCalls(BaseMixin):
             assert "error" in response, "Error not in response"
         else:
             assert "error" not in response
-            assert self.is_hex(response["result"]), f"Invalid response: {response['result']}"
+            assert rpc_checks.is_hex(response["result"]), f"Invalid response: {response['result']}"
 
     @pytest.mark.parametrize("params, raises", [(None, False), ("param", True)])
     def test_eth_get_work(self, params: tp.Union[str, None], raises: bool):
@@ -434,7 +470,7 @@ class TestRpcCalls(BaseMixin):
             assert "error" in response, "Error not in response"
         else:
             assert "error" not in response
-            assert self.is_hex(response["result"]), f"Invalid response: {response['result']}"
+            assert rpc_checks.is_hex(response["result"]), f"Invalid response: {response['result']}"
 
     @pytest.mark.parametrize("method", UNSUPPORTED_METHODS)
     def test_check_unsupported_methods(self, method: str):
@@ -444,27 +480,22 @@ class TestRpcCalls(BaseMixin):
         assert "message" in response["error"]
         assert response["error"]["message"] == f"method {method} is not supported", response
 
-    # FIXME: Make more relevant cases and checks
-    # @pytest.mark.parametrize(
-    #     "quantity_tag,full_trx,raises",
-    #     [
-    #         (Tag.EARLIEST, True, False),
-    #         (Tag.EARLIEST, False, True),
-    #         (Tag.LATEST, True, False),
-    #         (Tag.LATEST, False, True),
-    #         (Tag.PENDING, True, False),
-    #         (Tag.PENDING, False, True),
-    #     ],
-    # )
-    # def test_eth_get_block_by_number_via_tags(self, quantity_tag: Tag, full_trx: bool, raises: bool):
-    #     """Verify implemented rpc calls work eth_getBlockByNumber"""
-    #     params = [quantity_tag.value, full_trx]
-    #     response = self.json_rpc_client.send_rpc(method="eth_getBlockByNumber", params=params)
-    #     if raises:
-    #         assert "error" in response, "Error not in response"
-    #     else:
-    #         assert "error" not in response
-    #         assert "result" in response, AssertMessage.DOES_NOT_CONTAIN_RESULT
+    @pytest.mark.parametrize(
+        "quantity_tag,full_trx",
+        [
+            (Tag.EARLIEST, True),
+            (Tag.EARLIEST, False),
+            (Tag.LATEST, True),
+            (Tag.LATEST, False),
+            (Tag.PENDING, True),
+            (Tag.PENDING, False),
+        ],
+    )
+    def test_eth_get_block_by_number_via_tags(self, quantity_tag: Tag, full_trx: bool):
+        """Verify implemented rpc calls work eth_getBlockByNumber"""
+        params = [quantity_tag.value, full_trx]
+        response = self.proxy_api.send_rpc(method="eth_getBlockByNumber", params=params)
+        rpc_checks.assert_block_fields(response, full_trx, None)
 
     # FIXME: Add more relevant checks
     # @pytest.mark.parametrize(
@@ -505,7 +536,6 @@ class TestRpcCalls(BaseMixin):
 
 @allure.story("Basic: Json-RPC call tests - `eth_estimateGas`")
 class TestRpcCallsMoreComplex(TestRpcCalls):
-
     account: "eth_account.signers.local.LocalAccount" = None
 
     @pytest.fixture(params=[(850000, 15000), (8500000, 150000), (8500000, 150000)])
@@ -514,7 +544,7 @@ class TestRpcCallsMoreComplex(TestRpcCalls):
 
     @pytest.fixture(params=["BigGasFactory1", "BigGasFactory2"])
     def deploy_big_gas_requirements_contract(
-        self, request: tp.Any, constructor_args: tp.List[int]
+            self, request: tp.Any, constructor_args: tp.List[int]
     ) -> "web3._utils.datatypes.Contract":
         """Deploy contracts"""
         self.account = self.sender_account
@@ -537,7 +567,7 @@ class TestRpcCallsMoreComplex(TestRpcCalls):
         # Check Base contract eth_estimateGas
         response = self.proxy_api.send_rpc(method="eth_estimateGas", params=transaction)
         assert "error" not in response
-        assert self.is_hex(response["result"]), f"Invalid response result, `{response['result']}`"
+        assert rpc_checks.is_hex(response["result"]), f"Invalid response result, `{response['result']}`"
         transaction["gas"] = int(response["result"], 16)
         # Deploy contract
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.account.key)
@@ -564,7 +594,7 @@ class TestRpcCallsMoreComplex(TestRpcCalls):
         response = self.proxy_api.send_rpc(method="eth_estimateGas", params=trx_big_gas)
         assert "error" not in response
         estimated_gas = int(response["result"], 16)
-        assert self.is_hex(response["result"]), f"Invalid response result, `{response['result']}`"
+        assert rpc_checks.is_hex(response["result"]), f"Invalid response result, `{response['result']}`"
         trx_big_gas["gas"] = estimated_gas
         signed_trx_big_gas = self.web3_client.eth.account.sign_transaction(trx_big_gas, self.account.key)
         raw_trx_big_gas = self.web3_client.eth.send_raw_transaction(signed_trx_big_gas.rawTransaction)

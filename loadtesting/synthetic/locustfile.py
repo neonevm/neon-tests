@@ -17,7 +17,7 @@ import gevent
 import requests
 import web3
 from eth_keys import keys as eth_keys
-from locust import TaskSet, User, events, tag, task
+from locust import TaskSet, User, events, tag, task, between
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
 from solana.rpc.api import Client as SolanaClient
@@ -28,7 +28,7 @@ from solana.transaction import AccountMeta, TransactionInstruction
 
 from ui.libs import try_until
 from utils import faucet
-from loadtesting.synthetic import utils
+from loadtesting.synthetic import helpers
 
 LOG = logging.getLogger("sol-client")
 
@@ -119,7 +119,7 @@ class NeonClient:
         cmd = (
             f"neon-cli {self._verbose_flags} "
             f"-vvv "
-            f"--commitment={utils.SOLCommitmentState.PROCESSED} "
+            f"--commitment={helpers.SOLCommitmentState.PROCESSED} "
             f"--url {self._solana_url} "
             f"--evm_loader {self._loader_id} "
             f"{comand.replace('_','-')} {''.join(map(str, args))}"
@@ -201,8 +201,8 @@ class SOLClient:
                 confirmation_status = result["confirmationStatus"]
                 confirmation_count = result["confirmations"] or 0
                 return (
-                    confirmation_status == utils.SOLCommitmentState.FINALIZED
-                    or confirmation_status == utils.SOLCommitmentState.CONFIRMED
+                    confirmation_status == helpers.SOLCommitmentState.FINALIZED
+                    or confirmation_status == helpers.SOLCommitmentState.CONFIRMED
                 ) and confirmation_count >= confirmations
             return False
 
@@ -220,7 +220,7 @@ class SOLClient:
     def get_sol_balance(
         self,
         address: tp.Union[str, "eth_account.signers.local.LocalAccount"],
-        state: str = utils.SOLCommitmentState.CONFIRMED,
+        state: str = helpers.SOLCommitmentState.CONFIRMED,
     ) -> int:
         """Get SOL account balance"""
         if isinstance(address, PublicKey):
@@ -233,7 +233,7 @@ class SOLClient:
         self,
         address: tp.Union[OperatorAccount, str],
         amount: int = DEFAULT_SOL_AMOUNT,
-        state: tp.Optional[str] = utils.SOLCommitmentState.CONFIRMED,
+        state: tp.Optional[str] = helpers.SOLCommitmentState.CONFIRMED,
     ) -> tp.Any:
         """Requests sol to account"""
         if isinstance(address, OperatorAccount):
@@ -245,8 +245,8 @@ class SOLClient:
     def _get_account_data(
         self,
         account: tp.Union[str, PublicKey, OperatorAccount],
-        expected_length: int = utils.ACCOUNT_INFO_LAYOUT.sizeof(),
-        state: tp.Optional[str] = utils.SOLCommitmentState.CONFIRMED,
+        expected_length: int = helpers.ACCOUNT_INFO_LAYOUT.sizeof(),
+        state: tp.Optional[str] = helpers.SOLCommitmentState.CONFIRMED,
         timeout: tp.Optional[int] = 60,
     ) -> bytes:
         """Request account info"""
@@ -265,7 +265,7 @@ class SOLClient:
 
     def get_transaction_count(self, account: tp.Union[str, PublicKey, OperatorAccount]) -> int:
         """Get transactions count from account info"""
-        info = utils.AccountInfo.from_bytes(self._get_account_data(account))
+        info = helpers.AccountInfo.from_bytes(self._get_account_data(account))
         return int.from_bytes(info.trx_count, "little")
 
     def make_eth_transaction(
@@ -295,7 +295,7 @@ class SOLClient:
         acc,
         skip_confirmation: bool = True,
         skip_preflight: bool = False,
-        wait_status: tp.Optional[str] = utils.SOLCommitmentState.CONFIRMED,
+        wait_status: tp.Optional[str] = helpers.SOLCommitmentState.CONFIRMED,
     ):
         tx_sig = self._client.send_transaction(
             txn,
@@ -348,7 +348,7 @@ class SOLClient:
 @dataclass
 class TransactionSigner:
     operator: OperatorAccount = None
-    treasury_pool: utils.TreasuryPool = None
+    treasury_pool: helpers.TreasuryPool = None
 
 
 @events.init_command_line_parser.add_listener
@@ -381,7 +381,7 @@ def init_transaction_signers(environment, **kwargs) -> None:
     network = environment.parsed_options.host or DEFAULT_NETWORK
     evm_loader_id = environment.credentials["evm_loader"]
     environment.transaction_signers = [
-        TransactionSigner(OperatorAccount(i), utils.create_treasury_pool_address(network, evm_loader_id))
+        TransactionSigner(OperatorAccount(i), helpers.create_treasury_pool_address(network, evm_loader_id))
         for i in range(1, 31)
     ]
 
@@ -431,21 +431,23 @@ class SolanaTransactionTasksSet(TaskSet):
     def setup(self) -> None:
         """Prepare data requirements"""
         operator = self.tr_signer.operator
-        self.log.info(f"# # request SOL to `operator` {operator.eth_address}")
+        self.log.info(f"# # request SOL to `operator` {operator.eth_address.hex()}")
         sig = self.sol_client.request_sol(operator, DEFAULT_SOL_AMOUNT)
         self.sol_client.wait_confirmation(sig)
-        self.log.info(f"# # create solana program from `operator` eth address: {operator.eth_address}")
+        self.log.info(f"# # create solana program from `operator` eth address: {operator.eth_address.hex()}")
         sol_program = self.sol_client.create_solana_program(operator.eth_address)[0]
-        self.log.info(f"`operator` sol address {sol_program} / public key {operator.public_key}")
+        self.log.info(f"sol program from `operator` address {sol_program}")
         self.log.info(f"# # create token sender eth account")
         self.token_sender = self.sol_client.create_eth_account()
-        self.log.info(f"# # create solana program from token `sender` eth address: {self.token_sender.address}")
+        self.log.info(f"# # create solana program from `token sender` eth address: {self.token_sender.address}")
         self.token_sender_sol_account = self.sol_client.create_solana_program(self.token_sender.address)[0]
-        self.log.info(f"Token `sender` solana  address: {self.token_sender_sol_account}")
+        self.log.info(f"# # `token sender` solana  address: {self.token_sender_sol_account}")
         self.log.info("# # create one more account to receive `NEON` tokens")
         self.token_receiver = self.sol_client.create_eth_account()
-        self.log.info(f"# # create solana program from token `receiver` eth address: {self.token_receiver.address}")
-        self.token_receiver_sol_account = self.sol_client.create_solana_program(self.token_reciever)[0]
+        self.log.info(
+            f"# # create solana program from ~token receiver` eth address: {self.token_receiver.address}"
+        )
+        self.token_receiver_sol_account = self.sol_client.create_solana_program(self.token_receiver)[0]
         self.log.info(f"Token `receiver` solana address: {self.token_receiver_sol_account}")
 
     def on_start(self) -> None:
@@ -463,28 +465,24 @@ class SolanaTransactionTasksSet(TaskSet):
             self.user.environment.parsed_options.num_users or self.user.environment.runner.target_user_count
         )
         self.sol_client = SOLClient(self.user.environment.credentials, session)
-        self.setup()
         self.log = logging.getLogger("tr-sender[%s]" % self.tr_sender_id)
-
-    # @task
-    def task(self) -> None:
-        self.log(f" # # Operator key is: {self.tr_signer.operator.get_path()}")
+        self.setup()
 
     @task
     def send_tokens(self) -> None:
         """Create `Neon` transfer solana transaction"""
 
-        self.log("# # create eth transaction")
+        self.log.info("# # create eth transaction")
         eth_transaction = self.sol_client.make_eth_transaction(
             self.token_receiver.address,
             data=b"",
             signer=self.token_sender,
             from_solana_user=self.token_sender_sol_account,
-            value=1
+            value=1,
         )
-        self.log.info(f"# # ETH transaction {eth_transaction.hash}")
+        self.log.info(f"# # ETH transaction {eth_transaction.hash.hex()}")
         self.log.info("# # create token transfer transaction instruction")
-        trx = utils.TransactionWithComputeBudget().add(
+        trx = helpers.TransactionWithComputeBudget().add(
             self.sol_client.make_TransactionExecuteFromInstruction(
                 eth_transaction.rawTransaction,
                 self.tr_signer.operator,
@@ -500,6 +498,8 @@ class SolanaTransactionTasksSet(TaskSet):
 
 class UserTokenSenderTasks(User):
     """Class represents a base task to token send by solana"""
+
+    wait_time = between(3, 1)
 
     tasks = {
         SolanaTransactionTasksSet: 1,

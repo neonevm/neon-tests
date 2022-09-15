@@ -11,10 +11,13 @@ import os
 import pathlib
 import subprocess
 import typing as tp
+from dataclasses import dataclass
 
+import gevent
 import requests
 import web3
 from eth_keys import keys as eth_keys
+from locust import TaskSet, User, events, tag, task
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
 from solana.rpc.api import Client as SolanaClient
@@ -25,7 +28,7 @@ from solana.transaction import AccountMeta, TransactionInstruction
 
 from ui.libs import try_until
 from utils import faucet
-from . import utils
+from loadtesting.synthetic import utils
 
 LOG = logging.getLogger("sol-client")
 
@@ -71,14 +74,6 @@ def init_session(size: int) -> requests.Session:
     session.mount("http://", adapter)
     session.mount("https://", adapter)
     return session
-
-
-def load_credentials(*args, **kwargs) -> tp.Dict:
-    """Test start event handler"""
-    path = BASE_PATH / ENV_FILE
-    with open(path, "r") as fp:
-        f = json.load(fp)
-        return f[DEFAULT_NETWORK]
 
 
 def handle_failed_requests(func: tp.Callable) -> tp.Callable:
@@ -181,21 +176,23 @@ class EvmLoader:
 class SOLClient:
     """"""
 
-    def __init__(self, credentials: tp.Dict = None, session: tp.Optional[tp.Any] = None, timeout: float = 10) -> None:
-        self._credentials = credentials or load_credentials()
+    def __init__(self, credentials: tp.Dict, session: tp.Optional[requests.Session], timeout: float = 10) -> None:
         self._web3 = web3.Web3(web3.HTTPProvider(""))
-        self._session = session or init_session(DEFAULT_USER_NUM)
-        self._faucet = faucet.Faucet(self._credentials["faucet_url"], self._session)
-        self._evm_loader = EvmLoader(self._credentials["evm_loader"], self._credentials["solana_url"])
+        self._faucet = faucet.Faucet(credentials["faucet_url"], session)
+        self._evm_loader = EvmLoader(credentials["evm_loader"], credentials["solana_url"])
         self._client = SolanaClient()
-        self._client._provider = ExtendedHTTPProvider(self._credentials["solana_url"], timeout=timeout)
+        self._client._provider = ExtendedHTTPProvider(credentials["solana_url"], timeout=timeout)
+        self._credentials = credentials
+
+    def __getattr__(self, item) -> tp.Any:
+        return getattr(self._client, item)
 
     @property
     def evm_loader_id(self) -> str:
         return self._evm_loader.loader_id
 
     def wait_confirmation(self, tx_sig: str, confirmations: tp.Optional[int] = 0) -> bool:
-        """"""
+        """Wait transaction status"""
 
         def get_signature_status():
             resp = self._client.get_signature_statuses([tx_sig])
@@ -212,6 +209,7 @@ class SOLClient:
         return try_until(get_signature_status, interval=1, timeout=30)
 
     def create_eth_account(self) -> "eth_account.local.LocalAccount":
+        """Create eth account"""
         account = self._web3.eth.account.create()
         self._faucet.request_neon(account.address, amount=DEFAULT_NEON_AMOUNT)
         return account
@@ -224,6 +222,7 @@ class SOLClient:
         address: tp.Union[str, "eth_account.signers.local.LocalAccount"],
         state: str = utils.SOLCommitmentState.CONFIRMED,
     ) -> int:
+        """Get SOL account balance"""
         if isinstance(address, PublicKey):
             address = str(address)
         elif not isinstance(address, str):
@@ -250,6 +249,7 @@ class SOLClient:
         state: tp.Optional[str] = utils.SOLCommitmentState.CONFIRMED,
         timeout: tp.Optional[int] = 60,
     ) -> bytes:
+        """Request account info"""
         if isinstance(account, OperatorAccount):
             account = account.public_key
         resp = try_until(
@@ -264,6 +264,7 @@ class SOLClient:
         return data
 
     def get_transaction_count(self, account: tp.Union[str, PublicKey, OperatorAccount]) -> int:
+        """Get transactions count from account info"""
         info = utils.AccountInfo.from_bytes(self._get_account_data(account))
         return int.from_bytes(info.trx_count, "little")
 
@@ -275,6 +276,7 @@ class SOLClient:
         value: int = 0,
         data: bytes = b"",
     ):
+        """Create eth transaction"""
         nonce = self.get_transaction_count(from_solana_user)
         tx = {
             "to": to_addr,
@@ -319,6 +321,7 @@ class SOLClient:
         treasury_buffer: bytes,
         additional_accounts: tp.List[PublicKey],
     ):
+        """Create solana transaction instruction from eth transaction"""
         code = 31
         d = code.to_bytes(1, "little") + treasury_buffer + instruction
         operator_ether = eth_keys.PrivateKey(operator.secret_key[:32]).public_key.to_canonical_address()
@@ -342,53 +345,162 @@ class SOLClient:
         return TransactionInstruction(program_id=self.evm_loader_id, data=d, keys=accounts)
 
 
-sol_client = SOLClient()
+@dataclass
+class TransactionSigner:
+    operator: OperatorAccount = None
+    treasury_pool: utils.TreasuryPool = None
 
 
-def create_transaction():
-    print("# # Create transaction signer `operator`")
-    # operator = OperatorAccount(random.choice(range(2, 31)))
-    operator = OperatorAccount(DEFAULT_OPERATOR_KEY_PAIR_ID)
-    print("# # request SOL to transaction signer")
-    tx_sig = sol_client.request_sol(operator, 1000)
-    sol_client.wait_confirmation(tx_sig)
-    print("# # Create solana program from `operator` eth address")
-    operator_sol_program = sol_client.create_solana_program(operator.eth_address)[0]
-    print(f"Operator sol address {operator_sol_program} / public {operator.public_key}")
-    print("# # Create sender eth account")
-    from_eth_account = sol_client.create_eth_account()
-    from_eth_account_address = from_eth_account.address
-    print(f"From ethereum address: {from_eth_account_address}")
-    print("# # Create solana program from `sender` eth address")
-    from_sol_account_address = sol_client.create_solana_program(from_eth_account_address)[0]
-    print(f"Solana from addr: {from_sol_account_address}")
-    print("# # Create one more account to receive neons")
-    to_eth_account_address = sol_client.create_eth_account().address
-    print(f"From ethereum address: {to_eth_account_address}")
-    to_sol_account_address = sol_client.create_solana_program(to_eth_account_address)[0]
-    print(f"Solana to addr: {to_sol_account_address}")
-    print("# # create eth transaction")
-    eth_transaction = sol_client.make_eth_transaction(
-        to_eth_account_address,
-        data=b"",
-        signer=from_eth_account,
-        from_solana_user=from_sol_account_address,
+@events.init_command_line_parser.add_listener
+def arg_parser(parser):
+    """Add custom command line arguments to Locust"""
+    parser.add_argument(
+        "--credentials",
+        type=str,
+        env_var="NEON_CRED",
+        default=ENV_FILE,
+        help="Relative path to environment credentials file.",
     )
-    print("# # Create storage account")
-    treasury_pool = utils.create_treasury_pool_address(DEFAULT_NETWORK, sol_client.evm_loader_id)
-    print("# # Create transaction")
 
-    print(f"ETH transaction {eth_transaction.hash}")
 
-    trx = utils.TransactionWithComputeBudget().add(
-        sol_client.make_TransactionExecuteFromInstruction(
-            eth_transaction.rawTransaction,
-            operator,
-            treasury_pool.account,
-            treasury_pool.buffer,
-            [PublicKey(from_sol_account_address), PublicKey(to_sol_account_address)],
+@events.test_start.add_listener
+def load_credentials(environment, **kwargs):
+    """Test start event handler"""
+    path = BASE_PATH / environment.parsed_options.credentials
+    network = environment.parsed_options.host
+    if not (path.exists() and path.is_file()):
+        path = BASE_PATH / ENV_FILE
+    with open(path, "r") as fp:
+        f = json.load(fp)
+        environment.credentials = f.get(network, f[DEFAULT_NETWORK])
+
+
+@events.test_start.add_listener
+def init_transaction_signers(environment, **kwargs) -> None:
+    """Test start event handler - initialize transactions signers"""
+    network = environment.parsed_options.host or DEFAULT_NETWORK
+    evm_loader_id = environment.credentials["evm_loader"]
+    environment.transaction_signers = [
+        TransactionSigner(OperatorAccount(i), utils.create_treasury_pool_address(network, evm_loader_id))
+        for i in range(1, 31)
+    ]
+
+
+class SolanaTransactionTasksSet(TaskSet):
+    """Implements solana transaction sender task sets"""
+
+    _last_consumer_id: int = 0
+    """Last spawned user id
+    """
+
+    tr_sender_id: int = 0
+    """Spawned user id
+    """
+
+    tr_signer: tp.Optional[TransactionSigner] = None
+    """Transaction signer
+    """
+
+    _setup_class_locker = gevent.threading.Lock()
+    _setup_class_done = False
+
+    sol_client: tp.Optional[SOLClient] = None
+    """Solana client
+    """
+
+    _transaction_signers: tp.Optional[tp.List[TransactionSigner]] = None
+    """List operators signed transaction
+    """
+
+    token_sender: tp.Optional["eth_account.local.LocalAccount"] = None
+    """
+    """
+
+    token_sender_sol_account: tp.Optional[tp.Any] = None
+    """
+    """
+
+    token_receiver: tp.Optional["eth_account.local.LocalAccount"] = None
+    """
+    """
+
+    token_receiver_sol_account: tp.Optional[tp.Any] = None
+    """
+    """
+
+    def setup(self) -> None:
+        """Prepare data requirements"""
+        operator = self.tr_signer.operator
+        self.log.info(f"# # request SOL to `operator` {operator.eth_address}")
+        sig = self.sol_client.request_sol(operator, DEFAULT_SOL_AMOUNT)
+        self.sol_client.wait_confirmation(sig)
+        self.log.info(f"# # create solana program from `operator` eth address: {operator.eth_address}")
+        sol_program = self.sol_client.create_solana_program(operator.eth_address)[0]
+        self.log.info(f"`operator` sol address {sol_program} / public key {operator.public_key}")
+        self.log.info(f"# # create token sender eth account")
+        self.token_sender = self.sol_client.create_eth_account()
+        self.log.info(f"# # create solana program from token `sender` eth address: {self.token_sender.address}")
+        self.token_sender_sol_account = self.sol_client.create_solana_program(self.token_sender.address)[0]
+        self.log.info(f"Token `sender` solana  address: {self.token_sender_sol_account}")
+        self.log.info("# # create one more account to receive `NEON` tokens")
+        self.token_receiver = self.sol_client.create_eth_account()
+        self.log.info(f"# # create solana program from token `receiver` eth address: {self.token_receiver.address}")
+        self.token_receiver_sol_account = self.sol_client.create_solana_program(self.token_reciever)[0]
+        self.log.info(f"Token `receiver` solana address: {self.token_receiver_sol_account}")
+
+    def on_start(self) -> None:
+        """on_start is called when a Locust start before any task is scheduled"""
+        # setup class once
+        with self._setup_class_locker:
+            if not SolanaTransactionTasksSet._setup_class_done:
+                SolanaTransactionTasksSet._transaction_signers = self.user.environment.transaction_signers
+                SolanaTransactionTasksSet._setup_class_done = True
+            SolanaTransactionTasksSet._last_consumer_id += 1
+            self.tr_sender_id = SolanaTransactionTasksSet._last_consumer_id
+            self.tr_signer = SolanaTransactionTasksSet._transaction_signers.pop(0)
+            SolanaTransactionTasksSet._transaction_signers.append(self.tr_signer)
+        session = init_session(
+            self.user.environment.parsed_options.num_users or self.user.environment.runner.target_user_count
         )
-    )
-    print("# # Send transaction")
-    receipt = sol_client.send_transaction(trx, operator, skip_preflight=False)
-    return receipt
+        self.sol_client = SOLClient(self.user.environment.credentials, session)
+        self.setup()
+        self.log = logging.getLogger("tr-sender[%s]" % self.tr_sender_id)
+
+    # @task
+    def task(self) -> None:
+        self.log(f" # # Operator key is: {self.tr_signer.operator.get_path()}")
+
+    @task
+    def send_tokens(self) -> None:
+        """Create `Neon` transfer solana transaction"""
+
+        self.log("# # create eth transaction")
+        eth_transaction = self.sol_client.make_eth_transaction(
+            self.token_receiver.address,
+            data=b"",
+            signer=self.token_sender,
+            from_solana_user=self.token_sender_sol_account,
+            value=1
+        )
+        self.log.info(f"# # ETH transaction {eth_transaction.hash}")
+        self.log.info("# # create token transfer transaction instruction")
+        trx = utils.TransactionWithComputeBudget().add(
+            self.sol_client.make_TransactionExecuteFromInstruction(
+                eth_transaction.rawTransaction,
+                self.tr_signer.operator,
+                self.tr_signer.treasury_pool.account,
+                self.tr_signer.treasury_pool.buffer,
+                [PublicKey(self.token_sender_sol_account), PublicKey(self.token_receiver_sol_account)],
+            )
+        )
+        self.log.info("# # Send transaction")
+        transaction_receipt = self.sol_client.send_transaction(trx, self.tr_signer.operator, skip_preflight=False)
+        self.log.info(f"# # token transfer transaction hash: {transaction_receipt[0]}")
+
+
+class UserTokenSenderTasks(User):
+    """Class represents a base task to token send by solana"""
+
+    tasks = {
+        SolanaTransactionTasksSet: 1,
+    }

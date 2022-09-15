@@ -29,20 +29,24 @@ def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[web
         assert result["gasUsed"] >= hex(tx_receipt.gasUsed), \
             f"Expected:{result['gasUsed']} or more; Actual: {hex(tx_receipt.gasUsed)}"
     assert result["uncles"] == []
-    if len(result["transactions"]) > 0:
-        transaction = result["transactions"][0]
-        if full_trx:
+    transactions = result["transactions"]
+    if full_trx:
+        if tx_receipt is not None:
+            assert tx_receipt.transactionHash.hex() in [transaction["hash"] for transaction in
+                                                        transactions], "Created transaction should be in block"
+        for transaction in transactions:
             expected_hex_fields = ["hash", "nonce", "blockHash", "blockNumber", "transactionIndex", "from", "to",
                                    "value", "gas", "gasPrice", "v", "r", "s"]
             for field in expected_hex_fields:
-                assert is_hex(transaction[field])
+                assert is_hex(transaction[field]), f"field {field} is not correct. Actual : {transaction[field]}"
             if tx_receipt is not None:
-                assert transaction["hash"] == tx_receipt.transactionHash.hex()
-                assert transaction["from"].upper() == tx_receipt['from'].upper()
-                assert transaction["to"].upper() == tx_receipt['to'].upper()
-                # FIXME: fix next assert if input field should have hex value
-                assert transaction["input"] == '0x'
-        else:
+                if tx_receipt.transactionHash.hex() == transaction["hash"]:
+                    assert transaction["from"].upper() == tx_receipt['from'].upper()
+                    assert transaction["to"].upper() == tx_receipt['to'].upper()
+                    # FIXME: fix next assert if input field should have hex value
+                    assert transaction["input"] == '0x'
+    else:
+        for transaction in transactions:
             assert is_hex(transaction)
-            if tx_receipt is not None:
-                assert transaction == tx_receipt.transactionHash.hex()
+        if tx_receipt is not None:
+            assert tx_receipt.transactionHash.hex() in transactions, "Created transaction should be in block"

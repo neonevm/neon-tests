@@ -22,9 +22,12 @@ def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[web
     for field in expected_hex_fields:
         assert is_hex(result[field])
     if tx_receipt is not None:
-        assert result["hash"] == tx_receipt.blockHash.hex()
-        assert result["number"] == hex(tx_receipt.blockNumber)
-        assert result["gasUsed"] == hex(tx_receipt.gasUsed)
+        assert result["hash"] == tx_receipt.blockHash.hex(), \
+            f"Expected:{result['hash']}; Actual{tx_receipt.blockHash.hex()}"
+        assert result["number"] == hex(tx_receipt.blockNumber), \
+            f"Expected:{result['number']}; Actual{hex(tx_receipt.blockNumber)}"
+        assert result["gasUsed"] == hex(tx_receipt.gasUsed), \
+            f"Expected:{result['gasUsed']}; Actual{hex(tx_receipt.gasUsed)}"
     assert result["uncles"] == []
     if len(result["transactions"]) > 0:
         transaction = result["transactions"][0]

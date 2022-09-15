@@ -2,14 +2,12 @@ import pathlib
 import random
 import shutil
 import string
-import time
 
 import allure
 import pytest
 import solana
 import solana.rpc.api
 from _pytest.config import Config
-from solana.keypair import Keypair
 
 from utils.erc20wrapper import ERC20Wrapper
 from utils.faucet import Faucet
@@ -106,16 +104,8 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
 
 @pytest.fixture(scope="session")
 def erc20wrapper(web3_client: NeonWeb3Client, faucet, pytestconfig: Config):
-    wrapper = ERC20Wrapper(web3_client)
-    eth_user = web3_client.create_account()
-
-    faucet.request_neon(eth_user.address, 100)
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
+    erc20 = ERC20Wrapper(web3_client, faucet, name=f"Test {symbol}", symbol=symbol)
+    erc20.mint_tokens(erc20.account)
+    yield erc20
 
-    contract, address = wrapper.deploy_wrapper(name=f"Test {symbol}", symbol=symbol, account=eth_user)
-
-    contract = wrapper.get_wrapper_contract(address)
-
-    wrapper.mint_tokens(eth_user, contract)
-
-    yield contract, eth_user

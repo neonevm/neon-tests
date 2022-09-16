@@ -5,9 +5,9 @@ from . import web3client
 
 
 class ERC20Wrapper:
-    def __init__(self, web3_client: web3client.NeonWeb3Client, faucet, name, symbol, decimals=18):
+    def __init__(self, web3_client: web3client.NeonWeb3Client, faucet, name, symbol, decimals=18, account=None):
         self.web3_client = web3_client
-        self.account = web3_client.create_account()
+        self.account = account or web3_client.create_account()
         faucet.request_neon(self.account.address, 100)
         self.name = name
         self.symbol = symbol

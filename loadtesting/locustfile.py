@@ -20,8 +20,9 @@ import solana
 import web3
 from locust import TaskSet, User, events, tag, task
 from solana.keypair import Keypair
+import tabulate
 
-from utils import helpers
+from utils import helpers, operator
 from utils.erc20wrapper import ERC20Wrapper
 from utils.faucet import Faucet
 from utils.web3client import NeonWeb3Client
@@ -125,6 +126,45 @@ def load_credentials(environment, **kwargs):
         global credentials
         f = json.load(fp)
         credentials = f.get(network, f[DEFAULT_NETWORK])
+        environment.credentials = credentials
+
+
+def get_token_balance(op: operator.Operator) -> tp.Dict:
+    """Return tokens balance"""
+    return dict(neon=op.get_neon_balance(), sol=op.get_solana_balance())
+
+
+@events.test_start.add_listener
+def operator_economy_pre_balance(environment, **kwargs):
+    op = operator.Operator(
+        environment.credentials["proxy_url"],
+        environment.credentials["solana_url"],
+        environment.credentials["network_id"],
+        environment.credentials["operator_neon_rewards_address"],
+        environment.credentials["spl_neon_mint"],
+        environment.credentials["operator_keys"],
+        web3_client=NeonWeb3Client(
+            environment.credentials["proxy_url"], environment.credentials["network_id"], session=requests.Session()
+        ),
+    )
+    environment.op = op
+    environment.pre_balance = get_token_balance(op)
+
+
+@events.test_stop.add_listener
+def operator_economy_balance(environment, **kwargs):
+    balance = get_token_balance(environment.op)
+    operator_balance = tabulate.tabulate(
+        [
+            ["NEON", environment.pre_balance["neon"], balance["neon"]],
+            ["SOL", environment.pre_balance["sol"], balance["sol"]],
+        ],
+        headers=["token", "on start balance", "os stop balance"],
+        tablefmt="fancy_outline",
+        numalign="right",
+        floatfmt=".2f",
+    )
+    LOG.info(f"\n{10*'_'} Operator balance {10*'_'}\n{operator_balance}\n")
 
 
 @events.test_start.add_listener
@@ -504,26 +544,21 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
     def on_start(self) -> None:
         super(ERC20BaseTasksSet, self).on_start()
 
-        self._solana_client = solana.rpc.api.Client(credentials["solana_url"])
-        self._erc20wrapper_client = ERC20Wrapper(
-            self.web3_client, self._solana_client, credentials["evm_loader"], credentials["spl_neon_mint"]
-        )
-
     def _deploy_erc20_contract(self) -> "web3._utils.datatypes.Contract":
         """Deploy ERC20 contract"""
         contract, _ = self.deploy_contract(
-            f"{self.contract_name}", self.version, self.account, constructor_args=[pow(10, 10)]
+            self.contract_name, self.version, self.account, constructor_args=[pow(10, 10)]
         )
         return contract
 
     def _deploy_erc20wrapper_contract(self) -> "web3._utils.datatypes.Contract":
         """Deploy SPL contract"""
         symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
-        contract, address = self._erc20wrapper_client.deploy_wrapper(
-            name=f"Test {symbol}", symbol=symbol, account=self.account)
-        contract = self._erc20wrapper_client.get_wrapper_contract(address)
-        self._erc20wrapper_client.mint_tokens(self.account, contract)
-        return contract
+        erc20wrapper_client = ERC20Wrapper(
+            self.web3_client, self.faucet, name=f"Test {symbol}", symbol=symbol, account=self.account
+        )
+        erc20wrapper_client.mint_tokens(self.account)
+        return erc20wrapper_client.contract
 
     @task(1)
     @execute_before("task_block_number", "task_keeps_balance")

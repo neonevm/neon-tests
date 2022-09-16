@@ -500,8 +500,6 @@ class SolanaTransactionTasksSet(TaskSet):
 class UserTokenSenderTasks(User):
     """Class represents a base task to token send by solana"""
 
-    wait_time = between(3, 1)
-
     tasks = {
         SolanaTransactionTasksSet: 1,
     }

@@ -16,6 +16,7 @@ import typing as tp
 from dataclasses import dataclass
 
 import gevent
+import gevent.queue
 import requests
 import web3
 from eth_keys import keys as eth_keys
@@ -67,7 +68,7 @@ SYS_INSTRUCT_ADDRESS = "Sysvar1nstructions1111111111111111111111111"
 """
 """
 
-DEFAULT_OPERATOR_KEY_PAIR_ID = 2
+PREPARED_USERS_COUNT = 20000
 
 
 def init_session(size: int) -> requests.Session:
@@ -90,7 +91,6 @@ def handle_failed_requests(func: tp.Callable) -> tp.Callable:
                 f"Request `{args[0]}` is failed! [{resp['error']['code']}]:{resp['error']['message']}.\n{args[1:]}"
             )
         return resp
-
     return wrapper
 
 
@@ -361,6 +361,13 @@ class TransactionSigner:
     treasury_pool: helpers.TreasuryPool = None
 
 
+@dataclass
+class ETHUser:
+    eth_account: "eth_account.local.LocalAccount" = None
+    sol_account = None
+    none: int = 0
+
+
 @events.init_command_line_parser.add_listener
 def arg_parser(parser):
     """Add custom command line arguments to Locust"""
@@ -396,6 +403,18 @@ def init_transaction_signers(environment, **kwargs) -> None:
     ]
 
 
+@events.test_start.add_listener
+def precompile_users(environment, **kwargs) -> None:
+    sol_client = SOLClient(environment.credentials, init_session(10))
+    environment.eth_users = gevent.queue.Queue()
+
+    for i in range(PREPARED_USERS_COUNT):
+        token_sender = sol_client.create_eth_account()
+        token_sender_sol_account = sol_client.create_solana_program(token_sender.address)[0]
+        u = ETHUser(token_sender, token_sender_sol_account)
+        environment.eth_users.put(u)
+
+
 class SolanaTransactionTasksSet(TaskSet):
     """Implements solana transaction sender task sets"""
 
@@ -422,26 +441,13 @@ class SolanaTransactionTasksSet(TaskSet):
     """List operators signed transaction
     """
 
-    _token_receivers: tp.List[tp.Dict] = []
-    """List eth accounts received tokens
-    """
-
-    token_sender: tp.Optional["eth_account.local.LocalAccount"] = None
-    """
-    """
-
-    token_sender_sol_account: tp.Optional[tp.Any] = None
-    """
-    """
-
     _mocked_nonce: int = 0
     _recent_blockhash = ""
     _last_blockhash_time = None
 
-    @property
-    def token_receiver(self):
+    def get_eth_user(self):
         """Randomly selected recipient of tokens"""
-        return random.choice(SolanaTransactionTasksSet._token_receivers)
+        return self.user.environment.eth_users.get()
 
     def prepare_accounts(self) -> None:
         """Prepare data requirements"""
@@ -452,19 +458,19 @@ class SolanaTransactionTasksSet(TaskSet):
         self.log.info(f"# # create solana program from `operator` eth address: {operator.eth_address.hex()}")
         sol_program = self.sol_client.create_solana_program(operator.eth_address)[0]
         self.log.info(f"sol program from `operator` address {sol_program}")
-        self.log.info(f"# # create token sender eth account")
-        self.token_sender = self.sol_client.create_eth_account()
-        self.log.info(f"# # create solana program from `token sender` eth address: {self.token_sender.address}")
-        self.token_sender_sol_account = self.sol_client.create_solana_program(self.token_sender.address)[0]
-        self.log.info(f"# # `token sender` solana  address: {self.token_sender_sol_account}")
-        self.log.info("# # create one more account to receive `NEON` tokens")
-        token_receiver = self.sol_client.create_eth_account()
-        self.log.info(f"# # create solana program from `token receiver` eth address: {token_receiver.address}")
-        token_receiver_sol_account = self.sol_client.create_solana_program(token_receiver)[0]
-        self.log.info(f"`token receiver` solana address: {token_receiver_sol_account}")
-        SolanaTransactionTasksSet._token_receivers.append(
-            dict(eth_acc=token_receiver, sol_acc=token_receiver_sol_account)
-        )
+        # self.log.info(f"# # create token sender eth account")
+        # self.token_sender = self.sol_client.create_eth_account()
+        # self.log.info(f"# # create solana program from `token sender` eth address: {self.token_sender.address}")
+        # self.token_sender_sol_account = self.sol_client.create_solana_program(self.token_sender.address)[0]
+        # self.log.info(f"# # `token sender` solana  address: {self.token_sender_sol_account}")
+        # self.log.info("# # create one more account to receive `NEON` tokens")
+        # token_receiver = self.sol_client.create_eth_account()
+        # self.log.info(f"# # create solana program from `token receiver` eth address: {token_receiver.address}")
+        # token_receiver_sol_account = self.sol_client.create_solana_program(token_receiver)[0]
+        # self.log.info(f"`token receiver` solana address: {token_receiver_sol_account}")
+        # SolanaTransactionTasksSet._token_receivers.append(
+        #     dict(eth_acc=token_receiver, sol_acc=token_receiver_sol_account)
+        # )
 
     def on_start(self) -> None:
         """on_start is called when a Locust start before any task is scheduled"""
@@ -491,21 +497,22 @@ class SolanaTransactionTasksSet(TaskSet):
             self._last_blockhash_time = time.time()
         return self._recent_blockhash
 
-
     @task
     def send_tokens(self) -> None:
         """Create `Neon` transfer solana transaction"""
-        token_receiver = self.token_receiver
+        token_sender = self.get_eth_user()
+        token_receiver = self.get_eth_user()
+
         self.log.info("# # create eth transaction")
         eth_transaction = self.sol_client.make_eth_transaction(
-            token_receiver["eth_acc"].address,
+            token_receiver.eth_account.address,
             data=b"",
-            signer=self.token_sender,
-            from_solana_user=self.token_sender_sol_account,
-            value=random.randint(1, 100),
-            nonce=self._mocked_nonce,
+            signer=token_sender.eth_account,
+            from_solana_user=token_sender.sol_account,
+            value=random.randint(1, 10000),
+            nonce=token_sender.nonce,
         )
-        self._mocked_nonce += 1
+        token_sender.nonce += 1
         self.log.info(f"# # ETH transaction {eth_transaction.hash.hex()}")
         self.log.info("# # create token transfer transaction instruction")
         trx = helpers.TransactionWithComputeBudget().add(
@@ -514,7 +521,7 @@ class SolanaTransactionTasksSet(TaskSet):
                 self.tr_signer.operator,
                 self.tr_signer.treasury_pool.account,
                 self.tr_signer.treasury_pool.buffer,
-                [PublicKey(self.token_sender_sol_account), PublicKey(token_receiver["sol_acc"])],
+                [PublicKey(token_sender.sol_account), PublicKey(token_receiver.sol_account)],
             )
         )
         self.log.info("# # Send transaction")
@@ -526,6 +533,8 @@ class SolanaTransactionTasksSet(TaskSet):
             wait_status=helpers.SOLCommitmentState.PROCESSED
         )
         self.log.info(f"# # token transfer transaction hash: {transaction_receipt[0]}")
+        self.user.environment.eth_users.put(token_sender)
+        self.user.environment.eth_users.put(token_receiver)
 
 
 class UserTokenSenderTasks(User):

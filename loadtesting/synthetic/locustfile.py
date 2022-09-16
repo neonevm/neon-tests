@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import pathlib
+import random
 import subprocess
 import typing as tp
 from dataclasses import dataclass
@@ -17,7 +18,7 @@ import gevent
 import requests
 import web3
 from eth_keys import keys as eth_keys
-from locust import TaskSet, User, events, tag, task, between
+from locust import TaskSet, User, events, task
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
 from solana.rpc.api import Client as SolanaClient
@@ -26,9 +27,9 @@ from solana.rpc.types import TxOpts
 from solana.system_program import SYS_PROGRAM_ID
 from solana.transaction import AccountMeta, TransactionInstruction
 
+from loadtesting.synthetic import helpers
 from ui.libs import try_until
 from utils import faucet
-from loadtesting.synthetic import helpers
 
 LOG = logging.getLogger("sol-client")
 
@@ -415,6 +416,10 @@ class SolanaTransactionTasksSet(TaskSet):
     """List operators signed transaction
     """
 
+    _token_receivers: tp.List = [tp.Dict]
+    """List eth accounts received tokens
+    """
+
     token_sender: tp.Optional["eth_account.local.LocalAccount"] = None
     """
     """
@@ -423,13 +428,10 @@ class SolanaTransactionTasksSet(TaskSet):
     """
     """
 
-    token_receiver: tp.Optional["eth_account.local.LocalAccount"] = None
-    """
-    """
-
-    token_receiver_sol_account: tp.Optional[tp.Any] = None
-    """
-    """
+    @property
+    def token_receiver(self):
+        """Randomly selected recipient of tokens"""
+        return random.choice(SolanaTransactionTasksSet._token_receivers)
 
     def prepare_accounts(self) -> None:
         """Prepare data requirements"""
@@ -446,10 +448,13 @@ class SolanaTransactionTasksSet(TaskSet):
         self.token_sender_sol_account = self.sol_client.create_solana_program(self.token_sender.address)[0]
         self.log.info(f"# # `token sender` solana  address: {self.token_sender_sol_account}")
         self.log.info("# # create one more account to receive `NEON` tokens")
-        self.token_receiver = self.sol_client.create_eth_account()
+        token_receiver = self.sol_client.create_eth_account()
         self.log.info(f"# # create solana program from ~token receiver` eth address: {self.token_receiver.address}")
-        self.token_receiver_sol_account = self.sol_client.create_solana_program(self.token_receiver)[0]
+        token_receiver_sol_account = self.sol_client.create_solana_program(self.token_receiver)[0]
         self.log.info(f"Token `receiver` solana address: {self.token_receiver_sol_account}")
+        SolanaTransactionTasksSet._token_receivers.append(
+            dict(eth_acc=token_receiver, sol_acc=token_receiver_sol_account)
+        )
 
     def on_start(self) -> None:
         """on_start is called when a Locust start before any task is scheduled"""
@@ -472,14 +477,14 @@ class SolanaTransactionTasksSet(TaskSet):
     @task
     def send_tokens(self) -> None:
         """Create `Neon` transfer solana transaction"""
-
+        token_receiver = self.token_receiver
         self.log.info("# # create eth transaction")
         eth_transaction = self.sol_client.make_eth_transaction(
-            self.token_receiver.address,
+            token_receiver["eth_acc"].address,
             data=b"",
             signer=self.token_sender,
             from_solana_user=self.token_sender_sol_account,
-            value=1,
+            value=random.randint(1, 100),
         )
         self.log.info(f"# # ETH transaction {eth_transaction.hash.hex()}")
         self.log.info("# # create token transfer transaction instruction")
@@ -489,7 +494,7 @@ class SolanaTransactionTasksSet(TaskSet):
                 self.tr_signer.operator,
                 self.tr_signer.treasury_pool.account,
                 self.tr_signer.treasury_pool.buffer,
-                [PublicKey(self.token_sender_sol_account), PublicKey(self.token_receiver_sol_account)],
+                [PublicKey(self.token_sender_sol_account), PublicKey(token_receiver["sol_acc"])],
             )
         )
         self.log.info("# # Send transaction")

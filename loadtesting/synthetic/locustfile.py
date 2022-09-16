@@ -296,6 +296,7 @@ class SOLClient:
         skip_confirmation: bool = True,
         skip_preflight: bool = False,
         wait_status: tp.Optional[str] = helpers.SOLCommitmentState.CONFIRMED,
+        wait_confirmed_transaction: bool = False,
     ):
         tx_sig = self._client.send_transaction(
             txn,
@@ -304,13 +305,15 @@ class SOLClient:
                 skip_confirmation=skip_confirmation, skip_preflight=skip_preflight, preflight_commitment=wait_status
             ),
         )["result"]
-        self.wait_confirmation(tx_sig)
-        trx = try_until(
-            lambda: self._client.get_confirmed_transaction(tx_sig)["result"],
-            interval=10,
-            timeout=60,
-            error_msg=f"Can't get confirmed transaction {tx_sig}",
-        )
+        trx = None
+        if wait_confirmed_transaction:
+            self.wait_confirmation(tx_sig)
+            trx = try_until(
+                lambda: self._client.get_confirmed_transaction(tx_sig)["result"],
+                interval=10,
+                timeout=60,
+                error_msg=f"Can't get confirmed transaction {tx_sig}",
+            )
         return tx_sig, trx
 
     def make_TransactionExecuteFromInstruction(
@@ -444,9 +447,7 @@ class SolanaTransactionTasksSet(TaskSet):
         self.log.info(f"# # `token sender` solana  address: {self.token_sender_sol_account}")
         self.log.info("# # create one more account to receive `NEON` tokens")
         self.token_receiver = self.sol_client.create_eth_account()
-        self.log.info(
-            f"# # create solana program from ~token receiver` eth address: {self.token_receiver.address}"
-        )
+        self.log.info(f"# # create solana program from ~token receiver` eth address: {self.token_receiver.address}")
         self.token_receiver_sol_account = self.sol_client.create_solana_program(self.token_receiver)[0]
         self.log.info(f"Token `receiver` solana address: {self.token_receiver_sol_account}")
 

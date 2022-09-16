@@ -317,7 +317,7 @@ class SOLClient:
             self.wait_confirmation(tx_sig)
             trx = try_until(
                 lambda: self._client.get_confirmed_transaction(tx_sig)["result"],
-                interval=10,
+                interval=1,
                 timeout=60,
                 error_msg=f"Can't get confirmed transaction {tx_sig}",
             )
@@ -533,7 +533,8 @@ class SolanaTransactionTasksSet(TaskSet):
             self.tr_signer.operator,
             blockhash=self.recent_blockhash,
             skip_preflight=True,
-            wait_status=helpers.SOLCommitmentState.PROCESSED
+            wait_status=helpers.SOLCommitmentState.CONFIRMED,
+            wait_confirmed_transaction=True
         )
         self.log.info(f"# # token transfer transaction hash: {transaction_receipt[0]}")
         self.user.environment.eth_users.put(token_sender)

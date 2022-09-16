@@ -276,9 +276,10 @@ class SOLClient:
         from_solana_user: PublicKey,
         value: int = 0,
         data: bytes = b"",
+        nonce: tp.Optional[int] = None,
     ):
         """Create eth transaction"""
-        nonce = self.get_transaction_count(from_solana_user)
+        nonce = nonce or self.get_transaction_count(from_solana_user)
         tx = {
             "to": to_addr,
             "value": value,
@@ -428,6 +429,10 @@ class SolanaTransactionTasksSet(TaskSet):
     """
     """
 
+    _mocked_nonce: int = 0
+    """nonce for transaction tests without confirmation status
+    """
+
     @property
     def token_receiver(self):
         """Randomly selected recipient of tokens"""
@@ -485,7 +490,9 @@ class SolanaTransactionTasksSet(TaskSet):
             signer=self.token_sender,
             from_solana_user=self.token_sender_sol_account,
             value=random.randint(1, 100),
+            nonce=self._mocked_nonce,
         )
+        self._mocked_nonce += 1
         self.log.info(f"# # ETH transaction {eth_transaction.hash.hex()}")
         self.log.info("# # create token transfer transaction instruction")
         trx = helpers.TransactionWithComputeBudget().add(

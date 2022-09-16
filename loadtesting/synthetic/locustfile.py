@@ -68,7 +68,7 @@ SYS_INSTRUCT_ADDRESS = "Sysvar1nstructions1111111111111111111111111"
 """
 """
 
-PREPARED_USERS_COUNT = 100
+PREPARED_USERS_COUNT = 10
 
 
 def init_session(size: int) -> requests.Session:
@@ -364,7 +364,7 @@ class TransactionSigner:
 @dataclass
 class ETHUser:
     eth_account: "eth_account.local.LocalAccount" = None
-    sol_account = None
+    sol_account: str = None
     nonce: int = 0
 
 
@@ -413,7 +413,7 @@ def precompile_users(environment, **kwargs) -> None:
         print(f"Prepare {i} user")
         token_sender = sol_client.create_eth_account()
         token_sender_sol_account = sol_client.create_solana_program(token_sender.address)[0]
-        u = ETHUser(token_sender, token_sender_sol_account)
+        u = ETHUser(token_sender, token_sender_sol_account, 0)
         environment.eth_users.put(u)
     print("Finish prepare users")
 

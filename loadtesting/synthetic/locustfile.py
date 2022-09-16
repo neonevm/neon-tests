@@ -416,7 +416,7 @@ class SolanaTransactionTasksSet(TaskSet):
     """List operators signed transaction
     """
 
-    _token_receivers: tp.List = [tp.Dict]
+    _token_receivers: tp.List[tp.Dict] = []
     """List eth accounts received tokens
     """
 

@@ -493,7 +493,9 @@ class SolanaTransactionTasksSet(TaskSet):
             )
         )
         self.log.info("# # Send transaction")
-        transaction_receipt = self.sol_client.send_transaction(trx, self.tr_signer.operator, skip_preflight=False)
+        transaction_receipt = self.sol_client.send_transaction(
+            trx, self.tr_signer.operator, skip_preflight=False, wait_status=helpers.SOLCommitmentState.PROCESSED
+        )
         self.log.info(f"# # token transfer transaction hash: {transaction_receipt[0]}")
 
 

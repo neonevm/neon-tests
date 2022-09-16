@@ -68,7 +68,7 @@ SYS_INSTRUCT_ADDRESS = "Sysvar1nstructions1111111111111111111111111"
 """
 """
 
-PREPARED_USERS_COUNT = 1000
+PREPARED_USERS_COUNT = 100
 
 
 def init_session(size: int) -> requests.Session:
@@ -410,10 +410,12 @@ def precompile_users(environment, **kwargs) -> None:
     environment.eth_users = gevent.queue.Queue()
 
     for i in range(PREPARED_USERS_COUNT):
+        print(f"Prepare {i} user")
         token_sender = sol_client.create_eth_account()
         token_sender_sol_account = sol_client.create_solana_program(token_sender.address)[0]
         u = ETHUser(token_sender, token_sender_sol_account)
         environment.eth_users.put(u)
+    print("Finish prepare users")
 
 
 class SolanaTransactionTasksSet(TaskSet):

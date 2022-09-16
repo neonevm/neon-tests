@@ -6,6 +6,7 @@ Created on 2022-08-18
 import base64
 import functools
 import json
+import time
 import logging
 import os
 import pathlib
@@ -25,6 +26,7 @@ from solana.rpc.api import Client as SolanaClient
 from solana.rpc.providers import http
 from solana.rpc.types import TxOpts
 from solana.system_program import SYS_PROGRAM_ID
+from solana.blockhash import Blockhash
 from solana.transaction import AccountMeta, TransactionInstruction
 
 from loadtesting.synthetic import helpers
@@ -299,10 +301,12 @@ class SOLClient:
         skip_preflight: bool = False,
         wait_status: tp.Optional[str] = helpers.SOLCommitmentState.PROCESSED,
         wait_confirmed_transaction: bool = False,
+        blockhash: tp.Optional[Blockhash] = None
     ):
         tx_sig = self._client.send_transaction(
             txn,
             acc,
+            recent_blockhash=blockhash,
             opts=TxOpts(
                 skip_confirmation=skip_confirmation, skip_preflight=skip_preflight, preflight_commitment=wait_status
             ),
@@ -430,8 +434,8 @@ class SolanaTransactionTasksSet(TaskSet):
     """
 
     _mocked_nonce: int = 0
-    """nonce for transaction tests without confirmation status
-    """
+    _recent_blockhash = ""
+    _last_blockhash_time = None
 
     @property
     def token_receiver(self):
@@ -479,6 +483,14 @@ class SolanaTransactionTasksSet(TaskSet):
         self.log = logging.getLogger("tr-sender[%s]" % self.tr_sender_id)
         self.prepare_accounts()
 
+    @property
+    def recent_blockhash(self):
+        if self._last_blockhash_time is None or (time.time() - self._last_blockhash_time) > 3:
+            self._recent_blockhash = self.sol_client._client.get_recent_blockhash()["result"]["value"]["blockhash"]
+            self._last_blockhash_time = time.time()
+        return self._recent_blockhash
+
+
     @task
     def send_tokens(self) -> None:
         """Create `Neon` transfer solana transaction"""
@@ -506,7 +518,11 @@ class SolanaTransactionTasksSet(TaskSet):
         )
         self.log.info("# # Send transaction")
         transaction_receipt = self.sol_client.send_transaction(
-            trx, self.tr_signer.operator, skip_preflight=True, wait_status=helpers.SOLCommitmentState.PROCESSED
+            trx,
+            self.tr_signer.operator,
+            blockhash=self.recent_blockhash,
+            skip_preflight=True,
+            wait_status=helpers.SOLCommitmentState.PROCESSED
         )
         self.log.info(f"# # token transfer transaction hash: {transaction_receipt[0]}")
 

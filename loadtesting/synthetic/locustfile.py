@@ -317,7 +317,7 @@ class SOLClient:
             self.wait_confirmation(tx_sig)
             trx = try_until(
                 lambda: self._client.get_confirmed_transaction(tx_sig)["result"],
-                interval=1,
+                interval=0.1,
                 timeout=60,
                 error_msg=f"Can't get confirmed transaction {tx_sig}",
             )

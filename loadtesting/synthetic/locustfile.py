@@ -431,7 +431,7 @@ class SolanaTransactionTasksSet(TaskSet):
     """
     """
 
-    def setup(self) -> None:
+    def prepare_accounts(self) -> None:
         """Prepare data requirements"""
         operator = self.tr_signer.operator
         self.log.info(f"# # request SOL to `operator` {operator.eth_address.hex()}")
@@ -467,7 +467,7 @@ class SolanaTransactionTasksSet(TaskSet):
         )
         self.sol_client = SOLClient(self.user.environment.credentials, session)
         self.log = logging.getLogger("tr-sender[%s]" % self.tr_sender_id)
-        self.setup()
+        self.prepare_accounts()
 
     @task
     def send_tokens(self) -> None:

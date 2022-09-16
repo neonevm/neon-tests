@@ -296,7 +296,7 @@ class SOLClient:
         acc,
         skip_confirmation: bool = True,
         skip_preflight: bool = False,
-        wait_status: tp.Optional[str] = helpers.SOLCommitmentState.CONFIRMED,
+        wait_status: tp.Optional[str] = helpers.SOLCommitmentState.PROCESSED,
         wait_confirmed_transaction: bool = False,
     ):
         tx_sig = self._client.send_transaction(
@@ -499,7 +499,7 @@ class SolanaTransactionTasksSet(TaskSet):
         )
         self.log.info("# # Send transaction")
         transaction_receipt = self.sol_client.send_transaction(
-            trx, self.tr_signer.operator, skip_preflight=False, wait_status=helpers.SOLCommitmentState.PROCESSED
+            trx, self.tr_signer.operator, skip_preflight=True, wait_status=helpers.SOLCommitmentState.PROCESSED
         )
         self.log.info(f"# # token transfer transaction hash: {transaction_receipt[0]}")
 

@@ -365,7 +365,7 @@ class TransactionSigner:
 class ETHUser:
     eth_account: "eth_account.local.LocalAccount" = None
     sol_account = None
-    none: int = 0
+    nonce: int = 0
 
 
 @events.init_command_line_parser.add_listener

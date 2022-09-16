@@ -28,6 +28,10 @@ try:
 except ImportError:
     pass
 
+from deploy.cli import dapps as dapps_cli
+from deploy.cli import faucet as faucet_cli
+
+
 CMD_ERROR_LOG = "click_cmd_err.log"
 
 ERR_MSG_TPL = {
@@ -125,24 +129,6 @@ with open("./envs.json", "r") as f:
         networks.update(environments)
 
 
-def prepare_wallets_with_balance(network, count=8, airdrop_amount=20000):
-    print(f"Preparing {count} wallets with balances")
-    settings = networks[network]
-    web3_client = web3client.NeonWeb3Client(settings["proxy_url"], settings["network_id"])
-    faucet_client = faucet.Faucet(settings["faucet_url"])
-    private_keys = []
-
-    for i in range(count):
-        acc = web3_client.eth.account.create()
-        faucet_client.request_neon(acc.address, airdrop_amount)
-        if i == 0:
-            for _ in range(2):
-                faucet_client.request_neon(acc.address, airdrop_amount)
-        private_keys.append(acc.privateKey.hex())
-    print("All private keys: ", ",".join(private_keys))
-    return private_keys
-
-
 def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     print(f"Running OpenZeppelin tests in {jobs} jobs on {network}")
     cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
@@ -150,7 +136,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         subprocess.check_call("git submodule init && git submodule update", shell=True, cwd=cwd)
     subprocess.check_call("npx hardhat compile", shell=True, cwd=cwd)
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
-    keys_env = [prepare_wallets_with_balance(network, count=users, airdrop_amount=amount) for i in range(jobs)]
+    keys_env = [faucet_cli.prepare_wallets_with_balance(networks[network], count=users, airdrop_amount=amount) for i in range(jobs)]
 
     tests = subprocess.check_output("find \"test\" -name '*.test.js'", shell=True, cwd=cwd).decode().splitlines()
 
@@ -494,6 +480,43 @@ def send_notification(url, build_url):
         f"\n<{build_url}|View build details>"
     )
     requests.post(url=url, data=json.dumps(tpl))
+
+
+@cli.group("infra", help="Manage test infrastructure")
+def infra():
+    pass
+
+
+@infra.command(name="deploy", help="Deploy test infrastructure")
+def deploy():
+    dapps_cli.deploy_infrastructure()
+
+
+@infra.command(name="destroy", help="Destroy test infrastructure")
+def destroy():
+    dapps_cli.destroy_infrastructure()
+
+
+@infra.command(name="prepare-accounts", help="Setup accounts with balance")
+@click.option("-c", "--count", default=2, help="How many users prepare")
+@click.option("-a", "--amount", default=10000, help="How many airdrop")
+def prepare_accounts(count, amount):
+    network = {
+        "proxy_url": f"http://{os.environ.get('PROXY_IP')}:9090/solana",
+        "network_id": 111,
+        "solana_url": f"http://{os.environ.get('SOLANA_IP')}:8899/",
+        "faucet_url": f"http://{os.environ.get('PROXY_IP')}:3333/",
+    }
+    accounts = faucet_cli.prepare_wallets_with_balance(
+        network, count, amount
+    )
+    if os.environ.get("CI"):
+        subprocess.run(f'echo "::set-output name=accounts::{",".join(accounts)}"')
+
+
+infra.add_command(deploy, "deploy")
+infra.add_command(destroy, "destroy")
+infra.add_command(prepare_accounts)
 
 
 if __name__ == "__main__":

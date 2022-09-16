@@ -231,3 +231,6 @@ allure-results/
 ui/extensions/chrome/plugins/
 ui/extensions/chrome/user_data/
 .idea
+
+.terraform
+.terraform.lock.hcl

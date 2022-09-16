@@ -449,9 +449,9 @@ class SolanaTransactionTasksSet(TaskSet):
         self.log.info(f"# # `token sender` solana  address: {self.token_sender_sol_account}")
         self.log.info("# # create one more account to receive `NEON` tokens")
         token_receiver = self.sol_client.create_eth_account()
-        self.log.info(f"# # create solana program from ~token receiver` eth address: {self.token_receiver.address}")
-        token_receiver_sol_account = self.sol_client.create_solana_program(self.token_receiver)[0]
-        self.log.info(f"Token `receiver` solana address: {self.token_receiver_sol_account}")
+        self.log.info(f"# # create solana program from `token receiver` eth address: {token_receiver.address}")
+        token_receiver_sol_account = self.sol_client.create_solana_program(token_receiver)[0]
+        self.log.info(f"`token receiver` solana address: {token_receiver_sol_account}")
         SolanaTransactionTasksSet._token_receivers.append(
             dict(eth_acc=token_receiver, sol_acc=token_receiver_sol_account)
         )

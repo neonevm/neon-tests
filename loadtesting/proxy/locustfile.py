@@ -518,27 +518,11 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
 
     def _deploy_erc20wrapper_contract(self) -> "web3._utils.datatypes.Contract":
         """Deploy SPL contract"""
-
-        keys = Keypair.generate()
-        self._solana_client.request_airdrop(keys.public_key, 10000000000)
-
-        for _ in range(10):
-            balance = self._solana_client.get_balance(keys.public_key)["result"]["value"]
-            if balance == 10000000000:
-                self.log.info(f"solana balance not empty, current: {balance}")
-                break
-            self.log.info(f"Waiting solana balance, current is: {balance}")
-            time.sleep(5)
-        else:
-            return
-
-        token = self._erc20wrapper_client.create_spl(keys)
         symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
         contract, address = self._erc20wrapper_client.deploy_wrapper(
-            name=f"Test {symbol}", symbol=symbol, account=self.account, mint_address=token.pubkey
-        )
-        self._erc20wrapper_client.mint_tokens(self.account.address, keys, token.pubkey, address)
+            name=f"Test {symbol}", symbol=symbol, account=self.account)
         contract = self._erc20wrapper_client.get_wrapper_contract(address)
+        self._erc20wrapper_client.mint_tokens(self.account, contract)
         return contract
 
     @task(1)

@@ -77,18 +77,16 @@ class TestTransfer(BaseMixin):
     @pytest.mark.parametrize("transfer_amount", [0, 1, 10, 100])
     def test_send_spl_wrapped_account_from_one_account_to_another(self, transfer_amount: int, erc20wrapper):
         """Send spl wrapped account from one account to another"""
-
-        contract, spl_owner = erc20wrapper
-        initial_spl_balance = contract.functions.balanceOf(self.recipient_account.address).call()
+        initial_spl_balance = erc20wrapper.contract.functions.balanceOf(self.recipient_account.address).call()
         initial_neon_balance = self.recipient_account_balance
 
         self.web3_client.send_erc20(
-            spl_owner, self.recipient_account, transfer_amount, contract.address, abi=contract.abi
-        )
+            erc20wrapper.account, self.recipient_account, transfer_amount, erc20wrapper.contract.address,
+            abi=erc20wrapper.contract.abi)
 
         # Spl balance
         assert (
-                contract.functions.balanceOf(
+                erc20wrapper.contract.functions.balanceOf(
                     self.recipient_account.address).call() == initial_spl_balance + transfer_amount
         )
 
@@ -111,17 +109,16 @@ class TestTransfer(BaseMixin):
         """Send more than exist on account: spl (with different precision)"""
 
         transfer_amount = 1_000_000_000_000_000_000_000
-        contract, spl_owner = erc20wrapper
-        initial_spl_balance = contract.functions.balanceOf(self.recipient_account.address).call()
+        initial_spl_balance = erc20wrapper.contract.functions.balanceOf(self.recipient_account.address).call()
         initial_neon_balance = self.recipient_account_balance
 
         with pytest.raises(web3.exceptions.ContractLogicError):
             self.web3_client.send_erc20(
-                spl_owner, self.recipient_account, transfer_amount, contract.address, abi=contract.abi
-            )
+                erc20wrapper.account, self.recipient_account, transfer_amount, erc20wrapper.contract.address,
+                abi=erc20wrapper.contract.abi)
 
         # Spl balance
-        assert contract.functions.balanceOf(self.recipient_account.address).call() == initial_spl_balance
+        assert erc20wrapper.contract.functions.balanceOf(self.recipient_account.address).call() == initial_spl_balance
 
         # Neon balance
         self.assert_balance(self.recipient_account.address, initial_neon_balance, rnd_dig=3)
@@ -213,17 +210,16 @@ class TestTransfer(BaseMixin):
         """Send negative sum from account: spl (with different precision)"""
 
         transfer_amount = -1
-        contract, spl_owner = erc20wrapper
-        initial_spl_balance = contract.functions.balanceOf(self.recipient_account.address).call()
+        initial_spl_balance = erc20wrapper.contract.functions.balanceOf(self.recipient_account.address).call()
         initial_neon_balance = self.recipient_account_balance
 
         with pytest.raises(web3.exceptions.ValidationError):
             self.web3_client.send_erc20(
-                spl_owner, self.recipient_account, transfer_amount, contract.address, abi=contract.abi
-            )
+                erc20wrapper.account, self.recipient_account, transfer_amount, erc20wrapper.contract.address,
+                abi=erc20wrapper.contract.abi)
 
         # Spl balance
-        assert contract.functions.balanceOf(self.recipient_account.address).call() == initial_spl_balance
+        assert erc20wrapper.contract.functions.balanceOf(self.recipient_account.address).call() == initial_spl_balance
 
         # Neon balance
         self.assert_balance(self.recipient_account.address, initial_neon_balance, rnd_dig=3)
@@ -394,7 +390,7 @@ class TestTransactionsValidation(BaseMixin):
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
         response_trx1 = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
 
-        time.sleep(10) # transaction with n+1 nonce should wait when transaction with nonce = n will be accepted
+        time.sleep(10)  # transaction with n+1 nonce should wait when transaction with nonce = n will be accepted
         receipt_trx1 = self.proxy_api.send_rpc(method="eth_getTransactionReceipt", params=[response_trx1["result"]])
         assert receipt_trx1["result"] is None, "Transaction shouldn't be accepted"
 
@@ -464,4 +460,3 @@ class TestTransactionsValidation(BaseMixin):
         response = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
         assert ErrorMessage.TOO_BIG_TRANSACTION.value in response["error"]["message"]
         assert response["error"]["code"] == -32000
-

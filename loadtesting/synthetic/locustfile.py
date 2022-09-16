@@ -217,7 +217,7 @@ class SOLClient:
         self._faucet.request_neon(account.address, amount=DEFAULT_NEON_AMOUNT)
         return account
 
-    @functools.cache
+    @functools.lru_cache(500)
     def create_solana_program(self, account: "eth_account.local.LocalAccount") -> tp.Tuple[tp.Any]:
         return self._evm_loader.ether2program(account)
 

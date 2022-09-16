@@ -68,7 +68,7 @@ SYS_INSTRUCT_ADDRESS = "Sysvar1nstructions1111111111111111111111111"
 """
 """
 
-PREPARED_USERS_COUNT = 20000
+PREPARED_USERS_COUNT = 1000
 
 
 def init_session(size: int) -> requests.Session:
@@ -405,6 +405,7 @@ def init_transaction_signers(environment, **kwargs) -> None:
 
 @events.test_start.add_listener
 def precompile_users(environment, **kwargs) -> None:
+    print("Precompile users before start")
     sol_client = SOLClient(environment.credentials, init_session(10))
     environment.eth_users = gevent.queue.Queue()
 

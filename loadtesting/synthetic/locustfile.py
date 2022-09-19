@@ -226,7 +226,8 @@ class SOLClient:
         nonce: tp.Optional[int] = None,
     ):
         """Create eth transaction"""
-        nonce = nonce or self.get_transaction_count(from_solana_user)
+        if nonce is None:
+            nonce = self.get_transaction_count(from_solana_user)
         tx = {
             "to": to_addr,
             "value": value,
@@ -354,6 +355,7 @@ def load_credentials(environment, **kwargs):
 @events.test_start.add_listener
 def init_transaction_signers(environment, **kwargs) -> None:
     """Test start event handler - initialize transactions signers"""
+    print("Init transaction signers")
     network = environment.parsed_options.host or DEFAULT_NETWORK
     evm_loader_id = environment.credentials["evm_loader"]
     sol_client = SOLClient(environment.credentials, init_session(10))
@@ -370,6 +372,7 @@ def init_transaction_signers(environment, **kwargs) -> None:
         environment.operators.append(op)
     for sig in signatures:
         sol_client.wait_confirmation(sig)
+    print("Finish signers")
 
 
 @events.test_start.add_listener
@@ -419,7 +422,7 @@ def precompile_users(environment, **kwargs) -> None:
             )
 
     pool = gevent.get_hub().threadpool
-    pool.map(generate_users, [100] * 10)
+    pool.map(generate_users, [100] * 5)
     environment.eth_users = users_queue
     print("Finish prepare users")
 

@@ -351,8 +351,8 @@ def init_transaction_signers(environment, **kwargs) -> None:
     network = environment.parsed_options.host or DEFAULT_NETWORK
     evm_loader_id = environment.credentials["evm_loader"]
     sol_client = SOLClient(environment.credentials, init_session(10))
-    # environment.operators = gevent.queue.Queue()
-    environment.operators = []
+    environment.operators = gevent.queue.Queue()
+    # environment.operators = []
 
     transaction_signers = [
         TransactionSigner(OperatorAccount(i), helpers.create_treasury_pool_address(network, evm_loader_id))
@@ -361,7 +361,7 @@ def init_transaction_signers(environment, **kwargs) -> None:
     signatures = []
     for op in transaction_signers:
         signatures.append(sol_client.request_sol(op.operator, DEFAULT_SOL_AMOUNT))
-        environment.operators.append(op)
+        environment.operators.put(op)
     for sig in signatures:
         sol_client.wait_confirmation(sig)
     print("Finish signers")
@@ -475,7 +475,7 @@ class SolanaTransactionTasksSet(TaskSet):
         """Create `Neon` transfer solana transaction"""
         token_sender = self.get_eth_user()
         token_receiver = self.get_eth_user()
-        operator = self.user.environment.operators[random.randint(0, len(self.user.environment.operators)-1)]
+        operator = self.user.environment.operators.get()
 
         eth_transaction = self.sol_client.make_eth_transaction(
             token_receiver.eth_account.address,
@@ -507,6 +507,7 @@ class SolanaTransactionTasksSet(TaskSet):
         self.log.info(f"## Token transfer transaction hash: {transaction_receipt}")
         self.user.environment.eth_users.put(token_sender)
         self.user.environment.eth_users.put(token_receiver)
+        self.user.environment.operators.put(operator)
 
 
 class UserTokenSenderTasks(User):

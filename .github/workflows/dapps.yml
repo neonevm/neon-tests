@@ -2,6 +2,9 @@ name: "dApps testing"
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - '**NDEV-629'
 
 env:
   SOLANA_IP: ""
@@ -16,7 +19,7 @@ jobs:
         run: |
           ./clickfile.py infra deploy
           ./clickfile.py infra gen-accounts
-          
+
           echo "::set-output name=solana_ip::${SOLANA_IP}"
           echo "::set-output name=proxy_ip::${PROXY_IP}"
           echo "SOLANA_IP=${SOLANA_IP}" >> $GITHUB_ENV

@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - '**NDEV-629'
+    paths:
+      - '**.test'
 
 env:
   SOLANA_IP: ""

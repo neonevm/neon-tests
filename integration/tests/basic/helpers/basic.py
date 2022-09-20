@@ -190,3 +190,17 @@ class BaseMixin(BaseTests):
         }
         transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
         return transaction
+
+    @staticmethod
+    def wait_condition(func_cond, timeout_sec=15, delay=0.5):
+        start_time = time.time()
+        while True:
+            if time.time() - start_time > timeout_sec:
+                return False
+            try:
+                if func_cond():
+                    break
+            except:
+                raise "Error during waiting"
+            time.sleep(delay)
+        return True

@@ -21,7 +21,7 @@ import requests
 import web3
 import eth_account
 from eth_keys import keys as eth_keys
-from locust import TaskSet, User, events, task
+from locust import TaskSet, User, events, task, FastHttpUser
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
 from solana.rpc.api import Client as SolanaClient
@@ -121,7 +121,7 @@ class OperatorAccount(Keypair):
 class SOLClient:
     """"""
 
-    def __init__(self, credentials: tp.Dict, session: tp.Optional[requests.Session], timeout: float = 10) -> None:
+    def __init__(self, credentials: tp.Dict, session: tp.Optional[requests.Session], timeout: float = 1) -> None:
         self._web3 = web3.Web3()
         self._faucet = faucet.Faucet(credentials["faucet_url"], session)
         self._evm_loader = PublicKey(credentials["evm_loader"])
@@ -246,7 +246,6 @@ class SOLClient:
         skip_confirmation: bool = True,
         skip_preflight: bool = False,
         wait_status: tp.Optional[str] = helpers.SOLCommitmentState.PROCESSED,
-        wait_confirmed_transaction: bool = False,
         blockhash: tp.Optional[Blockhash] = None
     ):
         tx_sig = self._client.send_transaction(
@@ -257,16 +256,8 @@ class SOLClient:
                 skip_confirmation=skip_confirmation, skip_preflight=skip_preflight, preflight_commitment=wait_status
             ),
         )["result"]
-        trx = None
-        if wait_confirmed_transaction:
-            self.wait_confirmation(tx_sig)
-            trx = try_until(
-                lambda: self._client.get_confirmed_transaction(tx_sig)["result"],
-                interval=0.1,
-                timeout=60,
-                error_msg=f"Can't get confirmed transaction {tx_sig}",
-            )
-        return tx_sig, trx
+
+        return tx_sig
 
     def make_CreateAccountV02(
             self,
@@ -350,6 +341,7 @@ def load_credentials(environment, **kwargs):
     with open(path, "r") as fp:
         f = json.load(fp)
         environment.credentials = f.get(network, f[DEFAULT_NETWORK])
+    environment.host = environment.credentials["solana_url"]
 
 
 @events.test_start.add_listener
@@ -422,7 +414,7 @@ def precompile_users(environment, **kwargs) -> None:
             )
 
     pool = gevent.get_hub().threadpool
-    pool.map(generate_users, [100] * 5)
+    pool.map(generate_users, [10])
     environment.eth_users = users_queue
     print("Finish prepare users")
 
@@ -468,7 +460,7 @@ class SolanaTransactionTasksSet(TaskSet):
         session = init_session(
             self.user.environment.parsed_options.num_users or self.user.environment.runner.target_user_count
         )
-        self.sol_client = SOLClient(self.user.environment.credentials, session)
+        self.sol_client = SOLClient(self.user.environment.credentials, session=session)
         self.log = logging.getLogger("tr-sender[%s]" % self.tr_sender_id)
 
     @property
@@ -510,10 +502,9 @@ class SolanaTransactionTasksSet(TaskSet):
             operator.operator,
             blockhash=self.recent_blockhash,
             skip_confirmation=True,
-            skip_preflight=True,
-            wait_confirmed_transaction=False
+            skip_preflight=True
         )
-        self.log.info(f"# # token transfer transaction hash: {transaction_receipt[0]}")
+        self.log.info(f"## Token transfer transaction hash: {transaction_receipt[0]}")
         self.user.environment.eth_users.put(token_sender)
         self.user.environment.eth_users.put(token_receiver)
 

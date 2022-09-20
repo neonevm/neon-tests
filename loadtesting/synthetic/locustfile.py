@@ -374,7 +374,7 @@ def precompile_users(environment, **kwargs) -> None:
 
     def generate_users(count):
         sol_client = SOLClient(environment.credentials, init_session(10))
-        operator = environment.operators[0]
+        operator = environment.operators.get()
 
         main_user = sol_client.create_eth_account()
         main_user_solana_address = sol_client.ether2solana(main_user.address)[0]
@@ -412,6 +412,7 @@ def precompile_users(environment, **kwargs) -> None:
             users_queue.put(
                 ETHUser(user, solana_address, 0)
             )
+        environment.operators.put(operator)
 
     pool = gevent.get_hub().threadpool
     pool.map(generate_users, [100]*5)

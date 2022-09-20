@@ -356,7 +356,7 @@ def init_transaction_signers(environment, **kwargs) -> None:
 
     transaction_signers = [
         TransactionSigner(OperatorAccount(i), helpers.create_treasury_pool_address(network, evm_loader_id))
-        for i in range(0, 31)
+        for i in range(0, 100)
     ]
     signatures = []
     for op in transaction_signers:
@@ -414,7 +414,7 @@ def precompile_users(environment, **kwargs) -> None:
             )
 
     pool = gevent.get_hub().threadpool
-    pool.map(generate_users, [10])
+    pool.map(generate_users, [100]*5)
     environment.eth_users = users_queue
     print("Finish prepare users")
 
@@ -504,7 +504,7 @@ class SolanaTransactionTasksSet(TaskSet):
             skip_confirmation=True,
             skip_preflight=True
         )
-        self.log.info(f"## Token transfer transaction hash: {transaction_receipt[0]}")
+        self.log.info(f"## Token transfer transaction hash: {transaction_receipt}")
         self.user.environment.eth_users.put(token_sender)
         self.user.environment.eth_users.put(token_receiver)
 

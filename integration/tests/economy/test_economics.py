@@ -158,13 +158,12 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        contract, spl_owner = erc20wrapper
+        assert erc20wrapper.contract.functions.balanceOf(self.acc.address).call() == 0
 
-        assert contract.functions.balanceOf(self.acc.address).call() == 0
+        transfer_tx = self.web3_client.send_erc20(erc20wrapper.account, self.acc, 25, erc20wrapper.contract.address,
+                                                  abi=erc20wrapper.contract.abi)
 
-        transfer_tx = self.web3_client.send_erc20(spl_owner, self.acc, 25, contract.address, abi=contract.abi)
-
-        assert contract.functions.balanceOf(self.acc.address).call() == 25
+        assert erc20wrapper.contract.functions.balanceOf(self.acc.address).call() == 25
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()

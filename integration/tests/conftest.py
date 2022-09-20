@@ -2,14 +2,12 @@ import pathlib
 import random
 import shutil
 import string
-import time
 
 import allure
 import pytest
 import solana
 import solana.rpc.api
 from _pytest.config import Config
-from solana.keypair import Keypair
 
 from utils.erc20wrapper import ERC20Wrapper
 from utils.faucet import Faucet
@@ -90,14 +88,14 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
     start_neon_balance = operator.get_neon_balance()
     start_sol_balance = operator.get_solana_balance()
     with allure.step(
-        f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
+            f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
     ):
         pass
     yield acc
     end_neon_balance = operator.get_neon_balance()
     end_sol_balance = operator.get_solana_balance()
     with allure.step(
-        f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
+            f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
     ):
         pass
     with allure.step(f"Account end balance: {web3_client.get_balance(acc)} NEON"):
@@ -105,34 +103,9 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
 
 
 @pytest.fixture(scope="session")
-def erc20wrapper(sol_client, web3_client: NeonWeb3Client, faucet, pytestconfig: Config):
-    wrapper = ERC20Wrapper(
-        web3_client, sol_client, pytestconfig.environment.evm_loader, pytestconfig.environment.spl_neon_mint
-    )
-    owner = Keypair.generate()
-    sol_client.request_airdrop(owner.public_key, 1000000000)
-
-    for _ in range(20):
-        balance = sol_client.get_balance(owner.public_key)["result"]["value"]
-        if balance == 1000000000:
-            break
-        time.sleep(5)
-    else:
-        raise AssertionError(f"Request airdrop for {owner.public_key} is failed, balance is {balance}.")
-
-    token = wrapper.create_spl(owner)
-
-    eth_user = web3_client.create_account()
-
-    faucet.request_neon(eth_user.address, 100)
+def erc20wrapper(web3_client: NeonWeb3Client, faucet, pytestconfig: Config):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
+    erc20 = ERC20Wrapper(web3_client, faucet, name=f"Test {symbol}", symbol=symbol)
+    erc20.mint_tokens(erc20.account)
+    yield erc20
 
-    contract, address = wrapper.deploy_wrapper(
-        name=f"Test {symbol}", symbol=symbol, account=eth_user, mint_address=token.pubkey
-    )
-
-    wrapper.mint_tokens(eth_user.address, owner, token.pubkey, address)
-
-    contract = wrapper.get_wrapper_contract(address)
-
-    yield contract, eth_user

@@ -110,6 +110,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.idea/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -229,3 +230,4 @@ allure-results/
 # chrome extensions
 ui/extensions/chrome/plugins/
 ui/extensions/chrome/user_data/
+.idea

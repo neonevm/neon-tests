@@ -4,6 +4,7 @@ import glob
 import json
 import os
 import pathlib
+import platform
 import re
 import shutil
 import subprocess
@@ -14,6 +15,9 @@ from multiprocessing.dummy import Pool
 from urllib.parse import urlparse
 
 import requests
+
+from deploy.infra.utils import docker as docker_utils
+from deploy.infra.utils import env
 
 try:
     import click
@@ -69,6 +73,19 @@ EXPANDED_ENVS = [
 NETWORK_NAME = os.environ.get("NETWORK_NAME", "full_test_suite")
 """Default network name for docker container
 """
+
+DEVBOX_DOCKERFILE = "deploy/infra/Dockerfile"
+"""
+"""
+
+DEVBOX_NAME = "neontests-devbox"
+"""
+"""
+
+# Docker devbox options:
+DEVBOX_SSH_PORT_ON_HOST = 8022
+
+HOME_DIR = pathlib.Path(__file__).absolute().parent
 
 
 def green(s):
@@ -399,7 +416,7 @@ def ozreport():
     "--run-time",
     type=int,
     help="Stop after the specified amount of time, e.g. (300s, 20m, 3h, 1h30m, etc.). "
-         "Only used together without Locust Web UI. [default: always run]",
+    "Only used together without Locust Web UI. [default: always run]",
 )
 @click.option(
     "-T",
@@ -502,6 +519,173 @@ def send_notification(url, build_url):
         f"\n<{build_url}|View build details>"
     )
     requests.post(url=url, data=json.dumps(tpl))
+
+
+@cli.group()
+@click.pass_context
+def devbox(ctx):
+    """Commands for devbox manipulation."""
+
+
+@devbox.command("rm")
+@click.pass_context
+def rm(ctx):
+    """Terminate existing devbox."""
+    if docker_utils.docker_inspect(DEVBOX_NAME):
+        env.shell(f"docker rm -f {DEVBOX_NAME}")
+        print(env.green("Terminated devbox"))
+    else:
+        print(env.green("DevBox not running, nothing to terminate"))
+
+
+@devbox.command("build")
+@click.pass_context
+@click.option(
+    "-p",
+    "--image-path",
+    "image_path",
+    type=str,
+    default=DEVBOX_DOCKERFILE,
+    help="Build image Dockerfile relative path.",
+)
+@click.option(
+    "-n",
+    "--image-name",
+    "image_name",
+    type=str,
+    default=DEVBOX_NAME,
+    help="Build image name.",
+)
+@click.option(
+    "-t",
+    "--tag",
+    "tag",
+    type=str,
+    default="latest",
+    help="Build image tag.",
+)
+@click.option(
+    "--quick/--full",
+    default=None,
+    help="Quick mode (Default). In quick mode task for sake of speed ignore some extra checks, "
+    "which might produce stale artifacts. Full mode builds eveything without Docker cache, "
+    "and because of this sick from duplicate layers for the same Dockerfile steps. "
+    "WARN: It's still unclear do we really need this CLI option. Strong argument against "
+    "is that `docker build --pull` invalidates the whole cache tree every time the base "
+    "buster/alpine image got updated. Base images get their security patches nearly every day. "
+    "As a side effect of these updates we check very frequency our images on nocache build, and may "
+    "find and address any issues early.",
+)
+@click.option("--dry-run", is_flag=True, default=False, help="Dry run")
+def build(ctx, image_path, image_name, tag, quick, dry_run=None):
+    """Build devbox docker image."""
+    env.header("Prepare docker images build...")
+    image = docker_utils.Image(pathlib.Path(image_path), image_name, tag)
+    build_args = ()
+    if quick is None:
+        # Quick by default
+        quick = True
+
+    if dry_run:
+        return print(env.yellow("Dry run, exiting"))
+
+    image.build(cache=quick, build_args=build_args)
+
+
+def create_devbox(prefix="", tag="latest"):
+
+    box_name = DEVBOX_NAME
+    network_name = "neon-tests"
+    cwd = os.getcwd()
+    workspace = "/neon-tests"
+    provide_ssh_port = f"{DEVBOX_SSH_PORT_ON_HOST}:22"
+    prefix = prefix or docker_utils.IMAGE_PREFIX
+
+    if not docker_utils.docker_inspect(box_name):
+        box_image = f"{prefix}/{box_name}:{tag}"
+        if not docker_utils.docker_image_exists(box_image):
+            print(env.yellow(f"No {box_image} image found, run `devbox build` command"))
+            exit()
+        # Run devbox in user-defined network and link it for test containers
+        if not docker_utils.docker_inspect_network(network_name):
+            env.shell(f"docker network create {network_name}")
+
+        home = os.path.expanduser("~")
+
+        def var_args():
+            """Variatic arguments"""
+            args = []
+
+            # neon client
+            neon_cli_path = f"{cwd}/deploy/infra/tools/neon-cli"
+            if os.path.isfile(neon_cli_path):
+                args.append(f"-v {neon_cli_path}:/usr/local/bin/neon-cli")
+            else:
+                print(env.yellow(f"copy file `neon-cli` to {neon_cli_path} for load tests to work properly"))
+            # solana operator keys
+            operator_keys_path = f"{cwd}/loadtesting/synthetic/operator-keypairs"
+            if os.path.exists(operator_keys_path):
+                args.append(f"-v {operator_keys_path}:/root/.config/solana")
+            else:
+                print(env.yellow(f"copy solana operator keys to {operator_keys_path} for load tests to work properly"))
+            # pip/pip-tools cache
+            if os.path.exists(f"{home}/.cache"):
+                args.append(f"-v {home}/.cache:/root/.cache")
+
+            # git config
+            if os.path.exists(f"{home}/.gitconfig"):
+                args.append(f"-v {home}/.gitconfig:/root/.gitconfig")
+
+            # ssh
+            if os.path.exists(f"{home}/.ssh"):
+                args.append(f"-v {home}/.ssh:/root/.ssh")
+            # pass ssh-agent to container
+            if "SSH_AUTH_SOCK" in os.environ and platform.system() == "Linux":
+                args.append(f" -v {os.environ['SSH_AUTH_SOCK']}:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent ")
+            elif platform.system() == "Darwin":
+                sock_path = os.environ.get("SSH_AUTH_SOCK", "/run/host-services/ssh-auth.sock")
+                args.append(f" --mount type=bind,src={sock_path},target=/ssh-agent -e " "SSH_AUTH_SOCK=/ssh-agent ")
+
+            shell_history_path = f"{cwd}/deploy/infra/devbox/.bash_history"
+            # Ensure .bash_history exists
+            env.shell(f"touch {shell_history_path}")
+            args.append(f"-v {shell_history_path}:/root/.bash_history")
+
+            return " ".join(args)
+
+        # Start new
+        env.shell(
+            "docker run --rm -it -d --init"
+            f" --name={box_name}"
+            f" --network={network_name}"
+            f" -e DEVBOX=true"
+            f" -e DEVBOX_NETWORK={network_name}"
+            f" -e DEVBOX_CWD={cwd}"
+            f" -w {workspace}"
+            f" -v {cwd}:{workspace}"
+            # SSH for remote debugging
+            f" -p {provide_ssh_port}" f" -v {cwd}/deploy/infra/devbox/ssh/id_ed25519.pub:/root/.ssh/authorized_keys"
+            # Bash profile and history
+            f" -v {cwd}/deploy/infra/devbox/.bash-profile:/etc/profile.d/neontests.sh"
+            # Docker host socket
+            " -v /var/run/docker.sock:/var/run/docker.sock"
+            # For pytest fileutil mount shared fixtures
+            " -v /tmp:/tmp" f" {var_args()} {box_image} {workspace}/deploy/infra/devbox/startup.sh",
+            capture=True,
+        )
+        print(env.green("Started devbox"))
+    else:
+        print(env.green("Devbox already started, attaching"))
+    return box_name
+
+
+@devbox.command("up")
+@click.pass_context
+def up(ctx):
+    """Start new devbox or attach existing."""
+    box_name = create_devbox()
+    # Attach to running container
+    env.shell(f"docker exec -it {box_name} bash --login; exit 0")
 
 
 if __name__ == "__main__":

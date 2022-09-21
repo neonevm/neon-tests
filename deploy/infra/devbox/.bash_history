@@ -131,3 +131,36 @@ locust -f /neon-tests/loadtesting/locustfile.py -u 3 -r 1 -t 30 --headless --hos
 locust -f /neon-tests/loadtesting/locustfile.py -u 3 -r 1 -t 30 --headless --host night-stand -T spl
 locust -f /neon-tests/loadtesting/locustfile.py -u 3 -r 1 -t 30 --headless --host night-stand -T spl
 locust -f /neon-tests/loadtesting/locustfile.py -u 3 -r 1 -t 30 --headless --host night-stand -T uniswap
+pip install -r deploy/requirements/nodeps.txt 
+which tfenv
+tfenv
+tfenv list
+tfenv init
+install latest
+install --help
+install --help
+tfenv install 
+tfenv install 
+terraform
+tfenv use 1.2.9
+terraform
+tfenv install
+tfenv use 1.2.9
+terraform
+terraform
+tfenv list
+tfenv 
+tfenv list
+tfenv use 1.29
+tfenv use 1.2.9
+terraform
+tfenv list
+tfenv u--help
+tfenv pin
+tfenv init
+tfenv list
+tfenv pin
+tfenv list
+terraform
+tfenv list
+tfenv pin

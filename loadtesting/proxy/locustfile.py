@@ -91,7 +91,7 @@ def execute_before(*attrs) -> tp.Callable:
             for attr in attrs:
                 getattr(self, attr)(*args, **kwargs)
             tx_receipt = func(self, *args, **kwargs)
-            if tx_receipt and isinstance(tx_receipt, web3.datastructures.AttributeDict):
+            if tx_receipt and isinstance(tx_receipt, tp.Dict):
                 transaction_history[str(tx_receipt["from"])].append(
                     {
                         "blockHash": tx_receipt["blockHash"].hex(),
@@ -610,13 +610,17 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
             self.log.info(
                 f"Send `{self.contract_name.lower()}` tokens from contract {str(contract.address)[-8:]} to {str(recipient.address)[-8:]}."
             )
-            if self.web3_client.send_erc20(self.account, recipient, 1, contract.address, abi=contract.abi):
+            tx_receipt = dict(
+                self.web3_client.send_erc20(self.account, recipient, 1, contract.address, abi=contract.abi)
+            )
+            if tx_receipt:
                 self._buffer.setdefault(recipient.address, set()).add(contract)
+                tx_receipt["contractAddress"] = contract.address
             # remove contracts without balance
             if contract.functions.balanceOf(self.account.address).call() < 1:
                 self.log.info(f"Remove contract `{contract.address[:8]}` because user has empty balance")
                 contracts.remove(contract)
-            return
+            return tx_receipt
         self.log.info(f"no `{self.contract_name.upper()}` contracts found, send is cancel.")
 
 
@@ -671,7 +675,7 @@ class ERC20WrappedTasksSet(ERC20BaseTasksSet):
     @execute_before("task_block_number", "task_keeps_balance")
     def task_send_erc20_wrapped(self) -> None:
         """Send ERC20 tokens"""
-        super(ERC20WrappedTasksSet, self).task_send_tokens()
+        return super(ERC20WrappedTasksSet, self).task_send_tokens()
 
 
 @tag("counter")

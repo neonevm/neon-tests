@@ -22,7 +22,6 @@ class JsonRPCSession(Session):
             body["params"] = params
         resp = self.post(self.proxy_url, json=body, timeout=60)
         response_body = resp.json()
-
         if "result" not in response_body and "error" not in response_body:
             raise AssertionError("Request must contains 'result' or 'error' field")
 

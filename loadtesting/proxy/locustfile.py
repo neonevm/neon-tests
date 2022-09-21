@@ -91,7 +91,7 @@ def execute_before(*attrs) -> tp.Callable:
             for attr in attrs:
                 getattr(self, attr)(*args, **kwargs)
             tx_receipt = func(self, *args, **kwargs)
-            if tx_receipt and isinstance(tx_receipt, tp.Dict):
+            if dump_data and tx_receipt:
                 transaction_history[str(tx_receipt["from"])].append(
                     {
                         "blockHash": tx_receipt["blockHash"].hex(),
@@ -125,12 +125,21 @@ def arg_parser(parser):
         default=ENV_FILE,
         help="Relative path to environment credentials file.",
     )
+    parser.add_argument(
+        "--dump-data",
+        type=int,
+        env_var="LOCUST_DUMP_DATA",
+        default=0,
+        help="Enabling dump transaction history.",
+    )
 
 
 @events.test_start.add_listener
 def make_env_preparation(environment, **kwargs):
     neon = NeonGlobalEnv()
     environment.shared = neon
+    global dump_data
+    dump_data = bool(int(environment.parsed_options.dump_data))
 
 
 @events.test_start.add_listener

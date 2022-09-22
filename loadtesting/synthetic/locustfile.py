@@ -64,14 +64,14 @@ BASE_PATH = CWD.parent.parent
 SYS_INSTRUCT_ADDRESS = "Sysvar1nstructions1111111111111111111111111"
 
 ACCOUNT_SEED_VERSION = b'\1'
-ACCOUNT_ETH_BASE = int(web3.eth.Account.create().privateKey.hex(), 16)
+ACCOUNT_ETH_BASE = int("0x7d51b09e994905ceb163e7b4ce30b838b776fb34986c96333c8caf8c652855b1", 16)
 
-PREPARED_USERS_COUNT = 2
+PREPARED_USERS_COUNT = 1000
 
 
-def init_session(size: int) -> requests.Session:
+def init_session() -> requests.Session:
     """init request session with extended connection pool size"""
-    adapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, pool_block=False)
+    adapter = requests.adapters.HTTPAdapter(pool_connections=10, pool_maxsize=10, pool_block=False)
     session = requests.Session()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
@@ -226,7 +226,7 @@ class SOLClient:
         nonce: tp.Optional[int] = None,
     ):
         """Create eth transaction"""
-        if nonce is None:
+        if nonce is None or nonce == 0:
             nonce = self.get_transaction_count(from_solana_user)
         tx = {
             "to": to_addr,
@@ -237,7 +237,7 @@ class SOLClient:
             "data": data,
             "chainId": self._credentials["network_id"],
         }
-        return self._web3.eth.account.sign_transaction(tx, signer.privateKey)
+        return self._web3.eth.account.sign_transaction(tx, signer.privateKey), nonce
 
     def send_transaction(
         self,
@@ -289,7 +289,6 @@ class SOLClient:
         d = code.to_bytes(1, "little") + treasury_buffer + instruction
         operator_ether_public = eth_keys.PrivateKey(operator.secret_key[:32]).public_key
         operator_ether_solana = self.ether2solana(operator_ether_public.to_address())[0]
-
         accounts = [
             AccountMeta(pubkey=operator.public_key, is_signer=True, is_writable=True),
             AccountMeta(pubkey=treasury_address, is_signer=False, is_writable=True),
@@ -350,12 +349,11 @@ def init_transaction_signers(environment, **kwargs) -> None:
     print("Init transaction signers")
     network = environment.parsed_options.host or DEFAULT_NETWORK
     evm_loader_id = environment.credentials["evm_loader"]
-    sol_client = SOLClient(environment.credentials, init_session(10))
+    sol_client = SOLClient(environment.credentials, init_session())
     environment.operators = gevent.queue.Queue()
-    # environment.operators = []
 
     transaction_signers = [
-        TransactionSigner(OperatorAccount(i), helpers.create_treasury_pool_address(network, evm_loader_id))
+        TransactionSigner(OperatorAccount(i), helpers.create_treasury_pool_address(network, evm_loader_id, i))
         for i in range(0, 100)
     ]
     signatures = []
@@ -371,51 +369,14 @@ def init_transaction_signers(environment, **kwargs) -> None:
 def precompile_users(environment, **kwargs) -> None:
     print("Precompile users before start")
     users_queue = gevent.queue.Queue()
+    web = web3.Web3()
+    sol_client = SOLClient(environment.credentials, init_session())
 
-    def generate_users(count):
-        sol_client = SOLClient(environment.credentials, init_session(10))
-        operator = environment.operators.get()
+    for i in range(1, PREPARED_USERS_COUNT+1):
+        user = web.eth.account.from_key(ACCOUNT_ETH_BASE + i)
+        solana_address, bump = sol_client.ether2solana(user.address)
+        users_queue.put(ETHUser(user, solana_address, 0))
 
-        main_user = sol_client.create_eth_account()
-        main_user_solana_address = sol_client.ether2solana(main_user.address)[0]
-        main_nonce = 0
-
-        for i in range(count):
-            user = sol_client._web3.eth.account.create()
-            solana_address, bump = sol_client.ether2solana(user.address)
-
-            create_acc = sol_client.make_CreateAccountV02(
-                user, bump, operator.operator, solana_address
-            )
-
-            eth_transaction = sol_client.make_eth_transaction(
-                user.address,
-                data=b"",
-                signer=main_user,
-                from_solana_user=main_user_solana_address,
-                value=100000000000,
-                nonce=main_nonce,
-            )
-
-            send_neon_instr = sol_client.make_TransactionExecuteFromInstruction(
-                    eth_transaction.rawTransaction,
-                    operator.operator,
-                    operator.treasury_pool.account,
-                    operator.treasury_pool.buffer,
-                    [main_user_solana_address, solana_address],
-                )
-
-            tx = helpers.TransactionWithComputeBudget().add(create_acc)
-            tx.add(send_neon_instr)
-            sol_client.send_transaction(tx, operator.operator, skip_preflight=True)
-            main_nonce += 1
-            users_queue.put(
-                ETHUser(user, solana_address, 0)
-            )
-        environment.operators.put(operator)
-
-    pool = gevent.get_hub().threadpool
-    pool.map(generate_users, [100]*5)
     environment.eth_users = users_queue
     print("Finish prepare users")
 
@@ -458,9 +419,7 @@ class SolanaTransactionTasksSet(TaskSet):
                 SolanaTransactionTasksSet._setup_class_done = True
             SolanaTransactionTasksSet._last_consumer_id += 1
             self.tr_sender_id = SolanaTransactionTasksSet._last_consumer_id
-        session = init_session(
-            self.user.environment.parsed_options.num_users or self.user.environment.runner.target_user_count
-        )
+        session = init_session()
         self.sol_client = SOLClient(self.user.environment.credentials, session=session)
         self.log = logging.getLogger("tr-sender[%s]" % self.tr_sender_id)
 
@@ -478,7 +437,7 @@ class SolanaTransactionTasksSet(TaskSet):
         token_receiver = self.get_eth_user()
         operator = self.user.environment.operators.get()
 
-        eth_transaction = self.sol_client.make_eth_transaction(
+        eth_transaction, new_nonce = self.sol_client.make_eth_transaction(
             token_receiver.eth_account.address,
             data=b"",
             signer=token_sender.eth_account,
@@ -486,7 +445,7 @@ class SolanaTransactionTasksSet(TaskSet):
             value=random.randint(1, 10000),
             nonce=token_sender.nonce,
         )
-        token_sender.nonce += 1
+        token_sender.nonce = new_nonce + 1
 
         trx = helpers.TransactionWithComputeBudget().add(
             self.sol_client.make_TransactionExecuteFromInstruction(

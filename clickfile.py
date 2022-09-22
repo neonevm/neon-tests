@@ -534,7 +534,7 @@ def destroy():
     dapps_cli.destroy_infrastructure()
 
 
-@infra.command(name="prepare-accounts", help="Setup accounts with balance")
+@infra.command(name="gen-accounts", help="Setup accounts with balance")
 @click.option("-c", "--count", default=2, help="How many users prepare")
 @click.option("-a", "--amount", default=10000, help="How many airdrop")
 def prepare_accounts(count, amount):
@@ -551,7 +551,7 @@ def prepare_accounts(count, amount):
 
 infra.add_command(deploy, "deploy")
 infra.add_command(destroy, "destroy")
-infra.add_command(prepare_accounts)
+infra.add_command(prepare_accounts, "gen-accounts")
 
 
 @cli.group("devbox", help="Manage devbox infrastructure")

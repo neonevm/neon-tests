@@ -14,3 +14,7 @@ export PYTHONDONTWRITEBYTECODE=1
 # Aliases
 export SOURCE_DIR="/neon-tests"
 alias cli=${SOURCE_DIR}/clickfile.py
+
+# Run on startup deployment
+chmod +x ${SOURCE_DIR}/deploy/infra/devbox/deploy.sh
+${SOURCE_DIR}/deploy/infra/devbox/deploy.sh

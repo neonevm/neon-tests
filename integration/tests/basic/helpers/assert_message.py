@@ -15,6 +15,11 @@ class ErrorMessage(Enum):
     TOO_BIG_TRANSACTION = "transaction size is too big"
     TRANSACTION_UNDERPRICED = "transaction underpriced: have {} want"
 
+    INVALID_ADDRESS_ERC20 = "only accepts checksum addresses"
+    ZERO_ACCOUNT_ERC20 = "execution reverted: ERC20: {} the zero address"
+    AMOUNT_EXCEEDS_BALANCE_ERC20 = "execution reverted: ERC20: {} amount exceeds balance"
+    INSUFFICIENT_ALLOWANCE_ERC20 = "execution reverted: ERC20: insufficient allowance"
+    MUST_HAVE_MINTER_ROLE_ERC20 = "execution reverted: ERC20: must have minter role to mint"
 
 class AssertMessage(Enum):
     WRONG_ID = "Id of the response does not correspond to id of the request"

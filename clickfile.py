@@ -562,6 +562,8 @@ def devbox():
 @devbox.command("rm")
 def rm():
     """Terminate existing devbox."""
+    if env.is_devbox():
+        return print(env.green("You inside `devbox` first quit"))
     if docker_utils.docker_inspect(DEVBOX_NAME):
         env.shell(f"docker rm -f {DEVBOX_NAME}")
         print(env.green("Terminated devbox"))
@@ -609,6 +611,8 @@ def rm():
 @click.option("--dry-run", is_flag=True, default=False, help="Dry run")
 def build(image_path, image_name, tag, quick, dry_run=None):
     """Build devbox docker image."""
+    if env.is_devbox():
+        return print(env.green("`devbox` is built, exiting "))
     env.header("Prepare docker images build...")
     image = docker_utils.Image(pathlib.Path(image_path), image_name, tag)
     build_args = ()
@@ -712,6 +716,8 @@ def create_devbox(prefix="", tag="latest"):
 @devbox.command("up")
 def up():
     """Start new devbox or attach existing."""
+    if env.is_devbox():
+        return print(env.green("`devbox` is created, exiting "))
     box_name = create_devbox()
     # Attach to running container
     env.shell(f"docker exec -it {box_name} bash --login; exit 0")

@@ -431,7 +431,14 @@ def ozreport():
     default=True,
     help="Enable the web interface. " "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
 )
-def locust(locustfile, credentials, neon_rpc, host, users, spawn_rate, run_time, tag, web_ui):
+@click.option(
+    "-d",
+    "--dump-data",
+    default=False,
+    is_flag=True,
+    help="Flag. Enable dumps transaction history to file.",
+)
+def locust(locustfile, credentials, neon_rpc, host, users, spawn_rate, run_time, tag, web_ui, dump_data):
     """Run `Neon` pipeline performance test
 
     path it's sub-folder and file name  `loadtesting/locustfile.py`.
@@ -450,6 +457,8 @@ def locust(locustfile, credentials, neon_rpc, host, users, spawn_rate, run_time,
         command += f" --tags {' '.join(tag)}"
     if not web_ui:
         command += f" --headless"
+    if dump_data:
+        command += f" --dump-data 1"
 
     cmd = subprocess.run(command, shell=True)
 

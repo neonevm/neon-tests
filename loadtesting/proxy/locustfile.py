@@ -1,3 +1,4 @@
+import collections
 import functools
 import json
 import logging
@@ -16,12 +17,12 @@ from functools import lru_cache
 
 import locust.env
 import requests
-import solana
+import tabulate
 import web3
 from locust import TaskSet, User, events, tag, task
 from solana.keypair import Keypair
 
-from utils import helpers
+from utils import helpers, operator
 from utils.erc20wrapper import ERC20Wrapper
 from utils.faucet import Faucet
 from utils.web3client import NeonWeb3Client
@@ -56,6 +57,16 @@ NEON_TOKEN_VERSION = "0.8.10"
 """Neon tokens contract version
 """
 
+DEFAULT_DUMP_FILE = "dumped_data/transaction.json"
+"""Default file name for transaction history
+"""
+
+# init global transaction history
+global transaction_history
+transaction_history = collections.defaultdict(list)
+"""Transactions storage {account: [{blockNumber, blockHash, contractAddress},]}
+"""
+
 UNISWAP_REPO_URL = "https://github.com/gigimon/Uniswap-V2-NEON.git"
 UNISWAP_TMP_DIR = "/tmp/uniswap-neon"
 MAX_UINT_256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
@@ -79,7 +90,16 @@ def execute_before(*attrs) -> tp.Callable:
         def task_wrapper(self, *args, **kwargs) -> tp.Any:
             for attr in attrs:
                 getattr(self, attr)(*args, **kwargs)
-            func(self, *args, **kwargs)
+            tx_receipt = func(self, *args, **kwargs)
+            if dump_data and tx_receipt:
+                transaction_history[str(tx_receipt["from"])].append(
+                    {
+                        "blockHash": tx_receipt["blockHash"].hex(),
+                        "blockNumber": hex(tx_receipt["blockNumber"]),
+                        "contractAddress": tx_receipt["contractAddress"],
+                        "to": str(tx_receipt["to"]),
+                    }
+                )
 
         return task_wrapper
 
@@ -105,12 +125,21 @@ def arg_parser(parser):
         default=ENV_FILE,
         help="Relative path to environment credentials file.",
     )
+    parser.add_argument(
+        "--dump-data",
+        type=int,
+        env_var="LOCUST_DUMP_DATA",
+        default=0,
+        help="Enabling dump transaction history.",
+    )
 
 
 @events.test_start.add_listener
 def make_env_preparation(environment, **kwargs):
     neon = NeonGlobalEnv()
     environment.shared = neon
+    global dump_data
+    dump_data = bool(int(environment.parsed_options.dump_data))
 
 
 @events.test_start.add_listener
@@ -125,6 +154,45 @@ def load_credentials(environment, **kwargs):
         global credentials
         f = json.load(fp)
         credentials = f.get(network, f[DEFAULT_NETWORK])
+        environment.credentials = credentials
+
+
+def get_token_balance(op: operator.Operator) -> tp.Dict:
+    """Return tokens balance"""
+    return dict(neon=op.get_neon_balance(), sol=op.get_solana_balance())
+
+
+@events.test_start.add_listener
+def operator_economy_pre_balance(environment, **kwargs):
+    op = operator.Operator(
+        environment.credentials["proxy_url"],
+        environment.credentials["solana_url"],
+        environment.credentials["network_id"],
+        environment.credentials["operator_neon_rewards_address"],
+        environment.credentials["spl_neon_mint"],
+        environment.credentials["operator_keys"],
+        web3_client=NeonWeb3Client(
+            environment.credentials["proxy_url"], environment.credentials["network_id"], session=requests.Session()
+        ),
+    )
+    environment.op = op
+    environment.pre_balance = get_token_balance(op)
+
+
+@events.test_stop.add_listener
+def operator_economy_balance(environment, **kwargs):
+    balance = get_token_balance(environment.op)
+    operator_balance = tabulate.tabulate(
+        [
+            ["NEON", environment.pre_balance["neon"], balance["neon"]],
+            ["SOL", environment.pre_balance["sol"], balance["sol"]],
+        ],
+        headers=["token", "on start balance", "os stop balance"],
+        tablefmt="fancy_outline",
+        numalign="right",
+        floatfmt=".2f",
+    )
+    LOG.info(f"\n{10*'_'} Operator balance {10*'_'}\n{operator_balance}\n")
 
 
 @events.test_start.add_listener
@@ -274,6 +342,17 @@ def deploy_uniswap(environment: "locust.env.Environment", **kwargs):
     environment.uniswap.update(erc20_contracts)
 
 
+@events.test_stop.add_listener
+def teardown(**kwargs) -> None:
+    """Test stop event handler"""
+    if transaction_history:
+        dumped_path = pathlib.Path(__file__).parent.parent / DEFAULT_DUMP_FILE
+        dumped_path.parents[0].mkdir(parents=True, exist_ok=True)
+        with open(dumped_path, "w") as fp:
+            LOG.info(f"Dumped transaction history to `{dumped_path.as_posix()}`")
+            json.dump(transaction_history, fp=fp, indent=4, sort_keys=True)
+
+
 class LocustEventHandler(object):
     """Implements custom Locust events handler"""
 
@@ -353,7 +432,7 @@ class NeonWeb3ClientExt(NeonWeb3Client):
         try:
             attr = object.__getattribute__(self, item)
         except AttributeError:
-            attr = super(NeonWeb3ClientExt, self).__getattribute__(item)
+            attr = super(NeonWeb3ClientExt, self).__getattr__(item)
         if callable(attr) and item not in ignore_list:
             attr = statistics_collector()(attr)
         return attr
@@ -504,26 +583,21 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
     def on_start(self) -> None:
         super(ERC20BaseTasksSet, self).on_start()
 
-        self._solana_client = solana.rpc.api.Client(credentials["solana_url"])
-        self._erc20wrapper_client = ERC20Wrapper(
-            self.web3_client, self._solana_client, credentials["evm_loader"], credentials["spl_neon_mint"]
-        )
-
     def _deploy_erc20_contract(self) -> "web3._utils.datatypes.Contract":
         """Deploy ERC20 contract"""
         contract, _ = self.deploy_contract(
-            f"{self.contract_name}", self.version, self.account, constructor_args=[pow(10, 10)]
+            self.contract_name, self.version, self.account, constructor_args=[pow(10, 10)]
         )
         return contract
 
     def _deploy_erc20wrapper_contract(self) -> "web3._utils.datatypes.Contract":
         """Deploy SPL contract"""
         symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
-        contract, address = self._erc20wrapper_client.deploy_wrapper(
-            name=f"Test {symbol}", symbol=symbol, account=self.account)
-        contract = self._erc20wrapper_client.get_wrapper_contract(address)
-        self._erc20wrapper_client.mint_tokens(self.account, contract)
-        return contract
+        erc20wrapper_client = ERC20Wrapper(
+            self.web3_client, self.faucet, name=f"Test {symbol}", symbol=symbol, account=self.account
+        )
+        erc20wrapper_client.mint_tokens(self.account)
+        return erc20wrapper_client.contract
 
     @task(1)
     @execute_before("task_block_number", "task_keeps_balance")
@@ -545,13 +619,17 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
             self.log.info(
                 f"Send `{self.contract_name.lower()}` tokens from contract {str(contract.address)[-8:]} to {str(recipient.address)[-8:]}."
             )
-            if self.web3_client.send_erc20(self.account, recipient, 1, contract.address, abi=contract.abi):
+            tx_receipt = dict(
+                self.web3_client.send_erc20(self.account, recipient, 1, contract.address, abi=contract.abi)
+            )
+            if tx_receipt:
                 self._buffer.setdefault(recipient.address, set()).add(contract)
+                tx_receipt["contractAddress"] = contract.address
             # remove contracts without balance
             if contract.functions.balanceOf(self.account.address).call() < 1:
                 self.log.info(f"Remove contract `{contract.address[:8]}` because user has empty balance")
                 contracts.remove(contract)
-            return
+            return tx_receipt
         self.log.info(f"no `{self.contract_name.upper()}` contracts found, send is cancel.")
 
 
@@ -561,12 +639,12 @@ class NeonTasksSet(NeonProxyTasksSet):
 
     @task
     @execute_before("task_block_number", "task_keeps_balance")
-    def task_send_neon(self) -> None:
+    def task_send_neon(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Transferring funds to a random account"""
         # add credits to account
         recipient = random.choice(self.user.environment.shared.accounts)
         self.log.info(f"Send `neon` from {str(self.account.address)[-8:]} to {str(recipient.address)[-8:]}.")
-        self.web3_client.send_neon(self.account, recipient, amount=1)
+        return self.web3_client.send_neon(self.account, recipient, amount=1)
 
 
 @tag("erc20")
@@ -587,9 +665,9 @@ class ERC20TasksSet(ERC20BaseTasksSet):
 
     @task(5)
     @execute_before("task_block_number", "task_keeps_balance")
-    def task_send_erc20(self) -> None:
+    def task_send_erc20(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Send ERC20 tokens"""
-        super(ERC20TasksSet, self).task_send_tokens()
+        return super(ERC20TasksSet, self).task_send_tokens()
 
 
 @tag("spl")
@@ -606,7 +684,7 @@ class ERC20WrappedTasksSet(ERC20BaseTasksSet):
     @execute_before("task_block_number", "task_keeps_balance")
     def task_send_erc20_wrapped(self) -> None:
         """Send ERC20 tokens"""
-        super(ERC20WrappedTasksSet, self).task_send_tokens()
+        return super(ERC20WrappedTasksSet, self).task_send_tokens()
 
 
 @tag("counter")

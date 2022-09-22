@@ -4,6 +4,7 @@ import glob
 import json
 import os
 import pathlib
+import platform
 import re
 import shutil
 import subprocess
@@ -18,6 +19,9 @@ from deploy.infra.utils import env
 from deploy.infra.utils import docker as docker_utils
 
 import requests
+
+from deploy.infra.utils import docker as docker_utils
+from deploy.infra.utils import env
 
 try:
     import click
@@ -381,7 +385,7 @@ def ozreport():
 @click.option(
     "-f",
     "--locustfile",
-    type=click.Choice(["proxy", "synthetic"]),
+    type=click.Choice(["proxy", "synthetic", "tracerapi"]),
     default="proxy",
     help="Load test type. It's sub-folder name to import.",
     show_default=True,
@@ -391,6 +395,12 @@ def ozreport():
     "--credentials",
     type=str,
     help="Relative path to credentials module.",
+    show_default=True,
+)
+@click.option(
+    "--neon-rpc",
+    type=str,
+    help="NEON RPC entry point.",
     show_default=True,
 )
 @click.option(
@@ -425,7 +435,14 @@ def ozreport():
     default=True,
     help="Enable the web interface. " "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
 )
-def locust(locustfile, credentials, host, users, spawn_rate, run_time, tag, web_ui):
+@click.option(
+    "-d",
+    "--dump-data",
+    default=False,
+    is_flag=True,
+    help="Flag. Enable dumps transaction history to file.",
+)
+def locust(locustfile, credentials, neon_rpc, host, users, spawn_rate, run_time, tag, web_ui, dump_data):
     """Run `Neon` pipeline performance test
 
     path it's sub-folder and file name  `loadtesting/locustfile.py`.
@@ -438,10 +455,14 @@ def locust(locustfile, credentials, host, users, spawn_rate, run_time, tag, web_
         command += f" --credentials={credentials}"
     if run_time:
         command += f" --run-time={run_time}"
+    if neon_rpc and locustfile == "tracerapi":
+        command += f" --neon-rpc={neon_rpc}"
     if tag:
         command += f" --tags {' '.join(tag)}"
     if not web_ui:
         command += f" --headless"
+    if dump_data:
+        command += f" --dump-data 1"
 
     cmd = subprocess.run(command, shell=True)
 

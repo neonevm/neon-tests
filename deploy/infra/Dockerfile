@@ -33,11 +33,19 @@ RUN apt-get update && apt-get install -qy --no-install-recommends ${PIP_BUILD_DE
 
 # Install PIP requirements
 RUN python3 -m ensurepip \
+<<<<<<< HEAD
   && pip install -U --upgrade-strategy=only-if-needed wheel pip==21.1 pip-tools==6.2.0 \
+=======
+  && pip install -U --upgrade-strategy=only-if-needed wheel pip pip-tools \
+>>>>>>> b0e94e36f104a0bd63a5d11c9b3b9c45772e8081
   && pip install --upgrade \
   -r ${HOME_DIR}/deploy/requirements/prod.txt \
   -r ${HOME_DIR}/deploy/requirements/devel.txt \
   -r ${HOME_DIR}/deploy/requirements/ui.txt \
+<<<<<<< HEAD
+=======
+  #-r ${HOME_DIR}/deploy/requirements/nodeps.txt \
+>>>>>>> b0e94e36f104a0bd63a5d11c9b3b9c45772e8081
   --src=/usr/local/lib/python3.8/site-packages ;
 
 # Fixes for ctypes.cdll.LoadLibrary:
@@ -46,6 +54,14 @@ RUN python3 -m ensurepip \
 RUN [ ! -L "/usr/lib/x86_64-linux-gnu/libssh2.so" ] || ln -sf libssh2.so.1 /usr/lib/x86_64-linux-gnu/libssh2.so
 
 
+<<<<<<< HEAD
+=======
+# Install tfenv fo terraform using in devbox
+RUN git clone --depth=1 https://github.com/tfutils/tfenv.git ~/.tfenv \
+  && echo 'export PATH="$HOME/.tfenv/bin:$PATH"' >> ~/.bash_profile \
+  && ln -s ~/.tfenv/bin/* /usr/local/bin
+
+>>>>>>> b0e94e36f104a0bd63a5d11c9b3b9c45772e8081
 # Cleanup:
 ## Git cache saves ~ 1min on pip-sync
 RUN find /usr/local/lib/python3.8/site-packages -name .git | xargs rm -rf \

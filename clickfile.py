@@ -4,6 +4,7 @@ import glob
 import json
 import os
 import pathlib
+import platform
 import re
 import shutil
 import subprocess
@@ -14,6 +15,9 @@ from multiprocessing.dummy import Pool
 from urllib.parse import urlparse
 
 import requests
+
+from deploy.infra.utils import docker as docker_utils
+from deploy.infra.utils import env
 
 try:
     import click
@@ -73,6 +77,19 @@ EXPANDED_ENVS = [
 NETWORK_NAME = os.environ.get("NETWORK_NAME", "full_test_suite")
 """Default network name for docker container
 """
+
+DEVBOX_DOCKERFILE = "deploy/infra/Dockerfile"
+"""
+"""
+
+DEVBOX_NAME = "neontests-devbox"
+"""
+"""
+
+# Docker devbox options:
+DEVBOX_SSH_PORT_ON_HOST = 8022
+
+HOME_DIR = pathlib.Path(__file__).absolute().parent
 
 
 def green(s):
@@ -136,7 +153,10 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         subprocess.check_call("git submodule init && git submodule update", shell=True, cwd=cwd)
     subprocess.check_call("npx hardhat compile", shell=True, cwd=cwd)
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
-    keys_env = [faucet_cli.prepare_wallets_with_balance(networks[network], count=users, airdrop_amount=amount) for i in range(jobs)]
+    keys_env = [
+        faucet_cli.prepare_wallets_with_balance(networks[network], count=users, airdrop_amount=amount)
+        for i in range(jobs)
+    ]
 
     tests = subprocess.check_output("find \"test\" -name '*.test.js'", shell=True, cwd=cwd).decode().splitlines()
 
@@ -350,9 +370,9 @@ def ozreport():
 @click.option(
     "-f",
     "--locustfile",
-    type=str,
-    default="loadtesting/locustfile.py",
-    help="Python module to import. It's sub-folder and file name.",
+    type=click.Choice(["proxy", "synthetic", "tracerapi"]),
+    default="proxy",
+    help="Load test type. It's sub-folder name to import.",
     show_default=True,
 )
 @click.option(
@@ -360,6 +380,12 @@ def ozreport():
     "--credentials",
     type=str,
     help="Relative path to credentials module.",
+    show_default=True,
+)
+@click.option(
+    "--neon-rpc",
+    type=str,
+    help="NEON RPC entry point.",
     show_default=True,
 )
 @click.option(
@@ -394,12 +420,19 @@ def ozreport():
     default=True,
     help="Enable the web interface. " "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
 )
-def locust(locustfile, credentials, host, users, spawn_rate, run_time, tag, web_ui):
+@click.option(
+    "-d",
+    "--dump-data",
+    default=False,
+    is_flag=True,
+    help="Flag. Enable dumps transaction history to file.",
+)
+def locust(locustfile, credentials, neon_rpc, host, users, spawn_rate, run_time, tag, web_ui, dump_data):
     """Run `Neon` pipeline performance test
 
     path it's sub-folder and file name  `loadtesting/locustfile.py`.
     """
-    path = pathlib.Path(__file__).parent / locustfile
+    path = pathlib.Path(__file__).parent / f"loadtesting/{locustfile}/locustfile.py"
     if not (path.exists() and path.is_file()):
         raise FileNotFoundError(f"path doe's not exists. {path.resolve()}")
     command = f"locust -f {path.as_posix()} --host={host} --users={users} --spawn-rate={spawn_rate}"
@@ -407,10 +440,14 @@ def locust(locustfile, credentials, host, users, spawn_rate, run_time, tag, web_
         command += f" --credentials={credentials}"
     if run_time:
         command += f" --run-time={run_time}"
+    if neon_rpc and locustfile == "tracerapi":
+        command += f" --neon-rpc={neon_rpc}"
     if tag:
         command += f" --tags {' '.join(tag)}"
     if not web_ui:
         command += f" --headless"
+    if dump_data:
+        command += f" --dump-data 1"
 
     cmd = subprocess.run(command, shell=True)
 
@@ -507,9 +544,7 @@ def prepare_accounts(count, amount):
         "solana_url": f"http://{os.environ.get('SOLANA_IP')}:8899/",
         "faucet_url": f"http://{os.environ.get('PROXY_IP')}:3333/",
     }
-    accounts = faucet_cli.prepare_wallets_with_balance(
-        network, count, amount
-    )
+    accounts = faucet_cli.prepare_wallets_with_balance(network, count, amount)
     if os.environ.get("CI"):
         subprocess.run(f'echo "::set-output name=accounts::{",".join(accounts)}"')
 
@@ -517,6 +552,169 @@ def prepare_accounts(count, amount):
 infra.add_command(deploy, "deploy")
 infra.add_command(destroy, "destroy")
 infra.add_command(prepare_accounts)
+
+
+@cli.group("devbox", help="Manage devbox infrastructure")
+def devbox():
+    """Commands for devbox manipulation."""
+
+
+@devbox.command("rm")
+def rm():
+    """Terminate existing devbox."""
+    if docker_utils.docker_inspect(DEVBOX_NAME):
+        env.shell(f"docker rm -f {DEVBOX_NAME}")
+        print(env.green("Terminated devbox"))
+    else:
+        print(env.green("DevBox not running, nothing to terminate"))
+
+
+@devbox.command("build")
+@click.option(
+    "-p",
+    "--image-path",
+    "image_path",
+    type=str,
+    default=DEVBOX_DOCKERFILE,
+    help="Build image Dockerfile relative path.",
+)
+@click.option(
+    "-n",
+    "--image-name",
+    "image_name",
+    type=str,
+    default=DEVBOX_NAME,
+    help="Build image name.",
+)
+@click.option(
+    "-t",
+    "--tag",
+    "tag",
+    type=str,
+    default="latest",
+    help="Build image tag.",
+)
+@click.option(
+    "--quick/--full",
+    default=None,
+    help="Quick mode (Default). In quick mode task for sake of speed ignore some extra checks, "
+    "which might produce stale artifacts. Full mode builds eveything without Docker cache, "
+    "and because of this sick from duplicate layers for the same Dockerfile steps. "
+    "WARN: It's still unclear do we really need this CLI option. Strong argument against "
+    "is that `docker build --pull` invalidates the whole cache tree every time the base "
+    "buster/alpine image got updated. Base images get their security patches nearly every day. "
+    "As a side effect of these updates we check very frequency our images on nocache build, and may "
+    "find and address any issues early.",
+)
+@click.option("--dry-run", is_flag=True, default=False, help="Dry run")
+def build(image_path, image_name, tag, quick, dry_run=None):
+    """Build devbox docker image."""
+    env.header("Prepare docker images build...")
+    image = docker_utils.Image(pathlib.Path(image_path), image_name, tag)
+    build_args = ()
+    if quick is None:
+        # Quick by default
+        quick = True
+
+    if dry_run:
+        return print(env.yellow("Dry run, exiting"))
+
+    image.build(cache=quick, build_args=build_args)
+
+
+def create_devbox(prefix="", tag="latest"):
+
+    box_name = DEVBOX_NAME
+    network_name = "neon-tests"
+    cwd = os.getcwd()
+    workspace = "/neon-tests"
+    provide_ssh_port = f"{DEVBOX_SSH_PORT_ON_HOST}:22"
+    prefix = prefix or docker_utils.IMAGE_PREFIX
+
+    if not docker_utils.docker_inspect(box_name):
+        box_image = f"{prefix}/{box_name}:{tag}"
+        if not docker_utils.docker_image_exists(box_image):
+            print(env.yellow(f"No {box_image} image found, run `devbox build` command"))
+            exit()
+        # Run devbox in user-defined network and link it for test containers
+        if not docker_utils.docker_inspect_network(network_name):
+            env.shell(f"docker network create {network_name}")
+
+        home = os.path.expanduser("~")
+
+        def var_args():
+            """Variatic arguments"""
+            args = []
+
+            # neon client
+            neon_cli_path = f"{cwd}/deploy/infra/tools/neon-cli"
+            if os.path.isfile(neon_cli_path):
+                args.append(f"-v {neon_cli_path}:/usr/local/bin/neon-cli")
+            else:
+                print(env.yellow(f"copy file `neon-cli` to {neon_cli_path} for load tests to work properly"))
+            # solana operator keys
+            operator_keys_path = f"{cwd}/loadtesting/synthetic/operator-keypairs"
+            if os.path.exists(operator_keys_path):
+                args.append(f"-v {operator_keys_path}:/root/.config/solana")
+            else:
+                print(env.yellow(f"copy solana operator keys to {operator_keys_path} for load tests to work properly"))
+            # pip/pip-tools cache
+            if os.path.exists(f"{home}/.cache"):
+                args.append(f"-v {home}/.cache:/root/.cache")
+
+            # git config
+            if os.path.exists(f"{home}/.gitconfig"):
+                args.append(f"-v {home}/.gitconfig:/root/.gitconfig")
+
+            # ssh
+            if os.path.exists(f"{home}/.ssh"):
+                args.append(f"-v {home}/.ssh:/root/.ssh")
+            # pass ssh-agent to container
+            if "SSH_AUTH_SOCK" in os.environ and platform.system() == "Linux":
+                args.append(f" -v {os.environ['SSH_AUTH_SOCK']}:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent ")
+            elif platform.system() == "Darwin":
+                sock_path = os.environ.get("SSH_AUTH_SOCK", "/run/host-services/ssh-auth.sock")
+                args.append(f" --mount type=bind,src={sock_path},target=/ssh-agent -e " "SSH_AUTH_SOCK=/ssh-agent ")
+
+            shell_history_path = f"{cwd}/deploy/infra/devbox/.bash_history"
+            # Ensure .bash_history exists
+            env.shell(f"touch {shell_history_path}")
+            args.append(f"-v {shell_history_path}:/root/.bash_history")
+
+            return " ".join(args)
+
+        # Start new
+        env.shell(
+            "docker run --rm -it -d --init"
+            f" --name={box_name}"
+            f" --network={network_name}"
+            f" -e DEVBOX=true"
+            f" -e DEVBOX_NETWORK={network_name}"
+            f" -e DEVBOX_CWD={cwd}"
+            f" -w {workspace}"
+            f" -v {cwd}:{workspace}"
+            # SSH for remote debugging
+            f" -p {provide_ssh_port}" f" -v {cwd}/deploy/infra/devbox/ssh/id_ed25519.pub:/root/.ssh/authorized_keys"
+            # Bash profile and history
+            f" -v {cwd}/deploy/infra/devbox/.bash-profile:/etc/profile.d/neontests.sh"
+            # Docker host socket
+            " -v /var/run/docker.sock:/var/run/docker.sock"
+            # For pytest fileutil mount shared fixtures
+            " -v /tmp:/tmp" f" {var_args()} {box_image} {workspace}/deploy/infra/devbox/startup.sh",
+            capture=True,
+        )
+        print(env.green("Started devbox"))
+    else:
+        print(env.green("Devbox already started, attaching"))
+    return box_name
+
+
+@devbox.command("up")
+def up():
+    """Start new devbox or attach existing."""
+    box_name = create_devbox()
+    # Attach to running container
+    env.shell(f"docker exec -it {box_name} bash --login; exit 0")
 
 
 if __name__ == "__main__":

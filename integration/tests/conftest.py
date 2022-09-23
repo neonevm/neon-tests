@@ -7,7 +7,6 @@ import allure
 import pytest
 import solana
 import solana.rpc.api
-import solcx
 from _pytest.config import Config
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
@@ -131,24 +130,14 @@ def solana_acc(erc20wrapper, sol_client):
     yield acc, token_mint, solana_address
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def multiply_actions_erc20(web3_client, faucet):
     acc = web3_client.create_account()
     faucet.request_neon(acc.address, 100)
-    contract_path = (
-            pathlib.Path.cwd() / "contracts" / "multiply_actions_erc20.sol"
-    ).absolute()
-
-    with open(contract_path, "r") as s:
-        source = s.read()
-    compiled = solcx.compile_source(source, output_values=["abi", "bin"], solc_version="0.8.10",
-                                    base_path=pathlib.Path.cwd() / "contracts", optimize=True)
-    contract_interface = compiled['<stdin>:multiplyActionsERC20']
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
 
-    contract_deploy_tx = web3_client.deploy_contract(acc, abi=contract_interface["abi"],
-                                                     bytecode=contract_interface["bin"],
-                                                     constructor_args=[f"Test {symbol}", symbol, 18]
-                                                     )
-    contract = web3_client.eth.contract(address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"])
+    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
+        "multiply_actions_erc20", "0.8.10", acc, contract_name="multiplyActionsERC20",
+        constructor_args=[f"Test {symbol}", symbol, 18]
+    )
     return acc, contract

@@ -23,26 +23,8 @@ class ERC20Wrapper:
         return tx
 
     def deploy_wrapper(self):
-        solcx.install_solc("0.8.10")
-        contract_path = (
-                pathlib.Path.cwd() / "contracts" / "erc20_for_spl_factory.sol"
-        ).absolute()
-
-        with open(contract_path, "r") as s:
-            source = s.read()
-        compiled = solcx.compile_source(source, output_values=["abi", "bin"], solc_version="0.8.10",
-                                        base_path=pathlib.Path.cwd() / "contracts", optimize=True)
-        contract_interface = compiled[list(compiled.keys())[0]]
-
-        contract_deploy_tx = self.web3_client.deploy_contract(
-            self.account,
-            abi=contract_interface["abi"],
-            bytecode=contract_interface["bin"]
-        )
-
-        contract = self.web3_client.eth.contract(
-            address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
-        )
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
+            "erc20_for_spl_factory", "0.8.10", self.account, contract_name='ERC20ForSplFactory')
         tx_object = self.make_tx_object(self.account.address)
         instruction_tx = contract.functions.createErc20ForSplMintable(self.name, self.symbol, self.decimals,
                                                                       self.account.address).buildTransaction(tx_object)
@@ -76,7 +58,6 @@ class ERC20Wrapper:
         tx = self.make_tx_object(sender_address, gas_price, gas)
         instruction_tx = self.contract.functions.burn(amount).buildTransaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
-        # logs = self.contract.events.Transfer().processReceipt(resp)
         return resp
 
     def burn_from(self, signer, from_address, amount, gas_price=None, gas=None):

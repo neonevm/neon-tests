@@ -17,14 +17,15 @@ NO_ENOUGH_GAS_PARAMS = [({'gas_price': 0}, "transaction underpriced"),
                         ({'gas': 0}, "gas limit reached")]
 
 
+@pytest.fixture(scope="function")
+def new_account(web3_client, faucet):
+    new_acc = web3_client.create_account()
+    faucet.request_neon(new_acc.address, 100)
+    yield new_acc
+
+
 @allure.story("Basic: Tests for contract created by createErc20ForSplMintable call")
 class TestERC20wrappedContract(BaseMixin):
-
-    @pytest.fixture(scope="function")
-    def new_account(self, faucet):
-        new_acc = self.web3_client.create_account()
-        faucet.request_neon(new_acc.address, 100)
-        yield new_acc
 
     @pytest.fixture(scope="function")
     def restore_balance(self, erc20wrapper):
@@ -307,3 +308,204 @@ class TestERC20wrappedContract(BaseMixin):
         token_account = sol_client.get_token_accounts_by_delegate(acc.public_key, opts)['result']['value'][0]['account']
         assert int(token_account['data']['parsed']['info']['delegatedAmount']['amount']) == amount
         assert int(token_account['data']['parsed']['info']['delegatedAmount']['decimals']) == erc20wrapper.decimals
+
+
+@allure.story("Basic: multiply actions tests for multiplyActionsERC20 contract")
+class TestMultiplyActionsForERC20(BaseMixin):
+
+    def make_tx_object(self):
+        tx = {"from": self.sender_account.address,
+              "nonce": self.web3_client.eth.get_transaction_count(self.sender_account.address),
+              "gasPrice": self.web3_client.gas_price()}
+        return tx
+
+    def test_mint_transfer_burn(self, multiply_actions_erc20):
+        acc, contract = multiply_actions_erc20
+        contract_balance_before = contract.functions.contractBalance().call()
+        user_balance_before = contract.functions.balance(acc.address).call()
+        mint_amount = random.randint(10, 100000000)
+        transfer_amount = random.randint(1, mint_amount - 1)
+        burn_amount = random.randint(1, mint_amount - transfer_amount)
+
+        tx = self.make_tx_object()
+        instruction_tx = contract.functions.mintTransferBurn(mint_amount, acc.address, transfer_amount,
+                                                             burn_amount) \
+            .buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        contract_balance = contract.functions.contractBalance().call()
+        user_balance = contract.functions.balance(acc.address).call()
+
+        assert user_balance == transfer_amount + user_balance_before, "User balance is not correct"
+        assert contract_balance == mint_amount - transfer_amount - burn_amount + contract_balance_before, \
+            "Contract balance is not correct"
+
+    def test_mint_transfer_transfer_one_recipient(self, multiply_actions_erc20):
+        acc, contract = multiply_actions_erc20
+        contract_balance_before = contract.functions.contractBalance().call()
+        user_balance_before = contract.functions.balance(acc.address).call()
+        mint_amount = random.randint(10, 100000000)
+        transfer_amount_1 = random.randint(1, mint_amount - 1)
+        transfer_amount_2 = random.randint(1, mint_amount - transfer_amount_1)
+
+        tx = self.make_tx_object()
+        instruction_tx = contract.functions.mintTransferTransfer(mint_amount, acc.address, transfer_amount_1,
+                                                                 acc.address, transfer_amount_2) \
+            .buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        contract_balance = contract.functions.contractBalance().call()
+        user_balance = contract.functions.balance(acc.address).call()
+
+        assert user_balance == transfer_amount_1 + transfer_amount_2 + user_balance_before, "User balance is not correct"
+        assert contract_balance == mint_amount - transfer_amount_1 - transfer_amount_2 + contract_balance_before, \
+            "Contract balance is not correct"
+
+    def test_mint_transfer_transfer_different_recipients(self, multiply_actions_erc20, new_account):
+        acc_1, contract = multiply_actions_erc20
+        acc_2 = new_account
+        contract_balance_before = contract.functions.contractBalance().call()
+        user_balance_before = contract.functions.balance(acc_1.address).call()
+
+        mint_amount = random.randint(10, 100000000)
+        transfer_amount_1 = random.randint(1, mint_amount - 1)
+        transfer_amount_2 = random.randint(1, mint_amount - transfer_amount_1)
+
+        tx = self.make_tx_object()
+        instruction_tx = contract.functions.mintTransferTransfer(mint_amount, acc_1.address, transfer_amount_1,
+                                                                 acc_2.address, transfer_amount_2) \
+            .buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        contract_balance = contract.functions.contractBalance().call()
+        user_1_balance = contract.functions.balance(acc_1.address).call()
+        user_2_balance = contract.functions.balance(acc_2.address).call()
+
+        assert user_1_balance == transfer_amount_1 + user_balance_before, "User 1 balance is not correct"
+        assert user_2_balance == transfer_amount_2, "User 2 balance is not correct"
+        assert contract_balance == mint_amount - transfer_amount_1 - transfer_amount_2 + contract_balance_before, \
+            "Contract balance is not correct"
+
+    def test_transfer_mint_burn(self, multiply_actions_erc20):
+        acc, contract = multiply_actions_erc20
+        contract_balance_before = contract.functions.contractBalance().call()
+        user_balance_before = contract.functions.balance(acc.address).call()
+        mint_amount_1 = random.randint(10, 100000000)
+        mint_amount_2 = random.randint(10, 100000000)
+        transfer_amount = random.randint(1, mint_amount_1)
+        burn_amount = random.randint(1, mint_amount_1 + mint_amount_2 - transfer_amount)
+
+        tx = self.make_tx_object()
+        instruction_tx = contract.functions.mint(mint_amount_1).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        tx = self.make_tx_object()
+        instruction_tx = contract.functions.transferMintBurn(acc.address, transfer_amount, mint_amount_2,
+                                                             burn_amount).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        contract_balance = contract.functions.contractBalance().call()
+        user_balance = contract.functions.balance(acc.address).call()
+
+        assert contract_balance == mint_amount_1 + mint_amount_2 - transfer_amount - burn_amount + contract_balance_before, \
+            "Contract balance is not correct"
+        assert user_balance == transfer_amount + user_balance_before, "User balance is not correct"
+
+    def test_transfer_mint_transfer_burn(self, multiply_actions_erc20):
+        acc, contract = multiply_actions_erc20
+        contract_balance_before = contract.functions.contractBalance().call()
+        user_balance_before = contract.functions.balance(acc.address).call()
+        mint_amount_1 = random.randint(10, 100000000)
+        mint_amount_2 = random.randint(10, 100000000)
+        transfer_amount_1 = random.randint(1, mint_amount_1)
+        transfer_amount_2 = random.randint(1, mint_amount_1 + mint_amount_2 - transfer_amount_1)
+        burn_amount = random.randint(1, mint_amount_1 + mint_amount_2 - transfer_amount_1 - transfer_amount_2)
+
+        tx = self.make_tx_object()
+        instruction_tx = contract.functions.mint(mint_amount_1).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        tx = self.make_tx_object()
+        instruction_tx = contract.functions. \
+            transferMintTransferBurn(acc.address, transfer_amount_1, mint_amount_2, transfer_amount_2,
+                                     burn_amount).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        contract_balance = contract.functions.contractBalance().call()
+        user_balance = contract.functions.balance(acc.address).call()
+
+        assert contract_balance == mint_amount_1 + mint_amount_2 - transfer_amount_1 - transfer_amount_2 - \
+               burn_amount + contract_balance_before, "Contract balance is not correct"
+        assert user_balance == transfer_amount_1 + transfer_amount_2 + user_balance_before, \
+            "User balance is not correct"
+
+    def test_mint_burn_transfer(self, multiply_actions_erc20):
+        acc, contract = multiply_actions_erc20
+        contract_balance_before = contract.functions.contractBalance().call()
+        user_balance_before = contract.functions.balance(acc.address).call()
+        mint_amount = random.randint(10, 100000000)
+        burn_amount = random.randint(1, mint_amount - 1)
+        transfer_amount = mint_amount - burn_amount
+
+        tx = self.make_tx_object()
+        instruction_tx = contract.functions.mintBurnTransfer(mint_amount, burn_amount, acc.address, transfer_amount, ) \
+            .buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        contract_balance = contract.functions.contractBalance().call()
+        user_balance = contract.functions.balance(acc.address).call()
+        assert user_balance == transfer_amount + user_balance_before, "User balance is not correct"
+        assert contract_balance == contract_balance_before, "Contract balance is not correct"
+
+    def test_burn_transfer_burn_transfer(self, multiply_actions_erc20):
+        acc, contract = multiply_actions_erc20
+        contract_balance_before = contract.functions.contractBalance().call()
+        user_balance_before = contract.functions.balance(acc.address).call()
+
+        mint_amount = random.randint(10, 100000000)
+        burn_amount_1 = random.randint(1, mint_amount - 2)
+        transfer_amount_1 = random.randint(1, mint_amount - burn_amount_1 - 2)
+        burn_amount_2 = random.randint(1, mint_amount - burn_amount_1 - transfer_amount_1 - 1)
+        transfer_amount_2 = random.randint(1, mint_amount - burn_amount_1 - transfer_amount_1 - burn_amount_2)
+
+        tx = self.make_tx_object()
+        instruction_tx = contract.functions.mint(mint_amount).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        tx = self.make_tx_object()
+        instruction_tx = contract.functions. \
+            burnTransferBurnTransfer(burn_amount_1, acc.address, transfer_amount_1, burn_amount_2, acc.address,
+                                     transfer_amount_2).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        contract_balance = contract.functions.contractBalance().call()
+        user_balance = contract.functions.balance(acc.address).call()
+        assert contract_balance == mint_amount - transfer_amount_1 - transfer_amount_2 - burn_amount_1 \
+               - burn_amount_2 + contract_balance_before, "Contract balance is not correct"
+        assert user_balance == transfer_amount_1 + transfer_amount_2 + user_balance_before, "User balance is not correct"
+
+    def test_burn_mint_transfer(self, multiply_actions_erc20):
+        acc, contract = multiply_actions_erc20
+        contract_balance_before = contract.functions.contractBalance().call()
+        user_balance_before = contract.functions.balance(acc.address).call()
+
+        mint_amount_1 = random.randint(10, 100000000)
+        burn_amount = random.randint(1, mint_amount_1)
+        mint_amount_2 = random.randint(10, 100000000)
+        transfer_amount = random.randint(mint_amount_1 - burn_amount, mint_amount_1 - burn_amount + mint_amount_2)
+
+        tx = self.make_tx_object()
+        instruction_tx = contract.functions.mint(mint_amount_1).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        tx = self.make_tx_object()
+        instruction_tx = contract.functions. \
+            burnMintTransfer(burn_amount, mint_amount_2, acc.address, transfer_amount).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        contract_balance = contract.functions.contractBalance().call()
+        user_balance = contract.functions.balance(acc.address).call()
+
+        assert contract_balance == mint_amount_1 + mint_amount_2 - transfer_amount - burn_amount + \
+               contract_balance_before, "Contract balance is not correct"
+        assert user_balance == transfer_amount + user_balance_before, "User balance is not correct"

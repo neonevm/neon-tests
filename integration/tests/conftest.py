@@ -128,3 +128,16 @@ def solana_acc(erc20wrapper, sol_client):
     sol_client.send_transaction(trx, acc, opts=opts)
     solana_address = bytes(get_associated_token_address(acc.public_key, token_mint))
     yield acc, token_mint, solana_address
+
+
+@pytest.fixture(scope="class")
+def multiply_actions_erc20(web3_client, faucet):
+    acc = web3_client.create_account()
+    faucet.request_neon(acc.address, 100)
+    symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
+
+    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
+        "multiply_actions_erc20", "0.8.10", acc, contract_name="multiplyActionsERC20",
+        constructor_args=[f"Test {symbol}", symbol, 18]
+    )
+    return acc, contract

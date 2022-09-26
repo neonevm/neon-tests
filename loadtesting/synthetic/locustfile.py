@@ -226,6 +226,7 @@ class SOLClient:
         nonce: tp.Optional[int] = None,
     ):
         """Create eth transaction"""
+        print(f"SOL address: {from_solana_user}")
         if nonce is None or nonce == 0:
             nonce = self.get_transaction_count(from_solana_user)
         tx = {
@@ -436,7 +437,7 @@ class SolanaTransactionTasksSet(TaskSet):
         token_sender = self.get_eth_user()
         token_receiver = self.get_eth_user()
         operator = self.user.environment.operators.get()
-
+        print(f"Send from eth user {token_sender.eth_account.address}")
         eth_transaction, new_nonce = self.sol_client.make_eth_transaction(
             token_receiver.eth_account.address,
             data=b"",

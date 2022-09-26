@@ -853,3 +853,32 @@ class TestEconomics(BaseTests):
         assert sol_balance_before > sol_balance_after_deploy > sol_balance_after
         assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
+
+    def test_deploy_contract_alt(self, sol_price):
+        """Trigger transaction than requires more than 30 accounts"""
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("ALT", "0.8.10", 
+                                                                                account=self.acc,
+                                                                                constructor_args=[3])
+
+        sol_balance_after_deploy = self.operator.get_solana_balance()
+        neon_balance_after_deploy = self.operator.get_neon_balance()
+
+        inc_tx = contract.functions.fill(1).buildTransaction(
+            {
+                "from": self.acc.address,
+                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
+                "gasPrice": self.web3_client.gas_price()
+            }
+        )
+        # assert contract.functions.fill(33).call() == 32
+        tx_rec = self.web3_client.send_transaction(self.acc, inc_tx)
+        # assert contract.functions.fill(44).call() == 43
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before > sol_balance_after_deploy > sol_balance_after
+        assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
+        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)

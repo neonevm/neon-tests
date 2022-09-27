@@ -15,6 +15,7 @@ import uuid
 from dataclasses import dataclass
 from functools import lru_cache
 
+import gevent
 import locust.env
 import requests
 import tabulate
@@ -57,6 +58,10 @@ NEON_TOKEN_VERSION = "0.8.10"
 """Neon tokens contract version
 """
 
+RETRIEVE_STORE_VERSION = "0.8.10"
+"""RetrieveStore contract version
+"""
+
 DEFAULT_DUMP_FILE = "dumped_data/transaction.json"
 """Default file name for transaction history
 """
@@ -83,14 +88,18 @@ class NeonGlobalEnv:
 
 def execute_before(*attrs) -> tp.Callable:
     """Extends user task functional"""
-
+    print(f"{30*'_'}1")
     @functools.wraps(*attrs)
     def ext_runner(func: tp.Callable) -> tp.Callable:
+        print(f"{30 * '_'}{func}")
+
         @functools.wraps(func)
         def task_wrapper(self, *args, **kwargs) -> tp.Any:
+            print(f"{30 * '_'}3")
             for attr in attrs:
                 getattr(self, attr)(*args, **kwargs)
             tx_receipt = func(self, *args, **kwargs)
+            print(f"{30*'_'}{tx_receipt}")
             if dump_data and tx_receipt:
                 transaction_history[str(tx_receipt["from"])].append(
                     {
@@ -485,11 +494,12 @@ class NeonProxyTasksSet(TaskSet):
         """Check the number of the most recent block"""
         self.web3_client.get_block_number()
 
-    def task_keeps_balance(self) -> None:
+    def task_keeps_balance(self, account: tp.Optional["eth_account.signers.local.LocalAccount"] = None) -> None:
         """Keeps account balance not empty"""
-        if self.web3_client.get_balance(self.account.address) < 100:
+        account = account or self.account
+        if self.web3_client.get_balance(account.address) < 100:
             # add credits to account
-            self.faucet.request_neon(self.account.address, 1000)
+            self.faucet.request_neon(account.address, 1000)
 
     def deploy_contract(
         self,
@@ -498,10 +508,11 @@ class NeonProxyTasksSet(TaskSet):
         account: "eth_account.signers.local.LocalAccount",
         constructor_args: tp.Optional[tp.Any] = None,
         gas: tp.Optional[int] = 0,
+        contract_name: tp.Optional[str] = None,
     ) -> "web3._utils.datatypes.Contract":
         """contract deployments"""
 
-        contract_interface = self._compile_contract_interface(name, version)
+        contract_interface = self._compile_contract_interface(name, version, contract_name)
         contract_deploy_tx = self.web3_client.deploy_contract(
             account,
             abi=contract_interface["abi"],
@@ -520,9 +531,9 @@ class NeonProxyTasksSet(TaskSet):
         return contract, contract_deploy_tx
 
     @lru_cache(maxsize=32)
-    def _compile_contract_interface(self, name, version) -> tp.Any:
+    def _compile_contract_interface(self, name, version, contract_name: tp.Optional[str] = None) -> tp.Any:
         """Compile contract inteface form file"""
-        return helpers.get_contract_interface(name, version)
+        return helpers.get_contract_interface(name, version, contract_name=contract_name)
 
 
 class BaseResizingTasksSet(NeonProxyTasksSet):
@@ -831,6 +842,58 @@ class UniswapTransaction(NeonProxyTasksSet):
         self._send_2pools_swap_trx(swap_trx)
 
 
+@tag("store")
+class EthGetStorageAtPreparationStage(NeonProxyTasksSet):
+    """Preparation stage for eth_getStorageAt test suite"""
+
+    _deploy_contract_locker = gevent.threading.Lock()
+    _deploy_contract_done = False
+    _storage_contract: tp.Optional["web3._utils.datatypes.Contract"] = None
+
+    def deploy_storage_contract(self):
+        """Deploy once for all spawned users"""
+        EthGetStorageAtPreparationStage._deploy_contract_done = True
+        account = self.web3_client.create_account()
+        self.task_keeps_balance(account=account)
+        contract_name = "RetrieveStore"
+        self.log.info(f"`{contract_name}`: deploy contract.")
+        contract, contract_tx = self.deploy_contract(
+            contract_name, RETRIEVE_STORE_VERSION, account, contract_name="Storage"
+        )
+        if not contract:
+            self.log.error(f"`{contract_name}` contract deployment failed.")
+            EthGetStorageAtPreparationStage._deploy_contract_done = False
+            return
+        self._storage_contract = contract
+
+    def on_start(self) -> None:
+        """on_start is called when a Locust start before any task is scheduled"""
+        super(EthGetStorageAtPreparationStage, self).on_start()
+        # setup class once
+        with self._deploy_contract_locker:
+            if not EthGetStorageAtPreparationStage._deploy_contract_done:
+                self.deploy_storage_contract()
+
+    @task
+    @execute_before
+    def store_data(self) -> None:
+        """Store random int to contract"""
+        if self._storage_contract:
+            data = random.choice(range(100000))
+            self.log.info(f"Store random data `{data}` to contract by {self.account.address[:8]}.")
+            tx = self._storage_contract.functions.store(data).buildTransaction(
+                {
+                    "nonce": self.web3_client.eth.get_transaction_count(self.account.address),
+                    "gasPrice": self.web3_client.gas_price(),
+                }
+            )
+            tx_receipt = dict(self.web3_client.send_transaction(self.account, tx))
+            tx_receipt["contractAddress"] = self._storage_contract.address
+            return tx_receipt
+        self.log.info(f"no `storage` contracts found, data store canceled.")
+
+
+@tag("tests")
 class NeonPipelineUser(User):
     """Class represents a base Neon pipeline by one user"""
 
@@ -842,3 +905,10 @@ class NeonPipelineUser(User):
         # WithDrawTasksSet: 5,  Disable this, because withdraw instruction changed
         UniswapTransaction: 5,
     }
+
+
+@tag("prepare_data")
+class TracerAPIPreparationUser(User):
+    """Preparation stage for TracerAPI"""
+
+    tasks = {EthGetStorageAtPreparationStage: 1}

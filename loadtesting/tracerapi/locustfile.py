@@ -278,24 +278,26 @@ class EthGetBalanceTasksSet(BaseEthRPCATasksSet):
         self._do_call(method="eth_getBalance", req_type="blockNumber")
 
 
-@tag("getStorageAt")
-class EthGetStorageAtTasksSet(BaseEthRPCATasksSet):
-    """task set measures the maximum request rate for the eth_StorageAt method"""
+@tag("getTransactionCount")
+class EthGetTransactionCountTasksSet(BaseEthRPCATasksSet):
+    """task set measures the maximum request rate for the eth_getTransactionCount method"""
 
-    @tag("getStorage_by_hash")
+    @tag("getTransactionCount_by_hash")
     @task
-    def task_eth_get_storage_by_hash(self) -> tp.Dict:
-        """the eth_getStorageAt method by blockHash"""
-        self._do_call(method="eth_getStorageAt", req_type="blockHash")
+    def task_eth_get_transaction_count_by_hash(self) -> tp.Dict:
+        """the eth_getTransactionCount method by blockHash"""
+        self._do_call(method="eth_getTransactionCount", req_type="blockHash")
 
-    @tag("getStorage_by_num")
+    @tag("getTransactionCount_by_num")
     @task
-    def task_eth_get_storage_by_num(self) -> tp.Dict:
-        """the eth_getStorageAt method by blockNumber"""
-        self._do_call(method="eth_getStorageAt", req_type="blockNumber")
+    def task_eth_get_transaction_count_by_num(self) -> tp.Dict:
+        """the eth_getTransactionCount method by blockNumber"""
+        self._do_call(method="eth_getTransactionCount", req_type="blockNumber")
 
 
 class EthRPCAPICallUsers(User):
     """class represents extended ETH RPC API calls by one user"""
 
-    tasks = {EthGetBalanceTasksSet: 1, EthGetStorageAtTasksSet: 1}
+    tasks = {EthGetBalanceTasksSet: 1, EthGetTransactionCountTasksSet: 1}
+
+

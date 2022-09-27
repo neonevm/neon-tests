@@ -134,7 +134,7 @@ resource "aws_security_group" "test-stand-proxy" {
 
   tags = {
     Name    = "${var.branch}-test-stand-proxy"
-    purpose = "ci-oz-full-tests"
+    purpose = "neon-tests-dapps"
   }
 }
 
@@ -155,7 +155,7 @@ resource "aws_instance" "solana" {
 
   tags = {
     Name    = "${var.branch}-test-stand-solana"
-    purpose = "ci-oz-full-tests"
+    purpose = "neon-tests-dapps"
   }
 }
 
@@ -172,7 +172,7 @@ resource "aws_instance" "proxy" {
 
   tags = {
     Name    = "${var.branch}-test-stand-proxy"
-    purpose = "ci-oz-full-tests"
+    neon-tests-dapps = "neon-tests-dapps"
   }
 
   depends_on = [

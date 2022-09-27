@@ -47,7 +47,7 @@ class NeonWeb3Client:
     def get_balance(self, address: tp.Union[str, eth_account.signers.local.LocalAccount]):
         if not isinstance(address, str):
             address = address.address
-        return web3.Web3.fromWei(self._web3.eth.get_balance(address), "ether")
+        return web3.Web3.fromWei(self._web3.eth.get_balance(address, "pending"), "ether")
 
     def get_block_number(self):
         return self._web3.eth.get_block_number()

@@ -22,9 +22,9 @@ NEON_PRICE = 0.25
 
 TX_COST = 5000
 TRANSFER_TO_UNEXIST_ACC_SOL = 1_574_040
-TRANSFER_ERC20_SOL = 1_130_560
+TRANSFER_ERC20_SOL = 1_137_520
 TRANSFER_ERC20_WRAPPED_SOL = 2_049_280
-DEPLOY_SMALL_CONTRACT_SOL = 48_999_680
+DEPLOY_SMALL_CONTRACT_SOL = 33_623_960
 
 LAMPORT_PER_SOL = 1_000_000_000
 DECIMAL_CONTEXT = getcontext()
@@ -97,12 +97,15 @@ class TestEconomics(BaseTests):
         """Verify how many cost neon send to new user"""
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
-
+        print(f"Acc sender: {self.acc.address}")
         acc2 = self.web3_client.create_account()
-
+        print(f"To addr: {acc2.address}")
         tx = self.web3_client.send_neon(self.acc, acc2, 5)
-
+        print(tx)
+        time.sleep(30)
         assert self.web3_client.get_balance(acc2) == 5
+        print(f"Sender balance: {self.web3_client.get_balance(self.acc)}")
+        print(f"Receipr balance: {self.web3_client.get_balance(acc2)}")
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
@@ -418,7 +421,6 @@ class TestEconomics(BaseTests):
         assert sol_balance_after_deploy == sol_balance_after
         assert neon_balance_after_deploy == neon_balance_after
 
-    @pytest.mark.xfail(reason="A lot of accounts, wait for fix", raises=ValueError)
     def test_cost_resize_account(self):
         """Verify how much cost account resize"""
         sol_balance_before = self.operator.get_solana_balance()
@@ -448,7 +450,6 @@ class TestEconomics(BaseTests):
         assert neon_balance_after > neon_balance_before_increase > neon_balance_before, "NEON Balance incorrect"
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    @pytest.mark.xfail(reason="A lot of accounts, wait for fix")
     def test_cost_resize_account_less_neon(self):
         """Verify how much cost account resize"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(

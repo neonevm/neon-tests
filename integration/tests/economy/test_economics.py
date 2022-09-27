@@ -79,7 +79,7 @@ class TestEconomics(BaseTests):
     @allure.step("Get single transaction gas")
     def get_single_transaction_gas(self):
         """ One TX_COST to verify Solana signature plus another one TX_COST to pay to Governance"""
-        return TX_COST*2
+        return TX_COST * 2
 
     @pytest.mark.only_stands
     def test_account_creation(self):
@@ -854,28 +854,29 @@ class TestEconomics(BaseTests):
         assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    def test_deploy_contract_alt(self, sol_price):
+    @pytest.mark.parametrize('writable_account_quantity', [30, 31, 45, 60])
+    def test_deploy_contract_alt_on(self, writable_account_quantity):
         """Trigger transaction than requires more than 30 accounts"""
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract("ALT", "0.8.10", 
-                                                                                account=self.acc,
-                                                                                constructor_args=[3])
+        contract, _ = self.web3_client.deploy_and_get_contract("ALT", "0.8.10",
+                                                               account=self.acc,
+                                                               constructor_args=[7])
 
         sol_balance_after_deploy = self.operator.get_solana_balance()
         neon_balance_after_deploy = self.operator.get_neon_balance()
 
-        inc_tx = contract.functions.fill(1).buildTransaction(
+        tx = contract.functions.fill(writable_account_quantity).buildTransaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
                 "gasPrice": self.web3_client.gas_price()
             }
         )
-        # assert contract.functions.fill(33).call() == 32
-        tx_rec = self.web3_client.send_transaction(self.acc, inc_tx)
-        # assert contract.functions.fill(44).call() == 43
+        receipt = self.web3_client.send_transaction(self.acc, tx)
+        assert receipt['status'] == 1
+
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
 

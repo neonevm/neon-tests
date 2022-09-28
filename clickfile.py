@@ -506,8 +506,6 @@ def prepare(credentials, host, users, spawn_rate, run_time, tag, web_ui):
         command += f" --tags prepare"
     if web_ui:
         command += f" --headless"
-    print(command)
-    return command
     cmd = subprocess.run(command, shell=True)
 
     if cmd.returncode != 0:

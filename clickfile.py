@@ -489,13 +489,12 @@ def run(credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile,
 @locust_rate
 @locust_run_time
 @locust_tags
-@locust_headless
-def prepare(credentials, host, users, spawn_rate, run_time, tag, web_ui):
+def prepare(credentials, host, users, spawn_rate, run_time, tag):
     """Run `Preparation stage` for trace api performance test"""
     path = pathlib.Path(__file__).parent / f"loadtesting/tracerapi/prepare_data/locustfile.py"
     if not (path.exists() and path.is_file()):
         raise FileNotFoundError(f"path doe's not exists. {path.resolve()}")
-    command = f"locust -f {path.as_posix()} --host={host} --users={users} --spawn-rate={spawn_rate}"
+    command = f"locust -f {path.as_posix()} --host={host} --users={users} --spawn-rate={spawn_rate} --headless"
     if credentials:
         command += f" --credentials={credentials}"
     if run_time:
@@ -504,8 +503,6 @@ def prepare(credentials, host, users, spawn_rate, run_time, tag, web_ui):
         command += f" --tags {' '.join(tag)}"
     else:
         command += f" --tags prepare"
-    if web_ui:
-        command += f" --headless"
     cmd = subprocess.run(command, shell=True)
 
     if cmd.returncode != 0:

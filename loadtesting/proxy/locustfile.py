@@ -1,4 +1,3 @@
-import collections
 import functools
 import json
 import logging
@@ -15,7 +14,6 @@ import uuid
 from dataclasses import dataclass
 from functools import lru_cache
 
-import gevent
 import locust.env
 import requests
 import tabulate
@@ -58,20 +56,6 @@ NEON_TOKEN_VERSION = "0.8.10"
 """Neon tokens contract version
 """
 
-RETRIEVE_STORE_VERSION = "0.8.10"
-"""RetrieveStore contract version
-"""
-
-DEFAULT_DUMP_FILE = "dumped_data/transaction.json"
-"""Default file name for transaction history
-"""
-
-# init global transaction history
-global transaction_history
-transaction_history = collections.defaultdict(list)
-"""Transactions storage {account: [{blockNumber, blockHash, contractAddress},]}
-"""
-
 UNISWAP_REPO_URL = "https://github.com/gigimon/Uniswap-V2-NEON.git"
 UNISWAP_TMP_DIR = "/tmp/uniswap-neon"
 MAX_UINT_256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
@@ -88,27 +72,14 @@ class NeonGlobalEnv:
 
 def execute_before(*attrs) -> tp.Callable:
     """Extends user task functional"""
-    print(f"{30*'_'}1")
+
     @functools.wraps(*attrs)
     def ext_runner(func: tp.Callable) -> tp.Callable:
-        print(f"{30 * '_'}{func}")
-
         @functools.wraps(func)
         def task_wrapper(self, *args, **kwargs) -> tp.Any:
-            print(f"{30 * '_'}3")
             for attr in attrs:
                 getattr(self, attr)(*args, **kwargs)
-            tx_receipt = func(self, *args, **kwargs)
-            print(f"{30*'_'}{tx_receipt}")
-            if dump_data and tx_receipt:
-                transaction_history[str(tx_receipt["from"])].append(
-                    {
-                        "blockHash": tx_receipt["blockHash"].hex(),
-                        "blockNumber": hex(tx_receipt["blockNumber"]),
-                        "contractAddress": tx_receipt["contractAddress"],
-                        "to": str(tx_receipt["to"]),
-                    }
-                )
+            return func(self, *args, **kwargs)
 
         return task_wrapper
 
@@ -134,21 +105,12 @@ def arg_parser(parser):
         default=ENV_FILE,
         help="Relative path to environment credentials file.",
     )
-    parser.add_argument(
-        "--dump-data",
-        type=int,
-        env_var="LOCUST_DUMP_DATA",
-        default=0,
-        help="Enabling dump transaction history.",
-    )
 
 
 @events.test_start.add_listener
 def make_env_preparation(environment, **kwargs):
     neon = NeonGlobalEnv()
     environment.shared = neon
-    global dump_data
-    dump_data = bool(int(environment.parsed_options.dump_data))
 
 
 @events.test_start.add_listener
@@ -351,17 +313,6 @@ def deploy_uniswap(environment: "locust.env.Environment", **kwargs):
     environment.uniswap.update(erc20_contracts)
 
 
-@events.test_stop.add_listener
-def teardown(**kwargs) -> None:
-    """Test stop event handler"""
-    if transaction_history:
-        dumped_path = pathlib.Path(__file__).parent.parent / DEFAULT_DUMP_FILE
-        dumped_path.parents[0].mkdir(parents=True, exist_ok=True)
-        with open(dumped_path, "w") as fp:
-            LOG.info(f"Dumped transaction history to `{dumped_path.as_posix()}`")
-            json.dump(transaction_history, fp=fp, indent=4, sort_keys=True)
-
-
 class LocustEventHandler(object):
     """Implements custom Locust events handler"""
 
@@ -460,6 +411,9 @@ class NeonWeb3ClientExt(NeonWeb3Client):
 
     def dec_account(self, *args, **kwargs) -> tp.Any:
         """Decrease account wrapper"""
+        return self._send_transaction(*args, **kwargs)
+
+    def store_randint(self, *args, **kwargs) -> tp.Any:
         return self._send_transaction(*args, **kwargs)
 
 
@@ -842,58 +796,6 @@ class UniswapTransaction(NeonProxyTasksSet):
         self._send_2pools_swap_trx(swap_trx)
 
 
-@tag("store")
-class EthGetStorageAtPreparationStage(NeonProxyTasksSet):
-    """Preparation stage for eth_getStorageAt test suite"""
-
-    _deploy_contract_locker = gevent.threading.Lock()
-    _deploy_contract_done = False
-    _storage_contract: tp.Optional["web3._utils.datatypes.Contract"] = None
-
-    def deploy_storage_contract(self):
-        """Deploy once for all spawned users"""
-        EthGetStorageAtPreparationStage._deploy_contract_done = True
-        account = self.web3_client.create_account()
-        self.task_keeps_balance(account=account)
-        contract_name = "RetrieveStore"
-        self.log.info(f"`{contract_name}`: deploy contract.")
-        contract, contract_tx = self.deploy_contract(
-            contract_name, RETRIEVE_STORE_VERSION, account, contract_name="Storage"
-        )
-        if not contract:
-            self.log.error(f"`{contract_name}` contract deployment failed.")
-            EthGetStorageAtPreparationStage._deploy_contract_done = False
-            return
-        self._storage_contract = contract
-
-    def on_start(self) -> None:
-        """on_start is called when a Locust start before any task is scheduled"""
-        super(EthGetStorageAtPreparationStage, self).on_start()
-        # setup class once
-        with self._deploy_contract_locker:
-            if not EthGetStorageAtPreparationStage._deploy_contract_done:
-                self.deploy_storage_contract()
-
-    @task
-    @execute_before
-    def store_data(self) -> None:
-        """Store random int to contract"""
-        if self._storage_contract:
-            data = random.choice(range(100000))
-            self.log.info(f"Store random data `{data}` to contract by {self.account.address[:8]}.")
-            tx = self._storage_contract.functions.store(data).buildTransaction(
-                {
-                    "nonce": self.web3_client.eth.get_transaction_count(self.account.address),
-                    "gasPrice": self.web3_client.gas_price(),
-                }
-            )
-            tx_receipt = dict(self.web3_client.send_transaction(self.account, tx))
-            tx_receipt["contractAddress"] = self._storage_contract.address
-            return tx_receipt
-        self.log.info(f"no `storage` contracts found, data store canceled.")
-
-
-@tag("tests")
 class NeonPipelineUser(User):
     """Class represents a base Neon pipeline by one user"""
 
@@ -905,10 +807,3 @@ class NeonPipelineUser(User):
         # WithDrawTasksSet: 5,  Disable this, because withdraw instruction changed
         UniswapTransaction: 5,
     }
-
-
-@tag("prepare_data")
-class TracerAPIPreparationUser(User):
-    """Preparation stage for TracerAPI"""
-
-    tasks = {EthGetStorageAtPreparationStage: 1}

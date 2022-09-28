@@ -377,7 +377,71 @@ def ozreport():
     print_test_suite_results(test_report, skipped_files)
 
 
-@cli.command(help="Run `neon` pipeline performance test")
+# Base locust options
+locust_credentials = click.option(
+    "-c",
+    "--credentials",
+    type=str,
+    help="Relative path to credentials module.",
+    show_default=True,
+)
+
+locust_host = click.option(
+    "-h",
+    "--host",
+    default="night-stand",
+    type=click.Choice(networks),
+    help="In which stand run tests.",
+    show_default=True,
+)
+
+
+locust_users = click.option(
+    "-u", "--users", default=50, type=int, help="Peak number of concurrent Locust users.", show_default=True
+)
+
+locust_rate = click.option(
+    "-r", "--spawn-rate", default=1, type=int, help="Rate to spawn users at (users per second)", show_default=True
+)
+
+locust_run_time = click.option(
+    "-t",
+    "--run-time",
+    type=int,
+    help="Stop after the specified amount of time, e.g. (300s, 20m, 3h, 1h30m, etc.). "
+    "Only used together without Locust Web UI. [default: always run]",
+)
+
+locust_tags = click.option(
+    "-T",
+    "--tag",
+    type=str,
+    multiple=True,
+    help="tag to include in the test, so only tasks " "with any matching tags will be executed",
+)
+
+locust_headless = click.option(
+    "--web-ui/--headless",
+    " /-w",
+    default=True,
+    help="Enable the web interface. " "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
+)
+
+
+@cli.group()
+@click.pass_context
+def locust(ctx):
+    """Commands for load test manipulation."""
+
+
+@locust.command("run", help="Run `neon` pipeline performance test")
+@locust_credentials
+@locust_host
+@locust_users
+@locust_rate
+@locust_run_time
+@locust_tags
+@locust_headless
 @click.option(
     "-f",
     "--locustfile",
@@ -387,58 +451,12 @@ def ozreport():
     show_default=True,
 )
 @click.option(
-    "-c",
-    "--credentials",
-    type=str,
-    help="Relative path to credentials module.",
-    show_default=True,
-)
-@click.option(
     "--neon-rpc",
     type=str,
     help="NEON RPC entry point.",
     show_default=True,
 )
-@click.option(
-    "-h",
-    "--host",
-    default="night-stand",
-    type=click.Choice(networks),
-    help="In which stand run tests.",
-    show_default=True,
-)
-@click.option("-u", "--users", default=10, type=int, help="Peak number of concurrent Locust users.", show_default=True)
-@click.option(
-    "-r", "--spawn-rate", default=1, type=int, help="Rate to spawn users at (users per second)", show_default=True
-)
-@click.option(
-    "-t",
-    "--run-time",
-    type=int,
-    help="Stop after the specified amount of time, e.g. (300s, 20m, 3h, 1h30m, etc.). "
-    "Only used together without Locust Web UI. [default: always run]",
-)
-@click.option(
-    "-T",
-    "--tag",
-    type=str,
-    multiple=True,
-    help="tag to include in the test, so only tasks " "with any matching tags will be executed",
-)
-@click.option(
-    "--web-ui/--headless",
-    " /-w",
-    default=True,
-    help="Enable the web interface. " "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
-)
-@click.option(
-    "-d",
-    "--dump-data",
-    default=False,
-    is_flag=True,
-    help="Flag. Enable dumps transaction history to file.",
-)
-def locust(locustfile, credentials, neon_rpc, host, users, spawn_rate, run_time, tag, web_ui, dump_data):
+def run(credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile, neon_rpc):
     """Run `Neon` pipeline performance test
 
     path it's sub-folder and file name  `loadtesting/locustfile.py`.
@@ -457,9 +475,39 @@ def locust(locustfile, credentials, neon_rpc, host, users, spawn_rate, run_time,
         command += f" --tags {' '.join(tag)}"
     if not web_ui:
         command += f" --headless"
-    if dump_data:
-        command += f" --dump-data 1"
 
+    cmd = subprocess.run(command, shell=True)
+
+    if cmd.returncode != 0:
+        sys.exit(cmd.returncode)
+
+
+@locust.command("prepare", help="Run preparation stage for `tracer api` performance test")
+@locust_credentials
+@locust_host
+@locust_users
+@locust_rate
+@locust_run_time
+@locust_tags
+@locust_headless
+def prepare(credentials, host, users, spawn_rate, run_time, tag, web_ui):
+    """Run `Preparation stage` for trace api performance test"""
+    path = pathlib.Path(__file__).parent / f"loadtesting/tracerapi/prepare_data/locustfile.py"
+    if not (path.exists() and path.is_file()):
+        raise FileNotFoundError(f"path doe's not exists. {path.resolve()}")
+    command = f"locust -f {path.as_posix()} --host={host} --users={users} --spawn-rate={spawn_rate}"
+    if credentials:
+        command += f" --credentials={credentials}"
+    if run_time:
+        command += f" --run-time={run_time}"
+    if tag:
+        command += f" --tags {' '.join(tag)}"
+    else:
+        command += f" --tags prepare"
+    if web_ui:
+        command += f" --headless"
+    print(command)
+    return command
     cmd = subprocess.run(command, shell=True)
 
     if cmd.returncode != 0:

@@ -3,6 +3,8 @@
 Created on 2022-08-31
 @author: Eugeny Kurkovich
 """
+
+import enum
 import functools
 import json
 import logging
@@ -13,12 +15,12 @@ import sys
 import time
 import typing as tp
 import uuid
+from dataclasses import dataclass
 
 import gevent
 import requests
 import web3
 from locust import User, TaskSet, between, task, events, tag
-from dataclasses import dataclass
 
 from utils import apiclient
 
@@ -40,6 +42,16 @@ NEON_RPC = os.environ.get("NEON_RPC")
 """Endpoint to Neon-RPC. Neon-RPC is a single RPC entrypoint to Neon-EVM. 
 The function of this service is so route requests between Tracer API and Neon Proxy services
 """
+
+
+class RPCType(enum.Enum):
+
+    store = ["eth_getBalance", "eth_getTransactionCount"]
+    transfer = ["eth_getStorageAt"]
+
+    @classmethod
+    def get(cls, key: str) -> str:
+        return list(filter(lambda i: i if key in i.value else None, cls.__members__.values()))[0].name
 
 
 @dataclass
@@ -90,7 +102,7 @@ def load_credentials(environment, **kwargs):
 @events.test_start.add_listener
 def load_transaction_history(environment, **kwargs):
     # load transaction history
-    path = pathlib.Path(__file__).parents[1] / DUMPED_DATA
+    path = pathlib.Path(__file__).parent / DUMPED_DATA
     if path.exists():
         with open(path, "r") as fp:
             environment.shared.transaction_history = json.load(fp)
@@ -223,10 +235,6 @@ class BaseEthRPCATasksSet(TaskSet):
         BaseEthRPCATasksSet._transaction_history = history_data
         BaseEthRPCATasksSet._rpc_endpoint = rpc_endpoint
 
-    def setup(self) -> None:
-        """Prepare data requirements"""
-        pass
-
     def on_start(self) -> None:
         """on_start is called when a Locust start before any task is scheduled"""
         # setup class once
@@ -241,18 +249,18 @@ class BaseEthRPCATasksSet(TaskSet):
                 pool_size=self.user.environment.parsed_options.num_users
                 or self.user.environment.runner.target_user_count,
             )
-        self.setup()
         self.log = logging.getLogger("rpc-consumer[%s]" % self.rpc_consumer_id)
 
-    def _get_random_transaction(self) -> tp.Dict:
+    def _get_random_transaction(self, key: str) -> tp.Dict:
         """Return random transaction details from transaction history"""
-        key = random.choice(list(self._transaction_history.keys()))
-        params = random.choice(self._transaction_history[key])
+        transactions = self._transaction_history[RPCType.get(key)]
+        key = random.choice(list(transactions.keys()))
+        params = random.choice(transactions[key])
         params["from"] = key
         return params
 
     def _do_call(self, method: str, req_type: str, params: tp.Optional[tp.Dict] = None) -> tp.Dict:
-        tr_x = self._get_random_transaction()
+        tr_x = self._get_random_transaction(method)
         filters = {req_type: tr_x[req_type]}
         if params:
             filters.update(params)
@@ -299,5 +307,3 @@ class EthRPCAPICallUsers(User):
     """class represents extended ETH RPC API calls by one user"""
 
     tasks = {EthGetBalanceTasksSet: 1, EthGetTransactionCountTasksSet: 1}
-
-

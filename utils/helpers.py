@@ -1,5 +1,7 @@
 import os
 import pathlib
+import random
+import string
 import typing as tp
 
 import solcx
@@ -50,3 +52,12 @@ def gen_hash_of_block(size: int) -> str:
             return block_hash
     except ValueError:
         return gen_hash_of_block(size)
+
+
+def generate_text(min_len: int = 2, max_len: int = 200, simple: bool = True) -> str:
+    length = random.randint(min_len, max_len)
+    if simple:
+        chars = string.ascii_letters + string.digits
+    else:
+        chars = string.printable[:-5]
+    return ''.join(random.choice(chars) for _i in range(length)).strip()

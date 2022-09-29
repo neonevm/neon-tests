@@ -17,13 +17,6 @@ NO_ENOUGH_GAS_PARAMS = [({'gas_price': 0}, "transaction underpriced"),
                         ({'gas': 0}, "gas limit reached")]
 
 
-@pytest.fixture(scope="function")
-def new_account(web3_client, faucet):
-    new_acc = web3_client.create_account()
-    faucet.request_neon(new_acc.address, 100)
-    yield new_acc
-
-
 @allure.story("Basic: Tests for contract created by createErc20ForSplMintable call")
 class TestERC20wrappedContract(BaseMixin):
 
@@ -73,7 +66,7 @@ class TestERC20wrappedContract(BaseMixin):
 
     @pytest.mark.parametrize("address_to, expected_exception, msg",
                              [(gen_hash_of_block(20), web3.exceptions.InvalidAddress,
-                               ErrorMessage.INVALID_ADDRESS_ERC20.value),
+                               ErrorMessage.INVALID_ADDRESS.value),
                               (ZERO_ADDRESS, web3.exceptions.ContractLogicError,
                                str.format(ErrorMessage.ZERO_ACCOUNT_ERC20.value, "mint to"))
                               ])
@@ -114,7 +107,7 @@ class TestERC20wrappedContract(BaseMixin):
 
     @pytest.mark.parametrize("address, expected_exception, msg",
                              [(gen_hash_of_block(20), web3.exceptions.InvalidAddress,
-                               ErrorMessage.INVALID_ADDRESS_ERC20.value),
+                               ErrorMessage.INVALID_ADDRESS.value),
                               (gen_hash_of_block(25), web3.exceptions.InvalidAddress,
                                "is invalid"),
                               (ZERO_ADDRESS, web3.exceptions.ContractLogicError,
@@ -177,7 +170,7 @@ class TestERC20wrappedContract(BaseMixin):
 
     @pytest.mark.parametrize("address, expected_exception, msg",
                              [(gen_hash_of_block(20), web3.exceptions.InvalidAddress,
-                               ErrorMessage.INVALID_ADDRESS_ERC20.value),
+                               ErrorMessage.INVALID_ADDRESS.value),
                               (ZERO_ADDRESS, web3.exceptions.ContractLogicError,
                                str.format(ErrorMessage.ZERO_ACCOUNT_ERC20.value, "approve to"))
                               ])
@@ -213,7 +206,7 @@ class TestERC20wrappedContract(BaseMixin):
 
     @pytest.mark.parametrize("address, expected_exception, msg",
                              [(gen_hash_of_block(20), web3.exceptions.InvalidAddress,
-                               ErrorMessage.INVALID_ADDRESS_ERC20.value),
+                               ErrorMessage.INVALID_ADDRESS.value),
                               (ZERO_ADDRESS, web3.exceptions.ContractLogicError,
                                str.format(ErrorMessage.ZERO_ACCOUNT_ERC20.value, "transfer to"))
                               ])

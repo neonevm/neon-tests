@@ -8,9 +8,9 @@ contract ALT {
     }
 
     function fill(uint N) public returns (uint256){
-        for (uint i=0; i < N - 6; i++){
+        for (uint i=0; i < N - 7; i++){
             arr[i] = i + 1;
         }
-        return N - 6;
+        return N - 7;
     }
 }

@@ -22,7 +22,12 @@ Python 3.6 or later, if you dont already have it.
 Test configuration via environment variables settings:
 
 - `NEON_CRED`
-  Relative path to environment credentials file.
+  Relative path to environment credentials file. Used in all cases.
+  
+- `NEON_RPC`
+  Endpoint to Neon-RPC. Neon-RPC is a single RPC entrypoint to Neon-EVM. 
+  The function of this service is so route requests between Tracer API and Neon Proxy services. 
+  Used only in tracer API cases. 
 
 
 ## Running the test and analyzing the results in the console without using the web interface 
@@ -30,7 +35,7 @@ Test configuration via environment variables settings:
 ##### Instant load method without locust web interface 
 ```bash
 
-locust -f ./loadtesting/locustfile.py --headless --host=night-stand -u 10 -r 10
+locust -f ./loadtesting/{test_group}/locustfile.py --headless --host=night-stand -u 10 -r 10
 
 -f             : Python module to import, e.g. '../other_test.py'. Either a .py file or a package directory.
                  Defaults to 'locustfile'
@@ -56,9 +61,12 @@ Usage: clickfile.py locust [OPTIONS]
 Options:
   -f, --locustfile TEXT           Python module to import. It's sub-folder and
                                   file name.  [default:
-                                  loadtesting/locustfile.py]
+                                  loadtesting/{test_group}/locustfile.py]
+                                  Choices between ["proxy", "synthetic", "tracerapi"]
   --credentials 
   or -c                           Relative path to credentials module. Defaults envs.json
+  
+  --neon-rpc                      Entry point to Neon RPC. Used only in Tracer API test cases.
   -h, --host [night-stand|release-stand|devnet|local]
                                   In which stand run tests.  [default: night-
                                   stand]

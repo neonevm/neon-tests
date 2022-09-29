@@ -3,6 +3,7 @@ line-length = 120
 target-version = ['py39']
 
 [tool.pytest.ini_options]
+timeout = 300
 markers = [
     "only_stands: this tests works only on test stands",
     "only_devnet: this tests works only on devnet env"

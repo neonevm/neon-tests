@@ -46,8 +46,8 @@ The function of this service is so route requests between Tracer API and Neon Pr
 
 class RPCType(enum.Enum):
 
-    store = ["eth_getBalance", "eth_getTransactionCount"]
-    transfer = ["eth_getStorageAt"]
+    transfer = ["eth_getBalance", "eth_getTransactionCount"]
+    store = ["eth_getStorageAt"]
 
     @classmethod
     def get(cls, key: str) -> str:
@@ -259,13 +259,20 @@ class BaseEthRPCATasksSet(TaskSet):
         params["from"] = key
         return params
 
-    def _do_call(self, method: str, req_type: str, params: tp.Optional[tp.Dict] = None) -> tp.Dict:
-        tr_x = self._get_random_transaction(method)
-        filters = {req_type: tr_x[req_type]}
-        if params:
-            filters.update(params)
-        response = self._rpc_client.send_rpc(method, req_type=req_type, params=[tr_x["from"], filters])
-        self.log.info(f"Get balance by `{req_type}`: {tr_x[req_type]}")
+    def _do_call(
+        self, method: str, req_type: str, args: tp.Optional[tp.List] = None, kwargs: tp.Optional[tp.Dict] = None
+    ) -> tp.Dict:
+        transaction = self._get_random_transaction(method)
+        if not args:
+            args = []
+        elif not isinstance(args, list):
+            args = [args]
+        kwargs = kwargs or {}
+        kwargs.update({req_type: transaction[req_type]})
+        args.append(kwargs)
+        args.insert(0, transaction["to"])
+        response = self._rpc_client.send_rpc(method, req_type=req_type, params=args)
+        self.log.info(f"Call {method}, get data by `{req_type}`: {transaction[req_type]}")
         return response
 
 
@@ -303,7 +310,24 @@ class EthGetTransactionCountTasksSet(BaseEthRPCATasksSet):
         self._do_call(method="eth_getTransactionCount", req_type="blockNumber")
 
 
+@tag("getStorageAt")
+class EthGetStorageAtTasksSet(BaseEthRPCATasksSet):
+    """task set measures the maximum request rate for the eth_getStorageAt method"""
+
+    @tag("getStorageAt_by_hash")
+    @task
+    def task_eth_get_storage_at_by_hash(self) -> tp.Dict:
+        """the eth_getStorageAt method by blockHash"""
+        self._do_call(method="eth_getStorageAt", req_type="blockHash", args="0x0")
+
+    @tag("getStorageAt_by_num")
+    @task
+    def task_eth_get_storage_at_by_num(self) -> tp.Dict:
+        """the eth_getStorageAt method by blockNumber"""
+        self._do_call(method="eth_getStorageAt", req_type="blockNumber", args="0x0")
+
+
 class EthRPCAPICallUsers(User):
     """class represents extended ETH RPC API calls by one user"""
 
-    tasks = {EthGetBalanceTasksSet: 1, EthGetTransactionCountTasksSet: 1}
+    tasks = {EthGetBalanceTasksSet: 1, EthGetTransactionCountTasksSet: 1, EthGetStorageAtTasksSet: 1}

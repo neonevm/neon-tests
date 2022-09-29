@@ -4,13 +4,13 @@ Created on 2022-09-28
 @author: Eugeny Kurkovich
 """
 import collections
+import functools
 import json
 import logging
 import pathlib
 import random
 import typing as tp
 
-import functools
 import gevent
 import web3
 from locust import User, events, tag, task, between

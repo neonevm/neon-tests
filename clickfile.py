@@ -499,11 +499,14 @@ def prepare(credentials, host, users, spawn_rate, run_time, tag):
         command += f" --credentials={credentials}"
     if run_time:
         command += f" --run-time={run_time}"
+    else:
+        command += f" --run-time=60"
     if tag:
         command += f" --tags {' '.join(tag)}"
     else:
         command += f" --tags prepare"
-    cmd = subprocess.run(command, shell=True)
+
+    cmd = subprocess.run(command, shell=True, check=True)
 
     if cmd.returncode != 0:
         sys.exit(cmd.returncode)

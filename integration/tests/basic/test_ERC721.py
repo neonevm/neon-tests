@@ -405,3 +405,106 @@ class TestERC721(BaseMixin):
         token_amount = token_data['account']['data']['parsed']['info']['tokenAmount']
         assert int(token_amount['amount']) == 1
         assert int(token_amount['decimals']) == 0
+
+
+@allure.story("Basic: multiple actions tests for multipleActionsERC721 contract")
+class TestMultipleActionsForERC721(BaseMixin):
+    def make_tx_object(self):
+        tx = {"from": self.sender_account.address,
+              "nonce": self.web3_client.eth.get_transaction_count(self.sender_account.address),
+              "gasPrice": self.web3_client.gas_price()}
+        return tx
+
+    @pytest.mark.only_devnet
+    def test_mint_transfer(self, multiple_actions_erc721):
+        acc, contract = multiple_actions_erc721
+        seed = gen_hash_of_block(32)
+        uri = generate_text(min_len=10, max_len=200)
+
+        contract_balance_before = contract.functions.contractBalance().call()
+        user_balance_before = contract.functions.balance(acc.address).call()
+
+        tx = self.make_tx_object()
+        instruction_tx = contract.functions.mintTransfer(seed, uri, acc.address).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        contract_balance = contract.functions.contractBalance().call()
+        user_balance = contract.functions.balance(acc.address).call()
+
+        assert user_balance == user_balance_before + 1, "User balance is not correct"
+        assert contract_balance == contract_balance_before, "Contract balance is not correct"
+
+    @pytest.mark.only_devnet
+    def test_transfer_mint(self, multiple_actions_erc721):
+        acc, contract = multiple_actions_erc721
+
+        contract_balance_before = contract.functions.contractBalance().call()
+        user_balance_before = contract.functions.balance(acc.address).call()
+
+        tx = self.make_tx_object()
+        seed = gen_hash_of_block(32)
+        uri = generate_text(min_len=10, max_len=200)
+        instruction_tx = contract.functions.mint(seed, uri).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        token_id = contract.functions.lastTokenId().call()
+
+        tx = self.make_tx_object()
+        seed = gen_hash_of_block(32)
+        uri = generate_text(min_len=10, max_len=200)
+        instruction_tx = contract.functions.transferMint(acc.address, seed, token_id, uri).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        contract_balance = contract.functions.contractBalance().call()
+        user_balance = contract.functions.balance(acc.address).call()
+
+        assert user_balance == user_balance_before + 1, "User balance is not correct"
+        assert contract_balance == contract_balance_before + 1, "Contract balance is not correct"
+
+    @pytest.mark.xfail(reason="NDEV-700")
+    @pytest.mark.only_devnet
+    def test_mint_mint_transfer_transfer(self, multiple_actions_erc721):
+        acc, contract = multiple_actions_erc721
+
+        contract_balance_before = contract.functions.contractBalance().call()
+        user_balance_before = contract.functions.balance(acc.address).call()
+
+        tx = self.make_tx_object()
+        seed_1 = gen_hash_of_block(32)
+        seed_2 = gen_hash_of_block(32)
+        uri_1 = generate_text(min_len=10, max_len=200)
+        uri_2 = generate_text(min_len=10, max_len=200)
+        instruction_tx = contract.functions.mintMintTransferTransfer(seed_1, uri_1, seed_2, uri_2, acc.address,
+                                                                     acc.address).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        contract_balance = contract.functions.contractBalance().call()
+        user_balance = contract.functions.balance(acc.address).call()
+
+        assert user_balance == user_balance_before + 2, "User balance is not correct"
+        assert contract_balance == contract_balance_before, "Contract balance is not correct"
+
+    @pytest.mark.xfail(reason="NDEV-700")
+    @pytest.mark.only_devnet
+    def test_mint_mint_transfer_transfer_different_accounts(self, multiple_actions_erc721, new_account):
+        acc, contract = multiple_actions_erc721
+
+        contract_balance_before = contract.functions.contractBalance().call()
+        user_1_balance_before = contract.functions.balance(acc.address).call()
+        user_2_balance_before = contract.functions.balance(new_account.address).call()
+
+        tx = self.make_tx_object()
+        seed_1 = gen_hash_of_block(32)
+        seed_2 = gen_hash_of_block(32)
+        uri_1 = generate_text(min_len=10, max_len=200)
+        uri_2 = generate_text(min_len=10, max_len=200)
+        instruction_tx = contract.functions.mintMintTransferTransfer(seed_1, uri_1, seed_2, uri_2, acc.address,
+                                                                     new_account.address).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        contract_balance = contract.functions.contractBalance().call()
+        user_1_balance = contract.functions.balance(acc.address).call()
+        user_2_balance = contract.functions.balance(new_account.address).call()
+
+        assert user_1_balance == user_1_balance_before + 1, "User 1 balance is not correct"
+        assert user_2_balance == user_2_balance_before + 1, "User 2 balance is not correct"
+        assert contract_balance == contract_balance_before, "Contract balance is not correct"

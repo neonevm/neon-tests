@@ -27,7 +27,7 @@ NEON_AIRDROP_AMOUNT = 10_000
 
 
 def pytest_addoption(parser):
-    parser.addoption("--network", action="store", default="devnet", help="Which stand use")
+    parser.addoption("--network", action="store", default="night-stand", help="Which stand use")
 
 
 def pytest_collection_modifyitems(config, items):
@@ -150,13 +150,13 @@ def solana_acc(erc20wrapper, sol_client):
 
 
 @pytest.fixture(scope="class")
-def multiply_actions_erc20(web3_client, faucet):
+def multiple_actions_erc20(web3_client, faucet):
     acc = web3_client.create_account()
     faucet.request_neon(acc.address, 100)
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
 
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "multiply_actions_erc20", "0.8.10", acc, contract_name="multiplyActionsERC20",
+        "multiple_actions_erc20", "0.8.10", acc, contract_name="multipleActionsERC20",
         constructor_args=[f"Test {symbol}", symbol, 18]
     )
     return acc, contract
@@ -184,6 +184,16 @@ def invalid_nft_receiver(web3_client, faucet):
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
         "erc721_invalid_receiver", "0.8.10", acc, contract_name="ERC721Receiver")
     return contract
+
+
+@pytest.fixture(scope="class")
+def multiple_actions_erc721(web3_client, faucet):
+    acc = web3_client.create_account()
+    faucet.request_neon(acc.address)
+    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
+        "multiple_actions_erc721", "0.8.10", acc, contract_name="multipleActionsERC721"
+    )
+    return acc, contract
 
 
 @pytest.fixture(scope="function")

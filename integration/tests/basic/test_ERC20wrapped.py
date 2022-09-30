@@ -303,8 +303,8 @@ class TestERC20wrappedContract(BaseMixin):
         assert int(token_account['data']['parsed']['info']['delegatedAmount']['decimals']) == erc20wrapper.decimals
 
 
-@allure.story("Basic: multiply actions tests for multiplyActionsERC20 contract")
-class TestMultiplyActionsForERC20(BaseMixin):
+@allure.story("Basic: multiple actions tests for multipleActionsERC20 contract")
+class TestMultipleActionsForERC20(BaseMixin):
 
     def make_tx_object(self):
         tx = {"from": self.sender_account.address,
@@ -312,8 +312,8 @@ class TestMultiplyActionsForERC20(BaseMixin):
               "gasPrice": self.web3_client.gas_price()}
         return tx
 
-    def test_mint_transfer_burn(self, multiply_actions_erc20):
-        acc, contract = multiply_actions_erc20
+    def test_mint_transfer_burn(self, multiple_actions_erc20):
+        acc, contract = multiple_actions_erc20
         contract_balance_before = contract.functions.contractBalance().call()
         user_balance_before = contract.functions.balance(acc.address).call()
         mint_amount = random.randint(10, 100000000)
@@ -333,8 +333,8 @@ class TestMultiplyActionsForERC20(BaseMixin):
         assert contract_balance == mint_amount - transfer_amount - burn_amount + contract_balance_before, \
             "Contract balance is not correct"
 
-    def test_mint_transfer_transfer_one_recipient(self, multiply_actions_erc20):
-        acc, contract = multiply_actions_erc20
+    def test_mint_transfer_transfer_one_recipient(self, multiple_actions_erc20):
+        acc, contract = multiple_actions_erc20
         contract_balance_before = contract.functions.contractBalance().call()
         user_balance_before = contract.functions.balance(acc.address).call()
         mint_amount = random.randint(10, 100000000)
@@ -354,8 +354,8 @@ class TestMultiplyActionsForERC20(BaseMixin):
         assert contract_balance == mint_amount - transfer_amount_1 - transfer_amount_2 + contract_balance_before, \
             "Contract balance is not correct"
 
-    def test_mint_transfer_transfer_different_recipients(self, multiply_actions_erc20, new_account):
-        acc_1, contract = multiply_actions_erc20
+    def test_mint_transfer_transfer_different_recipients(self, multiple_actions_erc20, new_account):
+        acc_1, contract = multiple_actions_erc20
         acc_2 = new_account
         contract_balance_before = contract.functions.contractBalance().call()
         user_balance_before = contract.functions.balance(acc_1.address).call()
@@ -379,8 +379,8 @@ class TestMultiplyActionsForERC20(BaseMixin):
         assert contract_balance == mint_amount - transfer_amount_1 - transfer_amount_2 + contract_balance_before, \
             "Contract balance is not correct"
 
-    def test_transfer_mint_burn(self, multiply_actions_erc20):
-        acc, contract = multiply_actions_erc20
+    def test_transfer_mint_burn(self, multiple_actions_erc20):
+        acc, contract = multiple_actions_erc20
         contract_balance_before = contract.functions.contractBalance().call()
         user_balance_before = contract.functions.balance(acc.address).call()
         mint_amount_1 = random.randint(10, 100000000)
@@ -404,8 +404,8 @@ class TestMultiplyActionsForERC20(BaseMixin):
             "Contract balance is not correct"
         assert user_balance == transfer_amount + user_balance_before, "User balance is not correct"
 
-    def test_transfer_mint_transfer_burn(self, multiply_actions_erc20):
-        acc, contract = multiply_actions_erc20
+    def test_transfer_mint_transfer_burn(self, multiple_actions_erc20):
+        acc, contract = multiple_actions_erc20
         contract_balance_before = contract.functions.contractBalance().call()
         user_balance_before = contract.functions.balance(acc.address).call()
         mint_amount_1 = random.randint(10, 100000000)
@@ -432,8 +432,8 @@ class TestMultiplyActionsForERC20(BaseMixin):
         assert user_balance == transfer_amount_1 + transfer_amount_2 + user_balance_before, \
             "User balance is not correct"
 
-    def test_mint_burn_transfer(self, multiply_actions_erc20):
-        acc, contract = multiply_actions_erc20
+    def test_mint_burn_transfer(self, multiple_actions_erc20):
+        acc, contract = multiple_actions_erc20
         contract_balance_before = contract.functions.contractBalance().call()
         user_balance_before = contract.functions.balance(acc.address).call()
         mint_amount = random.randint(10, 100000000)
@@ -450,8 +450,8 @@ class TestMultiplyActionsForERC20(BaseMixin):
         assert user_balance == transfer_amount + user_balance_before, "User balance is not correct"
         assert contract_balance == contract_balance_before, "Contract balance is not correct"
 
-    def test_burn_transfer_burn_transfer(self, multiply_actions_erc20):
-        acc, contract = multiply_actions_erc20
+    def test_burn_transfer_burn_transfer(self, multiple_actions_erc20):
+        acc, contract = multiple_actions_erc20
         contract_balance_before = contract.functions.contractBalance().call()
         user_balance_before = contract.functions.balance(acc.address).call()
 
@@ -477,8 +477,8 @@ class TestMultiplyActionsForERC20(BaseMixin):
                - burn_amount_2 + contract_balance_before, "Contract balance is not correct"
         assert user_balance == transfer_amount_1 + transfer_amount_2 + user_balance_before, "User balance is not correct"
 
-    def test_burn_mint_transfer(self, multiply_actions_erc20):
-        acc, contract = multiply_actions_erc20
+    def test_burn_mint_transfer(self, multiple_actions_erc20):
+        acc, contract = multiple_actions_erc20
         contract_balance_before = contract.functions.contractBalance().call()
         user_balance_before = contract.functions.balance(acc.address).call()
 

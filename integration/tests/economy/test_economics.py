@@ -2,6 +2,7 @@ import os
 from decimal import Decimal, getcontext
 
 import allure
+import asyncio
 import eth_account.signers.local
 import pytest
 import rlp
@@ -79,7 +80,26 @@ class TestEconomics(BaseTests):
     @allure.step("Get single transaction gas")
     def get_single_transaction_gas(self):
         """ One TX_COST to verify Solana signature plus another one TX_COST to pay to Governance"""
-        return TX_COST*2
+        return TX_COST * 2
+
+    @allure.step("Check block for ALT use")
+    def check_alt_on(self, block, accounts_quantity):
+        txs = block['transactions']
+        for tx in txs:
+            if tx['version'] == 0:
+                transaction = tx['transaction']
+                message = transaction['message']
+                alt = message['addressTableLookups']
+                wr_acc = alt[0]['writableIndexes']
+                ro_acc = alt[0]['readonlyIndexes']
+                assert len(wr_acc) + len(ro_acc) == accounts_quantity
+
+    @allure.step("Check block for not using ALT")
+    def check_alt_off(self, block):
+        txs = block['transactions']
+        for tx in txs:
+            if tx['version'] == 0:
+                raise AssertionError("ALT should not be used")
 
     @pytest.mark.only_stands
     def test_account_creation(self):
@@ -853,3 +873,83 @@ class TestEconomics(BaseTests):
         assert sol_balance_before > sol_balance_after_deploy > sol_balance_after
         assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
+
+    @pytest.mark.parametrize('accounts_quantity', [31, 45, 60])
+    def test_deploy_contract_alt_on(self, sol_client_tx_v2, accounts_quantity):
+        """Trigger transaction than requires more than 30 accounts"""
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        contract, _ = self.web3_client.deploy_and_get_contract("ALT", "0.8.10",
+                                                               account=self.acc,
+                                                               constructor_args=[8])
+
+        sol_balance_after_deploy = self.operator.get_solana_balance()
+        neon_balance_after_deploy = self.operator.get_neon_balance()
+
+        tx = contract.functions.fill(accounts_quantity).buildTransaction(
+            {
+                "from": self.acc.address,
+                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
+                "gasPrice": self.web3_client.gas_price()
+            }
+        )
+        receipt = self.web3_client.send_transaction(self.acc, tx)
+        block = int(receipt['blockNumber'])
+        response = wait_for_block(sol_client_tx_v2, block)
+        self.check_alt_on(response, accounts_quantity)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before > sol_balance_after_deploy > sol_balance_after
+        assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
+        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
+
+    @pytest.mark.parametrize('accounts_quantity', [10, 29, 30])
+    def test_deploy_contract_alt_off(self, sol_client_tx_v2, accounts_quantity):
+        """Trigger transaction than requires less than 30 accounts"""
+        sol_balance_before = self.operator.get_solana_balance()
+        neon_balance_before = self.operator.get_neon_balance()
+
+        contract, _ = self.web3_client.deploy_and_get_contract("ALT", "0.8.10",
+                                                               account=self.acc,
+                                                               constructor_args=[8])
+
+        sol_balance_after_deploy = self.operator.get_solana_balance()
+        neon_balance_after_deploy = self.operator.get_neon_balance()
+
+        tx = contract.functions.fill(accounts_quantity).buildTransaction(
+            {
+                "from": self.acc.address,
+                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
+                "gasPrice": self.web3_client.gas_price()
+            }
+        )
+        receipt = self.web3_client.send_transaction(self.acc, tx)
+        block = int(receipt['blockNumber'])
+        response = wait_for_block(sol_client_tx_v2, block)
+        self.check_alt_off(response)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        neon_balance_after = self.operator.get_neon_balance()
+
+        assert sol_balance_before > sol_balance_after_deploy > sol_balance_after
+        assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
+        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
+
+
+def wait_for_block(client, block, timeout=60):
+    started = time.time()
+    while (time.time() - started) < timeout:
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(client.http_send(method="getBlock",
+                                                          params=[block,
+                                                                  {"encoding": "json",
+                                                                   "transactionDetails": "full",
+                                                                   "maxSupportedTransactionVersion": 2}],
+                                                          return_error=True))
+        if 'message' not in result:
+            return result
+        time.sleep(3)
+    raise TimeoutError("Block not available for slot")

@@ -24,5 +24,6 @@ def sol_price() -> float:
 
 @pytest.fixture(scope="function")
 def sol_client_tx_v2(pytestconfig: Config):
+    """Client for work with transactions version 2"""
     client = SolanaClient(endpoint=pytestconfig.environment.solana_url)
     return client

@@ -64,14 +64,14 @@ BASE_PATH = CWD.parent.parent
 SYS_INSTRUCT_ADDRESS = "Sysvar1nstructions1111111111111111111111111"
 
 ACCOUNT_SEED_VERSION = b'\1'
-ACCOUNT_ETH_BASE = int("0x7d51b09e994905ceb163e7b4ce30b838b776fb34986c96333c8caf8c652855b1", 16)
+ACCOUNT_ETH_BASE = int("0xc26286eebe70b838545855325d45b123149c3ca4a50e98b1fe7c7887e3327aa8", 16)
 
-PREPARED_USERS_COUNT = 10000
+PREPARED_USERS_COUNT = 50000
 
 
 def init_session() -> requests.Session:
     """init request session with extended connection pool size"""
-    adapter = requests.adapters.HTTPAdapter(pool_connections=10, pool_maxsize=10, pool_block=False)
+    adapter = requests.adapters.HTTPAdapter(pool_connections=1000, pool_maxsize=1000, pool_block=False)
     session = requests.Session()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
@@ -359,10 +359,10 @@ def init_transaction_signers(environment, **kwargs) -> None:
     ]
     signatures = []
     for op in transaction_signers:
-        signatures.append(sol_client.request_sol(op.operator, DEFAULT_SOL_AMOUNT))
+        # signatures.append(sol_client.request_sol(op.operator, DEFAULT_SOL_AMOUNT))
         environment.operators.put(op)
-    for sig in signatures:
-        sol_client.wait_confirmation(sig)
+    # for sig in signatures:
+    #     sol_client.wait_confirmation(sig)
     print("Finish signers")
 
 
@@ -463,6 +463,7 @@ class SolanaTransactionTasksSet(TaskSet):
             "name": "send_neon",
             "start_time": time.time(),
             "response_length": 0,
+            "context": {},
             "response": None,
             "exception": None
         }

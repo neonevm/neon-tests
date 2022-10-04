@@ -272,7 +272,7 @@ class BaseEthRPCATasksSet(TaskSet):
         args.append(kwargs)
         args.insert(0, transaction["to"])
         response = self._rpc_client.send_rpc(method, req_type=req_type, params=args)
-        self.log.info(f"Call {method}, get data by `{req_type}`: {transaction[req_type]}")
+        self.log.info(f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}")
         return response
 
 

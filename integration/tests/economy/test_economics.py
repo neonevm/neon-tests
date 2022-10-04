@@ -127,7 +127,7 @@ class TestEconomics(BaseTests):
         neon_balance_after = self.operator.get_neon_balance()
         sol_diff = sol_balance_before - sol_balance_after
 
-        assert sol_balance_before > sol_balance_after, "Operator balance after getBalance doesn't changed"
+        assert sol_balance_before > sol_balance_after, "Operator SOL balance incorrect"
         assert sol_diff == TRANSFER_TO_UNEXIST_ACC_SOL, "Unexpected amount of SOL for the operation"
         self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
@@ -873,7 +873,7 @@ class TestEconomics(BaseTests):
         assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    @pytest.mark.parametrize('accounts_quantity', [31, 45, 60])
+    @pytest.mark.parametrize('accounts_quantity', [31, 44, 59])
     def test_deploy_contract_alt_on(self, sol_client_tx_v2, accounts_quantity):
         """Trigger transaction than requires more than 30 accounts"""
         sol_balance_before = self.operator.get_solana_balance()

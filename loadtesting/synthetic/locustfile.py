@@ -66,7 +66,7 @@ SYS_INSTRUCT_ADDRESS = "Sysvar1nstructions1111111111111111111111111"
 ACCOUNT_SEED_VERSION = b'\1'
 ACCOUNT_ETH_BASE = int("0x7d51b09e994905ceb163e7b4ce30b838b776fb34986c96333c8caf8c652855b1", 16)
 
-PREPARED_USERS_COUNT = 1000
+PREPARED_USERS_COUNT = 10000
 
 
 def init_session() -> requests.Session:
@@ -355,7 +355,7 @@ def init_transaction_signers(environment, **kwargs) -> None:
 
     transaction_signers = [
         TransactionSigner(OperatorAccount(i), helpers.create_treasury_pool_address(network, evm_loader_id, i))
-        for i in range(0, 100)
+        for i in range(0, 1000)
     ]
     signatures = []
     for op in transaction_signers:
@@ -458,6 +458,15 @@ class SolanaTransactionTasksSet(TaskSet):
             )
         )
 
+        req_event = {
+            "request_type": "solana",
+            "name": "send_neon",
+            "start_time": time.time(),
+            "response_length": 0,
+            "response": None,
+            "exception": None
+        }
+        start_perf_counter = time.perf_counter()
         transaction_receipt = self.sol_client.send_transaction(
             trx,
             operator.operator,
@@ -465,9 +474,11 @@ class SolanaTransactionTasksSet(TaskSet):
             skip_confirmation=True,
             skip_preflight=True
         )
+        req_event["response_time"] = (time.perf_counter() - start_perf_counter) * 1000
+        self.user.environment.events.request.fire(**req_event)
         self.log.info(f"## Token transfer transaction hash: {transaction_receipt}")
-        self.user.environment.eth_users.put(token_sender)
         self.user.environment.eth_users.put(token_receiver)
+        self.user.environment.eth_users.put(token_sender)
         self.user.environment.operators.put(operator)
 
 

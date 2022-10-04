@@ -10,9 +10,13 @@ import shutil
 import subprocess
 import sys
 import typing as tp
+import platform
 from collections import defaultdict
 from multiprocessing.dummy import Pool
 from urllib.parse import urlparse
+
+from deploy.infra.utils import env
+from deploy.infra.utils import docker as docker_utils
 
 import requests
 

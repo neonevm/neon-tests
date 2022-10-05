@@ -23,8 +23,7 @@ jobs:
         id: prepare
         run: |
           ./clickfile.py infra deploy
-        #  ./clickfile.py infra gen-accounts
-
+#./clickfile.py infra gen-accounts
           echo "::set-output name=solana_ip::${env.SOLANA_IP}"
           echo "::set-output name=proxy_ip::${env.PROXY_IP}"
       - uses: actions/upload-artifact@v2

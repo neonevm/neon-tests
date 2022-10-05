@@ -9,8 +9,6 @@ on:
       - '**.test'
 
 env:
-  SOLANA_IP: ""
-  PROXY_IP: ""
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -26,10 +24,8 @@ jobs:
           ./clickfile.py infra deploy
           ./clickfile.py infra gen-accounts
 
-          echo "::set-output name=solana_ip::${SOLANA_IP}"
-          echo "::set-output name=proxy_ip::${PROXY_IP}"
-          echo "SOLANA_IP=${SOLANA_IP}" >> $GITHUB_ENV
-          echo "PROXY_IP=${PROXY_IP}" >> $GITHUB_ENV
+          echo "::set-output name=solana_ip::${env.SOLANA_IP}"
+          echo "::set-output name=proxy_ip::${env.PROXY_IP}"
 
     outputs:
       solana_ip: ${{ steps.prepare.outputs.solana_ip }}

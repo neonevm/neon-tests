@@ -29,18 +29,25 @@ def deploy_infrastructure() -> dict:
     subprocess.run(f"terraform init {TF_ENV['TF_BACKEND_CONFIG']}", shell=True, env=TF_ENV, cwd="deploy/aws")
     subprocess.run("terraform apply --auto-approve=true", shell=True, env=TF_ENV, cwd="deploy/aws")
     proxy_ip = subprocess.run(
-        "terraform output --json | jq -r '.proxy_ip.value' >> $GITHUB_ENV", shell=True, env=TF_ENV, cwd="deploy/aws"
-    )
-    print(f"{30*'_'}{proxy_ip}")
-    #solana_ip = subprocess.run("terraform output --json | jq -r '.solana_ip.value' >> $GITHUB_ENV",
-    #                           shell=True, env=TF_ENV, cwd="deploy/aws")
-    # subprocess.run(f'echo "SOLANA_IP={solana_ip} >> $GITHUB_ENV')
-    # subprocess.run(f'echo "PROXY_IP={proxy_ip} >> $GITHUB_ENV')
+        "terraform output --json | jq -r '.proxy_ip.value'",
+        shell=True,
+        env=TF_ENV,
+        cwd="deploy/aws",
+        stdout=subprocess.PIPE,
+    ).stdout.strip()
+    solana_ip = subprocess.run(
+        "terraform output --json | jq -r '.solana_ip.value'",
+        shell=True,
+        env=TF_ENV,
+        cwd="deploy/aws",
+        stdout=subprocess.PIPE,
+    ).stdout.strip()
+    subprocess.run(f'echo "SOLANA_IP={solana_ip} >> $GITHUB_ENV')
+    subprocess.run(f"export SOLANA_IP={solana_ip}")
+    subprocess.run(f'echo "PROXY_IP={proxy_ip} >> $GITHUB_ENV')
+    subprocess.run(f"export PROXY_IP={proxy_ip}")
 
-    # return {
-    #    "solana_ip": solana_ip,
-    #    "proxy_ip": proxy_ip
-    # }
+    return {"solana_ip": solana_ip, "proxy_ip": proxy_ip}
 
 
 def destroy_infrastructure():

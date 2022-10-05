@@ -16,7 +16,7 @@ env:
 
 jobs:
   prepare-stand:
-    runs-on: "neon-hosted"
+    runs-on: neon-hosted
     steps:
       - uses: actions/checkout@v2
       - name: "Prepare stand"
@@ -59,7 +59,7 @@ jobs:
    #       docker run -it -e NEON_PROXY_URL=${{ needs.prepare-stand.outputs.proxy_url }} -e NEON_ACCOUNTS=${{ steps.accounts.outputs.accounts }} uniswap:latest
 
   destroy-stand:
-    runs-on: "neon-hosted"
+    runs-on: neon-hosted
     if: always()
     needs:
       #- uniswap

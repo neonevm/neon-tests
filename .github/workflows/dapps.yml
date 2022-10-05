@@ -18,8 +18,8 @@ jobs:
   prepare-stand:
     runs-on: neon-hosted
     steps:
-    - uses: actions/checkout@v3
-    - name: "Prepare stands.."
+    #- uses:
+    - name: "Prepare stands"
       id: prepare
       run: |
         ./clickfile.py infra deploy

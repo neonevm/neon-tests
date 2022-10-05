@@ -70,5 +70,6 @@ jobs:
         with:
           name: tf-state
       - name: "Destroy stand"
+        id: destroy
         run: |
           ./clickfile.py infra destroy

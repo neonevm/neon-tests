@@ -26,10 +26,10 @@ jobs:
 #./clickfile.py infra gen-accounts
           echo "::set-output name=solana_ip::${env.SOLANA_IP}"
           echo "::set-output name=proxy_ip::${env.PROXY_IP}"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: tf-state
-          path: deploy/aws
+          path: deploy/aws/
 
     outputs:
       solana_ip: ${{ steps.prepare.outputs.solana_ip }}
@@ -65,7 +65,7 @@ jobs:
       - prepare-stand
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: tf-state
       - name: "Destroy stand"

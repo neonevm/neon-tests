@@ -218,7 +218,8 @@ def create_operators():
 
 
 def generate_user_faucet(count):
-    base_key = web.eth.account.create().privateKey.hex()
+    # base_key = web.eth.account.create().privateKey.hex()
+    base_key = "0xc26286eebe70b838545855325d45b123149c3ca4a50e98b1fe7c7887e3327aa8"
     print(f"Main user private key: {base_key}")
 
     for i in range(count):
@@ -229,5 +230,5 @@ def generate_user_faucet(count):
 
 
 # generate_users(10000)
-# generate_user_faucet(10000)
+generate_user_faucet(10000)
 create_operators()

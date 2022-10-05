@@ -63,10 +63,11 @@ BASE_PATH = CWD.parent.parent
 
 SYS_INSTRUCT_ADDRESS = "Sysvar1nstructions1111111111111111111111111"
 
-ACCOUNT_SEED_VERSION = b'\1'
+ACCOUNT_SEED_VERSION = b'\2'
 ACCOUNT_ETH_BASE = int("0xc26286eebe70b838545855325d45b123149c3ca4a50e98b1fe7c7887e3327aa8", 16)
 
-PREPARED_USERS_COUNT = 50000
+PREPARED_USERS_OFFSET = int(os.environ.get("USERS_OFFSET", 0))
+PREPARED_USERS_COUNT = int(os.environ.get("USERS_COUNT", 10000))
 
 
 def init_session() -> requests.Session:
@@ -226,7 +227,7 @@ class SOLClient:
         nonce: tp.Optional[int] = None,
     ):
         """Create eth transaction"""
-        print(f"SOL address: {from_solana_user}")
+        # print(f"SOL address: {from_solana_user}")
         if nonce is None or nonce == 0:
             nonce = self.get_transaction_count(from_solana_user)
         tx = {
@@ -355,7 +356,7 @@ def init_transaction_signers(environment, **kwargs) -> None:
 
     transaction_signers = [
         TransactionSigner(OperatorAccount(i), helpers.create_treasury_pool_address(network, evm_loader_id, i))
-        for i in range(0, 1000)
+        for i in range(0, 40)
     ]
     signatures = []
     for op in transaction_signers:
@@ -374,7 +375,7 @@ def precompile_users(environment, **kwargs) -> None:
     sol_client = SOLClient(environment.credentials, init_session())
 
     for i in range(1, PREPARED_USERS_COUNT+1):
-        user = web.eth.account.from_key(ACCOUNT_ETH_BASE + i)
+        user = web.eth.account.from_key(ACCOUNT_ETH_BASE + PREPARED_USERS_OFFSET + i)
         solana_address, bump = sol_client.ether2solana(user.address)
         users_queue.put(ETHUser(user, solana_address, 0))
 
@@ -437,7 +438,7 @@ class SolanaTransactionTasksSet(TaskSet):
         token_sender = self.get_eth_user()
         token_receiver = self.get_eth_user()
         operator = self.user.environment.operators.get()
-        print(f"Send from eth user {token_sender.eth_account.address}")
+        # print(f"Send from eth user {token_sender.eth_account.address}")
         eth_transaction, new_nonce = self.sol_client.make_eth_transaction(
             token_receiver.eth_account.address,
             data=b"",

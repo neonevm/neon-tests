@@ -7,7 +7,7 @@ import typing as tp
 from dataclasses import dataclass
 from hashlib import sha256
 
-from construct import Bytes, Int8ul, Struct
+from construct import Bytes, Int8ul, Struct, Int32ul
 from eth_keys import keys as eth_keys
 from solana.publickey import PublicKey
 from solana.rpc import commitment
@@ -17,11 +17,11 @@ ACCOUNT_INFO_LAYOUT = Struct(
     "type" / Int8ul,
     "ether" / Bytes(20),
     "nonce" / Int8ul,
-    "trx_count" / Bytes(8),
+    "tx_count" / Bytes(8),
     "balance" / Bytes(32),
-    "code_account" / Bytes(32),
+    "generation" / Int32ul,
+    "code_size" / Int32ul,
     "is_rw_blocked" / Int8ul,
-    "ro_blocked_cnt" / Int8ul,
 )
 
 
@@ -35,13 +35,12 @@ SYSTEM_ADDRESS = "11111111111111111111111111111111"
 @dataclass
 class AccountInfo:
     ether: eth_keys.PublicKey
-    code_account: PublicKey
     trx_count: int
 
     @staticmethod
     def from_bytes(data: bytes):
         cont = ACCOUNT_INFO_LAYOUT.parse(data)
-        return AccountInfo(cont.ether, PublicKey(cont.code_account), cont.trx_count)
+        return AccountInfo(cont.ether, cont.tx_count)
 
 
 @dataclass

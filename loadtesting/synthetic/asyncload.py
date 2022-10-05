@@ -19,11 +19,11 @@ from solana.system_program import SYS_PROGRAM_ID
 from solana.rpc.types import TxOpts
 
 
-SOLANA_URL = "http://127.0.0.1:8899"
+SOLANA_URL = "http://proxy.night.stand.neontest.xyz/node-solana"
 EVM_LOADER_ID = "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io"
-ACCOUNT_SEED_VERSION = b'\1'
+ACCOUNT_SEED_VERSION = b'\2'
 ACCOUNT_ETH_BASE = int("0xc26286eebe70b838545855325d45b123149c3ca4a50e98b1fe7c7887e3327aa8", 16)
-USERS_OFFSET = int(os.environ.get("USERS_OFFSET", "10000"))
+USERS_OFFSET = int(os.environ.get("USERS_OFFSET", "0"))
 PREPARED_USERS_COUNT = 10000
 
 
@@ -158,7 +158,7 @@ async def get_transaction_count(sol_client, account: tp.Union[str, PublicKey, Op
 
 async def prepare_operators():
     print("Prepare operators")
-    for i in range(1000):
+    for i in range(30):
         op = TransactionSigner(OperatorAccount(i), helpers.create_treasury_pool_address("night-stand", EVM_LOADER_ID, i))
         await OPERATORS_QUEUE.put(op)
     print("Operators prepared")

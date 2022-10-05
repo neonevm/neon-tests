@@ -1,12 +1,12 @@
 name: "dApps testing"
 
 on:
+  schedule:
+    - cron: "0 23,2 * * *"
   workflow_dispatch:
   push:
     branches:
       - '**NDEV-629'
-    paths:
-      - '**.test'
 
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -18,47 +18,57 @@ jobs:
   prepare-stand:
     runs-on: "neon-hosted"
     steps:
+      - uses: actions/checkout@v2
       - name: "Prepare stand"
         id: prepare
         run: |
           ./clickfile.py infra deploy
-          ./clickfile.py infra gen-accounts
+        #  ./clickfile.py infra gen-accounts
 
           echo "::set-output name=solana_ip::${env.SOLANA_IP}"
           echo "::set-output name=proxy_ip::${env.PROXY_IP}"
+      - uses: actions/upload-artifact@v2
+        with:
+          name: tf-state
+          path: deploy/aws
 
     outputs:
       solana_ip: ${{ steps.prepare.outputs.solana_ip }}
       proxy_ip: ${{ steps.prepare.outputs.proxy_ip }}
-      accounts: ${{ steps.prepare.outputs.accounts }}
+      #accounts: ${{ steps.prepare.outputs.accounts }}
       proxy_url: "http://${{ steps.prepare.outputs.proxy_ip }}:9090/solana"
       solana_url: "http://${{ steps.prepare.outputs.solana_ip }}:8899/"
 
-  uniswap:
-    runs-on: "neon-hosted"
-    needs:
-      - prepare-stand
-    steps:
-      - name: "Clone repository"
-        run: |
-          git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git
-      - name: "Build docker container"
-        run: |
-          docker build -t uniswap:latest .
-      - name: "Prepare accounts"
-        id: accounts
-        run: |
-          - ./clickfile.py infra prepare-accounts -c 1 -a 10000
-      - name: "Run tests"
-        run: |
-          docker run -it -e NEON_PROXY_URL=${{ needs.prepare-stand.outputs.proxy_url }} -e NEON_ACCOUNTS=${{ steps.accounts.outputs.accounts }} uniswap:latest
+  #uniswap:
+  #  runs-on: "neon-hosted"
+  #  needs:
+  #    - prepare-stand
+  #  steps:
+  #    - name: "Clone repository"
+  #      run: |
+  #        git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git
+  #    - name: "Build docker container"
+  #      run: |
+  #        docker build -t uniswap:latest .
+  #    - name: "Prepare accounts"
+  #      id: accounts
+  #      run: |
+  #        - ./clickfile.py infra prepare-accounts -c 1 -a 10000
+  #    - name: "Run tests"
+  #      run: |
+   #       docker run -it -e NEON_PROXY_URL=${{ needs.prepare-stand.outputs.proxy_url }} -e NEON_ACCOUNTS=${{ steps.accounts.outputs.accounts }} uniswap:latest
 
   destroy-stand:
     runs-on: "neon-hosted"
     if: always()
     needs:
-      - uniswap
+      #- uniswap
+      - prepare-stand
     steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: tf-state
       - name: "Destroy stand"
         run: |
           ./clickfile.py infra destroy

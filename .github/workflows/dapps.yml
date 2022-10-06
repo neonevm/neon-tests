@@ -1,9 +1,8 @@
 name: "dApps testing"
-on: [workflow_dispatch]
-#on:
-#  schedule:
-#    - cron: "0 23,2 * * *"
-#  workflow_dispatch:
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ 'devel', '**NDEV-629' ]
 #  push:
 #    branches:
 #      - '**NDEV-629'

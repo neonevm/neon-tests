@@ -10,20 +10,15 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-  RUNNER: ubuntu-20.04
 
 jobs:
-  prepare-env:
+  pipeline:
     runs-on: ubuntu-20.04
     if: always()
     steps:
-      - name: Setup env
-        id: setup
+      - name: Install terraform
+        id: terraform
         run: |
-
-          RUNNER=${{ env.RUNNER }}
-          echo "Runner: ${RUNNER}"
-          echo "::set-output name=runner::${RUNNER}"
 
           sudo apt-get update && sudo apt-get install -y gnupg software-properties-common wget
           wget -O- https://apt.releases.hashicorp.com/gpg | \
@@ -38,36 +33,36 @@ jobs:
           sudo apt update
           sudo apt-get install terraform
 
-    outputs:
-      runner: ${{ steps.setup.outputs.runner }}
-
-  prepare-stand:
-    needs:
-      - prepare-env
-    runs-on: ${{ needs.prepare-env.outputs.runner }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: "Install deps"
+      - name: "Install python requirements"
         id: requirements
-        uses: ./.github/actions/python-requirements
+        uses: ./.github/actions/requirements
+
       - name: "Deploy stand"
         id: deploy
         run: |
+          ssh_key=~/.ssh/dapps-stand
+          echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra deploy
-          #./clickfile.py infra gen-accounts
           echo "::set-output name=solana_ip::${env.SOLANA_IP}"
           echo "::set-output name=proxy_ip::${env.PROXY_IP}"
       - uses: actions/upload-artifact@v3
         with:
           name: tf-state
           path: deploy/aws/
+      - uses: actions/download-artifact@v3
+        with:
+          name: tf-state
+      - name: "Destroy stand"
+        if: always()
+        id: destroy
+        run: |
+          ./clickfile.py infra destroy
 
     outputs:
-      solana_ip: ${{ steps.prepare.outputs.solana_ip }}
-      proxy_ip: ${{ steps.prepare.outputs.proxy_ip }}
-      #accounts: ${{ steps.prepare.outputs.accounts }}
-      proxy_url: "http://${{ steps.prepare.outputs.proxy_ip }}:9090/solana"
-      solana_url: "http://${{ steps.prepare.outputs.solana_ip }}:8899/"
+      solana_ip: ${{ steps.deploy.outputs.solana_ip }}
+      proxy_ip: ${{ steps.deploy.outputs.proxy_ip }}
+      proxy_url: "http://${{ steps.deploy.outputs.proxy_ip }}:9090/solana"
+      solana_url: "http://${{ steps.deploy.outputs.solana_ip }}:8899/"
 
   #uniswap:
   #  runs-on: "neon-hosted"
@@ -87,23 +82,3 @@ jobs:
   #    - name: "Run tests"
   #      run: |
    #       docker run -it -e NEON_PROXY_URL=${{ needs.prepare-stand.outputs.proxy_url }} -e NEON_ACCOUNTS=${{ steps.accounts.outputs.accounts }} uniswap:latest
-
-  destroy-stand:
-    runs-on: ${{ needs.prepare-env.outputs.runner }}
-    if: always()
-    needs:
-      #- uniswap
-      - prepare-env
-      - prepare-stand
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v3
-        with:
-          name: tf-state
-      - name: "Install deps"
-        id: requirements
-        uses: ./.github/actions/python-requirements
-      - name: "Destroy stand"
-        id: destroy
-        run: |
-          ./clickfile.py infra destroy

@@ -37,6 +37,12 @@ class NeonWeb3Client:
             json={"jsonrpc": "2.0", "method": "web3_clientVersion", "params": [], "id": 0},
         ).json()
 
+    def get_solana_trx_by_neon(self, tr_id: str):
+        return requests.post(
+            self._proxy_url,
+            json={"jsonrpc": "2.0", "method": "neon_getSolanaTransactionByNeonTransaction", "params": [tr_id], "id": 0},
+        ).json()
+
     def gas_price(self):
         gas = self._web3.eth.gas_price
         return gas
@@ -47,7 +53,7 @@ class NeonWeb3Client:
     def get_balance(self, address: tp.Union[str, eth_account.signers.local.LocalAccount]):
         if not isinstance(address, str):
             address = address.address
-        return web3.Web3.fromWei(self._web3.eth.get_balance(address), "ether")
+        return web3.Web3.fromWei(self._web3.eth.get_balance(address, "pending"), "ether")
 
     def get_block_number(self):
         return self._web3.eth.get_block_number()

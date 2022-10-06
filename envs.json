@@ -87,7 +87,7 @@
   },
   "devnet": {
     "evm_loader": "eeLSJgWzzxrqKv1UxtRVVH8FX3qCQWUs9QuAjJpETGU",
-    "proxy_url": "https://proxy.devnet.neonlabs.org/solana",
+    "proxy_url": "https://devnet.neonevm.org",
     "network_id": 245022926,
     "solana_url": "http://neon.devnet.rpcpool.com/c7710a7b633cbadb9be9900c7946/",
     "faucet_url": "http://3.13.67.238/request_neon",

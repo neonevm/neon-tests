@@ -22,10 +22,11 @@ from utils import helpers, web3client
 NEON_PRICE = 0.25
 
 TX_COST = 5000
-TRANSFER_TO_UNEXIST_ACC_SOL = 1_574_040
+
+TRANSFER_TO_UNEXIST_ACC_SOL = 1_395_040
 TRANSFER_ERC20_SOL = 1_137_520
-TRANSFER_ERC20_WRAPPED_SOL = 2_049_280
-DEPLOY_SMALL_CONTRACT_SOL = 34_979_200
+TRANSFER_ERC20_WRAPPED_SOL = 2_059_280
+DEPLOY_SMALL_CONTRACT_SOL = 33_618_960
 
 LAMPORT_PER_SOL = 1_000_000_000
 DECIMAL_CONTEXT = getcontext()
@@ -84,6 +85,7 @@ class TestEconomics(BaseTests):
 
     @allure.step("Check block for ALT use")
     def check_alt_on(self, block, accounts_quantity):
+        #TODO: Change to use get_solana_trx_by_neon instead of block
         txs = block['transactions']
         for tx in txs:
             if tx['version'] == 0:
@@ -92,7 +94,7 @@ class TestEconomics(BaseTests):
                 alt = message['addressTableLookups']
                 wr_acc = alt[0]['writableIndexes']
                 ro_acc = alt[0]['readonlyIndexes']
-                assert len(wr_acc) + len(ro_acc) == accounts_quantity
+                assert len(wr_acc) + len(ro_acc) == accounts_quantity - 1
 
     @allure.step("Check block for not using ALT")
     def check_alt_off(self, block):
@@ -117,9 +119,7 @@ class TestEconomics(BaseTests):
         """Verify how many cost neon send to new user"""
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
-
         acc2 = self.web3_client.create_account()
-
         tx = self.web3_client.send_neon(self.acc, acc2, 5)
 
         assert self.web3_client.get_balance(acc2) == 5
@@ -128,7 +128,7 @@ class TestEconomics(BaseTests):
         neon_balance_after = self.operator.get_neon_balance()
         sol_diff = sol_balance_before - sol_balance_after
 
-        assert sol_balance_before > sol_balance_after, "Operator balance after getBalance doesn't changed"
+        assert sol_balance_before > sol_balance_after, "Operator SOL balance incorrect"
         assert sol_diff == TRANSFER_TO_UNEXIST_ACC_SOL, "Unexpected amount of SOL for the operation"
         self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
@@ -194,7 +194,7 @@ class TestEconomics(BaseTests):
 
         self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
-    @pytest.mark.xfail(reason="wait for fix")
+    @pytest.mark.skip(reason="Update withdraw instruction")
     def test_withdraw_neon_unexisting_ata(self, pytestconfig: Config):
         sol_user = SolanaAccount()
         self.sol_client.request_airdrop(sol_user.public_key, 5 * LAMPORT_PER_SOL)
@@ -240,7 +240,7 @@ class TestEconomics(BaseTests):
 
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    @pytest.mark.xfail(reason="wait for fix")
+    @pytest.mark.skip(reason="Update withdraw instruction")
     def test_withdraw_neon_existing_ata(self, pytestconfig):
         neon_mint = PublicKey(pytestconfig.environment.spl_neon_mint)
         sol_user = SolanaAccount()
@@ -440,7 +440,7 @@ class TestEconomics(BaseTests):
         assert sol_balance_after_deploy == sol_balance_after
         assert neon_balance_after_deploy == neon_balance_after
 
-    @pytest.mark.xfail(reason="A lot of accounts, wait for fix", raises=ValueError)
+    @pytest.mark.xfail(reason="https://neonlabs.atlassian.net/browse/NDEV-699")
     def test_cost_resize_account(self):
         """Verify how much cost account resize"""
         sol_balance_before = self.operator.get_solana_balance()
@@ -470,7 +470,6 @@ class TestEconomics(BaseTests):
         assert neon_balance_after > neon_balance_before_increase > neon_balance_before, "NEON Balance incorrect"
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    @pytest.mark.xfail(reason="A lot of accounts, wait for fix")
     def test_cost_resize_account_less_neon(self):
         """Verify how much cost account resize"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
@@ -625,7 +624,7 @@ class TestEconomics(BaseTests):
         assert sol_balance_before_instruction == sol_balance_after, "SOL Balance changed"
         assert neon_balance_after == neon_balance_before_instruction, "NEON Balance incorrect"
 
-    @pytest.mark.xfail(reason="Unprofitable transaction, because we create account not in evm (will be fixed)")
+    # @pytest.mark.xfail(reason="Unprofitable transaction, because we create account not in evm (will be fixed)")
     def test_tx_interact_more_1kb(self):
         """Send to contract a big text (tx more than 1 kb)"""
         sol_balance_before = self.operator.get_solana_balance()
@@ -876,7 +875,7 @@ class TestEconomics(BaseTests):
         assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    @pytest.mark.parametrize('accounts_quantity', [31, 45, 60])
+    @pytest.mark.parametrize('accounts_quantity', [31, 44, 59])
     def test_deploy_contract_alt_on(self, sol_client_tx_v2, accounts_quantity):
         """Trigger transaction than requires more than 30 accounts"""
         sol_balance_before = self.operator.get_solana_balance()
@@ -908,7 +907,7 @@ class TestEconomics(BaseTests):
         assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    @pytest.mark.parametrize('accounts_quantity', [10, 29, 30])
+    @pytest.mark.parametrize('accounts_quantity', [10])
     def test_deploy_contract_alt_off(self, sol_client_tx_v2, accounts_quantity):
         """Trigger transaction than requires less than 30 accounts"""
         sol_balance_before = self.operator.get_solana_balance()
@@ -930,6 +929,7 @@ class TestEconomics(BaseTests):
         )
         receipt = self.web3_client.send_transaction(self.acc, tx)
         block = int(receipt['blockNumber'])
+
         response = wait_for_block(sol_client_tx_v2, block)
         self.check_alt_off(response)
 

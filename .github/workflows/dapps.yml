@@ -18,18 +18,18 @@ jobs:
   prepare-stand:
     runs-on: neon-hosted
     steps:
-    - uses: actions/checkout@v3
-    - name: "Prepare stands"
-      id: prepare
-      run: |
-        ./clickfile.py infra deploy
-#./clickfile.py infra gen-accounts
-        echo "::set-output name=solana_ip::${env.SOLANA_IP}"
-        echo "::set-output name=proxy_ip::${env.PROXY_IP}"
-    - uses: actions/upload-artifact@v3
-      with:
-        name: tf-state
-        path: deploy/aws/
+      - uses: actions/checkout@v3
+      - name: "Prepare stands"
+        id: prepare
+        run: |
+          ./clickfile.py infra deploy
+          #./clickfile.py infra gen-accounts
+          echo "::set-output name=solana_ip::${env.SOLANA_IP}"
+          echo "::set-output name=proxy_ip::${env.PROXY_IP}"
+      - uses: actions/upload-artifact@v3
+        with:
+          name: tf-state
+          path: deploy/aws/
 
     outputs:
       solana_ip: ${{ steps.prepare.outputs.solana_ip }}

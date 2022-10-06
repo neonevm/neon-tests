@@ -1,6 +1,6 @@
 import os
 import subprocess
-
+import typing as tp
 
 TF_ENV = {
     "AWS_SECRET_ACCESS_KEY": os.environ.get("AWS_SECRET_ACCESS_KEY"),
@@ -25,6 +25,14 @@ TF_ENV.update(
 )
 
 
+def set_github_env(envs: tp.Dict, upper=True) -> None:
+    """Set environment for github action"""
+
+    with open(os.getenv("GITHUB_ENV"), "a") as env_file:
+        for key, value in envs.items():
+            env_file.write(f"{key.upper() if upper else key}={value}")
+
+
 def deploy_infrastructure() -> dict:
     subprocess.run(f"terraform init {TF_ENV['TF_BACKEND_CONFIG']}", shell=True, env=TF_ENV, cwd="deploy/aws")
     subprocess.run("terraform apply --auto-approve=true", shell=True, env=TF_ENV, cwd="deploy/aws")
@@ -42,12 +50,12 @@ def deploy_infrastructure() -> dict:
         cwd="deploy/aws",
         stdout=subprocess.PIPE,
     ).stdout.strip()
-    subprocess.run(f'echo "SOLANA_IP={solana_ip} >> $GITHUB_ENV')
-    subprocess.run(f"export SOLANA_IP={solana_ip}")
-    subprocess.run(f'echo "PROXY_IP={proxy_ip} >> $GITHUB_ENV')
-    subprocess.run(f"export PROXY_IP={proxy_ip}")
-
-    return {"solana_ip": solana_ip, "proxy_ip": proxy_ip}
+    infra = dict(
+        solana_ip=solana_ip,
+        proxy_ip=proxy_ip
+    )
+    set_github_env(infra)
+    return infra
 
 
 def destroy_infrastructure():

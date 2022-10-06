@@ -10,12 +10,42 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+  RUNNER: ubuntu-20.04
 
 jobs:
-  prepare-stand:
-    runs-on: neon-hosted
+  prepare-env:
+    runs-on: ${{ env.RUNNER }}
+    if: always()
     steps:
-      - uses: actions/checkout@v3
+      - name: Setup env
+        id: setup
+        run: |
+          echo "Runner: ${env.RUNNER}"
+          echo "::set-output name=runner::${RUNNER}"
+          echo "::set-output name=jobs::${JOBS_NUMBER}"
+
+          sudo apt-get update && sudo apt-get install -y gnupg software-properties-common wget
+          wget -O- https://apt.releases.hashicorp.com/gpg | \
+              gpg --dearmor | \
+              sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          gpg --no-default-keyring \
+              --keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg \
+              --fingerprint
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+              https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
+              sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update
+          sudo apt-get install terraform
+
+    outputs:
+      runner: ${{ steps.setup.outputs.runner }}
+
+  prepare-stand:
+    needs:
+      - prepare-env
+    runs-on: ${{ needs.prepare-env.outputs.runner }}
+    steps:
+      - uses: actions/checkout@v2
       - name: "Install deps"
         id: requirements
         uses: ./.github/actions/requirements
@@ -58,10 +88,11 @@ jobs:
    #       docker run -it -e NEON_PROXY_URL=${{ needs.prepare-stand.outputs.proxy_url }} -e NEON_ACCOUNTS=${{ steps.accounts.outputs.accounts }} uniswap:latest
 
   destroy-stand:
-    runs-on: neon-hosted
+    runs-on: ${{ needs.prepare-env.outputs.runner }}
     if: always()
     needs:
       #- uniswap
+      - prepare-env
       - prepare-stand
     steps:
       - uses: actions/checkout@v2

@@ -25,8 +25,8 @@ TX_COST = 5000
 
 TRANSFER_TO_UNEXIST_ACC_SOL = 1_395_040
 TRANSFER_ERC20_SOL = 1_137_520
-TRANSFER_ERC20_WRAPPED_SOL = 2_049_280
-DEPLOY_SMALL_CONTRACT_SOL = 33_623_960
+TRANSFER_ERC20_WRAPPED_SOL = 2_059_280
+DEPLOY_SMALL_CONTRACT_SOL = 33_618_960
 
 LAMPORT_PER_SOL = 1_000_000_000
 DECIMAL_CONTEXT = getcontext()
@@ -85,6 +85,7 @@ class TestEconomics(BaseTests):
 
     @allure.step("Check block for ALT use")
     def check_alt_on(self, block, accounts_quantity):
+        #TODO: Change to use get_solana_trx_by_neon instead of block
         txs = block['transactions']
         for tx in txs:
             if tx['version'] == 0:
@@ -93,7 +94,7 @@ class TestEconomics(BaseTests):
                 alt = message['addressTableLookups']
                 wr_acc = alt[0]['writableIndexes']
                 ro_acc = alt[0]['readonlyIndexes']
-                assert len(wr_acc) + len(ro_acc) == accounts_quantity
+                assert len(wr_acc) + len(ro_acc) == accounts_quantity - 1
 
     @allure.step("Check block for not using ALT")
     def check_alt_off(self, block):
@@ -439,6 +440,7 @@ class TestEconomics(BaseTests):
         assert sol_balance_after_deploy == sol_balance_after
         assert neon_balance_after_deploy == neon_balance_after
 
+    @pytest.mark.xfail(reason="https://neonlabs.atlassian.net/browse/NDEV-699")
     def test_cost_resize_account(self):
         """Verify how much cost account resize"""
         sol_balance_before = self.operator.get_solana_balance()
@@ -622,7 +624,7 @@ class TestEconomics(BaseTests):
         assert sol_balance_before_instruction == sol_balance_after, "SOL Balance changed"
         assert neon_balance_after == neon_balance_before_instruction, "NEON Balance incorrect"
 
-    @pytest.mark.xfail(reason="Unprofitable transaction, because we create account not in evm (will be fixed)")
+    # @pytest.mark.xfail(reason="Unprofitable transaction, because we create account not in evm (will be fixed)")
     def test_tx_interact_more_1kb(self):
         """Send to contract a big text (tx more than 1 kb)"""
         sol_balance_before = self.operator.get_solana_balance()
@@ -927,6 +929,7 @@ class TestEconomics(BaseTests):
         )
         receipt = self.web3_client.send_transaction(self.acc, tx)
         block = int(receipt['blockNumber'])
+        print("Block number ", block)
         response = wait_for_block(sol_client_tx_v2, block)
         self.check_alt_off(response)
 

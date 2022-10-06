@@ -20,9 +20,10 @@ jobs:
       - name: Setup env
         id: setup
         run: |
-          echo "Runner: ${env.RUNNER}"
+
+          RUNNER=${{ env.RUNNER }}
+          echo "Runner: ${RUNNER}"
           echo "::set-output name=runner::${RUNNER}"
-          echo "::set-output name=jobs::${JOBS_NUMBER}"
 
           sudo apt-get update && sudo apt-get install -y gnupg software-properties-common wget
           wget -O- https://apt.releases.hashicorp.com/gpg | \

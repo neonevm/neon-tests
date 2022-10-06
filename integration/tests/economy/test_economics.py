@@ -907,7 +907,7 @@ class TestEconomics(BaseTests):
         assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    @pytest.mark.parametrize('accounts_quantity', [10, 29, 30])
+    @pytest.mark.parametrize('accounts_quantity', [10])
     def test_deploy_contract_alt_off(self, sol_client_tx_v2, accounts_quantity):
         """Trigger transaction than requires less than 30 accounts"""
         sol_balance_before = self.operator.get_solana_balance()
@@ -929,7 +929,7 @@ class TestEconomics(BaseTests):
         )
         receipt = self.web3_client.send_transaction(self.acc, tx)
         block = int(receipt['blockNumber'])
-        print("Block number ", block)
+
         response = wait_for_block(sol_client_tx_v2, block)
         self.check_alt_off(response)
 

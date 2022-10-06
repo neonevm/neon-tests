@@ -10,6 +10,7 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+  RUNNER: ubuntu-20.04
 
 jobs:
   prepare-env:

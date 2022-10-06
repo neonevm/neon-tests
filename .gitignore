@@ -231,6 +231,5 @@ allure-results/
 ui/extensions/chrome/plugins/
 ui/extensions/chrome/user_data/
 .idea
-
-# tfenv Terraform versions
+.vscode
 .terraform-version

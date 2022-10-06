@@ -4,6 +4,7 @@ import allure
 import pytest
 from pythclient.pythaccounts import PythPriceAccount
 from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP_ENDPOINT
+from _pytest.config import Config
 
 
 @pytest.fixture(scope="session")
@@ -19,3 +20,10 @@ def sol_price() -> float:
     price = loop.run_until_complete(get_price())
     with allure.step(f"SOL price {price}$"):
         return price
+
+
+@pytest.fixture(scope="function")
+def sol_client_tx_v2(pytestconfig: Config):
+    """Client for work with transactions version 2"""
+    client = SolanaClient(endpoint=pytestconfig.environment.solana_url)
+    return client

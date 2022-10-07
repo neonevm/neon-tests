@@ -43,10 +43,10 @@ jobs:
         run: |
           ssh_key=$HOME/.ssh/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
-          #./clickfile.py infra deploy
-          #echo "::set-output name=solana_ip::${env.SOLANA_IP}"
-          #echo "::set-output name=proxy_ip::${env.PROXY_IP}"
-          cat ${ss_key}
+          ./clickfile.py infra deploy
+          env
+          echo "::set-output name=solana_ip::${env.SOLANA_IP}"
+          echo "::set-output name=proxy_ip::${env.PROXY_IP}"
       - uses: actions/upload-artifact@v3
         with:
           name: tf-state
@@ -58,8 +58,7 @@ jobs:
         if: always()
         id: destroy
         run: |
-          #./clickfile.py infra destroy
-          env
+          ./clickfile.py infra destroy
 
     #outputs:
     #  solana_ip: ${{ steps.deploy.outputs.solana_ip }}

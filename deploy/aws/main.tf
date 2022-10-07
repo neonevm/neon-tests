@@ -183,7 +183,7 @@ resource "aws_instance" "proxy" {
     type        = "ssh"
     user        = "ubuntu"
     host        = aws_instance.proxy.public_ip
-    private_key = file("~/.ssh/dapps-stand")
+    private_key = file(pathexpand("~/.ssh/dapps-stand"))
   }
 
   provisioner "file" {

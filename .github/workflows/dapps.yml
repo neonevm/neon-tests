@@ -41,11 +41,8 @@ jobs:
       - name: "Deploy stand"
         id: deploy
         run: |
-          ssh_path=$HOME/.ssh
-          ssh_key=${ssh_path}/dapps-stand
-          mkdir -p ${ssh_path}
+          ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
-          GETENT=$(dirname $(which getent)) && export PATH=$PATH:$GETENT
           ./clickfile.py infra deploy
           echo "::set-output name=solana_ip::${env.SOLANA_IP}"
           echo "::set-output name=proxy_ip::${env.PROXY_IP}"

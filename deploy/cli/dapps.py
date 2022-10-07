@@ -3,8 +3,8 @@ import subprocess
 import typing as tp
 
 TF_ENV = {
-    "AWS_SECRET_ACCESS_KEY": os.environ.get("AWS_SECRET_ACCESS_KEY"),
-    "AWS_ACCESS_KEY_ID": os.environ.get("AWS_ACCESS_KEY_ID"),
+    "AWS_SECRET_ACCESS_KEY": os.environ.get("AWS_SECRET_ACCESS_KEY",''),
+    "AWS_ACCESS_KEY_ID": os.environ.get("AWS_ACCESS_KEY_ID",''),
     "AWS_S3_BUCKET": os.environ.get("AWS_S3_BUCKET", "neon-tests-dapps"),
     "AWS_REGION": os.environ.get("AWS_REGION", "us-east-2"),
     "TF_VAR_branch": "develop",

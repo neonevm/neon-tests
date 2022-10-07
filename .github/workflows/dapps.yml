@@ -6,8 +6,8 @@ on:
       - '**NDEV-629'
 
 env:
-  AWS_ACCESS_KEY_ID1: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY1: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
 
@@ -20,7 +20,7 @@ jobs:
         id: terraform
         run: |
 
-          sudo apt-get update && sudo apt-get install -y python-dev gnupg software-properties-common wget libc-bin
+          sudo apt-get update && sudo apt-get install -y python-dev gnupg software-properties-common wget
           wget -O- https://apt.releases.hashicorp.com/gpg | \
               gpg --dearmor | \
               sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg

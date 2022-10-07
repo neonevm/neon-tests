@@ -41,8 +41,9 @@ jobs:
       - name: "Deploy stand"
         id: deploy
         run: |
-          ssh_key=$HOME/.ssh/dapps-stand
-          touch ${ssh_key}
+          ssh_path=$HOME/.ssh
+          mkdir ${ssh_path}
+          ssh_key=${ssh_path}/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra deploy
           env

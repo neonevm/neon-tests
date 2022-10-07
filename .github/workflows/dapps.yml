@@ -41,6 +41,7 @@ jobs:
       - name: "Deploy stand"
         id: deploy
         run: |
+          echo "getent is: $(which getent)"
           ssh_path=/home/runner/.ssh
           mkdir -p ${ssh_path}
           ssh_key=${ssh_path}/dapps-stand

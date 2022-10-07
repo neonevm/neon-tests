@@ -18,9 +18,7 @@ TF_ENV.update(
     {
         "TF_BACKEND_CONFIG": f"-backend-config=\"bucket={TF_ENV['AWS_S3_BUCKET']}\" "
         f"-backend-config=\"key={TF_ENV['TFSTATE_KEY']}\" "
-        f"-backend-config=\"region={TF_ENV['AWS_REGION']}\" "
-        f"-backend-config=\"access_key={TF_ENV['AWS_ACCESS_KEY_ID']}\" "
-        f"-backend-config=\"secret_key={TF_ENV['AWS_SECRET_ACCESS_KEY']}\" ",
+        f"-backend-config=\"region={TF_ENV['AWS_REGION']}\" ",
         "TFSTATE_BUCKET": TF_ENV["AWS_S3_BUCKET"],
         "TFSTATE_REGION": TF_ENV["AWS_REGION"],
     }

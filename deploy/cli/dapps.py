@@ -18,7 +18,9 @@ TF_ENV.update(
     {
         "TF_BACKEND_CONFIG": f"-backend-config=\"bucket={TF_ENV['AWS_S3_BUCKET']}\" "
         f"-backend-config=\"key={TF_ENV['TFSTATE_KEY']}\" "
-        f"-backend-config=\"region={TF_ENV['AWS_REGION']}\" ",
+        f"-backend-config=\"region={TF_ENV['AWS_REGION']}\" "
+        f"-backend-config=\"access_key={TF_ENV['AWS_ACCESS_KEY_ID']}\" "
+        f"-backend-config=\"secret_key={TF_ENV['AWS_SECRET_ACCESS_KEY']}\" ",
         "TFSTATE_BUCKET": TF_ENV["AWS_S3_BUCKET"],
         "TFSTATE_REGION": TF_ENV["AWS_REGION"],
     }
@@ -27,10 +29,11 @@ TF_ENV.update(
 
 def set_github_env(envs: tp.Dict, upper=True) -> None:
     """Set environment for github action"""
-
-    with open(os.getenv("GITHUB_ENV"), "a") as env_file:
-        for key, value in envs.items():
-            env_file.write(f"{key.upper() if upper else key}={value}")
+    path = os.getenv("GITHUB_ENV", str())
+    if os.path.exists(path):
+        with open(path, "a") as env_file:
+            for key, value in envs.items():
+                env_file.write(f"{key.upper() if upper else key}={value}")
 
 
 def deploy_infrastructure() -> dict:

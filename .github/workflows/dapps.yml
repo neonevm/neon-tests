@@ -43,10 +43,12 @@ jobs:
         run: |
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
+          echo "NETWORK=devnet" >> $GITHUB_ENV
           ./clickfile.py infra deploy
           #echo "::set-output name=solana_ip::${env.SOLANA_IP}"
           #echo "::set-output name=proxy_ip::${env.PROXY_IP}"
-          echo "Env: ${{ env.SOLANA_IP }}"
+          echo "SOLANA: ${{ env.SOLANA_IP }}"
+          echo "NETWORK: ${{ env.NETWORK }}"
       - uses: actions/upload-artifact@v3
         with:
           name: tf-state

@@ -28,7 +28,9 @@ TF_ENV.update(
 def set_github_env(envs: tp.Dict, upper=True) -> None:
     """Set environment for github action"""
     path = os.getenv("GITHUB_ENV", str())
+    print(f"{30*'_'}GITHUB_ENV:{path}")
     if os.path.exists(path):
+        print(f"{30 * '_'}Set GITHUB_ENV")
         with open(path, "a") as env_file:
             for key, value in envs.items():
                 env_file.write(f"{key.upper() if upper else key}={value}")

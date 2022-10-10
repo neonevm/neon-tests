@@ -49,8 +49,8 @@ jobs:
           ./clickfile.py infra deploy
           #echo "::set-output name=solana_ip::${env.SOLANA_IP}"
           #echo "::set-output name=proxy_ip::${env.PROXY_IP}"
-          echo "SOLANA: $SOLANA_IP"
-          echo "NETWORK: $NETWORK"
+          echo "SOLANA: ${{ env.SOLANA_IP }}"
+          echo "NETWORK: ${{ env.NETWORK }}"
       - uses: actions/upload-artifact@v3
         with:
           name: tf-state

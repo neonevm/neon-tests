@@ -45,6 +45,7 @@ def deploy_infrastructure() -> dict:
         env=TF_ENV,
         cwd="deploy/aws",
         stdout=subprocess.PIPE,
+        text=True
     ).stdout.strip()
     if isinstance(proxy_ip, bytes):
         proxy_ip = proxy_ip.decode()
@@ -54,6 +55,7 @@ def deploy_infrastructure() -> dict:
         env=TF_ENV,
         cwd="deploy/aws",
         stdout=subprocess.PIPE,
+        text=True
     ).stdout.strip()
     if isinstance(solana_ip, bytes):
         solana_ip = solana_ip.decode()
@@ -74,7 +76,6 @@ def prepare_accounts(count, amount) -> tp.List:
         "solana_url": f"http://{os.environ.get('SOLANA_IP')}:8899/",
         "faucet_url": f"http://{os.environ.get('PROXY_IP')}:3333/",
     }
-    print(f"{30*'_'}{network}")
     accounts = faucet_cli.prepare_wallets_with_balance(network, count, amount)
     if os.environ.get("CI"):
         set_github_env(dict(accounts=accounts))

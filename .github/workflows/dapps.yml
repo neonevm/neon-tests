@@ -66,16 +66,19 @@ jobs:
         if: steps.accounts.outcome == 'success'
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
-          SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
+          BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         run: |
-          echo "ACCOUNTS: ${{ env.ACCOUNTS }}"
-          echo "SOLANA IP: ${{ env.SOLANA_IP }}"
-          echo "PROXY IP: ${{ env.PROXY_IP }}"
           CWD=/opt/uniswap
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
           docker build -t uniswap:latest ${CWD}
+          docker run -it -e NEON_PROXY_URL=http://${{ env.PROXY_IP }}:9090/solana -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} uniswap:latest
+
+      - name: Notify on failure
+        id: notification
+        if: steps.uniswap.outcome == 'failure'
+          run: "./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }}"
 
       - uses: actions/download-artifact@v3
         with:
@@ -86,11 +89,6 @@ jobs:
         run: |
           ./clickfile.py infra destroy
 
-    #outputs:
-    #  solana_ip: ${{ steps.deploy.outputs.solana_ip }}
-    #  proxy_ip: ${{ steps.deploy.outputs.proxy_ip }}
-    #  proxy_url: "http://${{ steps.deploy.outputs.proxy_ip }}:9090/solana"
-    #  solana_url: "http://${{ steps.deploy.outputs.solana_ip }}:8899/"
 
   #uniswap:
   #  runs-on: "neon-hosted"

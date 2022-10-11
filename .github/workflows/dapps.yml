@@ -57,8 +57,8 @@ jobs:
           SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
         run: |
-          echo "SOLANA IP: ${{ SOLANA_IP }}"
-          echo "PROXY IP: ${{ PROXY_IP }}"
+          echo "SOLANA IP: ${{ env.SOLANA_IP }}"
+          echo "PROXY IP: ${{ env.PROXY_IP }}"
           ./clickfile.py infra gen-accounts
       - uses: actions/upload-artifact@v3
         with:

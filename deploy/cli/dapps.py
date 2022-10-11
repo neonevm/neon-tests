@@ -42,7 +42,8 @@ def get_github_envs() -> tp.Dict:
     if os.path.exists(path):
         with open(path, "r") as env_file:
             envs = env_file.read().split("\n")
-            return dict([env.split("=") for env in envs])
+            #return dict([env.split("=") for env in envs])
+            return envs
 
 
 def deploy_infrastructure() -> dict:
@@ -74,6 +75,7 @@ def destroy_infrastructure():
 
 def prepare_accounts(count, amount):
     print(f"{30*'_'} Readed envs: {get_github_envs()}")
+    print(f"{30*'_'} Read os environ {os.environ}")
     #network = {
     #    "proxy_url": f"http://{os.environ.get('PROXY_IP')}:9090/solana",
     #    "network_id": 111,

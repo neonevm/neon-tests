@@ -49,6 +49,7 @@ jobs:
           ./clickfile.py infra deploy
 
       - uses: actions/upload-artifact@v3
+        if: always()
         with:
           name: tf-state
           path: deploy/aws/
@@ -74,15 +75,16 @@ jobs:
           git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
           docker build -t uniswap:latest ${CWD}
           proxy_url=http://${{ env.PROXY_IP }}:9090/solana
-          docker run -it -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} uniswap:latest
+          docker run -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} uniswap:latest
 
       - name: Notify on failure
         id: notification
-        if: ${{ failure() }}
+        if: failure()
         run: |
           ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }}
 
       - uses: actions/download-artifact@v3
+        if: always()
         with:
           name: tf-state
       - name: "Destroy stand"

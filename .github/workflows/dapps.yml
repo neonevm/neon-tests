@@ -34,36 +34,48 @@ jobs:
           sudo apt-get install terraform
 
       - uses: actions/checkout@v3
-      - name: "Install python requirements"
+      - name: Install python requirements
         if: steps.terraform.outcome == 'success'
         id: requirements
         uses: ./.github/actions/requirements
 
-      - name: "Deploy stand"
+      - name: Deploy stand
         id: deploy
         if: steps.requirements.outcome == 'success'
         run: |
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra deploy
-          #echo "::set-output name=solana_ip::${env.SOLANA_IP}"
-          #echo "::set-output name=proxy_ip::${env.PROXY_IP}"
-          echo "SOLANA: ${{ env.SOLANA_IP }}"
-          echo "NETWORK: ${{ env.NETWORK }}"
-      - name: "Check environments"
-        id: environments
+      - uses: actions/upload-artifact@v3
+          with:
+            name: tf-state
+            path: deploy/aws/
+
+      - name: Prepare accounts
+        id: accounts
         if: steps.deploy.outcome == 'success'
         env:
           SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
         run: |
+          ./clickfile.py infra gen-accounts -c 1 -a 10000
+
+      - name: Launch uniswap tests
+        id: uniswap
+        if: steps.accounts.outcome == 'success'
+        env:
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+          SOLANA_IP: ${{ env.SOLANA_IP }}
+          PROXY_IP: ${{ env.PROXY_IP }}
+        run: |
+          echo "ACCOUNTS: ${{ env.ACCOUNTS }}"
           echo "SOLANA IP: ${{ env.SOLANA_IP }}"
           echo "PROXY IP: ${{ env.PROXY_IP }}"
-          ./clickfile.py infra gen-accounts
-      - uses: actions/upload-artifact@v3
-        with:
-          name: tf-state
-          path: deploy/aws/
+          CWD=/opt/uniswap
+          mkdir -p ${CWD}
+          git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
+          docker build -t uniswap:latest ${CWD}
+
       - uses: actions/download-artifact@v3
         with:
           name: tf-state

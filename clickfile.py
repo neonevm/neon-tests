@@ -538,15 +538,7 @@ def destroy():
 @click.option("-c", "--count", default=2, help="How many users prepare")
 @click.option("-a", "--amount", default=10000, help="How many airdrop")
 def prepare_accounts(count, amount):
-    network = {
-        "proxy_url": f"http://{os.environ.get('PROXY_IP')}:9090/solana",
-        "network_id": 111,
-        "solana_url": f"http://{os.environ.get('SOLANA_IP')}:8899/",
-        "faucet_url": f"http://{os.environ.get('PROXY_IP')}:3333/",
-    }
-    accounts = faucet_cli.prepare_wallets_with_balance(network, count, amount)
-    if os.environ.get("CI"):
-        subprocess.run(f'echo "::set-output name=accounts::{",".join(accounts)}"')
+    dapps_cli.prepare_accounts(count, amount)
 
 
 infra.add_command(deploy, "deploy")

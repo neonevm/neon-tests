@@ -75,7 +75,9 @@ jobs:
           git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
           docker build -t uniswap:latest ${CWD}
           proxy_url=http://${{ env.PROXY_IP }}:9090/solana
-          docker run -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} uniswap:latest
+          test -t 1 && USE_TTY="-t"
+          docker run -i ${USE_TTY} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} uniswap:latest
+          exit $?
 
       - name: Notify on failure
         id: notification

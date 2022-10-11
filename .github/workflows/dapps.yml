@@ -20,7 +20,7 @@ jobs:
         id: terraform
         run: |
 
-          sudo apt-get update && sudo apt-get install -y python-dev gnupg software-properties-common wget
+          sudo apt-get update && sudo apt-get install -y python-dev gnupg software-properties-common wget curl
           wget -O- https://apt.releases.hashicorp.com/gpg | \
               gpg --dearmor | \
               sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
@@ -59,6 +59,12 @@ jobs:
           SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
         run: |
+          proxy_url=http://${{ env.PROXY_IP }}:9090/solana
+          solana_url=http://${{ env.SOLANA_IP }}:8899/
+          echo "proxy: ${proxy_url} solana: ${solana_url}"
+          curl ${proxy_url}
+          curl ${solana_ip}
+
           ./clickfile.py infra gen-accounts -c 1 -a 10000
 
       - name: Launch uniswap tests

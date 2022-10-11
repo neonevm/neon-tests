@@ -70,6 +70,7 @@ def prepare_accounts(count, amount) -> tp.List:
         "solana_url": f"http://{os.environ.get('SOLANA_IP')}:8899/",
         "faucet_url": f"http://{os.environ.get('PROXY_IP')}:3333/",
     }
+    print(f"{30*'_'}{network}")
     accounts = faucet_cli.prepare_wallets_with_balance(network, count, amount)
     if os.environ.get("CI"):
         set_github_env(dict(accounts=accounts))

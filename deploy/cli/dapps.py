@@ -78,5 +78,5 @@ def prepare_accounts(count, amount) -> tp.List:
     }
     accounts = faucet_cli.prepare_wallets_with_balance(network, count, amount)
     if os.environ.get("CI"):
-        set_github_env(dict(accounts=accounts))
+        set_github_env(dict(accounts=",".join(accounts)))
     return accounts

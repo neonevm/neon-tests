@@ -78,8 +78,8 @@ jobs:
           test -t 1 && USE_TTY="-t"
           docker run -i ${USE_TTY} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} uniswap:latest
           RESULT=$?
-          echo "Test run exit code is ?{RESULT}"
-          exit ${RESULT}
+          echo "Test run exit code is $RESULT"
+          exit $RESULT
 
       - name: Notify on failure
         id: notification

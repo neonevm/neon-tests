@@ -46,6 +46,8 @@ def deploy_infrastructure() -> dict:
         cwd="deploy/aws",
         stdout=subprocess.PIPE,
     ).stdout.strip()
+    if isinstance(proxy_ip, bytes):
+        proxy_ip = proxy_ip.decode()
     solana_ip = subprocess.run(
         "terraform output --json | jq -r '.solana_ip.value'",
         shell=True,
@@ -53,6 +55,8 @@ def deploy_infrastructure() -> dict:
         cwd="deploy/aws",
         stdout=subprocess.PIPE,
     ).stdout.strip()
+    if isinstance(solana_ip, bytes):
+        solana_ip = solana_ip.decode()
     infra = dict(solana_ip=solana_ip, proxy_ip=proxy_ip)
     set_github_env(infra)
     return infra

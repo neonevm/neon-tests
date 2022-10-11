@@ -78,7 +78,8 @@ jobs:
       - name: Notify on failure
         id: notification
         if: steps.uniswap.outcome == 'failure'
-          run: "./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }}"
+        run: |
+          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }}
 
       - uses: actions/download-artifact@v3
         with:

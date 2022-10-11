@@ -46,10 +46,11 @@ jobs:
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra deploy
+
       - uses: actions/upload-artifact@v3
-          with:
-            name: tf-state
-            path: deploy/aws/
+        with:
+          name: tf-state
+          path: deploy/aws/
 
       - name: Prepare accounts
         id: accounts

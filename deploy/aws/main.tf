@@ -44,7 +44,7 @@ data "template_file" "proxy_init" {
   vars = {
     branch              = "${var.branch}"
     proxy_model_commit  = "${var.proxy_container_tag}"
-    solana_ip           = aws_instance.solana.private_ip
+    solana_ip           = aws_instance.solana.public_ip
     neon_evm_commit     = "${var.neon_evm_container_tag}"
     faucet_model_commit = "${var.faucet_container_tag}"
   }
@@ -60,13 +60,13 @@ resource "aws_security_group" "test-stand-solana" {
   description = "set of rules allow incoming traffic from ci test agents for OZ tests"
   vpc_id      = aws_default_vpc.default.id
 
-  ingress {
-    description = "allow incoming from ci test agent to SOLANA"
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = var.allow_list
-  }
+  #ingress {
+  #  description = "allow incoming from ci test agent to SOLANA"
+  #  from_port   = 0
+  #  to_port     = 65535
+  #  protocol    = "tcp"
+  #  cidr_blocks = var.allow_list
+  #}
 
   ingress {
     description = "allow incoming from world to SOLANA"
@@ -75,7 +75,46 @@ resource "aws_security_group" "test-stand-solana" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  #-1
+  ingress {
+    description = "allow incoming from ci test agent to proxy"
+    from_port   = 8899
+    to_port     = 8899
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  #-2
+  ingress {
+    description = "allow incoming from ci test agent to proxy"
+    from_port   = 9900
+    to_port     = 9900
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
+  #-3
+  ingress {
+    description = "allow incoming from ci test agent to proxy"
+    from_port   = 8900
+    to_port     = 8900
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  #-4
+  ingress {
+    description = "allow incoming from ci test agent to proxy"
+    from_port   = 8001
+    to_port     = 8001
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description = "allow incoming from ci test agent to proxy"
+    from_port   = 8001
+    to_port     = 8009
+    protocol    = "udp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
   egress {
     from_port        = 0
     to_port          = 0
@@ -101,7 +140,7 @@ resource "aws_security_group" "test-stand-proxy" {
   vpc_id      = aws_default_vpc.default.id
 
   ingress {
-    description = "allow incoming from ci test agent to PROXY"
+    description = "allow incoming from ci test agent to proxy"
     from_port   = 9090
     to_port     = 9091
     protocol    = "tcp"
@@ -194,7 +233,7 @@ resource "aws_instance" "proxy" {
 
   provisioner "remote-exec" {
     inline = [
-      "echo '${aws_instance.solana.private_ip}' > /tmp/solana_host",
+      "echo '${aws_instance.solana.public_ip}' > /tmp/solana_host",
       "chmod a+x /tmp/proxy_init.sh",
       "sudo /tmp/proxy_init.sh"
     ]

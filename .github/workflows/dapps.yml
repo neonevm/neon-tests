@@ -73,13 +73,23 @@ jobs:
           CWD=/opt/uniswap
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
+
+          cat <<EOF > ${CWD}/docker/entrypoint.sh
+          #!/bin/sh
+          # Change to the correct directory
+          cd /usr/src/app;
+          # Run hardhat
+          yarn deploy
+
+          EOF
+
           docker build -t uniswap:latest ${CWD}
           proxy_url=http://${{ env.PROXY_IP }}:9090/solana
           test -t 1 && USE_TTY="-t"
           docker run -i ${USE_TTY} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} uniswap:latest
-          RESULT=$?
-          echo "Test run exit code is $RESULT"
-          exit $RESULT
+
+          run_test_result=$?
+          echo "Uniswap exited with code: $run_test_result" && exit $run_test_result
 
       - name: Notify on failure
         id: notification

@@ -4,6 +4,7 @@ from enum import Enum
 class ErrorMessage(Enum):
     NEGATIVE_VALUE = "Resulting wei value must be between 1 and "
     INSUFFICIENT_FUNDS = "insufficient funds for transfer"
+    GAS_OVERFLOW = "gas uint64 overflow"
     GAS_LIMIT_REACHED = "gas limit reached"
     INVALID_FIELDS_GAS = "Transaction had invalid fields: {'gas'"
     NONCE_TOO_LOW = "nonce too low"
@@ -15,6 +16,20 @@ class ErrorMessage(Enum):
     TOO_BIG_TRANSACTION = "transaction size is too big"
     TRANSACTION_UNDERPRICED = "transaction underpriced: have {} want"
 
+    INVALID_ADDRESS = "only accepts checksum addresses"
+    ZERO_ACCOUNT_ERC20 = "execution reverted: ERC20: {} the zero address"
+    AMOUNT_EXCEEDS_BALANCE_ERC20 = "execution reverted: ERC20: {} amount exceeds balance"
+    INSUFFICIENT_ALLOWANCE_ERC20 = "execution reverted: ERC20: insufficient allowance"
+    MUST_HAVE_MINTER_ROLE_ERC20 = "execution reverted: ERC20: must have minter role to mint"
+
+    ZERO_ACCOUNT_ERC721 = "execution reverted: ERC721: {} the zero address"
+    INVALID_TOKEN_ERC721 = "ERC721: invalid token ID"
+    NOT_TOKEN_OWNER_ERC721 = "execution reverted: ERC721: caller is not token owner nor approved"
+    INCORRECT_OWNER_ERC721 = "execution reverted: ERC721: transfer from incorrect owner"
+    APPROVAL_TO_OWNER_ERC721 = "execution reverted: ERC721: approval to current owner"
+    APPROVE_CALLER_IS_NOT_OWNER_ERC721 = "ERC721: approve caller is not token owner nor approved for all"
+    INVALID_RECEIVER_ERC721 = "execution reverted: ERC721: transfer to non ERC721Receiver implementer"
+    APPROVE_TO_CALLER_ERC721 = "execution reverted: ERC721: approve to caller"
 
 class AssertMessage(Enum):
     WRONG_ID = "Id of the response does not correspond to id of the request"

@@ -106,23 +106,3 @@ jobs:
         id: destroy
         run: |
           ./clickfile.py infra destroy
-
-
-  #uniswap:
-  #  runs-on: "neon-hosted"
-  #  needs:
-  #    - prepare-stand
-  #  steps:
-  #    - name: "Clone repository"
-  #      run: |
-  #        git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git
-  #    - name: "Build docker container"
-  #      run: |
-  #        docker build -t uniswap:latest .
-  #    - name: "Prepare accounts"
-  #      id: accounts
-  #      run: |
-  #        - ./clickfile.py infra prepare-accounts -c 1 -a 10000
-  #    - name: "Run tests"
-  #      run: |
-   #       docker run -it -e NEON_PROXY_URL=${{ needs.prepare-stand.outputs.proxy_url }} -e NEON_ACCOUNTS=${{ steps.accounts.outputs.accounts }} uniswap:latest

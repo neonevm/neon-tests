@@ -19,7 +19,7 @@ DEFAULT_ERC20_BALANCE = 1000
 
 GAS_LIMIT_AND_PRICE_DATA = (
     [1, None, ErrorMessage.GAS_LIMIT_REACHED.value],
-    [U64_MAX + 1, None, ErrorMessage.INSUFFICIENT_FUNDS.value],
+    [U64_MAX + 1, None, ErrorMessage.GAS_OVERFLOW.value],
     [
         0,
         U64_MAX + 1,

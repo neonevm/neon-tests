@@ -8,8 +8,15 @@ import pytest
 import solana
 import solana.rpc.api
 from _pytest.config import Config
+from solana.keypair import Keypair
+from solana.publickey import PublicKey
+from solana.rpc.types import TxOpts
+from solana.transaction import Transaction
+from spl.token.instructions import create_associated_token_account, get_associated_token_address
 
+from integration.tests.basic.helpers.basic import BaseMixin
 from utils.erc20wrapper import ERC20Wrapper
+from utils.erc721ForMetaplex import ERC721ForMetaplex
 from utils.faucet import Faucet
 from utils.operator import Operator
 from utils.web3client import NeonWeb3Client
@@ -21,6 +28,24 @@ NEON_AIRDROP_AMOUNT = 10_000
 
 def pytest_addoption(parser):
     parser.addoption("--network", action="store", default="night-stand", help="Which stand use")
+
+
+def pytest_collection_modifyitems(config, items):
+    deselected_items = []
+    selected_items = []
+    if config.getoption("--network") == 'devnet':
+        deselected_mark = 'only_stands'
+    else:
+        deselected_mark = 'only_devnet'
+
+    for item in items:
+        if item.get_closest_marker(deselected_mark):
+            deselected_items.append(item)
+        else:
+            selected_items.append(item)
+
+    config.hook.pytest_deselected(items=deselected_items)
+    items[:] = selected_items
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -106,6 +131,73 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
 def erc20wrapper(web3_client: NeonWeb3Client, faucet, pytestconfig: Config):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
     erc20 = ERC20Wrapper(web3_client, faucet, name=f"Test {symbol}", symbol=symbol)
-    erc20.mint_tokens(erc20.account)
+    erc20.mint_tokens(erc20.account, erc20.account.address)
     yield erc20
 
+
+@pytest.fixture(scope="function")
+def solana_acc(erc20wrapper, sol_client):
+    acc = Keypair.generate()
+    sol_client.request_airdrop(acc.public_key, 1000000000)
+    BaseMixin.wait_condition(lambda: sol_client.get_balance(acc.public_key)["result"]["value"] == 1000000000)
+    token_mint = PublicKey(erc20wrapper.contract.functions.tokenMint().call())
+    trx = Transaction()
+    trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))
+    opts = TxOpts(skip_preflight=True, skip_confirmation=False)
+    sol_client.send_transaction(trx, acc, opts=opts)
+    solana_address = bytes(get_associated_token_address(acc.public_key, token_mint))
+    yield acc, token_mint, solana_address
+
+
+@pytest.fixture(scope="class")
+def multiple_actions_erc20(web3_client, faucet):
+    acc = web3_client.create_account()
+    faucet.request_neon(acc.address, 100)
+    symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
+
+    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
+        "multiple_actions_erc20", "0.8.10", acc, contract_name="multipleActionsERC20",
+        constructor_args=[f"Test {symbol}", symbol, 18]
+    )
+    return acc, contract
+
+
+@pytest.fixture(scope="class")
+def erc721(web3_client: NeonWeb3Client, faucet, pytestconfig: Config):
+    contract = ERC721ForMetaplex(web3_client, faucet)
+    return contract
+
+
+@pytest.fixture(scope="class")
+def nft_receiver(web3_client, faucet):
+    acc = web3_client.create_account()
+    faucet.request_neon(acc.address, 100)
+    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
+        "erc721_receiver", "0.8.10", acc, contract_name="ERC721Receiver")
+    return contract
+
+
+@pytest.fixture(scope="class")
+def invalid_nft_receiver(web3_client, faucet):
+    acc = web3_client.create_account()
+    faucet.request_neon(acc.address, 100)
+    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
+        "erc721_invalid_receiver", "0.8.10", acc, contract_name="ERC721Receiver")
+    return contract
+
+
+@pytest.fixture(scope="class")
+def multiple_actions_erc721(web3_client, faucet):
+    acc = web3_client.create_account()
+    faucet.request_neon(acc.address)
+    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
+        "multiple_actions_erc721", "0.8.10", acc, contract_name="multipleActionsERC721"
+    )
+    return acc, contract
+
+
+@pytest.fixture(scope="function")
+def new_account(web3_client, faucet):
+    new_acc = web3_client.create_account()
+    faucet.request_neon(new_acc.address, 100)
+    yield new_acc

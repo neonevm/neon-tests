@@ -48,11 +48,11 @@ jobs:
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra deploy
 
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: tf-state
-          path: deploy/aws/
+      #- uses: actions/upload-artifact@v3
+      #  if: always()
+      #  with:
+      #    name: tf-state
+      #    path: deploy/aws/
 
       - name: Prepare accounts
         id: accounts
@@ -97,10 +97,10 @@ jobs:
         run: |
           ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }}
 
-      - uses: actions/download-artifact@v3
-        if: always()
-        with:
-          name: tf-state
+      #- uses: actions/download-artifact@v3
+      #  if: always()
+      #  with:
+      #    name: tf-state
       - name: "Destroy stand"
         if: always()
         id: destroy

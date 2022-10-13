@@ -126,10 +126,10 @@ jobs:
         id: requirements
         uses: ./.github/actions/python-requirements
       - name: Destroy stand with terraform
-        if: ${{ needs.prepare.steps.deploy.outcome == 'success' }}
+        if: ${{ always() }}
         id: destroy
         run: |
-          echo "is Destroeyd"
+          echo "is Destroeyd:  ${{ needs.prepare.steps.deploy.outcome == 'success' }}"
           exit 0
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}

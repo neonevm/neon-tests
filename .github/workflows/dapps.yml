@@ -15,7 +15,7 @@ env:
 jobs:
   prepare:
     runs-on: ubuntu-20.04
-    if: always()
+    if: ${{ always() }}
     steps:
       - name: Install terraform
         id: terraform
@@ -36,27 +36,27 @@ jobs:
 
       - uses: actions/checkout@v3
       - name: Install python requirements
-        if: steps.terraform.outcome == 'success'
+        if: ${{ steps.terraform.outcome == 'success' }}
         id: requirements
         uses: ./.github/actions/python-requirements
 
       - name: Deploy stand with terraform
         id: deploy
-        if: steps.requirements.outcome == 'success'
+        if: ${{ steps.requirements.outcome == 'success' }}
         run: |
           exit 0
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra deploy
       - uses: actions/upload-artifact@v3
-        if: steps.deploy.outcome == 'success'
+        if: ${{ steps.deploy.outcome == 'success' }}
         with:
           name: tf-state
           path: deploy/aws/
 
       - name: Prepare accounts
         id: accounts
-        if: steps.deploy.outcome == 'success'
+        if: ${{ steps.deploy.outcome == 'success' }}
         env:
           SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
@@ -66,7 +66,7 @@ jobs:
 
       - name: Set outputs
         id: share
-        if: steps.accounts.outcome == 'success'
+        if: ${{ steps.accounts.outcome == 'success' }}
         env:
           SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
@@ -86,7 +86,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs:
       - prepare
-    if: success()
+    if: ${{ success() }}
     steps:
       - name: Launch uniswap tests
         id: uniswap
@@ -126,7 +126,7 @@ jobs:
         id: requirements
         uses: ./.github/actions/python-requirements
       - name: Destroy stand with terraform
-        if: needs.prepare.steps.deploy.outcome == 'success'
+        if: ${{ needs.prepare.steps.deploy.outcome == 'success' }}
         id: destroy
         run: |
           echo "is Destroeyd"
@@ -138,7 +138,7 @@ jobs:
   notify:
     runs-on: ubuntu-20.04
     needs: [prepare, uniswap, destroy]
-    if: failure()
+    if: ${{ failure() }}
     steps:
       - uses: actions/checkout@v3
       - name: Install python requirements

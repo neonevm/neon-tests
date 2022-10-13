@@ -89,7 +89,7 @@ jobs:
         id: notification
         if: failure()
         run: |
-          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }}
+          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "`FAILED` dapps: 'Uniswap-V2-NEON tests'"
 
       - name: "Destroy stand"
         if: always()

@@ -60,14 +60,6 @@ resource "aws_security_group" "test-stand-solana" {
   description = "set of rules allow incoming traffic from ci test agents for OZ tests"
   vpc_id      = aws_default_vpc.default.id
 
-  #ingress {
-  #  description = "allow incoming from ci test agent to SOLANA"
-  #  from_port   = 0
-  #  to_port     = 65535
-  #  protocol    = "tcp"
-  #  cidr_blocks = var.allow_list
-  #}
-
   ingress {
     description = "allow incoming from world to SOLANA"
     from_port   = 22
@@ -222,7 +214,6 @@ resource "aws_instance" "proxy" {
     type        = "ssh"
     user        = "ubuntu"
     host        = aws_instance.proxy.public_ip
-    #private_key = file(pathexpand("~/.ssh/dapps-stand"))
     private_key = file("/tmp/dapps-stand")
   }
 

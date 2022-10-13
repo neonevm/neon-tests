@@ -20,6 +20,7 @@ jobs:
       - name: Install terraform
         id: terraform
         run: |
+          exit 0
 
           sudo apt-get update && sudo apt-get install -y python-dev gnupg software-properties-common wget
           wget -O- https://apt.releases.hashicorp.com/gpg | \
@@ -44,6 +45,7 @@ jobs:
         id: deploy
         if: steps.requirements.outcome == 'success'
         run: |
+          exit 0
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra deploy
@@ -55,6 +57,7 @@ jobs:
           SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
         run: |
+          exit 0
           ./clickfile.py infra gen-accounts -c 1 -a 10000
 
       - name: Launch uniswap tests
@@ -64,6 +67,7 @@ jobs:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           PROXY_IP: ${{ env.PROXY_IP }}
         run: |
+          exit 1
           CWD=/opt/uniswap
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
@@ -92,4 +96,5 @@ jobs:
         if: always()
         id: destroy
         run: |
+          exit 0
           ./clickfile.py infra destroy

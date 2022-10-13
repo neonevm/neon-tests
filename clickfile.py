@@ -503,10 +503,11 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
 @cli.command(help="Send notification to slack")
 @click.option("-u", "--url", help="slack app endpoint url.")
 @click.option("-b", "--build_url", help="github action test build url.")
-@click.option("-t", "--traceback", default="", help="custom traceback message.")
-def send_notification(url, build_url, traceback):
+@click.option("-t", "--trace_back", default="", help="custom traceback message.")
+def send_notification(url, build_url, trace_back):
+    print(f"{30*'_'}{trace_back}")
     p = pathlib.Path(f"./{CMD_ERROR_LOG}")
-    trace_back = traceback or p.read_text() if p.exists() else ""
+    trace_back = trace_back or p.read_text() if p.exists() else ""
     print(f"{30*'_'}{trace_back}")
     tpl = ERR_MSG_TPL.copy()
 

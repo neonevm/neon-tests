@@ -40,7 +40,7 @@ jobs:
         id: requirements
         uses: ./.github/actions/requirements
 
-      - name: Deploy stand
+      - name: Deploy stand with terraform
         id: deploy
         if: steps.requirements.outcome == 'success'
         run: |
@@ -82,16 +82,13 @@ jobs:
           test -t 1 && USE_TTY="-t"
           docker run -i ${USE_TTY} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} uniswap:latest
 
-          #run_test_result=$?
-          #echo "Uniswap exited with code: $run_test_result" && exit $run_test_result
-
       - name: Notify on failure
         id: notification
         if: failure()
         run: |
-          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "`FAILED` dapps: 'Uniswap-V2-NEON tests'"
+          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "FAILED dapps: Uniswap-V2-NEON tests"
 
-      - name: "Destroy stand"
+      - name: Destroy stand with terraform
         if: always()
         id: destroy
         run: |

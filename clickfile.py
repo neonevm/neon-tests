@@ -507,6 +507,7 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
 def send_notification(url, build_url, traceback):
     p = pathlib.Path(f"./{CMD_ERROR_LOG}")
     trace_back = traceback or p.read_text() if p.exists() else ""
+    print(f"{30*'_'}{trace_back}")
     tpl = ERR_MSG_TPL.copy()
 
     parsed_build_url = urlparse(build_url).path.split("/")

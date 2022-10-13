@@ -20,6 +20,7 @@ jobs:
       - name: Install terraform
         id: terraform
         run: |
+          exit 0
           sudo apt-get update && sudo apt-get install -y python-dev gnupg software-properties-common wget
           wget -O- https://apt.releases.hashicorp.com/gpg | \
               gpg --dearmor | \
@@ -43,7 +44,7 @@ jobs:
         id: deploy
         if: steps.requirements.outcome == 'success'
         run: |
-          exit 1
+          exit 0
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra deploy
@@ -60,6 +61,7 @@ jobs:
           SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
         run: |
+          exit 0
           ./clickfile.py infra gen-accounts -c 1 -a 10000
 
       - name: Set outputs
@@ -70,6 +72,7 @@ jobs:
           PROXY_IP: ${{ env.PROXY_IP }}
           ACCOUNTS: ${{ env.ACCOUNTS }}
         run: |
+          exit 0
           echo "::set-output name=solana_ip::${{ env.SOLANA_IP }}"
           echo "::set-output name=proxy_ip::${{ env.PROXY_IP }}"
           echo "::set-output name=accounts::${{ env.ACCOUNTS }}"
@@ -92,6 +95,7 @@ jobs:
           SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
           ACCOUNTS: ${{ needs.prepare.outputs.accounts }}
         run: |
+          exit 0
           CWD=/opt/uniswap
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
@@ -125,6 +129,8 @@ jobs:
         if: needs.prepare.steps.deploy.outcome == 'success'
         id: destroy
         run: |
+          echo "is Destroeyd"
+          exit 0
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra destroy
@@ -141,4 +147,4 @@ jobs:
       - name: Notify on failure
         id: notification
         run: |
-          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "FAILED dapps: Uniswap-V2-NEON tests"
+          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "dapps: UniswapV2 NEON tests id failed."

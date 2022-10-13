@@ -106,13 +106,13 @@ jobs:
 
           docker build -t uniswap:latest ${CWD}
           proxy_url=http://${{ env.PROXY_IP }}:9090/solana
-          echo "Proxy ip is: ${proxy_ip}"
           test -t 1 && USE_TTY="-t"
           docker run -i ${USE_TTY} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} uniswap:latest
 
   destroy:
     runs-on: ubuntu-20.04
     needs: [prepare, uniswap]
+    if: ${{ failed() || success() }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
@@ -122,7 +122,6 @@ jobs:
         id: requirements
         uses: ./.github/actions/python-requirements
       - name: Destroy stand with terraform
-        if: ${{ always() }}
         id: destroy
         run: |
           ssh_key=/tmp/dapps-stand

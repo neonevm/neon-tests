@@ -132,7 +132,7 @@ jobs:
         if: ${{ always() }}
         id: destroy
         run: |
-          echo "is Destroeyd:  ${{ jobs.prepare.steps.deploy.status }}"
+          echo "is Destroeyd:  ${{ needs.prepare.steps.deploy.status }}"
           exit 0
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}

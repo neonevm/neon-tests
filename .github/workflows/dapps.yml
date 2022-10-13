@@ -44,6 +44,7 @@ jobs:
         id: deploy
         if: ${{ steps.requirements.outcome == 'success' }}
         run: |
+          echo "${{ steps.requirements.outcome }}"
           exit 0
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
@@ -61,6 +62,7 @@ jobs:
           SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
         run: |
+          echo "${{ steps.deploy.outcome}}"
           exit 0
           ./clickfile.py infra gen-accounts -c 1 -a 10000
 
@@ -72,6 +74,7 @@ jobs:
           PROXY_IP: ${{ env.PROXY_IP }}
           ACCOUNTS: ${{ env.ACCOUNTS }}
         run: |
+          echo "${{ steps.accounts.outcome }}"
           exit 0
           echo "::set-output name=solana_ip::${{ env.SOLANA_IP }}"
           echo "::set-output name=proxy_ip::${{ env.PROXY_IP }}"

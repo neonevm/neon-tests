@@ -20,7 +20,6 @@ jobs:
       - name: Install terraform
         id: terraform
         run: |
-          exit 0
           sudo apt-get update && sudo apt-get install -y python-dev gnupg software-properties-common wget
           wget -O- https://apt.releases.hashicorp.com/gpg | \
               gpg --dearmor | \
@@ -44,8 +43,6 @@ jobs:
         id: deploy
         if: ${{ steps.requirements.outcome == 'success' }}
         run: |
-          echo "${{ steps.requirements.outcome }}"
-          exit 0
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra deploy
@@ -62,8 +59,6 @@ jobs:
           SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
         run: |
-          echo "${{ steps.deploy.outcome}}"
-          exit 0
           ./clickfile.py infra gen-accounts -c 1 -a 10000
 
       - name: Set outputs
@@ -74,8 +69,6 @@ jobs:
           PROXY_IP: ${{ env.PROXY_IP }}
           ACCOUNTS: ${{ env.ACCOUNTS }}
         run: |
-          echo "${{ steps.accounts.outcome }}"
-          exit 0
           echo "::set-output name=solana_ip::${{ env.SOLANA_IP }}"
           echo "::set-output name=proxy_ip::${{ env.PROXY_IP }}"
           echo "::set-output name=accounts::${{ env.ACCOUNTS }}"
@@ -98,7 +91,6 @@ jobs:
           SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
           ACCOUNTS: ${{ needs.prepare.outputs.accounts }}
         run: |
-          exit 0
           CWD=/opt/uniswap
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
@@ -114,6 +106,7 @@ jobs:
 
           docker build -t uniswap:latest ${CWD}
           proxy_url=http://${{ env.PROXY_IP }}:9090/solana
+          echo "Proxy ip is: ${proxy_ip}"
           test -t 1 && USE_TTY="-t"
           docker run -i ${USE_TTY} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} uniswap:latest
 
@@ -132,9 +125,6 @@ jobs:
         if: ${{ always() }}
         id: destroy
         run: |
-          echo "is Destroeyd:  ${{ needs.prepare.steps.deploy.result }}"
-          echo "is Destroeyd:  ${{ needs.prepare.deploy.outcome }}"
-          exit 0
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra destroy

@@ -13,15 +13,13 @@ env:
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
 jobs:
-  pipeline:
+  prepare:
     runs-on: ubuntu-20.04
     if: always()
     steps:
       - name: Install terraform
         id: terraform
         run: |
-          exit 0
-
           sudo apt-get update && sudo apt-get install -y python-dev gnupg software-properties-common wget
           wget -O- https://apt.releases.hashicorp.com/gpg | \
               gpg --dearmor | \
@@ -39,16 +37,20 @@ jobs:
       - name: Install python requirements
         if: steps.terraform.outcome == 'success'
         id: requirements
-        uses: ./.github/actions/requirements
+        uses: ./.github/actions/python-requirements
 
       - name: Deploy stand with terraform
         id: deploy
         if: steps.requirements.outcome == 'success'
         run: |
-          exit 0
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra deploy
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: tf-state
+          path: deploy/aws/
 
       - name: Prepare accounts
         id: accounts
@@ -57,15 +59,37 @@ jobs:
           SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
         run: |
-          exit 0
           ./clickfile.py infra gen-accounts -c 1 -a 10000
 
-      - name: Launch uniswap tests
-        id: uniswap
+      - name: Set outputs
+        id: share
         if: steps.accounts.outcome == 'success'
         env:
-          ACCOUNTS: ${{ env.ACCOUNTS }}
+          SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+        run: |
+          echo "::set-output name=solana_ip::${{ env.SOLANA_IP }}"
+          echo "::set-output name=proxy_ip::${{ env.PROXY_IP }}"
+          echo "::set-output name=accounts::${{ env.ACCOUNTS }}"
+
+    outputs:
+      solana_ip: ${{ steps.share.outputs.solana_ip }}
+      proxy_ip: ${{ steps.share.outputs.proxy_ip }}
+      accounts: ${{ steps.share.outputs.accounts }}
+
+  uniswap:
+    runs-on: ubuntu-20.04
+    needs:
+      - prepare
+    if: always()
+    steps:
+      - name: Launch uniswap tests
+        id: uniswap
+        env:
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          ACCOUNTS: ${{ needs.prepare.outputs.accounts }}
         run: |
           exit 1
           CWD=/opt/uniswap
@@ -85,16 +109,32 @@ jobs:
           proxy_url=http://${{ env.PROXY_IP }}:9090/solana
           test -t 1 && USE_TTY="-t"
           docker run -i ${USE_TTY} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} uniswap:latest
-
+  notify:
+    runs-on: ubuntu-20.04
+    if: failure()
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
       - name: Notify on failure
         id: notification
-        if: failure()
         run: |
           ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "FAILED dapps: Uniswap-V2-NEON tests"
-
+  destroy:
+    runs-on: ubuntu-20.04
+    if: always()
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: tf-state
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
       - name: Destroy stand with terraform
-        if: always()
         id: destroy
         run: |
-          exit 0
+          ssh_key=/tmp/dapps-stand
+          echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra destroy

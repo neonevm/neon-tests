@@ -59,7 +59,7 @@ jobs:
           SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
         run: |
-          ./clickfile.py infra gen-accounts -c 1 -a 10000
+          ./clickfile.py infra gen-accounts -c 3 -a 10000
 
       - name: Set outputs
         id: share

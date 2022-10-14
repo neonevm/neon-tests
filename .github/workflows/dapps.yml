@@ -95,14 +95,14 @@ jobs:
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
 
-          #cat <<EOF > ${CWD}/docker/entrypoint.sh
-          ##!/bin/sh
-          ## Change to the correct directory
-          #cd /usr/src/app
-          ## Run hardhat
-          #yarn deploy
-          #
-          #EOF
+          cat <<EOF > ${CWD}/docker/entrypoint.sh
+          #!/bin/sh
+          # Change to the correct directory
+          cd /usr/src/app
+          # Run hardhat
+          yarn deploy
+
+          EOF
 
           docker build -t uniswap:latest ${CWD}
           proxy_url=http://${{ env.PROXY_IP }}:9090/solana

@@ -140,4 +140,4 @@ jobs:
       - name: Notify on failure
         id: notification
         run: |
-          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "dapps: UniswapV2 NEON tests id failed."
+          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "dapps: UniswapV2 NEON tests is failed."

@@ -97,19 +97,19 @@ jobs:
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
 
-          cat <<EOF > ${CWD}/docker/entrypoint.sh
-          !/bin/sh
+          #cat <<EOF > ${CWD}/docker/entrypoint.sh
+          #!/bin/sh
           # Change to the correct directory
-          cd /usr/src/app
+          #cd /usr/src/app
           # Run hardhat
-          yarn deploy
-
-          EOF
+          #yarn deploy
+          #
+          #EOF
 
           docker build -t uniswap:latest ${CWD}
           proxy_url=http://${{ env.PROXY_IP }}:9090/solana
           test -t 1 && USE_TTY="-t"
-          docker run -i ${USE_TTY} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} uniswap:latest
+          docker run -i ${USE_TTY} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} --entrypoint /bin/bash uniswap:latest -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
 
   destroy:
     runs-on: ubuntu-20.04

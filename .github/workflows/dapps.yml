@@ -124,6 +124,7 @@ jobs:
       - name: Destroy stand with terraform
         id: destroy
         run: |
+          exit 0
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra destroy

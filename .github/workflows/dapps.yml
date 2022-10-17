@@ -137,9 +137,6 @@ jobs:
           sudo apt update
           sudo apt-get install terraform
           ssh_key=/tmp/dapps-stand
-          echo "++++++++++++++++++++"
-          cat $ssh_key
-          echo "++++++++++++++++++++"
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra destroy
 

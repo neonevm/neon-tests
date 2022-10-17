@@ -80,8 +80,8 @@ jobs:
       - name: Prepare accounts
         id: accounts
         env:
-          SOLANA_IP: ${{ env.SOLANA_IP }}
-          PROXY_IP: ${{ env.PROXY_IP }}
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
         run: |
           ./clickfile.py infra gen-accounts -c 3 -a 10000
 

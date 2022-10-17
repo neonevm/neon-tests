@@ -12,8 +12,8 @@ TF_ENV = {
     "AWS_S3_BUCKET": os.environ.get("AWS_S3_BUCKET", "neon-tests-dapps"),
     "AWS_REGION": os.environ.get("AWS_REGION", "us-east-2"),
     "TF_VAR_branch": "develop",
-    "TF_VAR_proxy_container_tag": os.environ.get("NEON_PROXY_TAG", "latest"),
-    "TF_VAR_neon_evm_container_tag": os.environ.get("NEON_EVM_TAG", "latest"),
+    "TF_VAR_proxy_container_tag": os.environ.get("NEON_PROXY_TAG", "v0.12.1"),
+    "TF_VAR_neon_evm_container_tag": os.environ.get("NEON_EVM_TAG", "v0.12.1"),
     "TF_VAR_faucet_container_tag": os.environ.get("NEON_FAUCET_TAG", "latest"),
     "TF_STATE_KEY": f"neon-tests/{os.environ.get('GITHUB_RUN_ID', '0')}",
 }

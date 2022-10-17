@@ -342,12 +342,12 @@ class TestERC721(BaseMixin):
 
     def test_transferSolanaFrom(self, erc721, token_id, sol_client):
         acc = Keypair.generate()
-        sol_client.request_airdrop(acc.public_key, 10000000000)
+        sol_client.request_airdrop(acc.public_key, 1000000000)
         BaseMixin.wait_condition(lambda: sol_client.get_balance(acc.public_key)["result"]["value"] == 1000000000)
         token_mint = PublicKey(base58.b58encode(token_id.to_bytes(32, "big")).decode("utf-8"))
         trx = Transaction()
         trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))
-        opts = TxOpts(skip_preflight=True, skip_confirmation=False)
+        opts = TxOpts(skip_preflight=False, skip_confirmation=False)
         sol_client.send_transaction(trx, acc, opts=opts)
         solana_address = bytes(get_associated_token_address(acc.public_key, token_mint))
 

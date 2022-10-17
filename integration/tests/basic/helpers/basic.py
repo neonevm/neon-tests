@@ -201,6 +201,6 @@ class BaseMixin(BaseTests):
                 if func_cond():
                     break
             except:
-                raise "Error during waiting"
+                raise
             time.sleep(delay)
         return True

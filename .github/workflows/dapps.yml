@@ -132,7 +132,11 @@ jobs:
               https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
               sudo tee /etc/apt/sources.list.d/hashicorp.list
           sudo apt update
-          sudo apt-get install terraformssh_key=/tmp/dapps-stand
+          sudo apt-get install terraform
+          ssh_key=/tmp/dapps-stand
+          echo "++++++++++++++++++++"
+          cat $ssh_key
+          echo "++++++++++++++++++++"
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra destroy
 

@@ -14,7 +14,8 @@ env:
 
 jobs:
   prepare:
-    runs-on: ubuntu-20.04
+    #runs-on: ubuntu-20.04
+    runs-on: neon-hosted
     if: ${{ always() }}
     steps:
       - name: Install terraform
@@ -79,7 +80,8 @@ jobs:
       accounts: ${{ steps.share.outputs.accounts }}
 
   uniswap:
-    runs-on: ubuntu-20.04
+    #runs-on: ubuntu-20.04
+    runs-on: neon-hosted
     needs:
       - prepare
     if: ${{ success() }}
@@ -110,7 +112,8 @@ jobs:
           docker run -i ${USE_TTY} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} uniswap:latest
 
   destroy:
-    runs-on: ubuntu-20.04
+    #runs-on: ubuntu-20.04
+    runs-on: neon-hosted
     needs: [prepare, uniswap]
     if: ${{ failure() || success() }}
     steps:
@@ -124,13 +127,13 @@ jobs:
       - name: Destroy stand with terraform
         id: destroy
         run: |
-          exit 0
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra destroy
 
   notify:
-    runs-on: ubuntu-20.04
+    #runs-on: ubuntu-20.04
+    runs-on: neon-hosted
     needs: [prepare, uniswap, destroy]
     if: ${{ failure() }}
     steps:

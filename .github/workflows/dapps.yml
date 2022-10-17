@@ -1,6 +1,9 @@
 name: "dApps testing"
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - '**NDEV-629'
 
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.DAPPS_AWS_ACCESS_KEY_ID }}

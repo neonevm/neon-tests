@@ -24,15 +24,13 @@ variable "branch" {
 
 variable "proxy_container_tag" {
   type = string
-  // default = "latest"
-  default = "v0.12.1"
+  default = "latest"
 }
 
 
 variable "neon_evm_container_tag" {
   type = string
-  #default = "latest"
-  default = "v0.12.1"
+  default = "latest"
 }
 
 

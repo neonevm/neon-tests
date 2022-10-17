@@ -52,31 +52,19 @@ jobs:
           name: tf-state
           path: deploy/aws/
 
-      - name: Prepare accounts
-        id: accounts
+      - name: Set outputs
+        id: share
         if: ${{ steps.deploy.outcome == 'success' }}
         env:
           SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
         run: |
-          ./clickfile.py infra gen-accounts -c 3 -a 10000
-
-      - name: Set outputs
-        id: share
-        if: ${{ steps.accounts.outcome == 'success' }}
-        env:
-          SOLANA_IP: ${{ env.SOLANA_IP }}
-          PROXY_IP: ${{ env.PROXY_IP }}
-          ACCOUNTS: ${{ env.ACCOUNTS }}
-        run: |
           echo "::set-output name=solana_ip::${{ env.SOLANA_IP }}"
           echo "::set-output name=proxy_ip::${{ env.PROXY_IP }}"
-          echo "::set-output name=accounts::${{ env.ACCOUNTS }}"
 
     outputs:
       solana_ip: ${{ steps.share.outputs.solana_ip }}
       proxy_ip: ${{ steps.share.outputs.proxy_ip }}
-      accounts: ${{ steps.share.outputs.accounts }}
 
   uniswap:
     runs-on: ubuntu-20.04
@@ -84,12 +72,26 @@ jobs:
       - prepare
     if: ${{ success() }}
     steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        env:
+          SOLANA_IP: ${{ env.SOLANA_IP }}
+          PROXY_IP: ${{ env.PROXY_IP }}
+        run: |
+          ./clickfile.py infra gen-accounts -c 3 -a 10000
+
       - name: Launch uniswap tests
+        if: ${{ steps.accounts.outcome == 'success' }}
         id: uniswap
         env:
           PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
           SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
-          ACCOUNTS: ${{ needs.prepare.outputs.accounts }}
+          ACCOUNTS: ${{ env.ACCOUNTS }}
         run: |
           CWD=/opt/uniswap
           mkdir -p ${CWD}

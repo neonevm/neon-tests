@@ -3,7 +3,7 @@ pragma abicoder v2;
 
 import "./erc20_for_spl.sol";
 
-contract multiplyActionsERC20 {
+contract multipleActionsERC20 {
     uint256 data;
     ERC20ForSplMintable erc20;
 

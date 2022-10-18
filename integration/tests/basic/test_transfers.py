@@ -19,7 +19,7 @@ DEFAULT_ERC20_BALANCE = 1000
 
 GAS_LIMIT_AND_PRICE_DATA = (
     [1, None, ErrorMessage.GAS_LIMIT_REACHED.value],
-    [U64_MAX + 1, None, ErrorMessage.INSUFFICIENT_FUNDS.value],
+    [U64_MAX + 1, None, ErrorMessage.GAS_OVERFLOW.value],
     [
         0,
         U64_MAX + 1,
@@ -460,3 +460,14 @@ class TestTransactionsValidation(BaseMixin):
         response = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
         assert ErrorMessage.TOO_BIG_TRANSACTION.value in response["error"]["message"]
         assert response["error"]["code"] == -32000
+
+    # def test_send_transaction_with_small_gas_price(self):
+    #     """Check that transaction can't be sent if gas value is too small"""
+    #     gas_price = self.web3_client.gas_price()
+    #     print(gas_price)
+    #     transaction = self.create_tx_object(gas_price=(int(gas_price * 0.92)))
+    #     print(transaction)
+    #     signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+    #     response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
+    #     receipt = self.wait_transaction_accepted(response["result"])
+    #     print(receipt)

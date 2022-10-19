@@ -26,11 +26,11 @@ from utils import apiclient
 
 LOG = logging.getLogger("neon_client")
 
-DEFAULT_NETWORK = "night-stand"
+DEFAULT_NETWORK = "neon_rpc"
 """Default test environment name
 """
 
-ENV_FILE = "envs.json"
+ENV_FILE = pathlib.Path(__file__).parent / "envs.json"
 """ Default environment credentials storage 
 """
 
@@ -46,8 +46,9 @@ The function of this service is so route requests between Tracer API and Neon Pr
 
 class RPCType(enum.Enum):
 
-    transfer = ["eth_getBalance", "eth_getTransactionCount"]
+    logs = ["eth_getLogs"]
     store = ["eth_getStorageAt"]
+    transfer = ["eth_getBalance", "eth_getTransactionCount"]
 
     @classmethod
     def get(cls, key: str) -> str:

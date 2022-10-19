@@ -147,12 +147,26 @@ class ERC20TransferPreparationStage(head.ERC20TasksSet):
         return super(ERC20TransferPreparationStage, self).task_send_erc20()
 
 
+@tag("spl")
+@tag("logs")
+class ERC20WrappedPreparationStage(head.ERC20WrappedTasksSet):
+
+    wait_time = between(0.5, 2)
+
+    @task
+    @dump_history("logs")
+    def prepare_data_by_erc20_wrapped(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
+        """Make number of `ERC20Wrapper` transfer transactions between different client accounts"""
+        return super(ERC20WrappedPreparationStage, self).task_send_erc20_wrapped()
+
+
 @tag("prepare")
 class TracerAPIPreparationUser(User):
     """Preparation stage for TracerAPI"""
 
     tasks = {
-        ERC20TransferPreparationStage: 1,
+        ERC20WrappedPreparationStage: 1,
         EthGetStorageAtPreparationStage: 1,
         NeonTransferPreparationStage: 1,
+        ERC20TransferPreparationStage: 1,
     }

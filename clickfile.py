@@ -329,18 +329,16 @@ def requirements(dep):
 
 
 @cli.command(help="Run any type of tests")
-@click.option("-n", "--network", default=None, type=click.Choice(networks.keys()), help="In which stand run tests")
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
 @click.option("-a", "--amount", default=200000, help="Requested amount from faucet")
 @click.option("-u", "--users", default=8, help="Accounts numbers used in OZ tests")
 @click.option("--ui-item", default="all", type=click.Choice(["faucet", "neonpass", "all"]), help="Which UI test run")
 @click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz", "ui"]))
 @catch_traceback
-def run(name, jobs, ui_item, amount, users, network=None):
+def run(name, jobs, ui_item, amount, users, network):
     if not network and name == "ui":
         network = "devnet"
-    elif not network:
-        network = "night-stand"
     if DST_ALLURE_CATEGORIES.parent.exists():
         shutil.rmtree(DST_ALLURE_CATEGORIES.parent, ignore_errors=True)
     DST_ALLURE_CATEGORIES.parent.mkdir()
@@ -382,7 +380,7 @@ locust_credentials = click.option(
     "-c",
     "--credentials",
     type=str,
-    help="Relative path to credentials module.",
+    help="Relative path to credentials. Default repo root/envs.json",
     show_default=True,
 )
 
@@ -390,7 +388,7 @@ locust_host = click.option(
     "-h",
     "--host",
     default="night-stand",
-    type=click.Choice(networks),
+    type=str,
     help="In which stand run tests.",
     show_default=True,
 )
@@ -491,16 +489,19 @@ def run(credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile,
 @locust_tags
 def prepare(credentials, host, users, spawn_rate, run_time, tag):
     """Run `Preparation stage` for trace api performance test"""
-    path = pathlib.Path(__file__).parent / f"loadtesting/tracerapi/prepare_data/locustfile.py"
+    base_path = pathlib.Path(__file__).parent
+    path = base_path / "loadtesting/tracerapi/prepare_data/locustfile.py"
     if not (path.exists() and path.is_file()):
         raise FileNotFoundError(f"path doe's not exists. {path.resolve()}")
-    command = f"locust -f {path.as_posix()} --host={host} --users={users} --spawn-rate={spawn_rate} --headless"
+    command = f"locust -f {path.absolute()} --host={host} --users={users} --spawn-rate={spawn_rate} --headless"
     if credentials:
         command += f" --credentials={credentials}"
+    else:
+        command += f" --credentials={base_path.absolute()}/loadtesting/tracerapi/envs.json"
     if run_time:
         command += f" --run-time={run_time}"
     else:
-        command += f" --run-time=60"
+        command += f" --run-time=120"
     if tag:
         command += f" --tags {' '.join(tag)}"
     else:
@@ -514,9 +515,7 @@ def prepare(credentials, host, users, spawn_rate, run_time, tag):
 
 @cli.command(help="Download allure history")
 @click.argument("name", type=click.STRING)
-@click.option(
-    "-n", "--network", default="night-stand", type=click.Choice(networks.keys()), help="In which stand run tests"
-)
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 @click.option("-d", "--destination", default="./allure-results", type=click.Path(file_okay=False, dir_okay=True))
 def get_allure_history(name: str, network: str, destination: str = "./allure-results"):
     branch = os.environ.get("GITHUB_REF_NAME")
@@ -537,9 +536,7 @@ def get_allure_history(name: str, network: str, destination: str = "./allure-res
 
 @cli.command(help="Upload allure report")
 @click.argument("name", type=click.STRING)
-@click.option(
-    "-n", "--network", default="night-stand", type=click.Choice(networks.keys()), help="In which stand run tests"
-)
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 @click.option("-s", "--source", default="./allure-report", type=click.Path(file_okay=False, dir_okay=True))
 def upload_allure_report(name: str, network: str, source: str = "./allure-report"):
     branch = os.environ.get("GITHUB_REF_NAME")

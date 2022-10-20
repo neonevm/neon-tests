@@ -88,7 +88,7 @@ jobs:
           SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
           ACCOUNTS: ${{ env.ACCOUNTS }}
         run: |
-          CWD=/tmp/uniswap-${{ GITHUB_RUN_ID }}
+          CWD=/tmp/uniswap-${{ github.run_id }}
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
           docker build -t uniswap:latest ${CWD}

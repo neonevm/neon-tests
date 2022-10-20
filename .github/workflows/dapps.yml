@@ -55,8 +55,8 @@ jobs:
           SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
         run: |
-          echo "::set-output name=solana_ip::${{ env.SOLANA_IP }}"
-          echo "::set-output name=proxy_ip::${{ env.PROXY_IP }}"
+          echo "solana_ip=${{ env.SOLANA_IP }}" >> $GITHUB_OUTPUT
+          echo "proxy_ip=${{ env.PROXY_IP }}" >> $GITHUB_OUTPUT
 
     outputs:
       solana_ip: ${{ steps.share.outputs.solana_ip }}

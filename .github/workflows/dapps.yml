@@ -12,7 +12,6 @@ env:
 jobs:
   prepare:
     runs-on: ubuntu-20.04
-    if: ${{ always() }}
     steps:
       - name: Install terraform
         id: terraform
@@ -67,7 +66,6 @@ jobs:
     runs-on: neon-hosted
     needs:
       - prepare
-    if: ${{ success() }}
     steps:
       - uses: actions/checkout@v3
       - name: Install python requirements

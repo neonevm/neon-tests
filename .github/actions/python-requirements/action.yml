@@ -1,0 +1,17 @@
+name: "Prepare Click"
+description: "Install python and Click"
+
+runs:
+  using: composite
+  steps:
+    - name: "Install python"
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+    - name: "Install python requirements"
+      run: |
+        pip install click
+        pip3 install --upgrade -r deploy/requirements/prod.txt  -r deploy/requirements/devel.txt -r deploy/requirements/ui.txt
+        pip3 install --no-deps -r deploy/requirements/nodeps.txt
+        pip3 install --upgrade -r deploy/requirements/ui.txt
+      shell: bash

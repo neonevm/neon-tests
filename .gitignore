@@ -231,5 +231,10 @@ allure-results/
 ui/extensions/chrome/plugins/
 ui/extensions/chrome/user_data/
 .idea
-.vscode
+
+.terraform
+.terraform.lock.hcl
+
+# tfenv Terraform versions
 .terraform-version
+.vscode

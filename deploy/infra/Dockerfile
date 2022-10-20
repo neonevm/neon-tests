@@ -6,7 +6,7 @@ COPY . ${HOME_DIR}
 COPY ./deploy/infra/devbox/install-packages /usr/local/bin
 
 # Install Tools:
-RUN apt-get update && apt-get install -y --no-install-recommends git vim mc curl less rsync ssh unzip \
+RUN apt-get update && apt-get install -y --no-install-recommends jq git vim mc curl less rsync ssh unzip \
 # Install C libraries
 && install-packages \
     libffi6 \

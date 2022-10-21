@@ -459,12 +459,15 @@ def run(credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile,
 
     path it's sub-folder and file name  `loadtesting/locustfile.py`.
     """
-    path = pathlib.Path(__file__).parent / f"loadtesting/{locustfile}/locustfile.py"
+    base_path = pathlib.Path(__file__).parent
+    path = base_path / f"loadtesting/{locustfile}/locustfile.py"
     if not (path.exists() and path.is_file()):
         raise FileNotFoundError(f"path doe's not exists. {path.resolve()}")
     command = f"locust -f {path.as_posix()} --host={host} --users={users} --spawn-rate={spawn_rate}"
     if credentials:
         command += f" --credentials={credentials}"
+    elif locustfile == "tracerapi":
+        command += f" --credentials={base_path.absolute()}/loadtesting/tracerapi/envs.json"
     if run_time:
         command += f" --run-time={run_time}"
     if neon_rpc and locustfile == "tracerapi":
@@ -507,7 +510,7 @@ def prepare(credentials, host, users, spawn_rate, run_time, tag):
     else:
         command += f" --tags prepare"
 
-    cmd = subprocess.run(command, shell=True, check=True)
+    cmd = subprocess.run(command, shell=True)
 
     if cmd.returncode != 0:
         sys.exit(cmd.returncode)

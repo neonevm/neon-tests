@@ -125,8 +125,6 @@ class EthGetStorageAtPreparationStage(head.NeonProxyTasksSet):
 @tag("transfer")
 class NeonTransferPreparationStage(head.NeonTasksSet):
 
-    wait_time = between(0.5, 2)
-
     @task
     @dump_history("transfer")
     def prepare_data_by_neon_transfer(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
@@ -138,8 +136,6 @@ class NeonTransferPreparationStage(head.NeonTasksSet):
 @tag("transfer")
 class ERC20TransferPreparationStage(head.ERC20TasksSet):
 
-    wait_time = between(0.5, 2)
-
     @task
     @dump_history("transfer")
     def prepare_data_by_erc20_transfer(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
@@ -150,8 +146,6 @@ class ERC20TransferPreparationStage(head.ERC20TasksSet):
 @tag("spl")
 @tag("logs")
 class ERC20WrappedPreparationStage(head.ERC20WrappedTasksSet):
-
-    wait_time = between(0.5, 2)
 
     @task
     @dump_history("logs")

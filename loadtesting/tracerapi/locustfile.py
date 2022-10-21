@@ -92,12 +92,13 @@ def load_credentials(environment, **kwargs):
     # load test env credentials
     root_path = list(pathlib.Path(__file__).parents)[2]
     path_to_credentials = root_path / environment.parsed_options.credentials
+
     network = environment.parsed_options.host
     if not (path_to_credentials.exists() and path_to_credentials.is_file()):
         path_to_credentials = root_path / ENV_FILE
     with open(path_to_credentials, "r") as fp:
         f = json.load(fp)
-        environment.shared.credentials = f.get(network, f[DEFAULT_NETWORK])
+        environment.shared.credentials = f[network]
 
 
 @events.test_start.add_listener
@@ -328,7 +329,47 @@ class EthGetStorageAtTasksSet(BaseEthRPCATasksSet):
         self._do_call(method="eth_getStorageAt", req_type="blockNumber", args="0x0")
 
 
+@tag("getLogs")
+class EthGetLogs(BaseEthRPCATasksSet):
+    """task set measures the maximum request rate for the eth_getLogs method"""
+
+    @staticmethod
+    def assert_results(req_type: str, transaction: tp.Dict, response: tp.List) -> None:
+        """Check response result"""
+        if req_type == "blockNumber":
+            assert transaction[req_type].lower() == response[0][req_type]
+        if req_type == "blockHash":
+            assert any(transaction[req_type].lower() == r[req_type] for r in response)
+        assert all(transaction["contractAddress"].lower() == r["address"] for r in response)
+
+    def _do_call(self, method: str, req_type: str) -> tp.Dict:
+        transaction = self._get_random_transaction(method)
+        filter_obj = {"address": transaction["contractAddress"]}
+        if req_type == "blockNumber":
+            block = transaction[req_type]
+            kwargs = {"toBlock": block, "fromBlock": block}
+        else:
+            kwargs = {"blockhash": transaction[req_type]}
+        filter_obj.update(kwargs)
+        response = self._rpc_client.send_rpc(method, req_type=req_type, params=[filter_obj])
+        self.log.info(f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}")
+        self.assert_results(req_type, transaction, response["result"])
+        return response
+
+    @tag("getLogs_by_hash")
+    @task
+    def task_eth_get_logs_by_hash(self) -> tp.Dict:
+        """the eth_getLogs method by blockHash"""
+        self._do_call(method="eth_getLogs", req_type="blockHash")
+
+    @tag("getLogs_by_num")
+    @task
+    def task_eth_get_logs_by_num(self) -> tp.Dict:
+        """the eth_getLogs method by blockNumber"""
+        self._do_call(method="eth_getLogs", req_type="blockNumber")
+
+
 class EthRPCAPICallUsers(User):
     """class represents extended ETH RPC API calls by one user"""
 
-    tasks = {EthGetBalanceTasksSet: 1, EthGetTransactionCountTasksSet: 1, EthGetStorageAtTasksSet: 1}
+    tasks = {EthGetBalanceTasksSet: 1, EthGetTransactionCountTasksSet: 1, EthGetStorageAtTasksSet: 1, EthGetLogs: 1}

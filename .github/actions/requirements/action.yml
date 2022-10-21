@@ -5,15 +5,15 @@ runs:
   using: composite
   steps:
     - name: "Install python"
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: "3.9"
     - name: Use Node.js 16
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
         node-version: 16.x
     - name: "Install click"
-      run: "pip install click requests"
+      run: "pip install click requests web3 py-solc-x"
       shell: bash
     - name: "Install deps"
       run: "./clickfile.py requirements"

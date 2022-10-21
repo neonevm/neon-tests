@@ -1,0 +1,142 @@
+name: "dApps testing"
+on:
+  workflow_dispatch:
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.DAPPS_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.DAPPS_AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: us-east-2
+  AWS_S3_BUCKET: neon-tests-dapps
+  BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Install terraform
+        id: terraform
+        run: |
+          sudo apt-get update && sudo apt-get install -y python-dev gnupg software-properties-common wget jq
+          wget -O- https://apt.releases.hashicorp.com/gpg | \
+              gpg --dearmor | \
+              sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          gpg --no-default-keyring \
+              --keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg \
+              --fingerprint
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+              https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
+              sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update
+          sudo apt-get install terraform
+
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        if: ${{ steps.terraform.outcome == 'success' }}
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Deploy stand with terraform
+        id: deploy
+        if: ${{ steps.requirements.outcome == 'success' }}
+        run: |
+          ssh_key=/tmp/dapps-stand
+          echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
+          ./clickfile.py infra deploy
+      - uses: actions/upload-artifact@v3
+        if: ${{ steps.deploy.outcome == 'success' }}
+        with:
+          name: tf-state
+          path: deploy/aws/
+
+      - name: Set outputs
+        id: share
+        if: ${{ steps.deploy.outcome == 'success' }}
+        env:
+          SOLANA_IP: ${{ env.SOLANA_IP }}
+          PROXY_IP: ${{ env.PROXY_IP }}
+        run: |
+          echo "solana_ip=${{ env.SOLANA_IP }}" >> $GITHUB_OUTPUT
+          echo "proxy_ip=${{ env.PROXY_IP }}" >> $GITHUB_OUTPUT
+
+    outputs:
+      solana_ip: ${{ steps.share.outputs.solana_ip }}
+      proxy_ip: ${{ steps.share.outputs.proxy_ip }}
+
+  uniswap:
+    runs-on: neon-hosted
+    needs:
+      - prepare
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        env:
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+        run: |
+          ./clickfile.py infra gen-accounts -c 3 -a 10000
+
+      - name: Launch uniswap tests
+        if: ${{ steps.accounts.outcome == 'success' }}
+        id: uniswap
+        env:
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+        run: |
+          CWD=/tmp/uniswap-${{ github.run_id }}
+          mkdir -p ${CWD}
+          git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
+          docker build -t uniswap:latest ${CWD}
+          proxy_url=http://${{ env.PROXY_IP }}:9090/solana
+          test -t 1 && USE_TTY="-t"
+          docker run -i ${USE_TTY} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} --entrypoint /bin/bash uniswap:latest -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
+
+  destroy:
+    runs-on: ubuntu-20.04
+    needs: [prepare, uniswap]
+    if: ${{ failure() || success() }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: tf-state
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+      - name: Destroy stand with terraform
+        id: destroy
+        run: |
+          sudo apt-get update && sudo apt-get install -y python-dev gnupg software-properties-common wget
+          wget -O- https://apt.releases.hashicorp.com/gpg | \
+              gpg --dearmor | \
+              sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          gpg --no-default-keyring \
+              --keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg \
+              --fingerprint
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+              https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
+              sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update
+          sudo apt-get install terraform
+          ssh_key=/tmp/dapps-stand
+          echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
+          ./clickfile.py infra destroy
+
+  notify:
+    runs-on: ubuntu-20.04
+    needs: [prepare, uniswap, destroy]
+    if: ${{ failure() }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+      - name: Notify on failure
+        id: notification
+        run: |
+          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "dapps: UniswapV2 NEON tests is failed!"

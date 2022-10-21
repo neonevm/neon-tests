@@ -32,6 +32,10 @@ try:
 except ImportError:
     pass
 
+from deploy.cli import dapps as dapps_cli
+from deploy.cli import faucet as faucet_cli
+
+
 CMD_ERROR_LOG = "click_cmd_err.log"
 
 ERR_MSG_TPL = {
@@ -142,24 +146,6 @@ with open("./envs.json", "r") as f:
         networks.update(environments)
 
 
-def prepare_wallets_with_balance(network, count=8, airdrop_amount=20000):
-    print(f"Preparing {count} wallets with balances")
-    settings = networks[network]
-    web3_client = web3client.NeonWeb3Client(settings["proxy_url"], settings["network_id"])
-    faucet_client = faucet.Faucet(settings["faucet_url"])
-    private_keys = []
-
-    for i in range(count):
-        acc = web3_client.eth.account.create()
-        faucet_client.request_neon(acc.address, airdrop_amount)
-        if i == 0:
-            for _ in range(2):
-                faucet_client.request_neon(acc.address, airdrop_amount)
-        private_keys.append(acc.privateKey.hex())
-    print("All private keys: ", ",".join(private_keys))
-    return private_keys
-
-
 def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     print(f"Running OpenZeppelin tests in {jobs} jobs on {network}")
     cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
@@ -167,7 +153,10 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         subprocess.check_call("git submodule init && git submodule update", shell=True, cwd=cwd)
     subprocess.check_call("npx hardhat compile", shell=True, cwd=cwd)
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
-    keys_env = [prepare_wallets_with_balance(network, count=users, airdrop_amount=amount) for i in range(jobs)]
+    keys_env = [
+        faucet_cli.prepare_wallets_with_balance(networks[network], count=users, airdrop_amount=amount)
+        for i in range(jobs)
+    ]
 
     tests = subprocess.check_output("find \"test\" -name '*.test.js'", shell=True, cwd=cwd).decode().splitlines()
 
@@ -560,9 +549,10 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
 @cli.command(help="Send notification to slack")
 @click.option("-u", "--url", help="slack app endpoint url.")
 @click.option("-b", "--build_url", help="github action test build url.")
-def send_notification(url, build_url):
+@click.option("-t", "--traceback", default="", help="custom traceback message.")
+def send_notification(url, build_url, traceback):
     p = pathlib.Path(f"./{CMD_ERROR_LOG}")
-    trace_back = p.read_text() if p.exists() else ""
+    trace_back = traceback or (p.read_text() if p.exists() else "")
     tpl = ERR_MSG_TPL.copy()
 
     parsed_build_url = urlparse(build_url).path.split("/")
@@ -576,16 +566,43 @@ def send_notification(url, build_url):
     requests.post(url=url, data=json.dumps(tpl))
 
 
-@cli.group()
-@click.pass_context
-def devbox(ctx):
+@cli.group("infra", help="Manage test infrastructure")
+def infra():
+    pass
+
+
+@infra.command(name="deploy", help="Deploy test infrastructure")
+def deploy():
+    dapps_cli.deploy_infrastructure()
+
+
+@infra.command(name="destroy", help="Destroy test infrastructure")
+def destroy():
+    dapps_cli.destroy_infrastructure()
+
+
+@infra.command(name="gen-accounts", help="Setup accounts with balance")
+@click.option("-c", "--count", default=2, help="How many users prepare")
+@click.option("-a", "--amount", default=10000, help="How many airdrop")
+def prepare_accounts(count, amount):
+    dapps_cli.prepare_accounts(count, amount)
+
+
+infra.add_command(deploy, "deploy")
+infra.add_command(destroy, "destroy")
+infra.add_command(prepare_accounts, "gen-accounts")
+
+
+@cli.group("devbox", help="Manage devbox infrastructure")
+def devbox():
     """Commands for devbox manipulation."""
 
 
 @devbox.command("rm")
-@click.pass_context
-def rm(ctx):
+def rm():
     """Terminate existing devbox."""
+    if env.is_devbox():
+        return print(env.green("You inside `devbox` first quit"))
     if docker_utils.docker_inspect(DEVBOX_NAME):
         env.shell(f"docker rm -f {DEVBOX_NAME}")
         print(env.green("Terminated devbox"))
@@ -594,7 +611,6 @@ def rm(ctx):
 
 
 @devbox.command("build")
-@click.pass_context
 @click.option(
     "-p",
     "--image-path",
@@ -632,8 +648,10 @@ def rm(ctx):
     "find and address any issues early.",
 )
 @click.option("--dry-run", is_flag=True, default=False, help="Dry run")
-def build(ctx, image_path, image_name, tag, quick, dry_run=None):
+def build(image_path, image_name, tag, quick, dry_run=None):
     """Build devbox docker image."""
+    if env.is_devbox():
+        return print(env.green("`devbox` is built, exiting "))
     env.header("Prepare docker images build...")
     image = docker_utils.Image(pathlib.Path(image_path), image_name, tag)
     build_args = ()
@@ -735,9 +753,10 @@ def create_devbox(prefix="", tag="latest"):
 
 
 @devbox.command("up")
-@click.pass_context
-def up(ctx):
+def up():
     """Start new devbox or attach existing."""
+    if env.is_devbox():
+        return print(env.green("`devbox` is created, exiting "))
     box_name = create_devbox()
     # Attach to running container
     env.shell(f"docker exec -it {box_name} bash --login; exit 0")

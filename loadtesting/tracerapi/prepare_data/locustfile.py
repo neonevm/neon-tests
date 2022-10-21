@@ -145,7 +145,7 @@ class ERC20TransferPreparationStage(head.ERC20TasksSet):
 
 @tag("spl")
 @tag("logs")
-class ERC20WrappedPreparationStage(head.ERC20WrappedTasksSet):
+class ERC20WrappedPreparationStage(head.ERC20SPLTasksSet):
 
     @task
     @dump_history("logs")

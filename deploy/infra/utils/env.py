@@ -131,6 +131,11 @@ def is_docker_container():
     return os.path.exists("/.dockerenv")
 
 
+def is_devbox():
+    """Return True in this code is run inside devbox."""
+    return os.environ.get("DEVBOX")
+
+
 def shell(*args, **kwargs):
     """Run a command in shell.
 

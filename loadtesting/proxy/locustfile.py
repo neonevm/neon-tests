@@ -596,7 +596,7 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
         erc20wrapper_client = ERC20Wrapper(
             self.web3_client, self.faucet, name=f"Test {symbol}", symbol=symbol, account=self.account
         )
-        erc20wrapper_client.mint_tokens(self.account)
+        erc20wrapper_client.mint_tokens(self.account, self.account.address)
         return erc20wrapper_client.contract
 
     @task(1)
@@ -656,12 +656,6 @@ class ERC20TasksSet(ERC20BaseTasksSet):
         self.version = ERC20_VERSION
         self.contract_name = "ERC20"
         self._buffer = self.user.environment.shared.erc20_contracts
-
-    @task(1)
-    @execute_before("task_block_number", "task_keeps_balance")
-    def task_deploy_contract(self) -> None:
-        """Deploy ERC20 contract"""
-        super(ERC20TasksSet, self).task_deploy_contract()
 
     @task(5)
     @execute_before("task_block_number", "task_keeps_balance")

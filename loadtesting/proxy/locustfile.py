@@ -20,6 +20,8 @@ import requests
 import tabulate
 import web3
 from locust import TaskSet, User, events, tag, task
+from locust.runners import WorkerRunner
+
 from solana.keypair import Keypair
 
 from utils import helpers, operator
@@ -164,6 +166,8 @@ def get_token_balance(op: operator.Operator) -> tp.Dict:
 
 @events.test_start.add_listener
 def operator_economy_pre_balance(environment, **kwargs):
+    if isinstance(environment.runner, WorkerRunner):
+        return
     op = operator.Operator(
         environment.credentials["proxy_url"],
         environment.credentials["solana_url"],
@@ -181,6 +185,8 @@ def operator_economy_pre_balance(environment, **kwargs):
 
 @events.test_stop.add_listener
 def operator_economy_balance(environment, **kwargs):
+    if isinstance(environment.runner, WorkerRunner):
+        return
     balance = get_token_balance(environment.op)
     operator_balance = tabulate.tabulate(
         [
@@ -664,12 +670,12 @@ class ERC20TasksSet(ERC20BaseTasksSet):
         return super(ERC20TasksSet, self).task_send_tokens()
 
 
-@tag("spl")
-class ERC20WrappedTasksSet(ERC20BaseTasksSet):
+@tag("SPL")
+class ERC20SPLTasksSet(ERC20BaseTasksSet):
     """Implements ERC20Wrapped base pipeline tasks"""
 
     def on_start(self) -> None:
-        super(ERC20WrappedTasksSet, self).on_start()
+        super(ERC20SPLTasksSet, self).on_start()
         self.version = ERC20_WRAPPER_VERSION
         self.contract_name = "erc20wrapper"
         self._buffer = self.user.environment.shared.erc20_wrapper_contracts
@@ -678,7 +684,7 @@ class ERC20WrappedTasksSet(ERC20BaseTasksSet):
     @execute_before("task_block_number", "task_keeps_balance")
     def task_send_erc20_wrapped(self) -> None:
         """Send ERC20 tokens"""
-        return super(ERC20WrappedTasksSet, self).task_send_tokens()
+        return super(ERC20SPLTasksSet, self).task_send_tokens()
 
 
 @tag("counter")
@@ -831,7 +837,7 @@ class NeonPipelineUser(User):
     tasks = {
         CounterTasksSet: 3,
         ERC20TasksSet: 1,
-        ERC20WrappedTasksSet: 2,
+        # ERC20SPLTasksSet: 2,
         NeonTasksSet: 10,
         # WithDrawTasksSet: 5,  Disable this, because withdraw instruction changed
         UniswapTransaction: 5,

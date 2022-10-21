@@ -16,26 +16,31 @@ class ERC20Wrapper:
         self.contract = self.get_wrapper_contract()
 
     def make_tx_object(self, from_address, gasPrice=None, gas=None):
-        tx = {"from": from_address, "nonce": self.web3_client.eth.get_transaction_count(from_address),
-              "gasPrice": gasPrice if gasPrice is not None else self.web3_client.gas_price()}
+        tx = {
+            "from": from_address,
+            "nonce": self.web3_client.eth.get_transaction_count(from_address),
+            "gasPrice": gasPrice if gasPrice is not None else self.web3_client.gas_price(),
+        }
         if gas is not None:
             tx["gas"] = gas
         return tx
 
     def deploy_wrapper(self):
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "erc20_for_spl_factory", "0.8.10", self.account, contract_name='ERC20ForSplFactory')
+            "erc20_for_spl_factory", "0.8.10", self.account, contract_name="ERC20ForSplFactory"
+        )
         tx_object = self.make_tx_object(self.account.address)
-        instruction_tx = contract.functions.createErc20ForSplMintable(self.name, self.symbol, self.decimals,
-                                                                      self.account.address).buildTransaction(tx_object)
+        instruction_tx = contract.functions.createErc20ForSplMintable(
+            self.name, self.symbol, self.decimals, self.account.address
+        ).buildTransaction(tx_object)
         instruction_receipt = self.web3_client.send_transaction(self.account, instruction_tx)
-        logs = contract.events.ERC20ForSplCreated().processReceipt(instruction_receipt)
-        return logs[0]["args"]["pair"]
+        if instruction_receipt:
+            logs = contract.events.ERC20ForSplCreated().processReceipt(instruction_receipt)
+            return logs[0]["args"]["pair"]
+        return instruction_receipt
 
     def get_wrapper_contract(self):
-        contract_path = (
-                pathlib.Path.cwd() / "contracts" / "erc20interface.sol"
-        ).absolute()
+        contract_path = (pathlib.Path.cwd() / "contracts" / "erc20interface.sol").absolute()
 
         with open(contract_path, "r") as s:
             source = s.read()
@@ -43,9 +48,7 @@ class ERC20Wrapper:
         compiled = solcx.compile_source(source, output_values=["abi", "bin"], solc_version="0.8.10")
         contract_interface = compiled[list(compiled.keys())[0]]
 
-        contract = self.web3_client.eth.contract(
-            address=self.contract_address, abi=contract_interface["abi"]
-        )
+        contract = self.web3_client.eth.contract(address=self.contract_address, abi=contract_interface["abi"])
         return contract
 
     def mint_tokens(self, signer, to_address, amount: int = 1000000000000000, gas_price=None, gas=None):

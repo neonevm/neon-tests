@@ -75,18 +75,18 @@ class TestTransfer(BaseMixin):
         assert initial_recipient_neon_balance == self.get_balance_from_wei(self.recipient_account.address)
 
     @pytest.mark.parametrize("transfer_amount", [0, 1, 10, 100])
-    def test_send_spl_wrapped_account_from_one_account_to_another(self, transfer_amount: int, erc20wrapper):
+    def test_send_spl_wrapped_account_from_one_account_to_another(self, transfer_amount: int, erc20_spl):
         """Send spl wrapped account from one account to another"""
-        initial_spl_balance = erc20wrapper.contract.functions.balanceOf(self.recipient_account.address).call()
+        initial_spl_balance = erc20_spl.contract.functions.balanceOf(self.recipient_account.address).call()
         initial_neon_balance = self.recipient_account_balance
 
         self.web3_client.send_erc20(
-            erc20wrapper.account, self.recipient_account, transfer_amount, erc20wrapper.contract.address,
-            abi=erc20wrapper.contract.abi)
+            erc20_spl.account, self.recipient_account, transfer_amount, erc20_spl.contract.address,
+            abi=erc20_spl.contract.abi)
 
         # Spl balance
         assert (
-                erc20wrapper.contract.functions.balanceOf(
+                erc20_spl.contract.functions.balanceOf(
                     self.recipient_account.address).call() == initial_spl_balance + transfer_amount
         )
 
@@ -105,20 +105,20 @@ class TestTransfer(BaseMixin):
         self.assert_balance(self.sender_account.address, sender_balance, rnd_dig=1)
         self.assert_balance(self.recipient_account.address, recipient_balance, rnd_dig=1)
 
-    def test_send_more_than_exist_on_account_spl(self, erc20wrapper):
+    def test_send_more_than_exist_on_account_spl(self, erc20_spl):
         """Send more than exist on account: spl (with different precision)"""
 
         transfer_amount = 1_000_000_000_000_000_000_000
-        initial_spl_balance = erc20wrapper.contract.functions.balanceOf(self.recipient_account.address).call()
+        initial_spl_balance = erc20_spl.contract.functions.balanceOf(self.recipient_account.address).call()
         initial_neon_balance = self.recipient_account_balance
 
         with pytest.raises(web3.exceptions.ContractLogicError):
             self.web3_client.send_erc20(
-                erc20wrapper.account, self.recipient_account, transfer_amount, erc20wrapper.contract.address,
-                abi=erc20wrapper.contract.abi)
+                erc20_spl.account, self.recipient_account, transfer_amount, erc20_spl.contract.address,
+                abi=erc20_spl.contract.abi)
 
         # Spl balance
-        assert erc20wrapper.contract.functions.balanceOf(self.recipient_account.address).call() == initial_spl_balance
+        assert erc20_spl.contract.functions.balanceOf(self.recipient_account.address).call() == initial_spl_balance
 
         # Neon balance
         self.assert_balance(self.recipient_account.address, initial_neon_balance, rnd_dig=3)
@@ -206,20 +206,20 @@ class TestTransfer(BaseMixin):
         self.assert_balance(self.sender_account.address, sender_balance, rnd_dig=0)
         self.assert_balance(self.recipient_account.address, recipient_balance, rnd_dig=1)
 
-    def test_send_negative_sum_from_account_spl(self, erc20wrapper):
+    def test_send_negative_sum_from_account_spl(self, erc20_spl):
         """Send negative sum from account: spl (with different precision)"""
 
         transfer_amount = -1
-        initial_spl_balance = erc20wrapper.contract.functions.balanceOf(self.recipient_account.address).call()
+        initial_spl_balance = erc20_spl.contract.functions.balanceOf(self.recipient_account.address).call()
         initial_neon_balance = self.recipient_account_balance
 
         with pytest.raises(web3.exceptions.ValidationError):
             self.web3_client.send_erc20(
-                erc20wrapper.account, self.recipient_account, transfer_amount, erc20wrapper.contract.address,
-                abi=erc20wrapper.contract.abi)
+                erc20_spl.account, self.recipient_account, transfer_amount, erc20_spl.contract.address,
+                abi=erc20_spl.contract.abi)
 
         # Spl balance
-        assert erc20wrapper.contract.functions.balanceOf(self.recipient_account.address).call() == initial_spl_balance
+        assert erc20_spl.contract.functions.balanceOf(self.recipient_account.address).call() == initial_spl_balance
 
         # Neon balance
         self.assert_balance(self.recipient_account.address, initial_neon_balance, rnd_dig=3)

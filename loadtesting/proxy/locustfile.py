@@ -638,7 +638,7 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
 class NeonTasksSet(NeonProxyTasksSet):
     """Implements Neons transfer base pipeline tasks"""
 
-    @task
+    @task(1)
     @execute_before("task_block_number", "task_keeps_balance")
     def task_send_neon(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Transferring funds to a random account"""

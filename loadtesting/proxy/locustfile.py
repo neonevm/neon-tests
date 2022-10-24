@@ -595,8 +595,8 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
         """Deploy ERC20 or ERC20Wrapper contract"""
         self.log.info(f"Deploy `{self.contract_name.lower()}` contract.")
         contract = self.deploy_contract(self.contract_name, self.version, self.account, [pow(10, 10)])
-        if not contract:
-            self.log.info(f"{self.contract_name} contract deployment failed")
+        if not contract or contract[0] is None:
+            self.log.info(f"{self.contract_name} contract deployment failed {contract[1]}")
             return
         acc_balances = self._buffer.get(self.account.address, {})
         acc_balances[contract[0].address] = {

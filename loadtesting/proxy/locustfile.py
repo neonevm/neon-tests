@@ -110,7 +110,7 @@ def execute_before(*attrs) -> tp.Callable:
 
 def init_session(size: int) -> requests.Session:
     """init request session with extended connection pool size"""
-    adapter = requests.adapters.HTTPAdapter(pool_connections=size * 2, pool_maxsize=size * 2, pool_block=True)
+    adapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, pool_block=True)
     session = requests.Session()
     session.mount("http://", adapter)
     session.mount("https://", adapter)

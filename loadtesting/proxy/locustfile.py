@@ -611,6 +611,8 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
 
         if contracts:
             contract_address = random.choice(list(contracts.keys()))
+            if contracts[contract_address]["amount"] <= 1:
+                return self.task_send_tokens()
             contract = contracts[contract_address]["contract"]
             recipient = random.choice(self.user.environment.shared.accounts)
             self.log.info(
@@ -628,10 +630,6 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
                     recep_contract["amount"] = 0
                 recep_contract["amount"] += 1
                 self._buffer[recipient.address] = recep_balances
-            # remove contracts without balance
-            # if contract.functions.balanceOf(self.account.address).call() < 1:
-            #     self.log.info(f"Remove contract `{contract.address[:8]}` because user has empty balance")
-            #     contracts.remove(contract)
             return tx_receipt
         self.log.info(f"no `{self.contract_name.upper()}` contracts found, send is cancel.")
 
@@ -660,7 +658,7 @@ class ERC20TasksSet(ERC20BaseTasksSet):
         self.contract_name = "ERC20"
         self._buffer = self.user.environment.shared.erc20_contracts
 
-    @task(5)
+    @task(6)
     @execute_before("task_block_number", "task_keeps_balance")
     def task_send_erc20(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Send ERC20 tokens"""

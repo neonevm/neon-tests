@@ -21,7 +21,6 @@ class AccountData:
     address: str
     key: str = ""
 
-EVM_LOADER_ID = os.environ.get("EVM_LOADER", "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io")
 ACCOUNT_SEED_VERSION = b'\2'
 
 
@@ -31,6 +30,7 @@ class BaseMixin(BaseTests):
     _sender_account: eth_account.signers.local.LocalAccount = None
     _recipient_account: eth_account.signers.local.LocalAccount = None
     _invalid_account: AccountData = None
+    evm_loader_id = None
 
     @pytest.fixture(autouse=True)
     def prepare_env(self, json_rpc_client):
@@ -97,10 +97,10 @@ class BaseMixin(BaseTests):
         return AccountData(address=gen_hash_of_block(20))
 
     @staticmethod
-    def get_neon_account_address(neon_account_address: str) -> PublicKey:
+    def get_neon_account_address(neon_account_address: str, evm_loader_id) -> PublicKey:
         neon_account_addressbytes = bytes.fromhex(neon_account_address[2:])
         return PublicKey.find_program_address([ACCOUNT_SEED_VERSION, neon_account_addressbytes],
-                                              PublicKey(EVM_LOADER_ID))[0]
+                                              PublicKey(evm_loader_id))[0]
 
     def send_neon(
         self,

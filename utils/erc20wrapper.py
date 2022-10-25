@@ -25,6 +25,7 @@ class ERC20Wrapper:
     def deploy_wrapper(self):
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
             "erc20_for_spl_factory", "0.8.10", self.account, contract_name='ERC20ForSplFactory')
+        assert contract_deploy_tx["status"] == 1, f"ERC20 Factory wasn't deployed: {contract_deploy_tx}"
         tx_object = self.make_tx_object(self.account.address)
         instruction_tx = contract.functions.createErc20ForSplMintable(self.name, self.symbol, self.decimals,
                                                                       self.account.address).buildTransaction(tx_object)

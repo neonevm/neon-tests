@@ -130,13 +130,14 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
 @pytest.fixture(scope="session")
 def erc20_spl(web3_client: NeonWeb3Client, faucet, pytestconfig: Config, sol_client):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
-    erc20 = ERC20Wrapper(web3_client, faucet, f"Test {symbol}", symbol, sol_client, mintable=False)
+    erc20 = ERC20Wrapper(web3_client, faucet, f"Test {symbol}", symbol, sol_client, mintable=False,
+                         evm_loader_id=pytestconfig.environment.evm_loader)
     erc20.claim(erc20.account, bytes(erc20.solana_associated_token_acc), 100000000000000)
     yield erc20
 
 
 @pytest.fixture(scope="session")
-def erc20_spl_mintable(web3_client: NeonWeb3Client, faucet, pytestconfig: Config, sol_client):
+def erc20_spl_mintable(web3_client: NeonWeb3Client, faucet, sol_client):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
     erc20 = ERC20Wrapper(web3_client, faucet, f"Test {symbol}", symbol, sol_client, mintable=True)
     erc20.mint_tokens(erc20.account, erc20.account.address)

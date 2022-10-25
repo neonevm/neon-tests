@@ -85,7 +85,7 @@ class TestEconomics(BaseTests):
 
     @allure.step("Check block for ALT use")
     def check_alt_on(self, block, accounts_quantity):
-        #TODO: Change to use get_solana_trx_by_neon instead of block
+        # TODO: Change to use get_solana_trx_by_neon instead of block
         txs = block['transactions']
         for tx in txs:
             if tx['version'] == 0:
@@ -174,16 +174,17 @@ class TestEconomics(BaseTests):
         assert sol_balance_before == sol_balance_after
         assert neon_balance_before == neon_balance_after
 
-    def test_erc20wrapper_transfer(self, erc20wrapper):
+    def test_erc20wrapper_transfer(self, erc20_spl_mintable):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        assert erc20wrapper.contract.functions.balanceOf(self.acc.address).call() == 0
+        assert erc20_spl_mintable.contract.functions.balanceOf(self.acc.address).call() == 0
 
-        transfer_tx = self.web3_client.send_erc20(erc20wrapper.account, self.acc, 25, erc20wrapper.contract.address,
-                                                  abi=erc20wrapper.contract.abi)
+        transfer_tx = self.web3_client.send_erc20(erc20_spl_mintable.account, self.acc, 25,
+                                                  erc20_spl_mintable.contract.address,
+                                                  abi=erc20_spl_mintable.contract.abi)
 
-        assert erc20wrapper.contract.functions.balanceOf(self.acc.address).call() == 25
+        assert erc20_spl_mintable.contract.functions.balanceOf(self.acc.address).call() == 25
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
@@ -283,12 +284,13 @@ class TestEconomics(BaseTests):
         assert receipt["status"] == 1
         assert (user_neon_balance_before - self.web3_client.get_balance(self.acc)) > 5
         assert (
-            int(
-                self.sol_client.get_token_account_balance(dest_token_acc, Commitment("confirmed"))["result"]["value"][
-                    "amount"
-                ]
-            )
-            == move_amount / 1_000_000_000
+                int(
+                    self.sol_client.get_token_account_balance(dest_token_acc, Commitment("confirmed"))["result"][
+                        "value"][
+                        "amount"
+                    ]
+                )
+                == move_amount / 1_000_000_000
         )
 
         sol_balance_after = self.operator.get_solana_balance()

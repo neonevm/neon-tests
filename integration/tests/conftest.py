@@ -128,19 +128,41 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
 
 
 @pytest.fixture(scope="session")
-def erc20wrapper(web3_client: NeonWeb3Client, faucet, pytestconfig: Config):
+def erc20_spl(web3_client: NeonWeb3Client, faucet, pytestconfig: Config, sol_client):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
-    erc20 = ERC20Wrapper(web3_client, faucet, name=f"Test {symbol}", symbol=symbol)
+    erc20 = ERC20Wrapper(web3_client, faucet, f"Test {symbol}", symbol, sol_client, mintable=False,
+                         evm_loader_id=pytestconfig.environment.evm_loader)
+    erc20.claim(erc20.account, bytes(erc20.solana_associated_token_acc), 100000000000000)
+    yield erc20
+
+
+@pytest.fixture(scope="session")
+def erc20_spl_mintable(web3_client: NeonWeb3Client, faucet, sol_client):
+    symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
+    erc20 = ERC20Wrapper(web3_client, faucet, f"Test {symbol}", symbol, sol_client, mintable=True)
     erc20.mint_tokens(erc20.account, erc20.account.address)
     yield erc20
 
 
 @pytest.fixture(scope="function")
-def solana_acc(erc20wrapper, sol_client):
+def solana_associated_token_mintable_erc20(erc20_spl_mintable, sol_client):
     acc = Keypair.generate()
     sol_client.request_airdrop(acc.public_key, 1000000000)
     BaseMixin.wait_condition(lambda: sol_client.get_balance(acc.public_key)["result"]["value"] == 1000000000)
-    token_mint = PublicKey(erc20wrapper.contract.functions.tokenMint().call())
+    token_mint = PublicKey(erc20_spl_mintable.contract.functions.tokenMint().call())
+    trx = Transaction()
+    trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))
+    opts = TxOpts(skip_preflight=True, skip_confirmation=False)
+    sol_client.send_transaction(trx, acc, opts=opts)
+    solana_address = bytes(get_associated_token_address(acc.public_key, token_mint))
+    yield acc, token_mint, solana_address
+
+@pytest.fixture(scope="function")
+def solana_associated_token_erc20(erc20_spl, sol_client):
+    acc = Keypair.generate()
+    sol_client.request_airdrop(acc.public_key, 1000000000)
+    BaseMixin.wait_condition(lambda: sol_client.get_balance(acc.public_key)["result"]["value"] == 1000000000)
+    token_mint = erc20_spl.token_mint.pubkey
     trx = Transaction()
     trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))
     opts = TxOpts(skip_preflight=True, skip_confirmation=False)

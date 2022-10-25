@@ -11,10 +11,4 @@ contract GetPrice {
        PythStructs.Price memory result = pyth.getCurrentPrice(id);
        return result.price;
     }
-
-    // function get(bytes32 id) public view returns (int64 price){
-    //     PythStructs.Price memory result = PythOracle.getCurrentPrice(id);
-
-    //     return result.price;
-    // }
 }

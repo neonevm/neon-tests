@@ -90,7 +90,7 @@ def execute_before(*attrs) -> tp.Callable:
 
 def init_session(size: int) -> requests.Session:
     """init request session with extended connection pool size"""
-    adapter = requests.adapters.HTTPAdapter(pool_connections=size * 2, pool_maxsize=size * 2, pool_block=True)
+    adapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, pool_block=True)
     session = requests.Session()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
@@ -555,53 +555,81 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
     def on_start(self) -> None:
         super(ERC20BaseTasksSet, self).on_start()
 
+    def task_deploy_contract(self) -> None:
+        """Deploy ERC20 or ERC20Wrapper contract"""
+        self.log.info(f"Deploy `{self.contract_name.lower()}` contract.")
+        # contract = self.deploy_contract(self.contract_name, self.version, self.account, [pow(10, 10)])
+        amount_range = pow(10, 15)
+        amount = random.randint(amount_range, amount_range + pow(10, 3))
+        contract = getattr(self, f"_deploy_{self.contract_name.lower()}_contract")(ammount=amount)
+        if not contract or contract[0] is None:
+            self.log.info(f"{self.contract_name} contract deployment failed {contract[1]}")
+            return
+        acc_balances = self._buffer.get(self.account.address, {})
+        acc_balances[contract[0].address] = {"contract": contract[0], "amount": amount}
+        self._buffer[self.account.address] = acc_balances
+
     def task_send_tokens(self) -> None:
         """Send ERC20/ERC20Wrapped tokens"""
         contracts = self._buffer.get(self.account.address)
+
         if contracts:
-            contract = random.choice(tuple(contracts))
+            contract_address = random.choice(list(contracts.keys()))
+            # if contracts[contract_address]["amount"] <= 1:
+            #    return self.task_send_tokens()
+            contract = contracts[contract_address]["contract"]
             recipient = random.choice(self.user.environment.shared.accounts)
             self.log.info(
                 f"Send `{self.contract_name.lower()}` tokens from contract {str(contract.address)[-8:]} to {str(recipient.address)[-8:]}."
             )
             tx_receipt = self.web3_client.send_erc20(self.account, recipient, 1, contract.address, abi=contract.abi)
             if tx_receipt:
-                self._buffer.setdefault(recipient.address, set()).add(contract)
-                tx_receipt = dict(tx_receipt)
+                # self._buffer.setdefault(recipient.address, set()).add(contract)
+                # tx_receipt = dict(tx_receipt)
+                tx_receipt = dict(tx_receipt)  # AttributeDict -> dict
                 tx_receipt["contractAddress"] = contract.address
-            # remove contracts without balance
-            if contract.functions.balanceOf(self.account.address).call() < 1:
-                self.log.info(f"Remove contract `{contract.address[:8]}` because user has empty balance")
-                contracts.remove(contract)
+                contract_amount = self._buffer[self.account.address][contract.address]["amount"]
+                if contract_amount < 1:
+                    del self._buffer[self.account.address][contract.address]
+                else:
+                    contract_amount -= 1
+                recep_balances = self._buffer.get(recipient.address, {})
+                recep_contract = recep_balances.get(contract.address, {})
+                if not recep_contract:
+                    recep_contract["contract"] = contract
+                    recep_contract["amount"] = 0
+                recep_contract["amount"] += 1
+                self._buffer[recipient.address] = recep_balances
             return tx_receipt
         self.log.info(f"no `{self.contract_name.upper()}` contracts found, send is cancel.")
 
-    def task_deploy_contract(self) -> None:
-        """Deploy ERC20/ERCWrapped contract"""
+    # def task_deploy_contract(self) -> None:
+    #    """Deploy ERC20/ERCWrapped contract"""
+    #
+    #    self.log.info(f"Deploy `{self.contract_name.lower()}` contract.")
+    #    contract = getattr(self, f"_deploy_{self.contract_name.lower()}_contract")()
+    #    if not contract:
+    #        self.log.info(f"{self.contract_name} contract deployment failed")
+    #        return
+    #    self._buffer.setdefault(self.account.address, set()).add(contract)
 
-        self.log.info(f"Deploy `{self.contract_name.lower()}` contract.")
-        contract = getattr(self, f"_deploy_{self.contract_name.lower()}_contract")()
-        if not contract:
-            self.log.info(f"{self.contract_name} contract deployment failed")
-            return
-        self._buffer.setdefault(self.account.address, set()).add(contract)
-
-    def _deploy_erc20_contract(self) -> "web3._utils.datatypes.Contract":
+    def _deploy_erc20_contract(self, amount: int) -> "web3._utils.datatypes.Contract":
         """Deploy ERC20 contract"""
-        contract, _ = self.deploy_contract(
-            self.contract_name, self.version, self.account, constructor_args=[pow(10, 10)]
-        )
+        contract, _ = self.deploy_contract(self.contract_name, self.version, self.account, constructor_args=[amount])
         return contract
 
-    def _deploy_erc20wrapper_contract(self) -> "web3._utils.datatypes.Contract":
+    def _deploy_erc20wrapper_contract(self, amount: int) -> "web3._utils.datatypes.Contract":
         """Deploy ERC20Wrapped contract"""
         symbol = "".join(random.sample(string.ascii_uppercase, 3))
         erc20wrapper_client = ERC20Wrapper(
             self.web3_client, self.faucet, name=f"Test {symbol}", symbol=symbol, account=self.account
         )
-        amount_range = pow(10, 15)
+        # amount_range = pow(10, 15)
         erc20wrapper_client.mint_tokens(
-            self.account, self.account.address, amount=random.randint(amount_range, amount_range + pow(10, 3))
+            # self.account, self.account.address, amount=random.randint(amount_range, amount_range + pow(10, 3))
+            self.account,
+            self.account.address,
+            amount=amount,
         )
         return erc20wrapper_client.contract
 
@@ -610,7 +638,7 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
 class NeonTasksSet(NeonProxyTasksSet):
     """Implements Neons transfer base pipeline tasks"""
 
-    @task
+    @task(1)
     @execute_before("task_block_number", "task_keeps_balance")
     def task_send_neon(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Transferring funds to a random account"""
@@ -636,7 +664,7 @@ class ERC20TasksSet(ERC20BaseTasksSet):
         """Deploy ERC20 contract"""
         super(ERC20TasksSet, self).task_deploy_contract()
 
-    @task(5)
+    @task(6)
     @execute_before("task_block_number", "task_keeps_balance")
     def task_send_erc20(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Send ERC20 tokens"""
@@ -653,7 +681,7 @@ class ERC20SPLTasksSet(ERC20BaseTasksSet):
         self.contract_name = "erc20wrapper"
         self._buffer = self.user.environment.shared.erc20_wrapper_contracts
 
-    @task(5)
+    @task(6)
     @execute_before("task_block_number", "task_keeps_balance")
     def task_send_erc20_wrapped(self) -> None:
         """Send ERC20 tokens"""
@@ -663,7 +691,7 @@ class ERC20SPLTasksSet(ERC20BaseTasksSet):
     @execute_before("task_block_number", "task_keeps_balance")
     def task_deploy_contract(self) -> None:
         """Deploy ERC20Wrapper contract"""
-        return super(ERC20SPLTasksSet, self).task_deploy_contract()
+        super(ERC20SPLTasksSet, self).task_deploy_contract()
 
 
 @tag("counter")

@@ -154,8 +154,9 @@ def solana_associated_token_mintable_erc20(erc20_spl_mintable, sol_client):
     trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))
     opts = TxOpts(skip_preflight=True, skip_confirmation=False)
     sol_client.send_transaction(trx, acc, opts=opts)
-    solana_address = bytes(get_associated_token_address(acc.public_key, token_mint))
+    solana_address = get_associated_token_address(acc.public_key, token_mint)
     yield acc, token_mint, solana_address
+
 
 @pytest.fixture(scope="function")
 def solana_associated_token_erc20(erc20_spl, sol_client):
@@ -167,7 +168,7 @@ def solana_associated_token_erc20(erc20_spl, sol_client):
     trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))
     opts = TxOpts(skip_preflight=True, skip_confirmation=False)
     sol_client.send_transaction(trx, acc, opts=opts)
-    solana_address = bytes(get_associated_token_address(acc.public_key, token_mint))
+    solana_address = get_associated_token_address(acc.public_key, token_mint)
     yield acc, token_mint, solana_address
 
 

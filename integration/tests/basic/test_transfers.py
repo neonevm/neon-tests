@@ -471,3 +471,11 @@ class TestTransactionsValidation(BaseMixin):
     #     response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
     #     receipt = self.wait_transaction_accepted(response["result"])
     #     print(receipt)
+
+    @pytest.mark.xfail(reason="NDEV-628")
+    def test_big_memory_value(self):
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
+            "BigMemoryValue", "0.8.12", account=self.sender_account
+        )
+        bytes_amount = contract.functions.makeBigMemoryValue(13).call()
+        assert bytes_amount > 16*1024*1024

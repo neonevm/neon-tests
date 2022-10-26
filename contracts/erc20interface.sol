@@ -19,5 +19,8 @@ interface IERC20ForSpl {
     function balanceOf(address who) external view returns (uint256);
     function totalSupply() external view returns (uint256);
     function decimals() external view returns (uint8);
+    function symbol() external view returns (string memory);
+    function name() external view returns (string memory);
     function tokenMint() external view returns (bytes32);
+    function claimTo(bytes32 from, address to, uint64 amount) external returns (bool);
 }

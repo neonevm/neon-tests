@@ -1,3 +1,4 @@
+import os
 import time
 import typing as tp
 from dataclasses import dataclass
@@ -7,18 +8,20 @@ import allure
 import pytest
 import web3
 import eth_account.signers.local
+from solana.publickey import PublicKey
 
 from utils.consts import Unit, InputTestConstants
 from utils.helpers import gen_hash_of_block
 from utils.apiclient import JsonRPCSession
 from integration.tests.base import BaseTests
-from integration.tests.basic.helpers.assert_message import ErrorMessage
 
 
 @dataclass
 class AccountData:
     address: str
     key: str = ""
+
+ACCOUNT_SEED_VERSION = b'\2'
 
 
 class BaseMixin(BaseTests):
@@ -27,6 +30,7 @@ class BaseMixin(BaseTests):
     _sender_account: eth_account.signers.local.LocalAccount = None
     _recipient_account: eth_account.signers.local.LocalAccount = None
     _invalid_account: AccountData = None
+    evm_loader_id = None
 
     @pytest.fixture(autouse=True)
     def prepare_env(self, json_rpc_client):
@@ -91,6 +95,12 @@ class BaseMixin(BaseTests):
     def create_invalid_account() -> AccountData:
         """Create non existing account"""
         return AccountData(address=gen_hash_of_block(20))
+
+    @staticmethod
+    def get_neon_account_address(neon_account_address: str, evm_loader_id) -> PublicKey:
+        neon_account_addressbytes = bytes.fromhex(neon_account_address[2:])
+        return PublicKey.find_program_address([ACCOUNT_SEED_VERSION, neon_account_addressbytes],
+                                              PublicKey(evm_loader_id))[0]
 
     def send_neon(
         self,

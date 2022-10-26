@@ -21,6 +21,7 @@ import web3
 from locust import TaskSet, User, events, tag, task
 from locust.runners import WorkerRunner
 from solana.keypair import Keypair
+from solana.rpc.api import Client
 
 from utils import helpers, operator
 from utils.erc20wrapper import ERC20Wrapper
@@ -549,7 +550,7 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
     version: tp.Optional[str] = None
     _buffer: tp.Optional[tp.Dict] = None
     _erc20wrapper_client: tp.Optional[ERC20Wrapper] = None
-    _solana_client: tp.Any = None
+    _sol_client: tp.Any = None
 
     def on_start(self) -> None:
         super(ERC20BaseTasksSet, self).on_start()
@@ -586,13 +587,12 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
                     del self._buffer[self.account.address][contract.address]
                 else:
                     self._buffer[self.account.address][contract.address]["amount"] -= 1
-                recep_balances = self._buffer.get(recipient.address, {})
-                recep_contract = recep_balances.get(contract.address, {})
-                if not recep_contract:
-                    recep_contract["contract"] = contract
-                    recep_contract["amount"] = 0
-                recep_contract["amount"] += 1
-                self._buffer[recipient.address] = recep_balances
+                recipient_contracts = self._buffer.get(recipient.address, {})
+                recipient_contract = recipient_contracts.get(contract.address, {})
+                if not recipient_contract:
+                    recipient_contract.update({"contract": contract, "amount": 0})
+                recipient_contract["amount"] += 1
+                self._buffer.setdefault(recipient.address, {}).update({contract.address: recipient_contract})
             return tx_receipt
         self.log.info(f"no `{self.contract_name.upper()}` contracts found, send is cancel.")
 
@@ -605,7 +605,12 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
         """Deploy ERC20Wrapped contract"""
         symbol = "".join(random.sample(string.ascii_uppercase, 3))
         erc20wrapper_client = ERC20Wrapper(
-            self.web3_client, self.faucet, name=f"Test {symbol}", symbol=symbol, account=self.account
+            self.web3_client,
+            self.faucet,
+            name=f"Test {symbol}",
+            symbol=symbol,
+            sol_client=self._sol_client,
+            account=self.account,
         )
         erc20wrapper_client.mint_tokens(
             self.account,
@@ -656,11 +661,14 @@ class ERC20TasksSet(ERC20BaseTasksSet):
 class ERC20SPLTasksSet(ERC20BaseTasksSet):
     """Implements ERC20Wrapped base pipeline tasks"""
 
+    _sol_client: tp.Optional["solana.rpc.api.Client"] = None
+
     def on_start(self) -> None:
         super(ERC20SPLTasksSet, self).on_start()
         self.version = ERC20_WRAPPER_VERSION
         self.contract_name = "erc20wrapper"
         self._buffer = self.user.environment.shared.erc20_wrapper_contracts
+        self._sol_client = Client(self.credentials["solana_url"])
 
     @task(2)
     @execute_before("task_block_number", "task_keeps_balance")

@@ -17,8 +17,18 @@ INIT_TOKEN_AMOUNT = 1000000000000000
 
 
 class ERC20Wrapper:
-    def __init__(self, web3_client: web3client.NeonWeb3Client, faucet, name, symbol, sol_client, decimals=18, evm_loader_id=None,
-                 account=None, mintable=True):
+    def __init__(
+        self,
+        web3_client: web3client.NeonWeb3Client,
+        faucet,
+        name,
+        symbol,
+        sol_client,
+        decimals=18,
+        evm_loader_id=None,
+        account=None,
+        mintable=True,
+    ):
         self.solana_associated_token_acc = None
         self.token_mint = None
         self.solana_acc = None
@@ -34,28 +44,33 @@ class ERC20Wrapper:
         self.contract = self.get_wrapper_contract()
 
     def make_tx_object(self, from_address, gasPrice=None, gas=None):
-        tx = {"from": from_address, "nonce": self.web3_client.eth.get_transaction_count(from_address),
-              "gasPrice": gasPrice if gasPrice is not None else self.web3_client.gas_price()}
+        tx = {
+            "from": from_address,
+            "nonce": self.web3_client.eth.get_transaction_count(from_address),
+            "gasPrice": gasPrice if gasPrice is not None else self.web3_client.gas_price(),
+        }
         if gas is not None:
             tx["gas"] = gas
         return tx
 
     def deploy_wrapper(self, mintable: bool):
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "erc20_for_spl_factory", "0.8.10", self.account, contract_name='ERC20ForSplFactory')
+            "erc20_for_spl_factory", "0.8.10", self.account, contract_name="ERC20ForSplFactory"
+        )
         assert contract_deploy_tx["status"] == 1, f"ERC20 Factory wasn't deployed: {contract_deploy_tx}"
         tx_object = self.make_tx_object(self.account.address)
         if mintable:
 
-            instruction_tx = contract.functions.createErc20ForSplMintable(self.name, self.symbol, self.decimals,
-                                                                          self.account.address).buildTransaction(
-                tx_object)
+            instruction_tx = contract.functions.createErc20ForSplMintable(
+                self.name, self.symbol, self.decimals, self.account.address
+            ).buildTransaction(tx_object)
         else:
             acc = Keypair.generate()
             self.solana_acc = acc
             self.sol_client.request_airdrop(acc.public_key, 1000000000)
             BaseMixin.wait_condition(
-                lambda: self.sol_client.get_balance(acc.public_key)["result"]["value"] == 1000000000)
+                lambda: self.sol_client.get_balance(acc.public_key)["result"]["value"] == 1000000000
+            )
             self.token_mint = self.create_spl(acc, self.decimals)
             metadata = create_metadata_instruction_data(self.name, self.symbol, 0, ())
             txn = Transaction()
@@ -68,14 +83,18 @@ class ERC20Wrapper:
                     acc.public_key,
                 )
             )
-            self.sol_client.send_transaction(txn, acc,
-                                             opts=TxOpts(preflight_commitment=Confirmed, skip_confirmation=False))
+            self.sol_client.send_transaction(
+                txn, acc, opts=TxOpts(preflight_commitment=Confirmed, skip_confirmation=False)
+            )
             instruction_tx = contract.functions.createErc20ForSpl(bytes(self.token_mint.pubkey)).buildTransaction(
-                tx_object)
+                tx_object
+            )
 
         instruction_receipt = self.web3_client.send_transaction(self.account, instruction_tx)
-        logs = contract.events.ERC20ForSplCreated().processReceipt(instruction_receipt)
-        return logs[0]["args"]["pair"]
+        if instruction_receipt:
+            logs = contract.events.ERC20ForSplCreated().processReceipt(instruction_receipt)
+            return logs[0]["args"]["pair"]
+        return instruction_receipt
 
     def create_spl(self, owner: Keypair, decimals: int = 9):
         token_mint = spl.token.client.Token.create_mint(
@@ -83,7 +102,7 @@ class ERC20Wrapper:
             payer=owner,
             mint_authority=owner.public_key,
             decimals=decimals,
-            program_id=TOKEN_PROGRAM_ID
+            program_id=TOKEN_PROGRAM_ID,
         )
         assoc_addr = token_mint.create_associated_token_account(owner.public_key)
         self.solana_associated_token_acc = assoc_addr
@@ -93,15 +112,16 @@ class ERC20Wrapper:
             amount=INIT_TOKEN_AMOUNT,
             opts=TxOpts(skip_confirmation=False),
         )
-        token_mint.approve(source=assoc_addr,
-                           delegate=BaseMixin.get_neon_account_address(self.account.address, self.evm_loader_id),
-                           owner=owner.public_key, amount=INIT_TOKEN_AMOUNT)
+        token_mint.approve(
+            source=assoc_addr,
+            delegate=BaseMixin.get_neon_account_address(self.account.address, self.evm_loader_id),
+            owner=owner.public_key,
+            amount=INIT_TOKEN_AMOUNT,
+        )
         return token_mint
 
     def get_wrapper_contract(self):
-        contract_path = (
-                pathlib.Path.cwd() / "contracts" / "erc20interface.sol"
-        ).absolute()
+        contract_path = (pathlib.Path.cwd() / "contracts" / "erc20interface.sol").absolute()
 
         with open(contract_path, "r") as s:
             source = s.read()
@@ -109,9 +129,7 @@ class ERC20Wrapper:
         compiled = solcx.compile_source(source, output_values=["abi", "bin"], solc_version="0.8.10")
         contract_interface = compiled[list(compiled.keys())[0]]
 
-        contract = self.web3_client.eth.contract(
-            address=self.contract_address, abi=contract_interface["abi"]
-        )
+        contract = self.web3_client.eth.contract(address=self.contract_address, abi=contract_interface["abi"])
         return contract
 
     def mint_tokens(self, signer, to_address, amount: int = INIT_TOKEN_AMOUNT, gas_price=None, gas=None):

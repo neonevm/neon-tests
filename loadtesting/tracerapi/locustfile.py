@@ -3,6 +3,8 @@
 Created on 2022-08-31
 @author: Eugeny Kurkovich
 """
+
+import enum
 import functools
 import json
 import logging
@@ -13,22 +15,22 @@ import sys
 import time
 import typing as tp
 import uuid
+from dataclasses import dataclass
 
 import gevent
 import requests
 import web3
 from locust import User, TaskSet, between, task, events, tag
-from dataclasses import dataclass
 
 from utils import apiclient
 
 LOG = logging.getLogger("neon_client")
 
-DEFAULT_NETWORK = "night-stand"
+DEFAULT_NETWORK = "neon_rpc"
 """Default test environment name
 """
 
-ENV_FILE = "envs.json"
+ENV_FILE = pathlib.Path(__file__).parent / "envs.json"
 """ Default environment credentials storage 
 """
 
@@ -40,6 +42,17 @@ NEON_RPC = os.environ.get("NEON_RPC")
 """Endpoint to Neon-RPC. Neon-RPC is a single RPC entrypoint to Neon-EVM. 
 The function of this service is so route requests between Tracer API and Neon Proxy services
 """
+
+
+class RPCType(enum.Enum):
+
+    logs = ["eth_getLogs"]
+    store = ["eth_getStorageAt"]
+    transfer = ["eth_getBalance", "eth_getTransactionCount"]
+
+    @classmethod
+    def get(cls, key: str) -> str:
+        return list(filter(lambda i: i if key in i.value else None, cls.__members__.values()))[0].name
 
 
 @dataclass
@@ -79,18 +92,19 @@ def load_credentials(environment, **kwargs):
     # load test env credentials
     root_path = list(pathlib.Path(__file__).parents)[2]
     path_to_credentials = root_path / environment.parsed_options.credentials
+
     network = environment.parsed_options.host
     if not (path_to_credentials.exists() and path_to_credentials.is_file()):
         path_to_credentials = root_path / ENV_FILE
     with open(path_to_credentials, "r") as fp:
         f = json.load(fp)
-        environment.shared.credentials = f.get(network, f[DEFAULT_NETWORK])
+        environment.shared.credentials = f[network]
 
 
 @events.test_start.add_listener
 def load_transaction_history(environment, **kwargs):
     # load transaction history
-    path = pathlib.Path(__file__).parents[1] / DUMPED_DATA
+    path = pathlib.Path(__file__).parent / DUMPED_DATA
     if path.exists():
         with open(path, "r") as fp:
             environment.shared.transaction_history = json.load(fp)
@@ -223,10 +237,6 @@ class BaseEthRPCATasksSet(TaskSet):
         BaseEthRPCATasksSet._transaction_history = history_data
         BaseEthRPCATasksSet._rpc_endpoint = rpc_endpoint
 
-    def setup(self) -> None:
-        """Prepare data requirements"""
-        pass
-
     def on_start(self) -> None:
         """on_start is called when a Locust start before any task is scheduled"""
         # setup class once
@@ -241,23 +251,30 @@ class BaseEthRPCATasksSet(TaskSet):
                 pool_size=self.user.environment.parsed_options.num_users
                 or self.user.environment.runner.target_user_count,
             )
-        self.setup()
         self.log = logging.getLogger("rpc-consumer[%s]" % self.rpc_consumer_id)
 
-    def _get_random_transaction(self) -> tp.Dict:
+    def _get_random_transaction(self, key: str) -> tp.Dict:
         """Return random transaction details from transaction history"""
-        key = random.choice(list(self._transaction_history.keys()))
-        params = random.choice(self._transaction_history[key])
+        transactions = self._transaction_history[RPCType.get(key)]
+        key = random.choice(list(transactions.keys()))
+        params = random.choice(transactions[key])
         params["from"] = key
         return params
 
-    def _do_call(self, method: str, req_type: str, params: tp.Optional[tp.Dict] = None) -> tp.Dict:
-        tr_x = self._get_random_transaction()
-        filters = {req_type: tr_x[req_type]}
-        if params:
-            filters.update(params)
-        response = self._rpc_client.send_rpc(method, req_type=req_type, params=[tr_x["from"], filters])
-        self.log.info(f"Get balance by `{req_type}`: {tr_x[req_type]}")
+    def _do_call(
+        self, method: str, req_type: str, args: tp.Optional[tp.List] = None, kwargs: tp.Optional[tp.Dict] = None
+    ) -> tp.Dict:
+        transaction = self._get_random_transaction(method)
+        if not args:
+            args = []
+        elif not isinstance(args, list):
+            args = [args]
+        kwargs = kwargs or {}
+        kwargs.update({req_type: transaction[req_type]})
+        args.append(kwargs)
+        args.insert(0, transaction["to"])
+        response = self._rpc_client.send_rpc(method, req_type=req_type, params=args)
+        self.log.info(f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}")
         return response
 
 
@@ -278,24 +295,81 @@ class EthGetBalanceTasksSet(BaseEthRPCATasksSet):
         self._do_call(method="eth_getBalance", req_type="blockNumber")
 
 
+@tag("getTransactionCount")
+class EthGetTransactionCountTasksSet(BaseEthRPCATasksSet):
+    """task set measures the maximum request rate for the eth_getTransactionCount method"""
+
+    @tag("getTransactionCount_by_hash")
+    @task
+    def task_eth_get_transaction_count_by_hash(self) -> tp.Dict:
+        """the eth_getTransactionCount method by blockHash"""
+        self._do_call(method="eth_getTransactionCount", req_type="blockHash")
+
+    @tag("getTransactionCount_by_num")
+    @task
+    def task_eth_get_transaction_count_by_num(self) -> tp.Dict:
+        """the eth_getTransactionCount method by blockNumber"""
+        self._do_call(method="eth_getTransactionCount", req_type="blockNumber")
+
+
 @tag("getStorageAt")
 class EthGetStorageAtTasksSet(BaseEthRPCATasksSet):
-    """task set measures the maximum request rate for the eth_StorageAt method"""
+    """task set measures the maximum request rate for the eth_getStorageAt method"""
 
-    @tag("getStorage_by_hash")
+    @tag("getStorageAt_by_hash")
     @task
-    def task_eth_get_storage_by_hash(self) -> tp.Dict:
+    def task_eth_get_storage_at_by_hash(self) -> tp.Dict:
         """the eth_getStorageAt method by blockHash"""
-        self._do_call(method="eth_getStorageAt", req_type="blockHash")
+        self._do_call(method="eth_getStorageAt", req_type="blockHash", args="0x0")
 
-    @tag("getStorage_by_num")
+    @tag("getStorageAt_by_num")
     @task
-    def task_eth_get_storage_by_num(self) -> tp.Dict:
+    def task_eth_get_storage_at_by_num(self) -> tp.Dict:
         """the eth_getStorageAt method by blockNumber"""
-        self._do_call(method="eth_getStorageAt", req_type="blockNumber")
+        self._do_call(method="eth_getStorageAt", req_type="blockNumber", args="0x0")
+
+
+@tag("getLogs")
+class EthGetLogs(BaseEthRPCATasksSet):
+    """task set measures the maximum request rate for the eth_getLogs method"""
+
+    @staticmethod
+    def assert_results(req_type: str, transaction: tp.Dict, response: tp.List) -> None:
+        """Check response result"""
+        if req_type == "blockNumber":
+            assert transaction[req_type].lower() == response[0][req_type]
+        if req_type == "blockHash":
+            assert any(transaction[req_type].lower() == r[req_type] for r in response)
+        assert all(transaction["contractAddress"].lower() == r["address"] for r in response)
+
+    def _do_call(self, method: str, req_type: str) -> tp.Dict:
+        transaction = self._get_random_transaction(method)
+        filter_obj = {"address": transaction["contractAddress"]}
+        if req_type == "blockNumber":
+            block = transaction[req_type]
+            kwargs = {"toBlock": block, "fromBlock": block}
+        else:
+            kwargs = {"blockhash": transaction[req_type]}
+        filter_obj.update(kwargs)
+        response = self._rpc_client.send_rpc(method, req_type=req_type, params=[filter_obj])
+        self.log.info(f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}")
+        self.assert_results(req_type, transaction, response["result"])
+        return response
+
+    @tag("getLogs_by_hash")
+    @task
+    def task_eth_get_logs_by_hash(self) -> tp.Dict:
+        """the eth_getLogs method by blockHash"""
+        self._do_call(method="eth_getLogs", req_type="blockHash")
+
+    @tag("getLogs_by_num")
+    @task
+    def task_eth_get_logs_by_num(self) -> tp.Dict:
+        """the eth_getLogs method by blockNumber"""
+        self._do_call(method="eth_getLogs", req_type="blockNumber")
 
 
 class EthRPCAPICallUsers(User):
     """class represents extended ETH RPC API calls by one user"""
 
-    tasks = {EthGetBalanceTasksSet: 1, EthGetStorageAtTasksSet: 1}
+    tasks = {EthGetBalanceTasksSet: 1, EthGetTransactionCountTasksSet: 1, EthGetStorageAtTasksSet: 1, EthGetLogs: 1}

@@ -1,4 +1,3 @@
-import collections
 import functools
 import json
 import logging
@@ -21,8 +20,8 @@ import tabulate
 import web3
 from locust import TaskSet, User, events, tag, task
 from locust.runners import WorkerRunner
-
 from solana.keypair import Keypair
+from solana.rpc.api import Client
 
 from utils import helpers, operator
 from utils.erc20wrapper import ERC20Wrapper
@@ -59,16 +58,6 @@ NEON_TOKEN_VERSION = "0.8.10"
 """Neon tokens contract version
 """
 
-DEFAULT_DUMP_FILE = "dumped_data/transaction.json"
-"""Default file name for transaction history
-"""
-
-# init global transaction history
-global transaction_history
-transaction_history = collections.defaultdict(list)
-"""Transactions storage {account: [{blockNumber, blockHash, contractAddress},]}
-"""
-
 UNISWAP_REPO_URL = "https://github.com/gigimon/Uniswap-V2-NEON.git"
 UNISWAP_TMP_DIR = "/tmp/uniswap-neon"
 MAX_UINT_256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
@@ -92,25 +81,16 @@ def execute_before(*attrs) -> tp.Callable:
         def task_wrapper(self, *args, **kwargs) -> tp.Any:
             for attr in attrs:
                 getattr(self, attr)(*args, **kwargs)
-            tx_receipt = func(self, *args, **kwargs)
-            if dump_data and tx_receipt:
-                transaction_history[str(tx_receipt["from"])].append(
-                    {
-                        "blockHash": tx_receipt["blockHash"].hex(),
-                        "blockNumber": hex(tx_receipt["blockNumber"]),
-                        "contractAddress": tx_receipt["contractAddress"],
-                        "to": str(tx_receipt["to"]),
-                    }
-                )
+            return func(self, *args, **kwargs)
 
         return task_wrapper
 
     return ext_runner
 
 
-def init_session(size: int) -> requests.Session:
+def init_session(size: int = 1000) -> requests.Session:
     """init request session with extended connection pool size"""
-    adapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, pool_block=True)
+    adapter = requests.adapters.HTTPAdapter(pool_connections=size, pool_maxsize=size, pool_block=True)
     session = requests.Session()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
@@ -127,21 +107,12 @@ def arg_parser(parser):
         default=ENV_FILE,
         help="Relative path to environment credentials file.",
     )
-    parser.add_argument(
-        "--dump-data",
-        type=int,
-        env_var="LOCUST_DUMP_DATA",
-        default=0,
-        help="Enabling dump transaction history.",
-    )
 
 
 @events.test_start.add_listener
 def make_env_preparation(environment, **kwargs):
     neon = NeonGlobalEnv()
     environment.shared = neon
-    global dump_data
-    dump_data = bool(int(environment.parsed_options.dump_data))
 
 
 @events.test_start.add_listener
@@ -153,10 +124,8 @@ def load_credentials(environment, **kwargs):
     if not (path.exists() and path.is_file()):
         path = base_path / ENV_FILE
     with open(path, "r") as fp:
-        global credentials
         f = json.load(fp)
-        credentials = f.get(network, f[DEFAULT_NETWORK])
-        environment.credentials = credentials
+        environment.credentials = f[network]
 
 
 def get_token_balance(op: operator.Operator) -> tp.Dict:
@@ -223,8 +192,8 @@ def deploy_uniswap(environment: "locust.env.Environment", **kwargs):
         subprocess.call("npm install", shell=True)
     os.chdir(uniswap_path)
 
-    neon_client = NeonWeb3Client(credentials["proxy_url"], credentials["network_id"])
-    faucet = Faucet(credentials["faucet_url"])
+    neon_client = NeonWeb3Client(environment.credentials["proxy_url"], environment.credentials["network_id"])
+    faucet = Faucet(environment.credentials["faucet_url"])
 
     eth_account = neon_client.create_account()
     faucet.request_neon(eth_account.address, 10000)
@@ -348,17 +317,6 @@ def deploy_uniswap(environment: "locust.env.Environment", **kwargs):
     environment.uniswap.update(erc20_contracts)
 
 
-@events.test_stop.add_listener
-def teardown(**kwargs) -> None:
-    """Test stop event handler"""
-    if transaction_history:
-        dumped_path = pathlib.Path(__file__).parent.parent / DEFAULT_DUMP_FILE
-        dumped_path.parents[0].mkdir(parents=True, exist_ok=True)
-        with open(dumped_path, "w") as fp:
-            LOG.info(f"Dumped transaction history to `{dumped_path.as_posix()}`")
-            json.dump(transaction_history, fp=fp, indent=4, sort_keys=True)
-
-
 class LocustEventHandler(object):
     """Implements custom Locust events handler"""
 
@@ -459,6 +417,9 @@ class NeonWeb3ClientExt(NeonWeb3Client):
         """Decrease account wrapper"""
         return self._send_transaction(*args, **kwargs)
 
+    def store_randint(self, *args, **kwargs) -> tp.Any:
+        return self._send_transaction(*args, **kwargs)
+
 
 class NeonProxyTasksSet(TaskSet):
     """Implements base initialization, creates data requirements and helpers"""
@@ -479,11 +440,14 @@ class NeonProxyTasksSet(TaskSet):
         """on_start is called when a Locust start before any task is scheduled"""
         # setup class once
         session = init_session(
-            self.user.environment.parsed_options.num_users or self.user.environment.runner.target_user_count
+            int(self.user.environment.parsed_options.num_users or self.user.environment.runner.target_user_count) * 100
         )
-        self.faucet = Faucet(credentials["faucet_url"], session=session)
-        LOG.info(f"Create web3 client to: {credentials['proxy_url']}")
-        self.web3_client = NeonWeb3ClientExt(credentials["proxy_url"], credentials["network_id"], session=session)
+        self.credentials = self.user.environment.credentials
+        self.faucet = Faucet(self.credentials["faucet_url"], session=session)
+        LOG.info(f"Create web3 client to: {self.credentials['proxy_url']}")
+        self.web3_client = NeonWeb3ClientExt(
+            self.credentials["proxy_url"], self.credentials["network_id"], session=session
+        )
         self.setup()
         self.log = logging.getLogger("neon-consumer[%s]" % self.account.address[-8:])
 
@@ -491,11 +455,12 @@ class NeonProxyTasksSet(TaskSet):
         """Check the number of the most recent block"""
         self.web3_client.get_block_number()
 
-    def task_keeps_balance(self) -> None:
+    def task_keeps_balance(self, account: tp.Optional["eth_account.signers.local.LocalAccount"] = None) -> None:
         """Keeps account balance not empty"""
-        if self.web3_client.get_balance(self.account.address) < 100:
+        account = account or self.account
+        if self.web3_client.get_balance(account.address) < 100:
             # add credits to account
-            self.faucet.request_neon(self.account.address, 1000)
+            self.faucet.request_neon(account.address, 1000)
 
     def deploy_contract(
         self,
@@ -504,10 +469,11 @@ class NeonProxyTasksSet(TaskSet):
         account: "eth_account.signers.local.LocalAccount",
         constructor_args: tp.Optional[tp.Any] = None,
         gas: tp.Optional[int] = 0,
+        contract_name: tp.Optional[str] = None,
     ) -> "web3._utils.datatypes.Contract":
         """contract deployments"""
 
-        contract_interface = self._compile_contract_interface(name, version)
+        contract_interface = self._compile_contract_interface(name, version, contract_name)
         contract_deploy_tx = self.web3_client.deploy_contract(
             account,
             abi=contract_interface["abi"],
@@ -526,9 +492,9 @@ class NeonProxyTasksSet(TaskSet):
         return contract, contract_deploy_tx
 
     @lru_cache(maxsize=32)
-    def _compile_contract_interface(self, name, version) -> tp.Any:
+    def _compile_contract_interface(self, name, version, contract_name: tp.Optional[str] = None) -> tp.Any:
         """Compile contract inteface form file"""
-        return helpers.get_contract_interface(name, version)
+        return helpers.get_contract_interface(name, version, contract_name=contract_name)
 
 
 class BaseResizingTasksSet(NeonProxyTasksSet):
@@ -584,36 +550,35 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
     version: tp.Optional[str] = None
     _buffer: tp.Optional[tp.Dict] = None
     _erc20wrapper_client: tp.Optional[ERC20Wrapper] = None
-    _solana_client: tp.Any = None
+    _sol_client: tp.Any = None
 
     def on_start(self) -> None:
         super(ERC20BaseTasksSet, self).on_start()
 
-    @task(1)
-    @execute_before("task_block_number", "task_keeps_balance")
     def task_deploy_contract(self) -> None:
         """Deploy ERC20 or ERC20Wrapper contract"""
         self.log.info(f"Deploy `{self.contract_name.lower()}` contract.")
-        contract = self.deploy_contract(self.contract_name, self.version, self.account, [pow(10, 10)])
-        if not contract or contract[0] is None:
-            self.log.info(f"{self.contract_name} contract deployment failed {contract[1]}")
+        amount_range = pow(10, 15)
+        amount = random.randint(amount_range, amount_range + pow(10, 3))
+        contract = getattr(self, f"_deploy_{self.contract_name.lower()}_contract")(amount=amount)
+        if not contract:
+            self.log.info(f"{self.contract_name} contract deployment failed {contract}")
             return
-        acc_balances = self._buffer.get(self.account.address, {})
-        acc_balances[contract[0].address] = {
-            "contract": contract[0],
-            "amount": pow(10, 10)
-        }
-        self._buffer[self.account.address] = acc_balances
+        self._buffer.setdefault(self.account.address, {}).update(
+            {contract.address: {"contract": contract, "amount": amount}}
+        )
 
     def task_send_tokens(self) -> None:
-        """Send ERC20 tokens"""
+        """Send ERC20/ERC20Wrapped tokens"""
         contracts = self._buffer.get(self.account.address)
 
         if contracts:
             contract_address = random.choice(list(contracts.keys()))
-            if contracts[contract_address]["amount"] <= 1:
-                return self.task_send_tokens()
             contract = contracts[contract_address]["contract"]
+            if contracts[contract_address]["amount"] < 1:
+                self.log.info(f"low balance on contract: {contracts[contract_address]}, skip transfer")
+                del contracts[contract_address]
+                return
             recipient = random.choice(self.user.environment.shared.accounts)
             self.log.info(
                 f"Send `{self.contract_name.lower()}` tokens from contract {str(contract.address)[-8:]} to {str(recipient.address)[-8:]}."
@@ -623,15 +588,37 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
                 tx_receipt = dict(tx_receipt)  # AttributeDict -> dict
                 tx_receipt["contractAddress"] = contract.address
                 self._buffer[self.account.address][contract.address]["amount"] -= 1
-                recep_balances = self._buffer.get(recipient.address, {})
-                recep_contract = recep_balances.get(contract.address, {})
-                if not recep_contract:
-                    recep_contract["contract"] = contract
-                    recep_contract["amount"] = 0
-                recep_contract["amount"] += 1
-                self._buffer[recipient.address] = recep_balances
+                recipient_contracts = self._buffer.get(recipient.address, {})
+                recipient_contract = recipient_contracts.get(contract.address, {})
+                if not recipient_contract:
+                    recipient_contract.update({"contract": contract, "amount": 0})
+                recipient_contract["amount"] += 1
+                self._buffer.setdefault(recipient.address, {}).update({contract.address: recipient_contract})
             return tx_receipt
         self.log.info(f"no `{self.contract_name.upper()}` contracts found, send is cancel.")
+
+    def _deploy_erc20_contract(self, amount: int) -> "web3._utils.datatypes.Contract":
+        """Deploy ERC20 contract"""
+        contract, _ = self.deploy_contract(self.contract_name, self.version, self.account, constructor_args=[amount])
+        return contract
+
+    def _deploy_erc20wrapper_contract(self, amount: int) -> "web3._utils.datatypes.Contract":
+        """Deploy ERC20Wrapped contract"""
+        symbol = "".join(random.sample(string.ascii_uppercase, 3))
+        erc20wrapper_client = ERC20Wrapper(
+            self.web3_client,
+            self.faucet,
+            name=f"Test {symbol}",
+            symbol=symbol,
+            sol_client=self._sol_client,
+            account=self.account,
+        )
+        erc20wrapper_client.mint_tokens(
+            self.account,
+            self.account.address,
+            amount=amount,
+        )
+        return erc20wrapper_client.contract
 
 
 @tag("send_neon")
@@ -658,6 +645,12 @@ class ERC20TasksSet(ERC20BaseTasksSet):
         self.contract_name = "ERC20"
         self._buffer = self.user.environment.shared.erc20_contracts
 
+    @task(2)
+    @execute_before("task_block_number", "task_keeps_balance")
+    def task_deploy_contract(self) -> None:
+        """Deploy ERC20 contract"""
+        super(ERC20TasksSet, self).task_deploy_contract()
+
     @task(6)
     @execute_before("task_block_number", "task_keeps_balance")
     def task_send_erc20(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
@@ -665,26 +658,26 @@ class ERC20TasksSet(ERC20BaseTasksSet):
         return super(ERC20TasksSet, self).task_send_tokens()
 
 
-@tag("SPL")
+@tag("spl")
 class ERC20SPLTasksSet(ERC20BaseTasksSet):
     """Implements ERC20Wrapped base pipeline tasks"""
+
+    _sol_client: tp.Optional["solana.rpc.api.Client"] = None
 
     def on_start(self) -> None:
         super(ERC20SPLTasksSet, self).on_start()
         self.version = ERC20_WRAPPER_VERSION
         self.contract_name = "erc20wrapper"
         self._buffer = self.user.environment.shared.erc20_wrapper_contracts
+        self._sol_client = Client(self.credentials["solana_url"])
 
-    def _deploy_erc20wrapper_contract(self) -> "web3._utils.datatypes.Contract":
-        """Deploy SPL contract"""
-        symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
-        erc20wrapper_client = ERC20Wrapper(
-            self.web3_client, self.faucet, name=f"Test {symbol}", symbol=symbol, account=self.account
-        )
-        erc20wrapper_client.mint_tokens(self.account, self.account.address)
-        return erc20wrapper_client.contract
+    @task(2)
+    @execute_before("task_block_number", "task_keeps_balance")
+    def task_deploy_contract(self) -> None:
+        """Deploy ERC20Wrapper contract"""
+        super(ERC20SPLTasksSet, self).task_deploy_contract()
 
-    @task(5)
+    @task(6)
     @execute_before("task_block_number", "task_keeps_balance")
     def task_send_erc20_wrapped(self) -> None:
         """Send ERC20 tokens"""
@@ -728,7 +721,7 @@ class WithDrawTasksSet(NeonProxyTasksSet):
         """withdraw Ethereum tokens to Solana"""
         keys = Keypair.generate()
         contract_interface = self._compile_contract_interface(self.contract_name, self.version)
-        erc20wrapper_address = credentials.get("neon_erc20wrapper_address")
+        erc20wrapper_address = self.credentials.get("neon_erc20wrapper_address")
         if erc20wrapper_address:
             self.log.info(f"withdraw tokens to Solana from {self.account.address[:8]}")
             contract = self.web3_client.eth.contract(address=erc20wrapper_address, abi=contract_interface["abi"])
@@ -841,7 +834,7 @@ class NeonPipelineUser(User):
     tasks = {
         CounterTasksSet: 3,
         ERC20TasksSet: 1,
-        # ERC20SPLTasksSet: 2,
+        ERC20SPLTasksSet: 2,
         NeonTasksSet: 10,
         # WithDrawTasksSet: 5,  Disable this, because withdraw instruction changed
         UniswapTransaction: 5,

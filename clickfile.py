@@ -318,18 +318,16 @@ def requirements(dep):
 
 
 @cli.command(help="Run any type of tests")
-@click.option("-n", "--network", default=None, type=click.Choice(networks.keys()), help="In which stand run tests")
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
 @click.option("-a", "--amount", default=200000, help="Requested amount from faucet")
 @click.option("-u", "--users", default=8, help="Accounts numbers used in OZ tests")
 @click.option("--ui-item", default="all", type=click.Choice(["faucet", "neonpass", "all"]), help="Which UI test run")
 @click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz", "ui"]))
 @catch_traceback
-def run(name, jobs, ui_item, amount, users, network=None):
+def run(name, jobs, ui_item, amount, users, network):
     if not network and name == "ui":
         network = "devnet"
-    elif not network:
-        network = "night-stand"
     if DST_ALLURE_CATEGORIES.parent.exists():
         shutil.rmtree(DST_ALLURE_CATEGORIES.parent, ignore_errors=True)
     DST_ALLURE_CATEGORIES.parent.mkdir()
@@ -366,7 +364,71 @@ def ozreport():
     print_test_suite_results(test_report, skipped_files)
 
 
-@cli.command(help="Run `neon` pipeline performance test")
+# Base locust options
+locust_credentials = click.option(
+    "-c",
+    "--credentials",
+    type=str,
+    help="Relative path to credentials. Default repo root/envs.json",
+    show_default=True,
+)
+
+locust_host = click.option(
+    "-h",
+    "--host",
+    default="night-stand",
+    type=str,
+    help="In which stand run tests.",
+    show_default=True,
+)
+
+
+locust_users = click.option(
+    "-u", "--users", default=50, type=int, help="Peak number of concurrent Locust users.", show_default=True
+)
+
+locust_rate = click.option(
+    "-r", "--spawn-rate", default=1, type=int, help="Rate to spawn users at (users per second)", show_default=True
+)
+
+locust_run_time = click.option(
+    "-t",
+    "--run-time",
+    type=int,
+    help="Stop after the specified amount of time, e.g. (300s, 20m, 3h, 1h30m, etc.). "
+    "Only used together without Locust Web UI. [default: always run]",
+)
+
+locust_tags = click.option(
+    "-T",
+    "--tag",
+    type=str,
+    multiple=True,
+    help="tag to include in the test, so only tasks " "with any matching tags will be executed",
+)
+
+locust_headless = click.option(
+    "--web-ui/--headless",
+    " /-w",
+    default=True,
+    help="Enable the web interface. " "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
+)
+
+
+@cli.group()
+@click.pass_context
+def locust(ctx):
+    """Commands for load test manipulation."""
+
+
+@locust.command("run", help="Run `neon` pipeline performance test")
+@locust_credentials
+@locust_host
+@locust_users
+@locust_rate
+@locust_run_time
+@locust_tags
+@locust_headless
 @click.option(
     "-f",
     "--locustfile",
@@ -376,68 +438,25 @@ def ozreport():
     show_default=True,
 )
 @click.option(
-    "-c",
-    "--credentials",
-    type=str,
-    help="Relative path to credentials module.",
-    show_default=True,
-)
-@click.option(
     "--neon-rpc",
     type=str,
     help="NEON RPC entry point.",
     show_default=True,
 )
-@click.option(
-    "-h",
-    "--host",
-    default="night-stand",
-    type=click.Choice(networks),
-    help="In which stand run tests.",
-    show_default=True,
-)
-@click.option("-u", "--users", default=10, type=int, help="Peak number of concurrent Locust users.", show_default=True)
-@click.option(
-    "-r", "--spawn-rate", default=1, type=int, help="Rate to spawn users at (users per second)", show_default=True
-)
-@click.option(
-    "-t",
-    "--run-time",
-    type=int,
-    help="Stop after the specified amount of time, e.g. (300s, 20m, 3h, 1h30m, etc.). "
-    "Only used together without Locust Web UI. [default: always run]",
-)
-@click.option(
-    "-T",
-    "--tag",
-    type=str,
-    multiple=True,
-    help="tag to include in the test, so only tasks " "with any matching tags will be executed",
-)
-@click.option(
-    "--web-ui/--headless",
-    " /-w",
-    default=True,
-    help="Enable the web interface. " "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
-)
-@click.option(
-    "-d",
-    "--dump-data",
-    default=False,
-    is_flag=True,
-    help="Flag. Enable dumps transaction history to file.",
-)
-def locust(locustfile, credentials, neon_rpc, host, users, spawn_rate, run_time, tag, web_ui, dump_data):
+def run(credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile, neon_rpc):
     """Run `Neon` pipeline performance test
 
     path it's sub-folder and file name  `loadtesting/locustfile.py`.
     """
-    path = pathlib.Path(__file__).parent / f"loadtesting/{locustfile}/locustfile.py"
+    base_path = pathlib.Path(__file__).parent
+    path = base_path / f"loadtesting/{locustfile}/locustfile.py"
     if not (path.exists() and path.is_file()):
         raise FileNotFoundError(f"path doe's not exists. {path.resolve()}")
     command = f"locust -f {path.as_posix()} --host={host} --users={users} --spawn-rate={spawn_rate}"
     if credentials:
         command += f" --credentials={credentials}"
+    elif locustfile == "tracerapi":
+        command += f" --credentials={base_path.absolute()}/loadtesting/tracerapi/envs.json"
     if run_time:
         command += f" --run-time={run_time}"
     if neon_rpc and locustfile == "tracerapi":
@@ -446,8 +465,39 @@ def locust(locustfile, credentials, neon_rpc, host, users, spawn_rate, run_time,
         command += f" --tags {' '.join(tag)}"
     if not web_ui:
         command += f" --headless"
-    if dump_data:
-        command += f" --dump-data 1"
+
+    cmd = subprocess.run(command, shell=True)
+
+    if cmd.returncode != 0:
+        sys.exit(cmd.returncode)
+
+
+@locust.command("prepare", help="Run preparation stage for `tracer api` performance test")
+@locust_credentials
+@locust_host
+@locust_users
+@locust_rate
+@locust_run_time
+@locust_tags
+def prepare(credentials, host, users, spawn_rate, run_time, tag):
+    """Run `Preparation stage` for trace api performance test"""
+    base_path = pathlib.Path(__file__).parent
+    path = base_path / "loadtesting/tracerapi/prepare_data/locustfile.py"
+    if not (path.exists() and path.is_file()):
+        raise FileNotFoundError(f"path doe's not exists. {path.resolve()}")
+    command = f"locust -f {path.absolute()} --host={host} --users={users} --spawn-rate={spawn_rate} --headless"
+    if credentials:
+        command += f" --credentials={credentials}"
+    else:
+        command += f" --credentials={base_path.absolute()}/loadtesting/tracerapi/envs.json"
+    if run_time:
+        command += f" --run-time={run_time}"
+    else:
+        command += f" --run-time=120"
+    if tag:
+        command += f" --tags {' '.join(tag)}"
+    else:
+        command += f" --tags prepare"
 
     cmd = subprocess.run(command, shell=True)
 
@@ -457,9 +507,7 @@ def locust(locustfile, credentials, neon_rpc, host, users, spawn_rate, run_time,
 
 @cli.command(help="Download allure history")
 @click.argument("name", type=click.STRING)
-@click.option(
-    "-n", "--network", default="night-stand", type=click.Choice(networks.keys()), help="In which stand run tests"
-)
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 @click.option("-d", "--destination", default="./allure-results", type=click.Path(file_okay=False, dir_okay=True))
 def get_allure_history(name: str, network: str, destination: str = "./allure-results"):
     branch = os.environ.get("GITHUB_REF_NAME")
@@ -480,9 +528,7 @@ def get_allure_history(name: str, network: str, destination: str = "./allure-res
 
 @cli.command(help="Upload allure report")
 @click.argument("name", type=click.STRING)
-@click.option(
-    "-n", "--network", default="night-stand", type=click.Choice(networks.keys()), help="In which stand run tests"
-)
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 @click.option("-s", "--source", default="./allure-report", type=click.Path(file_okay=False, dir_okay=True))
 def upload_allure_report(name: str, network: str, source: str = "./allure-report"):
     branch = os.environ.get("GITHUB_REF_NAME")

@@ -354,19 +354,15 @@ def init_transaction_signers(environment, **kwargs) -> None:
     print("Init transaction signers")
     network = environment.parsed_options.host or DEFAULT_NETWORK
     evm_loader_id = environment.credentials["evm_loader"]
-    sol_client = SOLClient(environment.credentials, init_session())
     environment.operators = gevent.queue.Queue()
 
     transaction_signers = [
         TransactionSigner(OperatorAccount(i), helpers.create_treasury_pool_address(network, evm_loader_id, i))
         for i in range(OPERATORS_OFFSET, OPERATORS_COUNT + OPERATORS_OFFSET)
     ]
-    signatures = []
+
     for op in transaction_signers:
-        # signatures.append(sol_client.request_sol(op.operator, DEFAULT_SOL_AMOUNT))
         environment.operators.put(op)
-    # for sig in signatures:
-    #     sol_client.wait_confirmation(sig)
     print("Finish signers")
 
 
@@ -377,7 +373,7 @@ def precompile_users(environment, **kwargs) -> None:
     web = web3.Web3()
     sol_client = SOLClient(environment.credentials, init_session())
 
-    for i in range(1, PREPARED_USERS_COUNT+1):
+    for i in range(0, PREPARED_USERS_COUNT+1):
         user = web.eth.account.from_key(ACCOUNT_ETH_BASE + PREPARED_USERS_OFFSET + i)
         solana_address, bump = sol_client.ether2solana(user.address)
         users_queue.put(ETHUser(user, solana_address, 0))
@@ -388,26 +384,7 @@ def precompile_users(environment, **kwargs) -> None:
 
 class SolanaTransactionTasksSet(TaskSet):
     """Implements solana transaction sender task sets"""
-
-    _last_consumer_id: int = 0
-    """Last spawned user id
-    """
-
-    tr_sender_id: int = 0
-    """Spawned user id
-    """
-
-    _setup_class_locker = gevent.threading.Lock()
-    _setup_class_done = False
-
     sol_client: tp.Optional[SOLClient] = None
-    """Solana client
-    """
-
-    _transaction_signers: tp.Optional[tp.List[TransactionSigner]] = None
-    """List operators signed transaction
-    """
-
     _mocked_nonce: int = 0
     _recent_blockhash = ""
     _last_blockhash_time = None
@@ -418,15 +395,8 @@ class SolanaTransactionTasksSet(TaskSet):
 
     def on_start(self) -> None:
         """on_start is called when a Locust start before any task is scheduled"""
-        # setup class once
-        with self._setup_class_locker:
-            if not SolanaTransactionTasksSet._setup_class_done:
-                SolanaTransactionTasksSet._setup_class_done = True
-            SolanaTransactionTasksSet._last_consumer_id += 1
-            self.tr_sender_id = SolanaTransactionTasksSet._last_consumer_id
         session = init_session()
         self.sol_client = SOLClient(self.user.environment.credentials, session=session)
-        self.log = logging.getLogger("tr-sender[%s]" % self.tr_sender_id)
 
     @property
     def recent_blockhash(self):
@@ -481,7 +451,7 @@ class SolanaTransactionTasksSet(TaskSet):
         )
         req_event["response_time"] = (time.perf_counter() - start_perf_counter) * 1000
         self.user.environment.events.request.fire(**req_event)
-        self.log.info(f"## Token transfer transaction hash: {transaction_receipt}")
+        print(f"## Token transfer transaction hash: {transaction_receipt}")
         self.user.environment.eth_users.put(token_receiver)
         self.user.environment.eth_users.put(token_sender)
         self.user.environment.operators.put(operator)

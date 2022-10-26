@@ -88,9 +88,9 @@ def execute_before(*attrs) -> tp.Callable:
     return ext_runner
 
 
-def init_session(size: int) -> requests.Session:
+def init_session(size: int = 1000) -> requests.Session:
     """init request session with extended connection pool size"""
-    adapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, pool_block=True)
+    adapter = requests.adapters.HTTPAdapter(pool_connections=size, pool_maxsize=size, pool_block=True)
     session = requests.Session()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
@@ -440,7 +440,7 @@ class NeonProxyTasksSet(TaskSet):
         """on_start is called when a Locust start before any task is scheduled"""
         # setup class once
         session = init_session(
-            self.user.environment.parsed_options.num_users or self.user.environment.runner.target_user_count
+            int(self.user.environment.parsed_options.num_users or self.user.environment.runner.target_user_count) * 100
         )
         self.credentials = self.user.environment.credentials
         self.faucet = Faucet(self.credentials["faucet_url"], session=session)
@@ -575,6 +575,10 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
         if contracts:
             contract_address = random.choice(list(contracts.keys()))
             contract = contracts[contract_address]["contract"]
+            if contracts[contract_address]["amount"] < 1:
+                self.log.info(f"low balance on contract: {contracts[contract_address]}, skip transfer")
+                del contracts[contract_address]
+                return
             recipient = random.choice(self.user.environment.shared.accounts)
             self.log.info(
                 f"Send `{self.contract_name.lower()}` tokens from contract {str(contract.address)[-8:]} to {str(recipient.address)[-8:]}."
@@ -583,10 +587,7 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
             if tx_receipt:
                 tx_receipt = dict(tx_receipt)  # AttributeDict -> dict
                 tx_receipt["contractAddress"] = contract.address
-                if self._buffer[self.account.address][contract.address]["amount"] < 1:
-                    del self._buffer[self.account.address][contract.address]
-                else:
-                    self._buffer[self.account.address][contract.address]["amount"] -= 1
+                self._buffer[self.account.address][contract.address]["amount"] -= 1
                 recipient_contracts = self._buffer.get(recipient.address, {})
                 recipient_contract = recipient_contracts.get(contract.address, {})
                 if not recipient_contract:

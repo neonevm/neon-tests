@@ -63,11 +63,14 @@ BASE_PATH = CWD.parent.parent
 
 SYS_INSTRUCT_ADDRESS = "Sysvar1nstructions1111111111111111111111111"
 
+OPERATORS_COUNT = int(os.environ.get("OPERATORS_COUNT", "1000"))
+OPERATORS_OFFSET = int(os.environ.get("OPERATORS_OFFSET", "0"))
+
 ACCOUNT_SEED_VERSION = b'\2'
 ACCOUNT_ETH_BASE = int("0xc26286eebe70b838545855325d45b123149c3ca4a50e98b1fe7c7887e3327aa8", 16)
 
-PREPARED_USERS_OFFSET = int(os.environ.get("USERS_OFFSET", 0))
-PREPARED_USERS_COUNT = int(os.environ.get("USERS_COUNT", 10000))
+PREPARED_USERS_OFFSET = int(os.environ.get("USERS_OFFSET", "0"))
+PREPARED_USERS_COUNT = int(os.environ.get("USERS_COUNT", "10000"))
 
 
 def init_session() -> requests.Session:
@@ -356,7 +359,7 @@ def init_transaction_signers(environment, **kwargs) -> None:
 
     transaction_signers = [
         TransactionSigner(OperatorAccount(i), helpers.create_treasury_pool_address(network, evm_loader_id, i))
-        for i in range(0, 40)
+        for i in range(OPERATORS_OFFSET, OPERATORS_COUNT + OPERATORS_OFFSET)
     ]
     signatures = []
     for op in transaction_signers:

@@ -235,10 +235,10 @@ def generate_user_faucet(start_key: int, count):
 # generate_users(10000)
 def generate_faucet_users_parallel(workers=10, count=100000):
     users_count = count // workers
-    keys = [(int(BASE_KEY, 16) + o, users_count) for o in range(0, count, users_count)]
+    keys = [int(BASE_KEY, 16) + o for o in range(0, count, users_count)]
     with ThreadPoolExecutor(max_workers=workers) as executor:
         for k in keys:
-            executor.submit(generate_user_faucet, *k)
+            executor.submit(generate_user_faucet, k, users_count)
 
 
 generate_faucet_users_parallel(100, 100000)

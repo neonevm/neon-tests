@@ -1,0 +1,8 @@
+{
+    "python.defaultInterpreterPath": "/Users/gigimon/workspaces/neon/venv/bin/python",
+    "python.testing.pytestArgs": [
+        "."
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}

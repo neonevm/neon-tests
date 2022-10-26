@@ -1,3 +1,4 @@
 [submodule "compatibility/openzeppelin-contracts"]
 	path = compatibility/openzeppelin-contracts
 	url = https://github.com/neonlabsorg/openzeppelin-contracts.git
+	branch = feature/NDEV-743/uodate-contracts

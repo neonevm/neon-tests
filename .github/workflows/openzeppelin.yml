@@ -74,10 +74,20 @@ jobs:
     runs-on: ${{ needs.prepare-env.outputs.runner }}
     steps:
       - name: "Cleanup"
-        run: sudo rm -rf allure-report
+        run: |
+          sudo rm -rf allure-report
+          sudo rm -rf compatibility/openzeppelin-contracts
       - uses: actions/checkout@v2
       - name: Update openzeppelin
         run: git submodule update --init --recursive
+      - name: Change openzeppelin branch
+        run: |
+          git submodule update --recursive --remote
+          cd compatibility/openzeppelin-contracts
+          git log -n 10
+          cd scripts
+          chmod 777 *
+          ls -l
       - name: "Install deps"
         uses: ./.github/actions/requirements
       - name: "Run OpenZeppelin tests"

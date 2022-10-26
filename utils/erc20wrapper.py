@@ -126,6 +126,12 @@ class ERC20Wrapper:
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
+    def claim_to(self, signer, from_address, to_address, amount, gas_price=None, gas=None):
+        tx = self.make_tx_object(signer.address, gas_price, gas)
+        instruction_tx = self.contract.functions.claimTo(from_address, to_address, amount).buildTransaction(tx)
+        resp = self.web3_client.send_transaction(signer, instruction_tx)
+        return resp
+
     def burn(self, signer, sender_address, amount, gas_price=None, gas=None):
         tx = self.make_tx_object(sender_address, gas_price, gas)
         instruction_tx = self.contract.functions.burn(amount).buildTransaction(tx)

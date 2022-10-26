@@ -4,6 +4,7 @@ import os
 # import base64
 # from hashlib import sha256
 import json
+from concurrent.futures import ThreadPoolExecutor
 # from dataclasses import dataclass
 #
 import web3
@@ -12,6 +13,7 @@ import requests
 from solana.rpc.api import Client as SolanaClient
 from solana.keypair import Keypair
 from eth_keys import keys as eth_keys
+
 # from solana.publickey import PublicKey
 # from solana.rpc.types import TxOpts
 # from solana.system_program import SYS_PROGRAM_ID
@@ -21,6 +23,8 @@ from eth_keys import keys as eth_keys
 #
 # sol_client = SolanaClient("http://proxy.night.stand.neontest.xyz/node-solana")
 web = web3.Web3()
+BASE_KEY = "0xc26286eebe70b838545855325d45b123149c3ca4a50e98b1fe7c7887e3327aa8"
+FAUCET_URL = "http://proxy.night.stand.neontest.xyz/request_eth_token"
 #
 #
 # @dataclass
@@ -212,23 +216,30 @@ def create_operators():
             key = Keypair(data[:32])
             sol_client.request_airdrop(key.public_key, 10000)
             eth_address = eth_keys.PrivateKey(key.secret_key[:32]).public_key.to_address()
-            resp = requests.post("http://proxy.night.stand.neontest.xyz/request_eth_token",
+            resp = requests.post(FAUCET_URL,
                                  json={"amount": 1000, "wallet": eth_address})
             print(f"Create operator {eth_address} - {key.public_key}")
 
 
-def generate_user_faucet(count):
+def generate_user_faucet(start_key: int, count):
     # base_key = web.eth.account.create().privateKey.hex()
-    base_key = "0xc26286eebe70b838545855325d45b123149c3ca4a50e98b1fe7c7887e3327aa8"
-    print(f"Main user private key: {base_key}")
+    print(f"Main user private key: {start_key}")
 
-    for i in range(count):
-        user = web.eth.account.from_key(int(base_key, 16) + 1 + i)
-        resp = requests.post("http://proxy.night.stand.neontest.xyz/request_eth_token",
+    for i in range(1, count):
+        user = web.eth.account.from_key(start_key + i)
+        resp = requests.post(FAUCET_URL,
                              json={"amount": 20000, "wallet": user.address})
         print(f"User addr: {user.address} - resp {resp.status_code}")
 
 
 # generate_users(10000)
-generate_user_faucet(10000)
-create_operators()
+def generate_faucet_users_parallel(workers=10, count=100000):
+    users_count = count // workers
+    keys = [(int(BASE_KEY, 16) + o, users_count) for o in range(0, count, users_count)]
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        for k in keys:
+            executor.submit(generate_user_faucet, *k)
+
+
+generate_faucet_users_parallel(100, 100000)
+# create_operators()

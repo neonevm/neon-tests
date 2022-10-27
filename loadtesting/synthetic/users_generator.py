@@ -33,12 +33,16 @@ def create_operator(key):
 
 
 def create_operators():
-    for key_name in os.listdir('operator-keypairs'):
-        print(f"Work with key {key_name}")
-        with ThreadPoolExecutor(max_workers=100) as executor:
-            with open(f'operator-keypairs/{key_name}') as f:
-                data = json.load(f)
-                key = Keypair(data[:32])
+    keys_name = list(os.listdir('operator-keypairs'))
+    keys_name.sort()
+    keys = []
+    for key_name in keys_name:
+        with open(f'operator-keypairs/{key_name}') as f:
+            data = json.load(f)
+            key = Keypair(data[:32])
+            keys.append(key)
+    with ThreadPoolExecutor(max_workers=100) as executor:
+        for key in keys:
             executor.submit(create_operator, key)
 
 

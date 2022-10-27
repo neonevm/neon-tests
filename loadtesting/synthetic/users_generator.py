@@ -21,19 +21,25 @@ FAUCET_URL = "http://proxy.night.stand.neontest.xyz/request_eth_token"
 SOLANA_URL = "http://proxy.night.stand.neontest.xyz/node-solana"
 
 
-def create_operators():
-    sol_client = SolanaClient(SOLANA_URL)
+sol_client = SolanaClient(SOLANA_URL)
 
+
+def create_operator(key):
+    sol_client.request_airdrop(key.public_key, 10000)
+    eth_address = eth_keys.PrivateKey(key.secret_key[:32]).public_key.to_address()
+    resp = requests.post(FAUCET_URL,
+                         json={"amount": 1000, "wallet": eth_address})
+    print(f"Create operator {eth_address} - {key.public_key}")
+
+
+def create_operators():
     for key_name in os.listdir('operator-keypairs'):
         print(f"Work with key {key_name}")
         with open(f'operator-keypairs/{key_name}') as f:
             data = json.load(f)
             key = Keypair(data[:32])
-            sol_client.request_airdrop(key.public_key, 10000)
-            eth_address = eth_keys.PrivateKey(key.secret_key[:32]).public_key.to_address()
-            resp = requests.post(FAUCET_URL,
-                                 json={"amount": 1000, "wallet": eth_address})
-            print(f"Create operator {eth_address} - {key.public_key}")
+            with ThreadPoolExecutor(max_workers=100) as executor:
+                executor.submit(create_operator, key)
 
 
 def generate_user_faucet(start_key: int, count):

@@ -458,9 +458,17 @@ class NeonProxyTasksSet(TaskSet):
     def task_keeps_balance(self, account: tp.Optional["eth_account.signers.local.LocalAccount"] = None) -> None:
         """Keeps account balance not empty"""
         account = account or self.account
-        if self.web3_client.get_balance(account.address) < 100:
+        balance_before = self.web3_client.get_balance(account.address)
+        if balance_before < 100:
             # add credits to account
             self.faucet.request_neon(account.address, 1000)
+            for _ in range(5):
+                if self.web3_client.get_balance(account.address) <= balance_before:
+                    time.sleep(3)
+                    continue
+                break
+            else:
+                raise AssertionError(f"Account {account.address} balance didn't change after 15 seconds")
 
     def deploy_contract(
         self,

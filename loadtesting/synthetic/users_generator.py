@@ -35,11 +35,11 @@ def create_operator(key):
 def create_operators():
     for key_name in os.listdir('operator-keypairs'):
         print(f"Work with key {key_name}")
-        with open(f'operator-keypairs/{key_name}') as f:
-            data = json.load(f)
-            key = Keypair(data[:32])
-            with ThreadPoolExecutor(max_workers=100) as executor:
-                executor.submit(create_operator, key)
+        with ThreadPoolExecutor(max_workers=100) as executor:
+            with open(f'operator-keypairs/{key_name}') as f:
+                data = json.load(f)
+                key = Keypair(data[:32])
+            executor.submit(create_operator, key)
 
 
 def generate_user_faucet(start_key: int, count):

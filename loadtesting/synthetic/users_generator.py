@@ -17,8 +17,8 @@ from eth_keys import keys as eth_keys
 
 web = web3.Web3()
 BASE_KEY = "0xc26286eebe70b838545855325d45b123149c3ca4a50e98b1fe7c7887e3327aa8"
-FAUCET_URL = "http://proxy.night.stand.neontest.xyz/request_eth_token"
-SOLANA_URL = "http://proxy.night.stand.neontest.xyz/node-solana"
+FAUCET_URL = "http://3.13.67.238:3334/request_neon"
+SOLANA_URL = "http://3.13.67.238:8899"
 
 
 sol_client = SolanaClient(SOLANA_URL)
@@ -29,7 +29,7 @@ def create_operator(key):
     eth_address = eth_keys.PrivateKey(key.secret_key[:32]).public_key.to_address()
     resp = requests.post(FAUCET_URL,
                          json={"amount": 1000, "wallet": eth_address})
-    print(f"Create operator {eth_address} - {key.public_key}")
+    print(f"Create operator {eth_address} - {key.public_key} ({resp.status_code})")
 
 
 def create_operators():

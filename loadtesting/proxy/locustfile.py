@@ -120,7 +120,7 @@ def load_credentials(environment, **kwargs):
     """Test start event handler"""
     base_path = pathlib.Path(__file__).parent.parent.parent
     path = base_path / environment.parsed_options.credentials
-    network = environment.parsed_options.host
+    network = environment.parsed_options.host or environment.host
     if not (path.exists() and path.is_file()):
         path = base_path / ENV_FILE
     with open(path, "r") as fp:

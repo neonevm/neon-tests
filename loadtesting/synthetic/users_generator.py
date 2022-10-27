@@ -25,7 +25,7 @@ sol_client = SolanaClient(SOLANA_URL)
 
 
 def create_operator(key):
-    airdrop_resp = sol_client.request_airdrop(key.public_key, 10000)
+    airdrop_resp = sol_client.request_airdrop(key.public_key, 100000000000)
     eth_address = eth_keys.PrivateKey(key.secret_key[:32]).public_key.to_address()
     resp = requests.post(FAUCET_URL,
                          json={"amount": 1000, "wallet": eth_address})

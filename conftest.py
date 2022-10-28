@@ -43,14 +43,17 @@ def pytest_sessionstart(session):
 
 
 def pytest_runtest_protocol(item, nextitem):
+    ihook = item.ihook
+    ihook.pytest_runtest_logstart(nodeid=item.nodeid, location=item.location)
+    reports = runtestprotocol(item, nextitem=nextitem)
+    ihook.pytest_runtest_logfinish(nodeid=item.nodeid, location=item.location)
     if item.config.getoption("--make-report"):
         path = pathlib.Path(f"{clickfile.CMD_ERROR_LOG}")
-        reports = runtestprotocol(item, nextitem=nextitem)
         with path.open("a") as fd:
             for report in reports:
                 if report.when == "call" and report.outcome == "failed":
                     fd.write(f"`{report.outcome.upper()}` {item.nodeid}\n")
-        return True
+    return True
 
 
 def pytest_configure(config: Config):

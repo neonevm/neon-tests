@@ -107,8 +107,8 @@ def create_treasury_pool_address(
     network: str, loader_id: str, collateral_pool_index: tp.Optional[int] = 2
 ) -> TreasuryPool:
     """Create treasury pool address"""
-    collateral_seed_prefix = "collateral_seed_"
-    seed = collateral_seed_prefix + str(collateral_pool_index)
-    address = gen_account_with_seed(PublicKey(TreasuryPoolBases.get_by_network(network)), seed, PublicKey(loader_id))
+    collateral_seed_prefix = "treasury_pool"
     index_buf = collateral_pool_index.to_bytes(4, "little")
+    address, bump = PublicKey.find_program_address([bytes(collateral_seed_prefix, "utf8"), index_buf], PublicKey(loader_id))
+    # address = gen_account_with_seed(PublicKey(TreasuryPoolBases.get_by_network(network)), seed, PublicKey(loader_id))
     return TreasuryPool(collateral_pool_index, address, index_buf)

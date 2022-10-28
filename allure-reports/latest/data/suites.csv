@@ -1,5 +1,0 @@
-"Status","Start Time","Stop Time","Duration in ms","Parent Suite","Suite","Sub Suite","Test Class","Test Method","Name","Description"
-"broken","Fri Oct 28 11:53:21 UTC 2022","Fri Oct 28 11:54:12 UTC 2022","50401","integration.tests.basic","test_rpc_calls","TestRpcCalls","","","test_eth_call[Tag.PENDING-False]","Verify implemented rpc calls work eth_call"
-"passed","Fri Oct 28 11:55:02 UTC 2022","Fri Oct 28 11:55:03 UTC 2022","148","integration.tests.basic","test_rpc_calls","TestRpcCalls","","","test_eth_call[None-True]","Verify implemented rpc calls work eth_call"
-"broken","Fri Oct 28 11:52:30 UTC 2022","Fri Oct 28 11:53:21 UTC 2022","50429","integration.tests.basic","test_rpc_calls","TestRpcCalls","","","test_eth_call[Tag.LATEST-False]","Verify implemented rpc calls work eth_call"
-"broken","Fri Oct 28 11:54:12 UTC 2022","Fri Oct 28 11:55:02 UTC 2022","50393","integration.tests.basic","test_rpc_calls","TestRpcCalls","","","test_eth_call[Tag.EARLIEST-False]","Verify implemented rpc calls work eth_call"

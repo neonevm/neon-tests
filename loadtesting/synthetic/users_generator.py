@@ -57,9 +57,9 @@ def generate_user_faucet(start_key: int, count):
         print(f"User addr: {user.address} - resp {resp.status_code}")
 
 
-def generate_faucet_users_parallel(workers=10, count=100000):
+def generate_faucet_users_parallel(workers=10, count=100000, offset=0):
     users_count = count // workers
-    keys = [int(BASE_KEY, 16) + o for o in range(0, count, users_count)]
+    keys = [int(BASE_KEY, 16) + o for o in range(offset, count+offset, users_count)]
     with ThreadPoolExecutor(max_workers=workers) as executor:
         for k in keys:
             executor.submit(generate_user_faucet, k, users_count)

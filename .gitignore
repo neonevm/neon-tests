@@ -225,7 +225,7 @@ cython_debug/
 
 # allure report
 allure-report/
-# allure-reports/
+allure-reports/
 allure-results/
 
 # chrome extensions

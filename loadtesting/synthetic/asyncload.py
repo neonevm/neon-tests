@@ -23,9 +23,12 @@ SOLANA_URL = "http://proxy.night.stand.neontest.xyz/node-solana"
 EVM_LOADER_ID = "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io"
 ACCOUNT_SEED_VERSION = b'\2'
 ACCOUNT_ETH_BASE = int("0xc26286eebe70b838545855325d45b123149c3ca4a50e98b1fe7c7887e3327aa8", 16)
-USERS_OFFSET = int(os.environ.get("USERS_OFFSET", "0"))
-PREPARED_USERS_COUNT = 10000
 
+OPERATORS_COUNT = int(os.environ.get("OPERATORS_COUNT", "1000"))
+OPERATORS_OFFSET = int(os.environ.get("OPERATORS_OFFSET", "0"))
+
+PREPARED_USERS_OFFSET = int(os.environ.get("USERS_OFFSET", "0"))
+PREPARED_USERS_COUNT = int(os.environ.get("USERS_COUNT", "10000"))
 
 USERS_QUEUE = asyncio.Queue()
 OPERATORS_QUEUE = asyncio.Queue()
@@ -158,7 +161,7 @@ async def get_transaction_count(sol_client, account: tp.Union[str, PublicKey, Op
 
 async def prepare_operators():
     print("Prepare operators")
-    for i in range(30):
+    for i in range(OPERATORS_OFFSET, OPERATORS_COUNT + OPERATORS_OFFSET):
         op = TransactionSigner(OperatorAccount(i), helpers.create_treasury_pool_address("night-stand", EVM_LOADER_ID, i))
         await OPERATORS_QUEUE.put(op)
     print("Operators prepared")
@@ -167,8 +170,8 @@ async def prepare_operators():
 async def prepare_users():
     web = web3.Web3()
     print("Prepare users")
-    for i in range(1, PREPARED_USERS_COUNT + 1):
-        user = web.eth.account.from_key(ACCOUNT_ETH_BASE + USERS_OFFSET + i)
+    for i in range(0, PREPARED_USERS_COUNT+1):
+        user = web.eth.account.from_key(ACCOUNT_ETH_BASE + PREPARED_USERS_OFFSET + i)
         solana_address, bump = ether2solana(user.address)
         await USERS_QUEUE.put(ETHUser(user, solana_address, 0))
     print("Users prepare complete")

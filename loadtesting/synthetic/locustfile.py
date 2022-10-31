@@ -125,7 +125,7 @@ class OperatorAccount(Keypair):
 class SOLClient:
     """"""
 
-    def __init__(self, credentials: tp.Dict, session: tp.Optional[requests.Session], timeout: float = 1) -> None:
+    def __init__(self, credentials: tp.Dict, session: tp.Optional[requests.Session], timeout: float = 2) -> None:
         self._web3 = web3.Web3()
         self._faucet = faucet.Faucet(credentials["faucet_url"], session)
         self._evm_loader = PublicKey(credentials["evm_loader"])

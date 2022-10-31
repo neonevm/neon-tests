@@ -28,7 +28,7 @@ def create_operator(key):
     airdrop_resp = sol_client.request_airdrop(key.public_key, 100000000000)
     eth_address = eth_keys.PrivateKey(key.secret_key[:32]).public_key.to_address()
     resp = requests.post(FAUCET_URL,
-                         json={"amount": 1000, "wallet": eth_address})
+                         json={"amount": 100, "wallet": eth_address})
     print(f"Create operator {eth_address} - {key.public_key} ({resp.status_code} {airdrop_resp})")
 
 
@@ -53,7 +53,7 @@ def generate_user_faucet(start_key: int, count):
     for i in range(0, count):
         user = web.eth.account.from_key(start_key + i)
         resp = requests.post(FAUCET_URL,
-                             json={"amount": 20000, "wallet": user.address})
+                             json={"amount": 100, "wallet": user.address})
         print(f"User addr: {user.address} - resp {resp.status_code}")
 
 

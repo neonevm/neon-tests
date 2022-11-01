@@ -16,5 +16,5 @@ runs:
       run: "pip install click requests web3 py-solc-x"
       shell: bash
     - name: "Install deps"
-      run: "./clickfile.py requirements"
+      run: "./clickfile.py requirements tabulate"
       shell: bash

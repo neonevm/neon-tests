@@ -202,7 +202,6 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
 @check_profitability
 def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     print(f"Running OpenZeppelin tests in {jobs} jobs on {network}")
-    return
     cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
     if not list(cwd.glob("*")):
         subprocess.check_call("git submodule init && git submodule update", shell=True, cwd=cwd)

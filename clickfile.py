@@ -299,7 +299,7 @@ def print_test_suite_results(test_report: tp.Dict[str, int], skipped_files: tp.L
 
 def print_oz_balances():
     """Print token balances after oz tests"""
-    path = pathlib.Path(OZ_BALANCES + '1')
+    path = pathlib.Path(OZ_BALANCES)
     if not path.exists():
         print(red(f"OZ balances report not found on `{path.resolve()}` !"))
         return

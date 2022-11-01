@@ -7,8 +7,8 @@ from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP
 from _pytest.config import Config
 
 
-@pytest.fixture(scope="session")
-def sol_price() -> float:
+def get_sol_price() -> float:
+    """Get SOL price from Solana mainnet"""
     async def get_price():
         account_key = SolanaPublicKey("H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG")
         solana_client = SolanaClient(endpoint=SOLANA_MAINNET_HTTP_ENDPOINT)
@@ -17,7 +17,13 @@ def sol_price() -> float:
         return price.aggregate_price
 
     loop = asyncio.get_event_loop()
-    price = loop.run_until_complete(get_price())
+    return loop.run_until_complete(get_price())
+
+
+@pytest.fixture(scope="session")
+def sol_price() -> float:
+    """Get SOL price from Solana mainnet"""
+    price = get_sol_price()
     with allure.step(f"SOL price {price}$"):
         return price
 

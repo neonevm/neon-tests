@@ -15,9 +15,13 @@ from multiprocessing.dummy import Pool
 from urllib.parse import urlparse
 
 import requests
+import tabulate
 
 from deploy.infra.utils import docker as docker_utils
 from deploy.infra.utils import env
+from utils.operator import Operator
+from utils.web3client import NeonWeb3Client
+from integration.tests.economy.conftest import get_sol_price
 
 try:
     import click
@@ -91,6 +95,14 @@ DEVBOX_SSH_PORT_ON_HOST = 8022
 
 HOME_DIR = pathlib.Path(__file__).absolute().parent
 
+OZ_BALANCES = "./compatibility/results/oz_balance.json"
+"""relative path to oz report balances
+"""
+
+NEON_PRICE = 0.25
+"""Neon price
+"""
+
 
 def green(s):
     return click.style(s, fg="green")
@@ -146,8 +158,51 @@ with open("./envs.json", "r") as f:
         networks.update(environments)
 
 
+def check_profitability(func: tp.Callable) -> tp.Callable:
+    """Calculate profitability of OZ cases"""
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs) -> None:
+        def get_tokens_balances(operator: Operator) -> tp.Dict:
+            """Return tokens balances"""
+            return dict(neon=operator.get_neon_balance(), sol=operator.get_solana_balance())
+
+        def float_2_str(d):
+            return dict(map(lambda i: (i[0], str(i[1])), d.items()))
+
+        network = networks[args[0]]
+        op = Operator(
+            network["proxy_url"],
+            network["solana_url"],
+            network["network_id"],
+            network["operator_neon_rewards_address"],
+            network["spl_neon_mint"],
+            network["operator_keys"],
+            web3_client=NeonWeb3Client(network["proxy_url"], network["network_id"], session=requests.Session()),
+        )
+        pre = get_tokens_balances(op)
+        try:
+            func(*args, **kwargs)
+        except subprocess.CalledProcessError:
+            pass
+        after = get_tokens_balances(op)
+        profitability = dict(
+            neon=round(float(pre["neon"] - after["neon"]) * 0.25, 2),
+            sol=round((float(pre["sol"] - after["sol"])) * get_sol_price(), 2),
+        )
+        path = pathlib.Path(OZ_BALANCES)
+        path.absolute().parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w") as fd:
+            balances = dict(pre=float_2_str(pre), after=float_2_str(after), profitability=float_2_str(profitability))
+            json.dump(balances, fp=fd, indent=4, sort_keys=True)
+
+    return wrapper
+
+
+@check_profitability
 def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     print(f"Running OpenZeppelin tests in {jobs} jobs on {network}")
+    return
     cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
     if not list(cwd.glob("*")):
         subprocess.check_call("git submodule init && git submodule update", shell=True, cwd=cwd)
@@ -240,6 +295,29 @@ def print_test_suite_results(test_report: tp.Dict[str, int], skipped_files: tp.L
     for f in skipped_files:
         test_file_name = f.split("/", 3)[3].rsplit("/", 1)[0].replace("_", "")
         print("    {}".format(test_file_name))
+
+
+def print_oz_balances():
+    """Print token balances after oz tests"""
+    path = pathlib.Path(OZ_BALANCES + '1')
+    if not path.exists():
+        print(red(f"OZ balances report not found on `{path.resolve()}` !"))
+        return
+
+    with open(path, "r") as fd:
+        balances = json.load(fd)
+    report = tabulate.tabulate(
+        [
+            ["NEON", balances["pre"]["neon"], balances["after"]["neon"], balances["profitability"]["neon"]],
+            ["SOL", balances["pre"]["sol"], balances["after"]["sol"], balances["profitability"]["sol"]],
+        ],
+        headers=["token", "on start balance", "os stop balance", "profitability (usd)"],
+        tablefmt="fancy_outline",
+        numalign="right",
+        floatfmt=".2f",
+    )
+    print(green("\nOZ tests suite profitability:"))
+    print(yellow(report))
 
 
 def generate_allure_environment(network_name: str):
@@ -362,6 +440,7 @@ def run(name, jobs, ui_item, amount, users, network):
 def ozreport():
     test_report, skipped_files = parse_openzeppelin_results()
     print_test_suite_results(test_report, skipped_files)
+    print_oz_balances()
 
 
 # Base locust options

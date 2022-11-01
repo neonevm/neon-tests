@@ -19,5 +19,5 @@ runs:
         pip3 install --no-deps -r deploy/requirements/nodeps.txt
       shell: bash
     - name: "Install deps"
-      run: "./clickfile.py requirements oz"
+      run: "./clickfile.py requirements --dep oz"
       shell: bash

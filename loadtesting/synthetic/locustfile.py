@@ -21,7 +21,8 @@ import requests
 import web3
 import eth_account
 from eth_keys import keys as eth_keys
-from locust import TaskSet, User, events, task, FastHttpUser
+from locust import TaskSet, User, events, task
+from locust.contrib.fasthttp import FastHttpSession
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
 from solana.rpc.api import Client as SolanaClient
@@ -35,7 +36,6 @@ from loadtesting.synthetic import helpers
 from ui.libs import try_until
 from utils import faucet
 
-LOG = logging.getLogger("sol-client")
 
 DEFAULT_NETWORK = os.environ.get("NETWORK", "night-stand")
 """Default test environment name
@@ -102,6 +102,20 @@ class ExtendedHTTPProvider(http.HTTPProvider):
         return super(ExtendedHTTPProvider, self).make_request(*args, **kwargs)
 
 
+class FastSolanaClient(http.HTTPProvider):
+    def __init__(self, *args, **kwargs):
+        env = kwargs.pop("environment")
+        user = kwargs.pop("user")
+        base_url = kwargs.pop("base_url")
+        super().__init__(*args, **kwargs)
+        self.fast_http = FastHttpSession(environment=env, user=user, base_url=base_url)
+
+    def make_request(self, method, *params):
+        request_kwargs = self._before_request(method=method, params=params, is_async=False)
+        raw_response = self.fast_http.post("/", data=request_kwargs["data"], headers=request_kwargs["headers"])
+        return self._after_request(raw_response=raw_response, method=method)
+
+
 class OperatorAccount(Keypair):
     """Implements operator Account"""
 
@@ -123,14 +137,15 @@ class OperatorAccount(Keypair):
 
 
 class SOLClient:
-    """"""
-
-    def __init__(self, credentials: tp.Dict, session: tp.Optional[requests.Session], timeout: float = 2) -> None:
+    def __init__(self, credentials: tp.Dict, session: tp.Optional[requests.Session], timeout: float = 2, **kwargs) -> None:
         self._web3 = web3.Web3()
         self._faucet = faucet.Faucet(credentials["faucet_url"], session)
         self._evm_loader = PublicKey(credentials["evm_loader"])
         self._client = SolanaClient()
-        self._client._provider = ExtendedHTTPProvider(credentials["solana_url"], timeout=timeout)
+        # self._client._provider = ExtendedHTTPProvider(credentials["solana_url"], timeout=timeout)
+        self._client._provider = FastSolanaClient(environment=kwargs.get("environment"),
+                                                  user=kwargs.get("user"),
+                                                  base_url=credentials["solana_url"])
         self._credentials = credentials
 
     def __getattr__(self, item) -> tp.Any:
@@ -371,7 +386,7 @@ def precompile_users(environment, **kwargs) -> None:
     print("Precompile users before start")
     users_queue = gevent.queue.Queue()
     web = web3.Web3()
-    sol_client = SOLClient(environment.credentials, init_session())
+    sol_client = SOLClient(environment.credentials, init_session(), environment=environment, user=None)
 
     for i in range(0, PREPARED_USERS_COUNT+1):
         user = web.eth.account.from_key(ACCOUNT_ETH_BASE + PREPARED_USERS_OFFSET + i)
@@ -396,7 +411,7 @@ class SolanaTransactionTasksSet(TaskSet):
     def on_start(self) -> None:
         """on_start is called when a Locust start before any task is scheduled"""
         session = init_session()
-        self.sol_client = SOLClient(self.user.environment.credentials, session=session)
+        self.sol_client = SOLClient(self.user.environment.credentials, session=session, environment=self.user.environment, user=self.user)
 
     @property
     def recent_blockhash(self):

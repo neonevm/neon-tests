@@ -13,8 +13,8 @@ runs:
       with:
         node-version: 16.x
     - name: "Install click"
-      run: "pip install click requests web3 py-solc-x"
+      run: "pip install click requests web3 py-solc-x tabulate"
       shell: bash
     - name: "Install deps"
-      run: "./clickfile.py requirements tabulate"
+      run: "./clickfile.py requirements"
       shell: bash

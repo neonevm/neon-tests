@@ -145,7 +145,7 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
     def wrapper(*args, **kwargs) -> None:
         def get_tokens_balances(operator: Operator) -> tp.Dict:
             """Return tokens balances"""
-            return dict(neon=operator.get_neon_balance(), sol=operator.get_solana_balance())
+            return dict(neon=operator.get_neon_balance(), sol=operator.get_solana_balance() / 1_000_000_000)
 
         def float_2_str(d):
             return dict(map(lambda i: (i[0], str(i[1])), d.items()))
@@ -167,7 +167,7 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
             pass
         after = get_tokens_balances(op)
         profitability = dict(
-            neon=round(float(pre["neon"] - after["neon"]) * 0.25, 2),
+            neon=round(float(after["neon"] - pre["neon"]) * 0.25, 2),
             sol=round((float(pre["sol"] - after["sol"])) * get_sol_price(), 2),
         )
         path = pathlib.Path(OZ_BALANCES)
@@ -290,7 +290,7 @@ def print_oz_balances():
             ["NEON", balances["pre"]["neon"], balances["after"]["neon"], balances["profitability"]["neon"]],
             ["SOL", balances["pre"]["sol"], balances["after"]["sol"], balances["profitability"]["sol"]],
         ],
-        headers=["token", "on start balance", "os stop balance", "profitability (usd)"],
+        headers=["token", "on start balance", "os stop balance", "P/L (USD)"],
         tablefmt="fancy_outline",
         numalign="right",
         floatfmt=".2f",

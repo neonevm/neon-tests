@@ -14,14 +14,6 @@ from collections import defaultdict
 from multiprocessing.dummy import Pool
 from urllib.parse import urlparse
 
-import requests
-import tabulate
-
-from deploy.infra.utils import docker as docker_utils
-from deploy.infra.utils import env
-from utils.operator import Operator
-from utils.web3client import NeonWeb3Client
-from integration.tests.economy.conftest import get_sol_price
 
 try:
     import click
@@ -30,14 +22,22 @@ except ImportError:
     sys.exit(1)
 
 try:
+    import requests
+    import tabulate
+
     from utils import web3client
     from utils import faucet
     from utils import cloud
+    from utils.operator import Operator
+    from utils.web3client import NeonWeb3Client
+    from utils.helpers import get_sol_price
+
+    from deploy.cli import dapps as dapps_cli
+    from deploy.cli import faucet as faucet_cli
+    from deploy.infra.utils import docker as docker_utils
+    from deploy.infra.utils import env
 except ImportError:
     pass
-
-from deploy.cli import dapps as dapps_cli
-from deploy.cli import faucet as faucet_cli
 
 
 CMD_ERROR_LOG = "click_cmd_err.log"
@@ -55,16 +55,10 @@ ERR_MSG_TPL = {
 ERR_MESSAGES = {"run": "Unsuccessful tests executing.", "requirements": "Unsuccessful requirements installation."}
 
 SRC_ALLURE_CATEGORIES = pathlib.Path("./allure/categories.json")
-""" Allure report config tpl
-"""
 
 DST_ALLURE_CATEGORIES = pathlib.Path("./allure-results/categories.json")
-""" Allure report config
-"""
 
 BASE_EXTENSIONS_TPL_DATA = "ui/extensions/data"
-"""Relative path where ui tests extensions data stored
-"""
 
 EXTENSIONS_PATH = "ui/extensions/chrome/plugins"
 EXTENSIONS_USER_DATA_PATH = "ui/extensions/chrome"
@@ -75,20 +69,12 @@ EXPANDED_ENVS = [
     "FAUCET_URL",
     "SOLANA_URL",
 ]
-"""Test environment settings passed to the container
-"""
 
 NETWORK_NAME = os.environ.get("NETWORK_NAME", "full_test_suite")
-"""Default network name for docker container
-"""
 
 DEVBOX_DOCKERFILE = "deploy/infra/Dockerfile"
-"""
-"""
 
 DEVBOX_NAME = "neontests-devbox"
-"""
-"""
 
 # Docker devbox options:
 DEVBOX_SSH_PORT_ON_HOST = 8022
@@ -96,12 +82,6 @@ DEVBOX_SSH_PORT_ON_HOST = 8022
 HOME_DIR = pathlib.Path(__file__).absolute().parent
 
 OZ_BALANCES = "./compatibility/results/oz_balance.json"
-"""relative path to oz report balances
-"""
-
-NEON_PRICE = 0.25
-"""Neon price
-"""
 
 
 def green(s):

@@ -1,13 +1,6 @@
-# coding: utf-8
-"""
-Created on 2022-08-18
-@author: Eugeny Kurkovich
-"""
 import base64
-import functools
 import json
 import time
-import logging
 import os
 import pathlib
 import random
@@ -16,7 +9,6 @@ from dataclasses import dataclass
 
 import gevent
 import gevent.queue
-import requests
 
 import web3
 import eth_account
@@ -34,72 +26,21 @@ from solana.transaction import AccountMeta, TransactionInstruction
 
 from loadtesting.synthetic import helpers
 from ui.libs import try_until
-from utils import faucet
 
 
 DEFAULT_NETWORK = os.environ.get("NETWORK", "night-stand")
-"""Default test environment name
-"""
-
 ENV_FILE = "envs.json"
-""" Default environment credentials storage 
-"""
-
-DEFAULT_NEON_AMOUNT = 10000
-"""Default airdropped NEON amount 
-"""
-
-DEFAULT_SOL_AMOUNT = 1000000 * 10 ** 9
-"""Default airdropped SOL amount 
-"""
-
 CWD = pathlib.Path(__file__).parent
-"""Current working directory
-"""
-
 BASE_PATH = CWD.parent.parent
-"""Project root directory
-"""
 
-SYS_INSTRUCT_ADDRESS = "Sysvar1nstructions1111111111111111111111111"
-
-OPERATORS_COUNT = int(os.environ.get("OPERATORS_COUNT", "1000"))
+OPERATORS_COUNT = int(os.environ.get("OPERATORS_COUNT", "300"))
 OPERATORS_OFFSET = int(os.environ.get("OPERATORS_OFFSET", "0"))
 
 ACCOUNT_SEED_VERSION = b'\2'
 ACCOUNT_ETH_BASE = int("0xc26286eebe70b838545855325d45b123149c3ca4a50e98b1fe7c7887e3327aa8", 16)
 
 PREPARED_USERS_OFFSET = int(os.environ.get("USERS_OFFSET", "0"))
-PREPARED_USERS_COUNT = int(os.environ.get("USERS_COUNT", "10000"))
-
-
-def init_session() -> requests.Session:
-    """init request session with extended connection pool size"""
-    adapter = requests.adapters.HTTPAdapter(pool_connections=1000, pool_maxsize=1000, pool_block=False)
-    session = requests.Session()
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    return session
-
-
-def handle_failed_requests(func: tp.Callable) -> tp.Callable:
-    """Extends solana client functional"""
-
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs) -> tp.Any:
-        resp = func(self, *args, **kwargs)
-        if resp.get("error"):
-            raise AssertionError(
-                f"Request `{args[0]}` is failed! [{resp['error']['code']}]:{resp['error']['message']}.\n{args[1:]}"
-            )
-        return resp
-    return wrapper
-
-
-class ExtendedHTTPProvider(http.HTTPProvider):
-    @handle_failed_requests
-    def make_request(self, *args, **kwargs) -> tp.Dict:
-        return super(ExtendedHTTPProvider, self).make_request(*args, **kwargs)
+PREPARED_USERS_COUNT = int(os.environ.get("USERS_COUNT", "1000"))
 
 
 class FastSolanaClient(http.HTTPProvider):
@@ -137,12 +78,10 @@ class OperatorAccount(Keypair):
 
 
 class SOLClient:
-    def __init__(self, credentials: tp.Dict, session: tp.Optional[requests.Session], timeout: float = 2, **kwargs) -> None:
+    def __init__(self, credentials: tp.Dict, **kwargs) -> None:
         self._web3 = web3.Web3()
-        self._faucet = faucet.Faucet(credentials["faucet_url"], session)
         self._evm_loader = PublicKey(credentials["evm_loader"])
         self._client = SolanaClient()
-        # self._client._provider = ExtendedHTTPProvider(credentials["solana_url"], timeout=timeout)
         self._client._provider = FastSolanaClient(environment=kwargs.get("environment"),
                                                   user=kwargs.get("user"),
                                                   base_url=credentials["solana_url"])
@@ -177,37 +116,6 @@ class SOLClient:
             return False
 
         return try_until(get_signature_status, interval=1, timeout=30)
-
-    def create_eth_account(self) -> "eth_account.account.LocalAccount":
-        """Create eth account"""
-        account = self._web3.eth.account.create()
-        self._faucet.request_neon(account.address, amount=DEFAULT_NEON_AMOUNT)
-        return account
-
-    def get_sol_balance(
-        self,
-        address: tp.Union[str, "eth_account.signers.local.LocalAccount"],
-        state: str = helpers.SOLCommitmentState.CONFIRMED,
-    ) -> int:
-        """Get SOL account balance"""
-        if isinstance(address, PublicKey):
-            address = str(address)
-        elif not isinstance(address, str):
-            address = address.address
-        return self._client.get_balance(address, commitment=state)["result"]
-
-    def request_sol(
-        self,
-        address: tp.Union[OperatorAccount, str],
-        amount: int = DEFAULT_SOL_AMOUNT,
-        state: tp.Optional[str] = helpers.SOLCommitmentState.CONFIRMED,
-    ) -> tp.Any:
-        """Requests sol to account"""
-        if isinstance(address, OperatorAccount):
-            address = address.public_key
-        elif isinstance(address, PublicKey):
-            address = str(address)
-        return self._client.request_airdrop(pubkey=address, lamports=amount, commitment=state)["result"]
 
     def _get_account_data(
         self,
@@ -278,23 +186,6 @@ class SOLClient:
         )["result"]
 
         return tx_sig
-
-    def make_CreateAccountV02(
-            self,
-            user_eth_account: "eth_account.account.LocalAccount",
-            user_account_bump: int,
-            operator: Keypair,
-            user_solana_account: PublicKey
-    ):
-        code = 24
-        d = code.to_bytes(1, "little") + bytes.fromhex(user_eth_account.address[2:]) + user_account_bump.to_bytes(1, "little")
-
-        accounts = [
-            AccountMeta(pubkey=operator.public_key, is_signer=True, is_writable=True),
-            AccountMeta(SYS_PROGRAM_ID, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=user_solana_account, is_signer=False, is_writable=True),
-        ]
-        return TransactionInstruction(program_id=self._evm_loader, data=d, keys=accounts)
 
     def make_TransactionExecuteFromInstruction(
         self,
@@ -386,7 +277,7 @@ def precompile_users(environment, **kwargs) -> None:
     print("Precompile users before start")
     users_queue = gevent.queue.Queue()
     web = web3.Web3()
-    sol_client = SOLClient(environment.credentials, init_session(), environment=environment, user=None)
+    sol_client = SOLClient(environment.credentials, environment=environment, user=None)
 
     for i in range(0, PREPARED_USERS_COUNT+1):
         user = web.eth.account.from_key(ACCOUNT_ETH_BASE + PREPARED_USERS_OFFSET + i)
@@ -400,7 +291,6 @@ def precompile_users(environment, **kwargs) -> None:
 class SolanaTransactionTasksSet(TaskSet):
     """Implements solana transaction sender task sets"""
     sol_client: tp.Optional[SOLClient] = None
-    _mocked_nonce: int = 0
     _recent_blockhash = ""
     _last_blockhash_time = None
 
@@ -410,8 +300,7 @@ class SolanaTransactionTasksSet(TaskSet):
 
     def on_start(self) -> None:
         """on_start is called when a Locust start before any task is scheduled"""
-        session = init_session()
-        self.sol_client = SOLClient(self.user.environment.credentials, session=session, environment=self.user.environment, user=self.user)
+        self.sol_client = SOLClient(self.user.environment.credentials, environment=self.user.environment, user=self.user)
 
     @property
     def recent_blockhash(self):
@@ -426,7 +315,6 @@ class SolanaTransactionTasksSet(TaskSet):
         token_sender = self.get_eth_user()
         token_receiver = self.get_eth_user()
         operator = self.user.environment.operators.get()
-        # print(f"Send from eth user {token_sender.eth_account.address}")
         eth_transaction, new_nonce = self.sol_client.make_eth_transaction(
             token_receiver.eth_account.address,
             data=b"",
@@ -466,7 +354,6 @@ class SolanaTransactionTasksSet(TaskSet):
         )
         req_event["response_time"] = (time.perf_counter() - start_perf_counter) * 1000
         self.user.environment.events.request.fire(**req_event)
-        print(f"## Token transfer transaction hash: {transaction_receipt}")
         self.user.environment.eth_users.put(token_receiver)
         self.user.environment.eth_users.put(token_sender)
         self.user.environment.operators.put(operator)

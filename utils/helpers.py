@@ -17,11 +17,10 @@ def get_sol_price() -> float:
         solana_client = SolanaClient(endpoint=SOLANA_MAINNET_HTTP_ENDPOINT)
         price: PythPriceAccount = PythPriceAccount(account_key, solana_client)
         await price.update()
+        await solana_client.close()
         return price.aggregate_price
 
-    loop = asyncio.get_event_loop()
-    result = loop.run_until_complete(get_price())
-    loop.close()
+    result = asyncio.run(get_price())
     return result
 
 

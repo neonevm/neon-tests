@@ -1,6 +1,6 @@
 pytest==6.2.5
 allure-pytest==2.9.45
-solana==0.21.0
+solana==0.28.0
 requests==2.27.1
 py-solc-x==1.1.1
 click==8.0.3

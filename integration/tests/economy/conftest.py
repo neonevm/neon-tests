@@ -1,3 +1,5 @@
+import asyncio
+
 import allure
 import pytest
 
@@ -15,7 +17,7 @@ def sol_price() -> float:
         return price
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def sol_client_tx_v2(pytestconfig: Config):
     """Client for work with transactions version 2"""
     client = SolanaClient(endpoint=pytestconfig.environment.solana_url)

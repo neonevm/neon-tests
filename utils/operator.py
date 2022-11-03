@@ -1,8 +1,8 @@
 import time
 import typing as tp
 
-import web3
 import solana.rpc.api
+from solana.publickey import PublicKey
 from solana.rpc.commitment import Confirmed
 from solana.rpc.types import TokenAccountOpts
 
@@ -32,7 +32,7 @@ class Operator:
     def get_solana_balance(self):
         balances = []
         for key in self._operator_keys:
-            balances.append(self.sol.get_balance(key, commitment=Confirmed)["result"]["value"])
+            balances.append(self.sol.get_balance(PublicKey(key), commitment=Confirmed).value)
         return sum(balances)
 
     def get_neon_balance(self):
@@ -48,10 +48,14 @@ class Operator:
             for key in self._operator_keys:
                 if self._operator_keys[key] is None:
                     accounts = self.sol.get_token_accounts_by_owner(
-                        key, TokenAccountOpts(mint=self._neon_token_mint)
+                        PublicKey(key), TokenAccountOpts(mint=PublicKey(self._neon_token_mint))
                     )
                     self._operator_keys[key] = accounts["result"]["value"][0]["pubkey"]
-                balances.append(int(self.sol.get_token_account_balance(self._operator_keys[key], commitment=Confirmed)["result"]["value"]["amount"]))
+                balances.append(
+                    int(
+                        self.sol.get_token_account_balance(
+                            PublicKey(self._operator_keys[key]),
+                            commitment=Confirmed)["result"]["value"]["amount"]))
         return sum(balances)
 
     def wait_solana_balance_changed(self, current_balance, timeout=90):

@@ -69,7 +69,7 @@ class ERC20Wrapper:
             self.solana_acc = acc
             self.sol_client.request_airdrop(acc.public_key, 1000000000)
             BaseMixin.wait_condition(
-                lambda: self.sol_client.get_balance(acc.public_key)["result"]["value"] == 1000000000
+                lambda: self.sol_client.get_balance(acc.public_key).value == 1000000000
             )
             self.token_mint = self.create_spl(acc, self.decimals)
             metadata = create_metadata_instruction_data(self.name, self.symbol, 0, ())

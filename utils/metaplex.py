@@ -190,11 +190,10 @@ def unpack_metadata_account(data):
 
 def get_metadata(client, mint_key):
     metadata_account = get_metadata_account(mint_key)
-    data = base64.b64decode(client.get_account_info(metadata_account)['result']['value']['data'][0])
-    metadata = unpack_metadata_account(data)
+    metadata = unpack_metadata_account(client.get_account_info(metadata_account).value.data)
     return metadata
 
 
 def wait_account_info(client, mint_key):
     metadata_account = get_metadata_account(mint_key)
-    BaseMixin.wait_condition(lambda: client.get_account_info(metadata_account)['result']['value'] is not None)
+    BaseMixin.wait_condition(lambda: client.get_account_info(metadata_account).value is not None)

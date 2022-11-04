@@ -372,19 +372,18 @@ class TestERC20wrapperContract(BaseMixin):
     def test_transferSolana_mintable(self, erc20_spl_mintable, solana_associated_token_mintable_erc20, sol_client):
         acc, token_mint, solana_address = solana_associated_token_mintable_erc20
         amount = random.randint(10000, 1000000)
-        sol_balance_before = sol_client.get_balance(acc.public_key)["result"]["value"]
+        sol_balance_before = sol_client.get_balance(acc.public_key).value
         contract_balance_before = erc20_spl_mintable.contract.functions.balanceOf(
             erc20_spl_mintable.account.address).call()
-        opts = TokenAccountOpts(token_mint, encoding="jsonParsed")
+        opts = TokenAccountOpts(token_mint)
         erc20_spl_mintable.transfer_solana(erc20_spl_mintable.account, bytes(solana_address), amount)
         self.wait_condition(
             lambda: int(
-                sol_client.get_token_accounts_by_owner(acc.public_key, opts)['result']['value'][0]['account']['data'][
-                    'parsed']['info']['tokenAmount']['amount']) > 0)
+                sol_client.get_token_accounts_by_owner_json_parsed(acc.public_key, opts).value[0].account.data.parsed['info']['tokenAmount']['amount']) > 0)
 
-        sol_balance_after = sol_client.get_balance(acc.public_key)["result"]["value"]
-        token_data = sol_client.get_token_accounts_by_owner(acc.public_key, opts)["result"]["value"][0]
-        token_balance_after = token_data['account']['data']['parsed']['info']['tokenAmount']['amount']
+        sol_balance_after = sol_client.get_balance(acc.public_key).value
+        token_data = sol_client.get_token_accounts_by_owner_json_parsed(acc.public_key, opts).value[0]
+        token_balance_after = token_data.account.data.parsed['info']['tokenAmount']['amount']
         contract_balance_after = erc20_spl_mintable.contract.functions.balanceOf(
             erc20_spl_mintable.account.address).call()
 
@@ -403,17 +402,16 @@ class TestERC20wrapperContract(BaseMixin):
             acc, token_mint, solana_address = solana_associated_token_erc20
 
         amount = random.randint(10000, 1000000)
-        sol_balance_before = sol_client.get_balance(acc.public_key)["result"]["value"]
+        sol_balance_before = sol_client.get_balance(acc.public_key).value
         contract_balance_before = erc20.contract.functions.balanceOf(erc20.account.address).call()
-        opts = TokenAccountOpts(token_mint, encoding="jsonParsed")
+        opts = TokenAccountOpts(token_mint)
         erc20.transfer_solana(erc20.account, bytes(solana_address), amount)
         self.wait_condition(
-            lambda: int(sol_client.get_token_accounts_by_owner(acc.public_key, opts)['result']
-                        ['value'][0]['account']['data']['parsed']['info']['tokenAmount']['amount']) > 0)
+            lambda: int(sol_client.get_token_accounts_by_owner_json_parsed(acc.public_key, opts).value[0].account.data.parsed['info']['tokenAmount']['amount']) > 0)
 
-        sol_balance_after = sol_client.get_balance(acc.public_key)["result"]["value"]
-        token_data = sol_client.get_token_accounts_by_owner(acc.public_key, opts)["result"]["value"][0]
-        token_balance_after = token_data['account']['data']['parsed']['info']['tokenAmount']['amount']
+        sol_balance_after = sol_client.get_balance(acc.public_key).value
+        token_data = sol_client.get_token_accounts_by_owner_json_parsed(acc.public_key, opts).value[0]
+        token_balance_after = token_data.account.data.parsed['info']['tokenAmount']['amount']
         contract_balance_after = erc20.contract.functions.balanceOf(erc20.account.address).call()
 
         assert int(token_balance_after) == amount, 'Token balance for sol account is not correct'
@@ -431,14 +429,14 @@ class TestERC20wrapperContract(BaseMixin):
             acc, token_mint, solana_address = solana_associated_token_erc20
 
         amount = random.randint(10000, 1000000)
-        opts = TokenAccountOpts(token_mint, encoding="jsonParsed")
+        opts = TokenAccountOpts(token_mint)
         erc20.approve_solana(erc20.account, bytes(acc.public_key), amount)
         self.wait_condition(
-            lambda: len(sol_client.get_token_accounts_by_delegate(acc.public_key, opts)['result']['value']) > 0)
-        token_account = sol_client.get_token_accounts_by_delegate(acc.public_key, opts)['result']['value'][0]['account']
-        assert int(token_account['data']['parsed']['info']['delegatedAmount']['amount']) == amount
+            lambda: len(sol_client.get_token_accounts_by_delegate_json_parsed(acc.public_key, opts).value) > 0)
+        token_account = sol_client.get_token_accounts_by_delegate_json_parsed(acc.public_key, opts).value[0].account
+        assert int(token_account.data.parsed['info']['delegatedAmount']['amount']) == amount
         assert int(
-            token_account['data']['parsed']['info']['delegatedAmount']['decimals']) == erc20.decimals
+            token_account.data.parsed['info']['delegatedAmount']['decimals']) == erc20.decimals
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_claim(self, erc20_spl_mintable, sol_client, solana_associated_token_mintable_erc20,
@@ -456,7 +454,7 @@ class TestERC20wrapperContract(BaseMixin):
         trx.add(instructions.approve(instructions.ApproveParams(
             program_id=TOKEN_PROGRAM_ID,
             source=solana_address,
-            delegate=BaseMixin.get_neon_account_address(erc20.account.address, pytestconfig.environment.evm_loader),
+            delegate=self.get_neon_account_address(erc20.account.address, pytestconfig.environment.evm_loader),
             owner=acc.public_key,
             amount=sent_amount,
             signers=[],
@@ -486,7 +484,7 @@ class TestERC20wrapperContract(BaseMixin):
         trx.add(instructions.approve(instructions.ApproveParams(
             program_id=TOKEN_PROGRAM_ID,
             source=solana_address,
-            delegate=BaseMixin.get_neon_account_address(erc20.account.address, pytestconfig.environment.evm_loader),
+            delegate=self.get_neon_account_address(erc20.account.address, pytestconfig.environment.evm_loader),
             owner=acc.public_key,
             amount=sent_amount,
             signers=[],

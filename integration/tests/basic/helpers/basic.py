@@ -89,6 +89,8 @@ class BaseMixin(BaseTests):
             if self.get_balance_from_wei(account.address) >= (balance_before + amount):
                 break
             time.sleep(1)
+        else:
+            raise AssertionError(f"Balance didn't changed after 10 seconds ({account.address})")
         return account
 
     @staticmethod

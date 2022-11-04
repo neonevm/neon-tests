@@ -35,11 +35,11 @@ class TestTransfer(BaseMixin):
     @pytest.mark.parametrize("transfer_amount", [0, 0.1, 1, 1.1])
     def test_send_neon_from_one_account_to_another(self, transfer_amount: tp.Union[int, float]):
         """Send neon from one account to another"""
-        initial_sender_balance, initial_recipient_balance = self.sender_account_balance, self.recipient_account_balance
-        assert initial_recipient_balance > 0
+        initial_sender_balance = self.get_balance_from_wei(self.sender_account.address)
+        initial_recipient_balance = self.get_balance_from_wei(self.recipient_account.address)
         self.send_neon(self.sender_account, self.recipient_account, transfer_amount)
-        assert self.sender_account_balance < (initial_sender_balance - transfer_amount)
-        assert self.recipient_account_balance == (initial_recipient_balance + transfer_amount)
+        assert self.get_balance_from_wei(self.sender_account.address) < (initial_sender_balance - transfer_amount)
+        assert self.get_balance_from_wei(self.recipient_account.address) == (initial_recipient_balance + transfer_amount)
 
     @pytest.mark.parametrize("transfer_amount", [0, 1, 10, 100])
     def test_send_erc20_token_from_one_account_to_another(self, transfer_amount: tp.Union[int, float]):

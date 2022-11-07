@@ -32,15 +32,15 @@ INSUFFICIENT_FUNDS_ERROR = "insufficient funds for"
 GAS_LIMIT_ERROR = "gas limit reached"
 
 
-@pytest.fixture(scope="session", autouse=True)
-def heat_stand(web3_client: web3client.NeonWeb3Client, faucet):
-    """After redeploy stand, first 10-20 requests spend more sols than expected."""
-    if "CI" not in os.environ:
-        return
-    acc = web3_client.eth.account.create()
-    faucet.request_neon(acc.address, 100)
-    for _ in range(50):
-        web3_client.send_neon(acc, web3_client.eth.account.create(), 1)
+# @pytest.fixture(scope="session", autouse=True)
+# def heat_stand(web3_client: web3client.NeonWeb3Client, faucet):
+#     """After redeploy stand, first 10-20 requests spend more sols than expected."""
+#     if "CI" not in os.environ:
+#         return
+#     acc = web3_client.eth.account.create()
+#     faucet.request_neon(acc.address, 100)
+#     for _ in range(50):
+#         web3_client.send_neon(acc, web3_client.eth.account.create(), 1)
 
 
 @pytest.fixture(scope="session", autouse=True)

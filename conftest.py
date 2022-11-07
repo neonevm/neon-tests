@@ -59,8 +59,9 @@ def pytest_configure(config: Config):
         environments = json.load(f)
     assert network_name in environments, f"Environment {network_name} doesn't exist in envs.json"
     env = environments[network_name]
-    if "SOLANA_URL" in os.environ:
-        env["solana_url"] = os.environ.get("SOLANA_URL")
-    if "PROXY_URL" in os.environ:
-        env["proxy_url"] = os.environ.get("PROXY_URL")
+    if network_name == "devnet":
+        if "SOLANA_URL" in os.environ:
+            env["solana_url"] = os.environ.get("SOLANA_URL")
+        if "PROXY_URL" in os.environ:
+            env["proxy_url"] = os.environ.get("PROXY_URL")
     config.environment = EnvironmentConfig(**env)

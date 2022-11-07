@@ -89,7 +89,7 @@
     "evm_loader": "eeLSJgWzzxrqKv1UxtRVVH8FX3qCQWUs9QuAjJpETGU",
     "proxy_url": "https://devnet.neonevm.org",
     "network_id": 245022926,
-    "solana_url": "http://neon.devnet.rpcpool.com/c7710a7b633cbadb9be9900c7946/",
+    "solana_url": "https://api.devnet.solana.com",
     "faucet_url": "http://3.13.67.238/request_neon",
     "spl_neon_mint": "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g",
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",

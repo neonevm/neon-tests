@@ -68,7 +68,8 @@ class ERC20Wrapper:
         else:
             acc = Keypair.generate()
             self.solana_acc = acc
-            self.sol_client.request_airdrop(acc.public_key, 1000000000, commitment=Finalized)
+            resp = self.sol_client.request_airdrop(acc.public_key, 1000000000, commitment=Finalized)
+            print(f"ERC20 AIRDROP TRX {resp.value}   KEY {acc.public_key}")
             BaseMixin.wait_condition(
                 lambda: self.sol_client.get_balance(acc.public_key).value >= 1000000000
             )

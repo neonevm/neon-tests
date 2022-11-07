@@ -26,10 +26,6 @@ LAMPORT_PER_SOL = 1_000_000_000
 NEON_AIRDROP_AMOUNT = 10_000
 
 
-def pytest_addoption(parser):
-    parser.addoption("--network", action="store", default="night-stand", help="Which stand use")
-
-
 def pytest_collection_modifyitems(config, items):
     deselected_items = []
     selected_items = []

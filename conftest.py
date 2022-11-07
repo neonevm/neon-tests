@@ -1,9 +1,4 @@
-# coding: utf-8
-"""
-Created on 2022-05-19
-@author: Eugeny Kurkovich
-"""
-
+import os
 import json
 import pathlib
 import typing as tp
@@ -31,6 +26,7 @@ class EnvironmentConfig:
 
 
 def pytest_addoption(parser):
+    parser.addoption("--network", action="store", default="night-stand", help="Which stand use")
     parser.addoption("--make-report", action="store_true", default=False, help="Store tests result to file")
     parser.addoption("--envs", action="store", default="envs.json", help="Filename with environments")
 
@@ -57,9 +53,14 @@ def pytest_runtest_protocol(item, nextitem):
 
 
 def pytest_configure(config: Config):
-    network_name = config.getoption("--network", default="night-stand")
+    network_name = config.getoption("--network")
     envs_file = config.getoption("--envs")
     with open(pathlib.Path().parent.parent / envs_file, "r+") as f:
         environments = json.load(f)
     assert network_name in environments, f"Environment {network_name} doesn't exist in envs.json"
-    config.environment = EnvironmentConfig(**environments[network_name])
+    env = environments[network_name]
+    if "SOLANA_URL" in os.environ:
+        env["solana_url"] = os.environ.get("SOLANA_URL")
+    if "PROXY_URL" in os.environ:
+        env["proxy_url"] = os.environ.get("PROXY_URL")
+    config.environment = EnvironmentConfig(**env)

@@ -22,11 +22,6 @@ NEON_PRICE = 0.25
 
 TX_COST = 5000
 
-TRANSFER_TO_UNEXIST_ACC_SOL = 1_395_040
-TRANSFER_ERC20_SOL = 1_137_520
-TRANSFER_ERC20_WRAPPED_SOL = 2_049_280
-DEPLOY_SMALL_CONTRACT_SOL = 33_628_960
-
 LAMPORT_PER_SOL = 1_000_000_000
 DECIMAL_CONTEXT = getcontext()
 DECIMAL_CONTEXT.prec = 9
@@ -133,7 +128,6 @@ class TestEconomics(BaseTests):
         sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after, "Operator SOL balance incorrect"
-        assert sol_diff == TRANSFER_TO_UNEXIST_ACC_SOL, "Unexpected amount of SOL for the operation"
         self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
     def test_send_neon_to_exist_account(self):
@@ -154,7 +148,6 @@ class TestEconomics(BaseTests):
         sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after, "Operator balance after send tx doesn't changed"
-        assert sol_diff == self.get_single_transaction_gas(), "Unexpected amount of SOL for the operation"
         self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
     def test_send_when_not_enough_neon_to_gas(self):
@@ -195,7 +188,6 @@ class TestEconomics(BaseTests):
         sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after
-        assert sol_diff == TRANSFER_ERC20_WRAPPED_SOL, "Unexpected amount of SOL for the operation"
 
         self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
@@ -321,7 +313,6 @@ class TestEconomics(BaseTests):
         sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after
-        assert sol_diff == DEPLOY_SMALL_CONTRACT_SOL, "Unexpected amount of SOL for the operation"
 
         self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
@@ -346,7 +337,6 @@ class TestEconomics(BaseTests):
         sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after
-        assert sol_diff == TRANSFER_ERC20_SOL, "Unexpected amount of SOL for the operation"
         assert neon_balance_after > neon_balance_before
 
         self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
@@ -881,6 +871,7 @@ class TestEconomics(BaseTests):
         assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
+    @pytest.mark.skip(reason="https://neonlabs.atlassian.net/browse/NDEV-871")
     @pytest.mark.parametrize('accounts_quantity', [31, 44, 59])
     def test_deploy_contract_alt_on(self, sol_client, accounts_quantity):
         """Trigger transaction than requires more than 30 accounts"""

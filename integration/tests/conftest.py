@@ -143,8 +143,7 @@ def erc20_spl_mintable(web3_client: NeonWeb3Client, faucet, sol_client):
 @pytest.fixture(scope="function")
 def solana_associated_token_mintable_erc20(erc20_spl_mintable, sol_client):
     acc = Keypair.generate()
-    sol_client.request_airdrop(acc.public_key, 1000000000)
-    BaseMixin.wait_condition(lambda: sol_client.get_balance(acc.public_key).value == 1000000000)
+    BaseMixin().sol_request_airdrop(sol_client, acc, 1000000000)
     token_mint = PublicKey(erc20_spl_mintable.contract.functions.tokenMint().call())
     trx = Transaction()
     trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))
@@ -157,8 +156,7 @@ def solana_associated_token_mintable_erc20(erc20_spl_mintable, sol_client):
 @pytest.fixture(scope="function")
 def solana_associated_token_erc20(erc20_spl, sol_client):
     acc = Keypair.generate()
-    sol_client.request_airdrop(acc.public_key, 1000000000)
-    BaseMixin.wait_condition(lambda: sol_client.get_balance(acc.public_key).value == 1000000000)
+    BaseMixin().sol_request_airdrop(sol_client, acc, 1000000000)
     token_mint = erc20_spl.token_mint.pubkey
     trx = Transaction()
     trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))

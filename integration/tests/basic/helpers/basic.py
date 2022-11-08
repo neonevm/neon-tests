@@ -1,4 +1,3 @@
-import os
 import time
 import typing as tp
 from dataclasses import dataclass
@@ -9,6 +8,8 @@ import pytest
 import web3
 import eth_account.signers.local
 from solana.publickey import PublicKey
+from solana.rpc.commitment import Finalized
+from solders.rpc.errors import InternalErrorMessage
 
 from utils.consts import Unit, InputTestConstants
 from utils.helpers import gen_hash_of_block
@@ -20,6 +21,7 @@ from integration.tests.base import BaseTests
 class AccountData:
     address: str
     key: str = ""
+
 
 ACCOUNT_SEED_VERSION = b'\2'
 
@@ -216,3 +218,17 @@ class BaseMixin(BaseTests):
                 raise
             time.sleep(delay)
         return True
+
+    def sol_request_airdrop(self, sol_client, account, amount):
+        airdrop_resp = None
+        for _ in range(5):
+            airdrop_resp = sol_client.request_airdrop(account.public_key, amount, commitment=Finalized)
+            if isinstance(airdrop_resp, InternalErrorMessage):
+                time.sleep(5)
+                print(f"Get error from solana airdrop: {airdrop_resp}")
+            else:
+                break
+        else:
+            raise AssertionError(f"Can't get airdrop from solana: {airdrop_resp}")
+        self.wait_condition(
+            lambda: sol_client.get_balance(account.public_key).value >= amount)

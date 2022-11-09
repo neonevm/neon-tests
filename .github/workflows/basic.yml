@@ -70,7 +70,7 @@ jobs:
           echo "Build url: ${{ env.BUILD_URL }}"
 
           echo "network=${NETWORK}" >> $GITHUB_OUTPUT
-          echo "runner=${RUNNER" >> $GITHUB_OUTPUT
+          echo "runner=${RUNNER}" >> $GITHUB_OUTPUT
           echo "jobs=${JOBS_NUMBER}" >> $GITHUB_OUTPUT
     outputs:
       network: ${{ steps.setup.outputs.network }}

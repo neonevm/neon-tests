@@ -67,7 +67,7 @@ class ERC20Wrapper:
         else:
             acc = Keypair.generate()
             self.solana_acc = acc
-            BaseMixin().sol_request_airdrop(self.sol_client, acc, 1000000000)
+            self.sol_client.request_airdrop(acc.public_key, 1000000000)
             self.token_mint = self.create_spl(acc, self.decimals)
             metadata = create_metadata_instruction_data(self.name, self.symbol, 0, ())
             txn = Transaction()

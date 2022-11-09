@@ -5,8 +5,6 @@ import string
 
 import allure
 import pytest
-import solana
-import solana.rpc.api
 from _pytest.config import Config
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
@@ -14,13 +12,13 @@ from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
 from spl.token.instructions import create_associated_token_account, get_associated_token_address
 
-from integration.tests.basic.helpers.basic import BaseMixin
 from utils.erc20wrapper import ERC20Wrapper
 from utils.erc721ForMetaplex import ERC721ForMetaplex
 from utils.faucet import Faucet
 from utils.operator import Operator
 from utils.web3client import NeonWeb3Client
 from utils.apiclient import JsonRPCSession
+from utils.solana_client import SolanaClient
 
 LAMPORT_PER_SOL = 1_000_000_000
 NEON_AIRDROP_AMOUNT = 10_000
@@ -62,7 +60,8 @@ def web3_client(pytestconfig: Config) -> NeonWeb3Client:
 
 @pytest.fixture(scope="session", autouse=True)
 def sol_client(pytestconfig: Config):
-    client = solana.rpc.api.Client(pytestconfig.environment.solana_url)
+    #client = solana.rpc.api.Client(pytestconfig.environment.solana_url)
+    client = SolanaClient(pytestconfig.environment.solana_url)
     return client
 
 
@@ -143,7 +142,7 @@ def erc20_spl_mintable(web3_client: NeonWeb3Client, faucet, sol_client):
 @pytest.fixture(scope="function")
 def solana_associated_token_mintable_erc20(erc20_spl_mintable, sol_client):
     acc = Keypair.generate()
-    BaseMixin().sol_request_airdrop(sol_client, acc, 1000000000)
+    sol_client.request_airdrop(acc.public_key, 1000000000)
     token_mint = PublicKey(erc20_spl_mintable.contract.functions.tokenMint().call())
     trx = Transaction()
     trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))
@@ -156,7 +155,7 @@ def solana_associated_token_mintable_erc20(erc20_spl_mintable, sol_client):
 @pytest.fixture(scope="function")
 def solana_associated_token_erc20(erc20_spl, sol_client):
     acc = Keypair.generate()
-    BaseMixin().sol_request_airdrop(sol_client, acc, 1000000000)
+    sol_client.request_airdrop(acc.public_key, 1000000000)
     token_mint = erc20_spl.token_mint.pubkey
     trx = Transaction()
     trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))

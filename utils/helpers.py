@@ -3,6 +3,7 @@ import asyncio
 import pathlib
 import random
 import string
+import time
 import typing as tp
 
 import solcx
@@ -12,6 +13,7 @@ from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP
 
 def get_sol_price() -> float:
     """Get SOL price from Solana mainnet"""
+
     async def get_price():
         account_key = SolanaPublicKey("H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG")
         solana_client = SolanaClient(endpoint=SOLANA_MAINNET_HTTP_ENDPOINT)
@@ -78,3 +80,17 @@ def generate_text(min_len: int = 2, max_len: int = 200, simple: bool = True) -> 
     else:
         chars = string.printable[:-5]
     return ''.join(random.choice(chars) for _i in range(length)).strip()
+
+
+def wait_condition(func_cond, timeout_sec=15, delay=0.5):
+    start_time = time.time()
+    while True:
+        if time.time() - start_time > timeout_sec:
+            raise TimeoutError(f"The condition not reached within {timeout_sec} sec")
+        try:
+            if func_cond():
+                break
+        except Exception as e:
+            print(f"Error during waiting: {e}")
+        time.sleep(delay)
+    return True

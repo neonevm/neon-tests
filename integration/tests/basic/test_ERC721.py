@@ -12,7 +12,7 @@ from spl.token.instructions import create_associated_token_account, get_associat
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from integration.tests.basic.helpers.basic import BaseMixin
 from utils import metaplex
-from utils.helpers import gen_hash_of_block, generate_text
+from utils.helpers import gen_hash_of_block, generate_text, wait_condition
 
 ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
@@ -342,7 +342,7 @@ class TestERC721(BaseMixin):
 
     def test_transferSolanaFrom(self, erc721, token_id, sol_client):
         acc = Keypair.generate()
-        self.sol_request_airdrop(sol_client, acc, 1000000000)
+        sol_client.request_airdrop(acc.public_key, 1000000000)
         token_mint = PublicKey(base58.b58encode(token_id.to_bytes(32, "big")).decode("utf-8"))
         trx = Transaction()
         trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))
@@ -353,9 +353,9 @@ class TestERC721(BaseMixin):
         erc721.transfer_solana_from(erc721.account.address, solana_address, token_id, erc721.account)
         opts = TokenAccountOpts(token_mint)
 
-        self.wait_condition(
-            lambda: int(
-                sol_client.get_token_accounts_by_owner_json_parsed(acc.public_key, opts).value[0].account.data.parsed["info"]["tokenAmount"]["amount"]) > 0)
+        wait_condition(lambda: int(
+            sol_client.get_token_accounts_by_owner_json_parsed(acc.public_key, opts).value[0].account.data.parsed[
+                "info"]["tokenAmount"]["amount"]) > 0)
         token_data = sol_client.get_token_accounts_by_owner_json_parsed(acc.public_key, opts).value[0]
         token_amount = token_data.account.data.parsed['info']['tokenAmount']
         assert int(token_amount['amount']) == 1

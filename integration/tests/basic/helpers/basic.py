@@ -12,7 +12,7 @@ from solana.rpc.commitment import Finalized
 from solders.rpc.errors import InternalErrorMessage
 
 from utils.consts import Unit, InputTestConstants
-from utils.helpers import gen_hash_of_block
+from utils.helpers import gen_hash_of_block, wait_condition
 from utils.apiclient import JsonRPCSession
 from integration.tests.base import BaseTests
 
@@ -205,30 +205,5 @@ class BaseMixin(BaseTests):
         transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
         return transaction
 
-    @staticmethod
-    def wait_condition(func_cond, timeout_sec=15, delay=0.5):
-        start_time = time.time()
-        while True:
-            if time.time() - start_time > timeout_sec:
-                return False
-            try:
-                if func_cond():
-                    break
-            except:
-                raise
-            time.sleep(delay)
-        return True
 
-    def sol_request_airdrop(self, sol_client, account, amount):
-        airdrop_resp = None
-        for _ in range(5):
-            airdrop_resp = sol_client.request_airdrop(account.public_key, amount, commitment=Finalized)
-            if isinstance(airdrop_resp, InternalErrorMessage):
-                time.sleep(5)
-                print(f"Get error from solana airdrop: {airdrop_resp}")
-            else:
-                break
-        else:
-            raise AssertionError(f"Can't get airdrop from solana: {airdrop_resp}")
-        self.wait_condition(
-            lambda: sol_client.get_balance(account.public_key).value >= amount)
+

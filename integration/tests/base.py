@@ -1,9 +1,9 @@
 import pytest
-import solana.rpc.api
 
 import eth_account.signers.local
 from utils.faucet import Faucet
 from utils.operator import Operator
+from utils.solana_client import SolanaClient
 from utils.web3client import NeonWeb3Client
 
 
@@ -12,7 +12,7 @@ class BaseTests:
     operator: Operator
     faucet: Faucet
     web3_client: NeonWeb3Client
-    sol_client: solana.rpc.api.Client
+    sol_client: SolanaClient
     sol_price: float
 
     @pytest.fixture(autouse=True)

@@ -5,9 +5,8 @@ from construct import Struct as cStruct  # type: ignore
 from solana.publickey import PublicKey
 from solana.transaction import AccountMeta, TransactionInstruction
 import base58
-import base64
 
-from integration.tests.basic.helpers.basic import BaseMixin
+from utils.helpers import wait_condition
 
 MAX_NAME_LENGTH = 32
 MAX_SYMBOL_LENGTH = 10
@@ -196,4 +195,4 @@ def get_metadata(client, mint_key):
 
 def wait_account_info(client, mint_key):
     metadata_account = get_metadata_account(mint_key)
-    BaseMixin.wait_condition(lambda: client.get_account_info(metadata_account).value is not None)
+    wait_condition(lambda: client.get_account_info(metadata_account).value is not None)

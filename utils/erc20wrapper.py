@@ -1,13 +1,11 @@
 import pathlib
-import time
 
 import solcx
 from solana.keypair import Keypair
-from solana.rpc.commitment import Confirmed, Finalized
+from solana.rpc.commitment import Confirmed
 import spl.token.client
 from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
-from solders.rpc.errors import InternalErrorMessage
 
 from integration.tests.basic.helpers.basic import BaseMixin
 from . import web3client
@@ -69,19 +67,7 @@ class ERC20Wrapper:
         else:
             acc = Keypair.generate()
             self.solana_acc = acc
-            airdrop_resp = None
-            for _ in range(5):
-                airdrop_resp = self.sol_client.request_airdrop(acc.public_key, 1000000000, commitment=Finalized)
-                if isinstance(airdrop_resp, InternalErrorMessage):
-                    time.sleep(5)
-                    print(f"Get error from solana airdrop: {airdrop_resp}")
-                else:
-                    break
-            else:
-                raise AssertionError(f"Can't get airdrop from solana: {airdrop_resp}")
-            BaseMixin.wait_condition(
-                lambda: self.sol_client.get_balance(acc.public_key).value >= 1000000000
-            )
+            self.sol_client.request_airdrop(acc.public_key, 1000000000)
             self.token_mint = self.create_spl(acc, self.decimals)
             metadata = create_metadata_instruction_data(self.name, self.symbol, 0, ())
             txn = Transaction()

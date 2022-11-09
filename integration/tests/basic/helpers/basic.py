@@ -1,4 +1,3 @@
-import os
 import time
 import typing as tp
 from dataclasses import dataclass
@@ -9,9 +8,11 @@ import pytest
 import web3
 import eth_account.signers.local
 from solana.publickey import PublicKey
+from solana.rpc.commitment import Finalized
+from solders.rpc.errors import InternalErrorMessage
 
 from utils.consts import Unit, InputTestConstants
-from utils.helpers import gen_hash_of_block
+from utils.helpers import gen_hash_of_block, wait_condition
 from utils.apiclient import JsonRPCSession
 from integration.tests.base import BaseTests
 
@@ -20,6 +21,7 @@ from integration.tests.base import BaseTests
 class AccountData:
     address: str
     key: str = ""
+
 
 ACCOUNT_SEED_VERSION = b'\2'
 
@@ -203,16 +205,5 @@ class BaseMixin(BaseTests):
         transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
         return transaction
 
-    @staticmethod
-    def wait_condition(func_cond, timeout_sec=15, delay=0.5):
-        start_time = time.time()
-        while True:
-            if time.time() - start_time > timeout_sec:
-                return False
-            try:
-                if func_cond():
-                    break
-            except:
-                raise
-            time.sleep(delay)
-        return True
+
+

@@ -26,5 +26,5 @@ class SolanaClient(solana.rpc.api.Client):
                 break
         else:
             raise AssertionError(f"Can't get airdrop from solana: {airdrop_resp}")
-        wait_condition(lambda: self.get_balance(pubkey).value >= lamports)
+        wait_condition(lambda: self.get_balance(pubkey).value >= lamports, timeout_sec=30)
         return airdrop_resp

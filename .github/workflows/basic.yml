@@ -30,6 +30,7 @@ env:
   NETWORK: night-stand
   RUNNER: neon-hosted
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+  SOLANA_URL: "${{ secrets.SOLANA_URL }}"
 
 jobs:
   prepare-env:
@@ -68,9 +69,9 @@ jobs:
           echo "Runner: ${RUNNER}"
           echo "Build url: ${{ env.BUILD_URL }}"
 
-          echo "::set-output name=network::${NETWORK}"
-          echo "::set-output name=runner::${RUNNER}"
-          echo "::set-output name=jobs::${JOBS_NUMBER}"
+          echo "network=${NETWORK}" >> $GITHUB_OUTPUT
+          echo "runner=${RUNNER}" >> $GITHUB_OUTPUT
+          echo "jobs=${JOBS_NUMBER}" >> $GITHUB_OUTPUT
     outputs:
       network: ${{ steps.setup.outputs.network }}
       runner: ${{ steps.setup.outputs.runner }}

@@ -61,7 +61,6 @@ def web3_client(pytestconfig: Config) -> NeonWeb3Client:
 @pytest.fixture(scope="session", autouse=True)
 def sol_client(pytestconfig: Config):
     client = SolanaClient(pytestconfig.environment.solana_url)
-    print(f"solana url: {pytestconfig.environment.solana_url}")
     return client
 
 

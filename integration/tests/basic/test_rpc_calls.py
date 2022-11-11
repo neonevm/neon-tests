@@ -498,7 +498,7 @@ class TestRpcCalls(BaseMixin):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
         params = [quantity_tag.value, full_trx]
         response = self.proxy_api.send_rpc(method="eth_getBlockByNumber", params=params)
-        rpc_checks.assert_block_fields(response, full_trx, None)
+        rpc_checks.assert_block_fields(response, full_trx, None, quantity_tag == Tag.PENDING)
 
     @pytest.mark.parametrize(
         "quantity, raises",
@@ -569,7 +569,7 @@ class TestRpcCalls(BaseMixin):
 
 
 @allure.story("Basic: Json-RPC call tests - `eth_estimateGas`")
-class TestRpcCallsMoreComplex(TestRpcCalls):
+class TestRpcCallsMoreComplex(BaseMixin):
     account: "eth_account.signers.local.LocalAccount" = None
 
     @pytest.fixture(params=[(850000, 15000), (8500000, 150000), (8500000, 150000)])

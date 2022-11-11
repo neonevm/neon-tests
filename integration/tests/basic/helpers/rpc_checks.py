@@ -12,15 +12,19 @@ def is_hex(hex_data: str) -> bool:
         return False
 
 
-def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[web3.types.TxReceipt]):
+def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[web3.types.TxReceipt],
+                        pending: bool = False):
     assert "error" not in block
     assert "result" in block, AssertMessage.DOES_NOT_CONTAIN_RESULT
     result = block["result"]
     expected_hex_fields = ["difficulty", "extraData", "gasLimit", "gasUsed", "hash", "logsBloom", "miner",
                            "mixHash", "nonce", "number", "parentHash", "receiptsRoot", "sha3Uncles", "size",
                            "stateRoot", "timestamp", "totalDifficulty", "transactionsRoot"]
+    if pending:
+        for i in ["hash", "nonce", "miner"]:
+            expected_hex_fields.remove(i)
     for field in expected_hex_fields:
-        assert is_hex(result[field])
+        assert is_hex(result[field]), f"Field {field} must be hex but '{result[field]}'"
     if tx_receipt is not None:
         assert result["hash"] == tx_receipt.blockHash.hex(), \
             f"Actual:{result['hash']}; Expected: {tx_receipt.blockHash.hex()}"

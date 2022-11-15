@@ -455,7 +455,6 @@ class NeonProxyTasksSet(TaskSet):
         """Check the number of the most recent block"""
         self.web3_client.get_block_number()
 
-    @task(1)
     def task_keeps_balance(self, account: tp.Optional["eth_account.signers.local.LocalAccount"] = None) -> None:
         """Keeps account balance not empty"""
         account = account or self.account
@@ -514,7 +513,7 @@ class BaseResizingTasksSet(NeonProxyTasksSet):
     version: tp.Optional[str] = None
 
     @task(1)
-    @execute_before("task_block_number")
+    @execute_before("task_block_number", "task_keeps_balance")
     def task_deploy_contract(self) -> None:
         """Deploy contract"""
         self.log.info(f"`{self.contract_name}`: deploy contract.")
@@ -633,8 +632,9 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
 @tag("send_neon")
 class NeonTasksSet(NeonProxyTasksSet):
     """Implements Neons transfer base pipeline tasks"""
-    @task(100)
-    @execute_before("task_block_number")
+
+    @task(1)
+    @execute_before("task_block_number", "task_keeps_balance")
     def task_send_neon(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Transferring funds to a random account"""
         # add credits to account
@@ -653,14 +653,14 @@ class ERC20TasksSet(ERC20BaseTasksSet):
         self.contract_name = "ERC20"
         self._buffer = self.user.environment.shared.erc20_contracts
 
-    @task(4)
-    @execute_before("task_block_number")
+    @task(2)
+    @execute_before("task_block_number", "task_keeps_balance")
     def task_deploy_contract(self) -> None:
         """Deploy ERC20 contract"""
         super(ERC20TasksSet, self).task_deploy_contract()
 
-    @task(20)
-    @execute_before("task_block_number")
+    @task(6)
+    @execute_before("task_block_number", "task_keeps_balance")
     def task_send_erc20(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Send ERC20 tokens"""
         return super(ERC20TasksSet, self).task_send_tokens()
@@ -679,14 +679,14 @@ class ERC20SPLTasksSet(ERC20BaseTasksSet):
         self._buffer = self.user.environment.shared.erc20_wrapper_contracts
         self._sol_client = Client(self.credentials["solana_url"])
 
-    @task(4)
-    @execute_before("task_block_number")
+    @task(2)
+    @execute_before("task_block_number", "task_keeps_balance")
     def task_deploy_contract(self) -> None:
         """Deploy ERC20Wrapper contract"""
         super(ERC20SPLTasksSet, self).task_deploy_contract()
 
-    @task(20)
-    @execute_before("task_block_number")
+    @task(6)
+    @execute_before("task_block_number", "task_keeps_balance")
     def task_send_erc20_wrapped(self) -> None:
         """Send ERC20 tokens"""
         return super(ERC20SPLTasksSet, self).task_send_tokens()
@@ -703,14 +703,14 @@ class CounterTasksSet(BaseResizingTasksSet):
         self.contract_name = "Counter"
         self.version = COUNTER_VERSION
 
-    @task(10)
-    @execute_before("task_block_number")
+    @task(4)
+    @execute_before("task_block_number", "task_keeps_balance")
     def task_increase_counter(self) -> None:
         """Accounts increase"""
         super(CounterTasksSet, self).task_resize("inc")
 
-    @task(5)
-    @execute_before("task_block_number")
+    @task(2)
+    @execute_before("task_block_number", "task_keeps_balance")
     def task_decrease_counter(self) -> None:
         """Accounts decrease"""
         super(CounterTasksSet, self).task_resize("dec")
@@ -840,10 +840,10 @@ class NeonPipelineUser(User):
     """Class represents a base Neon pipeline by one user"""
 
     tasks = {
-        NeonTasksSet: 10,
         CounterTasksSet: 3,
         ERC20TasksSet: 1,
         ERC20SPLTasksSet: 2,
+        NeonTasksSet: 10,
         # WithDrawTasksSet: 5,  Disable this, because withdraw instruction changed
         UniswapTransaction: 5,
     }

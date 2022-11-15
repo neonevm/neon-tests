@@ -455,7 +455,7 @@ class NeonProxyTasksSet(TaskSet):
         """Check the number of the most recent block"""
         self.web3_client.get_block_number()
 
-    @task(10)
+    @task(1)
     def task_keeps_balance(self, account: tp.Optional["eth_account.signers.local.LocalAccount"] = None) -> None:
         """Keeps account balance not empty"""
         account = account or self.account
@@ -633,7 +633,7 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
 @tag("send_neon")
 class NeonTasksSet(NeonProxyTasksSet):
     """Implements Neons transfer base pipeline tasks"""
-    @task(1)
+    @task(100)
     @execute_before("task_block_number")
     def task_send_neon(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Transferring funds to a random account"""

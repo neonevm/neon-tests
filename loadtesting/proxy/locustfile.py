@@ -193,7 +193,7 @@ def deploy_uniswap(environment: "locust.env.Environment", **kwargs):
     os.chdir(uniswap_path)
 
     neon_client = NeonWeb3Client(environment.credentials["proxy_url"], environment.credentials["network_id"])
-    faucet = Faucet(environment.credentials["faucet_url"])
+    faucet = Faucet(environment.credentials["faucet_url"], neon_client)
 
     eth_account = neon_client.create_account()
     faucet.request_neon(eth_account.address, 10000)
@@ -443,11 +443,12 @@ class NeonProxyTasksSet(TaskSet):
             int(self.user.environment.parsed_options.num_users or self.user.environment.runner.target_user_count) * 100
         )
         self.credentials = self.user.environment.credentials
-        self.faucet = Faucet(self.credentials["faucet_url"], session=session)
         LOG.info(f"Create web3 client to: {self.credentials['proxy_url']}")
         self.web3_client = NeonWeb3ClientExt(
             self.credentials["proxy_url"], self.credentials["network_id"], session=session
         )
+        self.faucet = Faucet(self.credentials["faucet_url"], self.web3_client, session=session)
+
         self.setup()
         self.log = logging.getLogger("neon-consumer[%s]" % self.account.address[-8:])
 

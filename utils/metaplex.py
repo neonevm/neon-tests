@@ -195,4 +195,4 @@ def get_metadata(client, mint_key):
 
 def wait_account_info(client, mint_key):
     metadata_account = get_metadata_account(mint_key)
-    wait_condition(lambda: client.get_account_info(metadata_account).value is not None)
+    wait_condition(lambda: client.get_account_info(metadata_account).value is not None, timeout_sec=30)

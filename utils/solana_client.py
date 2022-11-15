@@ -20,7 +20,7 @@ class SolanaClient(solana.rpc.api.Client):
         for _ in range(5):
             airdrop_resp = super().request_airdrop(pubkey, lamports, commitment=Finalized)
             if isinstance(airdrop_resp, InternalErrorMessage):
-                time.sleep(5)
+                time.sleep(10)
                 print(f"Get error from solana airdrop: {airdrop_resp}")
             else:
                 break

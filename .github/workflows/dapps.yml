@@ -102,7 +102,6 @@ jobs:
             name: uniswap-report
             path: report.json
 
-
   destroy:
     runs-on: ubuntu-20.04
     needs: [prepare, uniswap]

@@ -1,8 +1,15 @@
 import os
+import glob
+import json
 import subprocess
 import typing as tp
+import pathlib
+
+import tabulate
 
 from deploy.cli import faucet as faucet_cli
+
+NEON_COST = 0.25
 
 TF_CWD = "deploy/aws"
 
@@ -80,3 +87,27 @@ def prepare_accounts(count, amount) -> tp.List:
     if os.environ.get("CI"):
         set_github_env(dict(accounts=",".join(accounts)))
     return accounts
+
+
+def print_report(directory):
+    headers = ["Action", "Fee", "Cost in $"]
+    out = {}
+    reports = {}
+    for path in glob.glob(str(pathlib.Path(directory) / "*-report.json")):
+        with open(path, "r") as f:
+            rep = json.load(f)
+            reports[rep["name"]] = rep["actions"]
+
+    for app in reports:
+        out[app] = []
+        for action in reports[app]:
+            row = [action["name"]]
+            fee = int(action["usedGas"]) * int(action["gasPrice"]) / 1000000000000000000
+            row.append(fee)
+            row.append(fee * NEON_COST)
+            out[app].append(row)
+
+    for app in out:
+        print(f"Cost report for \"{app.title()}\" dApp")
+        print("----------------------------------------")
+        print(tabulate.tabulate(out[app], headers, tablefmt="simple_grid"))

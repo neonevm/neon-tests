@@ -96,6 +96,13 @@ jobs:
           test -t 1 && USE_TTY="-t"
           docker run -i ${USE_TTY} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} --entrypoint /bin/bash uniswap:latest -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
 
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+            name: uniswap-report
+            path: report.json
+
+
   destroy:
     runs-on: ubuntu-20.04
     needs: [prepare, uniswap]
@@ -126,6 +133,21 @@ jobs:
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra destroy
+
+  swap-report:
+    runs-on: ubuntu-20.04
+    needs: [uniswap]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+      - uses: actions/download-artifact@v3
+        with:
+          name: uniswap-report
+          path: reports/uniswap-report.json
+      - name: "Swap report"
+        run: ./clickfile.py dapps report --directory=reports
 
   notify:
     runs-on: ubuntu-20.04

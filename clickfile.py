@@ -651,6 +651,17 @@ infra.add_command(destroy, "destroy")
 infra.add_command(prepare_accounts, "gen-accounts")
 
 
+@cli.group("dapps", help="Manage dapps")
+def dapps():
+    pass
+
+
+@dapps.command("report", help="Print dapps report (from .json files)")
+@click.option("-d", "--directory", default="reports", help="Directory with reports")
+def make_dapps_report(directory):
+    dapps_cli.print_report(directory)
+
+
 @cli.group("devbox", help="Manage devbox infrastructure")
 def devbox():
     """Commands for devbox manipulation."""

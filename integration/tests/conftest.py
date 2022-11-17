@@ -43,8 +43,8 @@ def pytest_collection_modifyitems(config, items):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def faucet(pytestconfig: Config) -> Faucet:
-    return Faucet(pytestconfig.environment.faucet_url)
+def faucet(pytestconfig: Config, web3_client) -> Faucet:
+    return Faucet(pytestconfig.environment.faucet_url, web3_client)
 
 
 @pytest.fixture(scope="session")

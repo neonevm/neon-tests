@@ -25,7 +25,6 @@ class ERC20TasksSet(NeonProxyTasksSet):
         self._buffer = self.user.environment.shared.erc20_contracts
 
     @task(1)
-    @execute_before("task_block_number")
     def task_deploy_contract(self):
         """Deploy ERC20 contract"""
         self.log.info(f"Deploy ERC20 contract.")
@@ -37,7 +36,6 @@ class ERC20TasksSet(NeonProxyTasksSet):
         )
 
     @task(10)
-    @execute_before("task_block_number")
     def task_send_erc20(self):
         contracts = self._buffer.get(self.account.address)
 
@@ -104,7 +102,6 @@ class ERC20OneContractTasksSet(NeonProxyTasksSet):
             abi=contract.abi)
 
     @task
-    @execute_before("task_block_number")
     def task_send_erc20(self):
         """Send ERC20 tokens"""
         contract = self.user.environment.erc20_one["contract"]

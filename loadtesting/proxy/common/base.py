@@ -50,7 +50,7 @@ class NeonProxyTasksSet(TaskSet):
         """Prepare data requirements"""
         # create new account for each simulating user
         self.account = self.web3_client.create_account()
-        self.task_keeps_balance()
+        self.check_balance()
         self.user.environment.shared.accounts.append(self.account)
         LOG.info(f"New account {self.account.address} created")
 
@@ -73,7 +73,7 @@ class NeonProxyTasksSet(TaskSet):
         """Check the number of the most recent block"""
         self.web3_client.get_block_number()
 
-    def task_keeps_balance(self, account: tp.Optional["eth_account.signers.local.LocalAccount"] = None) -> None:
+    def check_balance(self, account: tp.Optional["eth_account.signers.local.LocalAccount"] = None) -> None:
         """Keeps account balance not empty"""
         account = account or self.account
         balance_before = self.web3_client.get_balance(account.address)

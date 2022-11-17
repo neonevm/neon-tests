@@ -145,7 +145,7 @@ jobs:
         uses: ./.github/actions/python-requirements
       - uses: actions/download-artifact@v3
         with:
-          name: uniswap-report.json
+          name: uniswap-report
           path: reports/
       - name: "Swap report"
         run: ./clickfile.py dapps report --directory=reports

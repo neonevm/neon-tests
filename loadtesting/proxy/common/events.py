@@ -86,6 +86,7 @@ def get_token_balance(op: operator.Operator) -> tp.Dict:
 def operator_economy_pre_balance(environment, **kwargs):
     if isinstance(environment.runner, WorkerRunner):
         return
+    LOG.info("Get operator balances")
     op = operator.Operator(
         environment.credentials["proxy_url"],
         environment.credentials["solana_url"],
@@ -105,6 +106,7 @@ def operator_economy_pre_balance(environment, **kwargs):
 def operator_economy_balance(environment, **kwargs):
     if isinstance(environment.runner, WorkerRunner):
         return
+    LOG.info("Get operator balances")
     balance = get_token_balance(environment.op)
     operator_balance = tabulate.tabulate(
         [

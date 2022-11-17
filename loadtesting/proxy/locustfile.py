@@ -654,16 +654,31 @@ class ERC20TasksSet(ERC20BaseTasksSet):
         self._buffer = self.user.environment.shared.erc20_contracts
 
     @task(2)
-    @execute_before("task_block_number", "task_keeps_balance")
+    @execute_before("task_block_number")
     def task_deploy_contract(self) -> None:
         """Deploy ERC20 contract"""
         super(ERC20TasksSet, self).task_deploy_contract()
 
     @task(6)
-    @execute_before("task_block_number", "task_keeps_balance")
+    @execute_before("task_block_number")
     def task_send_erc20(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Send ERC20 tokens"""
         return super(ERC20TasksSet, self).task_send_tokens()
+
+
+@tag("erc20one")
+class ERC20TasksSet(ERC20BaseTasksSet):
+    """Implements ERC20 base pipeline tasks"""
+    def on_start(self) -> None:
+        super().on_start()
+        self.version = ERC20_VERSION
+        self.contract_name = "ERC20"
+        self._buffer = self.user.environment.shared.erc20_contracts
+
+    @execute_before("task_block_number")
+    def task_send_erc20(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
+        """Send ERC20 tokens"""
+
 
 
 @tag("spl")

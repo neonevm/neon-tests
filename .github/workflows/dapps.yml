@@ -94,7 +94,9 @@ jobs:
           docker build -t uniswap:latest ${CWD}
           proxy_url=http://${{ env.PROXY_IP }}:9090/solana
           test -t 1 && USE_TTY="-t"
-          docker run -i ${USE_TTY} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} --entrypoint /bin/bash uniswap:latest -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
+          docker run -i ${USE_TTY} --name=uniswap-${{ github.run_id }} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} --entrypoint /bin/bash uniswap:latest -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
+          docker cp uniswap-${{ github.run_id }}:/usr/src/app/report.json report.json
+          docker rm -f uniswap-${{ github.run_id }}
 
       - name: Save report
         uses: actions/upload-artifact@v3

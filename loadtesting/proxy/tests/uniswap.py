@@ -148,3 +148,91 @@ def deploy_uniswap(environment: "locust.env.Environment", **kwargs):
         "pair2": pair2_contract,
     }
     environment.uniswap.update(erc20_contracts)
+
+
+
+@tag("uniswap")
+class UniswapTransaction(NeonProxyTasksSet):
+    def on_start(self) -> None:
+        super(UniswapTransaction, self).on_start()
+        signer = self.user.environment.uniswap["signer"]
+        token_a = self.user.environment.uniswap["tokenA"]
+        token_b = self.user.environment.uniswap["tokenB"]
+        token_c = self.user.environment.uniswap["tokenC"]
+
+        for token in [token_a, token_b, token_c]:
+            self.log.info(f"Transfer erc token to account: {self.account.address}")
+            trx = token.functions.transfer(self.account.address, web3.Web3.toWei(1000, "ether")).buildTransaction(
+                {
+                    "from": signer.address,
+                    "nonce": self.web3_client.eth.get_transaction_count(signer.address),
+                    "gasPrice": self.web3_client.gas_price(),
+                }
+            )
+            self.web3_client.send_transaction(signer, trx)
+
+            self.log.info(f"Approve token by account {self.account.address}")
+            trx = token.functions.approve(
+                self.user.environment.uniswap["router"].address, MAX_UINT_256
+            ).buildTransaction(
+                {
+                    "from": self.account.address,
+                    "nonce": self.web3_client.get_nonce(self.account.address),
+                    "gasPrice": self.web3_client.gas_price(),
+                }
+            )
+            self.web3_client.send_transaction(self.account, trx)
+
+    def _send_swap_trx(self, trx):
+        self.web3_client.send_transaction(self.account, trx, gas_multiplier=1.1)
+
+    @statistics_collector("Direct swap")
+    def _send_direct_swap_trx(self, trx):
+        return self._send_swap_trx(trx)
+
+    @statistics_collector("Swap 2 pools")
+    def _send_2pools_swap_trx(self, trx):
+        return self._send_swap_trx(trx)
+
+    @task
+    def task_swap_direct(self):
+        router = self.user.environment.uniswap["router"]
+        token_a = self.user.environment.uniswap["tokenA"]
+        token_b = self.user.environment.uniswap["tokenB"]
+        self.log.info("Swap token direct")
+        swap_trx = router.functions.swapExactTokensForTokens(
+            web3.Web3.toWei(1, "ether"),
+            0,
+            random.sample([token_a.address, token_b.address], 2),
+            self.account.address,
+            MAX_UINT_256,
+        ).buildTransaction(
+            {
+                "from": self.account.address,
+                "nonce": self.web3_client.get_nonce(self.account.address),
+                "gasPrice": self.web3_client.gas_price(),
+            }
+        )
+        self._send_direct_swap_trx(swap_trx)
+
+    @task
+    def task_swap_two_pools(self):
+        router = self.user.environment.uniswap["router"]
+        token_a = self.user.environment.uniswap["tokenA"]
+        token_b = self.user.environment.uniswap["tokenB"]
+        token_c = self.user.environment.uniswap["tokenC"]
+        self.log.info("Swap token via 2 pools")
+        swap_trx = router.functions.swapExactTokensForTokens(
+            web3.Web3.toWei(1, "ether"),
+            0,
+            [token_a.address, token_b.address, token_c.address],
+            self.account.address,
+            MAX_UINT_256,
+        ).buildTransaction(
+            {
+                "from": self.account.address,
+                "nonce": self.web3_client.get_nonce(self.account.address),
+                "gasPrice": self.web3_client.gas_price(),
+            }
+        )
+        self._send_2pools_swap_trx(swap_trx)

@@ -90,6 +90,9 @@ def prepare_accounts(count, amount) -> tp.List:
 
 
 def print_report(directory):
+    print("DIRECTORIES")
+    print(os.listdir(str(pathlib.Path(directory))))
+    print(subprocess.run(f"ls -la {directory}", shell=True))
     headers = ["Action", "Fee", "Cost in $"]
     out = {}
     reports = {}

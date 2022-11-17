@@ -1,6 +1,7 @@
 import functools
 import json
 import logging
+import os
 import pathlib
 import sys
 import time
@@ -66,7 +67,7 @@ def make_env_preparation(environment, **kwargs):
 @events.test_start.add_listener
 def load_credentials(environment, **kwargs):
     """Test start event handler"""
-    base_path = pathlib.Path(__file__).parent.parent.parent
+    base_path = pathlib.Path(__file__).parent.parent.parent.parent
     path = base_path / environment.parsed_options.credentials
     network = environment.parsed_options.host or environment.host
     if not (path.exists() and path.is_file()):

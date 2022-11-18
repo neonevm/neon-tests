@@ -87,12 +87,12 @@ class BaseMixin(BaseTests):
         account = self.create_account()
         balance_before = self.get_balance_from_wei(account.address)
         self.faucet.request_neon(account.address, amount=amount)
-        for _ in range(10):
+        for _ in range(20):
             if self.get_balance_from_wei(account.address) >= (balance_before + amount):
                 break
             time.sleep(1)
         else:
-            raise AssertionError(f"Balance didn't changed after 10 seconds ({account.address})")
+            raise AssertionError(f"Balance didn't changed after 20 seconds ({account.address})")
         return account
 
     @staticmethod

@@ -51,8 +51,8 @@ class TestContractReverting(BaseMixin):
         contract_interface = get_contract_abi("ArrConstructable", compiled)
         contract = self.web3_client.eth.contract(abi=contract_interface["abi"], bytecode=contract_interface["bin"])
 
-        # with pytest.raises(web3.exceptions.ContractLogicError, match="execution reverted"):
-        contract.constructor([]).buildTransaction()
+        with pytest.raises(web3.exceptions.ContractLogicError, match="execution reverted"):
+            contract.constructor([]).buildTransaction()
 
     def test_method_raises_string_based_error(self):
         contract, _ = self.web3_client.deploy_and_get_contract("trivial_revert", "0.7.0",

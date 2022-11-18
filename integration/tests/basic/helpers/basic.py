@@ -23,9 +23,6 @@ class AccountData:
     key: str = ""
 
 
-ACCOUNT_SEED_VERSION = b'\3'
-
-
 class BaseMixin(BaseTests):
 
     proxy_api: JsonRPCSession = None
@@ -100,11 +97,7 @@ class BaseMixin(BaseTests):
         """Create non existing account"""
         return AccountData(address=gen_hash_of_block(20))
 
-    @staticmethod
-    def get_neon_account_address(neon_account_address: str, evm_loader_id) -> PublicKey:
-        neon_account_addressbytes = bytes.fromhex(neon_account_address[2:])
-        return PublicKey.find_program_address([ACCOUNT_SEED_VERSION, neon_account_addressbytes],
-                                              PublicKey(evm_loader_id))[0]
+
 
     def send_neon(
         self,

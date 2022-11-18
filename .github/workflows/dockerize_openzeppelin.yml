@@ -21,7 +21,7 @@ jobs:
           labels: '["full_test_suite"]'
       - uses: actions/checkout@v3
       - name: Build and push OpenZeppelin full test suite Docker image
-        if: ${{ steps.check_pr_labels.outputs.result == 'true' || git.ref_name == 'develop'}}
+        if: ${{ steps.check_pr_labels.outputs.result == 'true' || github.ref_name == 'develop'}}
         id: docker_pipeline
         run: |
           delimeter=$(printf "%0.s-" {1..30})

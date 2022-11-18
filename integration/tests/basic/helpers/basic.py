@@ -23,7 +23,7 @@ class AccountData:
     key: str = ""
 
 
-ACCOUNT_SEED_VERSION = b'\2'
+ACCOUNT_SEED_VERSION = b'\3'
 
 
 class BaseMixin(BaseTests):

@@ -107,7 +107,7 @@ jobs:
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap]
+    needs: [prepare, uniswap, swap-report]
     if: ${{ failure() || success() }}
     steps:
       - uses: actions/checkout@v3

@@ -140,8 +140,8 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [uniswap]
     env:
-      SOLANA_URL: "http://${{ env.SOLANA_IP }}:8899"
-      PROXY_URL: "http://${{ env.PROXY_IP }}:9090/solana"
+      SOLANA_URL: "http://${{ needs.prepare.outputs.solana_ip }}:8899"
+      PROXY_URL: "http://${{ needs.prepare.outputs.proxy_ip }}:9090/solana"
     steps:
       - uses: actions/checkout@v3
       - name: Install python requirements

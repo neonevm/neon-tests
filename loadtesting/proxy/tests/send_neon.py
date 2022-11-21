@@ -1,8 +1,6 @@
 import random
 import logging
-import typing as tp
 
-import web3
 from locust import tag, task, User
 
 from loadtesting.proxy.common.base import NeonProxyTasksSet

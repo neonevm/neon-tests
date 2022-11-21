@@ -69,9 +69,11 @@ class NeonWeb3Client:
         amount: tp.Union[int, float, Decimal],
         gas: tp.Optional[int] = 0,
         gas_price: tp.Optional[int] = None,
+        nonce: int = None
     ) -> web3.types.TxReceipt:
         to_addr = to if isinstance(to, str) else to.address
-        nonce = self.get_nonce(from_)
+        if nonce is None:
+            nonce = self.get_nonce(from_)
         transaction = {
             "from": from_.address,
             "to": to_addr,

@@ -608,20 +608,27 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
 @click.option("-u", "--url", help="slack app endpoint url.")
 @click.option("-b", "--build_url", help="github action test build url.")
 @click.option("-t", "--traceback", default="", help="custom traceback message.")
-def send_notification(url, build_url, traceback):
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+def send_notification(url, build_url, traceback, network):
     p = pathlib.Path(f"./{CMD_ERROR_LOG}")
     trace_back = traceback or (p.read_text() if p.exists() else "")
+    # Slack has 3001 symbols limit
+    if len(trace_back) > 2500:
+        trace_back = trace_back[0:2500]
     tpl = ERR_MSG_TPL.copy()
 
     parsed_build_url = urlparse(build_url).path.split("/")
     build_id = parsed_build_url[-1]
     repo_name = f"{parsed_build_url[1]}/{parsed_build_url[2]}"
-
     tpl["blocks"][0]["text"]["text"] = (
-        f"*Build <{build_url}|`{build_id}`> of repository `{repo_name}` is failed.* \n{trace_back}"
+        f"*Build <{build_url}|`{build_id}`> of repository `{repo_name}` is failed on `{network}`!* \n{trace_back}"
         f"\n<{build_url}|View build details>"
     )
-    requests.post(url=url, data=json.dumps(tpl))
+    response = requests.post(url=url, data=json.dumps(tpl))
+    if response.status_code != 200:
+        click.echo(f"Response status code: {response.status_code}")
+        click.echo(f"TPL: {json.dumps(tpl)}")
+        raise RuntimeError(f"Notification is not sent. Error: {response.text}")
 
 
 @cli.group("infra", help="Manage test infrastructure")
@@ -649,6 +656,17 @@ def prepare_accounts(count, amount):
 infra.add_command(deploy, "deploy")
 infra.add_command(destroy, "destroy")
 infra.add_command(prepare_accounts, "gen-accounts")
+
+
+@cli.group("dapps", help="Manage dapps")
+def dapps():
+    pass
+
+
+@dapps.command("report", help="Print dapps report (from .json files)")
+@click.option("-d", "--directory", default="reports", help="Directory with reports")
+def make_dapps_report(directory):
+    dapps_cli.print_report(directory)
 
 
 @cli.group("devbox", help="Manage devbox infrastructure")

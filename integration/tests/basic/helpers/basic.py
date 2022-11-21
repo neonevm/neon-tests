@@ -1,4 +1,3 @@
-import os
 import time
 import typing as tp
 from dataclasses import dataclass
@@ -9,9 +8,11 @@ import pytest
 import web3
 import eth_account.signers.local
 from solana.publickey import PublicKey
+from solana.rpc.commitment import Finalized
+from solders.rpc.errors import InternalErrorMessage
 
 from utils.consts import Unit, InputTestConstants
-from utils.helpers import gen_hash_of_block
+from utils.helpers import gen_hash_of_block, wait_condition
 from utils.apiclient import JsonRPCSession
 from integration.tests.base import BaseTests
 
@@ -20,8 +21,6 @@ from integration.tests.base import BaseTests
 class AccountData:
     address: str
     key: str = ""
-
-ACCOUNT_SEED_VERSION = b'\2'
 
 
 class BaseMixin(BaseTests):
@@ -85,12 +84,12 @@ class BaseMixin(BaseTests):
         account = self.create_account()
         balance_before = self.get_balance_from_wei(account.address)
         self.faucet.request_neon(account.address, amount=amount)
-        for _ in range(10):
+        for _ in range(20):
             if self.get_balance_from_wei(account.address) >= (balance_before + amount):
                 break
             time.sleep(1)
         else:
-            raise AssertionError(f"Balance didn't changed after 10 seconds ({account.address})")
+            raise AssertionError(f"Balance didn't changed after 20 seconds ({account.address})")
         return account
 
     @staticmethod
@@ -98,11 +97,7 @@ class BaseMixin(BaseTests):
         """Create non existing account"""
         return AccountData(address=gen_hash_of_block(20))
 
-    @staticmethod
-    def get_neon_account_address(neon_account_address: str, evm_loader_id) -> PublicKey:
-        neon_account_addressbytes = bytes.fromhex(neon_account_address[2:])
-        return PublicKey.find_program_address([ACCOUNT_SEED_VERSION, neon_account_addressbytes],
-                                              PublicKey(evm_loader_id))[0]
+
 
     def send_neon(
         self,
@@ -203,16 +198,5 @@ class BaseMixin(BaseTests):
         transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
         return transaction
 
-    @staticmethod
-    def wait_condition(func_cond, timeout_sec=15, delay=0.5):
-        start_time = time.time()
-        while True:
-            if time.time() - start_time > timeout_sec:
-                return False
-            try:
-                if func_cond():
-                    break
-            except:
-                raise
-            time.sleep(delay)
-        return True
+
+

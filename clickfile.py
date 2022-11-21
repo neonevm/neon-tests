@@ -150,32 +150,34 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
         def float_2_str(d):
             return dict(map(lambda i: (i[0], str(i[1])), d.items()))
 
-        network = networks[args[0]]
-        op = Operator(
-            network["proxy_url"],
-            network["solana_url"],
-            network["network_id"],
-            network["operator_neon_rewards_address"],
-            network["spl_neon_mint"],
-            network["operator_keys"],
-            web3_client=NeonWeb3Client(network["proxy_url"], network["network_id"], session=requests.Session()),
-        )
-        pre = get_tokens_balances(op)
-        try:
+        if os.environ.get("PROXY_URL") is None:
+            network = networks[args[0]]
+            op = Operator(
+                network["proxy_url"],
+                network["solana_url"],
+                network["network_id"],
+                network["operator_neon_rewards_address"],
+                network["spl_neon_mint"],
+                network["operator_keys"],
+                web3_client=NeonWeb3Client(network["proxy_url"], network["network_id"], session=requests.Session()),
+            )
+            pre = get_tokens_balances(op)
+            try:
+                func(*args, **kwargs)
+            except subprocess.CalledProcessError:
+                pass
+            after = get_tokens_balances(op)
+            profitability = dict(
+                neon=round(float(after["neon"] - pre["neon"]) * 0.25, 2),
+                sol=round((float(pre["sol"] - after["sol"])) * get_sol_price(), 2),
+            )
+            path = pathlib.Path(OZ_BALANCES)
+            path.absolute().parent.mkdir(parents=True, exist_ok=True)
+            with open(path, "w") as fd:
+                balances = dict(pre=float_2_str(pre), after=float_2_str(after), profitability=float_2_str(profitability))
+                json.dump(balances, fp=fd, indent=4, sort_keys=True)
+        else:
             func(*args, **kwargs)
-        except subprocess.CalledProcessError:
-            pass
-        after = get_tokens_balances(op)
-        profitability = dict(
-            neon=round(float(after["neon"] - pre["neon"]) * 0.25, 2),
-            sol=round((float(pre["sol"] - after["sol"])) * get_sol_price(), 2),
-        )
-        path = pathlib.Path(OZ_BALANCES)
-        path.absolute().parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "w") as fd:
-            balances = dict(pre=float_2_str(pre), after=float_2_str(after), profitability=float_2_str(profitability))
-            json.dump(balances, fp=fd, indent=4, sort_keys=True)
-
     return wrapper
 
 

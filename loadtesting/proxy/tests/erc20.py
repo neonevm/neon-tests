@@ -73,7 +73,7 @@ def prepare_one_contract_for_erc20(environment: "locust.env.Environment", **kwar
         return
 
     neon_client = NeonWeb3Client(environment.credentials["proxy_url"], environment.credentials["network_id"])
-    faucet = Faucet(environment.credentials["faucet_url"])
+    faucet = Faucet(environment.credentials["faucet_url"], neon_client)
 
     eth_account = neon_client.create_account()
     faucet.request_neon(eth_account.address, 10000)

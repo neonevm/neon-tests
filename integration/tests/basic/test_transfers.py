@@ -4,6 +4,7 @@ import time
 import typing as tp
 
 import allure
+import eth_utils
 import pytest
 import web3
 
@@ -39,7 +40,8 @@ class TestTransfer(BaseMixin):
         initial_recipient_balance = self.get_balance_from_wei(self.recipient_account.address)
         self.send_neon(self.sender_account, self.recipient_account, transfer_amount)
         assert self.get_balance_from_wei(self.sender_account.address) < (initial_sender_balance - transfer_amount)
-        assert self.get_balance_from_wei(self.recipient_account.address) == (initial_recipient_balance + transfer_amount)
+        assert self.get_balance_from_wei(self.recipient_account.address) == (
+                initial_recipient_balance + transfer_amount)
 
     @pytest.mark.parametrize("transfer_amount", [0, 1, 10, 100])
     def test_send_erc20_token_from_one_account_to_another(self, transfer_amount: tp.Union[int, float]):
@@ -478,4 +480,101 @@ class TestTransactionsValidation(BaseMixin):
             "BigMemoryValue", "0.8.12", account=self.sender_account
         )
         bytes_amount = contract.functions.makeBigMemoryValue(13).call()
-        assert bytes_amount > 16*1024*1024
+        assert bytes_amount > 16 * 1024 * 1024
+
+    @pytest.mark.parametrize("amount", [eth_utils.denoms.gwei, eth_utils.denoms.gwei + eth_utils.denoms.gwei * 0.5])
+    def test_transfer_gweis(self, amount):
+        sender = self.create_account_with_balance(1)
+        recipient = self.create_account()
+        sender_balance_before = self.web3_client.eth.get_balance(sender.address)
+        recipient_balance_before = self.web3_client.eth.get_balance(recipient.address)
+
+        transaction = self.create_tx_object(sender=sender.address,
+                                            recipient=recipient.address,
+                                            amount=web3.Web3.fromWei(amount, "ether"))
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender.key)
+
+        params = [signed_tx.rawTransaction.hex()]
+        transaction = self.proxy_api.send_rpc("eth_sendRawTransaction", params)["result"]
+
+        self.wait_transaction_accepted(transaction)
+        self.proxy_api.send_rpc("eth_getTransactionReceipt", [transaction])
+        sender_balance_after = self.web3_client.eth.get_balance(sender.address)
+        recipient_balance_after = self.web3_client.eth.get_balance(recipient.address)
+
+        assert sender_balance_after < sender_balance_before - amount
+        assert recipient_balance_after == recipient_balance_before + amount
+
+
+class TestNonce(BaseMixin):
+    TRANSFER_CNT = 25
+
+    def make_tx_object(self, amount=10):
+        transaction = {
+            "from": self.sender_account.address,
+            "to": self.recipient_account.address,
+            "value": amount,
+            "gasPrice": self.web3_client.gas_price()
+        }
+        transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
+        return transaction
+
+    def check_transaction_list(self, tx_hash_list):
+        for tx_hash in tx_hash_list:
+            tx_receipt = self.wait_transaction_accepted(tx_hash, timeout=30)
+            assert tx_receipt['result']['status'] == '0x1'
+
+    def test_get_receipt_sequence(self):
+        tx_hash_list = []
+        for i in range(self.TRANSFER_CNT):
+            res = self.send_neon(self.sender_account, self.recipient_account, 0.1)
+            tx_hash_list.append(res['transactionHash'].hex())
+
+        self.check_transaction_list(tx_hash_list)
+
+    def test_mono_sequence(self):
+        nonce = self.web3_client.get_nonce(self.sender_account.address)
+        transaction = self.make_tx_object()
+        tx_hash_list = []
+        for i in range(self.TRANSFER_CNT):
+            transaction['nonce'] = nonce
+            signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+            tx = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)
+            tx_hash_list.append(tx.hex())
+            nonce += 1
+
+        self.check_transaction_list(tx_hash_list)
+
+    def test_reverse_sequence(self):
+        nonce = self.web3_client.get_nonce(self.sender_account.address)
+        nonce_list = []
+        for i in range(self.TRANSFER_CNT):
+            nonce_list.insert(0, nonce)
+            nonce += 1
+        transaction = self.make_tx_object()
+
+        tx_hash_list = []
+        for nonce in nonce_list:
+            transaction['nonce'] = nonce
+            signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+            tx = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)
+            tx_hash_list.append(tx.hex())
+
+        self.check_transaction_list(tx_hash_list[::-1])
+
+    def test_random_sequence(self):
+        nonce = self.web3_client.get_nonce(self.sender_account.address)
+        nonce_list = []
+        for i in range(self.TRANSFER_CNT):
+            nonce_list.append(nonce)
+            nonce += 1
+        random.shuffle(nonce_list)
+        transaction = self.make_tx_object()
+        tx_hash_list = []
+        for nonce in nonce_list:
+            transaction['nonce'] = nonce
+            signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
+            tx = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)
+            tx_hash_list.append(tx.hex())
+
+        self.check_transaction_list(tx_hash_list)

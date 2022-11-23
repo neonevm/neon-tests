@@ -11,6 +11,8 @@ boto3==1.21.40
 pysha3>=1.0.2
 tabulate>=0.8.10
 pytest-timeout==2.1.0
+pytest-xdist[psutil]
+pytest-timeout
 
 # deps for web3
 aiohttp>=3.7.4.post0,<4

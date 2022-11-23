@@ -27,10 +27,10 @@ NEON_AIRDROP_AMOUNT = 10_000
 def pytest_collection_modifyitems(config, items):
     deselected_items = []
     selected_items = []
-    if config.getoption("--network") == 'devnet':
-        deselected_mark = 'only_stands'
+    if config.getoption("--network") == "devnet":
+        deselected_mark = "only_stands"
     else:
-        deselected_mark = 'only_devnet'
+        deselected_mark = "only_devnet"
 
     for item in items:
         if item.get_closest_marker(deselected_mark):
@@ -107,14 +107,14 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
     start_neon_balance = operator.get_neon_balance()
     start_sol_balance = operator.get_solana_balance()
     with allure.step(
-            f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
+        f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
     ):
         pass
     yield acc
     end_neon_balance = operator.get_neon_balance()
     end_sol_balance = operator.get_solana_balance()
     with allure.step(
-            f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
+        f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
     ):
         pass
     with allure.step(f"Account end balance: {web3_client.get_balance(acc)} NEON"):
@@ -124,8 +124,15 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
 @pytest.fixture(scope="session")
 def erc20_spl(web3_client: NeonWeb3Client, faucet, pytestconfig: Config, sol_client):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
-    erc20 = ERC20Wrapper(web3_client, faucet, f"Test {symbol}", symbol, sol_client, mintable=False,
-                         evm_loader_id=pytestconfig.environment.evm_loader)
+    erc20 = ERC20Wrapper(
+        web3_client,
+        faucet,
+        f"Test {symbol}",
+        symbol,
+        sol_client,
+        mintable=False,
+        evm_loader_id=pytestconfig.environment.evm_loader,
+    )
     erc20.claim(erc20.account, bytes(erc20.solana_associated_token_acc), 100000000000000)
     yield erc20
 
@@ -171,8 +178,11 @@ def multiple_actions_erc20(web3_client, faucet):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
 
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "multiple_actions_erc20", "0.8.10", acc, contract_name="multipleActionsERC20",
-        constructor_args=[f"Test {symbol}", symbol, 18]
+        "multiple_actions_erc20",
+        "0.8.10",
+        acc,
+        contract_name="multipleActionsERC20",
+        constructor_args=[f"Test {symbol}", symbol, 18],
     )
     return acc, contract
 
@@ -188,7 +198,8 @@ def nft_receiver(web3_client, faucet):
     acc = web3_client.create_account()
     faucet.request_neon(acc.address, 100)
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "erc721_receiver", "0.8.10", acc, contract_name="ERC721Receiver")
+        "erc721_receiver", "0.8.10", acc, contract_name="ERC721Receiver"
+    )
     return contract
 
 
@@ -197,7 +208,8 @@ def invalid_nft_receiver(web3_client, faucet):
     acc = web3_client.create_account()
     faucet.request_neon(acc.address, 100)
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "erc721_invalid_receiver", "0.8.10", acc, contract_name="ERC721Receiver")
+        "erc721_invalid_receiver", "0.8.10", acc, contract_name="ERC721Receiver"
+    )
     return contract
 
 

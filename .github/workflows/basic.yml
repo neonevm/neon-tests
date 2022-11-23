@@ -92,7 +92,7 @@ jobs:
         uses: ./.github/actions/requirements
       - name: "Run basic tests"
         id: basic
-        run: "./clickfile.py run basic -n ${{ env.NETWORK }}"
+        run: "./clickfile.py run basic -n ${{ env.NETWORK }} --numprocesses 4"
       - uses: actions/upload-artifact@v2
         with:
           name: "Allure results"

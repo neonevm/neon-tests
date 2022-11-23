@@ -379,12 +379,13 @@ def requirements(dep):
 @cli.command(help="Run any type of tests")
 @click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
+@click.option("--numprocesses", default=0, type=int, help="Number of parallel jobs for basic tests")
 @click.option("-a", "--amount", default=200000, help="Requested amount from faucet")
 @click.option("-u", "--users", default=8, help="Accounts numbers used in OZ tests")
 @click.option("--ui-item", default="all", type=click.Choice(["faucet", "neonpass", "all"]), help="Which UI test run")
 @click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz", "ui"]))
 @catch_traceback
-def run(name, jobs, ui_item, amount, users, network):
+def run(name, jobs, num_processes, ui_item, amount, users, network):
     if not network and name == "ui":
         network = "devnet"
     if DST_ALLURE_CATEGORIES.parent.exists():
@@ -394,6 +395,8 @@ def run(name, jobs, ui_item, amount, users, network):
         command = "py.test integration/tests/economy/test_economics.py"
     elif name == "basic":
         command = "py.test integration/tests/basic"
+        if num_processes:
+            command = f"{command} --numprocesses {num_processes}"
     elif name == "oz":
         run_openzeppelin_tests(network, jobs=int(jobs), amount=int(amount), users=int(users))
         shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)

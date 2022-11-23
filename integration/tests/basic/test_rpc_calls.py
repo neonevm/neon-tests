@@ -531,6 +531,7 @@ class TestRpcCalls(BaseMixin):
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
         self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
         params = [tx_receipt.blockHash.hex(), quantity]
+
         response = self.proxy_api.send_rpc(method="eth_getTransactionByBlockHashAndIndex", params=params)
         if raises:
             assert response['result'] is None, "Result should be None"
@@ -548,18 +549,20 @@ class TestRpcCalls(BaseMixin):
     @pytest.mark.parametrize(
         "params, raises",
         [([Tag.LATEST.value, 0], False),
-         ([Tag.EARLIEST.value, 0], False),
          (["param", 1], True),
          ([], True)])
-    @pytest.mark.xfail(reason="NDEV-803")
     def test_eth_get_transaction_by_block_number_and_index_by_tag(self, params: tp.List[tp.Union[int, str]], raises: bool):
         """Verify implemented rpc calls work eth_getTransactionByBlockNumberAndIndex"""
+
         if params:
             params = list(map(lambda i: hex(i) if isinstance(i, int) else i, params))
+            if params[0] == Tag.LATEST.value:
+                tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
+                self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
         response = self.proxy_api.send_rpc(
             method="eth_getTransactionByBlockNumberAndIndex", params=params)
         if raises:
-            assert "error" in response, "Error not in response"
+            assert "error" in response, f"Error not in response. Response : {response}"
         else:
             assert "error" not in response
             result = response["result"]

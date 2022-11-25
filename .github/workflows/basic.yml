@@ -28,7 +28,7 @@ on:
           - ubuntu-20.04
       numprocesses:
         type: choice
-        default: 8
+        default: auto
         required: true
         description: "Number of parallel jobs"
         options:
@@ -41,7 +41,7 @@ env:
   RUNNER: neon-hosted
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   SOLANA_URL: "${{ secrets.SOLANA_URL }}"
-  NUMPROCESSES: 8
+  NUMPROCESSES: auto
 
 jobs:
   prepare-env:

@@ -483,46 +483,16 @@ class TestRpcCalls(BaseMixin):
         response = self.proxy_api.send_rpc(method="eth_getBlockByNumber", params=params)
         rpc_checks.assert_block_fields(response, full_trx, None, quantity_tag == Tag.PENDING)
 
-    @pytest.mark.parametrize("quantity", ["0x0", "0x5"])
-    def test_eth_get_transaction_by_block_number_and_index(self, quantity: str):
+    @pytest.mark.parametrize("valid_index", [True, False])
+    def test_eth_get_transaction_by_block_number_and_index(self, valid_index: bool):
         """Verify implemented rpc calls work eth_getTransactionByBlockNumberAndIndex"""
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
         self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
-        params = [hex(tx_receipt.blockNumber), quantity]
-        response = self.proxy_api.send_rpc(method="eth_getTransactionByBlockNumberAndIndex", params=params)
-        if quantity.endswith("5"):
-            assert response["result"] is None, "Result should be None"
-            return
-        assert "error" not in response
-        result = response["result"]
-        expected_hex_fields = [
-            "blockHash",
-            "blockNumber",
-            "hash",
-            "transactionIndex",
-            "type",
-            "from",
-            "nonce",
-            "gasPrice",
-            "gas",
-            "to",
-            "value",
-            "v",
-            "s",
-            "r",
-        ]
-        for field in expected_hex_fields:
-            assert rpc_checks.is_hex(result[field])
-        assert result["blockHash"] == tx_receipt.blockHash.hex()
-
-    @pytest.mark.parametrize("quantity", ["0x0", "0x5"])
-    def test_eth_get_transaction_by_block_hash_and_index(self, quantity: str):
-        """Verify implemented rpc calls work eth_getTransactionByBlockHashAndIndex"""
-        tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
-        self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
-        params = [tx_receipt.blockHash.hex(), quantity]
-        response = self.proxy_api.send_rpc(method="eth_getTransactionByBlockHashAndIndex", params=params)
-        if quantity.endswith("5"):
+        transaction_index = hex(tx_receipt.transactionIndex) if valid_index else hex(999)
+        response = self.proxy_api.send_rpc(
+            method="eth_getTransactionByBlockNumberAndIndex", params=[hex(tx_receipt.blockNumber), transaction_index]
+        )
+        if not valid_index:
             assert response["result"] is None, "Result should be None"
         else:
             assert "error" not in response
@@ -546,18 +516,20 @@ class TestRpcCalls(BaseMixin):
             for field in expected_hex_fields:
                 assert rpc_checks.is_hex(result[field])
             assert result["blockHash"] == tx_receipt.blockHash.hex()
+            assert result["from"].upper() == tx_receipt["from"].upper()
+            assert result["to"].upper() == tx_receipt["to"].upper()
 
-    @pytest.mark.parametrize(
-        "param",
-        [[Tag.LATEST.value, 0], [Tag.EARLIEST.value, 0], ["param", 1], []],
-    )
-    @pytest.mark.xfail(reason="NDEV-803")
-    def _test_eth_get_transaction_by_block_number_and_index_by_tag(self, param: tp.List[tp.Union[int, str]]):
-        """Verify implemented rpc calls work eth_getTransactionByBlockNumberAndIndex"""
-        params = list(map(lambda i: hex(i) if isinstance(i, int) else i, param)) if param else param
-        response = self.proxy_api.send_rpc(method="eth_getTransactionByBlockNumberAndIndex", params=params)
-        if not param or param[0] == "param":
-            assert "error" in response, "Error not in response"
+    @pytest.mark.parametrize("valid_index", [True, False])
+    def test_eth_get_transaction_by_block_hash_and_index(self, valid_index: bool):
+        """Verify implemented rpc calls work eth_getTransactionByBlockHashAndIndex"""
+        tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
+        self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
+        transaction_index = hex(tx_receipt.transactionIndex) if valid_index else hex(999)
+        response = self.proxy_api.send_rpc(
+            method="eth_getTransactionByBlockHashAndIndex", params=[tx_receipt.blockHash.hex(), transaction_index]
+        )
+        if not valid_index:
+            assert response["result"] is None, "Result should be None"
         else:
             assert "error" not in response
             result = response["result"]
@@ -579,6 +551,45 @@ class TestRpcCalls(BaseMixin):
             ]
             for field in expected_hex_fields:
                 assert rpc_checks.is_hex(result[field])
+            assert result["blockHash"] == tx_receipt.blockHash.hex()
+            assert result["from"].upper() == tx_receipt["from"].upper()
+            assert result["to"].upper() == tx_receipt["to"].upper()
+
+    @pytest.mark.parametrize("tag", [Tag.LATEST.value, Tag.EARLIEST.value, "param"])
+    def test_eth_get_transaction_by_block_number_and_index_by_tag(self, tag: str):
+        """Verify implemented rpc calls work eth_getTransactionByBlockNumberAndIndex"""
+        tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
+        self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
+        response = self.proxy_api.send_rpc(
+            method="eth_getTransactionByBlockNumberAndIndex", params=[tag, hex(tx_receipt.transactionIndex)]
+        )
+        if tag == "param":
+            assert "error" in response, "Error not in response"
+        else:
+            assert "error" not in response
+            result = response["result"]
+            if result:
+                expected_hex_fields = [
+                    "blockHash",
+                    "blockNumber",
+                    "hash",
+                    "transactionIndex",
+                    "type",
+                    "from",
+                    "nonce",
+                    "gasPrice",
+                    "gas",
+                    "to",
+                    "value",
+                    "v",
+                    "s",
+                    "r",
+                ]
+                for field in expected_hex_fields:
+                    assert rpc_checks.is_hex(result[field])
+                assert result["blockHash"] == tx_receipt.blockHash.hex()
+                assert result["from"].upper() == tx_receipt["from"].upper()
+                assert result["to"].upper() == tx_receipt["to"].upper()
 
 
 @allure.story("Basic: Json-RPC call tests - `eth_estimateGas`")

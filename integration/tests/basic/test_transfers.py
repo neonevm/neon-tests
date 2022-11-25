@@ -1,17 +1,16 @@
 import random
 import re
-import time
 import typing as tp
 
 import allure
+import eth_utils
 import pytest
 import web3
 
-from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin, AccountData
 from integration.tests.basic.helpers.assert_message import ErrorMessage
-from utils.consts import Unit, InputTestConstants
+from utils.consts import InputTestConstants
 from utils.helpers import gen_hash_of_block
 
 U64_MAX = 18_446_744_073_709_551_615
@@ -39,7 +38,8 @@ class TestTransfer(BaseMixin):
         initial_recipient_balance = self.get_balance_from_wei(self.recipient_account.address)
         self.send_neon(self.sender_account, self.recipient_account, transfer_amount)
         assert self.get_balance_from_wei(self.sender_account.address) < (initial_sender_balance - transfer_amount)
-        assert self.get_balance_from_wei(self.recipient_account.address) == (initial_recipient_balance + transfer_amount)
+        assert self.get_balance_from_wei(self.recipient_account.address) == (
+                initial_recipient_balance + transfer_amount)
 
     @pytest.mark.parametrize("transfer_amount", [0, 1, 10, 100])
     def test_send_erc20_token_from_one_account_to_another(self, transfer_amount: tp.Union[int, float]):
@@ -383,49 +383,6 @@ class TestTransactionsValidation(BaseMixin):
         assert "error" not in response
         assert "result" in response
 
-    def test_send_transaction_with_low_nonce_after_high(self):
-        """Check that transaction with a higher nonce is waiting for its turn in the mempool"""
-        nonce = self.web3_client.eth.get_transaction_count(self.sender_account.address) + 1
-        transaction = self.create_tx_object(nonce=nonce)
-        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
-        response_trx1 = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
-
-        time.sleep(10)  # transaction with n+1 nonce should wait when transaction with nonce = n will be accepted
-        receipt_trx1 = self.proxy_api.send_rpc(method="eth_getTransactionReceipt", params=[response_trx1["result"]])
-        assert receipt_trx1["result"] is None, "Transaction shouldn't be accepted"
-
-        transaction = self.create_tx_object(nonce=nonce - 1)
-        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
-        response_trx2 = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
-        for result in (response_trx2['result'], response_trx1['result']):
-            self.wait_transaction_accepted(result)
-            assert rpc_checks.is_hex(result)
-
-    def test_send_transaction_with_the_same_nonce_and_lower_gas(self):
-        """Check that transaction with a low gas and the same nonce can't be sent"""
-        nonce = self.web3_client.eth.get_transaction_count(self.sender_account.address) + 1
-        gas = self.web3_client.gas_price()
-        transaction = self.create_tx_object(nonce=nonce, gas_price=gas)
-        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
-        self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
-        transaction = self.create_tx_object(nonce=nonce, gas_price=gas - 1)
-        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
-        response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
-        assert ErrorMessage.REPLACEMENT_UNDERPRICED.value in response["error"]["message"]
-        assert response["error"]["code"] == -32000
-
-    def test_send_transaction_with_the_same_nonce_and_higher_gas(self):
-        """Check that transaction with higher gas and the same nonce can be sent"""
-        nonce = self.web3_client.eth.get_transaction_count(self.sender_account.address) + 1
-        gas = self.web3_client.gas_price()
-        transaction = self.create_tx_object(nonce=nonce, gas_price=gas)
-        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
-        self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
-        transaction = self.create_tx_object(nonce=nonce, gas_price=gas * 10)
-        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
-        response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
-        assert "error" not in response
-        assert "result" in response
 
     def test_send_transaction_with_small_gas_amount(self):
         """Check that transaction can't be sent if gas value is too small"""
@@ -478,4 +435,26 @@ class TestTransactionsValidation(BaseMixin):
             "BigMemoryValue", "0.8.12", account=self.sender_account
         )
         bytes_amount = contract.functions.makeBigMemoryValue(13).call()
-        assert bytes_amount > 16*1024*1024
+        assert bytes_amount > 16 * 1024 * 1024
+
+    @pytest.mark.parametrize("amount", [eth_utils.denoms.gwei, eth_utils.denoms.gwei + eth_utils.denoms.gwei * 0.5])
+    def test_transfer_gweis(self, amount):
+        sender = self.create_account_with_balance(1)
+        recipient = self.create_account()
+        sender_balance_before = self.web3_client.eth.get_balance(sender.address)
+        recipient_balance_before = self.web3_client.eth.get_balance(recipient.address)
+
+        transaction = self.create_tx_object(sender=sender.address,
+                                            recipient=recipient.address,
+                                            amount=web3.Web3.fromWei(amount, "ether"))
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender.key)
+
+        params = [signed_tx.rawTransaction.hex()]
+        transaction = self.proxy_api.send_rpc("eth_sendRawTransaction", params)["result"]
+
+        self.wait_transaction_accepted(transaction)
+        sender_balance_after = self.web3_client.eth.get_balance(sender.address)
+        recipient_balance_after = self.web3_client.eth.get_balance(recipient.address)
+
+        assert sender_balance_after < sender_balance_before - amount
+        assert recipient_balance_after == recipient_balance_before + amount

@@ -1,4 +1,5 @@
 # coding: utf-8
+import re
 import typing as tp
 from enum import Enum
 
@@ -590,6 +591,27 @@ class TestRpcCalls(BaseMixin):
                 assert result["blockHash"] == tx_receipt.blockHash.hex()
                 assert result["from"].upper() == tx_receipt["from"].upper()
                 assert result["to"].upper() == tx_receipt["to"].upper()
+
+    def test_get_evm_params(self):
+        response = self.proxy_api.send_rpc(method="neon_getEvmParams", params=[])
+
+        expected_fields = ['NEON_GAS_LIMIT_MULTIPLIER_NO_CHAINID', 'NEON_POOL_SEED', 'NEON_COMPUTE_BUDGET_UNITS',
+                           'NEON_SEED_VERSION', 'NEON_EVM_STEPS_LAST_ITERATION_MAX', 'NEON_PAYMENT_TO_DEPOSIT',
+                           'NEON_COMPUTE_UNITS', 'NEON_REQUEST_UNITS_ADDITIONAL_FEE', 'NEON_PKG_VERSION',
+                           'NEON_HEAP_FRAME',
+                           'NEON_ACCOUNT_SEED_VERSION', 'NEON_TOKEN_MINT', 'NEON_TREASURY_POOL_SEED',
+                           'NEON_STORAGE_ENTRIES_IN_CONTRACT_ACCOUNT', 'NEON_EVM_STEPS_MIN', 'NEON_PAYMENT_TO_TREASURE',
+                           'NEON_OPERATOR_PRIORITY_SLOTS', 'NEON_STATUS_NAME', 'NEON_REVISION', 'NEON_ADDITIONAL_FEE',
+                           'NEON_CHAIN_ID', 'NEON_COMPUTE_BUDGET_HEAP_FRAME', 'NEON_POOL_COUNT', 'NEON_HOLDER_MSG_SIZE',
+                           'NEON_TREASURY_POOL_COUNT', 'NEON_TOKEN_MINT_DECIMALS', 'NEON_EVM_ID']
+        for field in expected_fields:
+            assert field in response["result"], f"Field {field} is not in response: {response}"
+
+    def test_neon_cli_version(self):
+        response = self.proxy_api.send_rpc(method="neon_cli_version", params=[])
+        pattern = r"Neon-cli/[vt]\d{1,2}.\d{1,2}.\d{1,2}.*"
+        assert re.match(pattern, response["result"]), \
+            f"Version format is not correct. Pattern: {pattern}; Response: {response}"
 
 
 @allure.story("Basic: Json-RPC call tests - `eth_estimateGas`")

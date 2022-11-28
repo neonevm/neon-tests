@@ -60,7 +60,8 @@ def web3_client(pytestconfig: Config) -> NeonWeb3Client:
 
 @pytest.fixture(scope="session", autouse=True)
 def sol_client(pytestconfig: Config):
-    client = SolanaClient(pytestconfig.environment.solana_url, pytestconfig.environment.account_seed_version)
+    client = SolanaClient(pytestconfig.environment.solana_url, pytestconfig.environment.account_seed_version,
+                          pytestconfig.environment.evm_loader)
     return client
 
 

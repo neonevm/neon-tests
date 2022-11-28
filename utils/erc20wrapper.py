@@ -111,7 +111,7 @@ class ERC20Wrapper:
         )
         token_mint.approve(
             source=assoc_addr,
-            delegate=self.sol_client.get_neon_account_address(self.account.address, self.evm_loader_id),
+            delegate=self.sol_client.get_neon_account_address(self.account.address),
             owner=owner.public_key,
             amount=INIT_TOKEN_AMOUNT,
         )

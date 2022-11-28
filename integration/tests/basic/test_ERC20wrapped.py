@@ -443,7 +443,7 @@ class TestERC20wrapperContract(BaseMixin):
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_claim(self, erc20_spl_mintable, sol_client, solana_associated_token_mintable_erc20,
-                   solana_associated_token_erc20, erc20_spl, pytestconfig, mintable):
+                   solana_associated_token_erc20, erc20_spl, mintable):
         if mintable:
             acc, token_mint, solana_address = solana_associated_token_mintable_erc20
             erc20 = erc20_spl_mintable
@@ -457,7 +457,7 @@ class TestERC20wrapperContract(BaseMixin):
         trx.add(instructions.approve(instructions.ApproveParams(
             program_id=TOKEN_PROGRAM_ID,
             source=solana_address,
-            delegate=sol_client.get_neon_account_address(erc20.account.address, pytestconfig.environment.evm_loader),
+            delegate=sol_client.get_neon_account_address(erc20.account.address),
             owner=acc.public_key,
             amount=sent_amount,
             signers=[],
@@ -487,7 +487,7 @@ class TestERC20wrapperContract(BaseMixin):
         trx.add(instructions.approve(instructions.ApproveParams(
             program_id=TOKEN_PROGRAM_ID,
             source=solana_address,
-            delegate=sol_client.get_neon_account_address(erc20.account.address, pytestconfig.environment.evm_loader),
+            delegate=sol_client.get_neon_account_address(erc20.account.address),
             owner=acc.public_key,
             amount=sent_amount,
             signers=[],

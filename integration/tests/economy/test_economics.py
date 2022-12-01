@@ -1,3 +1,4 @@
+import json
 import os
 from decimal import Decimal, getcontext
 
@@ -191,21 +192,19 @@ class TestEconomics(BaseTests):
 
         self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
 
-    @pytest.mark.skip(reason="Update withdraw instruction")
     def test_withdraw_neon_unexisting_ata(self, pytestconfig: Config):
         sol_user = SolanaAccount()
-        self.sol_client.request_airdrop(sol_user.public_key, 5 * LAMPORT_PER_SOL)
+        self.sol_client.request_airdrop(
+            sol_user.public_key, 5 * LAMPORT_PER_SOL)
 
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        contract_interface = helpers.get_contract_interface("NeonToken.sol", "0.8.10")
-        contract = self.web3_client.eth.contract(
-            address=pytestconfig.environment.neon_erc20wrapper_address, abi=contract_interface["abi"]
-        )
-
         user_neon_balance_before = self.web3_client.get_balance(self.acc)
         move_amount = self.web3_client._web3.toWei(5, "ether")
+
+        contract, _ = self.web3_client.deploy_and_get_contract(
+            "NeonToken", "0.8.10", account=self.acc)
 
         instruction_tx = contract.functions.withdraw(bytes(sol_user.public_key)).buildTransaction(
             {
@@ -216,18 +215,15 @@ class TestEconomics(BaseTests):
             }
         )
         receipt = self.web3_client.send_transaction(self.acc, instruction_tx)
-
         assert receipt["status"] == 1
-        assert (user_neon_balance_before - self.web3_client.get_balance(self.acc)) > 5
-        sol_balances = self.sol_client.get_token_accounts_by_owner(
-            sol_user.public_key,
-            TokenAccountOpts(mint=pytestconfig.environment.spl_neon_mint, encoding="jsonParsed"),
-            Commitment("confirmed"),
-        )["result"]
 
-        assert int(sol_balances["value"][0]["account"]["data"]["parsed"]["info"]["tokenAmount"]["amount"]) == int(
-            move_amount / 1_000_000_000
-        )
+        assert (user_neon_balance_before - self.web3_client.get_balance(self.acc)) > 5
+       
+        balance = self.sol_client.get_account_info_json_parsed(
+            sol_user.public_key,
+            commitment=Commitment("confirmed")
+            )
+        assert int(balance.value.lamports) == int(move_amount / 1_000_000_000)
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
@@ -235,13 +231,14 @@ class TestEconomics(BaseTests):
         assert sol_balance_before > sol_balance_after
         assert neon_balance_after > neon_balance_before
 
-        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
+        self.assert_profit(sol_balance_before - sol_balance_after,
+                           neon_balance_after - neon_balance_before)
 
-    @pytest.mark.skip(reason="Update withdraw instruction")
     def test_withdraw_neon_existing_ata(self, pytestconfig):
         neon_mint = PublicKey(pytestconfig.environment.spl_neon_mint)
         sol_user = SolanaAccount()
-        self.sol_client.request_airdrop(sol_user.public_key, 5 * LAMPORT_PER_SOL)
+        self.sol_client.request_airdrop(
+            sol_user.public_key, 5 * LAMPORT_PER_SOL)
 
         for _ in range(6):
             if self.sol_client.get_balance(sol_user.public_key) != 0:
@@ -259,13 +256,11 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        contract_interface = helpers.get_contract_interface("NeonToken.sol", "0.8.10")
-        contract = self.web3_client.eth.contract(
-            address=pytestconfig.environment.neon_erc20wrapper_address, abi=contract_interface["abi"]
-        )
-
         user_neon_balance_before = self.web3_client.get_balance(self.acc)
         move_amount = self.web3_client._web3.toWei(5, "ether")
+
+        contract, _ = self.web3_client.deploy_and_get_contract(
+            "NeonToken", "0.8.10", account=self.acc)
 
         instruction_tx = contract.functions.withdraw(bytes(sol_user.public_key)).buildTransaction(
             {
@@ -276,18 +271,17 @@ class TestEconomics(BaseTests):
             }
         )
         receipt = self.web3_client.send_transaction(self.acc, instruction_tx)
-
         assert receipt["status"] == 1
-        assert (user_neon_balance_before - self.web3_client.get_balance(self.acc)) > 5
-        assert (
-                int(
-                    self.sol_client.get_token_account_balance(dest_token_acc, Commitment("confirmed"))["result"][
-                        "value"][
-                        "amount"
-                    ]
-                )
-                == move_amount / 1_000_000_000
+
+        assert (user_neon_balance_before -
+                self.web3_client.get_balance(self.acc)) > 5
+
+        balances = json.loads(
+            self.sol_client.get_token_account_balance(
+                dest_token_acc,
+                Commitment("confirmed")).to_json()
         )
+        assert int(balances["result"]["value"]["amount"]) == int(move_amount / 1_000_000_000)
 
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()

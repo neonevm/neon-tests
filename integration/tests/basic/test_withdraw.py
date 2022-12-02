@@ -1,5 +1,3 @@
-import time
-
 import allure
 import pytest
 from _pytest.config import Config
@@ -11,6 +9,7 @@ from spl.token.client import Token as SplToken
 from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import (create_associated_token_account,
                                     get_associated_token_address)
+from utils.helpers import wait_condition
 from web3 import exceptions as web3_exceptions
 
 from ..base import BaseTests
@@ -77,11 +76,8 @@ class TestWithdraw(BaseTests):
         self.sol_client.request_airdrop(
             dest_acc.public_key, 5 * LAMPORT_PER_SOL)
 
-        started = time.time()
-        while (time.time() - started) < 60:
-            if self.sol_client.get_balance(dest_acc.public_key) != 0:
-                break
-            time.sleep(1)
+        wait_condition(lambda: self.sol_client.get_balance(
+            dest_acc.public_key) != 0)
 
         trx = Transaction()
         trx.add(

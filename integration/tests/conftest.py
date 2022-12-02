@@ -211,6 +211,15 @@ def multiple_actions_erc721(web3_client, faucet):
     return acc, contract
 
 
+@pytest.fixture(scope="class")
+def withdraw_contract(web3_client, faucet):
+    acc = web3_client.create_account()
+    faucet.request_neon(acc.address, 100)
+    contract, _ = web3_client.deploy_and_get_contract(
+        "NeonToken", "0.8.10", account=acc)
+    return contract
+
+
 @pytest.fixture(scope="function")
 def new_account(web3_client, faucet):
     new_acc = web3_client.create_account()

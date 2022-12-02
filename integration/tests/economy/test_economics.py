@@ -240,10 +240,11 @@ class TestEconomics(BaseTests):
         self.sol_client.request_airdrop(
             sol_user.public_key, 5 * LAMPORT_PER_SOL)
 
-        for _ in range(6):
+        started = time.time()
+        while (time.time() - started) < 60:
             if self.sol_client.get_balance(sol_user.public_key) != 0:
                 break
-            time.sleep(10)
+            time.sleep(1)
 
         trx = Transaction()
         trx.add(create_associated_token_account(sol_user.public_key, sol_user.public_key, neon_mint))

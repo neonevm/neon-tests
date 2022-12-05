@@ -239,8 +239,7 @@ class TestEconomics(BaseTests):
         self.assert_profit(sol_balance_before - sol_balance_after,
                            neon_balance_after - neon_balance_before)
 
-    def test_withdraw_neon_existing_ata(self, pytestconfig):
-        neon_mint = PublicKey(pytestconfig.environment.spl_neon_mint)
+    def test_withdraw_neon_existing_ata(self, pytestconfig, neon_mint):
         sol_user = SolanaAccount()
         self.sol_client.request_airdrop(
             sol_user.public_key, 5 * LAMPORT_PER_SOL)

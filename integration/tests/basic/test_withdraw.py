@@ -31,9 +31,8 @@ class TestWithdraw(BaseTests):
         receipt = self.web3_client.send_transaction(self.acc, instruction_tx)
         assert receipt["status"] == 1
 
-    def test_success_withdraw_to_non_existing_account(self, pytestconfig: Config, withdraw_contract):
+    def test_success_withdraw_to_non_existing_account(self, pytestconfig: Config, withdraw_contract, neon_mint):
         """Should successfully withdraw NEON tokens to previously non-existing Associated Token Account"""
-        neon_mint = PublicKey(pytestconfig.environment.spl_neon_mint)
         dest_acc = SolanaAccount()
         self.sol_client.request_airdrop(
             dest_acc.public_key, 5 * LAMPORT_PER_SOL)
@@ -69,9 +68,8 @@ class TestWithdraw(BaseTests):
         assert int(destination_balance_after.value.amount) == int(
             move_amount / 1_000_000_000)
 
-    def test_success_withdraw_to_existing_account(self, pytestconfig: Config, withdraw_contract):
+    def test_success_withdraw_to_existing_account(self, pytestconfig: Config, withdraw_contract, neon_mint):
         """Should succesfully withdraw NEON tokens to existing Associated Token Account"""
-        neon_mint = PublicKey(pytestconfig.environment.spl_neon_mint)
         dest_acc = SolanaAccount()
         self.sol_client.request_airdrop(
             dest_acc.public_key, 5 * LAMPORT_PER_SOL)
@@ -119,8 +117,7 @@ class TestWithdraw(BaseTests):
         )
         assert int(destination_balance_after.value.amount) == move_amount_galan
 
-    def test_failed_withdraw_non_divisible_amount(self, pytestconfig: Config, withdraw_contract):
-        neon_mint = PublicKey(pytestconfig.environment.spl_neon_mint)
+    def test_failed_withdraw_non_divisible_amount(self, pytestconfig: Config, withdraw_contract, neon_mint):
         dest_acc = SolanaAccount()
         self.sol_client.request_airdrop(
             dest_acc.public_key, 5 * LAMPORT_PER_SOL)
@@ -152,8 +149,7 @@ class TestWithdraw(BaseTests):
             destination_balance_after.value
 
     @pytest.mark.parametrize('move_amount', [11000, 10000])
-    def test_failed_withdraw_insufficient_balance(self, pytestconfig: Config, move_amount, withdraw_contract):
-        neon_mint = PublicKey(pytestconfig.environment.spl_neon_mint)
+    def test_failed_withdraw_insufficient_balance(self, pytestconfig: Config, move_amount, withdraw_contract, neon_mint):
         dest_acc = SolanaAccount()
         self.sol_client.request_airdrop(
             dest_acc.public_key, 1 * LAMPORT_PER_SOL)

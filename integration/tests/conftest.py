@@ -211,7 +211,7 @@ def multiple_actions_erc721(web3_client, faucet):
     return acc, contract
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="session")
 def withdraw_contract(web3_client, faucet):
     acc = web3_client.create_account()
     faucet.request_neon(acc.address, 100)
@@ -225,3 +225,9 @@ def new_account(web3_client, faucet):
     new_acc = web3_client.create_account()
     faucet.request_neon(new_acc.address, 100)
     yield new_acc
+
+
+@pytest.fixture(scope="session")
+def neon_mint(pytestconfig: Config):
+    neon_mint = PublicKey(pytestconfig.environment.spl_neon_mint)
+    return neon_mint

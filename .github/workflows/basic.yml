@@ -3,7 +3,7 @@ name: "Basic tests"
 on:
   schedule:
     - cron: "0 23,2 * * *"
-    - cron: "0 0,4,8,12,16,20 * * *"
+#    - cron: "0 0,4,8,12,16,20 * * *"
   pull_request:
     types: [ opened, reopened, synchronize ]
   workflow_dispatch:

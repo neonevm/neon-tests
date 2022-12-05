@@ -41,7 +41,7 @@ env:
   RUNNER: neon-hosted
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   SOLANA_URL: "${{ secrets.SOLANA_URL }}"
-  NUMPROCESSES: auto
+  NUMPROCESSES: 4
 
 jobs:
   prepare-env:

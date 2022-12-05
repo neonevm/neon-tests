@@ -47,7 +47,7 @@ The function of this service is so route requests between Tracer API and Neon Pr
 class RPCType(enum.Enum):
 
     logs = ["eth_getLogs"]
-    store = ["eth_getStorageAt"]
+    store = ["eth_getStorageAt", "eth_call"]
     transfer = ["eth_getBalance", "eth_getTransactionCount"]
 
     @classmethod
@@ -340,11 +340,11 @@ class EthGetLogs(BaseEthRPCATasksSet):
             assert transaction[req_type].lower() == response[0][req_type]
         if req_type == "blockHash":
             assert any(transaction[req_type].lower() == r[req_type] for r in response)
-        assert all(transaction["contractAddress"].lower() == r["address"] for r in response)
+        assert all(transaction["contract"]["address"].lower() == r["address"] for r in response)
 
     def _do_call(self, method: str, req_type: str) -> tp.Dict:
         transaction = self._get_random_transaction(method)
-        filter_obj = {"address": transaction["contractAddress"]}
+        filter_obj = {"address": transaction["contract"]["address"]}
         if req_type == "blockNumber":
             block = transaction[req_type]
             kwargs = {"toBlock": block, "fromBlock": block}
@@ -367,6 +367,53 @@ class EthGetLogs(BaseEthRPCATasksSet):
     def task_eth_get_logs_by_num(self) -> tp.Dict:
         """the eth_getLogs method by blockNumber"""
         self._do_call(method="eth_getLogs", req_type="blockNumber")
+
+
+@tag("call")
+class EthCall(BaseEthRPCATasksSet):
+    """task set measures the maximum request rate for the eth_call method"""
+
+    _deploy_contract_locker = gevent.threading.Lock()
+    _deploy_contract_done = False
+    _contract: tp.Optional["web3._utils.datatypes.Contract"] = None
+    method = "eth_call"
+
+    def deploy_contract(self):
+        """Deploy once for all spawned users"""
+        EthCall._deploy_contract_done = True
+        transaction = self._get_random_transaction(self.method)
+        contract = self.web3_client.eth.contract(
+            address=transaction["contract"]["address"], abi=transaction["contract"]["abi"]
+        )
+        self.log.info(f"deploy contract.")
+        if not contract:
+            self.log.error(f"contract deployment failed.")
+            EthCall._deploy_contract_done = False
+            return
+        EthCall._contract = contract
+
+    def on_start(self) -> None:
+        """on_start is called when a Locust start before any task is scheduled"""
+        super(EthCall, self).on_start()
+        # setup class once
+        with self._deploy_contract_locker:
+            if not EthCall._deploy_contract_done:
+                self.deploy_contract()
+
+    @task
+    def _do_call(self, req_type: str, args: tp.Optional[tp.List] = None, kwargs: tp.Optional[tp.Dict] = None) -> None:
+        """Store random int to contract"""
+        contract = EthCall._contract
+        if contract:
+            self.log.info(f"Retrieve data from contract contract by {self.account.address[:8]}.")
+            tx = contract.functions.store().buildTransaction(
+                {
+                    "nonce": self.web3_client.eth.get_transaction_count(self.account.address),
+                    "gasPrice": self.web3_client.gas_price(),
+                }
+            )
+
+        self.log.info(f"no `storage` contracts found, data store canceled.")
 
 
 class EthRPCAPICallUsers(User):

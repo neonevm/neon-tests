@@ -595,7 +595,7 @@ class ERC20BaseTasksSet(NeonProxyTasksSet):
             tx_receipt = self.web3_client.send_erc20(self.account, recipient, 1, contract.address, abi=contract.abi)
             if tx_receipt:
                 tx_receipt = dict(tx_receipt)  # AttributeDict -> dict
-                tx_receipt["contractAddress"] = contract.address
+                tx_receipt.update({"contract": {"address": contract.address}})
                 self._buffer[self.account.address][contract.address]["amount"] -= 1
                 recipient_contracts = self._buffer.get(recipient.address, {})
                 recipient_contract = recipient_contracts.get(contract.address, {})

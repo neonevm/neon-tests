@@ -549,7 +549,7 @@ def prepare(credentials, host, users, spawn_rate, run_time, tag):
     if credentials:
         command += f" --credentials={credentials}"
     else:
-        command += f" --credentials={base_path.absolute()}/loadtesting/tracerapi/envs.json"
+        command += f" --credentials={base_path.absolute()}/envs.json"
     if run_time:
         command += f" --run-time={run_time}"
     else:

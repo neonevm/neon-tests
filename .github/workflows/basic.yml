@@ -28,7 +28,7 @@ on:
           - ubuntu-20.04
       numprocesses:
         type: choice
-        default: auto
+        default: 4
         required: true
         description: "Number of parallel jobs"
         options:

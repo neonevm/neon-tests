@@ -18,7 +18,7 @@ from utils.helpers import gen_hash_of_block, generate_text, wait_condition
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 INCORRECT_ADDRESS_PARAMS = (
-    "address, expected_exception",
+    "block_len, expected_exception",
     [(20, web3.exceptions.InvalidAddress), (5, web3.exceptions.ValidationError)],
 )
 
@@ -110,10 +110,10 @@ class TestERC721(BaseMixin):
         assert mint_amount == balance - balance_before
 
     @pytest.mark.parametrize(*INCORRECT_ADDRESS_PARAMS)
-    def test_balanceOf_incorrect_address(self, erc721, address, expected_exception):
-        address = gen_hash_of_block(address)
+    def test_balanceOf_incorrect_address(self, erc721, block_len, expected_exception):
+        block_len = gen_hash_of_block(block_len)
         with pytest.raises(expected_exception):
-            erc721.contract.functions.balanceOf(address).call()
+            erc721.contract.functions.balanceOf(block_len).call()
 
     def test_ownerOf(self, erc721, token_id):
         owner = erc721.contract.functions.ownerOf(token_id).call()
@@ -162,16 +162,16 @@ class TestERC721(BaseMixin):
             erc721.transfer_from(erc721.account.address, erc721.account.address, token_id, erc721.account)
 
     @pytest.mark.parametrize(*INCORRECT_ADDRESS_PARAMS)
-    def test_transferFrom_incorrect_address_from(self, erc721, token_id, address, expected_exception):
-        address = gen_hash_of_block(address)
+    def test_transferFrom_incorrect_address_from(self, erc721, token_id, block_len, expected_exception):
+        block_len = gen_hash_of_block(block_len)
         with pytest.raises(expected_exception):
-            erc721.transfer_from(address, erc721.account.address, token_id, erc721.account)
+            erc721.transfer_from(block_len, erc721.account.address, token_id, erc721.account)
 
     @pytest.mark.parametrize(*INCORRECT_ADDRESS_PARAMS)
-    def test_transferFrom_incorrect_address_to(self, erc721, token_id, address, expected_exception):
-        address = gen_hash_of_block(address)
+    def test_transferFrom_incorrect_address_to(self, erc721, token_id, block_len, expected_exception):
+        block_len = gen_hash_of_block(block_len)
         with pytest.raises(expected_exception):
-            erc721.transfer_from(erc721.account.address, address, token_id, erc721.account)
+            erc721.transfer_from(erc721.account.address, block_len, token_id, erc721.account)
 
     @pytest.mark.parametrize(*NOT_ENOUGH_GAS_PARAMS)
     def test_transferFrom_no_enough_gas(self, erc721, token_id, param, msg):
@@ -201,10 +201,10 @@ class TestERC721(BaseMixin):
             erc721.approve(erc721.account.address, token_id, erc721.account)
 
     @pytest.mark.parametrize(*INCORRECT_ADDRESS_PARAMS)
-    def test_approve_incorrect_address(self, erc721, token_id, address, expected_exception):
-        address = gen_hash_of_block(address)
+    def test_approve_incorrect_address(self, erc721, token_id, block_len, expected_exception):
+        block_len = gen_hash_of_block(block_len)
         with pytest.raises(expected_exception):
-            erc721.approve(address, token_id, erc721.account)
+            erc721.approve(block_len, token_id, erc721.account)
 
     def test_approve_no_owner(self, erc721, token_id, new_account):
         with pytest.raises(
@@ -313,10 +313,10 @@ class TestERC721(BaseMixin):
         assert balance_usr2_before - balance_usr2_after == -1
 
     @pytest.mark.parametrize(*INCORRECT_ADDRESS_PARAMS)
-    def test_setApprovalForAll_incorrect_address(self, erc721, address, expected_exception):
-        address = gen_hash_of_block(address)
+    def test_setApprovalForAll_incorrect_address(self, erc721, block_len, expected_exception):
+        block_len = gen_hash_of_block(block_len)
         with pytest.raises(expected_exception):
-            erc721.set_approval_for_all(address, True, erc721.account)
+            erc721.set_approval_for_all(block_len, True, erc721.account)
 
     def test_setApprovalForAll_approve_to_caller(self, erc721, token_id):
         with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.APPROVE_TO_CALLER_ERC721.value):
@@ -336,16 +336,16 @@ class TestERC721(BaseMixin):
         assert not is_approved
 
     @pytest.mark.parametrize(*INCORRECT_ADDRESS_PARAMS)
-    def test_isApprovedForAll_incorrect_owner_address(self, erc721, address, expected_exception):
-        address = gen_hash_of_block(address)
+    def test_isApprovedForAll_incorrect_owner_address(self, erc721, block_len, expected_exception):
+        block_len = gen_hash_of_block(block_len)
         with pytest.raises(expected_exception):
-            erc721.contract.functions.isApprovedForAll(address, erc721.account.address).call()
+            erc721.contract.functions.isApprovedForAll(block_len, erc721.account.address).call()
 
     @pytest.mark.parametrize(*INCORRECT_ADDRESS_PARAMS)
-    def test_isApprovedForAll_incorrect_operator_address(self, erc721, address, expected_exception):
-        address = gen_hash_of_block(address)
+    def test_isApprovedForAll_incorrect_operator_address(self, erc721, block_len, expected_exception):
+        block_len = gen_hash_of_block(block_len)
         with pytest.raises(expected_exception):
-            erc721.contract.functions.isApprovedForAll(erc721.account.address, address).call()
+            erc721.contract.functions.isApprovedForAll(erc721.account.address, block_len).call()
 
     def test_getApproved(self, erc721, token_id, new_account):
         erc721.approve(new_account.address, token_id, erc721.account)

@@ -100,24 +100,21 @@ class TestRpcCalls(BaseMixin):
 
     _erc20_contract: tp.Optional[tp.Any] = None
 
-    def _deploy_erc20_contract(self) -> tp.Any:
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "ERC20", "0.6.6", self.sender_account, constructor_args=[1000]
-        )
-        tx_receipt = self.web3_client.send_erc20(
-            self.sender_account,
-            self.recipient_account.address,
-            amount=1,
-            address=contract_deploy_tx["contractAddress"],
-            abi=contract.abi,
-        )
-        self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
-        return contract, contract_deploy_tx, tx_receipt
-
     @pytest.fixture
     def erc20_contract(self) -> tp.Any:
         if not TestRpcCalls._erc20_contract:
-            TestRpcCalls._erc20_contract = self._deploy_erc20_contract()
+            contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
+                "ERC20", "0.6.6", self.sender_account, constructor_args=[1000]
+            )
+            tx_receipt = self.web3_client.send_erc20(
+                self.sender_account,
+                self.recipient_account.address,
+                amount=1,
+                address=contract_deploy_tx["contractAddress"],
+                abi=contract.abi,
+            )
+            self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
+            TestRpcCalls._erc20_contract = contract, contract_deploy_tx, tx_receipt
         return TestRpcCalls._erc20_contract
 
     def test_eth_call_without_params(self):
@@ -595,23 +592,44 @@ class TestRpcCalls(BaseMixin):
     def test_get_evm_params(self):
         response = self.proxy_api.send_rpc(method="neon_getEvmParams", params=[])
 
-        expected_fields = ['NEON_GAS_LIMIT_MULTIPLIER_NO_CHAINID', 'NEON_POOL_SEED', 'NEON_COMPUTE_BUDGET_UNITS',
-                           'NEON_SEED_VERSION', 'NEON_EVM_STEPS_LAST_ITERATION_MAX', 'NEON_PAYMENT_TO_DEPOSIT',
-                           'NEON_COMPUTE_UNITS', 'NEON_REQUEST_UNITS_ADDITIONAL_FEE', 'NEON_PKG_VERSION',
-                           'NEON_HEAP_FRAME',
-                           'NEON_ACCOUNT_SEED_VERSION', 'NEON_TOKEN_MINT', 'NEON_TREASURY_POOL_SEED',
-                           'NEON_STORAGE_ENTRIES_IN_CONTRACT_ACCOUNT', 'NEON_EVM_STEPS_MIN', 'NEON_PAYMENT_TO_TREASURE',
-                           'NEON_OPERATOR_PRIORITY_SLOTS', 'NEON_STATUS_NAME', 'NEON_REVISION', 'NEON_ADDITIONAL_FEE',
-                           'NEON_CHAIN_ID', 'NEON_COMPUTE_BUDGET_HEAP_FRAME', 'NEON_POOL_COUNT', 'NEON_HOLDER_MSG_SIZE',
-                           'NEON_TREASURY_POOL_COUNT', 'NEON_TOKEN_MINT_DECIMALS', 'NEON_EVM_ID']
+        expected_fields = [
+            "NEON_GAS_LIMIT_MULTIPLIER_NO_CHAINID",
+            "NEON_POOL_SEED",
+            "NEON_COMPUTE_BUDGET_UNITS",
+            "NEON_SEED_VERSION",
+            "NEON_EVM_STEPS_LAST_ITERATION_MAX",
+            "NEON_PAYMENT_TO_DEPOSIT",
+            "NEON_COMPUTE_UNITS",
+            "NEON_REQUEST_UNITS_ADDITIONAL_FEE",
+            "NEON_PKG_VERSION",
+            "NEON_HEAP_FRAME",
+            "NEON_ACCOUNT_SEED_VERSION",
+            "NEON_TOKEN_MINT",
+            "NEON_TREASURY_POOL_SEED",
+            "NEON_STORAGE_ENTRIES_IN_CONTRACT_ACCOUNT",
+            "NEON_EVM_STEPS_MIN",
+            "NEON_PAYMENT_TO_TREASURE",
+            "NEON_OPERATOR_PRIORITY_SLOTS",
+            "NEON_STATUS_NAME",
+            "NEON_REVISION",
+            "NEON_ADDITIONAL_FEE",
+            "NEON_CHAIN_ID",
+            "NEON_COMPUTE_BUDGET_HEAP_FRAME",
+            "NEON_POOL_COUNT",
+            "NEON_HOLDER_MSG_SIZE",
+            "NEON_TREASURY_POOL_COUNT",
+            "NEON_TOKEN_MINT_DECIMALS",
+            "NEON_EVM_ID",
+        ]
         for field in expected_fields:
             assert field in response["result"], f"Field {field} is not in response: {response}"
 
     def test_neon_cli_version(self):
         response = self.proxy_api.send_rpc(method="neon_cli_version", params=[])
         pattern = r"Neon-cli/[vt]\d{1,2}.\d{1,2}.\d{1,2}.*"
-        assert re.match(pattern, response["result"]), \
-            f"Version format is not correct. Pattern: {pattern}; Response: {response}"
+        assert re.match(
+            pattern, response["result"]
+        ), f"Version format is not correct. Pattern: {pattern}; Response: {response}"
 
 
 @allure.story("Basic: Json-RPC call tests - `eth_estimateGas`")

@@ -58,6 +58,9 @@ class NeonWeb3Client:
     def get_block_number(self):
         return self._web3.eth.get_block_number()
 
+    def get_block_number_by_id(self, block_identifier):
+        return self._web3.eth.get_block(block_identifier)
+
     def get_nonce(self, address: tp.Union[eth_account.signers.local.LocalAccount, str], block: str = "pending"):
         address = address if isinstance(address, str) else address.address
         return self._web3.eth.get_transaction_count(address, block)

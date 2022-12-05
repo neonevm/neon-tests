@@ -317,7 +317,7 @@ class TestERC20wrapperContract(BaseMixin):
         balance_acc1_before = erc20.contract.functions.balanceOf(erc20.account.address).call()
         balance_acc2_before = erc20.contract.functions.balanceOf(new_account.address).call()
         total_before = erc20.contract.functions.totalSupply().call()
-        amount = random.randint(1, balance_acc1_before)
+        amount = random.randint(1, 10000)
         erc20.approve(erc20.account, new_account.address, amount)
         erc20.transfer_from(new_account, erc20.account.address, new_account.address, amount)
         balance_acc1_after = erc20.contract.functions.balanceOf(erc20.account.address).call()
@@ -457,7 +457,7 @@ class TestERC20wrapperContract(BaseMixin):
         trx.add(instructions.approve(instructions.ApproveParams(
             program_id=TOKEN_PROGRAM_ID,
             source=solana_address,
-            delegate=self.get_neon_account_address(erc20.account.address, pytestconfig.environment.evm_loader),
+            delegate=sol_client.get_neon_account_address(erc20.account.address, pytestconfig.environment.evm_loader),
             owner=acc.public_key,
             amount=sent_amount,
             signers=[],
@@ -487,7 +487,7 @@ class TestERC20wrapperContract(BaseMixin):
         trx.add(instructions.approve(instructions.ApproveParams(
             program_id=TOKEN_PROGRAM_ID,
             source=solana_address,
-            delegate=self.get_neon_account_address(erc20.account.address, pytestconfig.environment.evm_loader),
+            delegate=sol_client.get_neon_account_address(erc20.account.address, pytestconfig.environment.evm_loader),
             owner=acc.public_key,
             amount=sent_amount,
             signers=[],

@@ -1,8 +1,19 @@
 import os
+import glob
+import json
 import subprocess
 import typing as tp
+import pathlib
+
+import tabulate
+from solana.transaction import Signature
 
 from deploy.cli import faucet as faucet_cli
+from utils.web3client import NeonWeb3Client
+from utils.solana_client import SolanaClient
+
+
+NEON_COST = 0.25
 
 TF_CWD = "deploy/aws"
 
@@ -80,3 +91,40 @@ def prepare_accounts(count, amount) -> tp.List:
     if os.environ.get("CI"):
         set_github_env(dict(accounts=",".join(accounts)))
     return accounts
+
+
+def get_solana_accounts_in_tx(eth_transaction):
+    web3_client = NeonWeb3Client(os.environ.get("PROXY_URL"), os.environ.get("CHAIN_ID", 111))
+    sol_client = SolanaClient(os.environ.get("SOLANA_URL"))
+    trx = web3_client.get_solana_trx_by_neon(eth_transaction)
+    tr = sol_client.get_transaction(Signature.from_string(trx["result"][0]))
+    if tr.value.transaction.transaction.message.address_table_lookups:
+        alt = tr.value.transaction.transaction.message.address_table_lookups
+        return len(alt[0].writable_indexes) + len(alt[0].readonly_indexes)
+    else:
+        return len(tr.value.transaction.transaction.message.account_keys)
+
+
+def print_report(directory):
+    headers = ["Action", "Fee", "Cost in $", "Accounts"]
+    out = {}
+    reports = {}
+    for path in glob.glob(str(pathlib.Path(directory) / "*-report.json")):
+        with open(path, "r") as f:
+            rep = json.load(f)
+            reports[rep["name"]] = rep["actions"]
+
+    for app in reports:
+        out[app] = []
+        for action in reports[app]:
+            row = [action["name"]]
+            fee = int(action["usedGas"]) * int(action["gasPrice"]) / 1000000000000000000
+            row.append(fee)
+            row.append(fee * NEON_COST)
+            row.append(get_solana_accounts_in_tx(action["tx"]))
+            out[app].append(row)
+
+    for app in out:
+        print(f"Cost report for \"{app.title()}\" dApp")
+        print("----------------------------------------")
+        print(tabulate.tabulate(out[app], headers, tablefmt="simple_grid"))

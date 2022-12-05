@@ -1,3 +1,4 @@
+import re
 import typing as tp
 from enum import Enum
 
@@ -530,6 +531,7 @@ class TestRpcCalls(BaseMixin):
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
         self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
         params = [tx_receipt.blockHash.hex(), quantity]
+
         response = self.proxy_api.send_rpc(method="eth_getTransactionByBlockHashAndIndex", params=params)
         if raises:
             assert response['result'] is None, "Result should be None"
@@ -547,18 +549,20 @@ class TestRpcCalls(BaseMixin):
     @pytest.mark.parametrize(
         "params, raises",
         [([Tag.LATEST.value, 0], False),
-         ([Tag.EARLIEST.value, 0], False),
          (["param", 1], True),
          ([], True)])
-    @pytest.mark.xfail(reason="NDEV-803")
     def test_eth_get_transaction_by_block_number_and_index_by_tag(self, params: tp.List[tp.Union[int, str]], raises: bool):
         """Verify implemented rpc calls work eth_getTransactionByBlockNumberAndIndex"""
+
         if params:
             params = list(map(lambda i: hex(i) if isinstance(i, int) else i, params))
+            if params[0] == Tag.LATEST.value:
+                tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
+                self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
         response = self.proxy_api.send_rpc(
             method="eth_getTransactionByBlockNumberAndIndex", params=params)
         if raises:
-            assert "error" in response, "Error not in response"
+            assert "error" in response, f"Error not in response. Response : {response}"
         else:
             assert "error" not in response
             result = response["result"]
@@ -566,6 +570,27 @@ class TestRpcCalls(BaseMixin):
                                    'type', 'from', 'nonce', 'gasPrice', 'gas', 'to', 'value', 'v', 's', 'r']
             for field in expected_hex_fields:
                 assert rpc_checks.is_hex(result[field])
+
+    def test_get_evm_params(self):
+        response = self.proxy_api.send_rpc(method="neon_getEvmParams", params=[])
+
+        expected_fields = ['NEON_GAS_LIMIT_MULTIPLIER_NO_CHAINID', 'NEON_POOL_SEED', 'NEON_COMPUTE_BUDGET_UNITS',
+                           'NEON_SEED_VERSION', 'NEON_EVM_STEPS_LAST_ITERATION_MAX', 'NEON_PAYMENT_TO_DEPOSIT',
+                           'NEON_COMPUTE_UNITS', 'NEON_REQUEST_UNITS_ADDITIONAL_FEE', 'NEON_PKG_VERSION',
+                           'NEON_HEAP_FRAME',
+                           'NEON_ACCOUNT_SEED_VERSION', 'NEON_TOKEN_MINT', 'NEON_TREASURY_POOL_SEED',
+                           'NEON_STORAGE_ENTRIES_IN_CONTRACT_ACCOUNT', 'NEON_EVM_STEPS_MIN', 'NEON_PAYMENT_TO_TREASURE',
+                           'NEON_OPERATOR_PRIORITY_SLOTS', 'NEON_STATUS_NAME', 'NEON_REVISION', 'NEON_ADDITIONAL_FEE',
+                           'NEON_CHAIN_ID', 'NEON_COMPUTE_BUDGET_HEAP_FRAME', 'NEON_POOL_COUNT', 'NEON_HOLDER_MSG_SIZE',
+                           'NEON_TREASURY_POOL_COUNT', 'NEON_TOKEN_MINT_DECIMALS', 'NEON_EVM_ID']
+        for field in expected_fields:
+            assert field in response["result"], f"Field {field} is not in response: {response}"
+
+    def test_neon_cli_version(self):
+        response = self.proxy_api.send_rpc(method="neon_cli_version", params=[])
+        pattern = r"Neon-cli/[vt]\d{1,2}.\d{1,2}.\d{1,2}.*"
+        assert re.match(pattern, response["result"]), \
+            f"Version format is not correct. Pattern: {pattern}; Response: {response}"
 
 
 @allure.story("Basic: Json-RPC call tests - `eth_estimateGas`")

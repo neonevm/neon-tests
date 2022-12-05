@@ -47,13 +47,11 @@ services:
   indexer:
     environment:
       - SOLANA_URL=$SOLANA_URL
-  proxy_program_loader:
-    command: bash -c "echo done"
 EOF
 
 
 # Get list of services
-SERVICES=$(docker-compose -f docker-compose-test.yml config --services | grep -vP "solana|airdropper|prometheus|proxy_program_loader")
+SERVICES=$(docker-compose -f docker-compose-test.yml config --services | grep -vP "solana|airdropper|prometheus")
 
 
 # Pull latest versions

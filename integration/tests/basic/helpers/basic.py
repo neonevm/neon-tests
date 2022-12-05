@@ -23,9 +23,6 @@ class AccountData:
     key: str = ""
 
 
-ACCOUNT_SEED_VERSION = b'\2'
-
-
 class BaseMixin(BaseTests):
 
     proxy_api: JsonRPCSession = None
@@ -87,12 +84,12 @@ class BaseMixin(BaseTests):
         account = self.create_account()
         balance_before = self.get_balance_from_wei(account.address)
         self.faucet.request_neon(account.address, amount=amount)
-        for _ in range(10):
+        for _ in range(20):
             if self.get_balance_from_wei(account.address) >= (balance_before + amount):
                 break
             time.sleep(1)
         else:
-            raise AssertionError(f"Balance didn't changed after 10 seconds ({account.address})")
+            raise AssertionError(f"Balance didn't changed after 20 seconds ({account.address})")
         return account
 
     @staticmethod
@@ -100,11 +97,7 @@ class BaseMixin(BaseTests):
         """Create non existing account"""
         return AccountData(address=gen_hash_of_block(20))
 
-    @staticmethod
-    def get_neon_account_address(neon_account_address: str, evm_loader_id) -> PublicKey:
-        neon_account_addressbytes = bytes.fromhex(neon_account_address[2:])
-        return PublicKey.find_program_address([ACCOUNT_SEED_VERSION, neon_account_addressbytes],
-                                              PublicKey(evm_loader_id))[0]
+
 
     def send_neon(
         self,

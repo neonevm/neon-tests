@@ -3,7 +3,7 @@ name: "Basic tests"
 on:
   schedule:
     - cron: "0 23,2 * * *"
-    - cron: "0 0,4,8,12,16,20 * * *"
+#    - cron: "0 0,4,8,12,16,20 * * *"
   pull_request:
     types: [ opened, reopened, synchronize ]
   workflow_dispatch:
@@ -26,11 +26,22 @@ on:
           - neon-hosted
           - aws-hosted
           - ubuntu-20.04
+      numprocesses:
+        type: choice
+        default: 4
+        required: true
+        description: "Number of parallel jobs"
+        options:
+          - 4
+          - 8
+          - 12
+          - auto
 env:
   NETWORK: night-stand
   RUNNER: neon-hosted
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   SOLANA_URL: "${{ secrets.SOLANA_URL }}"
+  NUMPROCESSES: 4
 
 jobs:
   prepare-env:
@@ -64,17 +75,21 @@ jobs:
 
           NETWORK=$( setVar "${{ github.event.inputs.network }}" "${{ env.NETWORK }}" )
           RUNNER=$( setVar "${{ github.event.inputs.runner }}" "${{ env.RUNNER }}" )
+          NUMPROCESSES=$( setVar "${{ github.event.inputs.numprocesses }}" "${{ env.NUMPROCESSES }}" )
 
           echo "Network: ${NETWORK}"
           echo "Runner: ${RUNNER}"
+          echo "Numprocesses: ${NUMPROCESSES}"
           echo "Build url: ${{ env.BUILD_URL }}"
 
           echo "network=${NETWORK}" >> $GITHUB_OUTPUT
           echo "runner=${RUNNER}" >> $GITHUB_OUTPUT
           echo "jobs=${JOBS_NUMBER}" >> $GITHUB_OUTPUT
+          echo "numprocesses=${NUMPROCESSES}" >> $GITHUB_OUTPUT
     outputs:
       network: ${{ steps.setup.outputs.network }}
       runner: ${{ steps.setup.outputs.runner }}
+      numprocesses: ${{ steps.setup.outputs.numprocesses }}
 
   tests:
     name: "Basic tests"
@@ -84,6 +99,7 @@ jobs:
     env:
       NETWORK: ${{ needs.prepare-env.outputs.network }}
       RUNNER: ${{ needs.prepare-env.outputs.runner }}
+      NUMPROCESSES: ${{ needs.prepare-env.outputs.numprocesses }}
     if: always()
     steps:
       - uses: actions/checkout@v2
@@ -92,7 +108,7 @@ jobs:
         uses: ./.github/actions/requirements
       - name: "Run basic tests"
         id: basic
-        run: "./clickfile.py run basic -n ${{ env.NETWORK }}"
+        run: "./clickfile.py run basic -n ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}"
       - uses: actions/upload-artifact@v2
         with:
           name: "Allure results"

@@ -2,13 +2,13 @@ import random
 import logging
 
 import web3
+from gevent import time
 from locust import tag, task, User, events
 
 from utils.web3client import NeonWeb3Client
 from utils.faucet import Faucet
 
 from loadtesting.proxy.common.base import NeonProxyTasksSet
-from loadtesting.proxy.common.events import execute_before
 
 LOG = logging.getLogger(__name__)
 
@@ -95,15 +95,19 @@ class ERC20OneContractTasksSet(NeonProxyTasksSet):
     def on_start(self) -> None:
         super().on_start()
         contract = self.user.environment.erc20_one["contract"]
+        print(f"Main user {self.user.environment.erc20_one['user'].address} balance: "
+              f"{contract.functions.balanceOf(self.user.environment.erc20_one['user'].address).call()}")
         self.web3_client.send_erc20(
             self.user.environment.erc20_one["user"],
-            self.account, web3.Web3.toWei(10000, "ether"),
+            self.account, web3.Web3.toWei(1000, "ether"),
             contract.address,
             abi=contract.abi)
+
 
     @task
     def task_send_erc20(self):
         """Send ERC20 tokens"""
+        print("Send erc20 ", self.account.address)
         contract = self.user.environment.erc20_one["contract"]
         recipient = random.choice(self.user.environment.shared.accounts)
         self.web3_client.send_erc20(

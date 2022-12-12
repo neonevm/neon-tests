@@ -1,5 +1,3 @@
-import asyncio
-
 import allure
 import pytest
 

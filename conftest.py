@@ -23,6 +23,7 @@ class EnvironmentConfig:
     spl_neon_mint: str
     neon_erc20wrapper_address: str
     operator_keys: tp.List[str]
+    account_seed_version: bytes = b"\3"
 
 
 def pytest_addoption(parser):
@@ -32,7 +33,7 @@ def pytest_addoption(parser):
 
 
 def pytest_sessionstart(session):
-    """Hook for clearing the error log used by the slack notifications utility"""
+    """Hook for clearing the error log used by the Slack notifications utility"""
     path = pathlib.Path(f"{clickfile.CMD_ERROR_LOG}")
     if path.exists():
         path.unlink()

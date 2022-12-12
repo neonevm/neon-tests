@@ -20,9 +20,9 @@ ERC20SPL_CONTRACT_VERSION = "0.8.10"
 
 @events.test_start.add_listener
 def prepare_one_contract_for_erc20(environment: "locust.env.Environment", **kwargs):
-    if environment.parsed_options.exclude_tags and "erc20one" in environment.parsed_options.exclude_tags:
+    if environment.parsed_options.exclude_tags and "erc20spl" in environment.parsed_options.exclude_tags:
         return
-    if environment.parsed_options.tags and "erc20one" not in environment.parsed_options.tags:
+    if environment.parsed_options.tags and "erc20spl" not in environment.parsed_options.tags:
         return
 
     neon_client = NeonWeb3Client(environment.credentials["proxy_url"], environment.credentials["network_id"])

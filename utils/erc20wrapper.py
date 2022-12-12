@@ -6,11 +6,9 @@ from solana.rpc.commitment import Confirmed
 import spl.token.client
 from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
-
-from integration.tests.basic.helpers.basic import BaseMixin
-from . import web3client
 from spl.token.constants import TOKEN_PROGRAM_ID
 
+from . import web3client
 from .metaplex import create_metadata_instruction_data, create_metadata_instruction
 
 INIT_TOKEN_AMOUNT = 1000000000000000
@@ -34,8 +32,10 @@ class ERC20Wrapper:
         self.solana_acc = None
         self.evm_loader_id = evm_loader_id
         self.web3_client = web3_client
-        self.account = account or web3_client.create_account()
-        faucet.request_neon(self.account.address, 100)
+        self.account = account
+        if self.account is None:
+            self.account = web3_client.create_account()
+            faucet.request_neon(self.account.address, 100)
         self.name = name
         self.symbol = symbol
         self.decimals = decimals
@@ -43,11 +43,11 @@ class ERC20Wrapper:
         self.contract_address = self.deploy_wrapper(mintable)
         self.contract = self.get_wrapper_contract()
 
-    def make_tx_object(self, from_address, gasPrice=None, gas=None):
+    def make_tx_object(self, from_address, gas_price=None, gas=None):
         tx = {
             "from": from_address,
             "nonce": self.web3_client.eth.get_transaction_count(from_address),
-            "gasPrice": gasPrice if gasPrice is not None else self.web3_client.gas_price(),
+            "gasPrice": gas_price if gas_price is not None else self.web3_client.gas_price(),
         }
         if gas is not None:
             tx["gas"] = gas
@@ -129,6 +129,7 @@ class ERC20Wrapper:
         contract = self.web3_client.eth.contract(address=self.contract_address, abi=contract_interface["abi"])
         return contract
 
+    # TODO: In all this methods verify if exist self.account
     def mint_tokens(self, signer, to_address, amount: int = INIT_TOKEN_AMOUNT, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
         instruction_tx = self.contract.functions.mint(to_address, amount).buildTransaction(tx)

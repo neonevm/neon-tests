@@ -33,6 +33,5 @@ class SolanaClient(solana.rpc.api.Client):
 
     def get_neon_account_address(self, neon_account_address: str, evm_loader_id) -> PublicKey:
         neon_account_addressbytes = bytes.fromhex(neon_account_address[2:])
-        print(self.account_seed_version)
         return PublicKey.find_program_address([self.account_seed_version, neon_account_addressbytes],
                                               PublicKey(evm_loader_id))[0]

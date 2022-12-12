@@ -22,7 +22,6 @@ class EnvironmentConfig:
     operator_neon_rewards_address: tp.List[str]
     spl_neon_mint: str
     neon_erc20wrapper_address: str
-    account_seed_version: str
     operator_keys: tp.List[str]
 
 

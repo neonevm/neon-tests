@@ -23,10 +23,11 @@ import web3
 from locust import User, TaskSet, between, task, events, tag
 
 from utils import apiclient
+from utils.web3client import NeonWeb3Client
 
 LOG = logging.getLogger("neon_client")
 
-DEFAULT_NETWORK = "neon_rpc"
+DEFAULT_NETWORK = "neon-rpc"
 """Default test environment name
 """
 
@@ -98,7 +99,7 @@ def load_credentials(environment, **kwargs):
         path_to_credentials = root_path / ENV_FILE
     with open(path_to_credentials, "r") as fp:
         f = json.load(fp)
-        environment.shared.credentials = f[network]
+        environment.shared.credentials = f.get(network, f[DEFAULT_NETWORK])
 
 
 @events.test_start.add_listener
@@ -108,12 +109,6 @@ def load_transaction_history(environment, **kwargs):
     if path.exists():
         with open(path, "r") as fp:
             environment.shared.transaction_history = json.load(fp)
-
-
-@events.test_stop.add_listener
-def teardown(**kwargs) -> None:
-    """Test stop Event handler"""
-    pass
 
 
 class LocustEventHandler(object):
@@ -219,6 +214,7 @@ class BaseEthRPCATasksSet(TaskSet):
     _rpc_client: tp.Optional[ExtJsonRPCSession] = None
     _rpc_endpoint: tp.Optional[str] = None
     _transaction_history: tp.Optional[tp.Dict] = None
+    credentials: tp.Optional[tp.Dict] = None
 
     @staticmethod
     def setup_class(environment: tp.Any = None) -> None:
@@ -251,6 +247,11 @@ class BaseEthRPCATasksSet(TaskSet):
                 pool_size=self.user.environment.parsed_options.num_users
                 or self.user.environment.runner.target_user_count,
             )
+        self.credentials = self.user.environment.shared.credentials
+        LOG.info(f"Create web3 client to: {self.credentials['proxy_url']}")
+        self.web3_client = NeonWeb3Client(
+            self.credentials["proxy_url"], self.credentials["network_id"], session=self._rpc_client
+        )
         self.log = logging.getLogger("rpc-consumer[%s]" % self.rpc_consumer_id)
 
     def _get_random_transaction(self, key: str) -> tp.Dict:
@@ -385,7 +386,7 @@ class EthCall(BaseEthRPCATasksSet):
         contract = self.web3_client.eth.contract(
             address=transaction["contract"]["address"], abi=transaction["contract"]["abi"]
         )
-        self.log.info(f"deploy contract.")
+        self.log.info(f"Contract deployed {contract}.")
         if not contract:
             self.log.error(f"contract deployment failed.")
             EthCall._deploy_contract_done = False
@@ -400,23 +401,50 @@ class EthCall(BaseEthRPCATasksSet):
             if not EthCall._deploy_contract_done:
                 self.deploy_contract()
 
-    @task
-    def _do_call(self, req_type: str, args: tp.Optional[tp.List] = None, kwargs: tp.Optional[tp.Dict] = None) -> None:
+    def _do_call(self, method: str, req_type: str) -> None:
         """Store random int to contract"""
-        contract = EthCall._contract
-        if contract:
-            self.log.info(f"Retrieve data from contract contract by {self.account.address[:8]}.")
-            tx = contract.functions.store().buildTransaction(
-                {
-                    "nonce": self.web3_client.eth.get_transaction_count(self.account.address),
-                    "gasPrice": self.web3_client.gas_price(),
-                }
-            )
+        self.log.info(f"Call `retrieve` method from {self._contract.address} contract by `{method}`.")
+        transaction = self._get_random_transaction(self.method)
+        tx = self._contract.functions.retrieve().buildTransaction(
+            {
+                "nonce": self.web3_client.eth.get_transaction_count(transaction["from"]),
+                "gasPrice": self.web3_client.gas_price(),
+            }
+        )
 
-        self.log.info(f"no `storage` contracts found, data store canceled.")
+        tx_call_obj = {
+            "from": transaction["from"],
+            "to": transaction["to"],
+            "value": hex(tx["value"]),
+            "gas": hex(tx["gas"]),
+            "gasprice": hex(tx["gasPrice"]),
+            "data": tx["data"],
+        }
+        response = self._rpc_client.send_rpc(
+            method, req_type=req_type, params=[tx_call_obj, {req_type: transaction[req_type]}]
+        )
+        self.log.info(f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}")
+
+    @tag("call_by_hash")
+    @task
+    def task_eth_call_by_hash(self) -> tp.Dict:
+        """the eth_call method by blockHash"""
+        self._do_call(method="eth_call", req_type="blockHash")
+
+    @tag("call_by_num")
+    @task
+    def task_eth_call_by_num(self) -> tp.Dict:
+        """the eth_call method by blockNumber"""
+        self._do_call(method="eth_call", req_type="blockNumber")
 
 
 class EthRPCAPICallUsers(User):
     """class represents extended ETH RPC API calls by one user"""
 
-    tasks = {EthGetBalanceTasksSet: 1, EthGetTransactionCountTasksSet: 1, EthGetStorageAtTasksSet: 1, EthGetLogs: 1}
+    tasks = {
+        EthGetBalanceTasksSet: 1,
+        EthGetTransactionCountTasksSet: 1,
+        EthGetStorageAtTasksSet: 1,
+        EthGetLogs: 1,
+        EthCall: 1,
+    }

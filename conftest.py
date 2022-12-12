@@ -23,7 +23,7 @@ class EnvironmentConfig:
     spl_neon_mint: str
     neon_erc20wrapper_address: str
     operator_keys: tp.List[str]
-    account_seed_version: bytes = b"\3"
+    account_seed_version: str = "\3"
 
 
 def pytest_addoption(parser):

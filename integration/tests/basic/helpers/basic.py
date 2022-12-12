@@ -97,8 +97,6 @@ class BaseMixin(BaseTests):
         """Create non existing account"""
         return AccountData(address=gen_hash_of_block(20))
 
-
-
     def send_neon(
         self,
         sender_account: eth_account.signers.local.LocalAccount,

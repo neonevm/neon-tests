@@ -118,7 +118,8 @@ class MoraswapTaskSet(NeonProxyTasksSet):
                 "value": web3.Web3.toWei(1, "ether"),
             }
         )
-        self.log.info("Swap transaction: %s" % self.web3_client.send_transaction(self.account, swap_trx, gas_multiplier=1.1))
+        tr = self.web3_client.send_transaction(self.account, swap_trx, gas_multiplier=1.1)
+        self.log.info(f"Swap transaction: {tr['transactionHash']}")
 
 
 class MoraswapUser(User):

@@ -300,9 +300,8 @@ class TestEconomics(BaseTests):
         neon_balance_before = self.operator.get_neon_balance()
 
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "ERC20", "0.6.6", account=self.acc, constructor_args=[1000]
-        )
-
+            "ERC20/ERC20.sol", "0.8.8", self.sender_account, contract_name="ERC20",
+            constructor_args=['Test Token', 'TT', 1000])
         assert contract.functions.balanceOf(self.acc.address).call() == 1000
 
         sol_balance_after = self.operator.get_solana_balance()
@@ -316,8 +315,8 @@ class TestEconomics(BaseTests):
     def test_erc20_transfer(self):
         """Verify ERC20 token send"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "ERC20", "0.6.6", account=self.acc, constructor_args=[1000]
-        )
+            "ERC20/ERC20.sol", "0.8.8", self.sender_account, contract_name="ERC20",
+            constructor_args=['Test Token', 'TT', 1000])
 
         assert contract.functions.balanceOf(self.acc.address).call() == 1000
 

@@ -46,8 +46,9 @@ class TestTransfer(BaseMixin):
         """Send erc20 token from one account to another"""
 
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "ERC20", "0.6.6", self.sender_account, constructor_args=[DEFAULT_ERC20_BALANCE]
-        )
+            "ERC20/ERC20.sol", "0.8.8", self.sender_account, contract_name="ERC20",
+            constructor_args=['Test Token', 'TT', DEFAULT_ERC20_BALANCE])
+
         assert contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
         initial_sender_neon_balance, initial_recipient_neon_balance = (
             self.sender_account_balance,
@@ -62,7 +63,6 @@ class TestTransfer(BaseMixin):
             abi=contract.abi,
         )
         self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
-
         # ERC20 balance
         assert (
                 contract.functions.balanceOf(
@@ -127,8 +127,8 @@ class TestTransfer(BaseMixin):
         """Send more than exist on account: ERC20"""
 
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "ERC20", "0.6.6", self.sender_account, constructor_args=[DEFAULT_ERC20_BALANCE]
-        )
+            "ERC20/ERC20.sol", "0.8.8", self.sender_account, contract_name="ERC20",
+            constructor_args=['Test Token', 'TT', DEFAULT_ERC20_BALANCE])
         assert contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
         initial_sender_neon_balance, initial_recipient_neon_balance = (
             self.sender_account_balance,
@@ -228,8 +228,8 @@ class TestTransfer(BaseMixin):
         """Send negative sum from account: ERC20"""
 
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "ERC20", "0.6.6", self.sender_account, constructor_args=[DEFAULT_ERC20_BALANCE]
-        )
+            "ERC20/ERC20.sol", "0.8.8", self.sender_account, contract_name="ERC20",
+            constructor_args=['Test Token', 'TT', DEFAULT_ERC20_BALANCE])
         assert contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
         initial_sender_neon_balance, initial_recipient_neon_balance = (
             self.sender_account_balance,
@@ -274,8 +274,8 @@ class TestTransfer(BaseMixin):
 
         transfer_amount = 10
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "ERC20", "0.6.6", self.sender_account, constructor_args=[DEFAULT_ERC20_BALANCE]
-        )
+            "ERC20/ERC20.sol", "0.8.8", self.sender_account, contract_name="ERC20",
+            constructor_args=['Test Token', 'TT', DEFAULT_ERC20_BALANCE])
         assert contract.functions.balanceOf(self.sender_account.address).call() == DEFAULT_ERC20_BALANCE
         initial_sender_neon_balance = self.sender_account_balance
 
@@ -382,7 +382,6 @@ class TestTransactionsValidation(BaseMixin):
         response = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
         assert "error" not in response
         assert "result" in response
-
 
     def test_send_transaction_with_small_gas_amount(self):
         """Check that transaction can't be sent if gas value is too small"""

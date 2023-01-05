@@ -1,8 +1,3 @@
-# coding: utf-8
-"""
-Created on 2022-09-28
-@author: Eugeny Kurkovich
-"""
 import collections
 import functools
 import json
@@ -69,7 +64,7 @@ def teardown(*args, **kwargs) -> None:
 
 @tag("store")
 @tag("call")
-class EthGetStorageAtPreparationStage(head.NeonProxyTasksSet):
+class EthGetStorageAtPreparationStage(head.NeonTasksSet):
     """Preparation stage for eth_getStorageAt and eth_call test suite"""
 
     _deploy_contract_locker = gevent.threading.Lock()

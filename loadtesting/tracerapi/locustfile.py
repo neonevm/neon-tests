@@ -1,9 +1,3 @@
-# coding: utf-8
-"""
-Created on 2022-08-31
-@author: Eugeny Kurkovich
-"""
-
 import enum
 import functools
 import json
@@ -28,21 +22,11 @@ from utils.web3client import NeonWeb3Client
 LOG = logging.getLogger("neon_client")
 
 DEFAULT_NETWORK = "neon-rpc"
-"""Default test environment name
-"""
-
 ENV_FILE = pathlib.Path(__file__).parent / "envs.json"
-""" Default environment credentials storage 
-"""
 
-DUMPED_DATA = "dumped_data/transaction.json"
-"""Path to transaction history
-"""
+DUMPED_DATA = "dumped_data/transaction.json"  # where save dumped data
 
-NEON_RPC = os.environ.get("NEON_RPC")
-"""Endpoint to Neon-RPC. Neon-RPC is a single RPC entrypoint to Neon-EVM. 
-The function of this service is so route requests between Tracer API and Neon Proxy services
-"""
+NEON_RPC = os.environ.get("NEON_RPC")  # url for history endpoint proxy
 
 
 class RPCType(enum.Enum):

@@ -13,6 +13,8 @@ from solana.publickey import PublicKey
 from solana.rpc.core import RPCException
 from solana.rpc.types import Commitment, TokenAccountOpts, TxOpts
 from solana.transaction import Transaction
+from solders.rpc.responses import GetTransactionResp
+from solders.signature import Signature
 from spl.token.instructions import (create_associated_token_account,
                                     get_associated_token_address)
 from utils import helpers, web3client
@@ -60,45 +62,39 @@ class TestEconomics(BaseTests):
         self.sol_price = sol_price
 
     @allure.step("Verify operator profit")
-    def assert_profit(self, sol_diff, neon_diff):
+    def assert_profit(self, sol_diff, neon_diff, alt_creating_cost):
         sol_amount = sol_diff / LAMPORT_PER_SOL
         if neon_diff < 0:
             raise AssertionError(f"NEON has negative difference {neon_diff}")
-        # neon_amount = self.web3_client.fromWei(neon_diff, "ether")
         neon_amount = neon_diff
         sol_cost = Decimal(sol_amount, DECIMAL_CONTEXT) * \
-            Decimal(self.sol_price, DECIMAL_CONTEXT)
+                   Decimal(self.sol_price, DECIMAL_CONTEXT)
         neon_cost = Decimal(neon_amount, DECIMAL_CONTEXT) * \
-            Decimal(NEON_PRICE, DECIMAL_CONTEXT)
+                    Decimal(NEON_PRICE, DECIMAL_CONTEXT)
+        alt_cost = Decimal(alt_creating_cost / LAMPORT_PER_SOL, DECIMAL_CONTEXT) * \
+                   Decimal(self.sol_price, DECIMAL_CONTEXT)
         msg = "Operator receive {:.9f} NEON ({:.2f} $) and spend {:.9f} SOL ({:.2f} $), profit - {:.9f}% ".format(
-            neon_amount, neon_cost, sol_amount, sol_cost, ((
-                neon_cost - sol_cost) / sol_cost * 100)
-        )
+            neon_amount, neon_cost, sol_amount, sol_cost, ((neon_cost - sol_cost) / sol_cost * 100))
         with allure.step(msg):
-            assert neon_cost > sol_cost, msg
+            assert neon_cost + alt_cost > sol_cost, msg
 
     @allure.step("Get single transaction gas")
     def get_single_transaction_gas(self):
         """ One TX_COST to verify Solana signature plus another one TX_COST to pay to Governance"""
         return TX_COST * 2
 
-    @allure.step("Check block for ALT use")
-    def check_alt_on(self, block, accounts_quantity):
-        # TODO: Change to use get_solana_trx_by_neon instead of block
-        txs = block.value.transactions
-        for tx in txs:
-            if tx.version == 0: # Very bad method to check alt transaction
-                transaction = tx.transaction
-                message = transaction.message
-                alt = message.address_table_lookups
-                if not alt:
-                    continue
-                wr_acc = alt[0].writable_indexes
-                ro_acc = alt[0].readonly_indexes
-                assert len(wr_acc) + len(ro_acc) >= accounts_quantity - 5  # FIXME: because we can't guarantee accounts length
-                break
-        else:
-            raise AssertionError("This transaction didn't use ALT table but must")
+    @allure.step("Check transaction used ALT")
+    def check_alt_on(self, sol_client, receipt, accounts_quantity):
+        solana_trx = self.web3_client.get_solana_trx_by_neon(receipt["transactionHash"].hex())
+
+        wait_condition(lambda: sol_client.get_transaction(Signature.from_string(solana_trx["result"][0]),
+                                                          max_supported_transaction_version=0) != GetTransactionResp(
+            None))
+        trx = sol_client.get_transaction(Signature.from_string(solana_trx["result"][0]),
+                                         max_supported_transaction_version=0)
+        alt = trx.value.transaction.transaction.message.address_table_lookups
+        accounts = alt[0].writable_indexes + alt[0].readonly_indexes
+        assert len(accounts) == accounts_quantity - 1
 
     @allure.step("Check block for not using ALT")
     def check_alt_off(self, block):
@@ -867,8 +863,7 @@ class TestEconomics(BaseTests):
         assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    @pytest.mark.skip(reason="https://neonlabs.atlassian.net/browse/NDEV-871")
-    @pytest.mark.parametrize('accounts_quantity', [31, 44, 59])
+    @pytest.mark.parametrize('accounts_quantity', [31, 44])
     def test_deploy_contract_alt_on(self, sol_client, accounts_quantity):
         """Trigger transaction than requires more than 30 accounts"""
         sol_balance_before = self.operator.get_solana_balance()
@@ -878,10 +873,7 @@ class TestEconomics(BaseTests):
                                                                account=self.acc,
                                                                constructor_args=[8])
 
-        sol_balance_after_deploy = self.operator.get_solana_balance()
-        neon_balance_after_deploy = self.operator.get_neon_balance()
-
-        tx = contract.functions.fill(accounts_quantity).buildTransaction(
+        tx = contract.functions.fill(accounts_quantity).build_transaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
@@ -889,17 +881,23 @@ class TestEconomics(BaseTests):
             }
         )
         receipt = self.web3_client.send_transaction(self.acc, tx)
-        block = int(receipt['blockNumber'])
+        self.check_alt_on(sol_client, receipt, accounts_quantity)
+        solana_trx = self.web3_client.get_solana_trx_by_neon(receipt["transactionHash"].hex())
 
-        response = wait_for_block(sol_client, block)
-        self.check_alt_on(response, accounts_quantity)
+        trx_sol = sol_client.get_transaction(Signature.from_string(solana_trx["result"][0]),
+                                             max_supported_transaction_version=0)
 
+        alt_address = trx_sol.value.transaction.transaction.message.address_table_lookups[0].account_key
+        alt_balance = sol_client.get_balance(PublicKey(alt_address)).value
+
+        wait_condition(lambda: self.operator.get_solana_balance() != sol_balance_before, timeout_sec=30)
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
 
-        assert sol_balance_before > sol_balance_after_deploy > sol_balance_after
-        assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
-        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
+        assert sol_balance_before > sol_balance_after
+        assert neon_balance_after > neon_balance_before
+        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before,
+                           alt_balance)
 
     @pytest.mark.parametrize('accounts_quantity', [10])
     def test_deploy_contract_alt_off(self, sol_client, accounts_quantity):

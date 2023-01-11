@@ -1,5 +1,6 @@
 import json
 import os
+import random
 import time
 from decimal import Decimal, getcontext
 
@@ -62,7 +63,7 @@ class TestEconomics(BaseTests):
         self.sol_price = sol_price
 
     @allure.step("Verify operator profit")
-    def assert_profit(self, sol_diff, neon_diff, alt_creating_cost):
+    def assert_profit(self, sol_diff, neon_diff):
         sol_amount = sol_diff / LAMPORT_PER_SOL
         if neon_diff < 0:
             raise AssertionError(f"NEON has negative difference {neon_diff}")
@@ -71,12 +72,11 @@ class TestEconomics(BaseTests):
                    Decimal(self.sol_price, DECIMAL_CONTEXT)
         neon_cost = Decimal(neon_amount, DECIMAL_CONTEXT) * \
                     Decimal(NEON_PRICE, DECIMAL_CONTEXT)
-        alt_cost = Decimal(alt_creating_cost / LAMPORT_PER_SOL, DECIMAL_CONTEXT) * \
-                   Decimal(self.sol_price, DECIMAL_CONTEXT)
+
         msg = "Operator receive {:.9f} NEON ({:.2f} $) and spend {:.9f} SOL ({:.2f} $), profit - {:.9f}% ".format(
             neon_amount, neon_cost, sol_amount, sol_cost, ((neon_cost - sol_cost) / sol_cost * 100))
         with allure.step(msg):
-            assert neon_cost + alt_cost > sol_cost, msg
+            assert neon_cost > sol_cost, msg
 
     @allure.step("Get single transaction gas")
     def get_single_transaction_gas(self):
@@ -296,7 +296,7 @@ class TestEconomics(BaseTests):
         neon_balance_before = self.operator.get_neon_balance()
 
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "ERC20/ERC20.sol", "0.8.8", self.sender_account, contract_name="ERC20",
+            "ERC20/ERC20.sol", "0.8.8", self.acc, contract_name="ERC20",
             constructor_args=['Test Token', 'TT', 1000])
         assert contract.functions.balanceOf(self.acc.address).call() == 1000
 
@@ -311,7 +311,7 @@ class TestEconomics(BaseTests):
     def test_erc20_transfer(self):
         """Verify ERC20 token send"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "ERC20/ERC20.sol", "0.8.8", self.sender_account, contract_name="ERC20",
+            "ERC20/ERC20.sol", "0.8.8", self.acc, contract_name="ERC20",
             constructor_args=['Test Token', 'TT', 1000])
 
         assert contract.functions.balanceOf(self.acc.address).call() == 1000
@@ -863,9 +863,10 @@ class TestEconomics(BaseTests):
         assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    @pytest.mark.parametrize('accounts_quantity', [31, 44])
-    def test_deploy_contract_alt_on(self, sol_client, accounts_quantity):
+    @pytest.mark.timeout(720)
+    def test_deploy_contract_alt_on(self, sol_client):
         """Trigger transaction than requires more than 30 accounts"""
+        accounts_quantity = random.randint(31, 45)
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
@@ -890,14 +891,19 @@ class TestEconomics(BaseTests):
         alt_address = trx_sol.value.transaction.transaction.message.address_table_lookups[0].account_key
         alt_balance = sol_client.get_balance(PublicKey(alt_address)).value
 
-        wait_condition(lambda: self.operator.get_solana_balance() != sol_balance_before, timeout_sec=30)
+        wait_condition(lambda: self.operator.get_solana_balance() != sol_balance_before, timeout_sec=120)
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
 
         assert sol_balance_before > sol_balance_after
         assert neon_balance_after > neon_balance_before
-        self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before,
-                           alt_balance)
+
+        self.assert_profit(sol_balance_before - sol_balance_after - alt_balance,
+                           neon_balance_after - neon_balance_before)
+        # the charge for alt creating should be returned
+        wait_condition(lambda: self.operator.get_solana_balance() > sol_balance_after, timeout_sec=60 * 11, delay=3)
+        assert sol_balance_after + alt_balance == self.operator.get_solana_balance() - TX_COST, \
+            "Operator balance after the return of the alt creation fee is not correct"
 
     @pytest.mark.parametrize('accounts_quantity', [10])
     def test_deploy_contract_alt_off(self, sol_client, accounts_quantity):

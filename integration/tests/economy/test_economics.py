@@ -874,7 +874,7 @@ class TestEconomics(BaseTests):
                                                                account=self.acc,
                                                                constructor_args=[8])
 
-        tx = contract.functions.fill(accounts_quantity).build_transaction(
+        tx = contract.functions.fill(accounts_quantity).buildTransaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),

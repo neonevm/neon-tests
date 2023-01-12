@@ -105,6 +105,50 @@ jobs:
             name: uniswap-report
             path: uniswap-report.json
 
+  saddle:
+    runs-on: neon-hosted
+    needs:
+      - prepare
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        env:
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+        run: |
+          ./clickfile.py infra gen-accounts -c 3 -a 10000
+
+      - name: Launch saddle tests
+        if: ${{ steps.accounts.outcome == 'success' }}
+        id: uniswap
+        env:
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+        run: |
+          CWD=/tmp/saddle-${{ github.run_id }}
+          mkdir -p ${CWD}
+          git clone https://github.com/neonlabsorg/saddle-contract ${CWD}
+          docker build -t saddle:latest ${CWD}
+          proxy_url=http://${{ env.PROXY_IP }}:9090/solana
+          docker run -it -d --name=saddle-${{ github.run_id }} saddle:latest /bin/bash
+          docker exec -it -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} -c "npx hardhat run /usr/src/app/scripts/deploy2Tokens.ts"
+          docker exec -it -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} -c "npx hardhat run /usr/src/app/scripts/deploy3Tokens.ts"
+          docker exec -it -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} -c "npx hardhat run /usr/src/app/scripts/deployMetaPool.ts"
+          docker cp saddle-${{ github.run_id }}:/usr/src/app/report.json saddle-report.json
+          docker rm -f saddle-${{ github.run_id }}
+
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: saddle-report
+          path: saddle-report.json
+
   destroy:
     runs-on: ubuntu-20.04
     needs: [prepare, uniswap, swap-report]
@@ -150,6 +194,10 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: uniswap-report
+          path: reports/
+      - uses: actions/download-artifact@v3
+        with:
+          name: saddle-report
           path: reports/
       - name: "Swap report"
         run: ./clickfile.py dapps report --directory=reports

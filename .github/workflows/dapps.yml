@@ -149,9 +149,31 @@ jobs:
           name: saddle-report
           path: saddle-report.json
 
+  swap-report:
+    runs-on: ubuntu-20.04
+    needs: [prepare, uniswap, saddle]
+    env:
+      SOLANA_URL: "http://${{ needs.prepare.outputs.solana_ip }}:8899"
+      PROXY_URL: "http://${{ needs.prepare.outputs.proxy_ip }}:9090/solana"
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+      - uses: actions/download-artifact@v3
+        with:
+          name: uniswap-report
+          path: reports/
+      - uses: actions/download-artifact@v3
+        with:
+          name: saddle-report
+          path: reports/
+      - name: "Swap report"
+        run: ./clickfile.py dapps report --directory=reports
+
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, swap-report]
+    needs: [prepare, uniswap, saddle, swap-report]
     if: ${{ failure() || success() }}
     steps:
       - uses: actions/checkout@v3
@@ -180,31 +202,9 @@ jobs:
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra destroy
 
-  swap-report:
-    runs-on: ubuntu-20.04
-    needs: [prepare, uniswap]
-    env:
-      SOLANA_URL: "http://${{ needs.prepare.outputs.solana_ip }}:8899"
-      PROXY_URL: "http://${{ needs.prepare.outputs.proxy_ip }}:9090/solana"
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install python requirements
-        id: requirements
-        uses: ./.github/actions/python-requirements
-      - uses: actions/download-artifact@v3
-        with:
-          name: uniswap-report
-          path: reports/
-      - uses: actions/download-artifact@v3
-        with:
-          name: saddle-report
-          path: reports/
-      - name: "Swap report"
-        run: ./clickfile.py dapps report --directory=reports
-
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, destroy]
+    needs: [prepare, uniswap, saddle, destroy]
     if: ${{ failure() }}
     steps:
       - uses: actions/checkout@v3
@@ -214,4 +214,4 @@ jobs:
       - name: Notify on failure
         id: notification
         run: |
-          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "dapps: UniswapV2 NEON tests is failed!"
+          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "DApps testing failed, please check!"

@@ -1,3 +1,4 @@
+import json
 import typing as tp
 from decimal import Decimal
 
@@ -19,23 +20,23 @@ class NeonWeb3Client:
     def __getattr__(self, item):
         return getattr(self._web3, item)
 
+    def _get_evm_info(self, method):
+        resp = requests.post(self._proxy_url, json={"jsonrpc": "2.0", "method": method, "params": [], "id": 1})
+        resp.raise_for_status()
+        try:
+            body = resp.json()
+            return body
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"Failed to decode EVM info: {resp.text}")
+
     def get_proxy_version(self):
-        return requests.get(
-            self._proxy_url,
-            json={"jsonrpc": "2.0", "method": "neon_proxy_version", "params": [], "id": 0},
-        ).json()
+        return self._get_evm_info("neon_proxy_version")
 
     def get_cli_version(self):
-        return requests.get(
-            self._proxy_url,
-            json={"jsonrpc": "2.0", "method": "neon_cli_version", "params": [], "id": 0},
-        ).json()
+        return self._get_evm_info("neon_cli_version")
 
     def get_evm_version(self):
-        return requests.get(
-            self._proxy_url,
-            json={"jsonrpc": "2.0", "method": "web3_clientVersion", "params": [], "id": 0},
-        ).json()
+        return self._get_evm_info("web3_clientVersion")
 
     def get_solana_trx_by_neon(self, tr_id: str):
         return requests.post(

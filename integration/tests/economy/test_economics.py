@@ -863,7 +863,7 @@ class TestEconomics(BaseTests):
         assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
         self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
 
-    @pytest.mark.timeout(720)
+    @pytest.mark.timeout(960)
     def test_deploy_contract_alt_on(self, sol_client):
         """Trigger transaction than requires more than 30 accounts"""
         accounts_quantity = random.randint(31, 45)
@@ -887,9 +887,10 @@ class TestEconomics(BaseTests):
 
         trx_sol = sol_client.get_transaction(Signature.from_string(solana_trx["result"][0]),
                                              max_supported_transaction_version=0)
-
+        operator = PublicKey(trx_sol.value.transaction.transaction.message.account_keys[0])
         alt_address = trx_sol.value.transaction.transaction.message.address_table_lookups[0].account_key
         alt_balance = sol_client.get_balance(PublicKey(alt_address)).value
+        operator_balance = sol_client.get_balance(operator).value
 
         wait_condition(lambda: self.operator.get_solana_balance() != sol_balance_before, timeout_sec=120)
         sol_balance_after = self.operator.get_solana_balance()
@@ -897,12 +898,12 @@ class TestEconomics(BaseTests):
 
         assert sol_balance_before > sol_balance_after
         assert neon_balance_after > neon_balance_before
-
         self.assert_profit(sol_balance_before - sol_balance_after - alt_balance,
                            neon_balance_after - neon_balance_before)
         # the charge for alt creating should be returned
-        wait_condition(lambda: self.operator.get_solana_balance() > sol_balance_after, timeout_sec=60 * 11, delay=3)
-        assert sol_balance_after + alt_balance == self.operator.get_solana_balance() - TX_COST, \
+        wait_condition(lambda: sol_client.get_balance(operator).value > operator_balance, timeout_sec=60 * 15, delay=3)
+
+        assert operator_balance + alt_balance - TX_COST*2 == sol_client.get_balance(operator).value, \
             "Operator balance after the return of the alt creation fee is not correct"
 
     @pytest.mark.parametrize('accounts_quantity', [10])

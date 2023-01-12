@@ -121,7 +121,7 @@ jobs:
           SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
           PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
         run: |
-          ./clickfile.py infra gen-accounts -c 3 -a 10000
+          ./clickfile.py infra gen-accounts -c 5 -a 10000
 
       - name: Launch aave tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -134,6 +134,7 @@ jobs:
           CWD=/tmp/aave-${{ github.run_id }}
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/aave-protocol-v2.git ${CWD}
+          cd ${CWD}
           ls
           docker build -t aave:latest ${CWD}
           proxy_url=http://${{ env.PROXY_IP }}:9090/solana
@@ -182,7 +183,7 @@ jobs:
 
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap]
+    needs: [prepare, uniswap, aave]
     env:
       SOLANA_URL: "http://${{ needs.prepare.outputs.solana_ip }}:8899"
       PROXY_URL: "http://${{ needs.prepare.outputs.proxy_ip }}:9090/solana"

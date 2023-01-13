@@ -154,6 +154,7 @@ jobs:
   swap-report:
     runs-on: ubuntu-20.04
     needs: [prepare, uniswap, saddle]
+    if: always()
     env:
       SOLANA_URL: "http://${{ needs.prepare.outputs.solana_ip }}:8899"
       PROXY_URL: "http://${{ needs.prepare.outputs.proxy_ip }}:9090/solana"

@@ -123,7 +123,7 @@ jobs:
           SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
           PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
         run: |
-          ./clickfile.py infra gen-accounts -c 3 -a 10000
+          ./clickfile.py infra gen-accounts -c 4 -a 10000
 
       - name: Launch saddle tests
         if: ${{ steps.accounts.outcome == 'success' }}

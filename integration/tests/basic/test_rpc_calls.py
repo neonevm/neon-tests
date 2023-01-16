@@ -97,15 +97,15 @@ def get_event_signatures(abi: tp.List[tp.Dict]) -> tp.List[str]:
 
 @allure.story("Basic: Json-RPC call tests")
 class TestRpcCalls(BaseMixin):
-
     _erc20_contract: tp.Optional[tp.Any] = None
 
     @pytest.fixture
     def erc20_contract(self) -> tp.Any:
         if not TestRpcCalls._erc20_contract:
             contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-                "ERC20", "0.6.6", self.sender_account, constructor_args=[1000]
-            )
+                "ERC20/ERC20.sol", "0.8.8", self.sender_account, contract_name="ERC20",
+                constructor_args=['Test Token', 'TT', 1000])
+
             tx_receipt = self.web3_client.send_erc20(
                 self.sender_account,
                 self.recipient_account.address,
@@ -642,7 +642,7 @@ class TestRpcCallsMoreComplex(BaseMixin):
 
     @pytest.fixture(params=["BigGasFactory1", "BigGasFactory2"])
     def deploy_big_gas_requirements_contract(
-        self, request: tp.Any, constructor_args: tp.List[int]
+            self, request: tp.Any, constructor_args: tp.List[int]
     ) -> "web3._utils.datatypes.Contract":
         """Deploy contracts"""
         self.account = self.sender_account

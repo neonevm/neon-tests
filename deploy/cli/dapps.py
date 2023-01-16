@@ -97,7 +97,7 @@ def get_solana_accounts_in_tx(eth_transaction):
     web3_client = NeonWeb3Client(os.environ.get("PROXY_URL"), os.environ.get("CHAIN_ID", 111))
     sol_client = SolanaClient(os.environ.get("SOLANA_URL"))
     trx = web3_client.get_solana_trx_by_neon(eth_transaction)
-    tr = sol_client.get_transaction(Signature.from_string(trx["result"][0]))
+    tr = sol_client.get_transaction(Signature.from_string(trx["result"][0]), max_supported_transaction_version=0)
     if tr.value.transaction.transaction.message.address_table_lookups:
         alt = tr.value.transaction.transaction.message.address_table_lookups
         return len(alt[0].writable_indexes) + len(alt[0].readonly_indexes)

@@ -160,25 +160,29 @@ jobs:
         id: requirements
         uses: ./.github/actions/python-requirements
 
+      - name: Prepare accounts
+        id: accounts
+        env:
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+        run: |
+          ./clickfile.py infra gen-accounts -c 10 -a 10000
+
       - name: Launch yearn tests
         id: yearn
         env:
           PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
           SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          ACCOUNTS: ${{ env.ACCOUNTS }}
         run: |
           CWD=/tmp/yearn-${{ github.run_id }}
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/yearn-vaults ${CWD}
           docker build -t yearn:latest --build-arg PROXY_URL='http://${{ env.PROXY_IP }}:9090/solana' ${CWD}
-          MNEMONIC_PHRASE="slide clip fancy range predict resource stuff once all insect sniff acid"
-          docker run --rm --network host -e MNEMONIC_PHRASE="$MNEMONIC_PHRASE" \
+          docker run --rm --network host \
+            -e ACCOUNTS=${{ env.ACCOUNTS }} \
             yearn:latest \
             bash -c " \
-              brownie run scripts/neon_faucet.py --network neon && \
-              brownie run scripts/neon_faucet.py --network neon && \
-              brownie run scripts/neon_faucet.py --network neon && \
-              brownie run scripts/neon_faucet.py --network neon && \
-              brownie run scripts/neon_faucet.py --network neon && \
               brownie test -v \
                 tests/integration \
                 tests/functional/registry \

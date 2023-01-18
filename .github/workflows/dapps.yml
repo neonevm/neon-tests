@@ -150,10 +150,54 @@ jobs:
         with:
           name: saddle-report
           path: saddle-report.json
+  yearn:
+    runs-on: neon-hosted
+    needs:
+      - prepare
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Launch saddle tests
+        id: yearn
+        env:
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          PROXY_URL: "http://${{ env.PROXY_IP }}:9090/solana"
+        run: |
+          CWD=/tmp/yearn-${{ github.run_id }}
+          mkdir -p ${CWD}
+          git clone https://github.com/neonlabsorg/yearn-vaults ${CWD}
+          docker build -t yearn:latest ${CWD}
+          MNEMONIC_PHRASE="slide clip fancy range predict resource stuff once all insect sniff acid"
+          docker run --rm --network host -e MNEMONIC_PHRASE="$MNEMONIC_PHRASE" \
+            yearn:latest \
+            bash -c " \
+              brownie run scripts/neon_faucet.py --network neon && \
+              brownie run scripts/neon_faucet.py --network neon && \
+              brownie run scripts/neon_faucet.py --network neon && \
+              brownie run scripts/neon_faucet.py --network neon && \
+              brownie run scripts/neon_faucet.py --network neon && \
+              brownie test -v \
+                tests/integration \
+                tests/functional/registry \
+                tests/functional/strategy \
+                tests/functional/wrappers \
+              --network neon"
+          docker cp yearn-${{ github.run_id }}:/usr/src/app/report.json yearn-report.json
+          docker rm -f yearn-${{ github.run_id }}
+
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: yearn-report
+          path: yearn-report.json
 
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle]
+    needs: [prepare, uniswap, saddle, yearn]
     if: always()
     env:
       SOLANA_URL: "http://${{ needs.prepare.outputs.solana_ip }}:8899"
@@ -171,12 +215,18 @@ jobs:
         with:
           name: saddle-report
           path: reports/
+      - uses: actions/download-artifact@v3
+        with:
+          name: yearn-report
+          path: reports/
       - name: "Swap report"
         run: ./clickfile.py dapps report --directory=reports
 
+
+
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, swap-report]
+    needs: [prepare, uniswap, saddle, yearn, swap-report]
     if: always()
     steps:
       - uses: actions/checkout@v3
@@ -207,7 +257,7 @@ jobs:
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, destroy]
+    needs: [prepare, uniswap, saddle, yearn, destroy]
     if: ${{ failure() }}
     steps:
       - uses: actions/checkout@v3

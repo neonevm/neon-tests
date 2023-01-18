@@ -67,7 +67,8 @@ def gen_hash_of_block(size: int) -> str:
     """Generates a block hash of the given size"""
     try:
         block_hash = hex(int.from_bytes(os.urandom(size), "big"))
-        if bytes.fromhex(block_hash[2:]):
+        print(len(block_hash))
+        if bytes.fromhex(block_hash[2:]) or len(block_hash[2:]) != size * 2:
             return block_hash
     except ValueError:
         return gen_hash_of_block(size)

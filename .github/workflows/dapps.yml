@@ -183,9 +183,8 @@ jobs:
             -e ACCOUNTS=${{ env.ACCOUNTS }} \
             yearn:latest \
             bash -c " \
-              brownie test \
+              brownie test -v \
                 tests/functional/registry \
-              -vv \
               --network neon"
           docker cp yearn-${{ github.run_id }}:/usr/src/app/report.json yearn-report.json
           docker rm -f yearn-${{ github.run_id }}

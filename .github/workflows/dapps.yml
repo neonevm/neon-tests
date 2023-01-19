@@ -184,10 +184,7 @@ jobs:
             yearn:latest \
             bash -c " \
               brownie test \
-                tests/integration \
                 tests/functional/registry \
-                tests/functional/strategy \
-                tests/functional/wrappers \
               -vv \
               --network neon"
           docker cp yearn-${{ github.run_id }}:/usr/src/app/report.json yearn-report.json

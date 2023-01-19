@@ -166,7 +166,7 @@ jobs:
           SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
           PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
         run: |
-          ./clickfile.py infra gen-accounts -c 10 -a 20000
+          ./clickfile.py infra gen-accounts -c 10 -a 25000
 
       - name: Launch yearn tests
         id: yearn

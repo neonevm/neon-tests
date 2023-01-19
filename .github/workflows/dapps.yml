@@ -166,7 +166,7 @@ jobs:
           SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
           PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
         run: |
-          ./clickfile.py infra gen-accounts -c 10 -a 10000
+          ./clickfile.py infra gen-accounts -c 10 -a 20000
 
       - name: Launch yearn tests
         id: yearn
@@ -183,11 +183,12 @@ jobs:
             -e ACCOUNTS=${{ env.ACCOUNTS }} \
             yearn:latest \
             bash -c " \
-              brownie test -v \
+              brownie test \
                 tests/integration \
                 tests/functional/registry \
                 tests/functional/strategy \
                 tests/functional/wrappers \
+              -vv \
               --network neon"
           docker cp yearn-${{ github.run_id }}:/usr/src/app/report.json yearn-report.json
           docker rm -f yearn-${{ github.run_id }}

@@ -238,14 +238,8 @@ jobs:
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
-      - name: Download docker logs
-        run: ./clickfile.py infra download-logs
-      - uses: actions/upload-artifact@v3
-        with:
-          name: AWS docker logs
-          path: ./logs/*
-      - name: Destroy stand with terraform
-        id: destroy
+      - name: Prepare server for destroy terraform stand
+        if: always()
         run: |
           sudo apt-get update && sudo apt-get install -y python-dev gnupg software-properties-common wget
           wget -O- https://apt.releases.hashicorp.com/gpg | \
@@ -261,7 +255,18 @@ jobs:
           sudo apt-get install terraform
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
+      - name: Download docker logs
+        run: ./clickfile.py infra download-logs
+      - name: Destroy stand with terraform
+        id: destroy
+        if: always()
+        run: |
           ./clickfile.py infra destroy
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: AWS docker logs
+          path: ./logs/*
 
   notify:
     runs-on: ubuntu-20.04

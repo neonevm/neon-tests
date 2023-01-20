@@ -101,11 +101,13 @@ def download_remote_docker_logs():
     artifact_logs = "./logs"
     ssh_key = "/tmp/dapps-stand"
     os.mkdir(artifact_logs)
-
-    #subprocess.run(
-    #    f'ssh-keyscan -H {solana_ip} >> {home_path}/.ssh/known_hosts', shell=True)
-    #subprocess.run(
-    #    f'ssh-keyscan -H {proxy_ip} >> {home_path}/.ssh/known_hosts', shell=True)
+    if not os.path.exists(f"{home_path}/.ssh"):
+        os.mkdir(f"{home_path}/.ssh")
+    
+    subprocess.run(
+       f'ssh-keyscan -H {solana_ip} >> {home_path}/.ssh/known_hosts', shell=True)
+    subprocess.run(
+       f'ssh-keyscan -H {proxy_ip} >> {home_path}/.ssh/known_hosts', shell=True)
     ssh_client = SSHClient()
     ssh_client.load_system_host_keys()
     ssh_client.connect(solana_ip, username='ubuntu',

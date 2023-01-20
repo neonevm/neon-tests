@@ -157,40 +157,39 @@ jobs:
     needs:
       - prepare
     steps:
-      - run: echo "step skipped"
-          #      - uses: actions/checkout@v3
-#      - name: Install python requirements
-#        id: requirements
-#        uses: ./.github/actions/python-requirements
-#
-#      - name: Prepare accounts
-#        id: accounts
-#        env:
-#          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
-#          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-#        run: |
-#          ./clickfile.py infra gen-accounts -c 10 -a 50000
-#
-#      - name: Launch yearn tests
-#        id: yearn
-#        env:
-#          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-#          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
-#          ACCOUNTS: ${{ env.ACCOUNTS }}
-#        run: |
-#          CWD=/tmp/yearn-${{ github.run_id }}
-#          mkdir -p ${CWD}
-#          git clone https://github.com/neonlabsorg/yearn-vaults ${CWD}
-#          docker build -t yearn:latest --build-arg PROXY_URL='http://${{ env.PROXY_IP }}:9090/solana' ${CWD}
-#          docker run --rm --network host \
-#            -e ACCOUNTS=${{ env.ACCOUNTS }} \
-#            yearn:latest \
-#            bash -c " \
-#              brownie test \
-#              ./tests/functional/strategy/test_common_health_check.py \
-#              -vvvv --network neon"
-#          docker cp yearn-${{ github.run_id }}:/usr/src/app/report.json yearn-report.json
-#          docker rm -f yearn-${{ github.run_id }}
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        env:
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+        run: |
+          ./clickfile.py infra gen-accounts -c 10 -a 50000
+
+      - name: Launch yearn tests
+        id: yearn
+        env:
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+        run: |
+          CWD=/tmp/yearn-${{ github.run_id }}
+          mkdir -p ${CWD}
+          git clone https://github.com/neonlabsorg/yearn-vaults ${CWD}
+          docker build -t yearn:latest --build-arg PROXY_URL='http://${{ env.PROXY_IP }}:9090/solana' ${CWD}
+          docker run --rm --network host \
+            -e ACCOUNTS=${{ env.ACCOUNTS }} \
+            yearn:latest \
+            bash -c " \
+              brownie test \
+              ./tests/functional/strategy/test_common_health_check.py \
+              -vvvv --network neon"
+          docker cp yearn-${{ github.run_id }}:/usr/src/app/report.json yearn-report.json
+          docker rm -f yearn-${{ github.run_id }}
 
       - name: Save report
         uses: actions/upload-artifact@v3

@@ -6,6 +6,8 @@ import typing as tp
 import pathlib
 
 import tabulate
+from paramiko.client import SSHClient
+from scp import SCPClient
 from solana.transaction import Signature
 
 from deploy.cli import faucet as faucet_cli
@@ -47,19 +49,7 @@ def set_github_env(envs: tp.Dict, upper=True) -> None:
                 env_file.write(f"\n{key.upper() if upper else key}={str(value)}")
 
 
-def deploy_infrastructure() -> dict:
-    subprocess.check_call(f"terraform init {TF_ENV['TF_BACKEND_CONFIG']}", shell=True, env=TF_ENV, cwd=TF_CWD)
-    subprocess.check_call("terraform apply --auto-approve=true", shell=True, env=TF_ENV, cwd=TF_CWD)
-    proxy_ip = subprocess.run(
-        "terraform output --json | jq -r '.proxy_ip.value'",
-        shell=True,
-        env=TF_ENV,
-        cwd="deploy/aws",
-        stdout=subprocess.PIPE,
-        text=True
-    ).stdout.strip()
-    if isinstance(proxy_ip, bytes):
-        proxy_ip = proxy_ip.decode()
+def get_solana_ip() -> str:
     solana_ip = subprocess.run(
         "terraform output --json | jq -r '.solana_ip.value'",
         shell=True,
@@ -70,6 +60,28 @@ def deploy_infrastructure() -> dict:
     ).stdout.strip()
     if isinstance(solana_ip, bytes):
         solana_ip = solana_ip.decode()
+    return solana_ip
+
+
+def get_proxy_ip() -> str:
+    proxy_ip = subprocess.run(
+        "terraform output --json | jq -r '.proxy_ip.value'",
+        shell=True,
+        env=TF_ENV,
+        cwd="deploy/aws",
+        stdout=subprocess.PIPE,
+        text=True
+    ).stdout.strip()
+    if isinstance(proxy_ip, bytes):
+        proxy_ip = proxy_ip.decode()
+    return proxy_ip
+
+
+def deploy_infrastructure() -> dict:
+    subprocess.check_call(f"terraform init {TF_ENV['TF_BACKEND_CONFIG']}", shell=True, env=TF_ENV, cwd=TF_CWD)
+    subprocess.check_call("terraform apply --auto-approve=true", shell=True, env=TF_ENV, cwd=TF_CWD)
+    proxy_ip = get_proxy_ip()
+    solana_ip = get_solana_ip()
     infra = dict(solana_ip=solana_ip, proxy_ip=proxy_ip)
     set_github_env(infra)
     return infra
@@ -78,6 +90,42 @@ def deploy_infrastructure() -> dict:
 def destroy_infrastructure():
     subprocess.run(f"terraform init {TF_ENV['TF_BACKEND_CONFIG']}", shell=True, env=TF_ENV, cwd=TF_CWD)
     subprocess.run("terraform destroy --auto-approve=true", shell=True, env=TF_ENV, cwd=TF_CWD)
+
+
+def download_remote_docker_logs():
+    proxy_ip = get_proxy_ip()
+    solana_ip = get_solana_ip()
+
+    home_path = os.environ.get("HOME")
+    artifact_logs = "./logs"
+    ssh_key = "/tmp/dapps-stand"
+    os.mkdir(artifact_logs)
+
+    subprocess.run(
+        f'ssh-keyscan -H {solana_ip} >> {home_path}/.ssh/known_hosts', shell=True)
+    subprocess.run(
+        f'ssh-keyscan -H {proxy_ip} >> {home_path}/.ssh/known_hosts', shell=True)
+    ssh_client = SSHClient()
+    ssh_client.load_system_host_keys()
+    ssh_client.connect(solana_ip, username='ubuntu',
+                       key_filename=ssh_key, timeout=120)
+
+    upload_service_logs(ssh_client, "solana", artifact_logs)
+
+    ssh_client.connect(proxy_ip, username='ubuntu',
+                       key_filename=ssh_key, timeout=120)
+    services = ["postgres", "dbcreation", "indexer", "proxy", "faucet"]
+    for service in services:
+        upload_service_logs(ssh_client, service, artifact_logs)
+
+
+def upload_service_logs(ssh_client, service, artifact_logs):
+    scp_client = SCPClient(transport=ssh_client.get_transport())
+    print(f"Upload logs for service: {service}")
+    ssh_client.exec_command(f"touch /tmp/{service}.log.bz2")
+    ssh_client.exec_command(
+        f'sudo docker logs {service} 2>&1 | pbzip2 -f > /tmp/{service}.log.bz2')
+    scp_client.get(f'/tmp/{service}.log.bz2', artifact_logs)
 
 
 def prepare_accounts(count, amount) -> tp.List:

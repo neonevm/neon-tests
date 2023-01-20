@@ -93,6 +93,7 @@ def destroy_infrastructure():
 
 
 def download_remote_docker_logs():
+    subprocess.run(f"terraform init {TF_ENV['TF_BACKEND_CONFIG']}", shell=True, env=TF_ENV, cwd=TF_CWD)
     proxy_ip = get_proxy_ip()
     solana_ip = get_solana_ip()
 

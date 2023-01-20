@@ -126,8 +126,13 @@ def upload_service_logs(ssh_client, service, artifact_logs):
     scp_client = SCPClient(transport=ssh_client.get_transport())
     print(f"Upload logs for service: {service}")
     ssh_client.exec_command(f"touch /tmp/{service}.log.bz2")
-    ssh_client.exec_command(
+    stdin, stdout, stderr = ssh_client.exec_command(f"sudo docker logs {service} -n 10")
+    print(stdout.read())
+    print(stderr.read())
+    stdin, stdout, stderr = ssh_client.exec_command(
         f'sudo docker logs {service} 2>&1 | pbzip2 -f > /tmp/{service}.log.bz2')
+    print(stdout.read())
+    print(stderr.read())
     scp_client.get(f'/tmp/{service}.log.bz2', artifact_logs)
 
 

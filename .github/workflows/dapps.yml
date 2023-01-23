@@ -127,7 +127,7 @@ jobs:
 
       - name: Launch saddle tests
         if: ${{ steps.accounts.outcome == 'success' }}
-        id: uniswap
+        id: saddle
         env:
           PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
           SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
@@ -204,6 +204,10 @@ jobs:
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra destroy
+      - name: Remove tmp directories
+        run: |
+          rm -rf /tmp/saddle-${{ github.run_id }}
+          rm -rf /tmp/uniswap-${{ github.run_id }}
 
   notify:
     runs-on: ubuntu-20.04

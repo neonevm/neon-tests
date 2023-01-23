@@ -164,10 +164,12 @@ jobs:
         id: requirements
         uses: ./.github/actions/python-requirements
       - uses: actions/download-artifact@v3
+        continue-on-error: true
         with:
           name: uniswap-report
           path: reports/
       - uses: actions/download-artifact@v3
+        continue-on-error: true
         with:
           name: saddle-report
           path: reports/

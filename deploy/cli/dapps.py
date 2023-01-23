@@ -100,13 +100,13 @@ def get_solana_accounts_in_tx(eth_transaction):
     tr = sol_client.get_transaction(Signature.from_string(trx["result"][0]), max_supported_transaction_version=0)
     if tr.value.transaction.transaction.message.address_table_lookups:
         alt = tr.value.transaction.transaction.message.address_table_lookups
-        return len(alt[0].writable_indexes) + len(alt[0].readonly_indexes)
+        return len(alt[0].writable_indexes) + len(alt[0].readonly_indexes), len(trx["result"])
     else:
-        return len(tr.value.transaction.transaction.message.account_keys)
+        return len(tr.value.transaction.transaction.message.account_keys), len(trx["result"])
 
 
 def print_report(directory):
-    headers = ["Action", "Fee", "Cost in $", "Accounts"]
+    headers = ["Action", "Fee", "Cost in $", "Accounts", "TRx"]
     out = {}
     reports = {}
     for path in glob.glob(str(pathlib.Path(directory) / "*-report.json")):
@@ -117,11 +117,13 @@ def print_report(directory):
     for app in reports:
         out[app] = []
         for action in reports[app]:
+            accounts, trx = get_solana_accounts_in_tx(action["tx"])
             row = [action["name"]]
             fee = int(action["usedGas"]) * int(action["gasPrice"]) / 1000000000000000000
             row.append(fee)
             row.append(fee * NEON_COST)
-            row.append(get_solana_accounts_in_tx(action["tx"]))
+            row.append(accounts)
+            row.append(trx)
             out[app].append(row)
 
     for app in out:

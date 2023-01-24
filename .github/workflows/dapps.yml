@@ -69,89 +69,87 @@ jobs:
     needs:
       - prepare
     steps:
-      - run: echo "step skipped"
-#      - uses: actions/checkout@v3
-#      - name: Install python requirements
-#        id: requirements
-#        uses: ./.github/actions/python-requirements
-#
-#      - name: Prepare accounts
-#        id: accounts
-#        env:
-#          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
-#          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-#        run: |
-#          ./clickfile.py infra gen-accounts -c 3 -a 10000
-#
-#      - name: Launch uniswap tests
-#        if: ${{ steps.accounts.outcome == 'success' }}
-#        id: uniswap
-#        env:
-#          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-#          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
-#          ACCOUNTS: ${{ env.ACCOUNTS }}
-#        run: |
-#          CWD=/tmp/uniswap-${{ github.run_id }}
-#          mkdir -p ${CWD}
-#          git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
-#          docker build -t uniswap:latest ${CWD}
-#          proxy_url=http://${{ env.PROXY_IP }}:9090/solana
-#          test -t 1 && USE_TTY="-t"
-#          docker run -i ${USE_TTY} --name=uniswap-${{ github.run_id }} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} --entrypoint /bin/bash uniswap:latest -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
-#          docker cp uniswap-${{ github.run_id }}:/usr/src/app/report.json report.json
-#          docker rm -f uniswap-${{ github.run_id }}
-#          mv report.json uniswap-report.json
-#
-#      - name: Save report
-#        uses: actions/upload-artifact@v3
-#        with:
-#            name: uniswap-report
-#            path: uniswap-report.json
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        env:
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+        run: |
+          ./clickfile.py infra gen-accounts -c 3 -a 10000
+
+      - name: Launch uniswap tests
+        if: ${{ steps.accounts.outcome == 'success' }}
+        id: uniswap
+        env:
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+        run: |
+          CWD=/tmp/uniswap-${{ github.run_id }}
+          mkdir -p ${CWD}
+          git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
+          docker build -t uniswap:latest ${CWD}
+          proxy_url=http://${{ env.PROXY_IP }}:9090/solana
+          test -t 1 && USE_TTY="-t"
+          docker run -i ${USE_TTY} --name=uniswap-${{ github.run_id }} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} --entrypoint /bin/bash uniswap:latest -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
+          docker cp uniswap-${{ github.run_id }}:/usr/src/app/report.json report.json
+          docker rm -f uniswap-${{ github.run_id }}
+          mv report.json uniswap-report.json
+
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+            name: uniswap-report
+            path: uniswap-report.json
 
   saddle:
     runs-on: neon-hosted
     needs:
       - prepare
     steps:
-    - run: echo "step skipped"
-#      - uses: actions/checkout@v3
-#      - name: Install python requirements
-#        id: requirements
-#        uses: ./.github/actions/python-requirements
-#
-#      - name: Prepare accounts
-#        id: accounts
-#        env:
-#          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
-#          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-#        run: |
-#          ./clickfile.py infra gen-accounts -c 4 -a 10000
-#
-#      - name: Launch saddle tests
-#        if: ${{ steps.accounts.outcome == 'success' }}
-#        id: uniswap
-#        env:
-#          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-#          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
-#          ACCOUNTS: ${{ env.ACCOUNTS }}
-#        run: |
-#          CWD=/tmp/saddle-${{ github.run_id }}
-#          mkdir -p ${CWD}
-#          git clone https://github.com/neonlabsorg/saddle-contract ${CWD}
-#          docker build -t saddle:latest ${CWD}
-#          proxy_url=http://${{ env.PROXY_IP }}:9090/solana
-#          docker run -i -d --name=saddle-${{ github.run_id }} saddle:latest /bin/bash
-#          docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} npx hardhat run /usr/src/app/scripts/deploy2Tokens.ts
-#          docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} npx hardhat run /usr/src/app/scripts/deploy3Tokens.ts
-#          docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} npx hardhat run /usr/src/app/scripts/deployMetaPool.ts
-#          docker cp saddle-${{ github.run_id }}:/usr/src/app/report.json saddle-report.json
-#          docker rm -f saddle-${{ github.run_id }}
-#
-#      - name: Save report
-#        uses: actions/upload-artifact@v3
-#        with:
-#          name: saddle-report
-#          path: saddle-report.json
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        env:
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+        run: |
+          ./clickfile.py infra gen-accounts -c 4 -a 10000
+
+      - name: Launch saddle tests
+        if: ${{ steps.accounts.outcome == 'success' }}
+        id: uniswap
+        env:
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+        run: |
+          CWD=/tmp/saddle-${{ github.run_id }}
+          mkdir -p ${CWD}
+          git clone https://github.com/neonlabsorg/saddle-contract ${CWD}
+          docker build -t saddle:latest ${CWD}
+          proxy_url=http://${{ env.PROXY_IP }}:9090/solana
+          docker run -i -d --name=saddle-${{ github.run_id }} saddle:latest /bin/bash
+          docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} npx hardhat run /usr/src/app/scripts/deploy2Tokens.ts
+          docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} npx hardhat run /usr/src/app/scripts/deploy3Tokens.ts
+          docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} npx hardhat run /usr/src/app/scripts/deployMetaPool.ts
+          docker cp saddle-${{ github.run_id }}:/usr/src/app/report.json saddle-report.json
+          docker rm -f saddle-${{ github.run_id }}
+
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: saddle-report
+          path: saddle-report.json
   yearn:
     runs-on: neon-hosted
     needs:
@@ -186,7 +184,10 @@ jobs:
             yearn:latest \
             bash -c " \
               brownie test \
-              ./tests/functional/strategy/test_common_health_check.py \
+                tests/integration \
+                tests/functional/registry \
+                tests/functional/strategy \
+                tests/functional/wrappers \
               -vvvv --network neon"
           docker cp yearn-${{ github.run_id }}:/usr/src/app/report.json yearn-report.json
           docker rm -f yearn-${{ github.run_id }}

@@ -104,8 +104,8 @@ jobs:
       - name: Save report
         uses: actions/upload-artifact@v3
         with:
-            name: uniswap-report
-            path: uniswap-report.json
+          name: uniswap-report
+          path: uniswap-report.json
 
   saddle:
     runs-on: neon-hosted
@@ -127,7 +127,7 @@ jobs:
 
       - name: Launch saddle tests
         if: ${{ steps.accounts.outcome == 'success' }}
-        id: uniswap
+        id: saddle
         env:
           PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
           SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
@@ -228,8 +228,6 @@ jobs:
       - name: "Swap report"
         run: ./clickfile.py dapps report --directory=reports
 
-
-
   destroy:
     runs-on: ubuntu-20.04
     needs: [prepare, uniswap, saddle, yearn, swap-report]
@@ -271,6 +269,10 @@ jobs:
         with:
           name: AWS docker logs
           path: ./logs/*
+      - name: Remove tmp directories
+        run: |
+          rm -rf /tmp/saddle-${{ github.run_id }}
+          rm -rf /tmp/uniswap-${{ github.run_id }}
 
   notify:
     runs-on: ubuntu-20.04

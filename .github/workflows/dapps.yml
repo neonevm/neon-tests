@@ -230,7 +230,7 @@ jobs:
           docker build -t aave:latest ${CWD}
           proxy_url=http://${{ env.PROXY_IP }}:9090/solana
           docker run -i -d --name=aave-${{ github.run_id }} aave:latest /bin/bash
-          docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} npm run neonlabs:deploy --network=neonlabs
+          docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} aave-${{ github.run_id }} npm run neonlabs:deploy --network=neonlabs
           docker cp aave-${{ github.run_id }}:/usr/src/app/report.json aave-report.json
           docker rm -f aave-${{ github.run_id }}
 

@@ -651,6 +651,11 @@ def destroy():
     dapps_cli.destroy_infrastructure()
 
 
+@infra.command(name="download-logs", help="Download remote docker logs")
+def download_logs():
+    dapps_cli.download_remote_docker_logs()
+
+
 @infra.command(name="gen-accounts", help="Setup accounts with balance")
 @click.option("-c", "--count", default=2, help="How many users prepare")
 @click.option("-a", "--amount", default=10000, help="How many airdrop")
@@ -660,6 +665,7 @@ def prepare_accounts(count, amount):
 
 infra.add_command(deploy, "deploy")
 infra.add_command(destroy, "destroy")
+infra.add_command(download_logs, "download-logs")
 infra.add_command(prepare_accounts, "gen-accounts")
 
 

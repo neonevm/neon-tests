@@ -104,8 +104,8 @@ jobs:
       - name: Save report
         uses: actions/upload-artifact@v3
         with:
-            name: uniswap-report
-            path: uniswap-report.json
+          name: uniswap-report
+          path: uniswap-report.json
 
   saddle:
     runs-on: neon-hosted
@@ -150,10 +150,57 @@ jobs:
         with:
           name: saddle-report
           path: saddle-report.json
+  yearn:
+    runs-on: neon-hosted
+    needs:
+      - prepare
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        env:
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+        run: |
+          ./clickfile.py infra gen-accounts -c 10 -a 50000
+
+      - name: Launch yearn tests
+        id: yearn
+        env:
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+        run: |
+          CWD=/tmp/yearn-${{ github.run_id }}
+          mkdir -p ${CWD}
+          git clone https://github.com/neonlabsorg/yearn-vaults ${CWD}
+          docker build -t yearn:latest --build-arg PROXY_URL='http://${{ env.PROXY_IP }}:9090/solana' ${CWD}
+          docker run --rm --network host \
+            -e ACCOUNTS=${{ env.ACCOUNTS }} \
+            yearn:latest \
+            bash -c " \
+              brownie test \
+                tests/integration \
+                tests/functional/registry \
+                tests/functional/strategy \
+                tests/functional/wrappers \
+              -vvvv --network neon"
+          docker cp yearn-${{ github.run_id }}:/app/report.json yearn-report.json
+          docker rm -f yearn-${{ github.run_id }}
+
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: yearn-report
+          path: yearn-report.json
 
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle]
+    needs: [prepare, uniswap, saddle, yearn]
     if: always()
     env:
       SOLANA_URL: "http://${{ needs.prepare.outputs.solana_ip }}:8899"
@@ -173,12 +220,17 @@ jobs:
         with:
           name: saddle-report
           path: reports/
+      - uses: actions/download-artifact@v3
+        continue-on-error: true
+        with:
+          name: yearn-report
+          path: reports/
       - name: "Swap report"
         run: ./clickfile.py dapps report --directory=reports
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, swap-report]
+    needs: [prepare, uniswap, saddle, yearn, swap-report]
     if: always()
     steps:
       - uses: actions/checkout@v3
@@ -188,8 +240,8 @@ jobs:
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
-      - name: Destroy stand with terraform
-        id: destroy
+      - name: Prepare server for destroy terraform stand
+        if: always()
         run: |
           sudo apt-get update && sudo apt-get install -y python-dev gnupg software-properties-common wget
           wget -O- https://apt.releases.hashicorp.com/gpg | \
@@ -205,15 +257,27 @@ jobs:
           sudo apt-get install terraform
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
+      - name: Download docker logs
+        run: ./clickfile.py infra download-logs
+      - name: Destroy stand with terraform
+        id: destroy
+        if: always()
+        run: |
           ./clickfile.py infra destroy
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: AWS docker logs
+          path: ./logs/*
       - name: Remove tmp directories
         run: |
           rm -rf /tmp/saddle-${{ github.run_id }}
           rm -rf /tmp/uniswap-${{ github.run_id }}
+          rm -rf /tmp/yearn-${{ github.run_id }}
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, destroy]
+    needs: [prepare, uniswap, saddle, yearn, destroy]
     if: ${{ failure() }}
     steps:
       - uses: actions/checkout@v3

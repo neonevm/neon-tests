@@ -77,7 +77,7 @@ class EthGetStorageAtPreparationStage(head.NeonTasksSet):
         """Deploy once for all spawned users"""
         EthGetStorageAtPreparationStage._deploy_contract_done = True
         account = self.web3_client.create_account()
-        self.task_keeps_balance(account=account)
+        self.check_balance(account=account)
         contract_name = "RetrieveStore"
         self.log.info(f"`{contract_name}`: deploy contract.")
         contract, contract_tx = self.deploy_contract(
@@ -111,7 +111,7 @@ class EthGetStorageAtPreparationStage(head.NeonTasksSet):
                     "gasPrice": self.web3_client.gas_price(),
                 }
             )
-            tx_receipt = dict(self.web3_client.store_randint(self.account, tx))
+            tx_receipt = dict(self.web3_client.send_transaction(self.account, tx))
             tx_receipt.update({"contract": {"address": contract.address, "abi": contract.abi}})
             return tx_receipt
         self.log.info(f"no `storage` contracts found, data store canceled.")
@@ -147,7 +147,7 @@ class ERC20WrappedPreparationStage(head.ERC20SPLTasksSet):
     @dump_history("logs")
     def prepare_data_by_erc20_wrapped(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Make number of `ERC20Wrapper` transfer transactions between different client accounts"""
-        return super(ERC20WrappedPreparationStage, self).task_send_erc20_wrapped()
+        return super(ERC20WrappedPreparationStage, self).task_send_erc20_spl()
 
 
 @tag("prepare")

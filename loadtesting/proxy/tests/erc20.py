@@ -12,8 +12,8 @@ from loadtesting.proxy.common.base import NeonProxyTasksSet
 
 LOG = logging.getLogger(__name__)
 
-ERC20_CONTRACT_NAME = "ERC20.sol"
-ERC20_CONTRACT_VERSION = "0.6.6"
+ERC20_CONTRACT_NAME = "ERC20/ERC20.sol"
+ERC20_CONTRACT_VERSION = "0.8.0"
 
 
 @tag("erc20")
@@ -30,7 +30,8 @@ class ERC20TasksSet(NeonProxyTasksSet):
         self.log.info(f"Deploy ERC20 contract.")
         amount_range = pow(10, 15)
         amount = random.randint(amount_range, amount_range + pow(10, 3))
-        contract, _ = self.deploy_contract(ERC20_CONTRACT_NAME, ERC20_CONTRACT_VERSION, self.account, constructor_args=[amount])
+        contract, _ = self.deploy_contract(ERC20_CONTRACT_NAME, ERC20_CONTRACT_VERSION, self.account,
+                                           constructor_args=['Test Token', 'TT', amount])
         self._buffer.setdefault(self.account.address, {}).update(
             {contract.address: {"contract": contract, "amount": amount}}
         )
@@ -82,7 +83,7 @@ def prepare_one_contract_for_erc20(environment: "locust.env.Environment", **kwar
     erc_contract, _ = neon_client.deploy_and_get_contract(ERC20_CONTRACT_NAME,
                                                           account=eth_account,
                                                           version=ERC20_CONTRACT_VERSION,
-                                                          constructor_args=[web3.Web3.toWei(10000000000, "ether")])
+                                                          constructor_args=['Test Token', 'TT', web3.Web3.toWei(10000000000, "ether")])
     environment.erc20_one = {
         "user": eth_account,
         "contract": erc_contract

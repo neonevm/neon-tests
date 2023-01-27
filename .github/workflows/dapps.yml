@@ -1,5 +1,7 @@
 name: "dApps testing"
 on:
+  schedule:
+    - cron: "0 1 * * 6"
   workflow_dispatch:
 
 env:
@@ -102,13 +104,134 @@ jobs:
       - name: Save report
         uses: actions/upload-artifact@v3
         with:
-            name: uniswap-report
-            path: uniswap-report.json
+          name: uniswap-report
+          path: uniswap-report.json
+
+  saddle:
+    runs-on: neon-hosted
+    needs:
+      - prepare
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        env:
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+        run: |
+          ./clickfile.py infra gen-accounts -c 4 -a 10000
+
+      - name: Launch saddle tests
+        if: ${{ steps.accounts.outcome == 'success' }}
+        id: saddle
+        env:
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+        run: |
+          CWD=/tmp/saddle-${{ github.run_id }}
+          mkdir -p ${CWD}
+          git clone https://github.com/neonlabsorg/saddle-contract ${CWD}
+          docker build -t saddle:latest ${CWD}
+          proxy_url=http://${{ env.PROXY_IP }}:9090/solana
+          docker run -i -d --name=saddle-${{ github.run_id }} saddle:latest /bin/bash
+          docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} npx hardhat run /usr/src/app/scripts/deploy2Tokens.ts
+          docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} npx hardhat run /usr/src/app/scripts/deploy3Tokens.ts
+          docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} npx hardhat run /usr/src/app/scripts/deployMetaPool.ts
+          docker cp saddle-${{ github.run_id }}:/usr/src/app/report.json saddle-report.json
+          docker rm -f saddle-${{ github.run_id }}
+
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: saddle-report
+          path: saddle-report.json
+  yearn:
+    runs-on: neon-hosted
+    needs:
+      - prepare
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        env:
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+        run: |
+          ./clickfile.py infra gen-accounts -c 10 -a 50000
+
+      - name: Launch yearn tests
+        id: yearn
+        env:
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+        run: |
+          CWD=/tmp/yearn-${{ github.run_id }}
+          mkdir -p ${CWD}
+          git clone https://github.com/neonlabsorg/yearn-vaults ${CWD}
+          docker build -t yearn:latest --build-arg PROXY_URL='http://${{ env.PROXY_IP }}:9090/solana' ${CWD}
+          docker run --rm --network host \
+            -e ACCOUNTS=${{ env.ACCOUNTS }} \
+            yearn:latest \
+            bash -c " \
+              brownie test \
+                tests/integration \
+                tests/functional/registry \
+                tests/functional/strategy \
+                tests/functional/wrappers \
+              -vvvv --network neon"
+          docker cp yearn-${{ github.run_id }}:/app/report.json yearn-report.json
+          docker rm -f yearn-${{ github.run_id }}
+
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: yearn-report
+          path: yearn-report.json
+
+  swap-report:
+    runs-on: ubuntu-20.04
+    needs: [prepare, uniswap, saddle, yearn]
+    if: always()
+    env:
+      SOLANA_URL: "http://${{ needs.prepare.outputs.solana_ip }}:8899"
+      PROXY_URL: "http://${{ needs.prepare.outputs.proxy_ip }}:9090/solana"
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+      - uses: actions/download-artifact@v3
+        continue-on-error: true
+        with:
+          name: uniswap-report
+          path: reports/
+      - uses: actions/download-artifact@v3
+        continue-on-error: true
+        with:
+          name: saddle-report
+          path: reports/
+      - uses: actions/download-artifact@v3
+        continue-on-error: true
+        with:
+          name: yearn-report
+          path: reports/
+      - name: "Swap report"
+        run: ./clickfile.py dapps report --directory=reports
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, swap-report]
-    if: ${{ failure() || success() }}
+    needs: [prepare, uniswap, saddle, yearn, swap-report]
+    if: always()
     steps:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
@@ -117,8 +240,8 @@ jobs:
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
-      - name: Destroy stand with terraform
-        id: destroy
+      - name: Prepare server for destroy terraform stand
+        if: always()
         run: |
           sudo apt-get update && sudo apt-get install -y python-dev gnupg software-properties-common wget
           wget -O- https://apt.releases.hashicorp.com/gpg | \
@@ -134,29 +257,27 @@ jobs:
           sudo apt-get install terraform
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
+      - name: Download docker logs
+        run: ./clickfile.py infra download-logs
+      - name: Destroy stand with terraform
+        id: destroy
+        if: always()
+        run: |
           ./clickfile.py infra destroy
-
-  swap-report:
-    runs-on: ubuntu-20.04
-    needs: [prepare, uniswap]
-    env:
-      SOLANA_URL: "http://${{ needs.prepare.outputs.solana_ip }}:8899"
-      PROXY_URL: "http://${{ needs.prepare.outputs.proxy_ip }}:9090/solana"
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install python requirements
-        id: requirements
-        uses: ./.github/actions/python-requirements
-      - uses: actions/download-artifact@v3
+      - uses: actions/upload-artifact@v3
+        if: always()
         with:
-          name: uniswap-report
-          path: reports/
-      - name: "Swap report"
-        run: ./clickfile.py dapps report --directory=reports
+          name: AWS docker logs
+          path: ./logs/*
+      - name: Remove tmp directories
+        run: |
+          rm -rf /tmp/saddle-${{ github.run_id }}
+          rm -rf /tmp/uniswap-${{ github.run_id }}
+          rm -rf /tmp/yearn-${{ github.run_id }}
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, destroy]
+    needs: [prepare, uniswap, saddle, yearn, destroy]
     if: ${{ failure() }}
     steps:
       - uses: actions/checkout@v3
@@ -166,4 +287,4 @@ jobs:
       - name: Notify on failure
         id: notification
         run: |
-          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "dapps: UniswapV2 NEON tests is failed!"
+          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "DApps testing failed, please check!"

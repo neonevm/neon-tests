@@ -65,7 +65,7 @@ jobs:
       proxy_ip: ${{ steps.share.outputs.proxy_ip }}
 
   uniswap:
-    runs-on: neon-hosted
+    runs-on: ubuntu-20.04
     needs:
       - prepare
     steps:
@@ -108,7 +108,7 @@ jobs:
           path: uniswap-report.json
 
   saddle:
-    runs-on: neon-hosted
+    runs-on: ubuntu-20.04
     needs:
       - prepare
     steps:

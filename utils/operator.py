@@ -25,7 +25,7 @@ class Operator:
         self._network_id = network_id
         self._operator_neon_rewards_address = operator_neon_rewards_address
         self._neon_token_mint = neon_token_mint
-        self._operator_keys = dict(zip(operator_keys, [None]*len(operator_keys)))
+        self._operator_keys = dict(zip(operator_keys, [None] * len(operator_keys)))
         self.web3 = web3_client
         if self.web3 is None:
             self.web3 = NeonWeb3Client(self._proxy_url, self._network_id)
@@ -34,18 +34,19 @@ class Operator:
     def get_solana_balance(self):
         balances = []
         for key in self._operator_keys:
-            balances.append(self.sol.get_balance(PublicKey(key), commitment=Confirmed).value)
+            balance = self.sol.get_balance(PublicKey(key), commitment=Confirmed)
+            if isinstance(balance, dict):
+                balance = balance["result"]["value"]
+            else:
+                balance = balance.value
+            balances.append(balance)
         return sum(balances)
 
     def get_neon_balance(self):
         balances = []
         if len(self._operator_neon_rewards_address) > 0:
             for addr in self._operator_neon_rewards_address:
-                balances.append(
-                    self.web3.get_balance(
-                        self.web3.toChecksumAddress(addr.lower())
-                    )
-                )
+                balances.append(self.web3.get_balance(self.web3.toChecksumAddress(addr.lower())))
         else:
             for key in self._operator_keys:
                 if self._operator_keys[key] is None:
@@ -55,9 +56,11 @@ class Operator:
                     self._operator_keys[key] = accounts["result"]["value"][0]["pubkey"]
                 balances.append(
                     int(
-                        self.sol.get_token_account_balance(
-                            PublicKey(self._operator_keys[key]),
-                            commitment=Confirmed)["result"]["value"]["amount"]))
+                        self.sol.get_token_account_balance(PublicKey(self._operator_keys[key]), commitment=Confirmed)[
+                            "result"
+                        ]["value"]["amount"]
+                    )
+                )
         return sum(balances)
 
     def wait_solana_balance_changed(self, current_balance, timeout=90):

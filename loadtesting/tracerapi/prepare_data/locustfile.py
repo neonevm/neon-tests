@@ -1,8 +1,3 @@
-# coding: utf-8
-"""
-Created on 2022-09-28
-@author: Eugeny Kurkovich
-"""
 import collections
 import functools
 import json
@@ -45,7 +40,7 @@ def dump_history(attr) -> tp.Callable:
                     {
                         "blockHash": tx["blockHash"].hex(),
                         "blockNumber": hex(tx["blockNumber"]),
-                        "contractAddress": tx["contractAddress"],
+                        "contract": tx["contract"],
                         "to": str(tx["to"]),
                     }
                 )
@@ -68,8 +63,9 @@ def teardown(*args, **kwargs) -> None:
 
 
 @tag("store")
-class EthGetStorageAtPreparationStage(head.NeonProxyTasksSet):
-    """Preparation stage for eth_getStorageAt test suite"""
+@tag("call")
+class EthGetStorageAtPreparationStage(head.NeonTasksSet):
+    """Preparation stage for eth_getStorageAt and eth_call test suite"""
 
     _deploy_contract_locker = gevent.threading.Lock()
     _deploy_contract_done = False
@@ -81,7 +77,7 @@ class EthGetStorageAtPreparationStage(head.NeonProxyTasksSet):
         """Deploy once for all spawned users"""
         EthGetStorageAtPreparationStage._deploy_contract_done = True
         account = self.web3_client.create_account()
-        self.task_keeps_balance(account=account)
+        self.check_balance(account=account)
         contract_name = "RetrieveStore"
         self.log.info(f"`{contract_name}`: deploy contract.")
         contract, contract_tx = self.deploy_contract(
@@ -91,7 +87,7 @@ class EthGetStorageAtPreparationStage(head.NeonProxyTasksSet):
             self.log.error(f"`{contract_name}` contract deployment failed.")
             EthGetStorageAtPreparationStage._deploy_contract_done = False
             return
-        ERC20TransferPreparationStage.storage_contract = contract
+        EthGetStorageAtPreparationStage.storage_contract = contract
 
     def on_start(self) -> None:
         """on_start is called when a Locust start before any task is scheduled"""
@@ -105,7 +101,7 @@ class EthGetStorageAtPreparationStage(head.NeonProxyTasksSet):
     @dump_history("store")
     def prepare_data_by_store_int(self) -> None:
         """Store random int to contract"""
-        contract = ERC20TransferPreparationStage.storage_contract
+        contract = EthGetStorageAtPreparationStage.storage_contract
         if contract:
             data = random.choice(range(100000))
             self.log.info(f"Store random data `{data}` to contract by {self.account.address[:8]}.")
@@ -115,8 +111,8 @@ class EthGetStorageAtPreparationStage(head.NeonProxyTasksSet):
                     "gasPrice": self.web3_client.gas_price(),
                 }
             )
-            tx_receipt = dict(self.web3_client.store_randint(self.account, tx))
-            tx_receipt["contractAddress"] = contract.address
+            tx_receipt = dict(self.web3_client.send_transaction(self.account, tx))
+            tx_receipt.update({"contract": {"address": contract.address, "abi": contract.abi}})
             return tx_receipt
         self.log.info(f"no `storage` contracts found, data store canceled.")
 
@@ -151,7 +147,7 @@ class ERC20WrappedPreparationStage(head.ERC20SPLTasksSet):
     @dump_history("logs")
     def prepare_data_by_erc20_wrapped(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Make number of `ERC20Wrapper` transfer transactions between different client accounts"""
-        return super(ERC20WrappedPreparationStage, self).task_send_erc20_wrapped()
+        return super(ERC20WrappedPreparationStage, self).task_send_erc20_spl()
 
 
 @tag("prepare")

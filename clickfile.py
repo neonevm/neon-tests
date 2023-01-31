@@ -128,7 +128,7 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
     return wrap
 
 
-networks = []
+networks = {}
 with open("./envs.json", "r") as f:
     networks = json.load(f)
     if NETWORK_NAME not in networks.keys() and os.environ.get("DUMP_ENVS"):
@@ -636,6 +636,25 @@ def send_notification(url, build_url, traceback, network):
         raise RuntimeError(f"Notification is not sent. Error: {response.text}")
 
 
+@cli.command(name="get-balances", help="Get operator balances in NEON and SOL")
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+def get_operator_balances(network: str):
+    net = networks[network]
+    operator = Operator(
+        net["proxy_url"],
+        net["solana_url"],
+        net["network_id"],
+        net["operator_neon_rewards_address"],
+        net["spl_neon_mint"],
+        net["operator_keys"]
+    )
+    neon_balance = operator.get_neon_balance()
+    sol_balance = operator.get_solana_balance()
+    print(f'Operator balances ({len(net["operator_keys"])}):\n'
+          f'NEON: {neon_balance}\n'
+          f'SOL: {sol_balance / 1_000_000_000}')
+
+
 @cli.group("infra", help="Manage test infrastructure")
 def infra():
     pass
@@ -847,6 +866,9 @@ def up():
     box_name = create_devbox()
     # Attach to running container
     env.shell(f"docker exec -it {box_name} bash --login; exit 0")
+
+
+
 
 
 if __name__ == "__main__":

@@ -18,7 +18,7 @@ class Operator:
             operator_neon_rewards_address: tp.List[str],
             neon_token_mint: str,
             operator_keys: tp.List[str],
-            web3_client: NeonWeb3Client
+            web3_client: tp.Optional[NeonWeb3Client] = None
     ):
         self._proxy_url = proxy_url
         self._solana_url = solana_url
@@ -27,6 +27,8 @@ class Operator:
         self._neon_token_mint = neon_token_mint
         self._operator_keys = dict(zip(operator_keys, [None]*len(operator_keys)))
         self.web3 = web3_client
+        if self.web3 is None:
+            self.web3 = NeonWeb3Client(self._proxy_url, self._network_id)
         self.sol = solana.rpc.api.Client(self._solana_url)
 
     def get_solana_balance(self):

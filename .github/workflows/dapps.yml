@@ -150,6 +150,48 @@ jobs:
         with:
           name: saddle-report
           path: saddle-report.json
+  aave:
+    runs-on: ubuntu-20.04
+    needs:
+      - prepare
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        env:
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+        run: |
+          ./clickfile.py infra gen-accounts -c 5 -a 10000
+
+      - name: Launch aave tests
+        if: ${{ steps.accounts.outcome == 'success' }}
+        id: aave
+        env:
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+        run: |
+          CWD=/tmp/aave-${{ github.run_id }}
+          mkdir -p ${CWD}
+          git clone -b master --single-branch https://github.com/neonlabsorg/aave-protocol-v2 ${CWD}
+          docker build -t aave:latest ${CWD}
+          proxy_url=http://${{ env.PROXY_IP }}:9090/solana
+          docker run -i -d --name=aave-${{ github.run_id }} aave:latest /bin/bash
+          docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} aave-${{ github.run_id }} npm run neonlabs:deploy --network=neonlabs
+          docker cp aave-${{ github.run_id }}:/usr/src/app/report.json aave-report.json
+          docker rm -f aave-${{ github.run_id }}
+
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: aave-report
+          path: aave-report.json
+
   yearn:
     runs-on: neon-hosted
     needs:
@@ -197,48 +239,6 @@ jobs:
         with:
           name: yearn-report
           path: yearn-report.json
-
-  aave:
-    runs-on: ubuntu-20.04
-    needs:
-      - prepare
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install python requirements
-        id: requirements
-        uses: ./.github/actions/python-requirements
-
-      - name: Prepare accounts
-        id: accounts
-        env:
-          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
-          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-        run: |
-          ./clickfile.py infra gen-accounts -c 5 -a 10000
-
-      - name: Launch aave tests
-        if: ${{ steps.accounts.outcome == 'success' }}
-        id: aave
-        env:
-          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
-          ACCOUNTS: ${{ env.ACCOUNTS }}
-        run: |
-          CWD=/tmp/aave-${{ github.run_id }}
-          mkdir -p ${CWD}
-          git clone -b master --single-branch https://github.com/neonlabsorg/aave-protocol-v2 ${CWD}
-          docker build -t aave:latest ${CWD}
-          proxy_url=http://${{ env.PROXY_IP }}:9090/solana
-          docker run -i -d --name=aave-${{ github.run_id }} aave:latest /bin/bash
-          docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} aave-${{ github.run_id }} npm run neonlabs:deploy --network=neonlabs
-          docker cp aave-${{ github.run_id }}:/usr/src/app/report.json aave-report.json
-          docker rm -f aave-${{ github.run_id }}
-
-      - name: Save report
-        uses: actions/upload-artifact@v3
-        with:
-          name: aave-report
-          path: aave-report.json
 
   swap-report:
     runs-on: ubuntu-20.04

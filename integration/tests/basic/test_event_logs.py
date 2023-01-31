@@ -7,6 +7,8 @@ from solders.rpc.responses import GetTransactionResp
 from solders.signature import Signature
 
 from integration.tests.basic.helpers.basic import BaseMixin
+from integration.tests.basic.helpers.rpc_checks import assert_log_field_in_neon_trx_receipt
+from integration.tests.basic.test_rpc_calls import get_event_signatures
 from utils.helpers import wait_condition
 
 
@@ -27,7 +29,7 @@ class TestLogs(BaseMixin):
         instruction_tx = event_caller.functions.nonArgs().buildTransaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 1
-
+        print(resp)
         event_logs = event_caller.events.NonArgs().processReceipt(resp)
         assert len(event_logs) == 1
         assert event_logs[0].args == {}
@@ -53,6 +55,14 @@ class TestLogs(BaseMixin):
         assert event_logs[0].args.bol == bol
         assert event_logs[0].event == "AllTypes"
 
+        response = self.proxy_api.send_rpc(method="neon_getTransactionReceipt", params=[resp["transactionHash"].hex()])
+        print(response)
+        assert_log_field_in_neon_trx_receipt(response, 1)
+
+        topics = get_event_signatures(event_caller.abi)
+        print(topics)
+
+
     def test_indexed_args_event(self, event_caller):
         amount = random.randint(1, 100)
         tx = self.make_tx_object(self.sender_account.address, value=amount)
@@ -63,8 +73,11 @@ class TestLogs(BaseMixin):
         assert len(event_logs) == 1
         assert len(event_logs[0].args) == 2
         assert event_logs[0].args.who == self.sender_account.address
-        assert event_logs[0].args.value == amount
+        assert event_logs[0].args.value == web3.Web3.toWei(amount, "ether")
         assert event_logs[0].event == "IndexedArgs"
+
+        response = self.proxy_api.send_rpc(method="neon_getTransactionReceipt", params=[resp["transactionHash"].hex()])
+        assert_log_field_in_neon_trx_receipt(response, 1)
 
     def test_non_indexed_args_event(self, event_caller):
         amount = random.randint(1, 100)
@@ -77,6 +90,8 @@ class TestLogs(BaseMixin):
         assert len(event_logs[0].args) == 1
         assert event_logs[0].args.hello == "world"
         assert event_logs[0].event == "NonIndexedArg"
+        response = self.proxy_api.send_rpc(method="neon_getTransactionReceipt", params=[resp["transactionHash"].hex()])
+        assert_log_field_in_neon_trx_receipt(response, 1)
 
     def test_unnamed_args_event(self, event_caller):
         tx = self.make_tx_object(self.sender_account.address)
@@ -88,6 +103,8 @@ class TestLogs(BaseMixin):
         assert len(event_logs) == 1
         assert len(event_logs[0].args) == 1
         assert event_logs[0].event == "UnnamedArg"
+        response = self.proxy_api.send_rpc(method="neon_getTransactionReceipt", params=[resp["transactionHash"].hex()])
+        assert_log_field_in_neon_trx_receipt(response, 1)
 
     def test_big_args_count(self, event_caller):
         tx = self.make_tx_object(self.sender_account.address)
@@ -98,6 +115,9 @@ class TestLogs(BaseMixin):
         assert len(event_logs) == 1
         assert len(event_logs[0].args) == 10
         assert event_logs[0].event == "BigArgsCount"
+
+        response = self.proxy_api.send_rpc(method="neon_getTransactionReceipt", params=[resp["transactionHash"].hex()])
+        assert_log_field_in_neon_trx_receipt(response, 1)
 
     def test_several_events_in_one_trx(self, event_caller):
         tx = self.make_tx_object(self.sender_account.address)
@@ -111,25 +131,40 @@ class TestLogs(BaseMixin):
         assert event2_logs[0].event == "NonIndexedArg"
         assert event3_logs[0].event == "AllTypes"
 
+        response = self.proxy_api.send_rpc(method="neon_getTransactionReceipt", params=[resp["transactionHash"].hex()])
+        assert_log_field_in_neon_trx_receipt(response, 3)
+
     @pytest.mark.parametrize("changes_count, expected_trx_status", [(20, 1), (50, 0)])
-    def test_big_count_the_same_events_in_one_trx(self, event_caller, changes_count, expected_trx_status):
+    def test_many_the_same_events_in_one_trx(self, event_caller, changes_count, expected_trx_status):
         tx = self.make_tx_object(self.sender_account.address)
         instruction_tx = event_caller.functions.updateStorageMap(changes_count).buildTransaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert resp['status'] == expected_trx_status
-        print(resp)
-        solana_trx = self.web3_client.get_solana_trx_by_neon(resp["transactionHash"].hex())
-        # print(solana_trx['result'])
-        for trx in solana_trx['result']:
-            wait_condition(lambda: self.sol_client.get_transaction(Signature.from_string(trx),
-                                                                   max_supported_transaction_version=0) != GetTransactionResp(
-                None))
-            trx_sol = self.sol_client.get_transaction(Signature.from_string(trx), max_supported_transaction_version=0)
-            print(trx_sol)
-
         event_logs = event_caller.events.NonIndexedArg().processReceipt(resp)
-        print(event_logs)
         assert len(event_logs) == changes_count
-        print(len(event_logs))
         for log in event_logs:
             assert log.event == "NonIndexedArg"
+        response = self.proxy_api.send_rpc(method="neon_getTransactionReceipt", params=[resp["transactionHash"].hex()])
+        assert_log_field_in_neon_trx_receipt(response, changes_count)
+
+    def test_nested_calls_with_revert(self):
+
+        contract_a, _ = self.web3_client.deploy_and_get_contract("NestedCallsChecker", "0.8.12", self.sender_account,
+                                                                 contract_name="A")
+        contract_b, _ = self.web3_client.deploy_and_get_contract("NestedCallsChecker", "0.8.12", self.sender_account,
+                                                                 contract_name="B")
+        contract_c, _ = self.web3_client.deploy_and_get_contract("NestedCallsChecker", "0.8.12", self.sender_account,
+                                                                 contract_name="C")
+        print(contract_a.address)
+        print(contract_b.address)
+        print(contract_c.address)
+
+        tx = self.make_tx_object(self.sender_account.address)
+
+        instruction_tx = contract_a.functions.method1(contract_b.address, contract_c.address).buildTransaction(tx)
+        resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        print(resp)
+
+        # TODO add event checks
+

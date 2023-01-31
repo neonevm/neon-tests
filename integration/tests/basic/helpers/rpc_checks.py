@@ -54,3 +54,26 @@ def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[web
             assert is_hex(transaction)
         if tx_receipt is not None:
             assert tx_receipt.transactionHash.hex() in transactions, "Created transaction should be in block"
+
+
+def assert_log_field_in_neon_trx_receipt(responce, events_count):
+    logs = responce["result"]["logs"]
+    assert_neon_logs(logs)
+    expected_event_types = ["ENTER CALL"]
+    for i in range(events_count):
+        expected_event_types.append("LOG")
+    expected_event_types.append("EXIT STOP")
+
+    event_types = [log["eventType"] for log in sorted(logs, key=lambda x: int(x["eventOrder"], 0))]
+
+    print("event_types: ", event_types)
+    assert event_types == expected_event_types, f"Actual: {event_types}; Expected: {expected_event_types}"
+
+
+def assert_neon_logs(logs):
+    expected_hex_fields = ["transactionLogIndex", "ixIdx", "eventLevel", "eventOrder", "transactionHash",
+                           "blockHash", "blockNumber", "transactionIndex"]
+
+    for item in logs:
+        for field in expected_hex_fields:
+            assert is_hex(item[field]), f"field {field} is not correct. Actual : {item[field]}"

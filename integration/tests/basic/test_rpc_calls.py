@@ -1,5 +1,7 @@
 # coding: utf-8
+import random
 import re
+import string
 import typing as tp
 from enum import Enum
 
@@ -10,6 +12,7 @@ import sha3
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
+from integration.tests.basic.helpers.rpc_checks import assert_log_field_in_neon_trx_receipt, assert_neon_logs
 from utils import helpers
 from utils.helpers import gen_hash_of_block
 
@@ -630,6 +633,60 @@ class TestRpcCalls(BaseMixin):
         assert re.match(
             pattern, response["result"]
         ), f"Version format is not correct. Pattern: {pattern}; Response: {response}"
+
+    @pytest.mark.parametrize(
+        "tag1, tag2",
+        [
+            (None, None),
+            (None, Tag.LATEST),
+            (None, Tag.PENDING),
+            (None, Tag.EARLIEST),
+            (Tag.LATEST, Tag.LATEST),
+            (Tag.LATEST, Tag.PENDING),
+            (Tag.LATEST, Tag.EARLIEST),
+            (Tag.LATEST, None),
+            (Tag.PENDING, Tag.PENDING),
+            (Tag.PENDING, Tag.LATEST),
+            (Tag.PENDING, Tag.EARLIEST),
+            (Tag.PENDING, None),
+            (Tag.EARLIEST, Tag.EARLIEST),
+            (Tag.EARLIEST, Tag.PENDING),
+            (Tag.EARLIEST, Tag.LATEST),
+            (Tag.EARLIEST, None),
+        ],
+    )
+    @pytest.mark.parametrize("param_fields", [("address", "topics"), ("address"), ("topics")])
+    def test_get_neon_logs(self, event_caller, param_fields, tag1, tag2):
+        number = random.randint(1, 100)
+        text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
+        text_bytes = bytes(text, 'utf-8')
+        bol = True
+        instruction_tx = event_caller.functions.allTypes(self.sender_account.address, number, text, text_bytes,
+                                                         bol).buildTransaction({
+            "chainId": self.web3_client._chain_id,
+            "gasPrice": self.web3_client.gas_price(),
+            "nonce": self.web3_client.eth.get_transaction_count(self.sender_account.address),
+            "value": 0,
+        })
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        topics = get_event_signatures(event_caller.abi)
+
+        params = {}
+        if "address" in param_fields:
+            params["address"] = event_caller.address
+        if "topics" in param_fields:
+            params["topic"] = topics
+
+        if tag1:
+            params["fromBlock"] = tag1.value
+        if tag2:
+            params["toBlock"] = tag2.value
+
+        response = self.proxy_api.send_rpc("neon_getLogs", params=params)
+        assert "error" not in response
+        if response["result"]:
+            assert any(topic in response["result"][0]["topics"] for topic in topics)
+        assert_neon_logs(response["result"])
 
 
 @allure.story("Basic: Json-RPC call tests - `eth_estimateGas`")

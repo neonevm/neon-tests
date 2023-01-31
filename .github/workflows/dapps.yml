@@ -245,7 +245,7 @@ jobs:
 
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, aave]
+    needs: [uniswap, saddle, aave]
     if: always()
     env:
       SOLANA_URL: "http://${{ needs.prepare.outputs.solana_ip }}:8899"
@@ -323,11 +323,12 @@ jobs:
         run: |
           rm -rf /tmp/saddle-${{ github.run_id }}
           rm -rf /tmp/uniswap-${{ github.run_id }}
-          rm -rf /tmp/yearn-${{ github.run_id }}
+          rm -rf /tmp/aave-${{ github.run_id }}
+#          rm -rf /tmp/yearn-${{ github.run_id }}
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, aave, destroy]
+    needs: [prepare, uniswap, saddle, aave]
     if: ${{ failure() }}
     steps:
       - uses: actions/checkout@v3

@@ -139,8 +139,11 @@ jobs:
           docker build -t saddle:latest ${CWD}
           proxy_url=http://${{ env.PROXY_IP }}:9090/solana
           docker run -i -d --name=saddle-${{ github.run_id }} saddle:latest /bin/bash
+          echo "Run Saddle 2 tokens pool tests"
           docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} npx hardhat run /usr/src/app/scripts/deploy2Tokens.ts
+          echo "Run Saddle 3 tokens pool tests"
           docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} npx hardhat run /usr/src/app/scripts/deploy3Tokens.ts
+          echo "Run Saddle MetaPool tests"
           docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} saddle-${{ github.run_id }} npx hardhat run /usr/src/app/scripts/deployMetaPool.ts
           docker cp saddle-${{ github.run_id }}:/usr/src/app/report.json saddle-report.json
           docker rm -f saddle-${{ github.run_id }}
@@ -277,7 +280,7 @@ jobs:
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, yearn, swap-report]
+    needs: [prepare, uniswap, saddle, aave, yearn, swap-report]
     if: always()
     steps:
       - uses: actions/checkout@v3
@@ -324,7 +327,7 @@ jobs:
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, yearn, destroy]
+    needs: [prepare, uniswap, saddle, aave, yearn, destroy]
     if: ${{ failure() }}
     steps:
       - uses: actions/checkout@v3

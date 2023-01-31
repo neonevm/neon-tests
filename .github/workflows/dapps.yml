@@ -245,7 +245,7 @@ jobs:
 
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [uniswap, saddle, aave]
+    needs: [prepare, uniswap, saddle, aave]
     if: always()
     env:
       SOLANA_URL: "http://${{ needs.prepare.outputs.solana_ip }}:8899"

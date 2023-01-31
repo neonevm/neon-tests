@@ -108,7 +108,7 @@ jobs:
           path: uniswap-report.json
 
   saddle:
-    runs-on: ubuntu-20.04
+    runs-on: neon-hosted
     needs:
       - prepare
     steps:

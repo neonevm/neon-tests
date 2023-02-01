@@ -123,7 +123,7 @@ class TestRpcCalls(BaseMixin):
 
     def make_tx_object(self, sender=None) -> tp.Dict:
         if sender is None:
-            sender = self.sender_account
+            sender = self.sender_account.address
         return {
             "chainId": self.web3_client._chain_id,
             "gasPrice": self.web3_client.gas_price(),

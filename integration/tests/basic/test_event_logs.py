@@ -1,7 +1,6 @@
 import random
 import string
 
-import pytest
 import web3
 
 from integration.tests.basic.helpers.basic import BaseMixin
@@ -143,9 +142,7 @@ class TestLogs(BaseMixin):
         event_logs = event_caller.events.NonIndexedArg().processReceipt(resp)
         assert len(event_logs) == 0
 
-    @pytest.mark.xfail(reason="NDEV-1258")
     def test_nested_calls_with_revert(self):
-
         contract_a, _ = self.web3_client.deploy_and_get_contract("NestedCallsChecker", "0.8.12", self.sender_account,
                                                                  contract_name="A")
         contract_b, _ = self.web3_client.deploy_and_get_contract("NestedCallsChecker", "0.8.12", self.sender_account,
@@ -156,4 +153,12 @@ class TestLogs(BaseMixin):
 
         instruction_tx = contract_a.functions.method1(contract_b.address, contract_c.address).buildTransaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-        # TODO add event checks : Event1 method1 and Event2 method1 should be called only
+        event_a1_logs = contract_a.events.EventA1().processReceipt(resp)
+        assert len(event_a1_logs) == 1
+        event_b1_logs = contract_b.events.EventB1().processReceipt(resp)
+        assert len(event_b1_logs) == 1
+        event_b2_logs = contract_b.events.EventB2().processReceipt(resp)
+        event_c1_logs = contract_c.events.EventC1().processReceipt(resp)
+        event_c2_logs = contract_c.events.EventC2().processReceipt(resp)
+        for log in (event_b2_logs, event_c1_logs, event_c2_logs):
+            assert log == (), f"Trx shouldn't contain logs for the events: eventB2, eventC1, eventC2_log0. Log: {log}"

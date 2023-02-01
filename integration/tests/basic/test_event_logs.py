@@ -3,13 +3,9 @@ import string
 
 import pytest
 import web3
-from solders.rpc.responses import GetTransactionResp
-from solders.signature import Signature
 
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.rpc_checks import assert_log_field_in_neon_trx_receipt
-from integration.tests.basic.test_rpc_calls import get_event_signatures
-from utils.helpers import wait_condition
 
 
 class TestLogs(BaseMixin):
@@ -29,7 +25,6 @@ class TestLogs(BaseMixin):
         instruction_tx = event_caller.functions.nonArgs().buildTransaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 1
-        print(resp)
         event_logs = event_caller.events.NonArgs().processReceipt(resp)
         assert len(event_logs) == 1
         assert event_logs[0].args == {}
@@ -54,14 +49,8 @@ class TestLogs(BaseMixin):
         assert event_logs[0].args.b == text_bytes + bytes(32 - len(text_bytes))
         assert event_logs[0].args.bol == bol
         assert event_logs[0].event == "AllTypes"
-
         response = self.proxy_api.send_rpc(method="neon_getTransactionReceipt", params=[resp["transactionHash"].hex()])
-        print(response)
         assert_log_field_in_neon_trx_receipt(response, 1)
-
-        topics = get_event_signatures(event_caller.abi)
-        print(topics)
-
 
     def test_indexed_args_event(self, event_caller):
         amount = random.randint(1, 100)
@@ -99,7 +88,6 @@ class TestLogs(BaseMixin):
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 1
         event_logs = event_caller.events.UnnamedArg().processReceipt(resp)
-        print(event_logs)
         assert len(event_logs) == 1
         assert len(event_logs[0].args) == 1
         assert event_logs[0].event == "UnnamedArg"
@@ -130,16 +118,15 @@ class TestLogs(BaseMixin):
         assert event1_logs[0].event == "IndexedArgs"
         assert event2_logs[0].event == "NonIndexedArg"
         assert event3_logs[0].event == "AllTypes"
-
         response = self.proxy_api.send_rpc(method="neon_getTransactionReceipt", params=[resp["transactionHash"].hex()])
         assert_log_field_in_neon_trx_receipt(response, 3)
 
-    @pytest.mark.parametrize("changes_count, expected_trx_status", [(20, 1), (50, 0)])
-    def test_many_the_same_events_in_one_trx(self, event_caller, changes_count, expected_trx_status):
+    def test_many_the_same_events_in_one_trx(self, event_caller):
         tx = self.make_tx_object(self.sender_account.address)
+        changes_count = 20
         instruction_tx = event_caller.functions.updateStorageMap(changes_count).buildTransaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-        assert resp['status'] == expected_trx_status
+        assert resp['status'] == 1
         event_logs = event_caller.events.NonIndexedArg().processReceipt(resp)
         assert len(event_logs) == changes_count
         for log in event_logs:
@@ -147,6 +134,16 @@ class TestLogs(BaseMixin):
         response = self.proxy_api.send_rpc(method="neon_getTransactionReceipt", params=[resp["transactionHash"].hex()])
         assert_log_field_in_neon_trx_receipt(response, changes_count)
 
+    def test_event_logs_deleted_if_trx_was_canceled(self, event_caller):
+        tx = self.make_tx_object(self.sender_account.address)
+        changes_count = 50
+        instruction_tx = event_caller.functions.updateStorageMap(changes_count).buildTransaction(tx)
+        resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        assert resp['status'] == 0
+        event_logs = event_caller.events.NonIndexedArg().processReceipt(resp)
+        assert len(event_logs) == 0
+
+    @pytest.mark.xfail(reason="NDEV-1258")
     def test_nested_calls_with_revert(self):
 
         contract_a, _ = self.web3_client.deploy_and_get_contract("NestedCallsChecker", "0.8.12", self.sender_account,
@@ -155,16 +152,8 @@ class TestLogs(BaseMixin):
                                                                  contract_name="B")
         contract_c, _ = self.web3_client.deploy_and_get_contract("NestedCallsChecker", "0.8.12", self.sender_account,
                                                                  contract_name="C")
-        print(contract_a.address)
-        print(contract_b.address)
-        print(contract_c.address)
-
         tx = self.make_tx_object(self.sender_account.address)
 
         instruction_tx = contract_a.functions.method1(contract_b.address, contract_c.address).buildTransaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-
-        print(resp)
-
-        # TODO add event checks
-
+        # TODO add event checks : Event1 method1 and Event2 method1 should be called only

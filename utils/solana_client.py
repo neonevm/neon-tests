@@ -41,7 +41,6 @@ class SolanaClient(solana.rpc.api.Client):
         if token_address.startswith("0x"):
             token_address = token_address[2:]
         neon_contract_addressbytes = bytes.fromhex(token_address)
-        add = PublicKey.find_program_address(
+        return PublicKey.find_program_address(
             [self.account_seed_version, b"AUTH", neon_contract_addressbytes, neon_account_addressbytes],
             PublicKey(evm_loader_id))[0]
-        return add

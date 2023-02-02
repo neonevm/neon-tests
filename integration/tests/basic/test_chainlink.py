@@ -17,7 +17,7 @@ class TestChainlink(BaseTests):
     def test_deploy_contract_chainlink_network(self):
         """Deploy chainlink contract, then get latest price for SOL/USD"""
         contract, _ = self.web3_client.deploy_and_get_contract(contract="./chainlink/ChainlinkOracle",
-                                                               version="0.8.0",
+                                                               version="0.8.15",
                                                                account=self.acc,
                                                                constructor_args=[SOL_USD_ID])
         version = contract.functions.version().call()
@@ -37,11 +37,11 @@ class TestChainlink(BaseTests):
     def test_deploy_contract_chainlink_network_get_price(self):
         """Call latest price for SOL/USD from another contract"""
         _, contract_deploy_tx = self.web3_client.deploy_and_get_contract(contract="./chainlink/ChainlinkOracle",
-                                                                         version="0.8.0",
+                                                                         version="0.8.15",
                                                                          account=self.acc,
                                                                          constructor_args=[SOL_USD_ID])
         contract, _ = self.web3_client.deploy_and_get_contract(contract="./chainlink/GetLatestData",
-                                                               version="0.8.0",
+                                                               version="0.8.15",
                                                                account=self.acc)
 
         address = contract_deploy_tx["contractAddress"]

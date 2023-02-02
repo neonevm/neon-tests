@@ -1,23 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-import "../libraries/Utils.sol";
+import "./AggregatorV3Interface.sol";
+import "./libraries/Utils.sol";
 
 contract ChainlinkOracle is AggregatorV3Interface {
-    uint8 public _decimals;
+    uint8 public decimals;
     uint256 public feedAddress;
-    string public _description;
-    uint256 public _version;
+    string public description;
+    uint256 public version;
     uint32 private historicalLength;
 
     constructor(bytes32 _feedAddress) {
         feedAddress = uint256(_feedAddress);
 
         Utils.Header memory header = Utils.getHeader(feedAddress);
-        _version = header.version;
-        _description = header.description;
-        _decimals = header.decimals;
+        version = header.version;
+        description = header.description;
+        decimals = header.decimals;
         // Save historical ringbuffer length for future use.
         historicalLength = Utils.getHistoricalLength(
             feedAddress,
@@ -28,7 +28,6 @@ contract ChainlinkOracle is AggregatorV3Interface {
     function getRoundData(uint80 _roundId)
         external
         view
-        override
         returns (
             uint80 roundId,
             int256 answer,
@@ -55,7 +54,6 @@ contract ChainlinkOracle is AggregatorV3Interface {
     function latestRoundData()
         external
         view
-        override
         returns (
             uint80 roundId,
             int256 answer,
@@ -73,17 +71,5 @@ contract ChainlinkOracle is AggregatorV3Interface {
             round.timestamp,
             round.roundId
         );
-    }
-
-    function decimals() external view override returns (uint8) {
-        return _decimals;
-    }
-
-    function description() external view override returns (string memory) {
-        return _description;
-    }
-
-    function version() external view override returns (uint256) {
-        return _version;
     }
 }

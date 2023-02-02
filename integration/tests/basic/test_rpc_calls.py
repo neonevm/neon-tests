@@ -1,15 +1,19 @@
 # coding: utf-8
+import random
 import re
+import string
 import typing as tp
 from enum import Enum
 
 import allure
 import pytest
 import sha3
+from eth_utils import keccak
 
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
+from integration.tests.basic.helpers.rpc_checks import assert_neon_logs
 from utils import helpers
 from utils.helpers import gen_hash_of_block
 
@@ -116,6 +120,16 @@ class TestRpcCalls(BaseMixin):
             self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
             TestRpcCalls._erc20_contract = contract, contract_deploy_tx, tx_receipt
         return TestRpcCalls._erc20_contract
+
+    def make_tx_object(self, sender=None) -> tp.Dict:
+        if sender is None:
+            sender = self.sender_account.address
+        return {
+            "chainId": self.web3_client._chain_id,
+            "gasPrice": self.web3_client.gas_price(),
+            "nonce": self.web3_client.eth.get_transaction_count(sender),
+            "value": 0,
+        }
 
     def test_eth_call_without_params(self):
         """Verify implemented rpc calls work eth_call without params"""
@@ -630,6 +644,124 @@ class TestRpcCalls(BaseMixin):
         assert re.match(
             pattern, response["result"]
         ), f"Version format is not correct. Pattern: {pattern}; Response: {response}"
+
+    @pytest.mark.parametrize(
+        "tag1, tag2",
+        [
+            (None, None),
+            (None, Tag.LATEST),
+            (None, Tag.PENDING),
+            (None, Tag.EARLIEST),
+            (Tag.LATEST, Tag.LATEST),
+            (Tag.LATEST, Tag.PENDING),
+            (Tag.LATEST, Tag.EARLIEST),
+            (Tag.LATEST, None),
+            (Tag.PENDING, Tag.PENDING),
+            (Tag.PENDING, Tag.LATEST),
+            (Tag.PENDING, Tag.EARLIEST),
+            (Tag.PENDING, None),
+            (Tag.EARLIEST, Tag.EARLIEST),
+            (Tag.EARLIEST, Tag.PENDING),
+            (Tag.EARLIEST, Tag.LATEST),
+            (Tag.EARLIEST, None),
+        ],
+    )
+    @pytest.mark.parametrize("param_fields", [("address", "topics"), ("address"), ("topics")])
+    def test_get_neon_logs(self, event_caller, param_fields, tag1, tag2):
+        number = random.randint(1, 100)
+        text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
+        text_bytes = bytes(text, 'utf-8')
+        bol = True
+        tx = self.make_tx_object()
+        instruction_tx = event_caller.functions.allTypes(self.sender_account.address, number, text, text_bytes,
+                                                         bol).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        topics = get_event_signatures(event_caller.abi)
+
+        params = {}
+        if "address" in param_fields:
+            params["address"] = event_caller.address
+        if "topics" in param_fields:
+            params["topic"] = topics
+
+        if tag1:
+            params["fromBlock"] = tag1.value
+        if tag2:
+            params["toBlock"] = tag2.value
+
+        response = self.proxy_api.send_rpc("neon_getLogs", params=params)
+        assert "error" not in response
+        if response["result"]:
+            assert any(topic in response["result"][0]["topics"] for topic in topics)
+        assert_neon_logs(response["result"])
+
+    @pytest.mark.parametrize("method", ["neon_getLogs", "eth_getLogs"])
+    @pytest.mark.parametrize("event_filter, arg_filter, log_count", [(["Event2(string,string)"], None, 2),
+                                                                     ([], ["text1"], 3),
+                                                                     (["Event2(string,string)"], ["text2"], 1),
+                                                                     (["Event2(string,string)",
+                                                                       "Event3(string,string,string)"],
+                                                                      ["text2", "text3", "text1", "text5"], 3),
+                                                                     ([], None, 4),
+                                                                     ])
+    def test_filter_log_by_topics(self, event_filter, arg_filter, log_count, method):
+        event_caller, _ = self.web3_client.deploy_and_get_contract("EventCaller", "0.8.12", self.sender_account)
+
+        arg1, arg2, arg3 = ("text1", "text2", "text3")
+        topics = []
+        if event_filter is not None:
+            event_topics = []
+            for item in event_filter:
+                event_topics.append("0x" + keccak(text=item).hex())
+            topics.append(event_topics)
+        if arg_filter is not None:
+            arg_topics = []
+            for item in arg_filter:
+                arg_topics.append("0x" + keccak(text=item).hex())
+            topics.append(arg_topics)
+
+        tx = self.make_tx_object(self.sender_account.address)
+        instruction_tx = event_caller.functions.callEvent1(arg1).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        tx = self.make_tx_object(self.sender_account.address)
+        instruction_tx = event_caller.functions.callEvent2(arg1, arg2).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        tx = self.make_tx_object(self.sender_account.address)
+        instruction_tx = event_caller.functions.callEvent2(arg2, arg3).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        tx = self.make_tx_object(self.sender_account.address)
+        instruction_tx = event_caller.functions.callEvent3(arg1, arg2, arg3).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        response = self.proxy_api.send_rpc(method, params={
+            "address": event_caller.address,
+            "topics": topics,
+        })
+
+        assert len(response["result"]) == log_count, \
+            f"Expected {log_count} event logs, but found {len(response['result'])}"
+
+        is_event_topic_in_list = False
+        is_arg_topic_in_list = False
+        for log in response["result"]:
+            if topics[0]:
+                for topic in topics[0]:
+                    if topic in log["topics"]:
+                        is_event_topic_in_list = True
+            else:
+                is_event_topic_in_list = True
+            if len(topics) == 2:
+                for topic in topics[1]:
+                    if topic in log["topics"]:
+                        is_arg_topic_in_list = True
+            else:
+                is_arg_topic_in_list = True
+
+        assert is_event_topic_in_list, f"Filter by {topics} works incorrect. Response: {response}"
+        assert is_arg_topic_in_list, f"Filter by {topics} works incorrect. Response: {response}"
 
 
 @allure.story("Basic: Json-RPC call tests - `eth_estimateGas`")

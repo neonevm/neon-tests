@@ -10,6 +10,8 @@ import eth_account.signers.local
 from solana.publickey import PublicKey
 from solana.rpc.commitment import Finalized
 from solders.rpc.errors import InternalErrorMessage
+from solders.rpc.responses import GetTransactionResp
+from solders.signature import Signature
 
 from utils.consts import Unit, InputTestConstants
 from utils.helpers import gen_hash_of_block, wait_condition
@@ -24,7 +26,6 @@ class AccountData:
 
 
 class BaseMixin(BaseTests):
-
     proxy_api: JsonRPCSession = None
     _sender_account: eth_account.signers.local.LocalAccount = None
     _recipient_account: eth_account.signers.local.LocalAccount = None
@@ -78,7 +79,7 @@ class BaseMixin(BaseTests):
         return float(self.web3_client.fromWei(self.web3_client.eth.get_balance(address), Unit.ETHER))
 
     def create_account_with_balance(
-        self, amount: int = InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value
+            self, amount: int = InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value
     ):
         """Creates a new account with balance"""
         account = self.create_account()
@@ -98,24 +99,24 @@ class BaseMixin(BaseTests):
         return AccountData(address=gen_hash_of_block(20))
 
     def send_neon(
-        self,
-        sender_account: eth_account.signers.local.LocalAccount,
-        recipient_account: eth_account.signers.local.LocalAccount,
-        amount: float = 0.0,
+            self,
+            sender_account: eth_account.signers.local.LocalAccount,
+            recipient_account: eth_account.signers.local.LocalAccount,
+            amount: float = 0.0,
     ) -> tp.Union[web3.types.TxReceipt, None]:
         """Processes transaction"""
         with allure.step(f"Sending {amount} from {sender_account.address} to {recipient_account.address}"):
             return self.web3_client.send_neon(sender_account, recipient_account, amount)
 
     def send_neon_with_failure(
-        self,
-        sender_account: eth_account.signers.local.LocalAccount,
-        recipient_account: tp.Union[eth_account.signers.local.LocalAccount, AccountData],
-        amount: tp.Union[int, float, Decimal],
-        gas: tp.Optional[int] = 0,
-        gas_price: tp.Optional[int] = None,
-        error_message: str = None,
-        exception: tp.Any = None,
+            self,
+            sender_account: eth_account.signers.local.LocalAccount,
+            recipient_account: tp.Union[eth_account.signers.local.LocalAccount, AccountData],
+            amount: tp.Union[int, float, Decimal],
+            gas: tp.Optional[int] = 0,
+            gas_price: tp.Optional[int] = None,
+            error_message: str = None,
+            exception: tp.Any = None,
     ) -> tp.Union[web3.types.TxReceipt, None]:
         """Processes transaction, expects a failure"""
         exception = exception or Exception
@@ -129,9 +130,9 @@ class BaseMixin(BaseTests):
         self.check_balance(expected_amount, balance, rnd_dig=rnd_dig)
 
     def assert_balance_less(
-        self,
-        address: str,
-        calculated_balance: float,
+            self,
+            address: str,
+            calculated_balance: float,
     ):
         """Compares balance of an account, balance must be less than init balance"""
         balance = self.get_balance_from_wei(address)
@@ -196,5 +197,14 @@ class BaseMixin(BaseTests):
         transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
         return transaction
 
-
-
+    def get_solana_resps_by_neon_resp(self, resp):
+        solana_resps = []
+        solana_trx = self.web3_client.get_solana_trx_by_neon(resp["transactionHash"].hex())
+        for trx in solana_trx['result']:
+            wait_condition(
+                lambda: self.sol_client.get_transaction(Signature.from_string(trx),
+                                                        max_supported_transaction_version=0) != GetTransactionResp(
+                    None))
+            trx_sol = self.sol_client.get_transaction(Signature.from_string(trx), max_supported_transaction_version=0)
+            solana_resps.append(trx_sol)
+        return solana_resps

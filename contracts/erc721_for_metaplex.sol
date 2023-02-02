@@ -2,65 +2,8 @@
 
 pragma solidity >= 0.8.0;
 
-interface SPLToken {
-
-    enum AccountState {
-        Uninitialized,
-        Initialized,
-        Frozen
-    }
-
-    struct Account {
-        bytes32 mint;
-        bytes32 owner;
-        uint64 amount;
-        bytes32 delegate;
-        uint64 delegated_amount;
-        bytes32 close_authority;
-        AccountState state;
-    }
-
-    struct Mint {
-        uint64 supply;
-        uint8 decimals;
-        bool isInitialized;
-        bytes32 freezeAuthority;
-        bytes32 mintAuthority;
-    }
-
-    function findAccount(bytes32 salt) external pure returns(bytes32);
-
-    function exists(bytes32 account) external pure returns(bool);
-    function getAccount(bytes32 account) external pure returns(Account memory);
-    function getMint(bytes32 account) external pure returns(Mint memory);
-
-    function initializeMint(bytes32 salt, uint8 decimals) external returns(bytes32);
-    function initializeMint(bytes32 salt, uint8 decimals, bytes32 mint_authority, bytes32 freeze_authority) external returns(bytes32);
-
-    function initializeAccount(bytes32 salt, bytes32 mint) external returns(bytes32);
-    function initializeAccount(bytes32 salt, bytes32 mint, bytes32 owner) external returns(bytes32);
-
-    function closeAccount(bytes32 account) external;
-
-    function mintTo(bytes32 account, uint64 amount) external;
-    function burn(bytes32 account, uint64 amount) external;
-
-    function approve(bytes32 source, bytes32 target, uint64 amount) external;
-    function revoke(bytes32 source) external;
-
-    function transfer(bytes32 source, bytes32 target, uint64 amount) external;
-
-    function freeze(bytes32 account) external;
-    function thaw(bytes32 account) external;
-}
-
-interface Metaplex {
-    function createMetadata(bytes32 mint, string memory name, string memory symbol, string memory uri) external returns(bytes32);
-    function createMasterEdition(bytes32 mint, uint64 maxSupply) external returns(bytes32);
-
-    function isNFT(bytes32 mint) external view returns(bool);
-    function uri(bytes32 mint) external view returns(string memory);
-}
+import './SPLToken.sol';
+import './Metaplex.sol';
 
 interface IERC165 {
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
@@ -151,12 +94,7 @@ contract ERC721ForMetaplex is IERC165, IERC721, IERC721Metadata {
             _splToken.initializeAccount(seed, account.mint);
         }
 
-        // spl-token transaction will be signed by tx.origin
-        // this is only allowed in top level contract
-        (bool status, ) = address(_splToken).delegatecall(
-            abi.encodeWithSignature("transfer(bytes32,bytes32,uint64)", from, toSolana, amount)
-        );
-        require(status, "ERC721: claim failed");
+        _splToken.transferWithSeed(bytes20(msg.sender), from, toSolana, amount);
 
 
         uint256 tokenId = uint256(account.mint);
@@ -172,7 +110,7 @@ contract ERC721ForMetaplex is IERC165, IERC721, IERC721Metadata {
         require(to != address(0), "ERC721: mint to the zero address");
 
         bytes32 mintId = _splToken.initializeMint(seed, 0);
-
+        
         bytes32 tokenSeed = keccak256(abi.encode(mintId, to));
         bytes32 account = _splToken.initializeAccount(tokenSeed, mintId);
 
@@ -195,7 +133,7 @@ contract ERC721ForMetaplex is IERC165, IERC721, IERC721Metadata {
     function safeMint(bytes32 seed, address to, string memory uri) public returns (uint256) {
         return safeMint(seed, to, uri, "");
     }
-
+    
     function safeMint(bytes32 seed, address to, string memory uri, bytes memory data) public returns (uint256) {
         uint256 tokenId = mint(seed, to, uri);
 

@@ -133,6 +133,14 @@ def erc20_spl(web3_client: NeonWeb3Client, faucet, pytestconfig: Config, sol_cli
         mintable=False,
         evm_loader_id=pytestconfig.environment.evm_loader,
     )
+    erc20.token_mint.approve(
+        source=erc20.solana_associated_token_acc,
+        delegate= sol_client.get_erc_auth_address(
+           erc20.account.address, erc20.contract.address, pytestconfig.environment.evm_loader
+        ),
+        owner=erc20.solana_acc.public_key,
+        amount=1000000000000000,
+    )
     erc20.claim(erc20.account, bytes(erc20.solana_associated_token_acc), 100000000000000)
     yield erc20
 

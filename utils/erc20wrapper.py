@@ -109,12 +109,7 @@ class ERC20Wrapper:
             amount=INIT_TOKEN_AMOUNT,
             opts=TxOpts(skip_confirmation=False),
         )
-        token_mint.approve(
-            source=assoc_addr,
-            delegate=self.sol_client.get_neon_account_address(self.account.address, self.evm_loader_id),
-            owner=owner.public_key,
-            amount=INIT_TOKEN_AMOUNT,
-        )
+
         return token_mint
 
     def get_wrapper_contract(self):

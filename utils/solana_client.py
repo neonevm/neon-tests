@@ -31,7 +31,16 @@ class SolanaClient(solana.rpc.api.Client):
         wait_condition(lambda: self.get_balance(pubkey).value >= lamports, timeout_sec=30)
         return airdrop_resp
 
-    def get_neon_account_address(self, neon_account_address: str, evm_loader_id) -> PublicKey:
+    def get_neon_account_address(self, neon_account_address: str, evm_loader_id: str) -> PublicKey:
         neon_account_addressbytes = bytes.fromhex(neon_account_address[2:])
         return PublicKey.find_program_address([self.account_seed_version, neon_account_addressbytes],
                                               PublicKey(evm_loader_id))[0]
+
+    def get_erc_auth_address(self, neon_account_address: str, token_address: str, evm_loader_id: str):
+        neon_account_addressbytes = bytes(12) + bytes.fromhex(neon_account_address[2:])
+        if token_address.startswith("0x"):
+            token_address = token_address[2:]
+        neon_contract_addressbytes = bytes.fromhex(token_address)
+        return PublicKey.find_program_address(
+            [self.account_seed_version, b"AUTH", neon_contract_addressbytes, neon_account_addressbytes],
+            PublicKey(evm_loader_id))[0]

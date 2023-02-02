@@ -530,8 +530,8 @@ class TestERC20wrapperContract(BaseMixin):
                 instructions.ApproveParams(
                     program_id=TOKEN_PROGRAM_ID,
                     source=solana_address,
-                    delegate=sol_client.get_neon_account_address(
-                        erc20.account.address, pytestconfig.environment.evm_loader
+                    delegate=sol_client.get_erc_auth_address(
+                        erc20.account.address, erc20.contract.address, pytestconfig.environment.evm_loader
                     ),
                     owner=acc.public_key,
                     amount=sent_amount,
@@ -575,8 +575,8 @@ class TestERC20wrapperContract(BaseMixin):
                 instructions.ApproveParams(
                     program_id=TOKEN_PROGRAM_ID,
                     source=solana_address,
-                    delegate=sol_client.get_neon_account_address(
-                        erc20.account.address, pytestconfig.environment.evm_loader
+                    delegate=sol_client.get_erc_auth_address(
+                        erc20.account.address, erc20.contract.address, pytestconfig.environment.evm_loader
                     ),
                     owner=acc.public_key,
                     amount=sent_amount,

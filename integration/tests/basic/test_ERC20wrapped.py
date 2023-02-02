@@ -762,6 +762,43 @@ class TestMultipleActionsForERC20(BaseMixin):
         assert user_balance == transfer_amount + user_balance_before, "User balance is not correct"
         assert contract_balance == contract_balance_before, "Contract balance is not correct"
 
+    def test_mint_mint(self, multiple_actions_erc20):
+        acc, contract = multiple_actions_erc20
+        mint_amount1 = random.randint(10, 100000000)
+        mint_amount2 = random.randint(10, 100000000)
+        contract_balance_before = contract.functions.contractBalance().call()
+
+        tx = self.make_tx_object()
+        instruction_tx = contract.functions.mintMint(
+            mint_amount1,
+            mint_amount2,
+        ).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        contract_balance = contract.functions.contractBalance().call()
+        assert contract_balance == contract_balance_before + mint_amount1 + mint_amount2, "Contract balance is not correct"
+
+    @pytest.mark.xfail(reason="NDEV-700")
+    def test_mint_mint_transfer_transfer(self, multiple_actions_erc20):
+        acc, contract = multiple_actions_erc20
+        mint_amount1 = random.randint(10, 100000000)
+        mint_amount2 = random.randint(10, 100000000)
+        contract_balance_before = contract.functions.contractBalance().call()
+        user_balance_before = contract.functions.balance(acc.address).call()
+
+        tx = self.make_tx_object()
+        instruction_tx = contract.functions.mintMintTransferTransfer(
+            mint_amount1,
+            mint_amount2,
+            acc.address
+        ).buildTransaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        contract_balance = contract.functions.contractBalance().call()
+        user_balance = contract.functions.balance(acc.address).call()
+        assert user_balance == user_balance_before + mint_amount1 + mint_amount2, "User balance is not correct"
+        assert contract_balance == contract_balance_before, "Contract balance is not correct"
+
     def test_burn_transfer_burn_transfer(self, multiple_actions_erc20):
         acc, contract = multiple_actions_erc20
         contract_balance_before = contract.functions.contractBalance().call()

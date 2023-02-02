@@ -115,4 +115,22 @@ contract multipleActionsERC20 {
         erc20.transfer(transfer_to, transfer_amount);
     }
 
+    function mintMint(
+        uint256 mint_amount1,
+        uint256 mint_amount2
+    ) public {
+        erc20.mint(address(this), mint_amount1);
+        erc20.mint(address(this), mint_amount2);
+    }
+
+    function mintMintTransferTransfer(
+        uint256 mint_amount1,
+        uint256 mint_amount2,
+        address transfer_to
+    ) public {
+        erc20.mint(address(this), mint_amount1);
+        erc20.mint(address(this), mint_amount2);
+        erc20.transfer(transfer_to, mint_amount1);
+        erc20.transfer(transfer_to, mint_amount2);
+    }
 }

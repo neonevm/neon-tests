@@ -1,6 +1,7 @@
 import random
 import string
 
+import pytest
 import web3
 
 from integration.tests.basic.helpers.basic import BaseMixin
@@ -133,7 +134,9 @@ class TestLogs(BaseMixin):
         response = self.proxy_api.send_rpc(method="neon_getTransactionReceipt", params=[resp["transactionHash"].hex()])
         assert_log_field_in_neon_trx_receipt(response, changes_count)
 
+    @pytest.mark.skip(reason="test is broken")
     def test_event_logs_deleted_if_trx_was_canceled(self, event_caller):
+        # TODO transaction updateStorageMap wasn't canceled, need to find another way to get transaction with 0 status
         tx = self.make_tx_object(self.sender_account.address)
         changes_count = 50
         instruction_tx = event_caller.functions.updateStorageMap(changes_count).buildTransaction(tx)

@@ -547,6 +547,43 @@ class TestERC20wrapperContract(BaseMixin):
 
         assert balance_after == balance_before - sent_amount + claim_amount, "Balance is not correct"
 
+    def test_claim_mintable(
+        self,
+        erc20_spl_mintable,
+        sol_client,
+        solana_associated_token_mintable_erc20,
+        pytestconfig
+    ):
+        acc, token_mint, solana_address = solana_associated_token_mintable_erc20
+        erc20 = erc20_spl_mintable
+
+        balance_before = erc20.contract.functions.balanceOf(erc20.account.address).call()
+        sent_amount = random.randint(10, 1000)
+        erc20.transfer_solana(erc20.account, bytes(solana_address), sent_amount)
+        trx = Transaction()
+        trx.add(
+            instructions.approve(
+                instructions.ApproveParams(
+                    program_id=TOKEN_PROGRAM_ID,
+                    source=solana_address,
+                    delegate=sol_client.get_erc_auth_address(
+                        erc20.account.address, erc20.contract.address, pytestconfig.environment.evm_loader
+                    ),
+                    owner=acc.public_key,
+                    amount=sent_amount,
+                    signers=[],
+                )
+            )
+        )
+        sol_client.send_transaction(trx, acc, opts=TxOpts(skip_preflight=False, skip_confirmation=False))
+
+        claim_amount = random.randint(10, sent_amount)
+        erc20.claim(erc20.account, bytes(solana_address), claim_amount)
+        balance_after = erc20.contract.functions.balanceOf(erc20.account.address).call()
+
+        assert balance_after == balance_before - sent_amount + claim_amount, "Balance is not correct"
+
+
     @pytest.mark.parametrize("mintable", [True, False])
     def test_claimTo(
         self,

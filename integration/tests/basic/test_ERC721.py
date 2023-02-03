@@ -364,10 +364,12 @@ class TestERC721(BaseMixin):
         solana_address = bytes(
             get_associated_token_address(acc.public_key, token_mint))
         if pytestconfig.environment.use_bank:
-            erc721.transfer_solana_from(
-                bank_account.address, solana_address, token_id, erc721.account)
-            payback(lambda: erc721.transfer_solana_from(solana_address,
-                                                        bank_account.address, token_id, erc721.account))
+            sol_client.transfer(from_pubkey=bank_account.public_key,
+                                to_pubkey=acc.public_key,
+                                lamports=1000000000)
+            payback(lambda: sol_client.transfer(from_pubkey=acc.public_key,
+                                                to_pubkey=bank_account.public_key,
+                                                lamports=1000000000))
         else:
             sol_client.request_airdrop(acc.public_key, 1000000000)
         trx = Transaction()

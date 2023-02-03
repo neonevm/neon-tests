@@ -18,6 +18,8 @@ class EnvironmentConfig:
     proxy_url: str
     solana_url: str
     faucet_url: str
+    use_bank: bool
+    bank_account: str
     network_id: int
     operator_neon_rewards_address: tp.List[str]
     spl_neon_mint: str

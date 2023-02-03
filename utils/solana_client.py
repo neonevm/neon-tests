@@ -44,3 +44,14 @@ class SolanaClient(solana.rpc.api.Client):
         return PublicKey.find_program_address(
             [self.account_seed_version, b"AUTH", neon_contract_addressbytes, neon_account_addressbytes],
             PublicKey(evm_loader_id))[0]
+
+    def transfer(self, from_pubkey, to_pubkey, lamports, signers=None):
+        if signers is None:
+            signers = []
+        signers.append(from_pubkey)
+        transfer_tx = Transaction().add(transfer(
+                                        TransferParams(from_pubkey=from_pubkey,
+                                                       to_pubkey=to_pubkey,
+                                                       lamports=lamports)))
+
+        self.send_transaction(transfer_tx, from_pubkey)

@@ -22,6 +22,7 @@ class ERC20Wrapper:
         name,
         symbol,
         sol_client,
+        payback,
         decimals=18,
         evm_loader_id=None,
         account=None,
@@ -42,6 +43,7 @@ class ERC20Wrapper:
         self.symbol = symbol
         self.decimals = decimals
         self.sol_client = sol_client
+        self.payback = payback
         self.contract_address = self.deploy_wrapper(mintable)
         self.contract = self.get_wrapper_contract()
         self.use_bank = use_bank
@@ -72,7 +74,11 @@ class ERC20Wrapper:
             acc = Keypair.generate()
             self.solana_acc = acc
             if self.use_bank:
-                self.transfer_from(self.solana_acc, self.bank_account, self.solana_acc, 1000000000)
+                self.sol_client.transfer(from_pubkey=self.bank_account.public_key,
+                                         to_pubkey=acc.public_key, lamports=1000000000)
+                self.payback(lambda: self.sol_client.transfer(from_pubkey=acc.public_key,
+                                                              to_pubkey=self.bank_account.public_key,
+                                                              lamports=1000000000))
             else:
                 self.sol_client.request_airdrop(acc.public_key, 1000000000)
             self.token_mint = self.create_spl(acc, self.decimals)
@@ -99,10 +105,6 @@ class ERC20Wrapper:
             logs = contract.events.ERC20ForSplCreated().processReceipt(instruction_receipt)
             return logs[0]["args"]["pair"]
         return instruction_receipt
-
-    def payback(self):
-        amount = self.sol_client.get_balance(self.solana_acc.public_key).value
-        self.transfer_from(self.bank_account, self.solana_acc, self.bank_account, amount)
 
     def create_spl(self, owner: Keypair, decimals: int = 9):
         token_mint = spl.token.client.Token.create_mint(

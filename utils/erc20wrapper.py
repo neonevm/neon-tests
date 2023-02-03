@@ -26,6 +26,8 @@ class ERC20Wrapper:
         evm_loader_id=None,
         account=None,
         mintable=True,
+        use_bank=False,
+        bank_accont=None,
     ):
         self.solana_associated_token_acc = None
         self.token_mint = None
@@ -42,6 +44,8 @@ class ERC20Wrapper:
         self.sol_client = sol_client
         self.contract_address = self.deploy_wrapper(mintable)
         self.contract = self.get_wrapper_contract()
+        self.use_bank = use_bank
+        self.bank_account = bank_accont
 
     def make_tx_object(self, from_address, gas_price=None, gas=None):
         tx = {
@@ -67,7 +71,10 @@ class ERC20Wrapper:
         else:
             acc = Keypair.generate()
             self.solana_acc = acc
-            self.sol_client.request_airdrop(acc.public_key, 1000000000)
+            if self.use_bank:
+                self.transfer_from(self.solana_acc, self.bank_account, self.solana_acc, 1000000000)
+            else:
+                self.sol_client.request_airdrop(acc.public_key, 1000000000)
             self.token_mint = self.create_spl(acc, self.decimals)
             metadata = create_metadata_instruction_data(self.name, self.symbol, 0, ())
             txn = Transaction()
@@ -92,6 +99,10 @@ class ERC20Wrapper:
             logs = contract.events.ERC20ForSplCreated().processReceipt(instruction_receipt)
             return logs[0]["args"]["pair"]
         return instruction_receipt
+
+    def payback(self):
+        amount = self.sol_client.get_balance(self.solana_acc.public_key).value
+        self.transfer_from(self.bank_account, self.solana_acc, self.bank_account, amount)
 
     def create_spl(self, owner: Keypair, decimals: int = 9):
         token_mint = spl.token.client.Token.create_mint(

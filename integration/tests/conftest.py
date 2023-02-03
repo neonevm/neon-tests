@@ -54,14 +54,24 @@ def json_rpc_client(pytestconfig: Config) -> JsonRPCSession:
 
 @pytest.fixture(scope="session", autouse=True)
 def web3_client(pytestconfig: Config) -> NeonWeb3Client:
-    client = NeonWeb3Client(pytestconfig.environment.proxy_url, pytestconfig.environment.network_id)
+    client = NeonWeb3Client(
+        pytestconfig.environment.proxy_url, pytestconfig.environment.network_id)
     return client
 
 
 @pytest.fixture(scope="session", autouse=True)
 def sol_client(pytestconfig: Config):
-    client = SolanaClient(pytestconfig.environment.solana_url, pytestconfig.environment.account_seed_version)
+    client = SolanaClient(pytestconfig.environment.solana_url,
+                          pytestconfig.environment.account_seed_version)
     return client
+
+
+@pytest.fixture(scope="session", autouse=True)
+def bank_account(pytestconfig: Config, sol_client: SolanaClient) -> PublicKey:
+    if pytestconfig.environment.use_bank:
+        acc = Keypair.generate()
+        sol_client.request_airdrop(acc.public_key, 1000000000)
+        return acc
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -122,7 +132,7 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
 
 
 @pytest.fixture(scope="session")
-def erc20_spl(web3_client: NeonWeb3Client, faucet, pytestconfig: Config, sol_client):
+def erc20_spl(web3_client: NeonWeb3Client, faucet, pytestconfig: Config, sol_client, bank_account):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
     erc20 = ERC20Wrapper(
         web3_client,
@@ -132,39 +142,65 @@ def erc20_spl(web3_client: NeonWeb3Client, faucet, pytestconfig: Config, sol_cli
         sol_client,
         mintable=False,
         evm_loader_id=pytestconfig.environment.evm_loader,
+        use_bank=pytestconfig.environment.use_bank,
+        bank_accont=bank_account,
     )
-    erc20.claim(erc20.account, bytes(erc20.solana_associated_token_acc), 100000000000000)
+    erc20.claim(erc20.account, bytes(
+        erc20.solana_associated_token_acc), 100000000000000)
     yield erc20
+    erc20.payback()
 
 
 @pytest.fixture(scope="session")
 def erc20_spl_mintable(web3_client: NeonWeb3Client, faucet, sol_client):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
-    erc20 = ERC20Wrapper(web3_client, faucet, f"Test {symbol}", symbol, sol_client, mintable=True)
+    erc20 = ERC20Wrapper(web3_client, faucet,
+                         f"Test {symbol}", symbol, sol_client, mintable=True)
     erc20.mint_tokens(erc20.account, erc20.account.address)
     yield erc20
 
 
 @pytest.fixture(scope="function")
-def solana_associated_token_mintable_erc20(erc20_spl_mintable, sol_client):
+def solana_associated_token_mintable_erc20(erc20_spl_mintable, sol_client, bank_account, pytestconfig: Config):
     acc = Keypair.generate()
-    sol_client.request_airdrop(acc.public_key, 1000000000)
-    token_mint = PublicKey(erc20_spl_mintable.contract.functions.tokenMint().call())
+    if pytestconfig.environment.use_bank:
+        erc20_spl_mintable.transfer_from(
+            bank_account, acc, bank_account, 1000000000)
+        payback(lambda: sendback(sol_client, acc,
+                bank_account, erc20_spl_mintable))
+    else:
+        sol_client.request_airdrop(acc.public_key, 1000000000)
+    token_mint = PublicKey(
+        erc20_spl_mintable.contract.functions.tokenMint().call())
     trx = Transaction()
-    trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))
+    trx.add(create_associated_token_account(
+        acc.public_key, acc.public_key, token_mint))
     opts = TxOpts(skip_preflight=True, skip_confirmation=False)
     sol_client.send_transaction(trx, acc, opts=opts)
     solana_address = get_associated_token_address(acc.public_key, token_mint)
     yield acc, token_mint, solana_address
 
 
+def sendback(sol_client, solana_acc, bank_account, erc20_spl_mintable):
+    amount = sol_client.get_balance(solana_acc.public_key).value
+    erc20_spl_mintable.transfer_from(
+        bank_account, solana_acc, bank_account, amount)
+
+
 @pytest.fixture(scope="function")
-def solana_associated_token_erc20(erc20_spl, sol_client):
+def solana_associated_token_erc20(erc20_spl, sol_client, bank_account, pytestconfig: Config):
     acc = Keypair.generate()
-    sol_client.request_airdrop(acc.public_key, 1000000000)
+    if pytestconfig.environment.use_bank:
+        erc20_spl.transfer_from(
+            bank_account, acc, bank_account, 1000000000)
+        payback(lambda: sendback(sol_client, acc,
+                bank_account, erc20_spl))
+    else:
+        sol_client.request_airdrop(acc.public_key, 1000000000)
     token_mint = erc20_spl.token_mint.pubkey
     trx = Transaction()
-    trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))
+    trx.add(create_associated_token_account(
+        acc.public_key, acc.public_key, token_mint))
     opts = TxOpts(skip_preflight=True, skip_confirmation=False)
     sol_client.send_transaction(trx, acc, opts=opts)
     solana_address = get_associated_token_address(acc.public_key, token_mint)
@@ -249,6 +285,17 @@ def neon_mint(pytestconfig: Config):
 def event_caller(web3_client, faucet):
     acc = web3_client.create_account()
     faucet.request_neon(acc.address, 100)
-    contract, contract_deploy_tx = web3_client.deploy_and_get_contract("EventCaller", "0.8.12", acc)
+    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
+        "EventCaller", "0.8.12", acc)
     return contract
 
+
+@pytest.fixture(scope="function")
+def payback():
+    funcs = []
+
+    def add_func(func):
+        funcs.append(func)
+    yield add_func
+    for func in funcs:
+        func()

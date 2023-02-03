@@ -357,17 +357,27 @@ class TestERC721(BaseMixin):
         with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_TOKEN_ERC721.value):
             erc721.contract.functions.getApproved(token_id).call()
 
-    def test_transferSolanaFrom(self, erc721, token_id, sol_client):
+    def test_transferSolanaFrom(self, erc721, token_id, sol_client, payback, pytestconfig, bank_account):
         acc = Keypair.generate()
-        sol_client.request_airdrop(acc.public_key, 1000000000)
-        token_mint = PublicKey(base58.b58encode(token_id.to_bytes(32, "big")).decode("utf-8"))
+        token_mint = PublicKey(base58.b58encode(
+            token_id.to_bytes(32, "big")).decode("utf-8"))
+        solana_address = bytes(
+            get_associated_token_address(acc.public_key, token_mint))
+        if pytestconfig.environment.use_bank:
+            erc721.transfer_solana_from(
+                bank_account.address, solana_address, token_id, erc721.account)
+            payback(lambda: erc721.transfer_solana_from(solana_address,
+                                                        bank_account.address, token_id, erc721.account))
+        else:
+            sol_client.request_airdrop(acc.public_key, 1000000000)
         trx = Transaction()
-        trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))
+        trx.add(create_associated_token_account(
+            acc.public_key, acc.public_key, token_mint))
         opts = TxOpts(skip_preflight=False, skip_confirmation=False)
         sol_client.send_transaction(trx, acc, opts=opts)
-        solana_address = bytes(get_associated_token_address(acc.public_key, token_mint))
 
-        erc721.transfer_solana_from(erc721.account.address, solana_address, token_id, erc721.account)
+        erc721.transfer_solana_from(
+            erc721.account.address, solana_address, token_id, erc721.account)
         opts = TokenAccountOpts(token_mint)
 
         wait_condition(

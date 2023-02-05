@@ -357,9 +357,8 @@ class TestERC721(BaseMixin):
         with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_TOKEN_ERC721.value):
             erc721.contract.functions.getApproved(token_id).call()
 
-    def test_transferSolanaFrom(self, erc721, token_id, sol_client):
-        acc = Keypair.generate()
-        sol_client.request_airdrop(acc.public_key, 1000000000)
+    def test_transferSolanaFrom(self, erc721, token_id, sol_client, solana_account):
+        acc = solana_account
         token_mint = PublicKey(base58.b58encode(token_id.to_bytes(32, "big")).decode("utf-8"))
         trx = Transaction()
         trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))

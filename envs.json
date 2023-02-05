@@ -87,12 +87,13 @@
   },
   "devnet": {
     "evm_loader": "eeLSJgWzzxrqKv1UxtRVVH8FX3qCQWUs9QuAjJpETGU",
-    "proxy_url": "https://devnet.neonevm.org",
+    "proxy_url": "https://devnet.neonevm.org/solana",
     "network_id": 245022926,
     "solana_url": "https://api.devnet.solana.com",
     "faucet_url": "http://3.13.67.238/request_neon",
     "spl_neon_mint": "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g",
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
+    "use_bank": true,
     "operator_neon_rewards_address": [
       "0x04fb33d72b5c836e468e217f79c404a32fe5003a"
     ],

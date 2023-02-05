@@ -23,6 +23,7 @@ class EnvironmentConfig:
     spl_neon_mint: str
     neon_erc20wrapper_address: str
     operator_keys: tp.List[str]
+    use_bank: bool
     account_seed_version: str = "\3"
 
 
@@ -65,4 +66,6 @@ def pytest_configure(config: Config):
             env["solana_url"] = os.environ.get("SOLANA_URL")
         if "PROXY_URL" in os.environ:
             env["proxy_url"] = os.environ.get("PROXY_URL")
+    if "use_bank" not in env:
+        env["use_bank"] = False
     config.environment = EnvironmentConfig(**env)

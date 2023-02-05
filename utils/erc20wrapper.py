@@ -22,6 +22,7 @@ class ERC20Wrapper:
         name,
         symbol,
         sol_client,
+        solana_account,
         decimals=18,
         evm_loader_id=None,
         account=None,
@@ -29,7 +30,7 @@ class ERC20Wrapper:
     ):
         self.solana_associated_token_acc = None
         self.token_mint = None
-        self.solana_acc = None
+        self.solana_acc = solana_account
         self.evm_loader_id = evm_loader_id
         self.web3_client = web3_client
         self.account = account
@@ -65,23 +66,20 @@ class ERC20Wrapper:
                 self.name, self.symbol, self.decimals, self.account.address
             ).buildTransaction(tx_object)
         else:
-            acc = Keypair.generate()
-            self.solana_acc = acc
-            self.sol_client.request_airdrop(acc.public_key, 1000000000)
-            self.token_mint = self.create_spl(acc, self.decimals)
+            self.token_mint = self.create_spl(self.solana_acc, self.decimals)
             metadata = create_metadata_instruction_data(self.name, self.symbol, 0, ())
             txn = Transaction()
             txn.add(
                 create_metadata_instruction(
                     metadata,
-                    acc.public_key,
+                    self.solana_acc.public_key,
                     self.token_mint.pubkey,
-                    acc.public_key,
-                    acc.public_key,
+                    self.solana_acc.public_key,
+                    self.solana_acc.public_key,
                 )
             )
             self.sol_client.send_transaction(
-                txn, acc, opts=TxOpts(preflight_commitment=Confirmed, skip_confirmation=False)
+                txn, self.solana_acc, opts=TxOpts(preflight_commitment=Confirmed, skip_confirmation=False)
             )
             instruction_tx = contract.functions.createErc20ForSpl(bytes(self.token_mint.pubkey)).buildTransaction(
                 tx_object

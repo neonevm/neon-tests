@@ -1,5 +1,10 @@
 import time
+
 import solana.rpc.api
+import solders.system_program as sp
+from solana.system_program import transfer, TransferParams
+from solana.transaction import Transaction
+from solana.keypair import Keypair
 from solana.publickey import PublicKey
 from solana.rpc.commitment import Finalized, Commitment
 from solders.rpc.errors import InternalErrorMessage
@@ -30,6 +35,21 @@ class SolanaClient(solana.rpc.api.Client):
             raise AssertionError(f"Can't get airdrop from solana: {airdrop_resp}")
         wait_condition(lambda: self.get_balance(pubkey).value >= lamports, timeout_sec=30)
         return airdrop_resp
+
+    def send_sol(self, from_: Keypair, to: PublicKey, amount_lamports: int):
+        tx = Transaction().add(
+            transfer(
+                TransferParams(from_pubkey=from_.public_key, to_pubkey=to, lamports=amount_lamports)
+            )
+        )
+        balance_before = self.get_balance(to).value
+        self.send_transaction(tx, from_)
+        for _ in range(20):
+            if int(self.get_balance(to).value) > int(balance_before):
+                break
+            time.sleep(3)
+        else:
+            raise AssertionError(f"Balance not changed in account {to}")
 
     def get_neon_account_address(self, neon_account_address: str, evm_loader_id: str) -> PublicKey:
         neon_account_addressbytes = bytes.fromhex(neon_account_address[2:])

@@ -79,7 +79,7 @@ jobs:
           SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
           PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
         run: |
-          ./clickfile.py infra gen-accounts -c 2 -a 10000
+          ./clickfile.py infra gen-accounts -c 1 -a 50000
 
       - name: Launch makerDAO tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -92,9 +92,9 @@ jobs:
           CWD=/tmp/makerdao-${{ github.run_id }}
           git clone https://github.com/neonlabsorg/makerdao-dss.git ${CWD}
           proxy_url=http://${{ env.PROXY_IP }}:9090/solana
-          docker build -t makerdao:latest ${CWD}
+          docker build --build-arg NEON_PROXY_URL='http://${{ env.PROXY_IP }}:9090/solana' --build-arg NEON_ACCOUNTS=${{ env.ACCOUNTS }} -t makerdao:latest ${CWD}
           test -t 1 && USE_TTY="-t"
-          docker run -i ${USE_TTY} --name=makerdao-${{ github.run_id }} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} --entrypoint /bin/bash uniswap:latest -c "./start.sh"
+          docker run -i ${USE_TTY} --name=makerdao-${{ github.run_id }} --entrypoint /bin/bash makerdao:latest -c "./start.sh"
           docker cp makerdao-${{ github.run_id }}:/usr/src/app/report.json report.json
           docker rm -f makerdao-${{ github.run_id }}
           mv report.json makerdao-report.json

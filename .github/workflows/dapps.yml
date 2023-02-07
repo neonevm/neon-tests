@@ -94,7 +94,7 @@ jobs:
           proxy_url=http://${{ env.PROXY_IP }}:9090/solana
           docker build --build-arg NEON_PROXY_URL='http://${{ env.PROXY_IP }}:9090/solana' --build-arg NEON_ACCOUNTS=${{ env.ACCOUNTS }} -t makerdao:latest ${CWD}
           test -t 1 && USE_TTY="-t"
-          docker run -i ${USE_TTY} --name=makerdao-${{ github.run_id }}
+          docker run -i ${USE_TTY} --name=makerdao-${{ github.run_id }} makerdao:latest
           docker cp makerdao-${{ github.run_id }}:/usr/src/app/report.json report.json
           docker rm -f makerdao-${{ github.run_id }}
           mv report.json makerdao-report.json

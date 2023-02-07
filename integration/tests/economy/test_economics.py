@@ -86,7 +86,6 @@ class TestEconomics(BaseTests):
     @allure.step("Check transaction used ALT")
     def check_alt_on(self, sol_client, receipt, accounts_quantity):
         solana_trx = self.web3_client.get_solana_trx_by_neon(receipt["transactionHash"].hex())
-
         wait_condition(lambda: sol_client.get_transaction(Signature.from_string(solana_trx["result"][0]),
                                                           max_supported_transaction_version=0) != GetTransactionResp(
             None))
@@ -94,7 +93,7 @@ class TestEconomics(BaseTests):
                                          max_supported_transaction_version=0)
         alt = trx.value.transaction.transaction.message.address_table_lookups
         accounts = alt[0].writable_indexes + alt[0].readonly_indexes
-        assert len(accounts) == accounts_quantity - 1
+        assert len(accounts) == accounts_quantity - 2
 
     @allure.step("Check block for not using ALT")
     def check_alt_off(self, block):

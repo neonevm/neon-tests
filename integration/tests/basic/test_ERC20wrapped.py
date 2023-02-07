@@ -752,7 +752,6 @@ class TestMultipleActionsForERC20(BaseMixin):
         contract_balance = contract.functions.contractBalance().call()
         assert contract_balance == contract_balance_before + mint_amount1 + mint_amount2, "Contract balance is not correct"
 
-    @pytest.mark.xfail(reason="NDEV-700")
     def test_mint_mint_transfer_transfer(self, multiple_actions_erc20):
         acc, contract = multiple_actions_erc20
         mint_amount1 = random.randint(10, 100000000)

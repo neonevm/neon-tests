@@ -68,4 +68,7 @@ def pytest_configure(config: Config):
             env["proxy_url"] = os.environ.get("PROXY_URL")
     if "use_bank" not in env:
         env["use_bank"] = False
+    if network_name == "aws":
+            env["solana_url"] = env["solana_url"].replace("<solana_ip>", os.environ.get("SOLANA_IP"))
+            env["proxy_url"] = env["proxy_url"].replace("<proxy_ip>", os.environ.get("PROXY_IP"))
     config.environment = EnvironmentConfig(**env)

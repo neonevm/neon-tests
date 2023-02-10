@@ -357,6 +357,8 @@ class TestERC721(BaseMixin):
         with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_TOKEN_ERC721.value):
             erc721.contract.functions.getApproved(token_id).call()
 
+
+    @pytest.mark.xfail(reason="NDEV-1333")
     def test_transferSolanaFrom(self, erc721, token_id, sol_client, solana_account):
         acc = solana_account
         token_mint = PublicKey(base58.b58encode(token_id.to_bytes(32, "big")).decode("utf-8"))

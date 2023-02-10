@@ -491,6 +491,7 @@ class TestRpcCalls(BaseMixin):
     )
     def test_eth_get_block_by_number_via_tags(self, quantity_tag: Tag, full_trx: bool):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
+        self.send_neon(self.sender_account, self.recipient_account, 10)
         params = [quantity_tag.value, full_trx]
         response = self.proxy_api.send_rpc(method="eth_getBlockByNumber", params=params)
         rpc_checks.assert_block_fields(response, full_trx, None, quantity_tag == Tag.PENDING)
@@ -667,7 +668,9 @@ class TestRpcCalls(BaseMixin):
         ],
     )
     @pytest.mark.parametrize("param_fields", [("address", "topics"), ("address"), ("topics")])
-    def test_get_neon_logs(self, event_caller, param_fields, tag1, tag2):
+    def test_get_neon_logs(self, param_fields, tag1, tag2):
+        event_caller, _ = self.web3_client.deploy_and_get_contract("EventCaller", "0.8.12", self.sender_account)
+
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
         text_bytes = bytes(text, 'utf-8')

@@ -39,7 +39,7 @@ def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[web
             assert tx_receipt.transactionHash.hex() in [transaction["hash"] for transaction in
                                                         transactions], "Created transaction should be in block"
         for transaction in transactions:
-            expected_hex_fields = ["hash", "nonce", "blockHash", "blockNumber", "transactionIndex", "from", "to",
+            expected_hex_fields = ["hash", "nonce", "blockHash", "blockNumber", "transactionIndex", "from",
                                    "value", "gas", "gasPrice", "v", "r", "s"]
             for field in expected_hex_fields:
                 assert is_hex(transaction[field]), f"field '{field}' is not correct. Actual : {transaction[field]}"

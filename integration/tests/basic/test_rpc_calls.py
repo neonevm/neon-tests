@@ -679,13 +679,13 @@ class TestRpcCalls(BaseMixin):
         instruction_tx = event_caller.functions.allTypes(self.sender_account.address, number, text, text_bytes,
                                                          bol).buildTransaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
-        topics = get_event_signatures(event_caller.abi)
+        topic = "0x" + keccak(text="AllTypes(address,uint256,string,bytes32,bool)").hex()
 
         params = {}
         if "address" in param_fields:
             params["address"] = event_caller.address
         if "topics" in param_fields:
-            params["topic"] = topics
+            params["topics"] = [topic]
 
         if tag1:
             params["fromBlock"] = tag1.value
@@ -695,7 +695,7 @@ class TestRpcCalls(BaseMixin):
         response = self.proxy_api.send_rpc("neon_getLogs", params=params)
         assert "error" not in response
         if response["result"]:
-            assert any(topic in response["result"][0]["topics"] for topic in topics)
+            assert topic in response["result"][0]["topics"]
         assert_neon_logs(response["result"])
 
     @pytest.mark.parametrize("method", ["neon_getLogs", "eth_getLogs"])

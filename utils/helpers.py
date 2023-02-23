@@ -48,6 +48,8 @@ def get_contract_interface(contract: str, version: str, contract_name: tp.Option
         contract_path = pathlib.Path(contract)
     else:
         contract_path = (pathlib.Path.cwd() / "contracts" / f"{contract}").absolute()
+        if not contract_path.exists():
+            contract_path = (pathlib.Path.cwd() / "contracts" / "external" / f"{contract}").absolute()
 
     assert contract_path.exists(), f"Can't found contract: {contract_path}"
 

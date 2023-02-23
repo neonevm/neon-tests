@@ -376,6 +376,22 @@ def requirements(dep):
         install_ui_requirements()
 
 
+@cli.command(help="Download test contracts from neon-evm repo")
+def contracts():
+    contract_path = pathlib.Path.cwd() / "contracts" / "external"
+    pathlib.Path(contract_path).mkdir(parents=True, exist_ok=True)
+
+    response = requests.get(
+        "https://api.github.com/repos/neonlabsorg/neon-evm/contents/evm_loader/solidity?ref=develop").json()
+    for item in response:
+        r = requests.get(
+            f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/develop/evm_loader/solidity/{item['name']}")
+        if r.status_code == 200:
+            open(contract_path / item['name'], 'wb').write(r.content)
+        else:
+            raise click.ClickException(f"The contract {item['name']} is not downloaded. Error: {r.text}")
+
+
 @cli.command(help="Run any type of tests")
 @click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")

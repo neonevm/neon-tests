@@ -18,7 +18,8 @@ After this you can use from project root directory:
 
 This file contains a lot of utilities to work with this repository such as:
 1. update deps
-2. run different tests
+2. download test contracts
+3. run different tests
 3. prepare data and stand for run tests
 
 
@@ -27,6 +28,14 @@ This file contains a lot of utilities to work with this repository such as:
 Please use clickfile.py to install deps because our web3 has conflicts with solana package and this problem resolved in:
 ```bash
 ./clickfile.py requirements
+```
+
+##Download test contracts
+
+To download test contracts from the neon-evm repo you need to use:
+
+```bash
+./clickfile.py contracts
 ```
 
 ##Run OpenZeppelin tests

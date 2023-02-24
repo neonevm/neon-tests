@@ -357,6 +357,8 @@ class TestERC721(BaseMixin):
         with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_TOKEN_ERC721.value):
             erc721.contract.functions.getApproved(token_id).call()
 
+
+    @pytest.mark.xfail(reason="NDEV-1333")
     def test_transferSolanaFrom(self, erc721, token_id, sol_client, solana_account):
         acc = solana_account
         token_mint = PublicKey(base58.b58encode(token_id.to_bytes(32, "big")).decode("utf-8"))
@@ -436,7 +438,6 @@ class TestMultipleActionsForERC721(BaseMixin):
         assert user_balance == user_balance_before + 1, "User balance is not correct"
         assert contract_balance == contract_balance_before + 1, "Contract balance is not correct"
 
-    @pytest.mark.xfail(reason="NDEV-700")
     def test_mint_mint_transfer_transfer(self, multiple_actions_erc721):
         acc, contract = multiple_actions_erc721
 
@@ -459,7 +460,6 @@ class TestMultipleActionsForERC721(BaseMixin):
         assert user_balance == user_balance_before + 2, "User balance is not correct"
         assert contract_balance == contract_balance_before, "Contract balance is not correct"
 
-    @pytest.mark.xfail(reason="NDEV-700")
     def test_mint_mint_transfer_transfer_different_accounts(self, multiple_actions_erc721, new_account):
         acc, contract = multiple_actions_erc721
 

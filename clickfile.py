@@ -350,6 +350,7 @@ def install_ui_requirements():
 
 def install_oz_requirements():
     cwd = pathlib.Path().absolute() / "compatibility/openzeppelin-contracts"
+    subprocess.check_call("npm set audit false", shell=True, cwd=cwd.as_posix())
     if list(cwd.glob("*lock*")):
         cmd = "npm ci"
     else:
@@ -374,6 +375,23 @@ def requirements(dep):
         install_oz_requirements()
     if dep == "ui":
         install_ui_requirements()
+
+
+@cli.command(help="Download test contracts from neon-evm repo")
+def contracts():
+    contract_path = pathlib.Path.cwd() / "contracts" / "external"
+    pathlib.Path(contract_path).mkdir(parents=True, exist_ok=True)
+
+    response = requests.get(
+        "https://api.github.com/repos/neonlabsorg/neon-evm/contents/evm_loader/solidity?ref=develop").json()
+    for item in response:
+        r = requests.get(
+            f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/develop/evm_loader/solidity/{item['name']}")
+        if r.status_code == 200:
+            with open(contract_path / item['name'], 'wb') as f:
+                f.write(r.content)
+        else:
+            raise click.ClickException(f"The contract {item['name']} is not downloaded. Error: {r.text}")
 
 
 @cli.command(help="Run any type of tests")

@@ -17,6 +17,8 @@ class Faucet:
         url = urllib.parse.urljoin(self._url, "request_neon")
         balance_before = self.web3_client.get_balance(address)
         response = self._session.post(url, json={"amount": amount, "wallet": address})
-        assert response.ok, "Faucet returned error: {}".format(response.text)
+        assert response.ok, "Faucet returned error: {}, status code: {}, url: {}".format(response.text,
+                                                                                         response.status_code,
+                                                                                         response.url)
         wait_condition(lambda: self.web3_client.get_balance(address) > balance_before)
         return response

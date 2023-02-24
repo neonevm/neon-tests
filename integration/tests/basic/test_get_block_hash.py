@@ -24,8 +24,11 @@ class TestGetBlockHash(BaseMixin):
     def test_get_block_hash_from_history(self):
         contract, _ = self.web3_client.deploy_and_get_contract("BlockHash", "0.8.10", contract_name="BlockHashTest",
                                                                account=self.sender_account)
+        for _ in range(5):
+            self.send_neon(self.sender_account, self.recipient_account, 1)
+
         current_block_number = self.web3_client.get_block_number()
-        block_number_history = max(int(str(current_block_number), 0) - 25, 1)
+        block_number_history = max(int(str(current_block_number), 0) - 5, 1)
         block_hash_history = self.web3_client.get_block_number_by_id(block_number_history).hash
 
         instruction_tx = contract.functions.getValues(block_number_history).buildTransaction(

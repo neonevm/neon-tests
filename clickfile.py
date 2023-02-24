@@ -388,7 +388,8 @@ def contracts():
         r = requests.get(
             f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/develop/evm_loader/solidity/{item['name']}")
         if r.status_code == 200:
-            open(contract_path / item['name'], 'wb').write(r.content)
+            with open(contract_path / item['name'], 'wb') as f:
+                f.write(r.content)
         else:
             raise click.ClickException(f"The contract {item['name']} is not downloaded. Error: {r.text}")
 

@@ -42,7 +42,7 @@ jobs:
         if: ${{ steps.requirements.outcome == 'success' }}
         run: |
           ssh_key=/tmp/dapps-stand
-          echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
+          echo "${{ secrets.SSH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra deploy
       - uses: actions/upload-artifact@v3
         if: ${{ steps.deploy.outcome == 'success' }}
@@ -306,7 +306,7 @@ jobs:
           sudo apt update
           sudo apt-get install terraform
           ssh_key=/tmp/dapps-stand
-          echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
+          echo "${{ secrets.SSH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
       - name: Download docker logs
         run: ./clickfile.py infra download-logs
       - name: Destroy stand with terraform

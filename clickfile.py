@@ -36,8 +36,8 @@ try:
     from deploy.cli import faucet as faucet_cli
     from deploy.infra.utils import docker as docker_utils
     from deploy.infra.utils import env
-except ImportError:
-    pass
+except ImportError as e:
+    print(f"Can't load {e}")
 
 
 CMD_ERROR_LOG = "click_cmd_err.log"

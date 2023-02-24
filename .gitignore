@@ -239,3 +239,6 @@ ui/extensions/chrome/user_data/
 # tfenv Terraform versions
 .terraform-version
 .vscode
+
+# downloaded files
+contracts/external/

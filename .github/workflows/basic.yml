@@ -106,6 +106,8 @@ jobs:
       - name: "Install deps"
         id: requirements
         uses: ./.github/actions/requirements
+      - name: "Download test contracts"
+        run: "./clickfile.py contracts"
       - name: "Run basic tests"
         id: basic
         run: "./clickfile.py run basic -n ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}"

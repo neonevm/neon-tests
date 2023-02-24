@@ -350,6 +350,7 @@ def install_ui_requirements():
 
 def install_oz_requirements():
     cwd = pathlib.Path().absolute() / "compatibility/openzeppelin-contracts"
+    subprocess.check_call("npm set audit false", shell=True, cwd=cwd.as_posix())
     if list(cwd.glob("*lock*")):
         cmd = "npm ci"
     else:

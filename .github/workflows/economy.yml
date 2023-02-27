@@ -81,6 +81,8 @@ jobs:
       - name: "Install deps"
         id: requirements
         uses: ./.github/actions/requirements
+      - name: "Download test contracts"
+        run: "./clickfile.py contracts"
       - name: "Run economy tests"
         id: economy
         run: "./clickfile.py run economy -n ${{ env.NETWORK }}"

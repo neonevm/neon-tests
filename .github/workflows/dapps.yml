@@ -288,6 +288,7 @@ jobs:
         with:
           name: tf-state
       - name: Install python requirements
+        if: always()
         id: requirements
         uses: ./.github/actions/python-requirements
       - name: Prepare server for destroy terraform stand

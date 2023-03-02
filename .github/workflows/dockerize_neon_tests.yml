@@ -8,6 +8,7 @@ jobs:
   dockerize:
     runs-on: ubuntu-20.04
     steps:
+      - uses: actions/checkout@v3
       - name: "Dockerize neon tests"
         id: requirements
         uses: ./.github/actions/dockerize-neon-tests

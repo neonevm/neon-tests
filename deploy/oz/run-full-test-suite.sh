@@ -1,7 +1,6 @@
 #!/bin/bash
 # "Cleanup previous allure report"
 rm -rf /opt/allure-report
-cd /opt
 
 # "Run OpenZeppelin tests"
 python3 clickfile.py run oz --network=${NETWORK_NAME} --jobs=${FTS_JOBS_NUMBER} --amount=${REQUEST_AMOUNT} --users=${FTS_USERS_NUMBER}

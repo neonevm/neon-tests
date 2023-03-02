@@ -1,7 +1,6 @@
 #!/bin/bash
 # "Cleanup previous allure report"
-rm -rf /opt/allure-report
-cd /opt
+rm -rf ./allure-report
 
 # "Run OpenZeppelin tests"
 python3 clickfile.py run oz --network=${NETWORK_NAME} --jobs=${FTS_JOBS_NUMBER} --amount=${REQUEST_AMOUNT} --users=${FTS_USERS_NUMBER}
@@ -10,8 +9,8 @@ python3 clickfile.py run oz --network=${NETWORK_NAME} --jobs=${FTS_JOBS_NUMBER} 
 python3 clickfile.py ozreport
 
 # "Archive report"
-ALLURE_RESULT_DIR=/opt/allure-results
+ALLURE_RESULT_DIR=./allure-results
 if [[ -d "$ALLURE_RESULT_DIR" ]]; then
-    tar -czvf /opt/allure-reports.tar.gz $ALLURE_RESULT_DIR
+    tar -czvf ./allure-reports.tar.gz $ALLURE_RESULT_DIR
 fi
 

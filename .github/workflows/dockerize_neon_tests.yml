@@ -4,23 +4,15 @@ on:
   push:
     branches: ["develop"]
 
-env:
-  IMAGE_ID: neonlabsorg/neon_tests
-  DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-  DOCKER_HUB_USER: ${{ secrets.DOCKER_USERNAME }}
-
 jobs:
   dockerize:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - name: Build and push neon tests docker image
-        id: docker_pipeline
-        run: |
-          delimeter=$(printf "%0.s-" {1..30})
-          echo " ${delimeter} Build new docker image ${{ env.IMAGE_ID }} ${delimeter}"
-          docker build . --tag ${{ env.IMAGE_ID }}:latest --tag ${{ env.IMAGE_ID }}:${GITHUB_SHA::8}
-          echo "${delimeter} Login into Docker registry as ${{ env.DOCKER_HUB_USER }} ${delimeter}"
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-          echo "${delimeter} Push image ${{ env.IMAGE_ID }} to Docker registry ${delimeter}"
-          docker push --all-tags ${{ env.IMAGE_ID }}
+      - name: "Dockerize neon tests"
+        id: requirements
+        uses: ./.github/actions/dockerize-neon-tests
+        with:
+          image_tag: 'latest'
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}

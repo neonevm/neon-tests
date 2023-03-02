@@ -2,7 +2,7 @@ name: Docker Image for all neon tests
 
 on:
   push:
-    branches: ["develop"]
+    branches: ["develop", "NDEV-1378-common-test-image"]
 
 jobs:
   dockerize:

@@ -42,9 +42,21 @@ env:
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   SOLANA_URL: "${{ secrets.SOLANA_URL }}"
   NUMPROCESSES: 4
-  IMAGE:  neonlabsorg/neon_tests:latest
+  IMAGE:  neonlabsorg/neon_tests
   CONTAINER:  basic-${{ github.run_id }}
 jobs:
+  dockerize:
+    if: ${{ github.ref_name != 'develop'}}
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Dockerize neon tests"
+        id: requirements
+        uses: ./.github/actions/dockerize-neon-tests
+        with:
+          image_tag: ${{ github.sha }}
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
   prepare-env:
     runs-on: ubuntu-20.04
     if: always()
@@ -95,6 +107,7 @@ jobs:
   tests:
     name: "Basic tests"
     needs:
+      - dockerize
       - prepare-env
     runs-on: ${{ needs.prepare-env.outputs.runner }}
     env:
@@ -103,10 +116,20 @@ jobs:
       NUMPROCESSES: ${{ needs.prepare-env.outputs.numprocesses }}
     if: always()
     steps:
+      - name: Define image tag
+        id: image_tag
+        run: |
+            if [ "${{ github.ref_name }}" == "develop" ]
+            then
+                echo "tag='latest'" >> $GITHUB_ENV
+            else
+                echo "tag=${{ github.sha }}" >> $GITHUB_ENV
+            fi
+            echo "tag=${tag}
       - name: Run docker container
         run: |
-          docker pull ${{ env.IMAGE }}
-          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }} /bin/bash
+          docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
+          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
       - name: "Run basic tests"
         id: basic
         run: |
@@ -147,7 +170,13 @@ jobs:
         if: always()
         run: |
           docker exec -i -e GITHUB_REF_NAME=${GITHUB_REF_NAME} \
+          -e GITHUB_RUN_NUMBER=${GITHUB_RUN_NUMBER} \
           -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
           -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
           ${{ env.CONTAINER }} \
           ./clickfile.py upload-allure-report basic --network ${{ needs.prepare-env.outputs.network }}
+      - name: Remove docker container
+        if: always()
+        run: |
+          docker stop ${{ env.CONTAINER }}
+          docker rm ${{ env.CONTAINER }}

@@ -30,7 +30,7 @@ env:
   AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
   AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
   IMAGE:  neonlabsorg/neon_tests:latest
-  CONTAINER:  oz-${{ github.run_id }}
+  CONTAINER:  economy-${{ github.run_id }}
 jobs:
   prepare-env:
     runs-on: ubuntu-20.04
@@ -88,6 +88,8 @@ jobs:
         id: economy
         run: |
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py run economy -n ${{ env.NETWORK }}
+      - name: Download allure report
+
       - uses: actions/upload-artifact@v2
         with:
           name: "Allure results"
@@ -100,7 +102,9 @@ jobs:
             -b ${{ env.BUILD_URL }}
       - name: "Archive report"
         if: always()
-        run: tar -czf allure-results.tar.gz allure-results
+        run: |
+          docker exec -i ${{ env.CONTAINER }} tar -czvf ./allure-reports.tar.gz /opt/neon-tests/allure-results
+          docker cp ${{ env.CONTAINER }}:/opt/neon-tests/allure-reports.tar.gz ./
       - uses: actions/upload-artifact@v2
         if: always()
         with:

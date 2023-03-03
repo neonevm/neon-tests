@@ -93,7 +93,9 @@ jobs:
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py ozreport
 
       - name: Archive report
-        run: tar -czf allure-results.tar.gz allure-results
+        run: |
+          docker exec -i ${{ env.CONTAINER }} tar -czvf ./allure-results.tar.gz /opt/neon-tests/allure-results
+          docker cp ${{ env.CONTAINER }}:/opt/neon-tests/allure-results.tar.gz ./
       - uses: actions/upload-artifact@v2
         if: always()
         with:
@@ -101,8 +103,11 @@ jobs:
           path: allure-results.tar.gz
       - name: Download allure history
         run: |
-          docker exec -i ${{ env.CONTAINER }} ./clickfile.py get-allure-history openzeppelin \
-            --network ${{ needs.prepare-env.outputs.network }}
+          docker exec -i -e GITHUB_REF_NAME=${GITHUB_REF_NAME} \
+          -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+          -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+          ${{ env.CONTAINER }} \
+            ./clickfile.py get-allure-history openzeppelin --network ${{ needs.prepare-env.outputs.network }}
       - name: Generate allure report
         uses: QuintilianoNery/action-allure-report-V2@master
       - name: Fix permissions
@@ -111,8 +116,12 @@ jobs:
         run: sudo chown deploy:deploy -R allure-report
       - name: Upload allure history
         run: |
-          docker exec -i ${{ env.CONTAINER }} ./clickfile.py upload-allure-report openzeppelin 
-            --network ${{ needs.prepare-env.outputs.network }}
+          docker exec -i -e GITHUB_REF_NAME=${GITHUB_REF_NAME} \
+          -e GITHUB_RUN_NUMBER=${GITHUB_RUN_NUMBER} \
+          -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+          -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+          ${{ env.CONTAINER }} \
+          ./clickfile.py upload-allure-report openzeppelin --network ${{ needs.prepare-env.outputs.network }}
       - name: Remove docker container
         if: always()
         run: |

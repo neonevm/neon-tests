@@ -27,11 +27,21 @@ env:
   NETWORK: night-stand
   RUNNER: neon-hosted
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-  AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-  AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-  IMAGE:  neonlabsorg/neon_tests:latest
+  IMAGE:  neonlabsorg/neon_tests
   CONTAINER:  economy-${{ github.run_id }}
 jobs:
+  dockerize:
+    if: ${{ github.ref_name != 'develop'}}
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Dockerize neon tests"
+        id: requirements
+        uses: ./.github/actions/dockerize-neon-tests
+        with:
+          image_tag: ${{ github.sha }}
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
   prepare-env:
     runs-on: ubuntu-20.04
     if: always()
@@ -74,16 +84,26 @@ jobs:
     name: "Operator tests"
     needs:
       - prepare-env
+      - dockerize
     runs-on: ${{ needs.prepare-env.outputs.runner }}
     env:
       NETWORK: ${{ needs.prepare-env.outputs.network }}
       RUNNER: ${{ needs.prepare-env.outputs.runner }}
     if: always()
     steps:
+      - name: Define image tag
+        id: image_tag
+        run: |
+            if [[ "${{ github.ref_name }}" == "develop" ]]; then
+                tag='latest'
+            else
+                tag='${{ github.sha }}'
+            fi
+            echo "tag=${tag}" >> $GITHUB_OUTPUT
       - name: Run docker container
         run: |
-          docker pull ${{ env.IMAGE }}
-          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }} /bin/bash
+          docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
+          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
       - name: "Run economy tests"
         id: economy
         run: |

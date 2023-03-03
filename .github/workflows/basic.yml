@@ -113,13 +113,16 @@ jobs:
           docker exec -i ${{ env.CONTAINER }} \
             ./clickfile.py run basic -n ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}
       - name: "Notify on failure."
-        if: ${{ failure() }}
-        run: "./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -n ${{ needs.prepare-env.outputs.network }}"
+        if: failure()
+        run: |
+          docker exec -i ${{ env.CONTAINER }} \
+            ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+          -b ${{ env.BUILD_URL }} -n ${{ needs.prepare-env.outputs.network }}
       - name: "Archive report"
         if: always()
         run: |
-          docker exec -i ${{ env.CONTAINER }} tar -czvf ./allure-reports.tar.gz /opt/neon-tests/allure-results
-          docker cp ${{ env.CONTAINER }}:/opt/neon-tests/allure-reports.tar.gz ./
+          docker exec -i ${{ env.CONTAINER }} tar -czvf ./allure-results.tar.gz /opt/neon-tests/allure-results
+          docker cp ${{ env.CONTAINER }}:/opt/neon-tests/allure-results.tar.gz ./
       - uses: actions/upload-artifact@v2
         if: always()
         with:
@@ -128,7 +131,7 @@ jobs:
       - name: "Download allure history"
         if: always()
         run: |
-          docker exec -i ${{ env.CONTAINER }} \
+          docker exec -i -e GITHUB_REF_NAME=${GITHUB_REF_NAME} ${{ env.CONTAINER }} \
             ./clickfile.py get-allure-history basic --network ${{ needs.prepare-env.outputs.network }}
         env:
           AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
@@ -143,7 +146,7 @@ jobs:
       - name: "Upload allure history"
         if: always()
         run: |
-          docker exec -i ${{ env.CONTAINER }} \
+          docker exec -i -e GITHUB_REF_NAME=${GITHUB_REF_NAME} ${{ env.CONTAINER }} \
           ./clickfile.py upload-allure-report basic --network ${{ needs.prepare-env.outputs.network }}
         env:
           AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"

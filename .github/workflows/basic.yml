@@ -124,7 +124,7 @@ jobs:
             else
                 echo "tag=${{ github.sha }}" >> $GITHUB_ENV
             fi
-            echo "tag=${tag}
+            echo "tag=${tag}"
       - name: Run docker container
         run: |
           docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}

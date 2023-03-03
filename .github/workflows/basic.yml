@@ -131,11 +131,11 @@ jobs:
       - name: "Download allure history"
         if: always()
         run: |
-          docker exec -i -e GITHUB_REF_NAME=${GITHUB_REF_NAME} ${{ env.CONTAINER }} \
+          docker exec -i -e GITHUB_REF_NAME=${GITHUB_REF_NAME} \
+          -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+          -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+          ${{ env.CONTAINER }} \
             ./clickfile.py get-allure-history basic --network ${{ needs.prepare-env.outputs.network }}
-        env:
-          AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-          AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
       - name: "Generate allure report"
         if: always()
         uses: QuintilianoNery/action-allure-report-V2@master
@@ -146,8 +146,8 @@ jobs:
       - name: "Upload allure history"
         if: always()
         run: |
-          docker exec -i -e GITHUB_REF_NAME=${GITHUB_REF_NAME} ${{ env.CONTAINER }} \
+          docker exec -i -e GITHUB_REF_NAME=${GITHUB_REF_NAME} \
+          -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+          -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+          ${{ env.CONTAINER }} \
           ./clickfile.py upload-allure-report basic --network ${{ needs.prepare-env.outputs.network }}
-        env:
-          AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-          AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"

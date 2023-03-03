@@ -97,8 +97,8 @@ jobs:
       - name: "Archive report"
         if: always()
         run: |
-          docker exec -i ${{ env.CONTAINER }} tar -czvf ./allure-reports.tar.gz /opt/neon-tests/allure-results
-          docker cp ${{ env.CONTAINER }}:/opt/neon-tests/allure-reports.tar.gz ./
+          docker exec -i ${{ env.CONTAINER }} tar -czvf ./allure-results.tar.gz /opt/neon-tests/allure-results
+          docker cp ${{ env.CONTAINER }}:/opt/neon-tests/allure-results.tar.gz ./
       - uses: actions/upload-artifact@v2
         if: always()
         with:
@@ -107,7 +107,11 @@ jobs:
       - name: "Download allure history"
         if: always()
         run: |
-          docker exec -i ${{ env.CONTAINER }} ./clickfile.py get-allure-history economy \
+          docker exec -i -e GITHUB_REF_NAME=${GITHUB_REF_NAME} \
+          -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+          -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+          ${{ env.CONTAINER }} \
+           ./clickfile.py get-allure-history economy \
             --network ${{ needs.prepare-env.outputs.network }}
       - name: "Generate allure report"
         if: always()
@@ -119,8 +123,12 @@ jobs:
       - name: "Upload allure history"
         if: always()
         run: |
-          docker exec -i ${{ env.CONTAINER }} upload-allure-report economy \
-            --network ${{ needs.prepare-env.outputs.network }}
+          docker exec -i -e GITHUB_REF_NAME=${GITHUB_REF_NAME} \
+          -e GITHUB_RUN_NUMBER=${GITHUB_RUN_NUMBER} \
+          -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+          -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+          ${{ env.CONTAINER }} \
+          upload-allure-report economy --network ${{ needs.prepare-env.outputs.network }}
       - name: Remove docker container
         if: always()
         run: |

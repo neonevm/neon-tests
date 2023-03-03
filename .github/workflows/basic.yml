@@ -119,8 +119,7 @@ jobs:
       - name: Define image tag
         id: image_tag
         run: |
-            if [ "${{ github.ref_name }}" == "develop" ]
-            then
+            if [[ "${{ github.ref_name }}" == "develop" ]]; then
                 echo "tag='latest'" >> $GITHUB_ENV
             else
                 echo "tag=${{ github.sha }}" >> $GITHUB_ENV

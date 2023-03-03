@@ -88,12 +88,6 @@ jobs:
         id: economy
         run: |
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py run economy -n ${{ env.NETWORK }}
-      - name: Download allure report
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: "Allure results"
-          path: allure-results
       - name: "Notify on failure."
         if: failure()
         run: |

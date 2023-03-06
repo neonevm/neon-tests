@@ -24,10 +24,10 @@ add-apt-repository ppa:deadsnakes/ppa && apt update && \
 apt install -y python3.8 python3-pip
 
 # Install allure
-RUN curl -o allure-2.21.0.tgz -Ls https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/2.21.0/allure-commandline-2.21.0.tgz && \
+RUN apt install default-jdk -y && \
+curl -o allure-2.21.0.tgz -Ls https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/2.21.0/allure-commandline-2.21.0.tgz && \
 tar -zxvf allure-2.21.0.tgz -C /opt/  && \
 ln -s /opt/allure-2.21.0/bin/allure /usr/bin/allure
-
 
 COPY ./deploy/requirements/* /opt/
 RUN pip3 install -r /opt/prod.txt -r /opt/ui.txt -r /opt/nodeps.txt

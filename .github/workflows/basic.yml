@@ -165,7 +165,7 @@ jobs:
       - name: "Generate allure report"
         if: always()
         run: |
-          docker exec -i ${{ env.CONTAINER }} generate-allure-report
+          docker exec -i ${{ env.CONTAINER }} ./clickfile.py generate-allure-report
       - name: "Upload allure history"
         if: always()
         run: |

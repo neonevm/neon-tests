@@ -31,10 +31,22 @@ env:
   JOBS_NUMBER: "8"
   NETWORK: night-stand
   RUNNER: neon-hosted
-  IMAGE:  neonlabsorg/neon_tests:latest
+  IMAGE:  neonlabsorg/neon_tests
   CONTAINER:  oz-${{ github.run_id }}
 
 jobs:
+  dockerize:
+    if: ${{ github.ref_name != 'develop'}}
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Dockerize neon tests"
+        id: requirements
+        uses: ./.github/actions/dockerize-neon-tests
+        with:
+          image_tag: ${{ github.sha }}
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
   prepare-env:
     runs-on: ubuntu-20.04
     steps:
@@ -78,11 +90,20 @@ jobs:
       AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
       AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
     steps:
+      - name: Define image tag
+        id: image_tag
+        run: |
+            if [[ "${{ github.ref_name }}" == "develop" ]]; then
+                tag='latest'
+            else
+                tag='${{ github.sha }}'
+            fi
+            echo "tag=${tag}" >> $GITHUB_OUTPUT
       - name: Pull docker image
-        run: docker pull ${{ env.IMAGE }}
+        run: docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
       - name: Run docker container
         run: |
-          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }} /bin/bash
+          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
       - name: Run OpenZeppelin tests
         run: |
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py run oz \
@@ -108,8 +129,10 @@ jobs:
           -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
           ${{ env.CONTAINER }} \
             ./clickfile.py get-allure-history openzeppelin --network ${{ needs.prepare-env.outputs.network }}
-      - name: Generate allure report
-        uses: QuintilianoNery/action-allure-report-V2@master
+      - name: "Generate allure report"
+        if: always()
+        run: |
+          docker exec -i ${{ env.CONTAINER }} ./clickfile.py generate-allure-report
       - name: Fix permissions
         if: always()
         continue-on-error: true

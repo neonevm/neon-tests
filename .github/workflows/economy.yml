@@ -135,7 +135,8 @@ jobs:
             --network ${{ needs.prepare-env.outputs.network }}
       - name: "Generate allure report"
         if: always()
-        uses: QuintilianoNery/action-allure-report-V2@master
+        run: |
+          docker exec -i ${{ env.CONTAINER }} ./clickfile.py generate-allure-report
       - name: "Fix permissions"
         if: always()
         continue-on-error: true

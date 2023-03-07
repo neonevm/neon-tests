@@ -10,5 +10,6 @@ contract ContractTwo {
     function depositOnContractOne(address _contractOne) public {
         bytes memory payload = abi.encodeWithSignature("deposit()");
         (bool success, ) = _contractOne.call{value: 1, gas: 100000}(payload);
+        require(!success);
     }
 }

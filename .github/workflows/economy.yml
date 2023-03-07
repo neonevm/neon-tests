@@ -27,8 +27,21 @@ env:
   NETWORK: night-stand
   RUNNER: neon-hosted
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
+  IMAGE:  neonlabsorg/neon_tests
+  CONTAINER:  economy-${{ github.run_id }}
 jobs:
+  dockerize:
+    if: ${{ github.ref_name != 'develop'}}
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Dockerize neon tests"
+        id: requirements
+        uses: ./.github/actions/dockerize-neon-tests
+        with:
+          image_tag: ${{ github.sha }}
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
   prepare-env:
     runs-on: ubuntu-20.04
     if: always()
@@ -60,9 +73,9 @@ jobs:
           echo "Runner: ${RUNNER}"
           echo "Build url: ${{ env.BUILD_URL }}"
 
-          echo "::set-output name=network::${NETWORK}"
-          echo "::set-output name=runner::${RUNNER}"
-          echo "::set-output name=jobs::${JOBS_NUMBER}"
+          echo "network=${NETWORK}" >> $GITHUB_OUTPUT
+          echo "runner=${RUNNER}" >> $GITHUB_OUTPUT
+          echo "jobs=${JOBS_NUMBER}" >> $GITHUB_OUTPUT
     outputs:
       network: ${{ steps.setup.outputs.network }}
       runner: ${{ steps.setup.outputs.runner }}
@@ -71,52 +84,40 @@ jobs:
     name: "Operator tests"
     needs:
       - prepare-env
+      - dockerize
     runs-on: ${{ needs.prepare-env.outputs.runner }}
     env:
       NETWORK: ${{ needs.prepare-env.outputs.network }}
       RUNNER: ${{ needs.prepare-env.outputs.runner }}
     if: always()
     steps:
-      - uses: actions/checkout@v2
-      - name: "Install deps"
-        id: requirements
-        uses: ./.github/actions/requirements
-      - name: "Download test contracts"
-        run: "./clickfile.py contracts"
+      - uses: actions/checkout@v3
+      - name: Define image tag
+        id: image_tag
+        uses: ./.github/actions/define-image-tag
+      - name: Run docker container
+        run: |
+          docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
+          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
       - name: "Run economy tests"
         id: economy
-        run: "./clickfile.py run economy -n ${{ env.NETWORK }}"
-      - uses: actions/upload-artifact@v2
-        with:
-          name: "Allure results"
-          path: allure-results
+        run: |
+          docker exec -i ${{ env.CONTAINER }} ./clickfile.py run economy -n ${{ env.NETWORK }}
       - name: "Notify on failure."
-        if: ${{ failure() }}
-        run: "./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }}"
-      - name: "Archive report"
-        if: always()
-        run: tar -czf allure-results.tar.gz allure-results
-      - uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: "allure-results.tar.gz"
-          path: allure-results.tar.gz
-      - name: "Download allure history"
-        if: always()
-        run: "./clickfile.py get-allure-history economy --network ${{ needs.prepare-env.outputs.network }}"
-        env:
-          AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-          AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+        if: failure()
+        run: |
+          docker exec -i ${{ env.CONTAINER }} ./clickfile.py send-notification \
+            -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+            -b ${{ env.BUILD_URL }}
       - name: "Generate allure report"
+        id: requirements
+        uses: ./.github/actions/generate-allure-report
+        with:
+          container: ${{ env.CONTAINER }}
+          network: ${{ env.NETWORK }}
+          aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          tests_name: economy
+      - name: Remove docker container
         if: always()
-        uses: QuintilianoNery/action-allure-report-V2@master
-      - name: "Fix permissions"
-        if: always()
-        continue-on-error: true
-        run: sudo chown deploy:deploy -R allure-report
-      - name: "Upload allure history"
-        if: always()
-        run: "./clickfile.py upload-allure-report economy --network ${{ needs.prepare-env.outputs.network }}"
-        env:
-          AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-          AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+        run: docker rm -f ${{ env.CONTAINER }}

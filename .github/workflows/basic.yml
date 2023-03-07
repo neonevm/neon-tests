@@ -116,6 +116,7 @@ jobs:
       NUMPROCESSES: ${{ needs.prepare-env.outputs.numprocesses }}
     if: always()
     steps:
+      - uses: actions/checkout@v3
       - name: "Define image tag"
         id: image_tag
         uses: ./.github/actions/define-image-tag

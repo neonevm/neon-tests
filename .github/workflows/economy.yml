@@ -91,6 +91,7 @@ jobs:
       RUNNER: ${{ needs.prepare-env.outputs.runner }}
     if: always()
     steps:
+      - uses: actions/checkout@v3
       - name: Define image tag
         id: image_tag
         uses: ./.github/actions/define-image-tag

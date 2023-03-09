@@ -626,6 +626,12 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
     cloud.upload("/tmp/index.html", path)
     print(f"Allure report link: {report_url}")
 
+@cli.command(help="Generate allure report")
+def generate_allure_report():
+    cmd = subprocess.run("allure generate", shell=True)
+    if cmd.returncode != 0:
+        sys.exit(cmd.returncode)
+
 
 @cli.command(help="Send notification to slack")
 @click.option("-u", "--url", help="slack app endpoint url.")

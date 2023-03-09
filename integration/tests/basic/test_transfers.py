@@ -333,7 +333,7 @@ class TestTransfer(BaseMixin):
         self.assert_balance(recipient_account.address,
                             InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value + transfer_amount)
 
-    def test_send_token_to_contract_via_low_level_call(self):
+    def test_transaction_does_not_fail_nested_contract(self):
         """Send Neon to contract via low level call"""
         _, contract_deploy_tx = self.web3_client.deploy_and_get_contract("./NDEV1004/ContractOne.sol", "0.8.15",
                                                                account=self.sender_account)

@@ -3,16 +3,40 @@ name: Docker Image for all neon tests
 on:
   push:
     branches: ["develop"]
+  workflow_dispatch:
+    inputs:
+      oz_branch:
+        type: string
+        default: master
+        required: true
+        description: "Which OZ branch to use"
 
 jobs:
   dockerize:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+      - name: Define env
+        id: define-env
+        run: |
+            if [[ "${{ github.event_name }}" == "push" && github.ref_name == 'develop'  ]]; then
+                tag='latest'
+                oz_branch='master'
+            elif [[ "${{ github.event.inputs.oz_branch }}" != "" ]]; then
+                tag='${{ github.event.inputs.oz_branch }}'
+                oz_branch='${{ github.event.inputs.oz_branch }}'
+            else
+                tag='${{ github.sha }}'
+                oz_branch='master'
+            fi
+            echo "tag=${tag}"
+            echo "oz_branch=${oz_branch}"
+            echo "tag=${tag}" >> $GITHUB_OUTPUT
+            echo "oz_branch=${oz_branch}" >> $GITHUB_OUTPUT
       - name: "Dockerize neon tests"
-        id: requirements
         uses: ./.github/actions/dockerize-neon-tests
         with:
-          image_tag: 'latest'
+          image_tag: ${{ steps.define-env.outputs.tag }}
           docker_username: ${{ secrets.DOCKER_USERNAME }}
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
+          oz_branch: ${{ steps.define-env.outputs.oz_branch }}

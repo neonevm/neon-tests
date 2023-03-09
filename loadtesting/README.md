@@ -27,7 +27,8 @@ Test configuration via environment variables settings:
 - `NEON_RPC`
   Endpoint to Neon-RPC. Neon-RPC is a single RPC entrypoint to Neon-EVM. 
   The function of this service is so route requests between Tracer API and Neon Proxy services. 
-  Used only in tracer API cases. 
+  Used only in tracer API cases.
+-  `SAVE_TRANSACTIONS` Save all neon transactions and their solana transactions to "transactions-{id}.json" files
 
 
 ## Running the test and analyzing the results in the console without using the web interface 

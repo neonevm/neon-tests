@@ -37,9 +37,14 @@ WORKDIR /opt/neon-tests
 ADD ./ /opt/neon-tests
 RUN python3 ./clickfile.py contracts
 
+ARG OZ_BRANCH=master
+
 RUN chmod a+x run-full-test-suite.sh && \
 # Update oz contracts
 git submodule init && git submodule update && \
+git submodule sync --recursive  && \
+git submodule update --init --recursive --remote && \
+git -C compatibility/openzeppelin-contracts checkout origin/${OZ_BRANCH}  && \
 # Install oz tests requirements
 python3 clickfile.py requirements -d devel && \
 npm install --save-dev hardhat

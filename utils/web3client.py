@@ -102,7 +102,7 @@ class NeonWeb3Client:
         gas: tp.Optional[int] = 0,
         gas_price: tp.Optional[int] = None,
         constructor_args: tp.Optional[tp.List] = None,
-    ):
+    ) -> web3.types.TxReceipt:
         """Proxy doesn't support send_transaction"""
         gas_price = gas_price or self.gas_price()
         constructor_args = constructor_args or []
@@ -134,7 +134,7 @@ class NeonWeb3Client:
         abi,
         gas: tp.Optional[int] = 0,
         gas_price: tp.Optional[int] = None,
-    ):
+    ) -> web3.types.TxReceipt:
         to_addr = to if isinstance(to, str) else to.address
         gas_price = gas_price or self.gas_price()
         contract = self._web3.eth.contract(address=address, abi=abi)
@@ -158,7 +158,7 @@ class NeonWeb3Client:
     def send_transaction(
         self, account: eth_account.signers.local.LocalAccount, transaction: tp.Dict,
             gas_multiplier: tp.Optional[float] = None  # fix for some event depends transactions
-    ):
+    ) -> web3.types.TxReceipt:
         if "gasPrice" not in transaction:
             transaction["gasPrice"] = self.gas_price()
         if "gas" not in transaction:

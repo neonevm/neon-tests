@@ -1,19 +1,55 @@
+import os
+import json
 import logging
 import time
+import random
 import typing as tp
 from functools import lru_cache
 
-import web3
+import web3.types
 import requests
-from locust import TaskSet
+import gevent
+from gevent.pool import Pool
+from locust import TaskSet, events
 
 from utils import helpers
 from utils.faucet import Faucet
 from utils.web3client import NeonWeb3Client
 
-from .events import statistics_collector
+from .events import statistics_collector, save_transaction
 
 LOG = logging.getLogger(__name__)
+
+saved_transactions = []
+
+
+@events.test_stop.add_listener
+def save_transactions_list(environment: "locust.env.Environment", **kwargs):
+    if "SAVE_TRANSACTIONS" in os.environ:
+        web3_client = NeonWeb3ClientExt(
+            environment.credentials["proxy_url"], environment.credentials["network_id"]
+        )
+
+        def get_solana_trx(tr):
+            return tr, web3_client.get_solana_trx_by_neon(tr)
+
+        trx = {}
+        print("Start save transactions list")
+        pool = Pool(10)
+        tasks = [pool.spawn(get_solana_trx, t) for t in saved_transactions]
+        gevent.joinall(tasks)
+
+        for res in tasks:
+            if res.value is None:
+                continue
+            tr, resp = res.value
+            if "result" not in resp:
+                print(f"Can't get solana trx from tx {tr}: {resp}")
+                continue
+            trx[tr] = resp["result"]
+        with(open(f"transactions-{random.randint(0, 1000)}.json", "w+")) as f:
+            json.dump(trx, f)
+        print("Results saved")
 
 
 def init_session(size: int = 1000) -> requests.Session:
@@ -36,6 +72,8 @@ class NeonWeb3ClientExt(NeonWeb3Client):
             attr = super(NeonWeb3ClientExt, self).__getattr__(item)
         if callable(attr) and item not in ignore_list:
             attr = statistics_collector()(attr)
+            if "SAVE_TRANSACTIONS" in os.environ:
+                attr = save_transaction(saved_transactions)(attr)
         return attr
 
 

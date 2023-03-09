@@ -2,6 +2,7 @@ import functools
 import json
 import logging
 import os
+import re
 import pathlib
 import sys
 import time
@@ -11,6 +12,8 @@ from dataclasses import dataclass
 
 import requests
 import tabulate
+from web3.datastructures import AttributeDict
+from web3.exceptions import TimeExhausted
 
 from locust import events
 from locust.runners import WorkerRunner
@@ -113,7 +116,7 @@ def operator_economy_balance(environment, **kwargs):
             ["NEON", environment.pre_balance["neon"], balance["neon"]],
             ["SOL", environment.pre_balance["sol"], balance["sol"]],
         ],
-        headers=["token", "on start balance", "os stop balance"],
+        headers=["Token", "Balance before", "Balance after"],
         tablefmt="fancy_outline",
         numalign="right",
         floatfmt=".2f",
@@ -181,13 +184,39 @@ def statistics_collector(name: tp.Optional[str] = None) -> tp.Callable:
                 event = dict(response=response, response_length=sys.getsizeof(response), event_type="success")
             except Exception as err:
                 event = dict(event_type="failure", exception=err)
+                locust_events_handler.buffer[task_id].update(event)
+                locust_events_handler.fire_event(task_id)
                 LOG.error(
                     f"Web3 RPC call {request_type} is failed: {err} passed args: `{args}`, passed kwargs: `{kwargs}`"
                 )
+                raise
             locust_events_handler.buffer[task_id].update(event)
             locust_events_handler.fire_event(task_id)
             return response
 
         return wrap
 
+    return decor
+
+
+def save_transaction(transactions: tp.List[str]) -> tp.Callable:
+    def decor(func: tp.Callable) -> tp.Callable:
+        @functools.wraps(func)
+        def wrap(*args, **kwargs) -> tp.Any:
+            try:
+                result = func(*args, **kwargs)
+            except Exception as e:
+                tx_id = re.findall("(0x[\w\d]+)", str(e))
+                if tx_id:
+                    transactions.append(f"{tx_id[0]}")
+                raise
+            if isinstance(result, AttributeDict) or (isinstance(result, tuple) and len(result) == 2 and isinstance(result[1], AttributeDict)):
+                if isinstance(result, tuple) and len(result) == 2:
+                    tx = result[1]
+                else:
+                    tx = result
+                if "transactionHash" in tx:
+                    transactions.append(f'{tx["transactionHash"].hex()}')
+            return result
+        return wrap
     return decor

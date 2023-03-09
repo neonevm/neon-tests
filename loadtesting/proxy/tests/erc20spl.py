@@ -5,6 +5,7 @@ import time
 
 import web3
 from locust import tag, task, User, events
+from solana.keypair import Keypair
 
 from utils.web3client import NeonWeb3Client
 from utils.faucet import Faucet
@@ -35,7 +36,9 @@ def prepare_one_contract_for_erc20(environment: "locust.env.Environment", **kwar
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
     name = f"Test {symbol}"
 
-    erc20_wrapper = ERC20Wrapper(neon_client, faucet, name, symbol, None, account=eth_account, mintable=True)
+    erc20_wrapper = ERC20Wrapper(neon_client, faucet, name, symbol, None,
+                                 solana_account=Keypair.generate(),
+                                 account=eth_account, mintable=True)
     erc20_wrapper.deploy_wrapper(True)
     erc20_wrapper.mint_tokens(eth_account, eth_account.address, 18446744073709551615)
 
@@ -52,8 +55,6 @@ class ERC20SPLTasksSet(NeonProxyTasksSet):
     def on_start(self) -> None:
         super().on_start()
         contract = self.user.environment.erc20_one["contract"]
-        print(f"Main user {self.user.environment.erc20_one['user'].address} balance: "
-              f"{contract.functions.balanceOf(self.user.environment.erc20_one['user'].address).call()}")
         self.web3_client.send_erc20(
             self.user.environment.erc20_one["user"],
             self.account, 1000,
@@ -63,7 +64,6 @@ class ERC20SPLTasksSet(NeonProxyTasksSet):
     @task
     def task_send_erc20_spl(self):
         """Send ERC20 tokens"""
-        print("Send erc20spl ", self.account.address)
         contract = self.user.environment.erc20_one["contract"]
         recipient = random.choice(self.user.environment.shared.accounts)
         self.web3_client.send_erc20(

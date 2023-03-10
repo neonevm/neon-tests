@@ -125,6 +125,7 @@ jobs:
           docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:$${{ env.IMAGE_TAG }} /bin/bash
       - name: Run OpenZeppelin tests
         run: |
+          docker exec -i oz  bash -c "cd ./compatibility/openzeppelin-contracts && npm run prepack"  
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py run oz \
             --network ${{ needs.prepare-env.outputs.network }} \
             --jobs ${{ needs.prepare-env.outputs.jobs }} \

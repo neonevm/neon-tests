@@ -67,7 +67,7 @@ jobs:
       runner: ${{ steps.setup.outputs.runner }}
       jobs: ${{ steps.setup.outputs.jobs }}
 
-  tests-v3.4:
+  tests-v3_4:
     name: OpenZeppelin tests v0.3.4 (solc 0.7)
     needs:
       - prepare-env
@@ -105,7 +105,7 @@ jobs:
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}
 
-  tests-v2.5:
+  tests-v2_5:
     name: OpenZeppelin tests v0.2.5 (solc 0.5)
     needs:
       - prepare-env

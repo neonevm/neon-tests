@@ -19,7 +19,7 @@ jobs:
       - name: Define env
         id: define-env
         run: |
-            if [[ "${{ github.event_name }}" == "push" && github.ref_name == 'develop'  ]]; then
+            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == 'develop'  ]]; then
                 tag='latest'
                 oz_branch='master'
             elif [[ "${{ github.event.inputs.oz_branch }}" != "" ]]; then

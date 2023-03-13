@@ -67,8 +67,8 @@ jobs:
       runner: ${{ steps.setup.outputs.runner }}
       jobs: ${{ steps.setup.outputs.jobs }}
 
-  tests-v3.4:
-    name: OpenZeppelin tests v0.3.4 (solc 0.7)
+  tests-v3_4:
+    name: OpenZeppelin tests v3.4 (solc 0.7)
     needs:
       - prepare-env
     runs-on: ${{ needs.prepare-env.outputs.runner }}
@@ -83,12 +83,13 @@ jobs:
         run: docker pull ${{ env.IMAGE }}:${{ env.IMAGE_TAG }}
       - name: Run docker container
         run: |
-          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:$${{ env.IMAGE_TAG }} /bin/bash
+          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ env.IMAGE_TAG }} /bin/bash
       - name: Run OpenZeppelin tests
         run: |
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py run oz \
             --network ${{ needs.prepare-env.outputs.network }} \
-            --jobs ${{ needs.prepare-env.outputs.jobs }}
+            --jobs ${{ needs.prepare-env.outputs.jobs }} \
+            --users 12
       - name: Print OpenZeppelin report
         run: |
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py ozreport
@@ -105,8 +106,8 @@ jobs:
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}
 
-  tests-v2.5:
-    name: OpenZeppelin tests v0.2.5 (solc 0.5)
+  tests-v2_5:
+    name: OpenZeppelin tests v2.5 (solc 0.5)
     needs:
       - prepare-env
     runs-on: ${{ needs.prepare-env.outputs.runner }}
@@ -121,10 +122,9 @@ jobs:
         run: docker pull ${{ env.IMAGE }}:${{ env.IMAGE_TAG }}
       - name: Run docker container
         run: |
-          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:$${{ env.IMAGE_TAG }} /bin/bash
+          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ env.IMAGE_TAG }} /bin/bash
       - name: Run OpenZeppelin tests
         run: |
-          docker exec -i oz  bash -c "cd ./compatibility/openzeppelin-contracts && npm run prepack"  
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py run oz \
             --network ${{ needs.prepare-env.outputs.network }} \
             --jobs ${{ needs.prepare-env.outputs.jobs }} \

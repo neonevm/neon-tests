@@ -187,7 +187,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
     if not list(cwd.glob("*")):
         subprocess.check_call("git submodule init && git submodule update", shell=True, cwd=cwd)
-    subprocess.check_call("npx hardhat compile", shell=True, cwd=cwd)
+    subprocess.check_call("npm run compile", shell=True, cwd=cwd)
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
     keys_env = [
         faucet_cli.prepare_wallets_with_balance(networks[network], count=users, airdrop_amount=amount)

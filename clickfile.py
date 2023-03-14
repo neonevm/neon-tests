@@ -150,7 +150,7 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
         def float_2_str(d):
             return dict(map(lambda i: (i[0], str(i[1])), d.items()))
 
-        if os.environ.get("PROXY_URL") is None:
+        if os.environ.get("OZ_BALANCES_REPORT_FLAG") is not None:
             network = networks[args[0]]
             op = Operator(
                 network["proxy_url"],

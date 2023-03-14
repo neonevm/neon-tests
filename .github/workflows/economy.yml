@@ -89,7 +89,10 @@ jobs:
     env:
       NETWORK: ${{ needs.prepare-env.outputs.network }}
       RUNNER: ${{ needs.prepare-env.outputs.runner }}
-    if: always()
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
     steps:
       - uses: actions/checkout@v3
       - name: Define image tag

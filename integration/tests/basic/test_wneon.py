@@ -12,6 +12,7 @@ from utils.helpers import wait_condition
 
 @allure.story("Basic: WNEON tests")
 class TestWNeon(BaseMixin):
+    SPL_TOKEN_PROGRAM_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
 
     def deposit(self, wneon, amount, acc):
         value = self.web3_client._web3.toWei(amount, "ether")
@@ -53,7 +54,7 @@ class TestWNeon(BaseMixin):
         deposit_amount = 100
         self.deposit(wneon, deposit_amount, self.recipient_account)
         neon_balance_before, wneon_balance_before = self.get_balances(wneon, self.recipient_account.address)
-        withdraw_amount = random.randint(1, 100)
+        withdraw_amount = random.randint(1, deposit_amount)
         instruction_tx = wneon.functions.withdraw(
             self.web3_client._web3.toWei(withdraw_amount, "ether")).buildTransaction(
             self.make_tx_object(self.recipient_account)
@@ -66,12 +67,12 @@ class TestWNeon(BaseMixin):
         assert neon_balance_after - neon_balance_before - withdraw_amount < 0.2
         assert wneon_balance_after == wneon_balance_before - withdraw_amount
 
-    def test_transfer_and_check_token_does_not_use_spl(self, wneon, new_account, pytestconfig):
+    def test_transfer_and_check_token_does_not_use_spl(self, wneon, new_account):
         deposit_amount = 100
         self.deposit(wneon, deposit_amount, self.sender_account)
         neon_balance_sender_before, wneon_balance_sender_before = self.get_balances(wneon, self.sender_account.address)
 
-        transfer_amount = random.randint(1, 100)
+        transfer_amount = random.randint(1, deposit_amount)
         tx = self.make_tx_object(self.sender_account)
         instruction_tx = wneon.functions.transfer(new_account.address,
                                                   self.web3_client._web3.toWei(transfer_amount,
@@ -84,7 +85,7 @@ class TestWNeon(BaseMixin):
                                                                ) != GetTransactionResp(None))
         solana_resp = self.sol_client.get_transaction(Signature.from_string(solana_trx["result"][0]))
         sol_accounts = solana_resp.value.transaction.transaction.message.account_keys
-        assert pytestconfig.environment.spl_neon_mint not in sol_accounts
+        assert self.SPL_TOKEN_PROGRAM_ID not in sol_accounts
 
         neon_balance_sender_after, wneon_balance_sender_after = self.get_balances(wneon, self.sender_account.address)
         _, wneon_balance_recipient_after = self.get_balances(wneon, new_account.address)

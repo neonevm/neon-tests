@@ -264,6 +264,16 @@ def withdraw_contract(web3_client, faucet):
     return contract
 
 
+@pytest.fixture(scope="session")
+def wneon(web3_client, faucet):
+    acc = web3_client.create_account()
+    faucet.request_neon(acc.address, 100)
+
+    contract, _ = web3_client.deploy_and_get_contract(
+        "WNEON", "0.4.26", account=acc)
+    return contract
+
+
 @pytest.fixture(scope="function")
 def new_account(web3_client, faucet):
     new_acc = web3_client.create_account()

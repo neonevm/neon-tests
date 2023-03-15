@@ -454,7 +454,7 @@ def analyze_openzeppelin_results():
         version = json.load(f)["version"]
         print(f"OpenZeppelin version: {version}")
     if version.startswith("4"):
-        threshold = 999999 #2425
+        threshold = 2425
     elif version.startswith("3"):
         threshold = 1350
     elif version.startswith("2"):

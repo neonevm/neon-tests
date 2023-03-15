@@ -445,6 +445,29 @@ def ozreport():
     print_oz_balances()
 
 
+@cli.command(help="Analyze openzeppelin tests results")
+@catch_traceback
+def analyze_openzeppelin_results():
+    test_report, skipped_files = parse_openzeppelin_results()
+    with open("./compatibility/openzeppelin-contracts/package.json") as f:
+        version = json.load(f)["version"]
+        print(f"OpenZeppelin version: {version}")
+    if version.startswith("4"):
+        threshold = 999999 #2425
+    elif version.startswith("3"):
+        threshold = 1350
+    elif version.startswith("2"):
+        threshold = 2295
+    else:
+        raise click.ClickException("Unknown OpenZeppelin version")
+    print(f"Threshold: {threshold}")
+    if test_report["passing"] < threshold:
+        raise click.ClickException(f"OpenZeppelin {version} tests failed. \n"
+                                   f"Passed: {test_report['passing']}, expected: {threshold}")
+    else:
+        print("OpenZeppelin tests passed")
+
+
 # Base locust options
 locust_credentials = click.option(
     "-c",

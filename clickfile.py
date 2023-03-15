@@ -52,7 +52,8 @@ ERR_MSG_TPL = {
     ]
 }
 
-ERR_MESSAGES = {"run": "Unsuccessful tests executing.", "requirements": "Unsuccessful requirements installation."}
+ERR_MESSAGES = {"run": "Unsuccessful tests executing.", "requirements": "Unsuccessful requirements installation.",
+                "analyze_openzeppelin_results": "Unsuccessful tests executing."}
 
 SRC_ALLURE_CATEGORIES = pathlib.Path("./allure/categories.json")
 
@@ -819,7 +820,6 @@ def build(image_path, image_name, tag, quick, dry_run=None):
 
 
 def create_devbox(prefix="", tag="latest"):
-
     box_name = DEVBOX_NAME
     network_name = "neon-tests"
     cwd = os.getcwd()
@@ -913,9 +913,6 @@ def up():
     box_name = create_devbox()
     # Attach to running container
     env.shell(f"docker exec -it {box_name} bash --login; exit 0")
-
-
-
 
 
 if __name__ == "__main__":

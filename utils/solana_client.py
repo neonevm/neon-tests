@@ -47,7 +47,7 @@ class SolanaClient(solana.rpc.api.Client):
         for _ in range(20):
             if int(self.get_balance(to).value) > int(balance_before):
                 break
-            time.sleep(3)
+            time.sleep(6)
         else:
             raise AssertionError(f"Balance not changed in account {to}")
 

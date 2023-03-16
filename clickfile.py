@@ -52,7 +52,8 @@ ERR_MSG_TPL = {
     ]
 }
 
-ERR_MESSAGES = {"run": "Unsuccessful tests executing.", "requirements": "Unsuccessful requirements installation."}
+ERR_MESSAGES = {"run": "Unsuccessful tests executing.", "requirements": "Unsuccessful requirements installation.",
+                "analyze_openzeppelin_results": "Unsuccessful tests executing."}
 
 SRC_ALLURE_CATEGORIES = pathlib.Path("./allure/categories.json")
 
@@ -445,6 +446,29 @@ def ozreport():
     print_oz_balances()
 
 
+@cli.command(help="Analyze openzeppelin tests results")
+@catch_traceback
+def analyze_openzeppelin_results():
+    test_report, skipped_files = parse_openzeppelin_results()
+    with open("./compatibility/openzeppelin-contracts/package.json") as f:
+        version = json.load(f)["version"]
+        print(f"OpenZeppelin version: {version}")
+    if version.startswith("4"):
+        threshold = 2425
+    elif version.startswith("3"):
+        threshold = 1350
+    elif version.startswith("2"):
+        threshold = 2295
+    else:
+        raise click.ClickException("Unknown OpenZeppelin version")
+    print(f"Threshold: {threshold}")
+    if test_report["passing"] < threshold:
+        raise click.ClickException(f"OpenZeppelin {version} tests failed. \n"
+                                   f"Passed: {test_report['passing']}, expected: {threshold}")
+    else:
+        print("OpenZeppelin tests passed")
+
+
 # Base locust options
 locust_credentials = click.option(
     "-c",
@@ -796,7 +820,6 @@ def build(image_path, image_name, tag, quick, dry_run=None):
 
 
 def create_devbox(prefix="", tag="latest"):
-
     box_name = DEVBOX_NAME
     network_name = "neon-tests"
     cwd = os.getcwd()
@@ -890,9 +913,6 @@ def up():
     box_name = create_devbox()
     # Attach to running container
     env.shell(f"docker exec -it {box_name} bash --login; exit 0")
-
-
-
 
 
 if __name__ == "__main__":

@@ -67,7 +67,6 @@ def assert_log_field_in_neon_trx_receipt(responce, events_count):
 
     event_types = [log["neonEventType"] for log in sorted(logs, key=lambda x: int(x["neonEventOrder"], 0))]
 
-    print("event_types: ", event_types)
     assert event_types == expected_event_types, f"Actual: {event_types}; Expected: {expected_event_types}"
 
 

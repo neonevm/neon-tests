@@ -1,3 +1,4 @@
+import json
 import os
 import pathlib
 import random
@@ -91,20 +92,38 @@ def operator(pytestconfig: Config, web3_client: NeonWeb3Client) -> Operator:
 @pytest.fixture(scope="session", autouse=True)
 def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
     opts = {
+        "Network": pytestconfig.environment.proxy_url,
         "Proxy.Version": web3_client.get_proxy_version()["result"],
         "EVM.Version": web3_client.get_evm_version()["result"],
         "CLI.Version": web3_client.get_cli_version()["result"],
     }
 
-    allure_path = pytestconfig.getoption("--alluredir")
+    allure_dir = pytestconfig.getoption("--alluredir")
 
     yield opts
-    with open(pathlib.Path() / allure_path / "environment.properties", "w+") as f:
+    allure_path = pathlib.Path() / allure_dir
+    with open(allure_path / "environment.properties", "w+") as f:
         f.write("\n".join(map(lambda x: f"{x[0]}={x[1]}", opts.items())))
         f.write("\n")
     categories_from = pathlib.Path() / "allure" / "categories.json"
-    categories_to = pathlib.Path() / allure_path / "categories.json"
+    categories_to = allure_path / "categories.json"
     shutil.copy(categories_from, categories_to)
+
+    if "CI" in os.environ:
+        with open(allure_path / "executor.json") as f:
+            json.dump(
+                {
+                    "name": "Github Action",
+                    "type": "github",
+                    "url": "https://github.com/neonlabsorg/neon-tests/actions",
+                    "buildOrder": os.environ.get("GITHUB_RUN_ID", "0"),
+                    "buildName": os.environ.get("GITHUB_WORKFLOW", "neon-tests"),
+                    "buildUrl": f'{os.environ.get("GITHUB_SERVER_URL", "https://github.com")}/{os.environ.get("GITHUB_REPOSITORY", "neon-tests")}/actions/runs/{os.environ.get("GITHUB_RUN_ID", "0")}',
+                    "reportUrl": "",
+                    "reportName": "Allure report for neon-tests",
+                },
+                f,
+            )
 
 
 @pytest.fixture(scope="class")

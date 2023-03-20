@@ -31,6 +31,7 @@ NOT_ENOUGH_GAS_PARAMS = (
 )
 
 
+@allure.feature("ERC Verifications")
 @allure.story("ERC721: Verify integration with Metaplex")
 class TestERC721(BaseMixin):
     @pytest.fixture(scope="function")

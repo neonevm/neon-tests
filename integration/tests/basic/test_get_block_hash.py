@@ -3,6 +3,7 @@ import allure
 from integration.tests.basic.helpers.basic import BaseMixin
 
 
+@allure.feature("JSON-RPC validation")
 @allure.story("Verify block hash")
 class TestGetBlockHash(BaseMixin):
     def test_get_current_block_hash(self):

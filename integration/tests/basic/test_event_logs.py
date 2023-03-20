@@ -11,6 +11,7 @@ from integration.tests.basic.helpers.rpc_checks import (
 )
 
 
+@allure.feature("JSON-RPC validation")
 @allure.story("Verify events and logs")
 class TestLogs(BaseMixin):
     def make_tx_object(self, from_address, gas_price=None, gas=None, value=None):

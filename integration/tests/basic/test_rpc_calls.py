@@ -98,6 +98,7 @@ def get_event_signatures(abi: tp.List[tp.Dict]) -> tp.List[str]:
     return topics
 
 
+@allure.feature("JSON-RPC validation")
 @allure.story("Verify JSON-RPC proxy calls work")
 class TestRpcCalls(BaseMixin):
     _erc20_contract: tp.Optional[tp.Any] = None
@@ -879,6 +880,7 @@ class TestRpcCalls(BaseMixin):
         ), f"Filter by {topics} works incorrect. Response: {response}"
 
 
+@allure.feature("JSON-RPC validation")
 @allure.story("Verify eth_estimateGas RPC call")
 class TestRpcCallsMoreComplex(BaseMixin):
     account: "eth_account.signers.local.LocalAccount" = None

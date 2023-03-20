@@ -23,6 +23,7 @@ NO_ENOUGH_GAS_PARAMS = [
 ]
 
 
+@allure.feature("ERC Verifications")
 @allure.story(
     "ERC20SPL: Tests for contracts created by createErc20ForSplMintable and createErc20ForSpl calls"
 )

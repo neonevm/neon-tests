@@ -10,7 +10,8 @@ BTC_USD_ID = "0xf9c0172ba10dfa4d19088d94f5bf61d3b54d5bd7483a322a982e1373ee8ea31b
 PYTH_DEVNET_URI = "https://xc-devnet.pyth.network"
 
 
-@allure.story("Oracles: Verify Pyth Network")
+@allure.feature("Oracles")
+@allure.story("Pyth network")
 class TestPyth(BaseTests):
     @pytest.mark.only_devnet
     def test_deploy_contract_pyth_network(self):

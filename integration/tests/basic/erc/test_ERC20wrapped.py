@@ -794,7 +794,8 @@ class TestERC20wrapperContract(BaseMixin):
         ), "User2 balance is not correct"
 
 
-@allure.story("Basic: multiple actions tests for multipleActionsERC20 contract")
+@allure.feature("ERC Verifications")
+@allure.story("ERC20SPL: Tests for multiple actions in one transaction")
 class TestMultipleActionsForERC20(BaseMixin):
     def make_tx_object(self):
         tx = {

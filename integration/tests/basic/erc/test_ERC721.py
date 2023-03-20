@@ -546,7 +546,8 @@ class TestERC721(BaseMixin):
         assert int(token_amount["decimals"]) == 0
 
 
-@allure.story("Basic: multiple actions tests for multipleActionsERC721 contract")
+@allure.feature("ERC Verifications")
+@allure.story("ERC721: Tests for multiple actions in one transaction")
 class TestMultipleActionsForERC721(BaseMixin):
     def make_tx_object(self):
         tx = {

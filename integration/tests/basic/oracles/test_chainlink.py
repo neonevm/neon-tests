@@ -10,7 +10,8 @@ SOL_USD_ID = "0x78f57ae1195e8c497a8be054ad52adf4c8976f8436732309e22af7067724ad96
 CHAINLINK_URI = "https://min-api.cryptocompare.com/"
 
 
-@allure.story("Oracles: Verify Chainlink Network")
+@allure.feature("Oracles")
+@allure.story("Chainlink")
 class TestChainlink(BaseTests):
     @pytest.mark.only_devnet
     def test_deploy_contract_chainlink_network(self):

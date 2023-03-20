@@ -9,6 +9,7 @@ from integration.tests.basic.helpers.basic import BaseMixin
 from utils.helpers import get_contract_abi
 
 
+@allure.feature("Ethereum compatibility")
 @allure.story("Contract Reverting")
 class TestContractReverting(BaseMixin):
     @pytest.fixture(scope="class")

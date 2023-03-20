@@ -8,6 +8,7 @@ from integration.tests.basic.helpers.assert_message import ErrorMessage
 from integration.tests.basic.helpers.basic import BaseMixin
 
 
+@allure.feature("Ethereum compatibility")
 @allure.story("Verify mempool and how proxy handle nonce")
 class TestNonce(BaseMixin):
     TRANSFER_CNT = 25

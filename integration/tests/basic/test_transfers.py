@@ -30,6 +30,7 @@ GAS_LIMIT_AND_PRICE_DATA = (
 )
 
 
+@allure.feature("Ethereum compatibility")
 @allure.story("Basic tests for transfers")
 class TestTransfer(BaseMixin):
     @pytest.mark.parametrize("transfer_amount", [0, 0.1, 1, 1.1])
@@ -463,6 +464,7 @@ class TestTransfer(BaseMixin):
         contractTwo.functions.depositOnContractOne(address).call()
 
 
+@allure.feature("Ethereum compatibility")
 @allure.story("Verify transactions validation")
 class TestTransactionsValidation(BaseMixin):
     @pytest.mark.parametrize(

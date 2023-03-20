@@ -136,6 +136,7 @@ jobs:
             ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
           -b ${{ env.BUILD_URL }} -n ${{ needs.prepare-env.outputs.network }}
       - name: "Generate allure report"
+        if: always()
         id: requirements
         uses: ./.github/actions/generate-allure-report
         with:

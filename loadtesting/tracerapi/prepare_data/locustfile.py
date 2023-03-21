@@ -20,7 +20,9 @@ DEFAULT_DUMP_FILE = "dumped_data/transaction.json"
 """Default file name for transaction history
 """
 
-transaction_history = collections.defaultdict(functools.partial(collections.defaultdict, list))
+transaction_history = collections.defaultdict(
+    functools.partial(collections.defaultdict, list)
+)
 """Transactions storage {account: [{blockNumber, blockHash, contractAddress},]}
 """
 
@@ -40,7 +42,7 @@ def dump_history(attr) -> tp.Callable:
                     {
                         "blockHash": tx["blockHash"].hex(),
                         "blockNumber": hex(tx["blockNumber"]),
-                        "contract": tx["contract"],
+                        "contract": tx.get("contract", ""),
                         "to": str(tx["to"]),
                     }
                 )
@@ -104,15 +106,21 @@ class EthGetStorageAtPreparationStage(head.NeonTasksSet):
         contract = EthGetStorageAtPreparationStage.storage_contract
         if contract:
             data = random.choice(range(100000))
-            self.log.info(f"Store random data `{data}` to contract by {self.account.address[:8]}.")
+            self.log.info(
+                f"Store random data `{data}` to contract by {self.account.address[:8]}."
+            )
             tx = contract.functions.store(data).buildTransaction(
                 {
-                    "nonce": self.web3_client.eth.get_transaction_count(self.account.address),
+                    "nonce": self.web3_client.eth.get_transaction_count(
+                        self.account.address
+                    ),
                     "gasPrice": self.web3_client.gas_price(),
                 }
             )
             tx_receipt = dict(self.web3_client.send_transaction(self.account, tx))
-            tx_receipt.update({"contract": {"address": contract.address, "abi": contract.abi}})
+            tx_receipt.update(
+                {"contract": {"address": contract.address, "abi": contract.abi}}
+            )
             return tx_receipt
         self.log.info(f"no `storage` contracts found, data store canceled.")
 
@@ -120,10 +128,11 @@ class EthGetStorageAtPreparationStage(head.NeonTasksSet):
 @tag("neon")
 @tag("transfer")
 class NeonTransferPreparationStage(head.NeonTasksSet):
-
     @task
     @dump_history("transfer")
-    def prepare_data_by_neon_transfer(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
+    def prepare_data_by_neon_transfer(
+        self,
+    ) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Make number of `NEONs` transfer transactions between different client accounts"""
         return super(NeonTransferPreparationStage, self).task_send_neon()
 
@@ -131,10 +140,11 @@ class NeonTransferPreparationStage(head.NeonTasksSet):
 @tag("erc20")
 @tag("transfer")
 class ERC20TransferPreparationStage(head.ERC20TasksSet):
-
     @task
     @dump_history("transfer")
-    def prepare_data_by_erc20_transfer(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
+    def prepare_data_by_erc20_transfer(
+        self,
+    ) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Make number of `ERC20` transfer transactions between different client accounts"""
         return super(ERC20TransferPreparationStage, self).task_send_erc20()
 
@@ -142,10 +152,11 @@ class ERC20TransferPreparationStage(head.ERC20TasksSet):
 @tag("spl")
 @tag("logs")
 class ERC20WrappedPreparationStage(head.ERC20SPLTasksSet):
-
     @task
     @dump_history("logs")
-    def prepare_data_by_erc20_wrapped(self) -> tp.Union[None, web3.datastructures.AttributeDict]:
+    def prepare_data_by_erc20_wrapped(
+        self,
+    ) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Make number of `ERC20Wrapper` transfer transactions between different client accounts"""
         return super(ERC20WrappedPreparationStage, self).task_send_erc20_spl()
 

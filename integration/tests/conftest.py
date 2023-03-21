@@ -222,6 +222,7 @@ def erc20_spl_mintable(web3_client: NeonWeb3Client, faucet, sol_client, solana_a
     yield erc20
 
 
+@pytest.fixture(scope="function")
 def new_account(web3_client, faucet):
     new_acc = web3_client.create_account()
     faucet.request_neon(new_acc.address, 100)

@@ -98,9 +98,9 @@ def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
         "CLI.Version": web3_client.get_cli_version()["result"],
     }
 
-    allure_dir = pytestconfig.getoption("--alluredir")
-
     yield opts
+
+    allure_dir = pytestconfig.getoption("--alluredir")
     allure_path = pathlib.Path() / allure_dir
     with open(allure_path / "environment.properties", "w+") as f:
         f.write("\n".join(map(lambda x: f"{x[0]}={x[1]}", opts.items())))
@@ -108,7 +108,7 @@ def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
     categories_from = pathlib.Path() / "allure" / "categories.json"
     categories_to = allure_path / "categories.json"
     shutil.copy(categories_from, categories_to)
-
+    print(os.environ)
     if "CI" in os.environ:
         with open(allure_path / "executor.json") as f:
             json.dump(

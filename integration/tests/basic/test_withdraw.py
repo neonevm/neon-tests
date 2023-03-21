@@ -16,6 +16,16 @@ from web3 import exceptions as web3_exceptions
 from ..base import BaseTests
 
 
+@pytest.fixture(scope="session")
+def withdraw_contract(web3_client, faucet):
+    acc = web3_client.create_account()
+    faucet.request_neon(acc.address, 100)
+    contract, _ = web3_client.deploy_and_get_contract(
+        "NeonToken", "0.8.10", account=acc
+    )
+    return contract
+
+
 @allure.story("Withdraw tests")
 class TestWithdraw(BaseTests):
     def withdraw(self, dest_acc, move_amount, withdraw_contract):

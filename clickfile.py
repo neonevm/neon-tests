@@ -52,7 +52,10 @@ ERR_MSG_TPL = {
     ]
 }
 
-ERR_MESSAGES = {"run": "Unsuccessful tests executing.", "requirements": "Unsuccessful requirements installation."}
+ERR_MESSAGES = {
+    "run": "Unsuccessful tests executing.",
+    "requirements": "Unsuccessful requirements installation.",
+}
 
 SRC_ALLURE_CATEGORIES = pathlib.Path("./allure/categories.json")
 
@@ -71,13 +74,6 @@ EXPANDED_ENVS = [
 ]
 
 NETWORK_NAME = os.environ.get("NETWORK_NAME", "full_test_suite")
-
-DEVBOX_DOCKERFILE = "deploy/infra/Dockerfile"
-
-DEVBOX_NAME = "neontests-devbox"
-
-# Docker devbox options:
-DEVBOX_SSH_PORT_ON_HOST = 8022
 
 HOME_DIR = pathlib.Path(__file__).absolute().parent
 
@@ -145,7 +141,10 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
     def wrapper(*args, **kwargs) -> None:
         def get_tokens_balances(operator: Operator) -> tp.Dict:
             """Return tokens balances"""
-            return dict(neon=operator.get_neon_balance(), sol=operator.get_solana_balance() / 1_000_000_000)
+            return dict(
+                neon=operator.get_neon_balance(),
+                sol=operator.get_solana_balance() / 1_000_000_000,
+            )
 
         def float_2_str(d):
             return dict(map(lambda i: (i[0], str(i[1])), d.items()))
@@ -159,7 +158,11 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
                 network["operator_neon_rewards_address"],
                 network["spl_neon_mint"],
                 network["operator_keys"],
-                web3_client=NeonWeb3Client(network["proxy_url"], network["network_id"], session=requests.Session()),
+                web3_client=NeonWeb3Client(
+                    network["proxy_url"],
+                    network["network_id"],
+                    session=requests.Session(),
+                ),
             )
             pre = get_tokens_balances(op)
             try:
@@ -174,10 +177,15 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
             path = pathlib.Path(OZ_BALANCES)
             path.absolute().parent.mkdir(parents=True, exist_ok=True)
             with open(path, "w") as fd:
-                balances = dict(pre=float_2_str(pre), after=float_2_str(after), profitability=float_2_str(profitability))
+                balances = dict(
+                    pre=float_2_str(pre),
+                    after=float_2_str(after),
+                    profitability=float_2_str(profitability),
+                )
                 json.dump(balances, fp=fd, indent=4, sort_keys=True)
         else:
             func(*args, **kwargs)
+
     return wrapper
 
 
@@ -186,15 +194,23 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     print(f"Running OpenZeppelin tests in {jobs} jobs on {network}")
     cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
     if not list(cwd.glob("*")):
-        subprocess.check_call("git submodule init && git submodule update", shell=True, cwd=cwd)
+        subprocess.check_call(
+            "git submodule init && git submodule update", shell=True, cwd=cwd
+        )
     subprocess.check_call("npx hardhat compile", shell=True, cwd=cwd)
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
     keys_env = [
-        faucet_cli.prepare_wallets_with_balance(networks[network], count=users, airdrop_amount=amount)
+        faucet_cli.prepare_wallets_with_balance(
+            networks[network], count=users, airdrop_amount=amount
+        )
         for i in range(jobs)
     ]
 
-    tests = subprocess.check_output("find \"test\" -name '*.test.js'", shell=True, cwd=cwd).decode().splitlines()
+    tests = (
+        subprocess.check_output("find \"test\" -name '*.test.js'", shell=True, cwd=cwd)
+        .decode()
+        .splitlines()
+    )
 
     def run_oz_file(file_name):
         print(f"Run {file_name}")
@@ -204,14 +220,22 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         env["NETWORK_ID"] = str(networks[network]["network_id"])
         env["PROXY_URL"] = networks[network]["proxy_url"]
 
-        out = subprocess.run(f"npx hardhat test {file_name}", shell=True, cwd=cwd, capture_output=True, env=env)
+        out = subprocess.run(
+            f"npx hardhat test {file_name}",
+            shell=True,
+            cwd=cwd,
+            capture_output=True,
+            env=env,
+        )
         stdout = out.stdout.decode()
         stderr = out.stderr.decode()
         print(f"Test {file_name} finished with code {out.returncode}")
         print(stdout)
         print(stderr)
         keys_env.append(keys)
-        log_dirs = cwd.parent / "results" / file_name.replace(".", "_").replace("/", "_")
+        log_dirs = (
+            cwd.parent / "results" / file_name.replace(".", "_").replace("/", "_")
+        )
         log_dirs.mkdir(parents=True, exist_ok=True)
         with open(log_dirs / "stdout.log", "w") as f:
             f.write(stdout)
@@ -224,7 +248,9 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     pool.join()
     # Add allure environment
     settings = networks[network]
-    web3_client = web3client.NeonWeb3Client(settings["proxy_url"], settings["network_id"])
+    web3_client = web3client.NeonWeb3Client(
+        settings["proxy_url"], settings["network_id"]
+    )
     opts = {
         "Proxy.Version": web3_client.get_proxy_version()["result"],
         "EVM.Version": web3_client.get_evm_version()["result"],
@@ -235,7 +261,9 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         f.write("\n")
     # Add epic name for allure result files
     openzeppelin_reports = pathlib.Path("./allure-results")
-    res_file_list = [str(res_file) for res_file in openzeppelin_reports.glob("*-result.json")]
+    res_file_list = [
+        str(res_file) for res_file in openzeppelin_reports.glob("*-result.json")
+    ]
     print("Fix allure results: {}".format(len(res_file_list)))
 
     for res_file in res_file_list:
@@ -265,7 +293,9 @@ def parse_openzeppelin_results():
     return test_report, skipped_files
 
 
-def print_test_suite_results(test_report: tp.Dict[str, int], skipped_files: tp.List[str]):
+def print_test_suite_results(
+    test_report: tp.Dict[str, int], skipped_files: tp.List[str]
+):
     print("Summarize result:\n")
     for state in test_report:
         print("    {} - {}".format(state.capitalize(), test_report[state]))
@@ -289,8 +319,18 @@ def print_oz_balances():
         balances = json.load(fd)
     report = tabulate.tabulate(
         [
-            ["NEON", balances["pre"]["neon"], balances["after"]["neon"], balances["profitability"]["neon"]],
-            ["SOL", balances["pre"]["sol"], balances["after"]["sol"], balances["profitability"]["sol"]],
+            [
+                "NEON",
+                balances["pre"]["neon"],
+                balances["after"]["neon"],
+                balances["profitability"]["neon"],
+            ],
+            [
+                "SOL",
+                balances["pre"]["sol"],
+                balances["after"]["sol"],
+                balances["profitability"]["sol"],
+            ],
         ],
         headers=["token", "on start balance", "os stop balance", "P/L (USD)"],
         tablefmt="fancy_outline",
@@ -344,7 +384,9 @@ def install_ui_requirements():
         if "extension" in item.name:
             cmd = f"tar -xf {item.as_posix()} -C {base_path / EXTENSIONS_PATH}"
         elif "user_data" in item.name:
-            cmd = f"tar -xf {item.as_posix()} -C {base_path / EXTENSIONS_USER_DATA_PATH}"
+            cmd = (
+                f"tar -xf {item.as_posix()} -C {base_path / EXTENSIONS_USER_DATA_PATH}"
+            )
         subprocess.check_call(cmd, shell=True)
 
 
@@ -363,9 +405,13 @@ def cli():
     pass
 
 
-@cli.command(help="Update base python requirements")
+@cli.command(help="Install neon-tests dependencies")
 @click.option(
-    "-d", "--dep", default="devel", type=click.Choice(["devel", "python", "oz", "ui"]), help="Which deps install"
+    "-d",
+    "--dep",
+    default="devel",
+    type=click.Choice(["devel", "python", "oz", "ui"]),
+    help="Which deps install",
 )
 @catch_traceback
 def requirements(dep):
@@ -383,25 +429,40 @@ def contracts():
     pathlib.Path(contract_path).mkdir(parents=True, exist_ok=True)
 
     response = requests.get(
-        "https://api.github.com/repos/neonlabsorg/neon-evm/contents/evm_loader/solidity?ref=develop").json()
+        "https://api.github.com/repos/neonlabsorg/neon-evm/contents/evm_loader/solidity?ref=develop"
+    ).json()
     for item in response:
         r = requests.get(
-            f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/develop/evm_loader/solidity/{item['name']}")
+            f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/develop/evm_loader/solidity/{item['name']}"
+        )
         if r.status_code == 200:
-            with open(contract_path / item['name'], 'wb') as f:
+            with open(contract_path / item["name"], "wb") as f:
                 f.write(r.content)
         else:
-            raise click.ClickException(f"The contract {item['name']} is not downloaded. Error: {r.text}")
+            raise click.ClickException(
+                f"The contract {item['name']} is not downloaded. Error: {r.text}"
+            )
 
 
 @cli.command(help="Run any type of tests")
-@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
-@click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
+@click.option(
+    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
+)
+@click.option(
+    "-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)"
+)
 @click.option("-p", "--numprocesses", help="Number of parallel jobs for basic tests")
 @click.option("-a", "--amount", default=200000, help="Requested amount from faucet")
 @click.option("-u", "--users", default=8, help="Accounts numbers used in OZ tests")
-@click.option("--ui-item", default="all", type=click.Choice(["faucet", "neonpass", "all"]), help="Which UI test run")
-@click.argument("name", required=True, type=click.Choice(["economy", "basic", "oz", "ui"]))
+@click.option(
+    "--ui-item",
+    default="all",
+    type=click.Choice(["faucet", "neonpass", "all"]),
+    help="Which UI test run",
+)
+@click.argument(
+    "name", required=True, type=click.Choice(["economy", "basic", "oz", "ui"])
+)
 @catch_traceback
 def run(name, jobs, numprocesses, ui_item, amount, users, network):
     if not network and name == "ui":
@@ -416,13 +477,17 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
         if numprocesses:
             command = f"{command} --numprocesses {numprocesses}"
     elif name == "oz":
-        run_openzeppelin_tests(network, jobs=int(jobs), amount=int(amount), users=int(users))
+        run_openzeppelin_tests(
+            network, jobs=int(jobs), amount=int(amount), users=int(users)
+        )
         shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
         return
     elif name == "ui":
         if not os.environ.get("CHROME_EXT_PASSWORD"):
             raise click.ClickException(
-                red("Please set the `CHROME_EXT_PASSWORD` environment variable (password for wallets).")
+                red(
+                    "Please set the `CHROME_EXT_PASSWORD` environment variable (password for wallets)."
+                )
             )
         command = "py.test ui/tests"
         if ui_item != "all":
@@ -465,11 +530,21 @@ locust_host = click.option(
 
 
 locust_users = click.option(
-    "-u", "--users", default=50, type=int, help="Peak number of concurrent Locust users.", show_default=True
+    "-u",
+    "--users",
+    default=50,
+    type=int,
+    help="Peak number of concurrent Locust users.",
+    show_default=True,
 )
 
 locust_rate = click.option(
-    "-r", "--spawn-rate", default=1, type=int, help="Rate to spawn users at (users per second)", show_default=True
+    "-r",
+    "--spawn-rate",
+    default=1,
+    type=int,
+    help="Rate to spawn users at (users per second)",
+    show_default=True,
 )
 
 locust_run_time = click.option(
@@ -485,14 +560,16 @@ locust_tags = click.option(
     "--tag",
     type=str,
     multiple=True,
-    help="tag to include in the test, so only tasks " "with any matching tags will be executed",
+    help="tag to include in the test, so only tasks "
+    "with any matching tags will be executed",
 )
 
 locust_headless = click.option(
     "--web-ui/--headless",
     " /-w",
     default=True,
-    help="Enable the web interface. " "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
+    help="Enable the web interface. "
+    "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
 )
 
 
@@ -524,7 +601,9 @@ def locust(ctx):
     help="NEON RPC entry point.",
     show_default=True,
 )
-def run(credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile, neon_rpc):
+def run(
+    credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile, neon_rpc
+):
     """Run `Neon` pipeline performance test
 
     path it's sub-folder and file name  `loadtesting/locustfile.py`.
@@ -537,7 +616,9 @@ def run(credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile,
     if credentials:
         command += f" --credentials={credentials}"
     elif locustfile == "tracerapi":
-        command += f" --credentials={base_path.absolute()}/loadtesting/tracerapi/envs.json"
+        command += (
+            f" --credentials={base_path.absolute()}/loadtesting/tracerapi/envs.json"
+        )
     if run_time:
         command += f" --run-time={run_time}"
     if neon_rpc and locustfile == "tracerapi":
@@ -553,7 +634,9 @@ def run(credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile,
         sys.exit(cmd.returncode)
 
 
-@locust.command("prepare", help="Run preparation stage for `tracer api` performance test")
+@locust.command(
+    "prepare", help="Run preparation stage for `tracer api` performance test"
+)
 @locust_credentials
 @locust_host
 @locust_users
@@ -586,10 +669,23 @@ def prepare(credentials, host, users, spawn_rate, run_time, tag):
         sys.exit(cmd.returncode)
 
 
-@cli.command(help="Download allure history")
+@cli.group("allure")
+@click.pass_context
+def allure_cli(ctx):
+    """Commands for load test manipulation."""
+
+
+@allure_cli.command("get-history", help="Download allure history")
 @click.argument("name", type=click.STRING)
-@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
-@click.option("-d", "--destination", default="./allure-results", type=click.Path(file_okay=False, dir_okay=True))
+@click.option(
+    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
+)
+@click.option(
+    "-d",
+    "--destination",
+    default="./allure-results",
+    type=click.Path(file_okay=False, dir_okay=True),
+)
 def get_allure_history(name: str, network: str, destination: str = "./allure-results"):
     branch = os.environ.get("GITHUB_REF_NAME")
     path = pathlib.Path(name) / network / branch
@@ -604,13 +700,22 @@ def get_allure_history(name: str, network: str, destination: str = "./allure-res
             runs.append(int(run_id[0]))
     if len(runs) > 0:
         print(f"Downloading allure history from build: {max(runs)}")
-        cloud.download(path / str(max(runs)) / "history", pathlib.Path(destination) / "history")
+        cloud.download(
+            path / str(max(runs)) / "history", pathlib.Path(destination) / "history"
+        )
 
 
-@cli.command(help="Upload allure report")
+@allure_cli.command("upload-report", help="Upload allure history")
 @click.argument("name", type=click.STRING)
-@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
-@click.option("-s", "--source", default="./allure-report", type=click.Path(file_okay=False, dir_okay=True))
+@click.option(
+    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
+)
+@click.option(
+    "-s",
+    "--source",
+    default="./allure-report",
+    type=click.Path(file_okay=False, dir_okay=True),
+)
 def upload_allure_report(name: str, network: str, source: str = "./allure-report"):
     branch = os.environ.get("GITHUB_REF_NAME")
     build_id = os.environ.get("GITHUB_RUN_NUMBER")
@@ -626,7 +731,8 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
     cloud.upload("/tmp/index.html", path)
     print(f"Allure report link: {report_url}")
 
-@cli.command(help="Generate allure report")
+
+@allure_cli.command("generate", help="Generate allure history")
 def generate_allure_report():
     cmd = subprocess.run("allure generate", shell=True)
     if cmd.returncode != 0:
@@ -637,7 +743,9 @@ def generate_allure_report():
 @click.option("-u", "--url", help="slack app endpoint url.")
 @click.option("-b", "--build_url", help="github action test build url.")
 @click.option("-t", "--traceback", default="", help="custom traceback message.")
-@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+@click.option(
+    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
+)
 def send_notification(url, build_url, traceback, network):
     p = pathlib.Path(f"./{CMD_ERROR_LOG}")
     trace_back = traceback or (p.read_text() if p.exists() else "")
@@ -661,7 +769,9 @@ def send_notification(url, build_url, traceback, network):
 
 
 @cli.command(name="get-balances", help="Get operator balances in NEON and SOL")
-@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+@click.option(
+    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
+)
 def get_operator_balances(network: str):
     net = networks[network]
     operator = Operator(
@@ -670,13 +780,15 @@ def get_operator_balances(network: str):
         net["network_id"],
         net["operator_neon_rewards_address"],
         net["spl_neon_mint"],
-        net["operator_keys"]
+        net["operator_keys"],
     )
     neon_balance = operator.get_neon_balance()
     sol_balance = operator.get_solana_balance()
-    print(f'Operator balances ({len(net["operator_keys"])}):\n'
-          f'NEON: {neon_balance}\n'
-          f'SOL: {sol_balance / 1_000_000_000}')
+    print(
+        f'Operator balances ({len(net["operator_keys"])}):\n'
+        f"NEON: {neon_balance}\n"
+        f"SOL: {sol_balance / 1_000_000_000}"
+    )
 
 
 @cli.group("infra", help="Manage test infrastructure")
@@ -721,178 +833,6 @@ def dapps():
 @click.option("-d", "--directory", default="reports", help="Directory with reports")
 def make_dapps_report(directory):
     dapps_cli.print_report(directory)
-
-
-@cli.group("devbox", help="Manage devbox infrastructure")
-def devbox():
-    """Commands for devbox manipulation."""
-
-
-@devbox.command("rm")
-def rm():
-    """Terminate existing devbox."""
-    if env.is_devbox():
-        return print(env.green("You inside `devbox` first quit"))
-    if docker_utils.docker_inspect(DEVBOX_NAME):
-        env.shell(f"docker rm -f {DEVBOX_NAME}")
-        print(env.green("Terminated devbox"))
-    else:
-        print(env.green("DevBox not running, nothing to terminate"))
-
-
-@devbox.command("build")
-@click.option(
-    "-p",
-    "--image-path",
-    "image_path",
-    type=str,
-    default=DEVBOX_DOCKERFILE,
-    help="Build image Dockerfile relative path.",
-)
-@click.option(
-    "-n",
-    "--image-name",
-    "image_name",
-    type=str,
-    default=DEVBOX_NAME,
-    help="Build image name.",
-)
-@click.option(
-    "-t",
-    "--tag",
-    "tag",
-    type=str,
-    default="latest",
-    help="Build image tag.",
-)
-@click.option(
-    "--quick/--full",
-    default=None,
-    help="Quick mode (Default). In quick mode task for sake of speed ignore some extra checks, "
-    "which might produce stale artifacts. Full mode builds eveything without Docker cache, "
-    "and because of this sick from duplicate layers for the same Dockerfile steps. "
-    "WARN: It's still unclear do we really need this CLI option. Strong argument against "
-    "is that `docker build --pull` invalidates the whole cache tree every time the base "
-    "buster/alpine image got updated. Base images get their security patches nearly every day. "
-    "As a side effect of these updates we check very frequency our images on nocache build, and may "
-    "find and address any issues early.",
-)
-@click.option("--dry-run", is_flag=True, default=False, help="Dry run")
-def build(image_path, image_name, tag, quick, dry_run=None):
-    """Build devbox docker image."""
-    if env.is_devbox():
-        return print(env.green("`devbox` is built, exiting "))
-    env.header("Prepare docker images build...")
-    image = docker_utils.Image(pathlib.Path(image_path), image_name, tag)
-    build_args = ()
-    if quick is None:
-        # Quick by default
-        quick = True
-
-    if dry_run:
-        return print(env.yellow("Dry run, exiting"))
-
-    image.build(cache=quick, build_args=build_args)
-
-
-def create_devbox(prefix="", tag="latest"):
-
-    box_name = DEVBOX_NAME
-    network_name = "neon-tests"
-    cwd = os.getcwd()
-    workspace = "/neon-tests"
-    provide_ssh_port = f"{DEVBOX_SSH_PORT_ON_HOST}:22"
-    prefix = prefix or docker_utils.IMAGE_PREFIX
-
-    if not docker_utils.docker_inspect(box_name):
-        box_image = f"{prefix}/{box_name}:{tag}"
-        if not docker_utils.docker_image_exists(box_image):
-            print(env.yellow(f"No {box_image} image found, run `devbox build` command"))
-            exit()
-        # Run devbox in user-defined network and link it for test containers
-        if not docker_utils.docker_inspect_network(network_name):
-            env.shell(f"docker network create {network_name}")
-
-        home = os.path.expanduser("~")
-
-        def var_args():
-            """Variatic arguments"""
-            args = []
-
-            # neon client
-            neon_cli_path = f"{cwd}/deploy/infra/tools/neon-cli"
-            if os.path.isfile(neon_cli_path):
-                args.append(f"-v {neon_cli_path}:/usr/local/bin/neon-cli")
-            else:
-                print(env.yellow(f"copy file `neon-cli` to {neon_cli_path} for load tests to work properly"))
-            # solana operator keys
-            operator_keys_path = f"{cwd}/loadtesting/synthetic/operator-keypairs"
-            if os.path.exists(operator_keys_path):
-                args.append(f"-v {operator_keys_path}:/root/.config/solana")
-            else:
-                print(env.yellow(f"copy solana operator keys to {operator_keys_path} for load tests to work properly"))
-            # pip/pip-tools cache
-            if os.path.exists(f"{home}/.cache"):
-                args.append(f"-v {home}/.cache:/root/.cache")
-
-            # git config
-            if os.path.exists(f"{home}/.gitconfig"):
-                args.append(f"-v {home}/.gitconfig:/root/.gitconfig")
-
-            # ssh
-            if os.path.exists(f"{home}/.ssh"):
-                args.append(f"-v {home}/.ssh:/root/.ssh")
-            # pass ssh-agent to container
-            if "SSH_AUTH_SOCK" in os.environ and platform.system() == "Linux":
-                args.append(f" -v {os.environ['SSH_AUTH_SOCK']}:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent ")
-            elif platform.system() == "Darwin":
-                sock_path = os.environ.get("SSH_AUTH_SOCK", "/run/host-services/ssh-auth.sock")
-                args.append(f" --mount type=bind,src={sock_path},target=/ssh-agent -e " "SSH_AUTH_SOCK=/ssh-agent ")
-
-            shell_history_path = f"{cwd}/deploy/infra/devbox/.bash_history"
-            # Ensure .bash_history exists
-            env.shell(f"touch {shell_history_path}")
-            args.append(f"-v {shell_history_path}:/root/.bash_history")
-
-            return " ".join(args)
-
-        # Start new
-        env.shell(
-            "docker run --rm -it -d --init"
-            f" --name={box_name}"
-            f" --network={network_name}"
-            f" -e DEVBOX=true"
-            f" -e DEVBOX_NETWORK={network_name}"
-            f" -e DEVBOX_CWD={cwd}"
-            f" -w {workspace}"
-            f" -v {cwd}:{workspace}"
-            # SSH for remote debugging
-            f" -p {provide_ssh_port}" f" -v {cwd}/deploy/infra/devbox/ssh/id_ed25519.pub:/root/.ssh/authorized_keys"
-            # Bash profile and history
-            f" -v {cwd}/deploy/infra/devbox/.bash-profile:/etc/profile.d/neontests.sh"
-            # Docker host socket
-            " -v /var/run/docker.sock:/var/run/docker.sock"
-            # For pytest fileutil mount shared fixtures
-            " -v /tmp:/tmp" f" {var_args()} {box_image} {workspace}/deploy/infra/devbox/startup.sh",
-            capture=True,
-        )
-        print(env.green("Started devbox"))
-    else:
-        print(env.green("Devbox already started, attaching"))
-    return box_name
-
-
-@devbox.command("up")
-def up():
-    """Start new devbox or attach existing."""
-    if env.is_devbox():
-        return print(env.green("`devbox` is created, exiting "))
-    box_name = create_devbox()
-    # Attach to running container
-    env.shell(f"docker exec -it {box_name} bash --login; exit 0")
-
-
-
 
 
 if __name__ == "__main__":

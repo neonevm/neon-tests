@@ -109,7 +109,8 @@ jobs:
         run: |
           docker exec -i -e OZ_BALANCES_REPORT_FLAG=1 ${{ env.CONTAINER }}  ./clickfile.py run oz \
             --network ${{ needs.prepare-env.outputs.network }} \
-            --jobs ${{ needs.prepare-env.outputs.jobs }}
+            --jobs ${{ needs.prepare-env.outputs.jobs }} \
+            --users 10
       - name: Print OpenZeppelin report
         run: |
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py ozreport

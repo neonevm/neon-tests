@@ -1,8 +1,7 @@
 import allure
 import pytest
 from _pytest.config import Config
-from solana.keypair import Keypair as SolanaAccount
-from solana.publickey import PublicKey
+from solana.keypair import Keypair
 from solana.rpc.types import Commitment, TxOpts
 from solana.transaction import Transaction
 from spl.token.client import Token as SplToken
@@ -16,10 +15,18 @@ from web3 import exceptions as web3_exceptions
 
 from ..base import BaseTests
 
-LAMPORT_PER_SOL = 1_000_000_000
+
+@pytest.fixture(scope="session")
+def withdraw_contract(web3_client, faucet):
+    acc = web3_client.create_account()
+    faucet.request_neon(acc.address, 100)
+    contract, _ = web3_client.deploy_and_get_contract(
+        "NeonToken", "0.8.10", account=acc
+    )
+    return contract
 
 
-@allure.story("Basic: withdraw tests")
+@allure.story("Withdraw tests")
 class TestWithdraw(BaseTests):
     def withdraw(self, dest_acc, move_amount, withdraw_contract):
         instruction_tx = withdraw_contract.functions.withdraw(
@@ -35,14 +42,16 @@ class TestWithdraw(BaseTests):
         receipt = self.web3_client.send_transaction(self.acc, instruction_tx)
         assert receipt["status"] == 1
 
+    @pytest.mark.only_stands
     def test_success_withdraw_to_non_existing_account(
         self, pytestconfig: Config, withdraw_contract, neon_mint, solana_account
     ):
         """Should successfully withdraw NEON tokens to previously non-existing Associated Token Account"""
-        dest_acc = solana_account
+        dest_acc = Keypair.generate()
+        self.sol_client.request_airdrop(dest_acc.public_key, 1_000_000_000)
 
         spl_neon_token = SplToken(
-            self.sol_client, neon_mint, TOKEN_PROGRAM_ID, dest_acc.public_key
+            self.sol_client, neon_mint, TOKEN_PROGRAM_ID, dest_acc
         )
 
         dest_token_acc = get_associated_token_address(dest_acc.public_key, neon_mint)
@@ -53,7 +62,7 @@ class TestWithdraw(BaseTests):
             dest_acc.public_key, commitment=Commitment("confirmed")
         )
         with pytest.raises(AttributeError):
-            destination_balance_before.value
+            _ = destination_balance_before.value
 
         self.withdraw(dest_acc, move_amount, withdraw_contract)
 
@@ -68,7 +77,7 @@ class TestWithdraw(BaseTests):
     def test_success_withdraw_to_existing_account(
         self, pytestconfig: Config, withdraw_contract, neon_mint, solana_account
     ):
-        """Should succesfully withdraw NEON tokens to existing Associated Token Account"""
+        """Should successfully withdraw NEON tokens to existing Associated Token Account"""
         dest_acc = solana_account
 
         wait_condition(lambda: self.sol_client.get_balance(dest_acc.public_key) != 0)
@@ -88,7 +97,7 @@ class TestWithdraw(BaseTests):
         move_amount_galan = int(move_amount_alan / 1_000_000_000)
 
         spl_neon_token = SplToken(
-            self.sol_client, neon_mint, TOKEN_PROGRAM_ID, dest_acc.public_key
+            self.sol_client, neon_mint, TOKEN_PROGRAM_ID, dest_acc
         )
 
         destination_balance_before = spl_neon_token.get_balance(
@@ -118,7 +127,7 @@ class TestWithdraw(BaseTests):
             dest_acc.public_key, commitment=Commitment("confirmed")
         )
         with pytest.raises(AttributeError):
-            destination_balance_before.value
+            _ = destination_balance_before.value
 
         with pytest.raises(web3_exceptions.ContractLogicError):
             self.withdraw(dest_acc, move_amount, withdraw_contract)
@@ -127,7 +136,7 @@ class TestWithdraw(BaseTests):
             dest_acc.public_key, commitment=Commitment("confirmed")
         )
         with pytest.raises(AttributeError):
-            destination_balance_after.value
+            _ = destination_balance_after.value
 
     @pytest.mark.parametrize("move_amount", [11000, 10000])
     def test_failed_withdraw_insufficient_balance(
@@ -150,7 +159,7 @@ class TestWithdraw(BaseTests):
             dest_acc.public_key, commitment=Commitment("confirmed")
         )
         with pytest.raises(AttributeError):
-            destination_balance_before.value
+            _ = destination_balance_before.value
 
         with pytest.raises(ValueError):
             self.withdraw(dest_acc, amount, withdraw_contract)
@@ -159,4 +168,4 @@ class TestWithdraw(BaseTests):
             dest_acc.public_key, commitment=Commitment("confirmed")
         )
         with pytest.raises(AttributeError):
-            destination_balance_after.value
+            _ = destination_balance_after.value

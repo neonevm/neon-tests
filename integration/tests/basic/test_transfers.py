@@ -6,6 +6,7 @@ import allure
 import eth_utils
 import pytest
 import web3
+import web3.exceptions
 
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin, AccountData
@@ -29,7 +30,8 @@ GAS_LIMIT_AND_PRICE_DATA = (
 )
 
 
-@allure.story("Basic: transfer tests")
+@allure.feature("Ethereum compatibility")
+@allure.story("Basic tests for transfers")
 class TestTransfer(BaseMixin):
     @pytest.mark.parametrize("transfer_amount", [0, 0.1, 1, 1.1])
     def test_send_neon_from_one_account_to_another(
@@ -96,7 +98,7 @@ class TestTransfer(BaseMixin):
         )
 
     @pytest.mark.parametrize("transfer_amount", [0, 1, 10, 100])
-    def test_send_spl_wrapped_account_from_one_account_to_another(
+    def test_send_spl_wrapped_token_from_one_account_to_another(
         self, transfer_amount: int, erc20_spl
     ):
         """Send spl wrapped account from one account to another"""
@@ -126,9 +128,6 @@ class TestTransfer(BaseMixin):
             self.recipient_account.address, initial_neon_balance, rnd_dig=3
         )
 
-    @pytest.mark.xfail(
-        reason="https://github.com/neonlabsorg/proxy-model.py/issues/813"
-    )
     @pytest.mark.parametrize("amount", [11_000_501, 10_000_000.1])
     def test_send_more_than_exist_on_account_neon(self, amount: tp.Union[int, float]):
         """Send more than exist on account: neon"""
@@ -240,9 +239,6 @@ class TestTransfer(BaseMixin):
         self.assert_balance(sender_account.address, sender_amount)
         self.assert_balance(recipient_account.address, 0)
 
-    @pytest.mark.xfail(
-        reason="https://github.com/neonlabsorg/proxy-model.py/issues/813"
-    )
     def test_there_are_not_enough_neons_for_transfer(self):
         """There are not enough Neons for transfer"""
         sender_amount = 1
@@ -468,7 +464,8 @@ class TestTransfer(BaseMixin):
         contractTwo.functions.depositOnContractOne(address).call()
 
 
-@allure.story("Basic: transactions validation")
+@allure.feature("Ethereum compatibility")
+@allure.story("Verify transactions validation")
 class TestTransactionsValidation(BaseMixin):
     @pytest.mark.parametrize(
         "gas_limit,gas_price,expected_message", GAS_LIMIT_AND_PRICE_DATA
@@ -576,16 +573,18 @@ class TestTransactionsValidation(BaseMixin):
         assert ErrorMessage.TOO_BIG_TRANSACTION.value in response["error"]["message"]
         assert response["error"]["code"] == -32000
 
-    # def test_send_transaction_with_small_gas_price(self):
-    #     """Check that transaction can't be sent if gas value is too small"""
-    #     gas_price = self.web3_client.gas_price()
-    #     print(gas_price)
-    #     transaction = self.create_tx_object(gas_price=(int(gas_price * 0.92)))
-    #     print(transaction)
-    #     signed_tx = self.web3_client.eth.account.sign_transaction(transaction, self.sender_account.key)
-    #     response = self.proxy_api.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
-    #     receipt = self.wait_transaction_accepted(response["result"])
-    #     print(receipt)
+    @pytest.mark.skip(reason="We should rewrite this test, because it need new account")
+    def test_send_transaction_with_small_gas_price(self):
+        """Check that transaction can't be sent if gas value is too small"""
+        gas_price = self.web3_client.gas_price()
+        transaction = self.create_tx_object(gas_price=(int(gas_price * 0.92)))
+        signed_tx = self.web3_client.eth.account.sign_transaction(
+            transaction, self.sender_account.key
+        )
+        response = self.proxy_api.send_rpc(
+            "eth_sendRawTransaction", [signed_tx.rawTransaction.hex()]
+        )
+        receipt = self.wait_transaction_accepted(response["result"])
 
     @pytest.mark.xfail(reason="NDEV-628")
     def test_big_memory_value(self):

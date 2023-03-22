@@ -31,6 +31,7 @@ class ErrorMessage(Enum):
     INVALID_RECEIVER_ERC721 = "execution reverted: ERC721: transfer to non ERC721Receiver implementer"
     APPROVE_TO_CALLER_ERC721 = "execution reverted: ERC721: approve to caller"
 
+
 class AssertMessage(Enum):
     WRONG_ID = "Id of the response does not correspond to id of the request"
     WRONG_TYPE = "The response type is error response"

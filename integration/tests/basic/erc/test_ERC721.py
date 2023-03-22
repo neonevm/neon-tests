@@ -4,11 +4,14 @@ import allure
 import base58
 import pytest
 import web3
-from solana.keypair import Keypair
+import web3.exceptions
 from solana.publickey import PublicKey
 from solana.rpc.types import TokenAccountOpts, TxOpts
 from solana.transaction import Transaction
-from spl.token.instructions import create_associated_token_account, get_associated_token_address
+from spl.token.instructions import (
+    create_associated_token_account,
+    get_associated_token_address,
+)
 
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from integration.tests.basic.helpers.basic import BaseMixin
@@ -28,7 +31,8 @@ NOT_ENOUGH_GAS_PARAMS = (
 )
 
 
-@allure.story("Basic: Tests for ERC721ForMetaplex")
+@allure.feature("ERC Verifications")
+@allure.story("ERC721: Verify integration with Metaplex")
 class TestERC721(BaseMixin):
     @pytest.fixture(scope="function")
     def token_id(self, erc721):
@@ -77,7 +81,9 @@ class TestERC721(BaseMixin):
         ],
     )
     def test_mint_incorrect_address(self, erc721, address_to, expected_exception, msg):
-        address_to = gen_hash_of_block(address_to) if isinstance(address_to, int) else address_to
+        address_to = (
+            gen_hash_of_block(address_to) if isinstance(address_to, int) else address_to
+        )
         seed = gen_hash_of_block(32)
         uri = generate_text(min_len=10, max_len=200, simple=True)
         with pytest.raises(expected_exception, match=msg):
@@ -99,7 +105,9 @@ class TestERC721(BaseMixin):
         assert symbol == "MPL"
 
     def test_balanceOf(self, erc721):
-        balance_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
+        balance_before = erc721.contract.functions.balanceOf(
+            erc721.account.address
+        ).call()
         uri = generate_text(min_len=10, max_len=200)
         mint_amount = random.randint(1, 5)
         for _ in range(mint_amount):
@@ -121,7 +129,10 @@ class TestERC721(BaseMixin):
 
     def test_ownerOf_incorrect_token(self, erc721):
         token_id = random.randint(0, 99999999999)
-        with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_TOKEN_ERC721.value):
+        with pytest.raises(
+            web3.exceptions.ContractLogicError,
+            match=ErrorMessage.INVALID_TOKEN_ERC721.value,
+        ):
             erc721.contract.functions.ownerOf(token_id).call()
 
     def test_tokenURI(self, erc721):
@@ -133,82 +144,143 @@ class TestERC721(BaseMixin):
 
     def test_tokenURI_incorrect_token(self, erc721):
         token_id = random.randint(0, 99999999999)
-        with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_TOKEN_ERC721.value):
+        with pytest.raises(
+            web3.exceptions.ContractLogicError,
+            match=ErrorMessage.INVALID_TOKEN_ERC721.value,
+        ):
             erc721.contract.functions.tokenURI(token_id).call()
 
     def test_transferFrom(self, erc721, new_account, token_id):
-        balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
-        balance_usr2_before = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_before = erc721.contract.functions.balanceOf(
+            erc721.account.address
+        ).call()
+        balance_usr2_before = erc721.contract.functions.balanceOf(
+            new_account.address
+        ).call()
 
-        erc721.transfer_from(erc721.account.address, new_account.address, token_id, erc721.account)
+        erc721.transfer_from(
+            erc721.account.address, new_account.address, token_id, erc721.account
+        )
 
-        balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
-        balance_usr2_after = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_after = erc721.contract.functions.balanceOf(
+            erc721.account.address
+        ).call()
+        balance_usr2_after = erc721.contract.functions.balanceOf(
+            new_account.address
+        ).call()
 
         assert balance_usr1_after - balance_usr1_before == -1
         assert balance_usr2_after - balance_usr2_before == 1
 
     def test_transferFrom_not_token_owner(self, erc721, new_account, token_id):
-        with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.NOT_TOKEN_OWNER_ERC721.value):
-            erc721.transfer_from(erc721.account.address, new_account.address, token_id, new_account)
+        with pytest.raises(
+            web3.exceptions.ContractLogicError,
+            match=ErrorMessage.NOT_TOKEN_OWNER_ERC721.value,
+        ):
+            erc721.transfer_from(
+                erc721.account.address, new_account.address, token_id, new_account
+            )
 
     def test_transferFrom_incorrect_owner(self, erc721, new_account, token_id):
-        with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INCORRECT_OWNER_ERC721.value):
-            erc721.transfer_from(new_account.address, erc721.account.address, token_id, erc721.account)
+        with pytest.raises(
+            web3.exceptions.ContractLogicError,
+            match=ErrorMessage.INCORRECT_OWNER_ERC721.value,
+        ):
+            erc721.transfer_from(
+                new_account.address, erc721.account.address, token_id, erc721.account
+            )
 
     def test_transferFrom_incorrect_token(self, erc721):
         token_id = random.randint(0, 99999999999)
-        with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_TOKEN_ERC721.value):
-            erc721.transfer_from(erc721.account.address, erc721.account.address, token_id, erc721.account)
+        with pytest.raises(
+            web3.exceptions.ContractLogicError,
+            match=ErrorMessage.INVALID_TOKEN_ERC721.value,
+        ):
+            erc721.transfer_from(
+                erc721.account.address, erc721.account.address, token_id, erc721.account
+            )
 
     @pytest.mark.parametrize(*INCORRECT_ADDRESS_PARAMS)
-    def test_transferFrom_incorrect_address_from(self, erc721, token_id, block_len, expected_exception):
+    def test_transferFrom_incorrect_address_from(
+        self, erc721, token_id, block_len, expected_exception
+    ):
         block_len = gen_hash_of_block(block_len)
         with pytest.raises(expected_exception):
-            erc721.transfer_from(block_len, erc721.account.address, token_id, erc721.account)
+            erc721.transfer_from(
+                block_len, erc721.account.address, token_id, erc721.account
+            )
 
     @pytest.mark.parametrize(*INCORRECT_ADDRESS_PARAMS)
-    def test_transferFrom_incorrect_address_to(self, erc721, token_id, block_len, expected_exception):
+    def test_transferFrom_incorrect_address_to(
+        self, erc721, token_id, block_len, expected_exception
+    ):
         block_len = gen_hash_of_block(block_len)
         with pytest.raises(expected_exception):
-            erc721.transfer_from(erc721.account.address, block_len, token_id, erc721.account)
+            erc721.transfer_from(
+                erc721.account.address, block_len, token_id, erc721.account
+            )
 
     @pytest.mark.parametrize(*NOT_ENOUGH_GAS_PARAMS)
     def test_transferFrom_no_enough_gas(self, erc721, token_id, param, msg):
         with pytest.raises(ValueError, match=msg):
-            erc721.transfer_from(erc721.account.address, erc721.account.address, token_id, erc721.account, **param)
+            erc721.transfer_from(
+                erc721.account.address,
+                erc721.account.address,
+                token_id,
+                erc721.account,
+                **param,
+            )
 
     def test_transferFrom_with_approval(self, erc721, new_account, token_id):
-        balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
-        balance_usr2_before = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_before = erc721.contract.functions.balanceOf(
+            erc721.account.address
+        ).call()
+        balance_usr2_before = erc721.contract.functions.balanceOf(
+            new_account.address
+        ).call()
 
         erc721.approve(new_account.address, token_id, erc721.account)
-        erc721.transfer_from(erc721.account.address, new_account.address, token_id, new_account)
+        erc721.transfer_from(
+            erc721.account.address, new_account.address, token_id, new_account
+        )
 
-        balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
-        balance_usr2_after = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_after = erc721.contract.functions.balanceOf(
+            erc721.account.address
+        ).call()
+        balance_usr2_after = erc721.contract.functions.balanceOf(
+            new_account.address
+        ).call()
 
         assert balance_usr1_after - balance_usr1_before == -1
         assert balance_usr2_after - balance_usr2_before == 1
 
     def test_approve_for_owner(self, erc721, token_id):
-        with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.APPROVAL_TO_OWNER_ERC721.value):
+        with pytest.raises(
+            web3.exceptions.ContractLogicError,
+            match=ErrorMessage.APPROVAL_TO_OWNER_ERC721.value,
+        ):
             erc721.approve(erc721.account.address, token_id, erc721.account)
 
     def test_approve_incorrect_token(self, erc721):
         token_id = random.randint(0, 99999999999)
-        with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_TOKEN_ERC721.value):
+        with pytest.raises(
+            web3.exceptions.ContractLogicError,
+            match=ErrorMessage.INVALID_TOKEN_ERC721.value,
+        ):
             erc721.approve(erc721.account.address, token_id, erc721.account)
 
     @pytest.mark.parametrize(*INCORRECT_ADDRESS_PARAMS)
-    def test_approve_incorrect_address(self, erc721, token_id, block_len, expected_exception):
+    def test_approve_incorrect_address(
+        self, erc721, token_id, block_len, expected_exception
+    ):
         block_len = gen_hash_of_block(block_len)
         with pytest.raises(expected_exception):
             erc721.approve(block_len, token_id, erc721.account)
 
     def test_approve_no_owner(self, erc721, token_id, new_account):
         with pytest.raises(
-            web3.exceptions.ContractLogicError, match=ErrorMessage.APPROVE_CALLER_IS_NOT_OWNER_ERC721.value
+            web3.exceptions.ContractLogicError,
+            match=ErrorMessage.APPROVE_CALLER_IS_NOT_OWNER_ERC721.value,
         ):
             erc721.approve(new_account.address, token_id, new_account)
 
@@ -218,37 +290,67 @@ class TestERC721(BaseMixin):
             erc721.approve(new_account.address, token_id, erc721.account, **param)
 
     def test_safeTransferFrom_to_user(self, erc721, token_id, new_account):
-        balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
-        balance_usr2_before = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_before = erc721.contract.functions.balanceOf(
+            erc721.account.address
+        ).call()
+        balance_usr2_before = erc721.contract.functions.balanceOf(
+            new_account.address
+        ).call()
 
-        erc721.safe_transfer_from(erc721.account.address, new_account.address, token_id, erc721.account)
+        erc721.safe_transfer_from(
+            erc721.account.address, new_account.address, token_id, erc721.account
+        )
 
-        balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
-        balance_usr2_after = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_after = erc721.contract.functions.balanceOf(
+            erc721.account.address
+        ).call()
+        balance_usr2_after = erc721.contract.functions.balanceOf(
+            new_account.address
+        ).call()
 
         assert balance_usr1_after - balance_usr1_before == -1
         assert balance_usr2_after - balance_usr2_before == 1
 
     def test_safeTransferFrom_to_contract(self, erc721, token_id, nft_receiver):
-        balance_usr_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
-        balance_contract_before = erc721.contract.functions.balanceOf(nft_receiver.address).call()
+        balance_usr_before = erc721.contract.functions.balanceOf(
+            erc721.account.address
+        ).call()
+        balance_contract_before = erc721.contract.functions.balanceOf(
+            nft_receiver.address
+        ).call()
 
-        erc721.safe_transfer_from(erc721.account.address, nft_receiver.address, token_id, erc721.account)
+        erc721.safe_transfer_from(
+            erc721.account.address, nft_receiver.address, token_id, erc721.account
+        )
 
-        balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
-        balance_contract_after = erc721.contract.functions.balanceOf(nft_receiver.address).call()
+        balance_usr1_after = erc721.contract.functions.balanceOf(
+            erc721.account.address
+        ).call()
+        balance_contract_after = erc721.contract.functions.balanceOf(
+            nft_receiver.address
+        ).call()
 
         assert balance_usr1_after - balance_usr_before == -1
         assert balance_contract_after - balance_contract_before == 1
 
     def test_safeTransferFrom_with_data(self, erc721, token_id, nft_receiver):
-        balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
-        balance_usr2_before = erc721.contract.functions.balanceOf(nft_receiver.address).call()
+        balance_usr1_before = erc721.contract.functions.balanceOf(
+            erc721.account.address
+        ).call()
+        balance_usr2_before = erc721.contract.functions.balanceOf(
+            nft_receiver.address
+        ).call()
         data = generate_text(max_len=100).encode("utf-8")
-        erc721.safe_transfer_from(erc721.account.address, nft_receiver.address, token_id, erc721.account, data)
+        erc721.safe_transfer_from(
+            erc721.account.address, nft_receiver.address, token_id, erc721.account, data
+        )
 
-        balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
-        balance_usr2_after = erc721.contract.functions.balanceOf(nft_receiver.address).call()
+        balance_usr1_after = erc721.contract.functions.balanceOf(
+            erc721.account.address
+        ).call()
+        balance_usr2_after = erc721.contract.functions.balanceOf(
+            nft_receiver.address
+        ).call()
 
         nft_receiver_data = nft_receiver.functions.contractData().call()
 
@@ -256,9 +358,19 @@ class TestERC721(BaseMixin):
         assert balance_usr1_after - balance_usr1_before == -1
         assert balance_usr2_after - balance_usr2_before == 1
 
-    def test_safeTransferFrom_to_invalid_contract(self, erc721, token_id, invalid_nft_receiver):
-        with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_RECEIVER_ERC721.value):
-            erc721.safe_transfer_from(erc721.account.address, invalid_nft_receiver.address, token_id, erc721.account)
+    def test_safeTransferFrom_to_invalid_contract(
+        self, erc721, token_id, invalid_nft_receiver
+    ):
+        with pytest.raises(
+            web3.exceptions.ContractLogicError,
+            match=ErrorMessage.INVALID_RECEIVER_ERC721.value,
+        ):
+            erc721.safe_transfer_from(
+                erc721.account.address,
+                invalid_nft_receiver.address,
+                token_id,
+                erc721.account,
+            )
 
     def test_safeMint_to_user(self, erc721):
         seed = gen_hash_of_block(32)
@@ -286,7 +398,10 @@ class TestERC721(BaseMixin):
     def test_safeMint_to_invalid_contract(self, erc721, invalid_nft_receiver):
         seed = gen_hash_of_block(32)
         uri = generate_text(min_len=10, max_len=200)
-        with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_RECEIVER_ERC721.value):
+        with pytest.raises(
+            web3.exceptions.ContractLogicError,
+            match=ErrorMessage.INVALID_RECEIVER_ERC721.value,
+        ):
             erc721.safe_mint(seed, invalid_nft_receiver.address, uri)
 
     def test_setApprovalForAll(self, erc721, new_account):
@@ -296,56 +411,92 @@ class TestERC721(BaseMixin):
             uri = generate_text(min_len=10, max_len=200)
             tokens.append(erc721.mint(seed, erc721.account.address, uri))
 
-        balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
-        balance_usr2_before = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_before = erc721.contract.functions.balanceOf(
+            erc721.account.address
+        ).call()
+        balance_usr2_before = erc721.contract.functions.balanceOf(
+            new_account.address
+        ).call()
 
         erc721.set_approval_for_all(new_account.address, True, erc721.account)
-        erc721.transfer_from(erc721.account.address, new_account.address, tokens[0], new_account)
+        erc721.transfer_from(
+            erc721.account.address, new_account.address, tokens[0], new_account
+        )
 
         erc721.set_approval_for_all(new_account.address, False, erc721.account)
-        with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.NOT_TOKEN_OWNER_ERC721.value):
-            erc721.transfer_from(erc721.account.address, new_account.address, tokens[1], new_account)
+        with pytest.raises(
+            web3.exceptions.ContractLogicError,
+            match=ErrorMessage.NOT_TOKEN_OWNER_ERC721.value,
+        ):
+            erc721.transfer_from(
+                erc721.account.address, new_account.address, tokens[1], new_account
+            )
 
-        balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
-        balance_usr2_after = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_after = erc721.contract.functions.balanceOf(
+            erc721.account.address
+        ).call()
+        balance_usr2_after = erc721.contract.functions.balanceOf(
+            new_account.address
+        ).call()
 
         assert balance_usr1_before - balance_usr1_after == 1
         assert balance_usr2_before - balance_usr2_after == -1
 
     @pytest.mark.parametrize(*INCORRECT_ADDRESS_PARAMS)
-    def test_setApprovalForAll_incorrect_address(self, erc721, block_len, expected_exception):
+    def test_setApprovalForAll_incorrect_address(
+        self, erc721, block_len, expected_exception
+    ):
         block_len = gen_hash_of_block(block_len)
         with pytest.raises(expected_exception):
             erc721.set_approval_for_all(block_len, True, erc721.account)
 
     def test_setApprovalForAll_approve_to_caller(self, erc721, token_id):
-        with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.APPROVE_TO_CALLER_ERC721.value):
+        with pytest.raises(
+            web3.exceptions.ContractLogicError,
+            match=ErrorMessage.APPROVE_TO_CALLER_ERC721.value,
+        ):
             erc721.set_approval_for_all(erc721.account.address, True, erc721.account)
 
     @pytest.mark.parametrize(*NOT_ENOUGH_GAS_PARAMS)
-    def test_setApprovalForAll_no_enough_gas(self, erc721, token_id, new_account, param, msg):
+    def test_setApprovalForAll_no_enough_gas(
+        self, erc721, token_id, new_account, param, msg
+    ):
         with pytest.raises(ValueError, match=msg):
-            erc721.set_approval_for_all(new_account.address, True, erc721.account, **param)
+            erc721.set_approval_for_all(
+                new_account.address, True, erc721.account, **param
+            )
 
     def test_isApprovedForAll(self, erc721, token_id, new_account):
         erc721.set_approval_for_all(new_account.address, True, erc721.account)
-        is_approved = erc721.contract.functions.isApprovedForAll(erc721.account.address, new_account.address).call()
+        is_approved = erc721.contract.functions.isApprovedForAll(
+            erc721.account.address, new_account.address
+        ).call()
         assert is_approved
         erc721.set_approval_for_all(new_account.address, False, erc721.account)
-        is_approved = erc721.contract.functions.isApprovedForAll(erc721.account.address, new_account.address).call()
+        is_approved = erc721.contract.functions.isApprovedForAll(
+            erc721.account.address, new_account.address
+        ).call()
         assert not is_approved
 
     @pytest.mark.parametrize(*INCORRECT_ADDRESS_PARAMS)
-    def test_isApprovedForAll_incorrect_owner_address(self, erc721, block_len, expected_exception):
+    def test_isApprovedForAll_incorrect_owner_address(
+        self, erc721, block_len, expected_exception
+    ):
         block_len = gen_hash_of_block(block_len)
         with pytest.raises(expected_exception):
-            erc721.contract.functions.isApprovedForAll(block_len, erc721.account.address).call()
+            erc721.contract.functions.isApprovedForAll(
+                block_len, erc721.account.address
+            ).call()
 
     @pytest.mark.parametrize(*INCORRECT_ADDRESS_PARAMS)
-    def test_isApprovedForAll_incorrect_operator_address(self, erc721, block_len, expected_exception):
+    def test_isApprovedForAll_incorrect_operator_address(
+        self, erc721, block_len, expected_exception
+    ):
         block_len = gen_hash_of_block(block_len)
         with pytest.raises(expected_exception):
-            erc721.contract.functions.isApprovedForAll(erc721.account.address, block_len).call()
+            erc721.contract.functions.isApprovedForAll(
+                erc721.account.address, block_len
+            ).call()
 
     def test_getApproved(self, erc721, token_id, new_account):
         erc721.approve(new_account.address, token_id, erc721.account)
@@ -354,21 +505,29 @@ class TestERC721(BaseMixin):
 
     def test_getApproved_incorrect_token(self, erc721):
         token_id = random.randint(0, 99999999999)
-        with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_TOKEN_ERC721.value):
+        with pytest.raises(
+            web3.exceptions.ContractLogicError,
+            match=ErrorMessage.INVALID_TOKEN_ERC721.value,
+        ):
             erc721.contract.functions.getApproved(token_id).call()
-
 
     @pytest.mark.xfail(reason="NDEV-1333")
     def test_transferSolanaFrom(self, erc721, token_id, sol_client, solana_account):
         acc = solana_account
-        token_mint = PublicKey(base58.b58encode(token_id.to_bytes(32, "big")).decode("utf-8"))
+        token_mint = PublicKey(
+            base58.b58encode(token_id.to_bytes(32, "big")).decode("utf-8")
+        )
         trx = Transaction()
-        trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))
+        trx.add(
+            create_associated_token_account(acc.public_key, acc.public_key, token_mint)
+        )
         opts = TxOpts(skip_preflight=False, skip_confirmation=False)
         sol_client.send_transaction(trx, acc, opts=opts)
         solana_address = bytes(get_associated_token_address(acc.public_key, token_mint))
 
-        erc721.transfer_solana_from(erc721.account.address, solana_address, token_id, erc721.account)
+        erc721.transfer_solana_from(
+            erc721.account.address, solana_address, token_id, erc721.account
+        )
         opts = TokenAccountOpts(token_mint)
 
         wait_condition(
@@ -379,18 +538,23 @@ class TestERC721(BaseMixin):
             )
             > 0
         )
-        token_data = sol_client.get_token_accounts_by_owner_json_parsed(acc.public_key, opts).value[0]
+        token_data = sol_client.get_token_accounts_by_owner_json_parsed(
+            acc.public_key, opts
+        ).value[0]
         token_amount = token_data.account.data.parsed["info"]["tokenAmount"]
         assert int(token_amount["amount"]) == 1
         assert int(token_amount["decimals"]) == 0
 
 
-@allure.story("Basic: multiple actions tests for multipleActionsERC721 contract")
+@allure.feature("ERC Verifications")
+@allure.story("ERC721: Tests for multiple actions in one transaction")
 class TestMultipleActionsForERC721(BaseMixin):
     def make_tx_object(self):
         tx = {
             "from": self.sender_account.address,
-            "nonce": self.web3_client.eth.get_transaction_count(self.sender_account.address),
+            "nonce": self.web3_client.eth.get_transaction_count(
+                self.sender_account.address
+            ),
             "gasPrice": self.web3_client.gas_price(),
         }
         return tx
@@ -404,14 +568,18 @@ class TestMultipleActionsForERC721(BaseMixin):
         user_balance_before = contract.functions.balance(acc.address).call()
 
         tx = self.make_tx_object()
-        instruction_tx = contract.functions.mintTransfer(seed, uri, acc.address).buildTransaction(tx)
+        instruction_tx = contract.functions.mintTransfer(
+            seed, uri, acc.address
+        ).buildTransaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         contract_balance = contract.functions.contractBalance().call()
         user_balance = contract.functions.balance(acc.address).call()
 
         assert user_balance == user_balance_before + 1, "User balance is not correct"
-        assert contract_balance == contract_balance_before, "Contract balance is not correct"
+        assert (
+            contract_balance == contract_balance_before
+        ), "Contract balance is not correct"
 
     def test_transfer_mint(self, multiple_actions_erc721):
         acc, contract = multiple_actions_erc721
@@ -429,14 +597,18 @@ class TestMultipleActionsForERC721(BaseMixin):
         tx = self.make_tx_object()
         seed = gen_hash_of_block(32)
         uri = generate_text(min_len=10, max_len=200)
-        instruction_tx = contract.functions.transferMint(acc.address, seed, token_id, uri).buildTransaction(tx)
+        instruction_tx = contract.functions.transferMint(
+            acc.address, seed, token_id, uri
+        ).buildTransaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         contract_balance = contract.functions.contractBalance().call()
         user_balance = contract.functions.balance(acc.address).call()
 
         assert user_balance == user_balance_before + 1, "User balance is not correct"
-        assert contract_balance == contract_balance_before + 1, "Contract balance is not correct"
+        assert (
+            contract_balance == contract_balance_before + 1
+        ), "Contract balance is not correct"
 
     def test_mint_mint_transfer_transfer(self, multiple_actions_erc721):
         acc, contract = multiple_actions_erc721
@@ -458,9 +630,13 @@ class TestMultipleActionsForERC721(BaseMixin):
         user_balance = contract.functions.balance(acc.address).call()
 
         assert user_balance == user_balance_before + 2, "User balance is not correct"
-        assert contract_balance == contract_balance_before, "Contract balance is not correct"
+        assert (
+            contract_balance == contract_balance_before
+        ), "Contract balance is not correct"
 
-    def test_mint_mint_transfer_transfer_different_accounts(self, multiple_actions_erc721, new_account):
+    def test_mint_mint_transfer_transfer_different_accounts(
+        self, multiple_actions_erc721, new_account
+    ):
         acc, contract = multiple_actions_erc721
 
         contract_balance_before = contract.functions.contractBalance().call()
@@ -481,6 +657,12 @@ class TestMultipleActionsForERC721(BaseMixin):
         user_1_balance = contract.functions.balance(acc.address).call()
         user_2_balance = contract.functions.balance(new_account.address).call()
 
-        assert user_1_balance == user_1_balance_before + 1, "User 1 balance is not correct"
-        assert user_2_balance == user_2_balance_before + 1, "User 2 balance is not correct"
-        assert contract_balance == contract_balance_before, "Contract balance is not correct"
+        assert (
+            user_1_balance == user_1_balance_before + 1
+        ), "User 1 balance is not correct"
+        assert (
+            user_2_balance == user_2_balance_before + 1
+        ), "User 2 balance is not correct"
+        assert (
+            contract_balance == contract_balance_before
+        ), "Contract balance is not correct"

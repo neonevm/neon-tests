@@ -1,6 +1,9 @@
 from enum import Enum
 
 
+LAMPORT_PER_SOL = 1_000_000_000
+
+
 class Unit(Enum):
     WEI = "wei"
     KWEI = "kwei"
@@ -22,7 +25,7 @@ class InputTestConstants(Enum):
     SAMPLE_AMOUNT = 0.5
     ROUND_DIGITS = 3
 
-    def get_transfer_amount(self) -> int:
+    def get_transfer_amount(self) -> float:
         return self.DEFAULT_TRANSFER_AMOUNT.value
 
     def get_default_initial_amount(self) -> int:

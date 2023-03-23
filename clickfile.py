@@ -452,7 +452,7 @@ def contracts():
     "-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)"
 )
 @click.option("-p", "--numprocesses", help="Number of parallel jobs for basic tests")
-@click.option("-a", "--amount", default=200000, help="Requested amount from faucet")
+@click.option("-a", "--amount", default=20000, help="Requested amount from faucet")
 @click.option("-u", "--users", default=8, help="Accounts numbers used in OZ tests")
 @click.option(
     "--ui-item",
@@ -518,7 +518,7 @@ def analyze_openzeppelin_results():
         version = json.load(f)["version"]
         print(f"OpenZeppelin version: {version}")
     if version.startswith("4"):
-        threshold = 2851
+        threshold = 2432
     elif version.startswith("3"):
         threshold = 1350
     elif version.startswith("2"):

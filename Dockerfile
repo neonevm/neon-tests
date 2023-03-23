@@ -16,8 +16,8 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # Install common dependencies
 RUN apt update && apt install -y software-properties-common python-dev curl git && \
-# Install latest Node.js
-curl -fsSL https://deb.nodesource.com/setup_current.x | bash - && \
+# Install 18.x Node.js
+curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
 apt install -y nodejs && \
 # Install py3.8 from deadsnakes repository and pip from standard ubuntu packages
 add-apt-repository ppa:deadsnakes/ppa && apt update && \
@@ -48,3 +48,7 @@ git -C compatibility/openzeppelin-contracts checkout origin/${OZ_BRANCH}  && \
 # Install oz tests requirements
 python3 clickfile.py requirements -d devel && \
 npm install --save-dev hardhat
+
+RUN cd compatibility/openzeppelin-contracts npm set audit false
+RUN cd compatibility/openzeppelin-contracts && npm ci
+RUN cd compatibility/openzeppelin-contracts && npm run compile

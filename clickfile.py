@@ -197,7 +197,6 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         subprocess.check_call(
             "git submodule init && git submodule update", shell=True, cwd=cwd
         )
-    subprocess.check_call("npx hardhat compile", shell=True, cwd=cwd)
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
     keys_env = [
         faucet_cli.prepare_wallets_with_balance(
@@ -390,16 +389,6 @@ def install_ui_requirements():
         subprocess.check_call(cmd, shell=True)
 
 
-def install_oz_requirements():
-    cwd = pathlib.Path().absolute() / "compatibility/openzeppelin-contracts"
-    subprocess.check_call("npm set audit false", shell=True, cwd=cwd.as_posix())
-    if list(cwd.glob("*lock*")):
-        cmd = "npm ci"
-    else:
-        cmd = "npm install npm@latest -g"
-    subprocess.check_call(cmd, shell=True, cwd=cwd.as_posix())
-
-
 @click.group()
 def cli():
     pass
@@ -417,8 +406,6 @@ def cli():
 def requirements(dep):
     if dep in ["devel", "python"]:
         install_python_requirements()
-    if dep in ["devel", "oz"]:
-        install_oz_requirements()
     if dep == "ui":
         install_ui_requirements()
 

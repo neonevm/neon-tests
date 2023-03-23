@@ -388,6 +388,15 @@ def install_ui_requirements():
             )
         subprocess.check_call(cmd, shell=True)
 
+def install_oz_requirements():
+    cwd = pathlib.Path().absolute() / "compatibility/openzeppelin-contracts"
+    subprocess.check_call("npm set audit false", shell=True, cwd=cwd.as_posix())
+    if list(cwd.glob("*lock*")):
+        cmd = "npm ci"
+    else:
+        cmd = "npm install npm@latest -g"
+    subprocess.check_call(cmd, shell=True, cwd=cwd.as_posix())
+
 
 @click.group()
 def cli():

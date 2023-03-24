@@ -29,7 +29,6 @@ contract ERC173 is IERC173 {
     }
 
     function transferOwnership(address newOwner) external override onlyOwner {
-        require(newOwner != address(0), "Invalid address");
         emit OwnershipTransferred(_owner, newOwner);
         _owner = newOwner;
     }
@@ -37,4 +36,18 @@ contract ERC173 is IERC173 {
     function owner() external view override returns (address) {
         return _owner;
     }
+}
+
+contract ERC173Caller {
+    ERC173 erc173;
+    address private erc173_address;
+
+    constructor(address _erc173_address) {
+        erc173_address = _erc173_address;
+    }
+
+    function transferOwnership(address newOwner) external {
+        address(erc173_address).call(abi.encodeWithSignature("transferOwnership(address)", newOwner));
+    }
+
 }

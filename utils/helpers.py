@@ -14,10 +14,6 @@ from pythclient.pythaccounts import PythPriceAccount
 from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP_ENDPOINT
 
 
-NEON_EVM_LOADER_ID = 'eeLSJgWzzxrqKv1UxtRVVH8FX3qCQWUs9QuAjJpETGU'
-SEED_VERSION = 0x03
-
-
 def get_sol_price() -> float:
     """Get SOL price from Solana mainnet"""
 
@@ -103,8 +99,3 @@ def wait_condition(func_cond, timeout_sec=15, delay=0.5):
             print(f"Error during waiting: {e}")
         time.sleep(delay)
     return True
-
-def ether_to_program(ether_key: str):
-    key_buffer = bytes(base64.b64decode(ether_key[2:]))
-    seed = [bytes([SEED_VERSION]), key_buffer]
-    return PublicKey.find_program_address(seed, PublicKey(NEON_EVM_LOADER_ID))[0]

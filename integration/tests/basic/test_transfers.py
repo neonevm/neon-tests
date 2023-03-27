@@ -16,6 +16,7 @@ from utils.helpers import ether_to_program, gen_hash_of_block
 
 U64_MAX = 18_446_744_073_709_551_615
 DEFAULT_ERC20_BALANCE = 1000
+NEON_EVM_LOADER_ID = 'eeLSJgWzzxrqKv1UxtRVVH8FX3qCQWUs9QuAjJpETGU'
 
 GAS_LIMIT_AND_PRICE_DATA = (
     [1, None, ErrorMessage.GAS_LIMIT_REACHED.value],
@@ -466,7 +467,8 @@ class TestTransfer(BaseMixin):
     def test_transfer_neon_from_solana_to_neon(self, sol_client, new_account, solana_account):
         """Transfer Solana -> Neon"""
         amount = 0.1
-        neon_wallet = ether_to_program(new_account.address)
+        neon_wallet = sol_client.get_neon_account_address(
+            new_account.address, NEON_EVM_LOADER_ID)
         balance_before = sol_client.get_balance(neon_wallet).value
 
         full_amount = int(amount * 10 ** 9)
@@ -474,27 +476,31 @@ class TestTransfer(BaseMixin):
 
         balance_after = sol_client.get_balance(neon_wallet).value
         assert balance_before == balance_after - full_amount
-
 
     def test_transfer_neon_from_solana_to_neon_zero_balance(self, sol_client, new_account_zero_balance, solana_account):
         """Transfer SOL from Solana to new Neon account with zero balance"""
         amount = 0.1
-        assert self.get_balance_from_wei(new_account_zero_balance.address) == 0.0
+        assert self.get_balance_from_wei(
+            new_account_zero_balance.address) == 0.0
 
-        neon_wallet = ether_to_program(new_account_zero_balance.address)
+        neon_wallet = sol_client.get_neon_account_address(
+            new_account_zero_balance.address, NEON_EVM_LOADER_ID)
         balance_before = sol_client.get_balance(neon_wallet).value
-        sol_balance_before = sol_client.get_balance(solana_account.public_key).value
+        sol_balance_before = sol_client.get_balance(
+            solana_account.public_key).value
 
         full_amount = int(amount * 10 ** 9)
         sol_client.send_sol(solana_account, neon_wallet, full_amount)
 
-        assert self.get_balance_from_wei(new_account_zero_balance.address) > 0.0
+        assert self.get_balance_from_wei(
+            new_account_zero_balance.address) > 0.0
 
         balance_after = sol_client.get_balance(neon_wallet).value
-        sol_balance_after = sol_client.get_balance(solana_account.public_key).value
+        sol_balance_after = sol_client.get_balance(
+            solana_account.public_key).value
         assert balance_before == balance_after - full_amount
         assert sol_balance_before > sol_balance_after + full_amount
-        
+
 
 @allure.feature("Ethereum compatibility")
 @allure.story("Verify transactions validation")

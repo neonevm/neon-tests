@@ -52,7 +52,7 @@ class SolanaClient(solana.rpc.api.Client):
             raise AssertionError(f"Balance not changed in account {to}")
 
     def get_neon_account_address(self, neon_account_address: str, evm_loader_id: str) -> PublicKey:
-        neon_account_addressbytes = bytes.fromhex(neon_account_address[2:])
+        neon_account_addressby tes = bytes.fromhex(neon_account_address[2:])
         return PublicKey.find_program_address([self.account_seed_version, neon_account_addressbytes],
                                               PublicKey(evm_loader_id))[0]
 

@@ -83,9 +83,12 @@ class ERC20SPLTasksSet(NeonProxyTasksSet):
         """Send ERC20 tokens"""
         contract = self.user.environment.erc20_one["contract"]
         recipient = random.choice(self.user.environment.shared.accounts)
-        return self.web3_client.send_erc20(
+        receipt = self.web3_client.send_erc20(
             self.account, recipient, 1, contract.address, abi=contract.abi
         )
+        receipt = dict(receipt)
+        receipt["contract"] = {"address": contract.address}
+        return receipt
 
 
 class ERC20User(User):

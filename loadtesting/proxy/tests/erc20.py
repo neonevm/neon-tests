@@ -74,6 +74,7 @@ class ERC20TasksSet(NeonProxyTasksSet):
             self._buffer.setdefault(recipient.address, {}).update(
                 {contract.address: recipient_contract}
             )
+            tx_receipt["contract"] = {"address": contract.address}
         return tx_receipt
 
 

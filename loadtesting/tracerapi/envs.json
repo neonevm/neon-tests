@@ -1,8 +1,8 @@
 {
   "neon-rpc": {
     "evm_loader": "eeLSJgWzzxrqKv1UxtRVVH8FX3qCQWUs9QuAjJpETGU",
-    "proxy_url": "https://graph.neontest.xyz/neon-rpc",
-    "neon_rpc": "https://graph.neontest.xyz/neon-rpc",
+    "proxy_url": "https://graph2.neontest.xyz/neon-rpc",
+    "neon_rpc": "https://graph2.neontest.xyz/neon-rpc",
     "network_id": 245022926,
     "solana_url": "http://neon.devnet.rpcpool.com/c7710a7b633cbadb9be9900c7946/",
     "faucet_url": "http://3.13.67.238/request_neon",

@@ -4,7 +4,9 @@ A main repository for all types of tests in NEON for proxy and evm.
 
 ## How to use
 
-At first you need install a main dependency for CLI utility:
+At first you need to setup a Python 3 virtualenv, and also need to have npm installed, and be able to install packages globally on it. You'll also need to install solc.
+
+Then you need install a main dependency for CLI utility:
 
 ```bash
 pip3 install click==8.0.3
@@ -23,14 +25,14 @@ This file contains a lot of utilities to work with this repository such as:
 3. prepare data and stand for run tests
 
 
-##Install dependencies
+## Install dependencies
 
 Please use clickfile.py to install deps because our web3 has conflicts with solana package and this problem resolved in:
 ```bash
 ./clickfile.py requirements
 ```
 
-##Download test contracts
+## Download test contracts
 
 To download test contracts from the neon-evm repo you need to use:
 
@@ -38,7 +40,7 @@ To download test contracts from the neon-evm repo you need to use:
 ./clickfile.py contracts
 ```
 
-##Run OpenZeppelin tests
+## Run OpenZeppelin tests
 
 To run OpenZeppelin tests just use next command:
 ```bash
@@ -46,7 +48,7 @@ To run OpenZeppelin tests just use next command:
 ```
 
 
-##Run tests manual
+## Run tests manual
 
 You can run all tests manual uif know which framework it uses. For example economy tests:
 
@@ -54,7 +56,7 @@ You can run all tests manual uif know which framework it uses. For example econo
 py.test integration/tests/economy/test_economics.py
 ```
 
-##Useful options
+## Useful options
 
 - --network - which network uses for run tests (from file envs.json)
 - --envs - change file name with networks

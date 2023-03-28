@@ -74,6 +74,7 @@ class ERC20TasksSet(NeonProxyTasksSet):
             self._buffer.setdefault(recipient.address, {}).update(
                 {contract.address: recipient_contract}
             )
+            tx_receipt["contract"] = {"address": contract.address}
         return tx_receipt
 
 
@@ -115,7 +116,7 @@ class ERC20OneContractTasksSet(NeonProxyTasksSet):
     def on_start(self) -> None:
         super().on_start()
         contract = self.user.environment.erc20_one["contract"]
-        print(
+        LOG.debug(
             f"Main user {self.user.environment.erc20_one['user'].address} balance: "
             f"{contract.functions.balanceOf(self.user.environment.erc20_one['user'].address).call()}"
         )
@@ -130,7 +131,7 @@ class ERC20OneContractTasksSet(NeonProxyTasksSet):
     @task
     def task_send_erc20(self):
         """Send ERC20 tokens"""
-        print("Send erc20 ", self.account.address)
+        LOG.debug("Send erc20 ", self.account.address)
         contract = self.user.environment.erc20_one["contract"]
         recipient = random.choice(self.user.environment.shared.accounts)
         self.web3_client.send_erc20(

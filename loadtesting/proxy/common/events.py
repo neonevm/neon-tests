@@ -21,16 +21,14 @@ from locust.runners import WorkerRunner
 from utils import operator
 from utils.web3client import NeonWeb3Client
 
+from . import env
+
 LOG = logging.getLogger(__name__)
 
 
-@dataclass
-class NeonGlobalEnv:
-    accounts = []
-    counter_contracts = []
-    erc20_contracts = {}
-    erc20_wrapper_contracts = {}
-    increase_storage_contracts = []
+def get_token_balance(op: operator.Operator) -> tp.Dict:
+    """Return tokens balance"""
+    return dict(neon=op.get_neon_balance(), sol=op.get_solana_balance())
 
 
 def execute_before(*attrs) -> tp.Callable:
@@ -49,42 +47,6 @@ def execute_before(*attrs) -> tp.Callable:
     return ext_runner
 
 
-@events.init_command_line_parser.add_listener
-def arg_parser(parser):
-    """Add custom command line arguments to Locust"""
-    parser.add_argument(
-        "--credentials",
-        type=str,
-        env_var="NEON_CRED",
-        default="envs.json",
-        help="Relative path to environment credentials file.",
-    )
-
-
-@events.test_start.add_listener
-def make_env_preparation(environment, **kwargs):
-    neon = NeonGlobalEnv()
-    environment.shared = neon
-
-
-@events.test_start.add_listener
-def load_credentials(environment, **kwargs):
-    """Test start event handler"""
-    base_path = pathlib.Path(__file__).parent.parent.parent.parent
-    path = base_path / environment.parsed_options.credentials
-    network = environment.parsed_options.host or environment.host
-    if not (path.exists() and path.is_file()):
-        path = base_path / "envs.json"
-    with open(path, "r") as fp:
-        f = json.load(fp)
-        environment.credentials = f[network]
-
-
-def get_token_balance(op: operator.Operator) -> tp.Dict:
-    """Return tokens balance"""
-    return dict(neon=op.get_neon_balance(), sol=op.get_solana_balance())
-
-
 @events.test_start.add_listener
 def operator_economy_pre_balance(environment, **kwargs):
     if isinstance(environment.runner, WorkerRunner):
@@ -98,7 +60,9 @@ def operator_economy_pre_balance(environment, **kwargs):
         environment.credentials["spl_neon_mint"],
         environment.credentials["operator_keys"],
         web3_client=NeonWeb3Client(
-            environment.credentials["proxy_url"], environment.credentials["network_id"], session=requests.Session()
+            environment.credentials["proxy_url"],
+            environment.credentials["network_id"],
+            session=requests.Session(),
         ),
     )
     environment.op = op
@@ -132,8 +96,11 @@ class LocustEventHandler:
         self._request_event = request_event
 
     def init_event(
-            self, task_id: str, request_type: str, task_name: tp.Optional[str] = "",
-            start_time: tp.Optional[float] = None
+        self,
+        task_id: str,
+        request_type: str,
+        task_name: tp.Optional[str] = "",
+        start_time: tp.Optional[float] = None,
     ) -> None:
         """Added data to buffer"""
         params = dict(
@@ -159,7 +126,10 @@ class LocustEventHandler:
             context={},
         )
         self._request_event.fire(**request_meta)
-        LOG.debug("- %s : %s - %sms" % (event["request_type"], event["event_type"], total_time))
+        LOG.debug(
+            "- %s : %s - %sms"
+            % (event["request_type"], event["event_type"], total_time)
+        )
 
 
 locust_events_handler = LocustEventHandler(events.request)
@@ -181,7 +151,11 @@ def statistics_collector(name: tp.Optional[str] = None) -> tp.Callable:
             response = None
             try:
                 response = func(*args, **kwargs)
-                event = dict(response=response, response_length=sys.getsizeof(response), event_type="success")
+                event = dict(
+                    response=response,
+                    response_length=sys.getsizeof(response),
+                    event_type="success",
+                )
             except Exception as err:
                 event = dict(event_type="failure", exception=err)
                 locust_events_handler.buffer[task_id].update(event)
@@ -210,7 +184,11 @@ def save_transaction(transactions: tp.List[str]) -> tp.Callable:
                 if tx_id:
                     transactions.append(f"{tx_id[0]}")
                 raise
-            if isinstance(result, AttributeDict) or (isinstance(result, tuple) and len(result) == 2 and isinstance(result[1], AttributeDict)):
+            if isinstance(result, AttributeDict) or (
+                isinstance(result, tuple)
+                and len(result) == 2
+                and isinstance(result[1], AttributeDict)
+            ):
                 if isinstance(result, tuple) and len(result) == 2:
                     tx = result[1]
                 else:
@@ -218,5 +196,7 @@ def save_transaction(transactions: tp.List[str]) -> tp.Callable:
                 if "transactionHash" in tx:
                     transactions.append(f'{tx["transactionHash"].hex()}')
             return result
+
         return wrap
+
     return decor

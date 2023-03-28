@@ -17,7 +17,7 @@ from utils.web3client import NeonWeb3Client
 
 @pytest.fixture(scope="function")
 def solana_associated_token_mintable_erc20(
-    erc20_spl_mintable, sol_client, solana_account
+        erc20_spl_mintable, sol_client, solana_account
 ):
     token_mint = PublicKey(erc20_spl_mintable.contract.functions.tokenMint().call())
     trx = Transaction()
@@ -97,3 +97,13 @@ def multiple_actions_erc721(web3_client, faucet):
         "multiple_actions_erc721", "0.8.10", acc, contract_name="multipleActionsERC721"
     )
     return acc, contract
+
+
+@pytest.fixture(scope="function")
+def erc173(web3_client: NeonWeb3Client, faucet, pytestconfig: Config):
+    acc = web3_client.create_account()
+    faucet.request_neon(acc.address)
+    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
+        "ERC173", "0.8.10", acc
+    )
+    return contract, acc

@@ -16,17 +16,16 @@ import requests
 import web3
 from locust import User, TaskSet, between, task, events, tag
 
+from loadtesting.proxy.common import env
 from utils import apiclient
 from utils.web3client import NeonWeb3Client
 
 LOG = logging.getLogger("neon_client")
 
-DEFAULT_NETWORK = "neon-rpc"
-ENV_FILE = pathlib.Path(__file__).parent / "envs.json"
 
 DUMPED_DATA = "dumped_data/transaction.json"  # where save dumped data
 
-NEON_RPC = os.environ.get("NEON_RPC")  # url for history endpoint proxy
+NEON_RPC = os.environ.get("NEON_TRACING_URL", "")  # url for history endpoint proxy
 
 
 class RPCType(enum.Enum):
@@ -44,48 +43,14 @@ class RPCType(enum.Enum):
 
 @dataclass
 class GlobalEnv:
-    credentials: tp.Dict = None
+    rpc_url: str = ""
     transaction_history: tp.Dict = None
-
-
-@events.init_command_line_parser.add_listener
-def arg_parser(parser):
-    """Add custom command line arguments to Locust"""
-    parser.add_argument(
-        "--credentials",
-        type=str,
-        env_var="NEON_CRED",
-        default=ENV_FILE,
-        help="Relative path to environment credentials file.",
-    )
-    parser.add_argument(
-        "--neon-rpc",
-        type=str,
-        env_var="NEON_RPC",
-        default=None,
-        help="Entry point to NEON RPC.",
-    )
 
 
 @events.test_start.add_listener
 def make_env_preparation(environment, **kwargs):
     global_env = GlobalEnv()
     environment.shared = global_env
-
-
-@events.test_start.add_listener
-def load_credentials(environment, **kwargs):
-    """Test start event handler"""
-    # load test env credentials
-    root_path = list(pathlib.Path(__file__).parents)[2]
-    path_to_credentials = root_path / environment.parsed_options.credentials
-
-    network = environment.parsed_options.host
-    if not (path_to_credentials.exists() and path_to_credentials.is_file()):
-        path_to_credentials = root_path / ENV_FILE
-    with open(path_to_credentials, "r") as fp:
-        f = json.load(fp)
-        environment.shared.credentials = f.get(network, f[DEFAULT_NETWORK])
 
 
 @events.test_start.add_listener
@@ -215,7 +180,6 @@ class BaseEthRPCATasksSet(TaskSet):
     """
 
     _rpc_client: tp.Optional[ExtJsonRPCSession] = None
-    _rpc_endpoint: tp.Optional[str] = None
     _transaction_history: tp.Optional[tp.Dict] = None
     credentials: tp.Optional[tp.Dict] = None
 
@@ -223,23 +187,17 @@ class BaseEthRPCATasksSet(TaskSet):
     def setup_class(environment: tp.Any = None) -> None:
         """Base initialization, run once for all users"""
         history_data = environment.shared.transaction_history
-        rpc_endpoint = (
-            environment.shared.credentials.get("neon_rpc", NEON_RPC)
-            or environment.parsed_options.neon_rpc
-        )
+        rpc_endpoint = NEON_RPC
+        if not NEON_RPC:
+            rpc_endpoint = environment.credentials.get("proxy_url")
+        LOG.info(f"RPC endpoint: {rpc_endpoint}")
         if not history_data:
             LOG.error(
                 f"No transaction history found `{DUMPED_DATA}` to spawn locust users, exited."
             )
-            exit()
-        elif not rpc_endpoint:
-            LOG.error(
-                f"Entry point to access Neon-RPC not found. "
-                f"Set env `NEON_RPC` or pass `neon_rpc` to {ENV_FILE} or send via command line arguments."
-            )
-            exit()
+            sys.exit(1)
         BaseEthRPCATasksSet._transaction_history = history_data
-        BaseEthRPCATasksSet._rpc_endpoint = rpc_endpoint
+        environment.shared.rpc_endpoint = rpc_endpoint
 
     def on_start(self) -> None:
         """on_start is called when a Locust start before any task is scheduled"""
@@ -251,11 +209,11 @@ class BaseEthRPCATasksSet(TaskSet):
             BaseEthRPCATasksSet._last_consumer_id += 1
             self.rpc_consumer_id = BaseEthRPCATasksSet._last_consumer_id
             self._rpc_client = ExtJsonRPCSession(
-                endpoint=self._rpc_endpoint,
+                endpoint=self.user.environment.shared.rpc_endpoint,
                 pool_size=self.user.environment.parsed_options.num_users
                 or self.user.environment.runner.target_user_count,
             )
-        self.credentials = self.user.environment.shared.credentials
+        self.credentials = self.user.environment.credentials
         LOG.info(f"Create web3 client to: {self.credentials['proxy_url']}")
         self.web3_client = NeonWeb3Client(
             self.credentials["proxy_url"],

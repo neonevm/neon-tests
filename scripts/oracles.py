@@ -10,16 +10,14 @@ account = web3_client._web3.eth.account.from_key(
 
 
 def deploy_pyth():
-    print("Deploy Pyth contract")
     contract, _ = web3_client.deploy_and_get_contract(
         "./pyth/PythOracle", "0.8.0", account=account
     )
-    print("Pyth address: ", contract.address)
+    print("Use Pyth deployed contract address for any pairs: ", contract.address)
     return contract
 
 
 def deploy_chainlink():
-    print("Deploy Chainlink")
     contract, _ = web3_client.deploy_and_get_contract(
         contract="./chainlink/ChainlinkOracle",
         version="0.8.15",
@@ -28,12 +26,13 @@ def deploy_chainlink():
             "0x502b9d5731648a1c61dcf689240e2d2c799393430d9f1d584e368ec4e5243c5f"
         ],
     )
-    print("Chainlink address: ", contract.address)
+    print(
+        "Use Chainlink deployed contract address for BTC/USD pair: ", contract.address
+    )
     return contract
 
 
 def deploy_and_get_prices():
-    print("Deploy contracts")
     pyth_contract = deploy_pyth()
     chainlink_contract = deploy_chainlink()
     for _ in range(3):

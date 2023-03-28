@@ -5,11 +5,8 @@ import random
 import string
 import time
 import typing as tp
-import base64
 
 import solcx
-from enum import Enum
-from solana.publickey import PublicKey
 from pythclient.pythaccounts import PythPriceAccount
 from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP_ENDPOINT
 

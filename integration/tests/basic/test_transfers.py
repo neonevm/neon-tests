@@ -6,13 +6,22 @@ import eth_utils
 import pytest
 import web3
 import web3.exceptions
+from _pytest.config import Config
+from solana.publickey import PublicKey
+from solana.rpc.commitment import Commitment
+from solana.rpc.types import TxOpts
+from solana.transaction import Transaction, TransactionInstruction
+from spl.token.client import Token as SplToken
+from spl.token.constants import TOKEN_PROGRAM_ID
+from spl.token.instructions import (
+    ApproveParams, approve, get_associated_token_address)
 
 import allure
 from integration.tests.basic.helpers.assert_message import (AssertMessage,
                                                             ErrorMessage)
 from integration.tests.basic.helpers.basic import AccountData, BaseMixin
 from utils.consts import InputTestConstants
-from utils.helpers import ether_to_program, gen_hash_of_block
+from utils.helpers import gen_hash_of_block
 
 U64_MAX = 18_446_744_073_709_551_615
 DEFAULT_ERC20_BALANCE = 1000
@@ -464,42 +473,63 @@ class TestTransfer(BaseMixin):
         assert balance == 0
         contractTwo.functions.depositOnContractOne(address).call()
 
-    def test_transfer_neon_from_solana_to_neon(self, sol_client, new_account, solana_account):
+    def test_transfer_neon_from_solana_to_neon(self, sol_client, new_account, solana_account, pytestconfig: Config, neon_mint):
         """Transfer Solana -> Neon"""
-        amount = 0.1
-        neon_wallet = sol_client.get_neon_account_address(
-            new_account.address, NEON_EVM_LOADER_ID)
-        balance_before = sol_client.get_balance(neon_wallet).value
-
+        amount = 1
         full_amount = int(amount * 10 ** 9)
-        sol_client.send_sol(solana_account, neon_wallet, full_amount)
-
-        balance_after = sol_client.get_balance(neon_wallet).value
-        assert balance_before == balance_after - full_amount
-
-    def test_transfer_neon_from_solana_to_neon_zero_balance(self, sol_client, new_account_zero_balance, solana_account):
-        """Transfer SOL from Solana to new Neon account with zero balance"""
-        amount = 0.1
-        assert self.get_balance_from_wei(
-            new_account_zero_balance.address) == 0.0
+        evm_loader_id = pytestconfig.environment.evm_loader
 
         neon_wallet = sol_client.get_neon_account_address(
-            new_account_zero_balance.address, NEON_EVM_LOADER_ID)
+            new_account.address, evm_loader_id)
         balance_before = sol_client.get_balance(neon_wallet).value
         sol_balance_before = sol_client.get_balance(
             solana_account.public_key).value
 
-        full_amount = int(amount * 10 ** 9)
-        sol_client.send_sol(solana_account, neon_wallet, full_amount)
+        tx = Transaction(fee_payer=solana_account.public_key)
 
-        assert self.get_balance_from_wei(
-            new_account_zero_balance.address) > 0.0
+        instruction = sol_client.get_account_v3_instruction(
+            solana_account.public_key,
+            neon_wallet,
+            new_account.address,
+            evm_loader_id)
+
+        tx.add(instruction)
+
+        spl_neon_token = SplToken(
+            self.sol_client, neon_mint, TOKEN_PROGRAM_ID, solana_account
+        )
+        associated_token_address = get_associated_token_address(
+            solana_account.public_key, neon_mint)
+
+        approve_intruction = approve(ApproveParams(
+            program_id=TOKEN_PROGRAM_ID,
+            source=associated_token_address,
+            delegate=neon_wallet,
+            owner=solana_account.public_key,
+            amount=full_amount))
+
+        tx.add(approve_intruction)
+
+        authority_pool = sol_client.get_authority_pool_address(evm_loader_id)
+        deposit_instruction = sol_client.get_deposit_instruction(
+            solana_account.public_key,
+            neon_wallet,
+            authority_pool,
+            new_account.address,
+            neon_mint,
+            evm_loader_id)
+        tx.add(deposit_instruction)
+
+        opts = TxOpts(skip_preflight=True, skip_confirmation=False)
+        sig = sol_client.send_transaction(tx, solana_account, opts=opts).value
+        resp = sol_client.confirm_transaction(sig)
+        print(resp.value)
 
         balance_after = sol_client.get_balance(neon_wallet).value
         sol_balance_after = sol_client.get_balance(
             solana_account.public_key).value
-        assert balance_before == balance_after - full_amount
-        assert sol_balance_before > sol_balance_after + full_amount
+        assert sol_balance_after == sol_balance_before - full_amount
+        assert balance_after - balance_before == full_amount
 
 
 @allure.feature("Ethereum compatibility")

@@ -1,18 +1,21 @@
 import time
+import typing as tp
 
 import solana.rpc.api
 import solders.system_program as sp
-from solana.system_program import transfer, TransferParams
-from solana.transaction import Transaction
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
-from solana.rpc.commitment import Finalized, Commitment
+from solana.rpc.commitment import Commitment, Finalized
+from solana.system_program import SYS_PROGRAM_ID, TransferParams, transfer
+from solana.transaction import AccountMeta, Transaction, TransactionInstruction
 from solders.rpc.errors import InternalErrorMessage
-import typing as tp
-
 from solders.rpc.responses import RequestAirdropResp
+from spl.token.constants import TOKEN_PROGRAM_ID
+from spl.token.instructions import get_associated_token_address
 
 from utils.helpers import wait_condition
+
+CreateAccountV03 = 0x28  # 40
 
 
 class SolanaClient(solana.rpc.api.Client):
@@ -50,6 +53,52 @@ class SolanaClient(solana.rpc.api.Client):
             time.sleep(6)
         else:
             raise AssertionError(f"Balance not changed in account {to}")
+
+    def get_account_v3_instruction(self, solana_account, neon_wallet_pda,
+                                   neon_wallet, evm_loader_id) -> TransactionInstruction:
+        keys = [
+            AccountMeta(pubkey=solana_account,
+                        is_signer=True, is_writable=True),
+            AccountMeta(pubkey=SYS_PROGRAM_ID,
+                        is_signer=False, is_writable=False),
+            AccountMeta(pubkey=neon_wallet_pda,
+                        is_signer=False, is_writable=True),
+        ]
+
+        a = bytearray(CreateAccountV03)
+        b = bytes.fromhex(neon_wallet[2:])
+        a.extend(b)
+        data = bytes(a)
+        return TransactionInstruction(
+            program_id=PublicKey(evm_loader_id),
+            keys=keys,
+            data=data)
+
+    def get_deposit_instruction(self, solana_pubkey, neon_pubkey, deposit_pubkey, neon_wallet_address, neon_mint, evm_loader_id):
+        associated_token_address = get_associated_token_address(
+            solana_pubkey, neon_mint)
+        pool_key = get_associated_token_address(deposit_pubkey, neon_mint)
+        keys = [
+            AccountMeta(pubkey=associated_token_address,
+                        is_signer=False, is_writable=True),
+            AccountMeta(pubkey=pool_key, is_signer=False, is_writable=True),
+            AccountMeta(pubkey=neon_pubkey, is_signer=False, is_writable=True),
+            AccountMeta(pubkey=TOKEN_PROGRAM_ID,
+                        is_signer=False, is_writable=False),
+            AccountMeta(pubkey=solana_pubkey,
+                        is_signer=True, is_writable=True),
+            AccountMeta(pubkey=SYS_PROGRAM_ID,
+                        is_signer=False, is_writable=False),
+        ]
+
+        a = bytearray(CreateAccountV03)
+        b = bytes.fromhex(neon_wallet_address[2:])
+        a.extend(b)
+        data = bytes(a)
+        return TransactionInstruction(
+            program_id=PublicKey(evm_loader_id),
+            keys=keys,
+            data=data)
 
     def get_neon_account_address(self, neon_account_address: str, evm_loader_id: str) -> PublicKey:
         neon_account_addressbytes = bytes.fromhex(neon_account_address[2:])

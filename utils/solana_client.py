@@ -2,7 +2,6 @@ import time
 import typing as tp
 
 import solana.rpc.api
-import solders.system_program as sp
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
 from solana.rpc.commitment import Commitment, Finalized
@@ -58,16 +57,15 @@ class SolanaClient(solana.rpc.api.Client):
 
     def transaction_send_neon(self, solana_account, neon_wallet, neon_mint, neon_account, amount, evm_loader_id):
         tx = Transaction(fee_payer=solana_account.public_key)
-
-        tx.add(self.sol_client.get_account_v3_instruction(
+        associated_token_address = get_associated_token_address(
+            solana_account.public_key, neon_mint)
+        
+        tx.add(self.get_account_v3_instruction(
             solana_account.public_key,
             neon_wallet,
             neon_account.address,
             evm_loader_id)
         )
-
-        associated_token_address = get_associated_token_address(
-            solana_account.public_key, neon_mint)
 
         tx.add(approve(ApproveParams(
             program_id=TOKEN_PROGRAM_ID,
@@ -77,10 +75,10 @@ class SolanaClient(solana.rpc.api.Client):
             amount=amount))
         )
 
-        authority_pool = self.sol_client.get_authority_pool_address(
+        authority_pool = self.get_authority_pool_address(
             evm_loader_id)
 
-        tx.add(self.sol_client.get_deposit_instruction(
+        tx.add(self.get_deposit_instruction(
             solana_account.public_key,
             neon_wallet,
             authority_pool,
@@ -101,11 +99,8 @@ class SolanaClient(solana.rpc.api.Client):
             AccountMeta(pubkey=neon_wallet_pda,
                         is_signer=False, is_writable=True),
         ]
-        
-        a = bytearray(CreateAccountV03.to_bytes((CreateAccountV03.bit_length() + 7) // 8, 'big'))
-        b = bytes.fromhex(neon_wallet[2:])
-        a.extend(b)
-        data = bytes(a)
+
+        data = data = bytes.fromhex('28') + bytes.fromhex(neon_wallet[2:])
         return TransactionInstruction(
             program_id=PublicKey(evm_loader_id),
             keys=keys,
@@ -128,10 +123,7 @@ class SolanaClient(solana.rpc.api.Client):
                         is_signer=False, is_writable=False),
         ]
 
-        a = bytearray(CreateAccountV03.to_bytes((CreateAccountV03.bit_length() + 7) // 8, 'big'))
-        b = bytes.fromhex(neon_wallet_address[2:])
-        a.extend(b)
-        data = bytes(a)
+        data = bytes.fromhex('27') + bytes.fromhex(neon_wallet_address[2:])
         return TransactionInstruction(
             program_id=PublicKey(evm_loader_id),
             keys=keys,
@@ -148,5 +140,10 @@ class SolanaClient(solana.rpc.api.Client):
             token_address = token_address[2:]
         neon_contract_addressbytes = bytes.fromhex(token_address)
         return PublicKey.find_program_address(
-            [self.account_seed_version, b"AUTH", neon_contract_addressbytes, neon_account_addressbytes],
+            [self.account_seed_version, b"AUTH",
+                neon_contract_addressbytes, neon_account_addressbytes],
             PublicKey(evm_loader_id))[0]
+
+    def get_authority_pool_address(self, evm_loader_id: str):
+        text = 'Deposit'
+        return PublicKey.find_program_address([text.encode()], PublicKey(evm_loader_id))[0]

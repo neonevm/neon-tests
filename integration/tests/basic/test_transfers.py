@@ -473,21 +473,22 @@ class TestTransfer(BaseMixin):
         assert balance == 0
         contractTwo.functions.depositOnContractOne(address).call()
 
-    def test_transfer_neon_from_solana_to_neon(self, sol_client, new_account, solana_account, pytestconfig: Config, neon_mint):
+    def test_transfer_neon_from_solana_to_neon(self, new_account, solana_account, pytestconfig: Config, neon_mint):
         """Transfer Solana -> Neon"""
-        amount = 1
+        amount = 0.1
         full_amount = int(amount * 10 ** 9)
         evm_loader_id = pytestconfig.environment.evm_loader
 
-        neon_wallet = sol_client.get_neon_account_address(
+        neon_wallet = self.sol_client.get_neon_account_address(
             new_account.address, evm_loader_id)
-        balance_before = sol_client.get_balance(neon_wallet).value
-        sol_balance_before = sol_client.get_balance(
+
+        balance_before = self.sol_client.get_balance(neon_wallet).value
+        sol_balance_before = self.sol_client.get_balance(
             solana_account.public_key).value
 
         tx = Transaction(fee_payer=solana_account.public_key)
 
-        instruction = sol_client.get_account_v3_instruction(
+        instruction = self.sol_client.get_account_v3_instruction(
             solana_account.public_key,
             neon_wallet,
             new_account.address,
@@ -495,9 +496,6 @@ class TestTransfer(BaseMixin):
 
         tx.add(instruction)
 
-        spl_neon_token = SplToken(
-            self.sol_client, neon_mint, TOKEN_PROGRAM_ID, solana_account
-        )
         associated_token_address = get_associated_token_address(
             solana_account.public_key, neon_mint)
 
@@ -510,8 +508,9 @@ class TestTransfer(BaseMixin):
 
         tx.add(approve_intruction)
 
-        authority_pool = sol_client.get_authority_pool_address(evm_loader_id)
-        deposit_instruction = sol_client.get_deposit_instruction(
+        authority_pool = self.sol_client.get_authority_pool_address(
+            evm_loader_id)
+        deposit_instruction = self.sol_client.get_deposit_instruction(
             solana_account.public_key,
             neon_wallet,
             authority_pool,
@@ -521,12 +520,13 @@ class TestTransfer(BaseMixin):
         tx.add(deposit_instruction)
 
         opts = TxOpts(skip_preflight=True, skip_confirmation=False)
-        sig = sol_client.send_transaction(tx, solana_account, opts=opts).value
-        resp = sol_client.confirm_transaction(sig)
+        sig = self.sol_client.send_transaction(
+            tx, solana_account, opts=opts).value
+        resp = self.sol_client.confirm_transaction(sig)
         print(resp.value)
 
-        balance_after = sol_client.get_balance(neon_wallet).value
-        sol_balance_after = sol_client.get_balance(
+        balance_after = self.sol_client.get_balance(neon_wallet).value
+        sol_balance_after = self.sol_client.get_balance(
             solana_account.public_key).value
         assert sol_balance_after == sol_balance_before - full_amount
         assert balance_after - balance_before == full_amount

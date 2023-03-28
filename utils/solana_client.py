@@ -64,8 +64,8 @@ class SolanaClient(solana.rpc.api.Client):
             AccountMeta(pubkey=neon_wallet_pda,
                         is_signer=False, is_writable=True),
         ]
-
-        a = bytearray(CreateAccountV03)
+        
+        a = bytearray(CreateAccountV03.to_bytes((CreateAccountV03.bit_length() + 7) // 8, 'big'))
         b = bytes.fromhex(neon_wallet[2:])
         a.extend(b)
         data = bytes(a)
@@ -91,7 +91,7 @@ class SolanaClient(solana.rpc.api.Client):
                         is_signer=False, is_writable=False),
         ]
 
-        a = bytearray(CreateAccountV03)
+        a = bytearray(CreateAccountV03.to_bytes((CreateAccountV03.bit_length() + 7) // 8, 'big'))
         b = bytes.fromhex(neon_wallet_address[2:])
         a.extend(b)
         data = bytes(a)

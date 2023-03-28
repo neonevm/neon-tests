@@ -4,7 +4,9 @@ A main repository for all types of tests in NEON for proxy and evm.
 
 ## How to use
 
-At first you need install a main dependency for CLI utility:
+At first you need to setup a Python 3 virtualenv, and also need to have npm installed, and be able to install packages globally on it. You'll also need to install solc.
+
+Then you need install a main dependency for CLI utility:
 
 ```bash
 pip3 install click==8.0.3

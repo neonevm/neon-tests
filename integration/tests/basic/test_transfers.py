@@ -13,8 +13,7 @@ from solana.rpc.types import TxOpts
 from solana.transaction import Transaction, TransactionInstruction
 from spl.token.client import Token as SplToken
 from spl.token.constants import TOKEN_PROGRAM_ID
-from spl.token.instructions import (
-    ApproveParams, approve, get_associated_token_address)
+
 
 import allure
 from integration.tests.basic.helpers.assert_message import (AssertMessage,
@@ -486,38 +485,8 @@ class TestTransfer(BaseMixin):
         sol_balance_before = self.sol_client.get_balance(
             solana_account.public_key).value
 
-        tx = Transaction(fee_payer=solana_account.public_key)
-
-        instruction = self.sol_client.get_account_v3_instruction(
-            solana_account.public_key,
-            neon_wallet,
-            new_account.address,
-            evm_loader_id)
-
-        tx.add(instruction)
-
-        associated_token_address = get_associated_token_address(
-            solana_account.public_key, neon_mint)
-
-        approve_intruction = approve(ApproveParams(
-            program_id=TOKEN_PROGRAM_ID,
-            source=associated_token_address,
-            delegate=neon_wallet,
-            owner=solana_account.public_key,
-            amount=full_amount))
-
-        tx.add(approve_intruction)
-
-        authority_pool = self.sol_client.get_authority_pool_address(
-            evm_loader_id)
-        deposit_instruction = self.sol_client.get_deposit_instruction(
-            solana_account.public_key,
-            neon_wallet,
-            authority_pool,
-            new_account.address,
-            neon_mint,
-            evm_loader_id)
-        tx.add(deposit_instruction)
+        tx = self.sol_client.transaction_send_neon(
+            solana_account, neon_wallet, neon_mint, new_account, full_amount, evm_loader_id)
 
         opts = TxOpts(skip_preflight=True, skip_confirmation=False)
         sig = self.sol_client.send_transaction(

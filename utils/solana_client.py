@@ -10,6 +10,8 @@ from solana.system_program import SYS_PROGRAM_ID, TransferParams, transfer
 from solana.transaction import AccountMeta, Transaction, TransactionInstruction
 from solders.rpc.errors import InternalErrorMessage
 from solders.rpc.responses import RequestAirdropResp
+from spl.token.instructions import (
+    ApproveParams, approve, get_associated_token_address)
 from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address
 
@@ -53,6 +55,41 @@ class SolanaClient(solana.rpc.api.Client):
             time.sleep(6)
         else:
             raise AssertionError(f"Balance not changed in account {to}")
+
+    def transaction_send_neon(self, solana_account, neon_wallet, neon_mint, neon_account, amount, evm_loader_id):
+        tx = Transaction(fee_payer=solana_account.public_key)
+
+        tx.add(self.sol_client.get_account_v3_instruction(
+            solana_account.public_key,
+            neon_wallet,
+            neon_account.address,
+            evm_loader_id)
+        )
+
+        associated_token_address = get_associated_token_address(
+            solana_account.public_key, neon_mint)
+
+        tx.add(approve(ApproveParams(
+            program_id=TOKEN_PROGRAM_ID,
+            source=associated_token_address,
+            delegate=neon_wallet,
+            owner=solana_account.public_key,
+            amount=amount))
+        )
+
+        authority_pool = self.sol_client.get_authority_pool_address(
+            evm_loader_id)
+
+        tx.add(self.sol_client.get_deposit_instruction(
+            solana_account.public_key,
+            neon_wallet,
+            authority_pool,
+            neon_account.address,
+            neon_mint,
+            evm_loader_id)
+        )
+
+        return tx
 
     def get_account_v3_instruction(self, solana_account, neon_wallet_pda,
                                    neon_wallet, evm_loader_id) -> TransactionInstruction:

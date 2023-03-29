@@ -9,10 +9,9 @@ from solana.system_program import SYS_PROGRAM_ID, TransferParams, transfer
 from solana.transaction import AccountMeta, Transaction, TransactionInstruction
 from solders.rpc.errors import InternalErrorMessage
 from solders.rpc.responses import RequestAirdropResp
-from spl.token.instructions import (
-    ApproveParams, approve, get_associated_token_address)
 from spl.token.constants import TOKEN_PROGRAM_ID
-from spl.token.instructions import get_associated_token_address
+from spl.token.instructions import (ApproveParams, approve,
+                                    get_associated_token_address)
 
 from utils.helpers import wait_condition
 
@@ -57,15 +56,9 @@ class SolanaClient(solana.rpc.api.Client):
 
     def transaction_send_neon(self, solana_account, neon_wallet, neon_mint, neon_account, amount, evm_loader_id):
         tx = Transaction(fee_payer=solana_account.public_key)
+
         associated_token_address = get_associated_token_address(
-            solana_account.public_key, neon_mint)
-        
-        tx.add(self.get_account_v3_instruction(
-            solana_account.public_key,
-            neon_wallet,
-            neon_account.address,
-            evm_loader_id)
-        )
+                    solana_account.public_key, neon_mint)
 
         tx.add(approve(ApproveParams(
             program_id=TOKEN_PROGRAM_ID,

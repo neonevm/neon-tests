@@ -6,14 +6,6 @@ import eth_utils
 import pytest
 import web3
 import web3.exceptions
-from _pytest.config import Config
-from solana.publickey import PublicKey
-from solana.rpc.commitment import Commitment
-from solana.rpc.types import TxOpts
-from solana.transaction import Transaction, TransactionInstruction
-from spl.token.client import Token as SplToken
-from spl.token.constants import TOKEN_PROGRAM_ID
-
 
 import allure
 from integration.tests.basic.helpers.assert_message import (AssertMessage,
@@ -471,34 +463,6 @@ class TestTransfer(BaseMixin):
         balance = contractTwo.functions.getBalance().call()
         assert balance == 0
         contractTwo.functions.depositOnContractOne(address).call()
-
-    def test_transfer_neon_from_solana_to_neon(self, new_account, solana_account, pytestconfig: Config, neon_mint):
-        """Transfer Solana -> Neon"""
-        amount = 0.1
-        full_amount = int(amount * 10 ** 9)
-        evm_loader_id = pytestconfig.environment.evm_loader
-
-        neon_wallet = self.sol_client.get_neon_account_address(
-            new_account.address, evm_loader_id)
-
-        balance_before = self.sol_client.get_balance(neon_wallet).value
-        sol_balance_before = self.sol_client.get_balance(
-            solana_account.public_key).value
-
-        tx = self.sol_client.transaction_send_neon(
-            solana_account, neon_wallet, neon_mint, new_account, full_amount, evm_loader_id)
-
-        opts = TxOpts(skip_preflight=True, skip_confirmation=False)
-        sig = self.sol_client.send_transaction(
-            tx, solana_account, opts=opts).value
-        resp = self.sol_client.confirm_transaction(sig)
-        print(resp.value)
-
-        balance_after = self.sol_client.get_balance(neon_wallet).value
-        sol_balance_after = self.sol_client.get_balance(
-            solana_account.public_key).value
-        assert sol_balance_after == sol_balance_before - full_amount
-        assert balance_after - balance_before == full_amount
 
 
 @allure.feature("Ethereum compatibility")

@@ -6,9 +6,9 @@ import pytest
 from integration.tests.basic.helpers.basic import BaseMixin
 
 
-@allure.feature("Optcodes verifications")
-@allure.story("Self-destruction optcode")
-class TestSelfDestructOptcode(BaseMixin):
+@allure.feature("Opcodes verifications")
+@allure.story("Self-destruction opcode")
+class TestSelfDestructOpcode(BaseMixin):
 
     @pytest.fixture(scope="function")
     def destroyable_contract(self):
@@ -46,13 +46,15 @@ class TestSelfDestructOptcode(BaseMixin):
         self.deposit(destroyable_contract, self.sender_account, 1)
         self.deposit(destroyable_contract, self.recipient_account, 1)
 
-        balance_before = self.get_balance_from_wei(self.sender_account.address)
+        balance_before_user1 = self.get_balance_from_wei(self.sender_account.address)
+        balance_before_user2 = self.get_balance_from_wei(self.recipient_account.address)
         self.destroy(destroyable_contract, self.sender_account, self.sender_account)
 
-        balance_after = self.get_balance_from_wei(self.sender_account.address)
+        balance_after_user1 = self.get_balance_from_wei(self.sender_account.address)
+        balance_after_user2 = self.get_balance_from_wei(self.recipient_account.address)
 
-        assert 2 - balance_after - balance_before < 0.001
-
+        assert 2 - balance_after_user1 - balance_before_user1 < 0.001
+        assert balance_after_user2 == balance_before_user2
         tx = self.create_contract_call_tx_object(self.sender_account)
         instruction_tx = destroyable_contract.functions.anyFunction().buildTransaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)

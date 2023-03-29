@@ -197,16 +197,21 @@ class BaseMixin(BaseTests):
         transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
         return transaction
 
-    def create_contract_call_tx_object(self, sender=None):
+    def create_contract_call_tx_object(self, sender=None, amount=None):
         if sender is None:
             sender = self.sender_account
-        return {
+        tx = {
             "from": sender.address,
             "nonce": self.web3_client.eth.get_transaction_count(
                 sender.address
             ),
             "gasPrice": self.web3_client.gas_price(),
         }
+        if amount is not None:
+            tx["value"] = self.web3_client.toWei(amount, Unit.ETHER)
+        return tx
+
+
 
     def get_solana_resps_by_neon_resp(self, resp):
         solana_resps = []

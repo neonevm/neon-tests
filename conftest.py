@@ -7,8 +7,6 @@ from dataclasses import dataclass
 from _pytest.config import Config
 from _pytest.runner import runtestprotocol
 
-import clickfile
-
 pytest_plugins = ["ui.plugins.browser"]
 
 
@@ -28,14 +26,23 @@ class EnvironmentConfig:
 
 
 def pytest_addoption(parser):
-    parser.addoption("--network", action="store", default="night-stand", help="Which stand use")
-    parser.addoption("--make-report", action="store_true", default=False, help="Store tests result to file")
-    parser.addoption("--envs", action="store", default="envs.json", help="Filename with environments")
+    parser.addoption(
+        "--network", action="store", default="night-stand", help="Which stand use"
+    )
+    parser.addoption(
+        "--make-report",
+        action="store_true",
+        default=False,
+        help="Store tests result to file",
+    )
+    parser.addoption(
+        "--envs", action="store", default="envs.json", help="Filename with environments"
+    )
 
 
 def pytest_sessionstart(session):
     """Hook for clearing the error log used by the Slack notifications utility"""
-    path = pathlib.Path(f"{clickfile.CMD_ERROR_LOG}")
+    path = pathlib.Path(f"click_cmd_err.log")
     if path.exists():
         path.unlink()
 
@@ -46,7 +53,7 @@ def pytest_runtest_protocol(item, nextitem):
     reports = runtestprotocol(item, nextitem=nextitem)
     ihook.pytest_runtest_logfinish(nodeid=item.nodeid, location=item.location)
     if item.config.getoption("--make-report"):
-        path = pathlib.Path(f"{clickfile.CMD_ERROR_LOG}")
+        path = pathlib.Path(f"click_cmd_err.log")
         with path.open("a") as fd:
             for report in reports:
                 if report.when == "call" and report.outcome == "failed":
@@ -59,7 +66,9 @@ def pytest_configure(config: Config):
     envs_file = config.getoption("--envs")
     with open(pathlib.Path().parent.parent / envs_file, "r+") as f:
         environments = json.load(f)
-    assert network_name in environments, f"Environment {network_name} doesn't exist in envs.json"
+    assert (
+        network_name in environments
+    ), f"Environment {network_name} doesn't exist in envs.json"
     env = environments[network_name]
     if network_name == "devnet":
         if "SOLANA_URL" in os.environ:
@@ -69,7 +78,13 @@ def pytest_configure(config: Config):
     if "use_bank" not in env:
         env["use_bank"] = False
     if network_name == "aws":
-            env["solana_url"] = env["solana_url"].replace("<solana_ip>", os.environ.get("SOLANA_IP"))
-            env["proxy_url"] = env["proxy_url"].replace("<proxy_ip>", os.environ.get("PROXY_IP"))
-            env["faucet_url"] = env["faucet_url"].replace("<proxy_ip>", os.environ.get("PROXY_IP"))
+        env["solana_url"] = env["solana_url"].replace(
+            "<solana_ip>", os.environ.get("SOLANA_IP")
+        )
+        env["proxy_url"] = env["proxy_url"].replace(
+            "<proxy_ip>", os.environ.get("PROXY_IP")
+        )
+        env["faucet_url"] = env["faucet_url"].replace(
+            "<proxy_ip>", os.environ.get("PROXY_IP")
+        )
     config.environment = EnvironmentConfig(**env)

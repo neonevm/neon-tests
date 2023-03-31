@@ -46,17 +46,17 @@ class Operator:
         balances = []
         if len(self._operator_neon_rewards_address) > 0:
             for addr in self._operator_neon_rewards_address:
-                balances.append(self.web3.get_balance(self.web3.toChecksumAddress(addr.lower())))
+                balances.append(self.web3.get_balance(self.web3.to_checksum_address(addr.lower())))
         else:
             for key in self._operator_keys:
                 if self._operator_keys[key] is None:
-                    accounts = self.sol.get_token_accounts_by_owner(
+                    accounts = self.sol.get_token_accounts_by_owner_json_parsed(
                         PublicKey(key), TokenAccountOpts(mint=PublicKey(self._neon_token_mint))
                     )
-                    self._operator_keys[key] = accounts["result"]["value"][0]["pubkey"]
+                    self._operator_keys[key] = accounts.value[0]["pubkey"]
                 balances.append(
                     int(
-                        self.sol.get_token_account_balance(PublicKey(self._operator_keys[key]), commitment=Confirmed)[
+                        self.sol.get_token_account_balance(PublicKey(self._operator_keys[key]), commitment=Confirmed).to_json()[
                             "result"
                         ]["value"]["amount"]
                     )

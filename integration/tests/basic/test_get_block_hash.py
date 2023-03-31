@@ -1,4 +1,6 @@
 import allure
+import web3
+from hexbytes import HexBytes
 
 from integration.tests.basic.helpers.basic import BaseMixin
 
@@ -14,7 +16,7 @@ class TestGetBlockHash(BaseMixin):
             account=self.sender_account,
         )
 
-        instruction_tx = contract.functions.getCurrentValues().buildTransaction(
+        instruction_tx = contract.functions.getCurrentValues().build_transaction(
             {
                 "from": self.sender_account.address,
                 "nonce": self.web3_client.eth.get_transaction_count(
@@ -26,9 +28,10 @@ class TestGetBlockHash(BaseMixin):
         instruction_receipt = self.web3_client.send_transaction(
             self.sender_account, instruction_tx
         )
+
         assert (
-            instruction_receipt["logs"][0]["data"]
-            == "0x0000000000000000000000000000000000000000000000000000000000000000"
+                instruction_receipt["logs"][0]["data"].hex()
+                == "0x0000000000000000000000000000000000000000000000000000000000000000"
         )
 
     def test_get_block_hash_from_history(self):
@@ -49,7 +52,7 @@ class TestGetBlockHash(BaseMixin):
 
         instruction_tx = contract.functions.getValues(
             block_number_history
-        ).buildTransaction(
+        ).build_transaction(
             {
                 "from": self.sender_account.address,
                 "nonce": self.web3_client.eth.get_transaction_count(
@@ -61,4 +64,4 @@ class TestGetBlockHash(BaseMixin):
         instruction_receipt = self.web3_client.send_transaction(
             self.sender_account, instruction_tx
         )
-        assert instruction_receipt["logs"][0]["data"] == block_hash_history.hex()
+        assert instruction_receipt["logs"][0]["data"] == block_hash_history

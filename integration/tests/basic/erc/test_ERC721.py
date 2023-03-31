@@ -561,7 +561,7 @@ class TestMultipleActionsForERC721(BaseMixin):
         tx = self.create_contract_call_tx_object()
         instruction_tx = contract.functions.mintTransfer(
             seed, uri, acc.address
-        ).buildTransaction(tx)
+        ).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         contract_balance = contract.functions.contractBalance().call()
@@ -581,7 +581,7 @@ class TestMultipleActionsForERC721(BaseMixin):
         tx = self.create_contract_call_tx_object()
         seed = gen_hash_of_block(32)
         uri = generate_text(min_len=10, max_len=200)
-        instruction_tx = contract.functions.mint(seed, uri).buildTransaction(tx)
+        instruction_tx = contract.functions.mint(seed, uri).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
         token_id = contract.functions.lastTokenId().call()
 
@@ -590,7 +590,7 @@ class TestMultipleActionsForERC721(BaseMixin):
         uri = generate_text(min_len=10, max_len=200)
         instruction_tx = contract.functions.transferMint(
             acc.address, seed, token_id, uri
-        ).buildTransaction(tx)
+        ).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         contract_balance = contract.functions.contractBalance().call()
@@ -614,7 +614,7 @@ class TestMultipleActionsForERC721(BaseMixin):
         uri_2 = generate_text(min_len=10, max_len=200)
         instruction_tx = contract.functions.mintMintTransferTransfer(
             seed_1, uri_1, seed_2, uri_2, acc.address, acc.address
-        ).buildTransaction(tx)
+        ).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         contract_balance = contract.functions.contractBalance().call()
@@ -641,7 +641,7 @@ class TestMultipleActionsForERC721(BaseMixin):
         uri_2 = generate_text(min_len=10, max_len=200)
         instruction_tx = contract.functions.mintMintTransferTransfer(
             seed_1, uri_1, seed_2, uri_2, acc.address, new_account.address
-        ).buildTransaction(tx)
+        ).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         contract_balance = contract.functions.contractBalance().call()

@@ -89,7 +89,7 @@ class MoraswapTaskSet(NeonProxyTasksSet):
             self.log.info(f"Approve token by account {self.account.address}")
             trx = token.functions.approve(
                 self.user.environment.moraswap["router"].address, MAX_UINT_256
-            ).buildTransaction(
+            ).build_transaction(
                 {
                     "from": self.account.address,
                     "nonce": self.web3_client.get_nonce(self.account.address),
@@ -106,16 +106,16 @@ class MoraswapTaskSet(NeonProxyTasksSet):
 
         self.log.info("Swap token direct")
         swap_trx = router.functions.swapExactETHForTokens(
-            web3.Web3.toWei(1, "ether"),
+            web3.Web3.to_wei(1, "ether"),
             [token_a.address, token_b.address],
             self.account.address,
             int(time.time()) + 1800,
-        ).buildTransaction(
+        ).build_transaction(
             {
                 "from": self.account.address,
                 "nonce": self.web3_client.get_nonce(self.account.address),
                 "gasPrice": self.web3_client.gas_price(),
-                "value": web3.Web3.toWei(1, "ether"),
+                "value": web3.Web3.to_wei(1, "ether"),
             }
         )
         tr = self.web3_client.send_transaction(self.account, swap_trx, gas_multiplier=1.1)

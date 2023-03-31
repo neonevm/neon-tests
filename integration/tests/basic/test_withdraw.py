@@ -31,7 +31,7 @@ class TestWithdraw(BaseTests):
     def withdraw(self, dest_acc, move_amount, withdraw_contract):
         instruction_tx = withdraw_contract.functions.withdraw(
             bytes(dest_acc.public_key)
-        ).buildTransaction(
+        ).build_transaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
@@ -56,7 +56,7 @@ class TestWithdraw(BaseTests):
 
         dest_token_acc = get_associated_token_address(dest_acc.public_key, neon_mint)
 
-        move_amount = self.web3_client._web3.toWei(5, "ether")
+        move_amount = self.web3_client._web3.to_wei(5, "ether")
 
         destination_balance_before = spl_neon_token.get_balance(
             dest_acc.public_key, commitment=Commitment("confirmed")

@@ -26,12 +26,12 @@ class TestSelfDestructOpcode(BaseMixin):
 
     def deposit(self, destroyable_contract, sender, amount):
         tx = self.create_contract_call_tx_object(sender, amount=amount)
-        instruction_tx = destroyable_contract.functions.deposit().buildTransaction(tx)
+        instruction_tx = destroyable_contract.functions.deposit().build_transaction(tx)
         self.web3_client.send_transaction(sender, instruction_tx)
 
     def destroy(self, destroyable_contract, sender, funds_recipient, amount=None):
         tx = self.create_contract_call_tx_object(sender, amount=amount)
-        instruction_tx = destroyable_contract.functions.destroy(funds_recipient.address).buildTransaction(tx)
+        instruction_tx = destroyable_contract.functions.destroy(funds_recipient.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender, instruction_tx)
         assert receipt["status"] == 1
 
@@ -56,11 +56,11 @@ class TestSelfDestructOpcode(BaseMixin):
         assert 2 - balance_after_user1 - balance_before_user1 < 0.001
         assert balance_after_user2 == balance_before_user2
         tx = self.create_contract_call_tx_object(self.sender_account)
-        instruction_tx = destroyable_contract.functions.anyFunction().buildTransaction(tx)
+        instruction_tx = destroyable_contract.functions.anyFunction().build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert receipt["status"] == 1
 
-        event_logs = destroyable_contract.events.FunctionCalled().processReceipt(receipt)
+        event_logs = destroyable_contract.events.FunctionCalled().process_receipt(receipt)
         assert event_logs == ()
         self.check_contract_code_is_empty(destroyable_contract.address)
 
@@ -92,7 +92,7 @@ class TestSelfDestructOpcode(BaseMixin):
         recipient_balance_before = self.get_balance_from_wei(self.recipient_account.address)
         tx = self.create_contract_call_tx_object(self.sender_account)
         instruction_tx = contract_caller.functions.callDestroy(
-            self.recipient_account.address).buildTransaction(tx)
+            self.recipient_account.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         recipient_balance_after = self.get_balance_from_wei(self.recipient_account.address)
         assert receipt["status"] == 1
@@ -104,7 +104,7 @@ class TestSelfDestructOpcode(BaseMixin):
         recipient_balance_before = self.get_balance_from_wei(self.recipient_account.address)
         tx = self.create_contract_call_tx_object(self.sender_account)
         instruction_tx = contract_caller.functions.callDestroyAndSendMoneyFromContract(
-            self.recipient_account.address).buildTransaction(tx)
+            self.recipient_account.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         recipient_balance_after = self.get_balance_from_wei(self.recipient_account.address)
         assert receipt["status"] == 1
@@ -118,7 +118,7 @@ class TestSelfDestructOpcode(BaseMixin):
 
         tx = self.create_contract_call_tx_object(self.sender_account)
         instruction_tx = contract_caller.functions.sendMoneyFromContractAndCallDestroy(
-            self.recipient_account.address).buildTransaction(tx)
+            self.recipient_account.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert receipt["status"] == 1
 
@@ -140,7 +140,7 @@ class TestSelfDestructOpcode(BaseMixin):
     def test_destroy_contract_2_times_in_one_trx(self, destroyable_contract, contract_caller):
         self.deposit(destroyable_contract, self.recipient_account, 1)
         tx = self.create_contract_call_tx_object(self.sender_account)
-        instruction_tx = contract_caller.functions.callDestroyTwice(self.sender_account.address).buildTransaction(tx)
+        instruction_tx = contract_caller.functions.callDestroyTwice(self.sender_account.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert receipt["status"] == 1
         self.check_contract_code_is_empty(destroyable_contract.address)

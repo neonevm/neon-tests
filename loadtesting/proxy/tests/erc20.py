@@ -104,7 +104,7 @@ def prepare_one_contract_for_erc20(environment: "locust.env.Environment", **kwar
         ERC20_CONTRACT_NAME,
         account=eth_account,
         version=ERC20_CONTRACT_VERSION,
-        constructor_args=["Test Token", "TT", web3.Web3.toWei(10000000000, "ether")],
+        constructor_args=["Test Token", "TT", web3.Web3.to_wei(10000000000, "ether")],
     )
     environment.erc20_one = {"user": eth_account, "contract": erc_contract}
 
@@ -123,7 +123,7 @@ class ERC20OneContractTasksSet(NeonProxyTasksSet):
         self.web3_client.send_erc20(
             self.user.environment.erc20_one["user"],
             self.account,
-            web3.Web3.toWei(1000, "ether"),
+            web3.Web3.to_wei(1000, "ether"),
             contract.address,
             abi=contract.abi,
         )

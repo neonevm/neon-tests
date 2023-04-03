@@ -25,8 +25,8 @@ class TestWNeon(BaseMixin):
     SPL_TOKEN_PROGRAM_ID = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
 
     def deposit(self, wneon, amount, acc):
-        value = self.web3_client._web3.toWei(amount, "ether")
-        instruction_tx = wneon.functions.deposit().buildTransaction(
+        value = self.web3_client._web3.to_wei(amount, "ether")
+        instruction_tx = wneon.functions.deposit().build_transaction(
             self.make_tx_object(acc, value)
         )
         return self.web3_client.send_transaction(acc, instruction_tx)
@@ -43,7 +43,7 @@ class TestWNeon(BaseMixin):
 
     def get_balances(self, wneon, address):
         neon_balance = self.get_balance_from_wei(address)
-        wneon_balance = self.web3_client._web3.fromWei(
+        wneon_balance = self.web3_client.from_wei(
             wneon.functions.balanceOf(address).call(), "ether"
         )
         return neon_balance, wneon_balance
@@ -64,7 +64,7 @@ class TestWNeon(BaseMixin):
         deposit_amount2 = random.randint(1, 100)
         self.deposit(wneon, deposit_amount2, self.sender_account)
         assert (
-            self.web3_client._web3.fromWei(
+            self.web3_client._web3.from_wei(
                 wneon.functions.totalSupply().call(), "ether"
             )
             == deposit_amount + deposit_amount2
@@ -78,8 +78,8 @@ class TestWNeon(BaseMixin):
         )
         withdraw_amount = random.randint(1, deposit_amount)
         instruction_tx = wneon.functions.withdraw(
-            self.web3_client._web3.toWei(withdraw_amount, "ether")
-        ).buildTransaction(self.make_tx_object(self.recipient_account))
+            self.web3_client._web3.to_wei(withdraw_amount, "ether")
+        ).build_transaction(self.make_tx_object(self.recipient_account))
         receipt = self.web3_client.send_transaction(
             self.recipient_account, instruction_tx
         )
@@ -102,8 +102,8 @@ class TestWNeon(BaseMixin):
         transfer_amount = random.randint(1, deposit_amount)
         tx = self.make_tx_object(self.sender_account)
         instruction_tx = wneon.functions.transfer(
-            new_account.address, self.web3_client._web3.toWei(transfer_amount, "ether")
-        ).buildTransaction(tx)
+            new_account.address, self.web3_client._web3.to_wei(transfer_amount, "ether")
+        ).build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert receipt["status"] == 1
 
@@ -143,21 +143,21 @@ class TestWNeon(BaseMixin):
             wneon_balance_recipient_before,
         ) = self.get_balances(wneon, new_account.address)
         transfer_amount = random.randint(1, 100)
-        transfer_amount_wei = self.web3_client._web3.toWei(transfer_amount, "ether")
+        transfer_amount_wei = self.web3_client._web3.to_wei(transfer_amount, "ether")
 
         with pytest.raises(web3.exceptions.ContractLogicError):
             wneon.functions.transferFrom(
                 self.sender_account.address, new_account.address, transfer_amount_wei
-            ).buildTransaction(self.make_tx_object(new_account))
+            ).build_transaction(self.make_tx_object(new_account))
 
         instruction_tx = wneon.functions.approve(
             new_account.address, transfer_amount_wei
-        ).buildTransaction(self.make_tx_object(self.sender_account))
+        ).build_transaction(self.make_tx_object(self.sender_account))
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert receipt["status"] == 1
         instruction_tx = wneon.functions.transferFrom(
             self.sender_account.address, new_account.address, transfer_amount_wei
-        ).buildTransaction(self.make_tx_object(new_account))
+        ).build_transaction(self.make_tx_object(new_account))
         receipt = self.web3_client.send_transaction(new_account, instruction_tx)
         assert receipt["status"] == 1
         neon_balance_sender_after, wneon_balance_sender_after = self.get_balances(

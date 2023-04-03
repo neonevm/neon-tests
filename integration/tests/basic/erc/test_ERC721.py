@@ -36,9 +36,10 @@ NOT_ENOUGH_GAS_PARAMS = (
 class TestERC721(BaseMixin):
     @pytest.fixture(scope="function")
     def token_id(self, erc721):
-        seed = gen_hash_of_block(32)
+        seed = gen_hash_of_block(8)
+        seed_bytes_array = seed.encode().ljust(32, b'\0')
         uri = generate_text(min_len=10, max_len=200)
-        token_id = erc721.mint(seed, erc721.account.address, uri)
+        token_id = erc721.mint(seed_bytes_array, erc721.account.address, uri)
         yield token_id
 
     @allure.step("Check metaplex data")

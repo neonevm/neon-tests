@@ -1,2 +1,0 @@
-# this file for packages which has conflicts with
-web3==6.0.0

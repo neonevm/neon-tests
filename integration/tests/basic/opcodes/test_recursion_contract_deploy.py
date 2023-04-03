@@ -40,8 +40,8 @@ class TestContractRecursion(BaseMixin):
 
         event_logs = first_contract.events.ThirdContractDeployed().processReceipt(receipt)
         addresses = [event_log["args"]["addr"] for event_log in event_logs]
-        assert len(addresses) == 2
-        assert ZERO_ADDRESS in addresses
+        assert len(addresses) == 1
+        assert ZERO_ADDRESS not in addresses
 
     @pytest.mark.xfail(reason="SA-159")
     def test_deploy_to_the_same_address_via_create2_one_trx(self, first_contract):
@@ -49,4 +49,10 @@ class TestContractRecursion(BaseMixin):
         salt = generate_text(min_len=5, max_len=7)
         instruction_tx = first_contract.functions.deployViaCreate2Twice(salt).buildTransaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-        assert receipt["status"] == 0
+        assert receipt["status"] == 1
+        assert first_contract.functions.getThirdDeployedContractCount().call() == 2
+
+        event_logs = first_contract.events.ThirdContractDeployed().processReceipt(receipt)
+        addresses = [event_log["args"]["addr"] for event_log in event_logs]
+        assert ZERO_ADDRESS in addresses
+

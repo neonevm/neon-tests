@@ -41,8 +41,8 @@ contract FirstContract {
 
     function _deployThirdContractViaCreate2(string memory stringSalt) public returns (address thirdContract){
         bytes memory bytecode = type(ThirdContract).creationCode;
-        bytecode = abi.encodePacked(bytecode, abi.encode(address(this)));
-        bytecode = abi.encodePacked(bytecode, abi.encode(stringSalt));
+        bytecode = abi.encodePacked(bytecode, abi.encode(address(this), stringSalt));
+        
         bytes32 salt = keccak256(abi.encodePacked(stringSalt));
         assembly {
             thirdContract := create2(0, add(bytecode, 32), mload(bytecode), salt)
@@ -70,7 +70,7 @@ contract ThirdContract {
     address public firstContract;
 
     constructor(address _firstContractAddress, string memory stringSalt) {
-        address(_firstContractAddress).call(abi.encodeWithSignature("deployThirdContractViaCreate2(string)", stringSalt));
+        address(_firstContractAddress).call{gas: 100000}(abi.encodeWithSignature("deployThirdContractViaCreate2(string)", stringSalt));
     }
 
 }

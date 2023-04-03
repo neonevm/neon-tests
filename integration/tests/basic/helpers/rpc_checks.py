@@ -1,5 +1,6 @@
 import typing as tp
-import web3
+
+from web3 import types
 
 from integration.tests.basic.helpers.assert_message import AssertMessage
 
@@ -11,8 +12,7 @@ def is_hex(hex_data: str) -> bool:
     except (ValueError, TypeError):
         return False
 
-
-def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[web3.types.TxReceipt],
+def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[types.TxReceipt],
                         pending: bool = False):
     assert "error" not in block
     assert "result" in block, AssertMessage.DOES_NOT_CONTAIN_RESULT

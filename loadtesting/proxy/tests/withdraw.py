@@ -16,8 +16,8 @@ class WithDrawTasksSet(NeonProxyTasksSet):
         if erc20wrapper_address:
             self.log.info(f"withdraw tokens to Solana from {self.account.address[:8]}")
             contract = self.web3_client.eth.contract(address=erc20wrapper_address, abi=contract_interface["abi"])
-            amount = self.web3_client._web3.toWei(1, "ether")
-            instruction_tx = contract.functions.withdraw(bytes(keys.public_key)).buildTransaction(
+            amount = self.web3_client._web3.to_wei(1, "ether")
+            instruction_tx = contract.functions.withdraw(bytes(keys.public_key)).build_transaction(
                 {
                     "from": self.account.address,
                     "nonce": self.web3_client.eth.get_transaction_count(self.account.address),

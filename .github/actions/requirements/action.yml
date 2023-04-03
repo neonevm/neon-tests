@@ -15,7 +15,6 @@ runs:
     - name: "Install click"
       run: |
         pip3 install --upgrade -r deploy/requirements/prod.txt  -r deploy/requirements/devel.txt -r deploy/requirements/ui.txt
-        pip3 install --no-deps -r deploy/requirements/nodeps.txt
       shell: bash
     - name: "Install deps"
       run: "./clickfile.py requirements --dep oz"

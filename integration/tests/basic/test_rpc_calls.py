@@ -141,7 +141,7 @@ class TestRpcCalls(BaseMixin):
         assert "error" in response, "Error not in response"
 
     @pytest.mark.parametrize("tag", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST])
-    def test_eth_call(self, tag: tp.List[Tag]):
+    def test_eth_call(self, tag):
         """Verify implemented rpc calls work eth_call"""
         params = [
             {"to": self.recipient_account.address, "data": hex(pow(10, 14))},
@@ -761,12 +761,12 @@ class TestRpcCalls(BaseMixin):
 
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
-        text_bytes = bytes(text, "utf-8")
+        bytes_array = text.encode().ljust(32, b'\0')
         bol = True
         tx = self.make_tx_object()
         instruction_tx = event_caller.functions.allTypes(
-            self.sender_account.address, number, text, text_bytes, bol
-        ).buildTransaction(tx)
+            self.sender_account.address, number, text, bytes_array, bol
+        ).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
         topic = (
             "0x" + keccak(text="AllTypes(address,uint256,string,bytes32,bool)").hex()
@@ -823,17 +823,17 @@ class TestRpcCalls(BaseMixin):
             topics.append(arg_topics)
 
         tx = self.make_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.callEvent1(arg1).buildTransaction(tx)
+        instruction_tx = event_caller.functions.callEvent1(arg1).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         tx = self.make_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.callEvent2(arg1, arg2).buildTransaction(
+        instruction_tx = event_caller.functions.callEvent2(arg1, arg2).build_transaction(
             tx
         )
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         tx = self.make_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.callEvent2(arg2, arg3).buildTransaction(
+        instruction_tx = event_caller.functions.callEvent2(arg2, arg3).build_transaction(
             tx
         )
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
@@ -841,7 +841,7 @@ class TestRpcCalls(BaseMixin):
         tx = self.make_tx_object(self.sender_account.address)
         instruction_tx = event_caller.functions.callEvent3(
             arg1, arg2, arg3
-        ).buildTransaction(tx)
+        ).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         response = self.proxy_api.send_rpc(
@@ -903,7 +903,7 @@ class TestRpcCallsMoreComplex(BaseMixin):
             abi=contract_interface["abi"], bytecode=contract_interface["bin"]
         )
         # Build transaction
-        transaction = counter.constructor(*constructor_args).buildTransaction(
+        transaction = counter.constructor(*constructor_args).build_transaction(
             {
                 "chainId": self.web3_client._chain_id,
                 "gas": 0,
@@ -938,7 +938,7 @@ class TestRpcCallsMoreComplex(BaseMixin):
         """Check eth_estimateGas request on contracts with big int"""
         big_gas_contract = deploy_big_gas_requirements_contract
         trx_big_gas = (
-            big_gas_contract.functions.checkBigGasRequirements().buildTransaction(
+            big_gas_contract.functions.checkBigGasRequirements().build_transaction(
                 {
                     "chainId": self.web3_client._chain_id,
                     "from": self.account.address,

@@ -38,7 +38,7 @@ def deploy_uniswap(environment: "locust.env.Environment", **kwargs):
             str(uniswap_path / "contracts/v2-core/test/ERC20.sol"),
             account=eth_account,
             version="0.5.16",
-            constructor_args=[web3.Web3.toWei(10000000000, "ether")],
+            constructor_args=[web3.Web3.to_wei(10000000000, "ether")],
         )
         erc20_contracts[token] = erc_contract
     LOG.info("Deploy Uniswap factory")
@@ -59,7 +59,7 @@ def deploy_uniswap(environment: "locust.env.Environment", **kwargs):
     LOG.info(f'Create pair1 {erc20_contracts["tokenA"].address} <-> {erc20_contracts["tokenB"].address}')
     pair1_transaction = uniswap2_factory.functions.createPair(
         erc20_contracts["tokenA"].address, erc20_contracts["tokenB"].address
-    ).buildTransaction(
+    ).build_transaction(
         {
             "from": eth_account.address,
             "nonce": neon_client.eth.get_transaction_count(eth_account.address),
@@ -70,7 +70,7 @@ def deploy_uniswap(environment: "locust.env.Environment", **kwargs):
     LOG.info(f'Create pair2 {erc20_contracts["tokenB"].address} <-> {erc20_contracts["tokenC"].address}')
     pair2_transaction = uniswap2_factory.functions.createPair(
         erc20_contracts["tokenB"].address, erc20_contracts["tokenC"].address
-    ).buildTransaction(
+    ).build_transaction(
         {
             "from": eth_account.address,
             "nonce": neon_client.eth.get_transaction_count(eth_account.address),
@@ -95,7 +95,7 @@ def deploy_uniswap(environment: "locust.env.Environment", **kwargs):
 
     for token in erc20_contracts:
         c = erc20_contracts[token]
-        tr = c.functions.approve(uniswap2_router.address, MAX_UINT_256).buildTransaction(
+        tr = c.functions.approve(uniswap2_router.address, MAX_UINT_256).build_transaction(
             {
                 "from": eth_account.address,
                 "nonce": neon_client.eth.get_transaction_count(eth_account.address),
@@ -108,13 +108,13 @@ def deploy_uniswap(environment: "locust.env.Environment", **kwargs):
     tr = uniswap2_router.functions.addLiquidity(
         erc20_contracts["tokenA"].address,
         erc20_contracts["tokenB"].address,
-        web3.Web3.toWei(1000000, "ether"),
-        web3.Web3.toWei(1000000, "ether"),
+        web3.Web3.to_wei(1000000, "ether"),
+        web3.Web3.to_wei(1000000, "ether"),
         0,
         0,
         eth_account.address,
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
-    ).buildTransaction(
+    ).build_transaction(
         {
             "from": eth_account.address,
             "nonce": neon_client.eth.get_transaction_count(eth_account.address),
@@ -125,13 +125,13 @@ def deploy_uniswap(environment: "locust.env.Environment", **kwargs):
     tr = uniswap2_router.functions.addLiquidity(
         erc20_contracts["tokenB"].address,
         erc20_contracts["tokenC"].address,
-        web3.Web3.toWei(1000000, "ether"),
-        web3.Web3.toWei(1000000, "ether"),
+        web3.Web3.to_wei(1000000, "ether"),
+        web3.Web3.to_wei(1000000, "ether"),
         0,
         0,
         eth_account.address,
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
-    ).buildTransaction(
+    ).build_transaction(
         {
             "from": eth_account.address,
             "nonce": neon_client.eth.get_transaction_count(eth_account.address),
@@ -162,7 +162,7 @@ class UniswapTransaction(NeonProxyTasksSet):
 
         for token in [token_a, token_b, token_c]:
             self.log.info(f"Transfer erc token to account: {self.account.address}")
-            trx = token.functions.transfer(self.account.address, web3.Web3.toWei(1000, "ether")).buildTransaction(
+            trx = token.functions.transfer(self.account.address, web3.Web3.to_wei(1000, "ether")).build_transaction(
                 {
                     "from": signer.address,
                     "nonce": self.web3_client.eth.get_transaction_count(signer.address),
@@ -174,7 +174,7 @@ class UniswapTransaction(NeonProxyTasksSet):
             self.log.info(f"Approve token by account {self.account.address}")
             trx = token.functions.approve(
                 self.user.environment.uniswap["router"].address, MAX_UINT_256
-            ).buildTransaction(
+            ).build_transaction(
                 {
                     "from": self.account.address,
                     "nonce": self.web3_client.get_nonce(self.account.address),
@@ -201,12 +201,12 @@ class UniswapTransaction(NeonProxyTasksSet):
         token_b = self.user.environment.uniswap["tokenB"]
         self.log.info("Swap token direct")
         swap_trx = router.functions.swapExactTokensForTokens(
-            web3.Web3.toWei(1, "ether"),
+            web3.Web3.to_wei(1, "ether"),
             0,
             random.sample([token_a.address, token_b.address], 2),
             self.account.address,
             MAX_UINT_256,
-        ).buildTransaction(
+        ).build_transaction(
             {
                 "from": self.account.address,
                 "nonce": self.web3_client.get_nonce(self.account.address),
@@ -223,12 +223,12 @@ class UniswapTransaction(NeonProxyTasksSet):
         token_c = self.user.environment.uniswap["tokenC"]
         self.log.info("Swap token via 2 pools")
         swap_trx = router.functions.swapExactTokensForTokens(
-            web3.Web3.toWei(1, "ether"),
+            web3.Web3.to_wei(1, "ether"),
             0,
             [token_a.address, token_b.address, token_c.address],
             self.account.address,
             MAX_UINT_256,
-        ).buildTransaction(
+        ).build_transaction(
             {
                 "from": self.account.address,
                 "nonce": self.web3_client.get_nonce(self.account.address),

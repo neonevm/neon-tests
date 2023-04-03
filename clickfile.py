@@ -351,8 +351,6 @@ def generate_allure_environment(network_name: str):
 def install_python_requirements():
     command = "pip3 install --upgrade -r deploy/requirements/prod.txt  -r deploy/requirements/devel.txt -r deploy/requirements/ui.txt"
     subprocess.check_call(command, shell=True)
-    command = "pip3 install --no-deps -r deploy/requirements/nodeps.txt"
-    subprocess.check_call(command, shell=True)
 
 
 def install_ui_requirements():

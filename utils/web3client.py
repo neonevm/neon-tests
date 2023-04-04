@@ -194,3 +194,7 @@ class NeonWeb3Client:
         contract = self.eth.contract(address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"])
 
         return contract, contract_deploy_tx
+
+    @staticmethod
+    def text_to_bytes32(text: str) -> bytes:
+        return text.encode().ljust(32, b'\0')

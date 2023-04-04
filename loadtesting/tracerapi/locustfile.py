@@ -393,7 +393,7 @@ class EthCall(BaseEthRPCATasksSet):
             f"Call `retrieve` method from {self._contract.address} contract by `{method}`."
         )
         transaction = self._get_random_transaction(self.method)
-        tx = self._contract.functions.retrieve().buildTransaction(
+        tx = self._contract.functions.retrieve().build_transaction(
             {
                 "nonce": self.web3_client.eth.get_transaction_count(
                     transaction["from"]

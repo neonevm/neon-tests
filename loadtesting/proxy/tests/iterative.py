@@ -26,7 +26,7 @@ class NeonIterativeTasksSet(NeonProxyTasksSet):
         self.log.info(f"Run iterative tx from {str(self.account.address)[-8:]}.")
         instruction_tx = self.contract.functions.moreInstruction(
             0, 1500
-        ).buildTransaction(
+        ).build_transaction(
             {
                 "from": self.account.address,
                 "nonce": self.web3_client.eth.get_transaction_count(

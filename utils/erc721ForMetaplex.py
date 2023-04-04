@@ -29,9 +29,9 @@ class ERC721ForMetaplex:
     def mint(self, seed, to_address, uri, gas_price=None, gas=None, signer=None):
         signer = self.account if signer is None else signer
         tx = self.make_tx_object(signer.address, gas_price, gas)
-        instruction_tx = self.contract.functions.mint(seed, to_address, uri).buildTransaction(tx)
+        instruction_tx = self.contract.functions.mint(seed, to_address, uri).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
-        logs = self.contract.events.Transfer().processReceipt(resp)
+        logs = self.contract.events.Transfer().process_receipt(resp)
         LOGGER.info(f"Event logs: {logs}")
         return logs[0]['args']['tokenId']
 
@@ -39,17 +39,17 @@ class ERC721ForMetaplex:
         signer = self.account if signer is None else signer
         tx = self.make_tx_object(signer.address, gas_price, gas)
         if data is None:
-            instruction_tx = self.contract.functions.safeMint(seed, to_address, uri).buildTransaction(tx)
+            instruction_tx = self.contract.functions.safeMint(seed, to_address, uri).build_transaction(tx)
         else:
-            instruction_tx = self.contract.functions.safeMint(seed, to_address, uri, data).buildTransaction(tx)
+            instruction_tx = self.contract.functions.safeMint(seed, to_address, uri, data).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
-        logs = self.contract.events.Transfer().processReceipt(resp)
+        logs = self.contract.events.Transfer().process_receipt(resp)
         LOGGER.info(f"Event logs: {logs}")
         return logs[0]['args']['tokenId']
 
     def transfer_from(self, address_from, address_to, token_id, signer, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
-        instruction_tx = self.contract.functions.transferFrom(address_from, address_to, token_id).buildTransaction(tx)
+        instruction_tx = self.contract.functions.transferFrom(address_from, address_to, token_id).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
@@ -57,27 +57,27 @@ class ERC721ForMetaplex:
         tx = self.make_tx_object(signer.address, gas_price, gas)
         if data is None:
             instruction_tx = self.contract.functions.safeTransferFrom(address_from, address_to,
-                                                                      token_id).buildTransaction(tx)
+                                                                      token_id).build_transaction(tx)
         else:
             instruction_tx = self.contract.functions.safeTransferFrom(address_from, address_to,
-                                                                      token_id, data).buildTransaction(tx)
+                                                                      token_id, data).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def approve(self, address_to, token_id, signer, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
-        instruction_tx = self.contract.functions.approve(address_to, token_id).buildTransaction(tx)
+        instruction_tx = self.contract.functions.approve(address_to, token_id).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def set_approval_for_all(self, operator, approved, signer, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
-        instruction_tx = self.contract.functions.setApprovalForAll(operator, approved).buildTransaction(tx)
+        instruction_tx = self.contract.functions.setApprovalForAll(operator, approved).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def transfer_solana_from(self, from_address, to_address, token_id, signer, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
-        instruction_tx = self.contract.functions.transferSolanaFrom(from_address, to_address, token_id).buildTransaction(tx)
+        instruction_tx = self.contract.functions.transferSolanaFrom(from_address, to_address, token_id).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp

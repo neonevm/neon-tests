@@ -109,7 +109,7 @@ class EthGetStorageAtPreparationStage(head.NeonTasksSet):
             self.log.info(
                 f"Store random data `{data}` to contract by {self.account.address[:8]}."
             )
-            tx = contract.functions.store(data).buildTransaction(
+            tx = contract.functions.store(data).build_transaction(
                 {
                     "nonce": self.web3_client.eth.get_transaction_count(
                         self.account.address

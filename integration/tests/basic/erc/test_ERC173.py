@@ -18,12 +18,12 @@ class TestERC173ContractOwnershipStandard(BaseMixin):
         new_owner = self.web3_client.create_account()
         self.faucet.request_neon(acc.address)
         tx = self.create_contract_call_tx_object(acc)
-        instruction_tx = contract.functions.transferOwnership(new_owner.address).buildTransaction(tx)
+        instruction_tx = contract.functions.transferOwnership(new_owner.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(acc, instruction_tx)
         assert receipt["status"] == 1
         assert contract.functions.owner().call() == new_owner.address
 
-        event_logs = contract.events.OwnershipTransferred().processReceipt(receipt)
+        event_logs = contract.events.OwnershipTransferred().process_receipt(receipt)
         assert len(event_logs) == 1
         assert event_logs[0].args['previousOwner'] == acc.address
         assert event_logs[0].args['newOwner'] == new_owner.address
@@ -39,12 +39,12 @@ class TestERC173ContractOwnershipStandard(BaseMixin):
                 web3.exceptions.ContractLogicError,
                 match="Only the owner can perform this action",
         ):
-            contract.functions.transferOwnership(not_owner.address).buildTransaction(tx)
+            contract.functions.transferOwnership(not_owner.address).build_transaction(tx)
 
     def test_renounce_ownership(self, erc173):
         contract, acc = erc173
         tx = self.create_contract_call_tx_object(acc)
-        instruction_tx = contract.functions.transferOwnership(ZERO_ADDRESS).buildTransaction(tx)
+        instruction_tx = contract.functions.transferOwnership(ZERO_ADDRESS).build_transaction(tx)
         receipt = self.web3_client.send_transaction(acc, instruction_tx)
 
         assert receipt["status"] == 1
@@ -59,7 +59,7 @@ class TestERC173ContractOwnershipStandard(BaseMixin):
 
         tx = self.create_contract_call_tx_object(acc)
         instruction_tx = erc173_contract.functions.\
-            transferOwnership(erc173_caller_contract.address).buildTransaction(tx)
+            transferOwnership(erc173_caller_contract.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(acc, instruction_tx)
         assert receipt["status"] == 1
 
@@ -67,7 +67,7 @@ class TestERC173ContractOwnershipStandard(BaseMixin):
         self.faucet.request_neon(acc.address)
         tx = self.create_contract_call_tx_object(acc)
         instruction_tx = erc173_caller_contract.functions.\
-            transferOwnership(new_owner.address).buildTransaction(tx)
+            transferOwnership(new_owner.address).build_transaction(tx)
 
         receipt = self.web3_client.send_transaction(acc, instruction_tx)
         assert receipt["status"] == 1

@@ -43,17 +43,17 @@ def prepare_moraswap_contracts(environment: "locust.env.Environment", **kwargs):
         abi=factory_abi
     )
     router_contract = neon_client.eth.contract(
-        address=web3.Web3.toChecksumAddress(ROUTER_ADDRESS),
+        address=web3.Web3.to_checksum_address(ROUTER_ADDRESS),
         abi=router_abi
     )
 
     wneon_contract = neon_client.eth.contract(
-        address=web3.Web3.toChecksumAddress(WNEON_ADDRESS),
+        address=web3.Web3.to_checksum_address(WNEON_ADDRESS),
         abi=token_abi
     )
 
     mora_contract = neon_client.eth.contract(
-        address=web3.Web3.toChecksumAddress(MORA_ADDRESSS),
+        address=web3.Web3.to_checksum_address(MORA_ADDRESSS),
         abi=token_abi
     )
 

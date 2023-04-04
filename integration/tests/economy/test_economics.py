@@ -917,7 +917,7 @@ class TestEconomics(BaseTests):
         )[-20:]
 
         self.web3_client.send_neon(
-            acc2, self.web3_client.toChecksumAddress(contract_address.hex()), 0.5
+            acc2, self.web3_client.to_checksum_address(contract_address.hex()), 0.5
         )
 
         sol_balance_before = self.operator.get_solana_balance()
@@ -946,7 +946,7 @@ class TestEconomics(BaseTests):
         neon_balance_before = self.operator.get_neon_balance()
 
         nonce = self.web3_client.eth.get_transaction_count(acc2.address)
-        contract_address = self.web3_client.toChecksumAddress(
+        contract_address = self.web3_client.to_checksum_address(
             self.web3_client.keccak(
                 rlp.encode((bytes.fromhex(acc2.address[2:]), nonce))
             )[-20:].hex()

@@ -36,10 +36,9 @@ NOT_ENOUGH_GAS_PARAMS = (
 class TestERC721(BaseMixin):
     @pytest.fixture(scope="function")
     def token_id(self, erc721):
-        seed = gen_hash_of_block(8)
-        seed_bytes_array = seed.encode().ljust(32, b'\0')
+        seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200)
-        token_id = erc721.mint(seed_bytes_array, erc721.account.address, uri)
+        token_id = erc721.mint(seed, erc721.account.address, uri)
         yield token_id
 
     @allure.step("Check metaplex data")
@@ -53,20 +52,20 @@ class TestERC721(BaseMixin):
         assert metadata["is_mutable"] is False
 
     def test_mint(self, erc721):
-        seed = gen_hash_of_block(32)
+        seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200)
         token_id = erc721.mint(seed, erc721.account.address, uri)
         self.metaplex_checks(token_id)
 
     def test_mint_with_used_seed(self, erc721, new_account):
-        seed = gen_hash_of_block(32)
+        seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200)
         erc721.mint(seed, erc721.account.address, uri)
         with pytest.raises(web3.exceptions.ContractLogicError):
             erc721.mint(seed, new_account.address, uri)
 
     def test_mint_can_all(self, erc721, new_account):
-        seed = gen_hash_of_block(32)
+        seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200)
         erc721.mint(seed, new_account.address, uri, signer=new_account)
 
@@ -85,14 +84,14 @@ class TestERC721(BaseMixin):
         address_to = (
             gen_hash_of_block(address_to) if isinstance(address_to, int) else address_to
         )
-        seed = gen_hash_of_block(32)
+        seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200, simple=True)
         with pytest.raises(expected_exception, match=msg):
             erc721.mint(seed, address_to, uri)
 
     @pytest.mark.parametrize(*NOT_ENOUGH_GAS_PARAMS)
     def test_mint_no_enough_gas(self, erc721, param, msg):
-        seed = gen_hash_of_block(32)
+        seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200, simple=True)
         with pytest.raises(ValueError, match=msg):
             erc721.mint(seed, erc721.account.address, uri, **param)
@@ -112,7 +111,7 @@ class TestERC721(BaseMixin):
         uri = generate_text(min_len=10, max_len=200)
         mint_amount = random.randint(1, 5)
         for _ in range(mint_amount):
-            seed = gen_hash_of_block(32)
+            seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
             erc721.mint(seed, erc721.account.address, uri)
 
         balance = erc721.contract.functions.balanceOf(erc721.account.address).call()
@@ -138,7 +137,7 @@ class TestERC721(BaseMixin):
 
     def test_tokenURI(self, erc721):
         uri = generate_text(min_len=10, max_len=200)
-        seed = gen_hash_of_block(32)
+        seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         token_id = erc721.mint(seed, erc721.account.address, uri)
         token_uri = erc721.contract.functions.tokenURI(token_id).call()
         assert token_uri == uri
@@ -374,13 +373,13 @@ class TestERC721(BaseMixin):
             )
 
     def test_safeMint_to_user(self, erc721):
-        seed = gen_hash_of_block(32)
+        seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200)
         token_id = erc721.safe_mint(seed, erc721.account.address, uri)
         self.metaplex_checks(token_id)
 
     def test_safeMint_to_contract(self, erc721, nft_receiver):
-        seed = gen_hash_of_block(32)
+        seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200)
         token_id = erc721.safe_mint(seed, nft_receiver.address, uri)
         self.metaplex_checks(token_id)
@@ -397,7 +396,7 @@ class TestERC721(BaseMixin):
         assert nft_receiver_data == data
 
     def test_safeMint_to_invalid_contract(self, erc721, invalid_nft_receiver):
-        seed = gen_hash_of_block(32)
+        seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200)
         with pytest.raises(
             web3.exceptions.ContractLogicError,
@@ -408,7 +407,7 @@ class TestERC721(BaseMixin):
     def test_setApprovalForAll(self, erc721, new_account):
         tokens = []
         for _ in range(2):
-            seed = gen_hash_of_block(32)
+            seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
             uri = generate_text(min_len=10, max_len=200)
             tokens.append(erc721.mint(seed, erc721.account.address, uri))
 
@@ -553,7 +552,7 @@ class TestMultipleActionsForERC721(BaseMixin):
 
     def test_mint_transfer(self, multiple_actions_erc721):
         acc, contract = multiple_actions_erc721
-        seed = gen_hash_of_block(32)
+        seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200)
 
         contract_balance_before = contract.functions.contractBalance().call()
@@ -580,14 +579,14 @@ class TestMultipleActionsForERC721(BaseMixin):
         user_balance_before = contract.functions.balance(acc.address).call()
 
         tx = self.create_contract_call_tx_object()
-        seed = gen_hash_of_block(32)
+        seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200)
         instruction_tx = contract.functions.mint(seed, uri).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
         token_id = contract.functions.lastTokenId().call()
 
         tx = self.create_contract_call_tx_object()
-        seed = gen_hash_of_block(32)
+        seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200)
         instruction_tx = contract.functions.transferMint(
             acc.address, seed, token_id, uri
@@ -609,8 +608,8 @@ class TestMultipleActionsForERC721(BaseMixin):
         user_balance_before = contract.functions.balance(acc.address).call()
 
         tx = self.create_contract_call_tx_object()
-        seed_1 = gen_hash_of_block(32)
-        seed_2 = gen_hash_of_block(32)
+        seed_1 = self.web3_client.text_to_bytes32(gen_hash_of_block(10))
+        seed_2 = self.web3_client.text_to_bytes32(gen_hash_of_block(10))
         uri_1 = generate_text(min_len=10, max_len=200)
         uri_2 = generate_text(min_len=10, max_len=200)
         instruction_tx = contract.functions.mintMintTransferTransfer(
@@ -636,8 +635,8 @@ class TestMultipleActionsForERC721(BaseMixin):
         user_2_balance_before = contract.functions.balance(new_account.address).call()
 
         tx = self.create_contract_call_tx_object()
-        seed_1 = gen_hash_of_block(32)
-        seed_2 = gen_hash_of_block(32)
+        seed_1 = self.web3_client.text_to_bytes32(gen_hash_of_block(10))
+        seed_2 = self.web3_client.text_to_bytes32(gen_hash_of_block(10))
         uri_1 = generate_text(min_len=10, max_len=200)
         uri_2 = generate_text(min_len=10, max_len=200)
         instruction_tx = contract.functions.mintMintTransferTransfer(

@@ -14,6 +14,6 @@ def prepare_wallets_with_balance(settings, count=8, airdrop_amount=20000):
         if i == 0:
             for _ in range(2):
                 faucet_client.request_neon(acc.address, airdrop_amount)
-        private_keys.append(acc.privateKey.hex())
+        private_keys.append(acc.key.hex())
     print("All private keys: ", ",".join(private_keys))
     return private_keys

@@ -314,7 +314,12 @@ class EthGetLogs(BaseEthRPCATasksSet):
         if req_type == "blockNumber":
             assert transaction[req_type].lower() == response[0][req_type]
         if req_type == "blockHash":
-            assert any(transaction[req_type].lower() == r[req_type] for r in response)
+            any_result = [
+                transaction[req_type].lower() == r[req_type] for r in response
+            ]
+            assert any(
+                any_result
+            ), f"Block hash problem {any_result}, response: {response}"
         assert all(
             transaction["contract"]["address"].lower() == r["address"] for r in response
         )

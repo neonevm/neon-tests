@@ -37,6 +37,12 @@ class NeonWeb3Client:
 
     def get_evm_version(self):
         return self._get_evm_info("web3_clientVersion")
+    
+    def get_neon_emulate(self, params):
+        return requests.post(
+            self._proxy_url,
+            json={"jsonrpc": "2.0", "method": "neon_emulate", "params": [params], "id": 0},
+        ).json()
 
     def get_solana_trx_by_neon(self, tr_id: str):
         return requests.post(

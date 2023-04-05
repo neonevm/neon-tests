@@ -249,6 +249,6 @@ class TestWNeon(BaseMixin):
             wneon, self.recipient_account.address)
 
         assert int(destination_balance_after.value.amount) == int(
-            destination_balance_before.value.amount) + full_amount / 1_000_000_000
+            destination_balance_before.value.amount) + withdraw_amount
         assert wneon_balance_after == wneon_balance_before
         assert neon_balance_after - neon_balance_before < withdraw_amount

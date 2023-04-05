@@ -5,17 +5,12 @@ import solana.rpc.api
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
 from solana.rpc.commitment import Commitment, Finalized
-from solana.system_program import SYS_PROGRAM_ID, TransferParams, transfer
-from solana.transaction import AccountMeta, Transaction, TransactionInstruction
+from solana.system_program import TransferParams, transfer
+from solana.transaction import Transaction
 from solders.rpc.errors import InternalErrorMessage
 from solders.rpc.responses import RequestAirdropResp
-from spl.token.constants import TOKEN_PROGRAM_ID
-from spl.token.instructions import (ApproveParams, approve,
-                                    get_associated_token_address)
 
 from utils.helpers import wait_condition
-
-CreateAccountV03 = 0x28  # 40
 
 
 class SolanaClient(solana.rpc.api.Client):

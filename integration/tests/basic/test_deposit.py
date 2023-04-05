@@ -80,8 +80,12 @@ class TestDeposit(BaseMixin):
         self.create_ata(solana_account, neon_mint)
         self.withdraw_neon(solana_account, amount)
 
-        tx = self.sol_client.transaction_send_neon(
-            solana_account, neon_wallet, neon_mint, new_account, full_amount, evm_loader_id)
+        tx = Transfer.neon_from_solana_to_neon_tx(solana_account,
+                                                  neon_wallet,
+                                                  neon_mint, 
+                                                  new_account,
+                                                  full_amount, 
+                                                  evm_loader_id)
         self.send_tx_and_check_status_ok(tx, solana_account)
 
         neon_balance_after = self.get_balance_from_wei(new_account.address)

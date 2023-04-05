@@ -113,7 +113,6 @@ class Instruction:
         claim_to = contract.contract.functions.claimTo(
             bytes(ata_address), _from.address, amount)
         data = claim_to.abi
-        print("data: ", data)
 
         tx = {
             "from": _from.address,

@@ -188,6 +188,7 @@ class TestWNeon(BaseMixin):
 
         withdraw_amount = 5
         full_amount = self.web3_client._web3.toWei(withdraw_amount, "ether")
+
         neon_balance_before, wneon_balance_before = self.get_balances(
             wneon, self.recipient_account.address)
 
@@ -249,6 +250,6 @@ class TestWNeon(BaseMixin):
             wneon, self.recipient_account.address)
 
         assert int(destination_balance_after.value.amount) == int(
-            destination_balance_before.value.amount) + withdraw_amount
+            destination_balance_before.value.amount) + full_amount / 1_000_000_000
         assert wneon_balance_after == wneon_balance_before
         assert neon_balance_after - neon_balance_before < withdraw_amount

@@ -187,12 +187,12 @@ class TestWNeon(BaseMixin):
         self.deposit(wneon, deposit_amount, self.recipient_account)
 
         withdraw_amount = 5
-        full_amount = self.web3_client._web3.toWei(withdraw_amount, "ether")
+        full_amount = self.web3_client._web3.to_wei(withdraw_amount, "ether")
 
         neon_balance_before, wneon_balance_before = self.get_balances(
             wneon, self.recipient_account.address)
 
-        instruction_tx = wneon.functions.withdraw(full_amount).buildTransaction(
+        instruction_tx = wneon.functions.withdraw(full_amount).build_transaction(
             self.make_tx_object(self.recipient_account))
 
         receipt = self.web3_client.send_transaction(
@@ -230,12 +230,12 @@ class TestWNeon(BaseMixin):
 
         instruction_tx = withdraw_contract.functions.withdraw(
             bytes(solana_account.public_key),
-        ).buildTransaction(
+        ).build_transaction(
             {
                 "from": self.recipient_account.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.recipient_account.address),
                 "gasPrice": self.web3_client.gas_price(),
-                "value": self.web3_client._web3.toWei(withdraw_amount, "ether"),
+                "value": self.web3_client._web3.to_wei(withdraw_amount, "ether"),
             }
         )
 

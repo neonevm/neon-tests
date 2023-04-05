@@ -192,4 +192,4 @@ def get_solana_wallet_signer(solana_account, neon_account, web3_client):
     neon_wallet = bytes(neon_account.address, 'utf-8')
     new_wallet = hashlib.sha256(solana_wallet + neon_wallet).hexdigest()
     emulate_signer_private_key = f'0x{new_wallet}'
-    return web3_client._web3.eth.account.privateKeyToAccount(emulate_signer_private_key)
+    return web3_client._web3.eth.account.from_key(emulate_signer_private_key)

@@ -36,12 +36,12 @@ class TestDeposit(BaseMixin):
 
         instruction_tx = contract.functions.withdraw(
             bytes(dest_acc.public_key)
-        ).buildTransaction(
+        ).build_transaction(
             {
                 "from": self.sender_account.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.sender_account.address),
                 "gasPrice": self.web3_client.gas_price(),
-                "value": self.web3_client._web3.toWei(move_amount, "ether"),
+                "value": self.web3_client._web3.to_wei(move_amount, "ether"),
             }
         )
         receipt = self.web3_client.send_transaction(

@@ -608,7 +608,7 @@ class TestTransactionsValidation(BaseMixin):
         transaction = self.create_tx_object(
             sender=sender.address,
             recipient=recipient.address,
-            amount=web3.Web3.fromWei(amount, "ether"),
+            amount=web3.Web3.from_wei(amount, "ether"),
         )
         signed_tx = self.web3_client.eth.account.sign_transaction(
             transaction, sender.key

@@ -12,7 +12,6 @@ import pytest
 from _pytest.config import Config
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
-
 from utils.consts import LAMPORT_PER_SOL
 from utils.erc20wrapper import ERC20Wrapper
 from utils.faucet import Faucet
@@ -20,6 +19,8 @@ from utils.operator import Operator
 from utils.web3client import NeonWeb3Client
 from utils.apiclient import JsonRPCSession
 from utils.solana_client import SolanaClient
+from solana.rpc.types import TxOpts
+from solana.rpc.commitment import Confirmed
 
 NEON_AIRDROP_AMOUNT = 10_000
 
@@ -199,7 +200,9 @@ def erc20_spl(
         ),
         owner=erc20.solana_acc.public_key,
         amount=1000000000000000,
+        opts=TxOpts(preflight_commitment=Confirmed, skip_confirmation=False)
     )
+
     erc20.claim(
         erc20.account, bytes(erc20.solana_associated_token_acc), 100000000000000
     )

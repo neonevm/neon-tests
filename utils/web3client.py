@@ -60,7 +60,7 @@ class NeonWeb3Client:
     def get_balance(self, address: tp.Union[str, eth_account.signers.local.LocalAccount]):
         if not isinstance(address, str):
             address = address.address
-        return web3.Web3.fromWei(self._web3.eth.get_balance(address, "pending"), "ether")
+        return web3.Web3.from_wei(self._web3.eth.get_balance(address, "pending"), "ether")
 
     def get_block_number(self):
         return self._web3.eth.get_block_number()
@@ -87,7 +87,7 @@ class NeonWeb3Client:
         transaction = {
             "from": from_.address,
             "to": to_addr,
-            "value": web3.Web3.toWei(amount, "ether"),
+            "value": web3.Web3.to_wei(amount, "ether"),
             "chainId": self._chain_id,
             "gasPrice": gas_price or self.gas_price(),
             "gas": gas,
@@ -114,7 +114,7 @@ class NeonWeb3Client:
         constructor_args = constructor_args or []
 
         contract = self._web3.eth.contract(abi=abi, bytecode=bytecode)
-        transaction = contract.constructor(*constructor_args).buildTransaction(
+        transaction = contract.constructor(*constructor_args).build_transaction(
             {
                 "chainId": self._chain_id,
                 "from": from_.address,
@@ -144,7 +144,7 @@ class NeonWeb3Client:
         to_addr = to if isinstance(to, str) else to.address
         gas_price = gas_price or self.gas_price()
         contract = self._web3.eth.contract(address=address, abi=abi)
-        transaction = contract.functions.transfer(to_addr, amount).buildTransaction(
+        transaction = contract.functions.transfer(to_addr, amount).build_transaction(
             {
                 "chainId": self._chain_id,
                 "gas": gas,
@@ -200,3 +200,7 @@ class NeonWeb3Client:
         contract = self.eth.contract(address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"])
 
         return contract, contract_deploy_tx
+
+    @staticmethod
+    def text_to_bytes32(text: str) -> bytes:
+        return text.encode().ljust(32, b'\0')

@@ -16,17 +16,16 @@ import requests
 import web3
 from locust import User, TaskSet, between, task, events, tag
 
+from loadtesting.proxy.common import env
 from utils import apiclient
 from utils.web3client import NeonWeb3Client
 
 LOG = logging.getLogger("neon_client")
 
-DEFAULT_NETWORK = "neon-rpc"
-ENV_FILE = pathlib.Path(__file__).parent / "envs.json"
 
 DUMPED_DATA = "dumped_data/transaction.json"  # where save dumped data
 
-NEON_RPC = os.environ.get("NEON_RPC")  # url for history endpoint proxy
+NEON_RPC = os.environ.get("NEON_TRACING_URL", "")  # url for history endpoint proxy
 
 
 class RPCType(enum.Enum):
@@ -37,53 +36,21 @@ class RPCType(enum.Enum):
 
     @classmethod
     def get(cls, key: str) -> str:
-        return list(filter(lambda i: i if key in i.value else None, cls.__members__.values()))[0].name
+        return list(
+            filter(lambda i: i if key in i.value else None, cls.__members__.values())
+        )[0].name
 
 
 @dataclass
 class GlobalEnv:
-    credentials: tp.Dict = None
+    rpc_url: str = ""
     transaction_history: tp.Dict = None
-
-
-@events.init_command_line_parser.add_listener
-def arg_parser(parser):
-    """Add custom command line arguments to Locust"""
-    parser.add_argument(
-        "--credentials",
-        type=str,
-        env_var="NEON_CRED",
-        default=ENV_FILE,
-        help="Relative path to environment credentials file.",
-    )
-    parser.add_argument(
-        "--neon-rpc",
-        type=str,
-        env_var="NEON_RPC",
-        default=None,
-        help="Entry point to NEON RPC.",
-    )
 
 
 @events.test_start.add_listener
 def make_env_preparation(environment, **kwargs):
     global_env = GlobalEnv()
     environment.shared = global_env
-
-
-@events.test_start.add_listener
-def load_credentials(environment, **kwargs):
-    """Test start event handler"""
-    # load test env credentials
-    root_path = list(pathlib.Path(__file__).parents)[2]
-    path_to_credentials = root_path / environment.parsed_options.credentials
-
-    network = environment.parsed_options.host
-    if not (path_to_credentials.exists() and path_to_credentials.is_file()):
-        path_to_credentials = root_path / ENV_FILE
-    with open(path_to_credentials, "r") as fp:
-        f = json.load(fp)
-        environment.shared.credentials = f.get(network, f[DEFAULT_NETWORK])
 
 
 @events.test_start.add_listener
@@ -103,7 +70,11 @@ class LocustEventHandler(object):
         self._request_event = request_event
 
     def init_event(
-        self, task_id: str, request_type: str, task_name: tp.Optional[str] = "", start_time: tp.Optional[float] = None
+        self,
+        task_id: str,
+        request_type: str,
+        task_name: tp.Optional[str] = "",
+        start_time: tp.Optional[float] = None,
     ) -> None:
         """Added data to buffer"""
         params = dict(
@@ -129,7 +100,10 @@ class LocustEventHandler(object):
             context={},
         )
         self._request_event.fire(**request_meta)
-        LOG.debug("- %s : %s - %sms" % (event["request_type"], event["event_type"], total_time))
+        LOG.debug(
+            "- %s : %s - %sms"
+            % (event["request_type"], event["event_type"], total_time)
+        )
 
 
 locust_events_handler = LocustEventHandler(events.request)
@@ -143,7 +117,9 @@ def statistics_collector(func: tp.Callable) -> tp.Callable:
         task_id = str(uuid.uuid4())
         request_type = f"`{args[1].rsplit('_')[1]}`"
         event: tp.Dict[str, tp.Any] = dict(
-            task_id=task_id, request_type=request_type, task_name=f"[{kwargs.pop('req_type')}]"
+            task_id=task_id,
+            request_type=request_type,
+            task_name=f"[{kwargs.pop('req_type')}]",
         )
         locust_events_handler.init_event(**event)
         response = None
@@ -151,10 +127,16 @@ def statistics_collector(func: tp.Callable) -> tp.Callable:
             response = func(*args, **kwargs)
             if "error" in response:
                 raise web3.exceptions.ValidationError(response["error"])
-            event = dict(response=response, response_length=sys.getsizeof(response), event_type="success")
+            event = dict(
+                response=response,
+                response_length=sys.getsizeof(response),
+                event_type="success",
+            )
         except Exception as err:
             event = dict(event_type="failure", exception=err)
-            LOG.error(f"Web3 RPC call {request_type} is failed: {err} passed args: `{args}`, passed kwargs: `{kwargs}`")
+            LOG.error(
+                f"Web3 RPC call {request_type} is failed: {err} passed args: `{args}`, passed kwargs: `{kwargs}`"
+            )
         locust_events_handler.buffer[task_id].update(event)
         locust_events_handler.fire_event(task_id)
         return response
@@ -167,7 +149,9 @@ class ExtJsonRPCSession(apiclient.JsonRPCSession):
 
     def __init__(self, endpoint: str, pool_size: int) -> None:
         super(ExtJsonRPCSession, self).__init__(endpoint)
-        adapter = requests.adapters.HTTPAdapter(pool_connections=pool_size, pool_maxsize=pool_size, pool_block=True)
+        adapter = requests.adapters.HTTPAdapter(
+            pool_connections=pool_size, pool_maxsize=pool_size, pool_block=True
+        )
         self.mount("http://", adapter)
         self.mount("https://", adapter)
 
@@ -196,7 +180,6 @@ class BaseEthRPCATasksSet(TaskSet):
     """
 
     _rpc_client: tp.Optional[ExtJsonRPCSession] = None
-    _rpc_endpoint: tp.Optional[str] = None
     _transaction_history: tp.Optional[tp.Dict] = None
     credentials: tp.Optional[tp.Dict] = None
 
@@ -204,18 +187,17 @@ class BaseEthRPCATasksSet(TaskSet):
     def setup_class(environment: tp.Any = None) -> None:
         """Base initialization, run once for all users"""
         history_data = environment.shared.transaction_history
-        rpc_endpoint = environment.shared.credentials.get("neon_rpc", NEON_RPC) or environment.parsed_options.neon_rpc
+        rpc_endpoint = NEON_RPC
+        if not NEON_RPC:
+            rpc_endpoint = environment.credentials.get("proxy_url")
+        LOG.info(f"RPC endpoint: {rpc_endpoint}")
         if not history_data:
-            LOG.error(f"No transaction history found `{DUMPED_DATA}` to spawn locust users, exited.")
-            exit()
-        elif not rpc_endpoint:
             LOG.error(
-                f"Entry point to access Neon-RPC not found. "
-                f"Set env `NEON_RPC` or pass `neon_rpc` to {ENV_FILE} or send via command line arguments."
+                f"No transaction history found `{DUMPED_DATA}` to spawn locust users, exited."
             )
-            exit()
+            sys.exit(1)
         BaseEthRPCATasksSet._transaction_history = history_data
-        BaseEthRPCATasksSet._rpc_endpoint = rpc_endpoint
+        environment.shared.rpc_endpoint = rpc_endpoint
 
     def on_start(self) -> None:
         """on_start is called when a Locust start before any task is scheduled"""
@@ -227,14 +209,16 @@ class BaseEthRPCATasksSet(TaskSet):
             BaseEthRPCATasksSet._last_consumer_id += 1
             self.rpc_consumer_id = BaseEthRPCATasksSet._last_consumer_id
             self._rpc_client = ExtJsonRPCSession(
-                endpoint=self._rpc_endpoint,
+                endpoint=self.user.environment.shared.rpc_endpoint,
                 pool_size=self.user.environment.parsed_options.num_users
                 or self.user.environment.runner.target_user_count,
             )
-        self.credentials = self.user.environment.shared.credentials
+        self.credentials = self.user.environment.credentials
         LOG.info(f"Create web3 client to: {self.credentials['proxy_url']}")
         self.web3_client = NeonWeb3Client(
-            self.credentials["proxy_url"], self.credentials["network_id"], session=self._rpc_client
+            self.credentials["proxy_url"],
+            self.credentials["network_id"],
+            session=self._rpc_client,
         )
         self.log = logging.getLogger("rpc-consumer[%s]" % self.rpc_consumer_id)
 
@@ -247,7 +231,11 @@ class BaseEthRPCATasksSet(TaskSet):
         return params
 
     def _do_call(
-        self, method: str, req_type: str, args: tp.Optional[tp.List] = None, kwargs: tp.Optional[tp.Dict] = None
+        self,
+        method: str,
+        req_type: str,
+        args: tp.Optional[tp.List] = None,
+        kwargs: tp.Optional[tp.Dict] = None,
     ) -> tp.Dict:
         transaction = self._get_random_transaction(method)
         if not args:
@@ -259,7 +247,9 @@ class BaseEthRPCATasksSet(TaskSet):
         args.append(kwargs)
         args.insert(0, transaction["to"])
         response = self._rpc_client.send_rpc(method, req_type=req_type, params=args)
-        self.log.info(f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}")
+        self.log.info(
+            f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}"
+        )
         return response
 
 
@@ -325,7 +315,9 @@ class EthGetLogs(BaseEthRPCATasksSet):
             assert transaction[req_type].lower() == response[0][req_type]
         if req_type == "blockHash":
             assert any(transaction[req_type].lower() == r[req_type] for r in response)
-        assert all(transaction["contract"]["address"].lower() == r["address"] for r in response)
+        assert all(
+            transaction["contract"]["address"].lower() == r["address"] for r in response
+        )
 
     def _do_call(self, method: str, req_type: str) -> tp.Dict:
         transaction = self._get_random_transaction(method)
@@ -336,8 +328,12 @@ class EthGetLogs(BaseEthRPCATasksSet):
         else:
             kwargs = {"blockhash": transaction[req_type]}
         filter_obj.update(kwargs)
-        response = self._rpc_client.send_rpc(method, req_type=req_type, params=[filter_obj])
-        self.log.info(f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}")
+        response = self._rpc_client.send_rpc(
+            method, req_type=req_type, params=[filter_obj]
+        )
+        self.log.info(
+            f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}"
+        )
         self.assert_results(req_type, transaction, response["result"])
         return response
 
@@ -368,7 +364,8 @@ class EthCall(BaseEthRPCATasksSet):
         EthCall._deploy_contract_done = True
         transaction = self._get_random_transaction(self.method)
         contract = self.web3_client.eth.contract(
-            address=transaction["contract"]["address"], abi=transaction["contract"]["abi"]
+            address=transaction["contract"]["address"],
+            abi=transaction["contract"]["abi"],
         )
         self.log.info(f"Contract deployed {contract}.")
         if not contract:
@@ -387,11 +384,15 @@ class EthCall(BaseEthRPCATasksSet):
 
     def _do_call(self, method: str, req_type: str) -> None:
         """Store random int to contract"""
-        self.log.info(f"Call `retrieve` method from {self._contract.address} contract by `{method}`.")
+        self.log.info(
+            f"Call `retrieve` method from {self._contract.address} contract by `{method}`."
+        )
         transaction = self._get_random_transaction(self.method)
-        tx = self._contract.functions.retrieve().buildTransaction(
+        tx = self._contract.functions.retrieve().build_transaction(
             {
-                "nonce": self.web3_client.eth.get_transaction_count(transaction["from"]),
+                "nonce": self.web3_client.eth.get_transaction_count(
+                    transaction["from"]
+                ),
                 "gasPrice": self.web3_client.gas_price(),
             }
         )
@@ -401,13 +402,17 @@ class EthCall(BaseEthRPCATasksSet):
             "to": transaction["to"],
             "value": hex(tx["value"]),
             "gas": hex(tx["gas"]),
-            "gasprice": hex(tx["gasPrice"]),
+            "gasPrice": hex(tx["gasPrice"]),
             "data": tx["data"],
         }
         response = self._rpc_client.send_rpc(
-            method, req_type=req_type, params=[tx_call_obj, {req_type: transaction[req_type]}]
+            method,
+            req_type=req_type,
+            params=[tx_call_obj, {req_type: transaction[req_type]}],
         )
-        self.log.info(f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}")
+        self.log.info(
+            f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}"
+        )
 
     @tag("call_by_hash")
     @task

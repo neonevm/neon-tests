@@ -48,6 +48,7 @@ class Transfer:
             tx.add(Instruction.associated_token_account(
                 solana_wallet, ata_address, solana_wallet, mint_pubkey, instruction_data=bytes(0)))
         tx.add(transfer(TransferParams(solana_wallet, ata_address, amount)))
+        tx.add(Instruction.sync_native(ata_address))
 
         return tx
 
@@ -78,7 +79,6 @@ class Transfer:
                                                         amount,
                                                         web3_client,
                                                         ata_address,
-                                                        spl_token,
                                                         emulate_signer,
                                                         erc20_spl)
         tx = Transaction(fee_payer=solana_wallet)

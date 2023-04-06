@@ -36,6 +36,13 @@ class Instruction:
             data=data)
 
     @staticmethod
+    def sync_native(account: PublicKey):
+        keys = [AccountMeta(pubkey=account, is_signer=False, is_writable=True)]
+        data = bytes.fromhex('11')
+        return TransactionInstruction(keys=keys, program_id=TOKEN_PROGRAM_ID, data=data)
+
+
+    @staticmethod
     def deposit(solana_pubkey, neon_pubkey, deposit_pubkey,
                 neon_wallet_address, neon_mint, evm_loader_id) -> TransactionInstruction:
         associated_token_address = get_associated_token_address(
@@ -105,7 +112,7 @@ class Instruction:
         )
 
     @staticmethod
-    def claim(_from, to, amount, web3_client, ata_address, spl_token,
+    def claim(_from, to, amount, web3_client, ata_address,
               emulate_signer, contract, gas_price=None):
         emulated_tx = None
         result = dict()
@@ -116,7 +123,7 @@ class Instruction:
 
         tx = {
             "from": _from.address,
-            "to": spl_token['address'],
+            "to": to,
             "nonce": web3_client.eth.get_transaction_count(emulate_signer.address),
             "gasPrice": gas_price if gas_price is not None else web3_client.gas_price(),
             "chainId": web3_client._chain_id,

@@ -66,7 +66,7 @@ class TestDeposit(BaseMixin):
             (self.sol_client.confirm_transaction(sig)).to_json())
         assert sig_status["result"]["value"][0]["status"] == {"Ok": None}
 
-    def test_transfer_neon_from_solana_to_neon(self, new_account, solana_account, pytestconfig: Config, neon_mint):
+    def test_transfer_neon_from_solana_to_neon(self, new_account, solana_account, pytestconfig: Config, neon_mint, erc20_spl):
         """Transfer Neon from Solana -> Neon"""
         amount = 0.1
         full_amount = int(amount * LAMPORT_PER_SOL)
@@ -116,9 +116,6 @@ class TestDeposit(BaseMixin):
                                        solana_account.public_key, ata_address)
         self.send_tx_and_check_status_ok(wrap_sol_tx, solana_account)
 
-        ata_balance_after_wsol_tx = spl_neon_token.get_balance(
-            ata_address, commitment=Commitment("confirmed"))
-
         # transfer wSOL
         transfer_tx = Transfer.neon_transfer_tx(
             self.web3_client, self.sol_client, full_amount, wSOL, solana_account,
@@ -128,5 +125,4 @@ class TestDeposit(BaseMixin):
         ata_balance_after = spl_neon_token.get_balance(
             ata_address, commitment=Commitment("confirmed"))
 
-        assert int(ata_balance_after.value.amount) == int(
-            ata_balance_after_wsol_tx.value.amount) - amount == int(ata_balance_before.value.amount)
+        assert int(ata_balance_after.value.amount) == int(ata_balance_before.value.amount) + full_amount

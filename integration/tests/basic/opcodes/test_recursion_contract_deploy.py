@@ -59,9 +59,9 @@ class TestContractRecursion(BaseMixin):
         instruction_tx = recursion_factory.functions.deployViaCreate2Twice(salt).build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert receipt["status"] == 1
-        assert recursion_factory.functions.getSecondDeployedContractCount().call() == 2
+        assert recursion_factory.functions.getThirdDeployedContractCount().call() == 2
 
-        event_logs = recursion_factory.events.SecondContractDeployed().process_receipt(receipt)
+        event_logs = recursion_factory.events.ThirdContractDeployed().process_receipt(receipt)
         addresses = [event_log["args"]["addr"] for event_log in event_logs]
         assert ZERO_ADDRESS in addresses
 

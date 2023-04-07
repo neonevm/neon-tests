@@ -3,10 +3,12 @@ pragma solidity ^0.8.0;
 contract DeployRecursionFactory {
     address [] public firstContractAddresses;
     address [] public secondContractAddresses;
+    address [] public thirdContractAddresses;
     uint private depth;
     uint private depthCounter;
     event FirstContractDeployed(address addr);
     event SecondContractDeployed(address addr);
+    event ThirdContractDeployed(address addr);
     constructor(uint _depth) {
         setDepth(_depth);
     }
@@ -31,6 +33,10 @@ contract DeployRecursionFactory {
     function getSecondDeployedContractCount() public view returns (uint count) {
         return secondContractAddresses.length;
     }
+    function getThirdDeployedContractCount() public view returns (uint count) {
+        return thirdContractAddresses.length;
+    }
+
     function deploySecondContractViaCreate2(string memory stringSalt) public returns (address secondContract){
         if (depthCounter < depth) {
         depthCounter+=1;
@@ -58,7 +64,17 @@ contract DeployRecursionFactory {
         secondContractAddresses.push(secondContract);
         emit SecondContractDeployed(secondContract);
     }
+    function _deployThirdContractViaCreate2(string memory stringSalt) public returns (address thirdContract){
+        bytes memory bytecode = type(ThirdContract).creationCode;
+        bytecode = abi.encodePacked(bytecode, abi.encode(address(this), stringSalt));
 
+        bytes32 salt = keccak256(abi.encodePacked(stringSalt));
+        assembly {
+            thirdContract := create2(0, add(bytecode, 32), mload(bytecode), salt)
+        }
+        thirdContractAddresses.push(thirdContract);
+        emit ThirdContractDeployed(thirdContract);
+    }
     function _deployFirstContractViaCreate() public returns (address firstContract){
         bytes memory bytecode = type(FirstContract).creationCode;
         bytecode = abi.encodePacked(bytecode, abi.encode(address(this)));
@@ -69,11 +85,9 @@ contract DeployRecursionFactory {
         emit FirstContractDeployed(firstContract);
     }
 
-
-
     function deployViaCreate2Twice(string memory stringSalt) public {
-        _deploySecondContractViaCreate2(stringSalt);
-        _deploySecondContractViaCreate2(stringSalt);
+        _deployThirdContractViaCreate2(stringSalt);
+        _deployThirdContractViaCreate2(stringSalt);
     }
 
 }
@@ -86,11 +100,16 @@ contract FirstContract {
 
 contract SecondContract {
     constructor(address _factoryAddress, string memory stringSalt) {
-        address(_factoryAddress).call{gas: 100000}(abi.encodeWithSignature("deployThirdContractViaCreate2(string)", stringSalt));
+        address(_factoryAddress).call{gas: 100000}(abi.encodeWithSignature("deploySecondContractViaCreate2(string)", stringSalt));
     }
 
 }
 
+contract ThirdContract {
+    function doSomething() public returns (uint result) {
+        return 1;
+    }
+}
 
 contract RecursionCaller1 {
     uint public depth;

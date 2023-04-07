@@ -43,6 +43,7 @@ export FAUCET_COMMIT=${faucet_model_commit}
 
 # Receive docker-compose file and create override file
 cd /opt
+echo "Downloading docker-compose file from path: https://raw.githubusercontent.com/neonlabsorg/proxy-model.py/${proxy_model_commit}/docker-compose/docker-compose-test.yml"
 curl -O https://raw.githubusercontent.com/neonlabsorg/proxy-model.py/${proxy_model_commit}/docker-compose/docker-compose-test.yml
 cat > docker-compose-test.override.yml<<EOF
 version: "3"

@@ -16,6 +16,7 @@ from spl.token.instructions import (
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from integration.tests.basic.helpers.basic import BaseMixin
 from utils import metaplex
+from utils.consts import ZERO_ADDRESS
 from utils.helpers import gen_hash_of_block, generate_text, wait_condition
 
 

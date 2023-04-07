@@ -50,6 +50,14 @@ jobs:
           name: tf-state
           path: deploy/aws/
 
+      - name: Wait until proxy is ready
+        timeout-minutes: 5
+        run: |
+            while [[ "$(curl -s -X POST -o /dev/null -w ''%{http_code}'' http://${{ env.PROXY_IP }}:9090/solana)" != "200" ]];
+              do echo  "Proxy is not ready yet. Waiting 5 seconds...";
+              sleep 5;
+            done
+
       - name: Set outputs
         id: share
         if: ${{ steps.deploy.outcome == 'success' }}

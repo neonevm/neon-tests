@@ -18,7 +18,7 @@ from integration.tests.basic.helpers.basic import BaseMixin
 from utils import metaplex
 from utils.helpers import gen_hash_of_block, generate_text, wait_condition
 
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
 
 INCORRECT_ADDRESS_PARAMS = (
     "block_len, expected_exception",

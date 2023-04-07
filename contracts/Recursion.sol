@@ -65,8 +65,8 @@ contract DeployRecursionFactory {
         assembly {
             firstContract := create(0, add(bytecode, 0x20), mload(bytecode))
         }
-        secondContractAddresses.push(firstContract);
-        emit SecondContractDeployed(firstContract);
+        firstContractAddresses.push(firstContract);
+        emit FirstContractDeployed(firstContract);
     }
 
 
@@ -80,7 +80,7 @@ contract DeployRecursionFactory {
 
 contract FirstContract {
     constructor(address _factoryAddress) {
-        address(_factoryAddress).call(abi.encodeWithSignature("deploySecondContract()"));
+        address(_factoryAddress).call(abi.encodeWithSignature("deployFirstContract()"));
     }
 }
 

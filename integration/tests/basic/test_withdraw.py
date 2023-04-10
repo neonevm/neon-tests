@@ -1,4 +1,3 @@
-import allure
 import pytest
 from _pytest.config import Config
 from solana.keypair import Keypair
@@ -6,24 +5,14 @@ from solana.rpc.types import Commitment, TxOpts
 from solana.transaction import Transaction
 from spl.token.client import Token as SplToken
 from spl.token.constants import TOKEN_PROGRAM_ID
-from spl.token.instructions import (
-    create_associated_token_account,
-    get_associated_token_address,
-)
-from utils.helpers import wait_condition
+from spl.token.instructions import (create_associated_token_account,
+                                    get_associated_token_address)
 from web3 import exceptions as web3_exceptions
 
+import allure
+from utils.helpers import wait_condition
+
 from ..base import BaseTests
-
-
-@pytest.fixture(scope="session")
-def withdraw_contract(web3_client, faucet):
-    acc = web3_client.create_account()
-    faucet.request_neon(acc.address, 100)
-    contract, _ = web3_client.deploy_and_get_contract(
-        "NeonToken", "0.8.10", account=acc
-    )
-    return contract
 
 
 @allure.story("Withdraw tests")

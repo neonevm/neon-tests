@@ -16,9 +16,10 @@ from spl.token.instructions import (
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from integration.tests.basic.helpers.basic import BaseMixin
 from utils import metaplex
+from utils.consts import ZERO_ADDRESS
 from utils.helpers import gen_hash_of_block, generate_text, wait_condition
 
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
 
 INCORRECT_ADDRESS_PARAMS = (
     "block_len, expected_exception",

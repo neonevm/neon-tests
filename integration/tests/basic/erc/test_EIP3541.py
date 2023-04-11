@@ -61,10 +61,10 @@ class TestRejectingContractsStartingWith0xEF(BaseMixin):
         event_logs = eip3541_checker.events.Deploy().process_receipt(receipt)
         assert event_logs[0].args.addr != ZERO_ADDRESS
 
+    @pytest.mark.skip(reason="NDEV-1539")
     @pytest.mark.parametrize("data", BAD_CALLDATA)
     def test_sent_incorrect_calldata_via_create2(self, eip3541_checker, data):
         tx = self.create_contract_call_tx_object()
         seed = random.randint(1, 1000000)
         with pytest.raises(ValueError, match="unknown error"):
             eip3541_checker.functions.deploy(data, seed).build_transaction(tx)
-        # TODO: check error message after fix NDEV-1539

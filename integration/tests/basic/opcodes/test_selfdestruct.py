@@ -144,3 +144,25 @@ class TestSelfDestructOpcode(BaseMixin):
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert receipt["status"] == 1
         self.check_contract_code_is_empty(destroyable_contract.address)
+
+    def test_destroy_contract_via_delegatecall(self, destroyable_contract, contract_caller):
+        # contract_caller should be destroyed instead of destroyable_contract
+        tx = self.create_contract_call_tx_object(self.sender_account)
+        instr = contract_caller.functions\
+            .callDestroyViaDelegateCall(self.sender_account.address).build_transaction(tx)
+        receipt = self.web3_client.send_transaction(self.sender_account, instr)
+
+        assert receipt["status"] == 1
+        assert self.web3_client.eth.get_code(destroyable_contract.address) != "0x"
+        self.check_contract_code_is_empty(contract_caller.address)
+
+    @pytest.mark.xfail(reason="NDEV-1570")
+    def test_destroy_contract_via_delegatecall_and_create_new_contract(self, destroyable_contract, contract_caller):
+        tx = self.create_contract_call_tx_object(self.sender_account)
+        instr = contract_caller.functions\
+            .callDestroyViaDelegateCallAndCreateNewContract(self.sender_account.address).build_transaction(tx)
+        receipt = self.web3_client.send_transaction(self.sender_account, instr)
+
+        assert receipt["status"] == 1
+        assert self.web3_client.eth.get_code(destroyable_contract.address) != "0x"
+        self.check_contract_code_is_empty(contract_caller.address)

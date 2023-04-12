@@ -2,15 +2,15 @@ import random
 import re
 import typing as tp
 
-import allure
 import eth_utils
 import pytest
 import web3
 import web3.exceptions
 
-from integration.tests.basic.helpers.assert_message import AssertMessage
-from integration.tests.basic.helpers.basic import BaseMixin, AccountData
-from integration.tests.basic.helpers.assert_message import ErrorMessage
+import allure
+from integration.tests.basic.helpers.assert_message import (AssertMessage,
+                                                            ErrorMessage)
+from integration.tests.basic.helpers.basic import AccountData, BaseMixin
 from utils.consts import InputTestConstants
 from utils.helpers import gen_hash_of_block
 

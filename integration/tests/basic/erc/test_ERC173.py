@@ -3,8 +3,7 @@ import pytest
 import web3
 
 from integration.tests.basic.helpers.basic import BaseMixin
-
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+from utils.consts import ZERO_ADDRESS
 
 
 @allure.feature("ERC Verifications")

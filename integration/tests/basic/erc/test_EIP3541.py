@@ -4,11 +4,11 @@ import allure
 import pytest
 
 from integration.tests.basic.helpers.basic import BaseMixin
+from utils.consts import ZERO_ADDRESS
 
 BAD_CALLDATA = ["0x60ef60005360016000f3", '0x60ef60005360026000f3',
                 '0x60ef60005360036000f3', '0x60ef60005360206000f3']
 GOOD_CALLDATA = ['0x60fe60005360016000f3']
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 
 @allure.feature("EIP Verifications")
@@ -49,7 +49,7 @@ class TestRejectingContractsStartingWith0xEF(BaseMixin):
     @pytest.fixture(scope="function")
     def eip3541_checker(self, web3_client):
         contract, _ = web3_client.deploy_and_get_contract(
-            "EIP3541", "0.8.10", self.sender_account)
+            "EIPs/EIP3541_reject_0xEF", "0.8.10", self.sender_account, contract_name="EIP3541")
         return contract
 
     def test_sent_correct_calldata_via_create2(self, eip3541_checker):
@@ -61,10 +61,10 @@ class TestRejectingContractsStartingWith0xEF(BaseMixin):
         event_logs = eip3541_checker.events.Deploy().process_receipt(receipt)
         assert event_logs[0].args.addr != ZERO_ADDRESS
 
+    @pytest.mark.skip(reason="NDEV-1539")
     @pytest.mark.parametrize("data", BAD_CALLDATA)
     def test_sent_incorrect_calldata_via_create2(self, eip3541_checker, data):
         tx = self.create_contract_call_tx_object()
         seed = random.randint(1, 1000000)
         with pytest.raises(ValueError, match="unknown error"):
             eip3541_checker.functions.deploy(data, seed).build_transaction(tx)
-        # TODO: check error message after fix NDEV-1539

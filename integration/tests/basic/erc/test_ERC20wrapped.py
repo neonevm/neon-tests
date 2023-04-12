@@ -11,9 +11,9 @@ from spl.token.constants import TOKEN_PROGRAM_ID
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from integration.tests.basic.helpers.basic import BaseMixin
 from utils import metaplex
+from utils.consts import ZERO_ADDRESS
 from utils.helpers import gen_hash_of_block, wait_condition
 
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 UINT64_LIMIT = 18446744073709551615
 MAX_TOKENS_AMOUNT = 1000000000000000
 

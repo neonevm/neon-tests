@@ -1,6 +1,4 @@
 import allure
-import web3
-from hexbytes import HexBytes
 
 from integration.tests.basic.helpers.basic import BaseMixin
 

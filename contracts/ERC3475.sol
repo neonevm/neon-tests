@@ -265,27 +265,9 @@ contract ERC3475 is IERC3475 {
         _classMetadata[5]._type = "int";
         _classMetadata[5].description = "value (in months) about maturity time";
 
-
-
-
         // describing the symbol of the different class
         _classes[0]._values[0].stringValue = "DBIT Fix 6M";
         _classes[1]._values[0].stringValue = "DBIT Fix test Instantaneous";
-
-        
-        // define the maturity time period (for the test class).
-      //  _classes[0]._values[5].uintValue = 0;
-      //  _classes[1]._values[5].uintValue = 0;
-
-        // write the time of maturity to nonce values, in other implementation, a create nonce function can be added
-      //  _classes[0].nonces[0]._values[0].uintValue = block.timestamp + 180 days;
-     //   _classes[0].nonces[1]._values[0].uintValue = block.timestamp + 181 days;
-     //   _classes[0].nonces[2]._values[0].uintValue = block.timestamp + 182 days;
-
-        // test for review the instantaneous class
-      //  _classes[1].nonces[0]._values[0].uintValue = block.timestamp + 1;
-       // _classes[1].nonces[1]._values[0].uintValue = block.timestamp + 2;
-      //  _classes[1].nonces[2]._values[0].uintValue = block.timestamp + 3;
 
         // define metadata explaining "maturity of the nonce";
         _classes[0]._nonceMetadata[0].title = "maturity";

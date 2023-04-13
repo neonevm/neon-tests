@@ -36,7 +36,7 @@ def dump_history(attr) -> tp.Callable:
     def ext_runner(func: tp.Callable) -> tp.Callable:
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs) -> tp.Any:
-            tx = func(self, *args, **kwargs)
+            tx, balances = func(self, *args, **kwargs)
             if tx:
                 transaction_history[attr][str(tx["from"])].append(
                     {
@@ -44,6 +44,7 @@ def dump_history(attr) -> tp.Callable:
                         "blockNumber": hex(tx["blockNumber"]),
                         "contract": tx.get("contract", ""),
                         "to": str(tx["to"]),
+                        "additional_info": balances,
                     }
                 )
             return tx
@@ -121,7 +122,7 @@ class EthGetStorageAtPreparationStage(head.NeonTasksSet):
             tx_receipt.update(
                 {"contract": {"address": contract.address, "abi": contract.abi}}
             )
-            return tx_receipt
+            return tx_receipt, {}
         self.log.info(f"no `storage` contracts found, data store canceled.")
 
 

@@ -29,10 +29,29 @@ class NeonTasksSet(NeonProxyTasksSet):
         self.log.info(
             f"Send `neon` from {str(self.account.address)[-8:]} to {str(recipient.address)[-8:]}. nonce {self.nonce}"
         )
+        sender_balance_before = self.web3_client.get_balance(
+            self.account.address)
+        recipient_balance_before = self.web3_client.get_balance(
+            recipient.address)
+
+        amount = random.randint(1, int(sender_balance_before / 2))
         tx = self.web3_client.send_neon(
-            self.account, recipient, amount=1, nonce=self.nonce
+            self.account, recipient, amount=amount, nonce=self.nonce
         )
-        return tx
+
+        sender_balance_after = self.web3_client.get_balance(
+            self.account.address)
+        recipient_balance_after = self.web3_client.get_balance(
+            recipient.address)
+
+        balances = {
+            "sender_balance_before": f"{sender_balance_before}",
+            "sender_balance_after": f"{sender_balance_after}",
+            "recipient_balance_before": f"{recipient_balance_before}",
+            "recipient_balance_after": f"{recipient_balance_after}",
+            "amount": amount,
+        }
+        return tx, balances
 
 
 class NeonUser(User):

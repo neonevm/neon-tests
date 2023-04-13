@@ -59,9 +59,25 @@ class ERC20TasksSet(NeonProxyTasksSet):
         self.log.info(
             f"Send `{ERC20_CONTRACT_NAME}` tokens from contract {str(contract.address)[-8:]} to {str(recipient.address)[-8:]}."
         )
+
+        sender_balance_before = contract.functions.balanceOf(self.account.address).call()
+        recipient_balance_before = contract.functions.balanceOf(recipient.address).call()
+        
+        amount = random.randint(1, int(sender_balance_before / 2))
         tx_receipt = self.web3_client.send_erc20(
-            self.account, recipient, 1, contract.address, abi=contract.abi
+            self.account, recipient, amount, contract.address, abi=contract.abi
         )
+        sender_balance_after = contract.functions.balanceOf(self.account.address).call()
+        recipient_balance_after = contract.functions.balanceOf(recipient.address).call()
+
+        balances = {
+            "sender_balance_before": f"{sender_balance_before}",
+            "sender_balance_after": f"{sender_balance_after}",
+            "recipient_balance_before": f"{recipient_balance_before}",
+            "recipient_balance_after": f"{recipient_balance_after}",
+            "amount": amount,
+        }
+
         if tx_receipt:
             tx_receipt = dict(tx_receipt)  # AttributeDict -> dict
             tx_receipt["contractAddress"] = contract.address
@@ -75,7 +91,7 @@ class ERC20TasksSet(NeonProxyTasksSet):
                 {contract.address: recipient_contract}
             )
             tx_receipt["contract"] = {"address": contract.address}
-        return tx_receipt
+        return tx_receipt, balances
 
 
 @events.test_start.add_listener

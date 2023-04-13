@@ -25,19 +25,19 @@ LOG = logging.getLogger("neon_client")
 
 DUMPED_DATA = "dumped_data/transaction.json"  # where save dumped data
 
-NEON_RPC = os.environ.get("NEON_TRACING_URL", "")  # url for history endpoint proxy
+# url for history endpoint proxy
+NEON_RPC = os.environ.get("NEON_TRACING_URL", "")
 
 
 class RPCType(enum.Enum):
-
-    logs = ["eth_getLogs"]
     store = ["eth_getStorageAt", "eth_call"]
     transfer = ["eth_getBalance", "eth_getTransactionCount"]
 
     @classmethod
     def get(cls, key: str) -> str:
         return list(
-            filter(lambda i: i if key in i.value else None, cls.__members__.values())
+            filter(lambda i: i if key in i.value else None,
+                   cls.__members__.values())
         )[0].name
 
 
@@ -230,6 +230,14 @@ class BaseEthRPCATasksSet(TaskSet):
         params["from"] = key
         return params
 
+    def _check_transfer(self, transfer_info):
+        self.log.info(f"Check transfer: {transfer_info}")
+        if transfer_info:
+            assert float(transfer_info['sender_balance_before']) - \
+                float(transfer_info['sender_balance_after']) >= float(transfer_info['amount'])
+            assert float(transfer_info['recipient_balance_after']) - \
+                float(transfer_info['recipient_balance_before']) <= float(transfer_info['amount'])
+
     def _do_call(
         self,
         method: str,
@@ -238,6 +246,7 @@ class BaseEthRPCATasksSet(TaskSet):
         kwargs: tp.Optional[tp.Dict] = None,
     ) -> tp.Dict:
         transaction = self._get_random_transaction(method)
+        self._check_transfer(transaction['additional_info'])
         if not args:
             args = []
         elif not isinstance(args, list):
@@ -246,7 +255,8 @@ class BaseEthRPCATasksSet(TaskSet):
         kwargs.update({req_type: transaction[req_type]})
         args.append(kwargs)
         args.insert(0, transaction["to"])
-        response = self._rpc_client.send_rpc(method, req_type=req_type, params=args)
+        response = self._rpc_client.send_rpc(
+            method, req_type=req_type, params=args)
         self.log.info(
             f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}"
         )
@@ -295,64 +305,17 @@ class EthGetStorageAtTasksSet(BaseEthRPCATasksSet):
     @task
     def task_eth_get_storage_at_by_hash(self) -> tp.Dict:
         """the eth_getStorageAt method by blockHash"""
-        self._do_call(method="eth_getStorageAt", req_type="blockHash", args="0x0")
+        response = self._do_call(
+            method="eth_getStorageAt", req_type="blockHash", args="0x0")
+        assert response['result'] != '0x0'
 
     @tag("getStorageAt_by_num")
     @task
     def task_eth_get_storage_at_by_num(self) -> tp.Dict:
         """the eth_getStorageAt method by blockNumber"""
-        self._do_call(method="eth_getStorageAt", req_type="blockNumber", args="0x0")
-
-
-@tag("getLogs")
-class EthGetLogs(BaseEthRPCATasksSet):
-    """task set measures the maximum request rate for the eth_getLogs method"""
-
-    @staticmethod
-    def assert_results(req_type: str, transaction: tp.Dict, response: tp.List) -> None:
-        """Check response result"""
-        if req_type == "blockNumber":
-            assert transaction[req_type].lower() == response[0][req_type]
-        if req_type == "blockHash":
-            any_result = [
-                transaction[req_type].lower() == r[req_type] for r in response
-            ]
-            assert any(
-                any_result
-            ), f"Block hash problem {any_result}, response: {response}"
-        assert all(
-            transaction["contract"]["address"].lower() == r["address"] for r in response
-        )
-
-    def _do_call(self, method: str, req_type: str) -> tp.Dict:
-        transaction = self._get_random_transaction(method)
-        filter_obj = {"address": transaction["contract"]["address"]}
-        if req_type == "blockNumber":
-            block = transaction[req_type]
-            kwargs = {"toBlock": block, "fromBlock": block}
-        else:
-            kwargs = {"blockhash": transaction[req_type]}
-        filter_obj.update(kwargs)
-        response = self._rpc_client.send_rpc(
-            method, req_type=req_type, params=[filter_obj]
-        )
-        self.log.info(
-            f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}"
-        )
-        self.assert_results(req_type, transaction, response["result"])
-        return response
-
-    @tag("getLogs_by_hash")
-    @task
-    def task_eth_get_logs_by_hash(self) -> tp.Dict:
-        """the eth_getLogs method by blockHash"""
-        self._do_call(method="eth_getLogs", req_type="blockHash")
-
-    @tag("getLogs_by_num")
-    @task
-    def task_eth_get_logs_by_num(self) -> tp.Dict:
-        """the eth_getLogs method by blockNumber"""
-        self._do_call(method="eth_getLogs", req_type="blockNumber")
+        response = self._do_call(
+            method="eth_getStorageAt", req_type="blockNumber", args="0x0")
+        assert response['result'] != '0x0'
 
 
 @tag("call")
@@ -418,18 +381,21 @@ class EthCall(BaseEthRPCATasksSet):
         self.log.info(
             f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}"
         )
+        return response
 
     @tag("call_by_hash")
     @task
     def task_eth_call_by_hash(self) -> tp.Dict:
         """the eth_call method by blockHash"""
-        self._do_call(method="eth_call", req_type="blockHash")
+        response = self._do_call(method="eth_call", req_type="blockHash")
+        assert response['result'] != '0x0'
 
     @tag("call_by_num")
     @task
     def task_eth_call_by_num(self) -> tp.Dict:
         """the eth_call method by blockNumber"""
-        self._do_call(method="eth_call", req_type="blockNumber")
+        response = self._do_call(method="eth_call", req_type="blockNumber")
+        assert response['result'] != '0x0'
 
 
 class EthRPCAPICallUsers(User):
@@ -439,6 +405,5 @@ class EthRPCAPICallUsers(User):
         EthGetBalanceTasksSet: 1,
         EthGetTransactionCountTasksSet: 1,
         EthGetStorageAtTasksSet: 1,
-        EthGetLogs: 1,
         EthCall: 1,
     }

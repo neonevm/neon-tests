@@ -22,8 +22,8 @@ from utils.web3client import NeonWeb3Client
 
 LOG = logging.getLogger("neon_client")
 
-
-DUMPED_DATA = "dumped_data/transaction.json"  # where save dumped data
+# where save dumped data
+DUMPED_DATA = "dumped_data/transaction.json"
 
 # url for history endpoint proxy
 NEON_RPC = os.environ.get("NEON_TRACING_URL", "")
@@ -231,12 +231,13 @@ class BaseEthRPCATasksSet(TaskSet):
         return params
 
     def _check_transfer(self, transfer_info):
-        self.log.info(f"Check transfer: {transfer_info}")
         if transfer_info:
             assert float(transfer_info['sender_balance_before']) - \
-                float(transfer_info['sender_balance_after']) >= float(transfer_info['amount'])
+                float(transfer_info['sender_balance_after']
+                      ) >= float(transfer_info['amount'])
             assert float(transfer_info['recipient_balance_after']) - \
-                float(transfer_info['recipient_balance_before']) <= float(transfer_info['amount'])
+                float(transfer_info['recipient_balance_before']) <= float(
+                    transfer_info['amount'])
 
     def _do_call(
         self,

@@ -525,7 +525,7 @@ def analyze_openzeppelin_results():
     else:
         if test_report["failing"] > 0:
             raise click.ClickException(f"OpenZeppelin {version} tests failed. \n"
-                                       f"Failed: {test_report['failures']}, passed: {test_report['passing']}")
+                                       f"Failed: {test_report['failing']}, passed: {test_report['passing']}")
         else:
             print("OpenZeppelin tests passed")
 

@@ -100,7 +100,7 @@ contract FirstContract {
 
 contract SecondContract {
     constructor(address _factoryAddress, string memory stringSalt) {
-        address(_factoryAddress).call{gas: 100000}(abi.encodeWithSignature("deploySecondContractViaCreate2(string)", stringSalt));
+        address(_factoryAddress).call{gas: 19135420}(abi.encodeWithSignature("deploySecondContractViaCreate2(string)", stringSalt));
     }
 
 }

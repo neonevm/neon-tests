@@ -30,7 +30,6 @@ class TestContractRecursion(BaseMixin):
         for event_log in event_logs:
             assert event_log["args"]["addr"] != ZERO_ADDRESS
 
-    @pytest.mark.xfail(reason="NDEV-1587")
     def test_deploy_with_recursion_via_create2(self, recursion_factory):
         tx = self.create_contract_call_tx_object(self.sender_account)
         salt = generate_text(min_len=5, max_len=7)
@@ -40,8 +39,8 @@ class TestContractRecursion(BaseMixin):
 
         event_logs = recursion_factory.events.SecondContractDeployed().process_receipt(receipt)
         addresses = [event_log["args"]["addr"] for event_log in event_logs]
-        assert len(addresses) == 1
-        assert ZERO_ADDRESS not in addresses
+        assert len(addresses) == 2
+        assert ZERO_ADDRESS in addresses
 
     def test_deploy_with_recursion_via_create(self, recursion_factory):
         tx = self.create_contract_call_tx_object(self.sender_account)

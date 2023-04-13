@@ -38,20 +38,23 @@ class NeonTasksSet(NeonProxyTasksSet):
         tx = self.web3_client.send_neon(
             self.account, recipient, amount=amount, nonce=self.nonce
         )
+        recipient_nonce = self.web3_client.get_nonce(recipient)
 
         sender_balance_after = self.web3_client.get_balance(
             self.account.address)
         recipient_balance_after = self.web3_client.get_balance(
             recipient.address)
-
-        balances = {
+        
+        info = {
             "sender_balance_before": f"{sender_balance_before}",
             "sender_balance_after": f"{sender_balance_after}",
+            "recipient_nonce": f"{recipient_nonce}",
             "recipient_balance_before": f"{recipient_balance_before}",
             "recipient_balance_after": f"{recipient_balance_after}",
             "amount": amount,
+            "type": "neon",
         }
-        return tx, balances
+        return tx, info
 
 
 class NeonUser(User):

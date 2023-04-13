@@ -76,6 +76,7 @@ class ERC20TasksSet(NeonProxyTasksSet):
             "recipient_balance_before": f"{recipient_balance_before}",
             "recipient_balance_after": f"{recipient_balance_after}",
             "amount": amount,
+            "type": "erc20",
         }
 
         if tx_receipt:

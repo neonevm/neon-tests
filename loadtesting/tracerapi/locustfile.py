@@ -14,7 +14,7 @@ from dataclasses import dataclass
 import gevent
 import requests
 import web3
-from locust import User, TaskSet, between, task, events, tag
+from locust import User, TaskSet, task, events, tag
 
 from loadtesting.proxy.common import env
 from utils import apiclient
@@ -166,8 +166,6 @@ class BaseEthRPCATasksSet(TaskSet):
     """Implements base behavior for task set measured by the maximum request rates
     for EIP-1898 methods implemented inside Tracer API"""
 
-    wait_time = between(3, 5)
-
     _setup_class_locker = gevent.threading.Lock()
     _setup_class_done = False
 
@@ -230,15 +228,6 @@ class BaseEthRPCATasksSet(TaskSet):
         params["from"] = key
         return params
 
-    def _check_transfer(self, transfer_info):
-        if transfer_info:
-            assert float(transfer_info['sender_balance_before']) - \
-                float(transfer_info['sender_balance_after']
-                      ) >= float(transfer_info['amount'])
-            assert float(transfer_info['recipient_balance_after']) - \
-                float(transfer_info['recipient_balance_before']) <= float(
-                    transfer_info['amount'])
-
     def _do_call(
         self,
         method: str,
@@ -247,7 +236,6 @@ class BaseEthRPCATasksSet(TaskSet):
         kwargs: tp.Optional[tp.Dict] = None,
     ) -> tp.Dict:
         transaction = self._get_random_transaction(method)
-        self._check_transfer(transaction['additional_info'])
         if not args:
             args = []
         elif not isinstance(args, list):
@@ -261,7 +249,7 @@ class BaseEthRPCATasksSet(TaskSet):
         self.log.info(
             f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}"
         )
-        return response
+        return response, transaction
 
 
 @tag("getBalance")
@@ -272,13 +260,32 @@ class EthGetBalanceTasksSet(BaseEthRPCATasksSet):
     @task
     def task_eth_get_balance_by_hash(self) -> tp.Dict:
         """the eth_getBalance method by blockHash"""
-        self._do_call(method="eth_getBalance", req_type="blockHash")
+        response, tx = self._do_call(
+            method="eth_getBalance", req_type="blockHash")
+
+        if tx['additional_info']['type'] == 'neon':
+            assert float.fromhex(
+                response['result']) / 1e18 == tx['additional_info']['recipient_balance_after']
+        else:
+            balance = self.web3_client.get_balance(tx['to'])
+            self.log.info(f"Balance: {balance} of {tx['to']}")
+            assert float.fromhex(
+                response['result']) / 1e18 == balance
 
     @tag("getBalance_by_num")
     @task
     def task_eth_get_balance_by_num(self) -> tp.Dict:
         """the eth_getBalance method by blockNumber"""
-        self._do_call(method="eth_getBalance", req_type="blockNumber")
+        response, tx = self._do_call(
+            method="eth_getBalance", req_type="blockNumber")
+        if tx['additional_info']['type'] == 'neon':
+            assert float.fromhex(
+                response['result']) / 1e18 == tx['additional_info']['recipient_balance_after']
+        else:
+            balance = self.web3_client.get_balance(tx['to'])
+            self.log.info(f"Balance: {balance} of {tx['to']}")
+            assert float.fromhex(
+                response['result']) / 1e18 == balance
 
 
 @tag("getTransactionCount")
@@ -289,14 +296,16 @@ class EthGetTransactionCountTasksSet(BaseEthRPCATasksSet):
     @task
     def task_eth_get_transaction_count_by_hash(self) -> tp.Dict:
         """the eth_getTransactionCount method by blockHash"""
-        self._do_call(method="eth_getTransactionCount", req_type="blockHash")
+        # sender account self.account args=self.account
+        response, tx = self._do_call(method="eth_getTransactionCount", req_type="blockHash")
+        assert int(response['result'], 16) == int(tx['additional_info']['recipient_nonce'])
 
     @tag("getTransactionCount_by_num")
     @task
     def task_eth_get_transaction_count_by_num(self) -> tp.Dict:
         """the eth_getTransactionCount method by blockNumber"""
-        self._do_call(method="eth_getTransactionCount", req_type="blockNumber")
-
+        response, tx = self._do_call(method="eth_getTransactionCount", req_type="blockNumber")
+        assert int(response['result'], 16) == int(tx['additional_info']['recipient_nonce'])
 
 @tag("getStorageAt")
 class EthGetStorageAtTasksSet(BaseEthRPCATasksSet):
@@ -306,7 +315,7 @@ class EthGetStorageAtTasksSet(BaseEthRPCATasksSet):
     @task
     def task_eth_get_storage_at_by_hash(self) -> tp.Dict:
         """the eth_getStorageAt method by blockHash"""
-        response = self._do_call(
+        response, _ = self._do_call(
             method="eth_getStorageAt", req_type="blockHash", args="0x0")
         assert response['result'] != '0x0'
 
@@ -314,7 +323,7 @@ class EthGetStorageAtTasksSet(BaseEthRPCATasksSet):
     @task
     def task_eth_get_storage_at_by_num(self) -> tp.Dict:
         """the eth_getStorageAt method by blockNumber"""
-        response = self._do_call(
+        response, _ = self._do_call(
             method="eth_getStorageAt", req_type="blockNumber", args="0x0")
         assert response['result'] != '0x0'
 

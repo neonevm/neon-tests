@@ -35,7 +35,7 @@ def dump_history(attr) -> tp.Callable:
     def ext_runner(func: tp.Callable) -> tp.Callable:
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs) -> tp.Any:
-            tx, balances = func(self, *args, **kwargs)
+            tx, info = func(self, *args, **kwargs)
             if tx:
                 transaction_history[attr][str(tx["from"])].append(
                     {
@@ -43,7 +43,7 @@ def dump_history(attr) -> tp.Callable:
                         "blockNumber": hex(tx["blockNumber"]),
                         "contract": tx.get("contract", ""),
                         "to": str(tx["to"]),
-                        "additional_info": balances,
+                        "additional_info": info,
                     }
                 )
             return tx

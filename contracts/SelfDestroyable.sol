@@ -61,4 +61,15 @@ contract SelfDestroyableContractCaller {
         callDestroy(fundsRecipient);
         callDestroy(fundsRecipient);
     }
+
+    function callDestroyViaDelegateCall(address fundsRecipient) public {
+        (bool success, )  = address(contractAddress).delegatecall(abi.encodeWithSignature("destroy(address)", fundsRecipient));
+        require(success, "callDestroy: failed call");
+    }
+
+    function callDestroyViaDelegateCallAndCreateNewContract(address fundsRecipient) public {
+        (bool success, )  = address(contractAddress).delegatecall(abi.encodeWithSignature("destroy(address)", fundsRecipient));
+        require(success, "callDestroy: failed call");
+        contractAddress = address(new SelfDestroyable());
+    }
 }

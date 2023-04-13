@@ -1,15 +1,13 @@
 import time
-
-import solana.rpc.api
-import solders.system_program as sp
-from solana.system_program import transfer, TransferParams
-from solana.transaction import Transaction
-from solana.keypair import Keypair
-from solana.publickey import PublicKey
-from solana.rpc.commitment import Finalized, Commitment
-from solders.rpc.errors import InternalErrorMessage
 import typing as tp
 
+import solana.rpc.api
+from solana.keypair import Keypair
+from solana.publickey import PublicKey
+from solana.rpc.commitment import Commitment, Finalized
+from solana.system_program import TransferParams, transfer
+from solana.transaction import Transaction
+from solders.rpc.errors import InternalErrorMessage
 from solders.rpc.responses import RequestAirdropResp
 
 from utils.helpers import wait_condition

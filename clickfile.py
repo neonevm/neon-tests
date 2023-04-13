@@ -511,11 +511,12 @@ def analyze_openzeppelin_results():
     with open("./compatibility/openzeppelin-contracts/package.json") as f:
         version = json.load(f)["version"]
         print(f"OpenZeppelin version: {version}")
+
     if version.startswith("3") or version.startswith("2"):
-        if version.startswith("4"):
-            threshold = 2700
-        elif version.startswith("3"):
+        if version.startswith("3"):
             threshold = 1350
+        elif version.startswith("2"):
+            threshold = 2295
         print(f"Threshold: {threshold}")
         if test_report["passing"] < threshold:
             raise click.ClickException(f"OpenZeppelin {version} tests failed. \n"

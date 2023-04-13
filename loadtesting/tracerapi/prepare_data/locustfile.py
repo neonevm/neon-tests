@@ -9,9 +9,7 @@ import typing as tp
 import gevent
 import web3
 from locust import User, between, events, tag, task
-from proxy.tests.erc20 import ERC20TasksSet
-from proxy.tests.erc20spl import ERC20SPLTasksSet
-from proxy.tests.send_neon import NeonTasksSet
+from loadtesting.proxy import locustfile as head
 
 RETRIEVE_STORE_VERSION = "0.8.10"
 """RetrieveStore contract version
@@ -62,13 +60,14 @@ def teardown(*args, **kwargs) -> None:
         dumped_path = pathlib.Path(__file__).parent.parent / DEFAULT_DUMP_FILE
         dumped_path.parents[0].mkdir(parents=True, exist_ok=True)
         with open(dumped_path, "w") as fp:
-            LOG.info(f"Dumped transaction history to `{dumped_path.as_posix()}`")
+            LOG.info(
+                f"Dumped transaction history to `{dumped_path.as_posix()}`")
             json.dump(transaction_history, fp=fp, indent=4, sort_keys=True)
 
 
 @tag("store")
 @tag("call")
-class EthGetStorageAtPreparationStage():
+class EthGetStorageAtPreparationStage(head.NeonTasksSet):
     """Preparation stage for eth_getStorageAt and eth_call test suite"""
 
     _deploy_contract_locker = gevent.threading.Lock()
@@ -95,7 +94,7 @@ class EthGetStorageAtPreparationStage():
 
     def on_start(self) -> None:
         """on_start is called when a Locust start before any task is scheduled"""
-        NeonTasksSet.on_start()
+        super(EthGetStorageAtPreparationStage, self).on_start()
         # setup class once
         with self._deploy_contract_locker:
             if not EthGetStorageAtPreparationStage._deploy_contract_done:
@@ -119,7 +118,8 @@ class EthGetStorageAtPreparationStage():
                     "gasPrice": self.web3_client.gas_price(),
                 }
             )
-            tx_receipt = dict(self.web3_client.send_transaction(self.account, tx))
+            tx_receipt = dict(
+                self.web3_client.send_transaction(self.account, tx))
             tx_receipt.update(
                 {"contract": {"address": contract.address, "abi": contract.abi}}
             )
@@ -129,38 +129,38 @@ class EthGetStorageAtPreparationStage():
 
 @tag("neon")
 @tag("transfer")
-class NeonTransferPreparationStage():
+class NeonTransferPreparationStage(head.NeonTasksSet):
     @task
     @dump_history("transfer")
     def prepare_data_by_neon_transfer(
         self,
     ) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Make number of `NEONs` transfer transactions between different client accounts"""
-        return NeonTasksSet.task_send_neon()
+        return super(NeonTransferPreparationStage, self).task_send_neon()
 
 
 @tag("erc20")
 @tag("transfer")
-class ERC20TransferPreparationStage():
+class ERC20TransferPreparationStage(head.ERC20TasksSet):
     @task
     @dump_history("transfer")
     def prepare_data_by_erc20_transfer(
         self,
     ) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Make number of `ERC20` transfer transactions between different client accounts"""
-        return ERC20TasksSet.task_send_erc20()
+        return super(ERC20TransferPreparationStage, self).task_send_erc20()
 
 
 @tag("spl")
 @tag("logs")
-class ERC20WrappedPreparationStage():
+class ERC20WrappedPreparationStage(head.ERC20SPLTasksSet):
     @task
     @dump_history("logs")
     def prepare_data_by_erc20_wrapped(
         self,
     ) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Make number of `ERC20Wrapper` transfer transactions between different client accounts"""
-        return ERC20SPLTasksSet.task_send_erc20_spl()
+        return super(ERC20WrappedPreparationStage, self).task_send_erc20_spl()
 
 
 @tag("prepare")

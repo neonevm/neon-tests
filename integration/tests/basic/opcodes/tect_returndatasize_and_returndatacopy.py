@@ -86,7 +86,6 @@ class TestReturnDataSizeAndCopyOpcodes(BaseMixin):
         assert receipt["status"] == 1
         assert self.get_size_from_event_logs(eip211_checker, receipt) == 0
 
-    @pytest.mark.xfail(reason="NDEV-1567")
     def test_returndatacopy_for_create_with_revert(self, eip211_checker):
         tx = self.create_contract_call_tx_object(self.sender_account)
         instruction_tx = eip211_checker.functions.getReturnDataForCreateWithRevert().build_transaction(tx)
@@ -94,7 +93,6 @@ class TestReturnDataSizeAndCopyOpcodes(BaseMixin):
         assert receipt["status"] == 1
         assert self.get_data_from_event_logs(eip211_checker, receipt) == 'Revert msg'
 
-    @pytest.mark.xfail(reason="NDEV-1567")
     def test_returndatacopy_for_create2_with_revert(self, eip211_checker):
         tx = self.create_contract_call_tx_object(self.sender_account)
         salt = generate_text(min_len=10, max_len=200)
@@ -117,5 +115,5 @@ class TestReturnDataSizeAndCopyOpcodes(BaseMixin):
 
     def test_returndatacopy_with_invalid_params(self, eip211_checker):
         tx = self.create_contract_call_tx_object(self.sender_account)
-        with pytest.raises(ValueError, match="unknown error"):
+        with pytest.raises(web3.exceptions.ContractLogicError, match="exceeds data size"):
             eip211_checker.functions.getReturnDataWithParams(32, 96).build_transaction(tx)

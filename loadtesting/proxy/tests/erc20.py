@@ -55,24 +55,31 @@ class ERC20TasksSet(NeonProxyTasksSet):
             )
             del contracts[contract_address]
             return
-        recipient = random.choice(self.user.environment.shared.accounts)
+        recipient = self.web3_client.create_account()
         self.log.info(
             f"Send `{ERC20_CONTRACT_NAME}` tokens from contract {str(contract.address)[-8:]} to {str(recipient.address)[-8:]}."
         )
 
-        sender_balance_before = contract.functions.balanceOf(self.account.address).call()
-        recipient_balance_before = contract.functions.balanceOf(recipient.address).call()
-        
-        amount = random.randint(1, int(sender_balance_before / 2))
+        sender_balance_before = contract.functions.balanceOf(
+            self.account.address).call()
+        recipient_balance_before = contract.functions.balanceOf(
+            recipient.address).call()
+
+        amount = random.randint(1, int(sender_balance_before / 4))
         tx_receipt = self.web3_client.send_erc20(
             self.account, recipient, amount, contract.address, abi=contract.abi
         )
-        sender_balance_after = contract.functions.balanceOf(self.account.address).call()
-        recipient_balance_after = contract.functions.balanceOf(recipient.address).call()
+        self.nonce = self.web3_client.get_nonce(self.account)
+        
+        sender_balance_after = contract.functions.balanceOf(
+            self.account.address).call()
+        recipient_balance_after = contract.functions.balanceOf(
+            recipient.address).call()
 
         balances = {
             "sender_balance_before": f"{sender_balance_before}",
             "sender_balance_after": f"{sender_balance_after}",
+            "sender_nonce": f"{self.nonce}",
             "recipient_balance_before": f"{recipient_balance_before}",
             "recipient_balance_after": f"{recipient_balance_after}",
             "amount": amount,
@@ -121,7 +128,8 @@ def prepare_one_contract_for_erc20(environment: "locust.env.Environment", **kwar
         ERC20_CONTRACT_NAME,
         account=eth_account,
         version=ERC20_CONTRACT_VERSION,
-        constructor_args=["Test Token", "TT", web3.Web3.to_wei(10000000000, "ether")],
+        constructor_args=["Test Token", "TT",
+                          web3.Web3.to_wei(10000000000, "ether")],
     )
     environment.erc20_one = {"user": eth_account, "contract": erc_contract}
 

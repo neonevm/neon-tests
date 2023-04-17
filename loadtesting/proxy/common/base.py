@@ -89,7 +89,6 @@ class NeonProxyTasksSet(TaskSet):
         # create new account for each simulating user
         self.account = self.web3_client.create_account()
         self.check_balance()
-        self.user.environment.shared.accounts.append(self.account)
         LOG.info(f"New account {self.account.address} created")
 
     def on_start(self) -> None:

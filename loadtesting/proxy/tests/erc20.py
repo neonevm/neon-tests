@@ -158,7 +158,7 @@ class ERC20OneContractTasksSet(NeonProxyTasksSet):
         """Send ERC20 tokens"""
         LOG.debug("Send erc20 ", self.account.address)
         contract = self.user.environment.erc20_one["contract"]
-        recipient = random.choice(self.user.environment.shared.accounts)
+        recipient = self.web3_client.create_account()
         self.web3_client.send_erc20(
             self.account, recipient, 1, contract.address, abi=contract.abi
         )

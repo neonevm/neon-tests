@@ -1,37 +1,20 @@
+import logging
 import random
 import string
-import logging
-import time
 
-import web3
-from locust import tag, task, User, events
+from locust import User, events, tag, task
 from solana.keypair import Keypair
 
-from utils.web3client import NeonWeb3Client
-from utils.faucet import Faucet
-from utils.erc20wrapper import ERC20Wrapper
-
 from loadtesting.proxy.common.base import NeonProxyTasksSet
+from utils.erc20wrapper import ERC20Wrapper
+from utils.faucet import Faucet
+from utils.web3client import NeonWeb3Client
 
 LOG = logging.getLogger(__name__)
-
-ERC20SPL_CONTRACT_NAME = "erc20_for_spl_factory.sol"
-ERC20SPL_CONTRACT_VERSION = "0.8.10"
 
 
 @events.test_start.add_listener
 def prepare_one_contract_for_erc20(environment: "locust.env.Environment", **kwargs):
-    if (
-        environment.parsed_options.exclude_tags
-        and "erc20spl" in environment.parsed_options.exclude_tags
-    ):
-        return
-    if (
-        environment.parsed_options.tags
-        and "erc20spl" not in environment.parsed_options.tags
-    ):
-        return
-
     neon_client = NeonWeb3Client(
         environment.credentials["proxy_url"], environment.credentials["network_id"]
     )

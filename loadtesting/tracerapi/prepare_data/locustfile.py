@@ -68,7 +68,10 @@ def teardown(*args, **kwargs) -> None:
 @tag("store")
 @tag("call")
 class EthGetStorageAtPreparationStage(head.NeonTasksSet):
-    """Preparation stage for eth_getStorageAt and eth_call test suite"""
+    """
+        Preparation stage for eth_getStorageAt and eth_call test suite. 
+        Deploy RetrieveStore contract.
+    """
 
     _deploy_contract_locker = gevent.threading.Lock()
     _deploy_contract_done = False
@@ -83,7 +86,7 @@ class EthGetStorageAtPreparationStage(head.NeonTasksSet):
         self.check_balance(account=account)
         contract_name = "RetrieveStore"
         self.log.info(f"`{contract_name}`: deploy contract.")
-        contract, contract_tx = self.deploy_contract(
+        contract, _ = self.deploy_contract(
             contract_name, RETRIEVE_STORE_VERSION, account, contract_name="Storage"
         )
         if not contract:
@@ -151,7 +154,7 @@ class ERC20TransferPreparationStage(head.ERC20TasksSet):
         return super(ERC20TransferPreparationStage, self).task_send_erc20()
 
 
-@tag("spl")
+@tag("erc20spl")
 @tag("logs")
 class ERC20WrappedPreparationStage(head.ERC20SPLTasksSet):
     @task

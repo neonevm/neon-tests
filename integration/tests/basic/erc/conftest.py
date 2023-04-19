@@ -54,7 +54,7 @@ def multiple_actions_erc20(web3_client, faucet):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
 
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "multiple_actions_erc20",
+        "ERC20/multiple_actions_erc20",
         "0.8.10",
         acc,
         contract_name="multipleActionsERC20",
@@ -74,7 +74,7 @@ def nft_receiver(web3_client, faucet):
     acc = web3_client.create_account()
     faucet.request_neon(acc.address, 100)
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "erc721_receiver", "0.8.10", acc, contract_name="ERC721Receiver"
+        "ERC721/erc721_receiver", "0.8.10", acc, contract_name="ERC721Receiver"
     )
     return contract
 
@@ -84,7 +84,7 @@ def invalid_nft_receiver(web3_client, faucet):
     acc = web3_client.create_account()
     faucet.request_neon(acc.address, 100)
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "erc721_invalid_receiver", "0.8.10", acc, contract_name="ERC721Receiver"
+        "ERC721/erc721_invalid_receiver", "0.8.10", acc, contract_name="ERC721Receiver"
     )
     return contract
 
@@ -94,7 +94,7 @@ def multiple_actions_erc721(web3_client, faucet):
     acc = web3_client.create_account()
     faucet.request_neon(acc.address)
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "multiple_actions_erc721", "0.8.10", acc, contract_name="multipleActionsERC721"
+        "ERC721/multiple_actions_erc721", "0.8.10", acc, contract_name="multipleActionsERC721"
     )
     return acc, contract
 

@@ -90,43 +90,13 @@ contract MetaProxy is MetaProxyFactory {
     }
 
     /// @notice Runs test cases with proxy created from Calldata.
-    function testCreateFromCalldata() external payable returns (bool) {
-        (address a, uint256 b, uint256[] memory c) = abc();
-        MetaProxy self = MetaProxy(address(this));
-
-        {
-            address proxy = self.createFromCalldata(a, b, c);
-            testProxy(proxy);
-        }
-        return true;
-    }
-
-    /// @notice Runs test cases with proxy created from bytes.
-    function testCreateFromBytes() external payable returns (bool) {
-        (address a, uint256 b, uint256[] memory c) = abc();
-        MetaProxy self = MetaProxy(address(this));
-        {
-            address proxy = self.createFromBytes(c, b, a);
-            testProxy(proxy);
-        }
-        return true;
-    }
-
-    function abc()
-        public
-        view
-        returns (address a, uint256 b, uint256[] memory c)
+    function testCreateFromCalldataGetMetadataViaCall()
+        external
+        payable
+        returns (bool)
     {
-        a = address(this);
-        b = 0xc0ffe;
-        c = new uint256[](9);
-    }
-
-    function testProxy(address _proxy) public {
-        require(_proxy != address(0));
-
         (address a, uint256 b, uint256[] memory c) = abc();
-        MetaProxy proxy = MetaProxy(_proxy);
+        MetaProxy proxy = this.getProxyFromCalldata(a, b, c);
 
         {
             (address x, uint256 y, uint256[] memory z) = proxy
@@ -137,6 +107,18 @@ contract MetaProxy is MetaProxyFactory {
                     keccak256(abi.encode(c)) == keccak256(abi.encode(z))
             );
         }
+
+        return true;
+    }
+
+    function testCreateFromCalldataGetMetadataWithoutCall()
+        external
+        payable
+        returns (bool)
+    {
+        (address a, uint256 b, uint256[] memory c) = abc();
+        MetaProxy proxy = this.getProxyFromCalldata(a, b, c);
+
         {
             (address l, uint256 m, uint256[] memory n) = proxy
                 .getMetadataWithoutCall();
@@ -147,17 +129,55 @@ contract MetaProxy is MetaProxyFactory {
             );
         }
 
+        return true;
+    }
+
+    function testCreateFromCalldataReturnSingleValue()
+        external
+        payable
+        returns (bool)
+    {
+        (address a, uint256 b, uint256[] memory c) = abc();
+        MetaProxy proxy = this.getProxyFromCalldata(a, b, c);
+
         require(proxy.someValue() == b);
         require(proxy.testReturnSingle() == b);
+
+        return true;
+    }
+
+    function testCreateFromCalldataReturnMultiValues()
+        external
+        payable
+        returns (bool)
+    {
+        (address a, uint256 b, uint256[] memory c) = abc();
+        MetaProxy proxy = this.getProxyFromCalldata(a, b, c);
 
         bytes memory _bytes = hex"68656c6c6f20776f726c64";
         (uint256 x, uint256[] memory y) = proxy.testReturnMulti(
             _bytes,
             uint160(address(this)) + b
         );
+
         require(x == b);
         require(y.length == c.length);
 
+        return true;
+    }
+
+    function testCreateFromCalldataReturnRevert()
+        external
+        payable
+        returns (bool)
+    {
+        (address a, uint256 b, uint256[] memory c) = abc();
+        MetaProxy self = MetaProxy(address(this));
+
+        address _proxy = self.createFromCalldata(a, b, c);
+        require(_proxy != address(0));
+
+        bytes memory _bytes = hex"68656c6c6f20776f726c64";
         (bool success, bytes memory returnData) = _proxy.call(
             abi.encodeWithSignature("testRevert(string)", _bytes)
         );
@@ -166,6 +186,147 @@ contract MetaProxy is MetaProxyFactory {
             keccak256(returnData) ==
                 keccak256(abi.encodeWithSignature("Error(string)", _bytes))
         );
+
+        return true;
+    }
+
+    function getProxyFromCalldata(
+        address a,
+        uint256 b,
+        uint256[] memory c
+    ) external payable returns (MetaProxy) {
+        MetaProxy self = MetaProxy(address(this));
+
+        address _proxy = self.createFromCalldata(a, b, c);
+        require(_proxy != address(0));
+
+        MetaProxy proxy = MetaProxy(_proxy);
+        return proxy;
+    }
+
+   /// @notice Runs test cases with proxy created from bytes.
+    function testCreateFromBytesGetMetadataViaCall()
+        external
+        payable
+        returns (bool)
+    {
+        (address a, uint256 b, uint256[] memory c) = abc();
+        MetaProxy proxy = this.getProxyFromBytes(a, b, c);
+
+        {
+            (address x, uint256 y, uint256[] memory z) = proxy
+                .getMetadataViaCall();
+            require(
+                a == x &&
+                    b == y &&
+                    keccak256(abi.encode(c)) == keccak256(abi.encode(z))
+            );
+        }
+
+        return true;
+    }
+
+    function testCreateFromBytesGetMetadataWithoutCall()
+        external
+        payable
+        returns (bool)
+    {
+        (address a, uint256 b, uint256[] memory c) = abc();
+        MetaProxy proxy = this.getProxyFromBytes(a, b, c);
+
+        {
+            (address l, uint256 m, uint256[] memory n) = proxy
+                .getMetadataWithoutCall();
+            require(
+                a == l &&
+                    b == m &&
+                    keccak256(abi.encode(c)) == keccak256(abi.encode(n))
+            );
+        }
+
+        return true;
+    }
+
+    function testCreateFromBytesReturnSingleValue()
+        external
+        payable
+        returns (bool)
+    {
+        (address a, uint256 b, uint256[] memory c) = abc();
+        MetaProxy proxy = this.getProxyFromBytes(a, b, c);
+
+        require(proxy.someValue() == b);
+        require(proxy.testReturnSingle() == b);
+
+        return true;
+    }
+
+    function testCreateFromBytesReturnMultiValues()
+        external
+        payable
+        returns (bool)
+    {
+        (address a, uint256 b, uint256[] memory c) = abc();
+        MetaProxy proxy = this.getProxyFromBytes(a, b, c);
+
+        bytes memory _bytes = hex"68656c6c6f20776f726c64";
+        (uint256 x, uint256[] memory y) = proxy.testReturnMulti(
+            _bytes,
+            uint160(address(this)) + b
+        );
+
+        require(x == b);
+        require(y.length == c.length);
+
+        return true;
+    }
+
+    function testCreateFromBytesReturnRevert()
+        external
+        payable
+        returns (bool)
+    {
+        (address a, uint256 b, uint256[] memory c) = abc();
+        MetaProxy self = MetaProxy(address(this));
+
+        address _proxy = self.createFromBytes(c, b, a);
+        require(_proxy != address(0));
+
+        bytes memory _bytes = hex"68656c6c6f20776f726c64";
+        (bool success, bytes memory returnData) = _proxy.call(
+            abi.encodeWithSignature("testRevert(string)", _bytes)
+        );
+        require(success == false);
+        require(
+            keccak256(returnData) ==
+                keccak256(abi.encodeWithSignature("Error(string)", _bytes))
+        );
+
+        return true;
+    }
+
+    function getProxyFromBytes(
+        address a,
+        uint256 b,
+        uint256[] memory c
+    ) external payable returns (MetaProxy) {
+        MetaProxy self = MetaProxy(address(this));
+
+        address _proxy = self.createFromBytes(c, b, a);
+        require(_proxy != address(0));
+
+        MetaProxy proxy = MetaProxy(_proxy);
+        return proxy;
+    }
+
+    function abc()
+        public
+        view
+        returns (address a, uint256 b, uint256[] memory c)
+    {
+        a = address(this);
+        b = 0xc0ffe;
+        c = new uint256[](9);
     }
 
     function testReturnSingle() public returns (uint256) {

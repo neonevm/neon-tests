@@ -1,11 +1,5 @@
-import random
-
 import allure
-import pytest
-import web3
-
 from integration.tests.basic.helpers.basic import BaseMixin
-from utils.consts import ZERO_ADDRESS
 
 
 @allure.feature("EIP Verifications")
@@ -14,7 +8,15 @@ from utils.consts import ZERO_ADDRESS
               with immutable metadata attached to the bytecode")
 class TestMetaProxyStandard(BaseMixin):
     def test_create_from_call_data(self, meta_proxy_contract):
-        assert meta_proxy_contract.functions.testCreateFromCalldata().call()
+        assert meta_proxy_contract.functions.testCreateFromCalldataGetMetadataViaCall().call()
+        assert meta_proxy_contract.functions.testCreateFromCalldataGetMetadataWithoutCall().call()
+        assert meta_proxy_contract.functions.testCreateFromCalldataReturnSingleValue().call()
+        assert meta_proxy_contract.functions.testCreateFromCalldataReturnMultiValues().call()
+        assert meta_proxy_contract.functions.testCreateFromCalldataReturnRevert().call()
 
     def test_create_from_bytes(self, meta_proxy_contract):
-        assert meta_proxy_contract.functions.testCreateFromBytes().call()
+        assert meta_proxy_contract.functions.testCreateFromBytesGetMetadataViaCall().call()
+        assert meta_proxy_contract.functions.testCreateFromBytesGetMetadataWithoutCall().call()
+        assert meta_proxy_contract.functions.testCreateFromBytesReturnSingleValue().call()
+        assert meta_proxy_contract.functions.testCreateFromBytesReturnMultiValues().call()
+        assert meta_proxy_contract.functions.testCreateFromBytesReturnRevert().call()

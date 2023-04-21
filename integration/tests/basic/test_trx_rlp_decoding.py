@@ -85,3 +85,10 @@ class TestTrxRlpDecoding(BaseMixin):
             "eth_sendRawTransaction", [new_trx.hex()]
         )
         assert "wrong transaction format" in response["error"]["message"]
+
+    def test_add_waste_to_trx_without_decoding(self, signed_tx):
+        new_trx = signed_tx.rawTransaction + HexBytes(b'\x19p\x16l\xc0')
+        response = self.proxy_api.send_rpc(
+            "eth_sendRawTransaction", [new_trx.hex()]
+        )
+        assert "wrong transaction format" in response["error"]["message"]

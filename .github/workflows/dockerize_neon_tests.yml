@@ -22,7 +22,7 @@ jobs:
             if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == 'develop'  ]]; then
                 tag='latest'
                 oz_branch='master'
-            elif [[("${{ github.event_name }}" == "workflow_dispatch" && "${{ github.ref_name }}" == 'develop' && "${{ github.event.inputs.oz_branch }}" == 'master' ]]; then
+            elif [["${{ github.event_name }}" == "workflow_dispatch" && "${{ github.ref_name }}" == 'develop' && "${{ github.event.inputs.oz_branch }}" == 'master' ]]; then
                 tag='latest'
                 oz_branch='master'
             elif [[ "${{ github.event.inputs.oz_branch }}" != "" ]]; then

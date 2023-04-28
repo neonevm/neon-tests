@@ -107,9 +107,7 @@ def decode_function_signature(function_name: str, args=None) -> str:
     data = keccak(text=function_name)[:4]
     if args is not None:
         types = function_name.split("(")[1].split(")")[0].split(",")
-        print(types)
         data += abi.encode(types, args)
-
     return "0x" + data.hex()
 
 

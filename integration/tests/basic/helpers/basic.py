@@ -176,7 +176,7 @@ class BaseMixin(BaseTests):
             time.sleep(1)
         raise TimeoutError(f"Transaction is not accepted for {timeout} seconds")
 
-    def create_tx_object(self, sender=None, recipient=None, amount=2, nonce=None, gas_price=None):
+    def create_tx_object(self, sender=None, recipient=None, amount=2, nonce=None, gas_price=None, data=None):
         if gas_price is None:
             gas_price = self.web3_client.gas_price()
         if sender is None:
@@ -194,6 +194,8 @@ class BaseMixin(BaseTests):
             "gas": 0,
             "nonce": nonce,
         }
+        if data is not None:
+            transaction["data"] = data
         transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
         return transaction
 

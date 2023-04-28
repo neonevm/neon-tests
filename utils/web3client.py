@@ -6,8 +6,10 @@ import web3
 import web3.types
 import requests
 import eth_account.signers.local
+from eth_abi import abi
 
 from utils import helpers
+from utils.helpers import decode_function_signature
 
 
 class NeonWeb3Client:
@@ -204,3 +206,12 @@ class NeonWeb3Client:
     @staticmethod
     def text_to_bytes32(text: str) -> bytes:
         return text.encode().ljust(32, b'\0')
+
+    def call_function_at_address(self, contract_address, signature, args, result_types):
+        calldata = decode_function_signature(signature, args)
+        tx = {
+            "data": calldata,
+            "to": contract_address,
+        }
+        result = self._web3.eth.call(tx)
+        return abi.decode(result_types, result)[0]

@@ -485,6 +485,6 @@ class EthRPCAPICallUsers(User):
         EthGetBalanceTasksSet: 1,
         EthGetTransactionCountTasksSet: 1,
         EthGetStorageAtTasksSet: 1,
-        EthGetLogs: 1,
+        # EthGetLogs: 1,
         EthCall: 1,
     }

@@ -511,20 +511,24 @@ def analyze_openzeppelin_results():
     with open("./compatibility/openzeppelin-contracts/package.json") as f:
         version = json.load(f)["version"]
         print(f"OpenZeppelin version: {version}")
-    if version.startswith("4"):
-        threshold = 2700
-    elif version.startswith("3"):
-        threshold = 1350
-    elif version.startswith("2"):
-        threshold = 2295
+
+    if version.startswith("3") or version.startswith("2"):
+        if version.startswith("3"):
+            threshold = 1350
+        elif version.startswith("2"):
+            threshold = 2295
+        print(f"Threshold: {threshold}")
+        if test_report["passing"] < threshold:
+            raise click.ClickException(f"OpenZeppelin {version} tests failed. \n"
+                                       f"Passed: {test_report['passing']}, expected: {threshold}")
+        else:
+            print("OpenZeppelin tests passed")
     else:
-        raise click.ClickException("Unknown OpenZeppelin version")
-    print(f"Threshold: {threshold}")
-    if test_report["passing"] < threshold:
-        raise click.ClickException(f"OpenZeppelin {version} tests failed. \n"
-                                   f"Passed: {test_report['passing']}, expected: {threshold}")
-    else:
-        print("OpenZeppelin tests passed")
+        if test_report["failing"] > 0 or test_report["passing"] == 0:
+            raise click.ClickException(f"OpenZeppelin {version} tests failed. \n"
+                                       f"Failed: {test_report['failing']}, passed: {test_report['passing']}")
+        else:
+            print("OpenZeppelin tests passed")
 
 
 # Base locust options

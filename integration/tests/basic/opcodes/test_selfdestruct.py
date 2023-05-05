@@ -64,7 +64,6 @@ class TestSelfDestructOpcode(BaseMixin):
         assert event_logs == ()
         self.check_contract_code_is_empty(destroyable_contract.address)
 
-    @pytest.mark.xfail(reason="SA-179")
     def test_destroy_contract_with_contract_address_as_target(self, destroyable_contract):
         self.deposit(destroyable_contract, self.recipient_account, 1)
 

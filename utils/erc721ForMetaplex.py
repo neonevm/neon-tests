@@ -1,17 +1,17 @@
 import logging
 
-from integration.tests.basic.helpers.basic import BaseMixin
 from utils import web3client
 
 LOGGER = logging.getLogger(__name__)
 
 
 class ERC721ForMetaplex:
-    def __init__(self, web3_client: web3client.NeonWeb3Client, faucet, account=None):
+    def __init__(self, web3_client: web3client.NeonWeb3Client, faucet, account=None, contract="erc721_for_metaplex.sol",
+                 contract_name="ERC721ForMetaplex"):
         self.web3_client = web3_client
         self.account = account or web3_client.create_account()
         faucet.request_neon(self.account.address, 100)
-        self.contract = self.deploy()
+        self.contract = self.deploy(contract, contract_name)
 
     def make_tx_object(self, from_address, gasPrice=None, gas=None):
         tx = {"from": from_address, "nonce": self.web3_client.eth.get_transaction_count(from_address),
@@ -20,9 +20,9 @@ class ERC721ForMetaplex:
             tx["gas"] = gas
         return tx
 
-    def deploy(self):
+    def deploy(self, contract, contract_name):
         contract, _ = self.web3_client.deploy_and_get_contract(
-            "erc721_for_metaplex.sol", "0.8.0", self.account, contract_name="ERC721ForMetaplex"
+            contract, "0.8.0", self.account, contract_name=contract_name
         )
         return contract
 
@@ -78,6 +78,7 @@ class ERC721ForMetaplex:
 
     def transfer_solana_from(self, from_address, to_address, token_id, signer, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
-        instruction_tx = self.contract.functions.transferSolanaFrom(from_address, to_address, token_id).build_transaction(tx)
+        instruction_tx = self.contract.functions.transferSolanaFrom(from_address, to_address,
+                                                                    token_id).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp

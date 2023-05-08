@@ -67,7 +67,7 @@ class ERC20Wrapper:
             ).build_transaction(tx_object)
         else:
             self.token_mint = self.create_spl(self.solana_acc, self.decimals)
-            metadata = create_metadata_instruction_data(self.name, self.symbol, 0, ())
+            metadata = create_metadata_instruction_data(self.name, self.symbol)
             txn = Transaction()
             txn.add(
                 create_metadata_instruction(

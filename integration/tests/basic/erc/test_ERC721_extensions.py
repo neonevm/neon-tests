@@ -31,7 +31,7 @@ class TestERC721Extensions(BaseMixin):
         self.web3_client.send_transaction(erc4907.account, instr)
         assert erc4907.contract.functions.userOf(token_id).call() == self.recipient_account.address
         assert erc4907.contract.functions.ownerOf(token_id).call() == erc4907.account.address
-        time.sleep(6)  # wait for expiration
+        time.sleep(8)  # wait for expiration
         assert erc4907.contract.functions.userOf(token_id).call() == ZERO_ADDRESS
 
     def test_ERC2981_default_royalty(self, web3_client, faucet):

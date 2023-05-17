@@ -252,3 +252,12 @@ def withdraw_contract(web3_client, faucet):
         "NeonToken", "0.8.10", account=acc
     )
     return contract
+
+@pytest.fixture(scope="session")
+def meta_proxy_contract(web3_client, faucet):
+    acc = web3_client.create_account()
+    faucet.request_neon(acc.address, 100)
+    contract, _ = web3_client.deploy_and_get_contract(
+        "./EIPs/MetaProxy.sol", "0.8.10", account=acc
+    )
+    return contract

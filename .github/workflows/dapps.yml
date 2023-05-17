@@ -196,12 +196,57 @@ jobs:
           docker exec -i -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} aave-${{ github.run_id }} npm run neonlabs:deploy --network=neonlabs
           docker cp aave-${{ github.run_id }}:/usr/src/app/report.json aave-report.json
           docker rm -f aave-${{ github.run_id }}
-
       - name: Save report
         uses: actions/upload-artifact@v3
         with:
           name: aave-report
           path: aave-report.json
+  curve:
+    runs-on: ubuntu-20.04
+    needs:
+      - prepare
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        env:
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+        run: |
+          ./clickfile.py infra gen-accounts -c 4 -a 10000
+
+      - name: Launch curve tests
+        if: ${{ steps.accounts.outcome == 'success' }}
+        id: curve
+        env:
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+        run: |
+          CWD=/tmp/curve-${{ github.run_id }}
+          mkdir -p ${CWD}
+          git clone https://github.com/neonlabsorg/curve-contracts-ci ${CWD}
+          docker build -t curve:latest --build-arg PROXY_URL='http://${{ env.PROXY_IP }}:9090/solana' --build-arg CHAIN_ID='111' ${CWD}
+          docker run --rm --network host \
+            -e ACCOUNTS=${{ env.ACCOUNTS }} \
+            curve:latest \
+            bash -c " \
+              brownie test \
+              -vvvv --network neon"
+          docker cp curve-${{ github.run_id }}:/app/report.json curve-report.json
+          docker rm -f curve-${{ github.run_id }}
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: curve-report
+          path: curve-report.json
+
+
+
 
 #  yearn:
 #    runs-on: neon-hosted
@@ -282,6 +327,11 @@ jobs:
         continue-on-error: true
         with:
           name: aave-report
+          path: reports/
+      - uses: actions/download-artifact@v3
+        continue-on-error: true
+        with:
+          name: curve-report
           path: reports/
       - name: "Swap report"
         run: ./clickfile.py dapps report --directory=reports

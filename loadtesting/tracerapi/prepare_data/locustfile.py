@@ -133,6 +133,9 @@ class EthGetStorageAtPreparationStage(head.NeonTasksSet):
 @tag("neon")
 @tag("transfer")
 class NeonTransferPreparationStage(head.NeonTasksSet):
+    def get_account():
+        return super().web3_client.create_account()
+    
     @task
     @dump_history("transfer")
     def prepare_data_by_neon_transfer(
@@ -145,6 +148,9 @@ class NeonTransferPreparationStage(head.NeonTasksSet):
 @tag("erc20")
 @tag("transfer")
 class ERC20TransferPreparationStage(head.ERC20TasksSet):
+    def get_account():
+        return super().web3_client.create_account()
+    
     @task
     @dump_history("transfer")
     def prepare_data_by_erc20_transfer(
@@ -157,6 +163,9 @@ class ERC20TransferPreparationStage(head.ERC20TasksSet):
 @tag("erc20spl")
 @tag("logs")
 class ERC20WrappedPreparationStage(head.ERC20SPLTasksSet):
+    def get_account():
+        return super().web3_client.create_account()
+    
     @task
     @dump_history("logs")
     def prepare_data_by_erc20_wrapped(

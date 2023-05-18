@@ -22,8 +22,14 @@ class ERC20TasksSet(NeonProxyTasksSet):
 
     def on_start(self) -> None:
         super(ERC20TasksSet, self).on_start()
+        super(ERC20TasksSet, self).prepare_account()
+        self.log = logging.getLogger(
+            "neon-consumer[%s]" % self.account.address[-8:])
         self._buffer = self.user.environment.shared.erc20_contracts
 
+    def get_account(self):
+        return random.choice(self.user.environment.shared.accounts)
+    
     @task(1)
     def task_deploy_contract(self):
         """Deploy ERC20 contract"""
@@ -55,7 +61,7 @@ class ERC20TasksSet(NeonProxyTasksSet):
             )
             del contracts[contract_address]
             return
-        recipient = self.web3_client.create_account()
+        recipient = self.get_account()
         self.log.info(
             f"Send `{ERC20_CONTRACT_NAME}` tokens from contract {str(contract.address)[-8:]} to {str(recipient.address)[-8:]}."
         )
@@ -65,12 +71,11 @@ class ERC20TasksSet(NeonProxyTasksSet):
         recipient_balance_before = contract.functions.balanceOf(
             recipient.address).call()
 
-        amount = random.randint(1, int(sender_balance_before / 4))
         tx_receipt = self.web3_client.send_erc20(
-            self.account, recipient, amount, contract.address, abi=contract.abi
+            self.account, recipient, 1, contract.address, abi=contract.abi
         )
         self.nonce = self.web3_client.get_nonce(self.account)
-        
+
         sender_balance_after = contract.functions.balanceOf(
             self.account.address).call()
         recipient_balance_after = contract.functions.balanceOf(
@@ -82,7 +87,7 @@ class ERC20TasksSet(NeonProxyTasksSet):
             "sender_nonce": f"{self.nonce}",
             "recipient_balance_before": f"{recipient_balance_before}",
             "recipient_balance_after": f"{recipient_balance_after}",
-            "amount": amount,
+            "amount": 1,
             "type": "erc20",
         }
 

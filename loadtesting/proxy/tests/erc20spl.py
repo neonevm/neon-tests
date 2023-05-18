@@ -50,6 +50,8 @@ def prepare_one_contract_for_erc20(environment: "locust.env.Environment", **kwar
 @tag("erc20spl")
 class ERC20SPLTasksSet(NeonProxyTasksSet):
     """Implements ERC20 base pipeline tasks"""
+    nonce: str
+    recipient: str
 
     def on_start(self) -> None:
         super().on_start()
@@ -64,44 +66,34 @@ class ERC20SPLTasksSet(NeonProxyTasksSet):
             contract.address,
             abi=contract.abi,
         )
+        self.recipient = self.get_account()
 
     def get_account(self):
         return random.choice(self.user.environment.shared.accounts)
-   
+
+    def create_account(self):
+        return self.web3_client.create_account()
+
+    def get_balances(self):
+        sender_balance = self.web3_client.get_balance(
+            self.account.address)
+        recipient_balance = self.web3_client.get_balance(
+            self.recipient.address)
+        return sender_balance, recipient_balance
+
     @task
     def task_send_erc20_spl(self):
         """Send ERC20 tokens"""
         contract = self.user.environment.erc20_one["contract"]
-        recipient = self.get_account()
-        sender_balance_before = contract.functions.balanceOf(
-            self.account.address).call()
-        recipient_balance_before = contract.functions.balanceOf(
-            recipient.address).call()
 
         receipt = self.web3_client.send_erc20(
-            self.account, recipient, 1, contract.address, abi=contract.abi
+            self.account, self.recipient, 1, contract.address, abi=contract.abi
         )
-        self.nonce = self.web3_client.get_nonce(self.account)
-
-        sender_balance_after = contract.functions.balanceOf(
-            self.account.address).call()
-        recipient_balance_after = contract.functions.balanceOf(
-            recipient.address).call()
 
         receipt = dict(receipt)
         receipt["contract"] = {"address": contract.address}
 
-        balances = {
-            "sender_balance_before": f"{sender_balance_before}",
-            "sender_balance_after": f"{sender_balance_after}",
-            "sender_nonce": f"{self.nonce}",
-            "recipient_balance_before": f"{recipient_balance_before}",
-            "recipient_balance_after": f"{recipient_balance_after}",
-            "amount": 1,
-            "type": "erc20_spl",
-        }
-
-        return receipt, balances
+        return receipt, self.web3_client.get_nonce(self.account)
 
 
 class ERC20User(User):

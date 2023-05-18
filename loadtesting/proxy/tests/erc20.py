@@ -19,6 +19,8 @@ ERC20_CONTRACT_VERSION = "0.8.0"
 @tag("erc20")
 class ERC20TasksSet(NeonProxyTasksSet):
     """Implements ERC20 base pipeline tasks"""
+    nonce: str = None
+    recipient: str = None
 
     def on_start(self) -> None:
         super(ERC20TasksSet, self).on_start()
@@ -26,10 +28,21 @@ class ERC20TasksSet(NeonProxyTasksSet):
         self.log = logging.getLogger(
             "neon-consumer[%s]" % self.account.address[-8:])
         self._buffer = self.user.environment.shared.erc20_contracts
-
+        self.recipient = self.get_account()
+    
     def get_account(self):
         return random.choice(self.user.environment.shared.accounts)
     
+    def create_account(self):
+        return self.web3_client.create_account()
+
+    def get_balances(self):
+        sender_balance = self.web3_client.get_balance(
+            self.account.address)
+        recipient_balance = self.web3_client.get_balance(
+            self.recipient.address)
+        return sender_balance, recipient_balance
+
     @task(1)
     def task_deploy_contract(self):
         """Deploy ERC20 contract"""
@@ -61,50 +74,29 @@ class ERC20TasksSet(NeonProxyTasksSet):
             )
             del contracts[contract_address]
             return
-        recipient = self.get_account()
-        self.log.info(
-            f"Send `{ERC20_CONTRACT_NAME}` tokens from contract {str(contract.address)[-8:]} to {str(recipient.address)[-8:]}."
-        )
 
-        sender_balance_before = contract.functions.balanceOf(
-            self.account.address).call()
-        recipient_balance_before = contract.functions.balanceOf(
-            recipient.address).call()
+        self.log.info(
+            f"Send `{ERC20_CONTRACT_NAME}` tokens from contract {str(contract.address)[-8:]} to {str(self.recipient.address)[-8:]}."
+        )
 
         tx_receipt = self.web3_client.send_erc20(
-            self.account, recipient, 1, contract.address, abi=contract.abi
+            self.account, self.recipient, 1, contract.address, abi=contract.abi
         )
-        self.nonce = self.web3_client.get_nonce(self.account)
-
-        sender_balance_after = contract.functions.balanceOf(
-            self.account.address).call()
-        recipient_balance_after = contract.functions.balanceOf(
-            recipient.address).call()
-
-        balances = {
-            "sender_balance_before": f"{sender_balance_before}",
-            "sender_balance_after": f"{sender_balance_after}",
-            "sender_nonce": f"{self.nonce}",
-            "recipient_balance_before": f"{recipient_balance_before}",
-            "recipient_balance_after": f"{recipient_balance_after}",
-            "amount": 1,
-            "type": "erc20",
-        }
 
         if tx_receipt:
             tx_receipt = dict(tx_receipt)  # AttributeDict -> dict
             tx_receipt["contractAddress"] = contract.address
             self._buffer[self.account.address][contract.address]["amount"] -= 1
-            recipient_contracts = self._buffer.get(recipient.address, {})
+            recipient_contracts = self._buffer.get(self.recipient.address, {})
             recipient_contract = recipient_contracts.get(contract.address, {})
             if not recipient_contract:
                 recipient_contract.update({"contract": contract, "amount": 0})
             recipient_contract["amount"] += 1
-            self._buffer.setdefault(recipient.address, {}).update(
+            self._buffer.setdefault(self.recipient.address, {}).update(
                 {contract.address: recipient_contract}
             )
             tx_receipt["contract"] = {"address": contract.address}
-        return tx_receipt, balances
+        return tx_receipt, self.web3_client.get_nonce(self.account)
 
 
 @events.test_start.add_listener

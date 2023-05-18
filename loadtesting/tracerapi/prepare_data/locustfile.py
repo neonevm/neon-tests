@@ -133,46 +133,99 @@ class EthGetStorageAtPreparationStage(head.NeonTasksSet):
 @tag("neon")
 @tag("transfer")
 class NeonTransferPreparationStage(head.NeonTasksSet):
-    def get_account():
-        return super().web3_client.create_account()
-    
+    def get_account(self):
+        return super(NeonTransferPreparationStage, self).create_account()
+
+    def send_neon(self):
+        recipient_balance_before, sender_balance_before = super(
+            NeonTransferPreparationStage, self).get_balances()
+        tx, nonce = super(NeonTransferPreparationStage, self).task_send_neon()
+        recipient_balance_after, sender_balance_after = super(
+            NeonTransferPreparationStage, self).get_balances()
+        info = {
+            "sender_balance_before": f"{sender_balance_before}",
+            "sender_balance_after": f"{sender_balance_after}",
+            "sender_nonce": f"{nonce}",
+            "recipient_balance_before": f"{recipient_balance_before}",
+            "recipient_balance_after": f"{recipient_balance_after}",
+            "amount": 1,
+            "type": "neon",
+        }
+        return tx, info
+
     @task
     @dump_history("transfer")
     def prepare_data_by_neon_transfer(
         self,
     ) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Make number of `NEONs` transfer transactions between different client accounts"""
-        return super(NeonTransferPreparationStage, self).task_send_neon()
+        return self.send_neon()
 
 
 @tag("erc20")
 @tag("transfer")
 class ERC20TransferPreparationStage(head.ERC20TasksSet):
-    def get_account():
-        return super().web3_client.create_account()
-    
+    def get_account(self):
+        return super(ERC20TransferPreparationStage, self).create_account()
+
+    def send_erc20(self):
+        recipient_balance_before, sender_balance_before = super(
+            ERC20TransferPreparationStage, self).get_balances()
+        tx, nonce = super(ERC20TransferPreparationStage,
+                          self).task_send_erc20()
+        recipient_balance_after, sender_balance_after = super(
+            ERC20TransferPreparationStage, self).get_balances()
+        info = {
+            "sender_balance_before": f"{sender_balance_before}",
+            "sender_balance_after": f"{sender_balance_after}",
+            "sender_nonce": f"{nonce}",
+            "recipient_balance_before": f"{recipient_balance_before}",
+            "recipient_balance_after": f"{recipient_balance_after}",
+            "amount": 1,
+            "type": "erc20",
+        }
+        return tx, info
+
     @task
     @dump_history("transfer")
     def prepare_data_by_erc20_transfer(
         self,
     ) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Make number of `ERC20` transfer transactions between different client accounts"""
-        return super(ERC20TransferPreparationStage, self).task_send_erc20()
+        return self.send_erc20()
 
 
 @tag("erc20spl")
 @tag("logs")
 class ERC20WrappedPreparationStage(head.ERC20SPLTasksSet):
-    def get_account():
-        return super().web3_client.create_account()
-    
+    def get_account(self):
+        return super(ERC20WrappedPreparationStage, self).create_account()
+
+    def send_erc20spl(self):
+        recipient_balance_before, sender_balance_before = super(
+            ERC20WrappedPreparationStage, self).get_balances()
+        tx, nonce = super(ERC20WrappedPreparationStage,
+                          self).task_send_erc20_spl()
+        recipient_balance_after, sender_balance_after = super(
+            ERC20WrappedPreparationStage, self).get_balances()
+        info = {
+            "sender_balance_before": f"{sender_balance_before}",
+            "sender_balance_after": f"{sender_balance_after}",
+            "sender_nonce": f"{nonce}",
+            "recipient_balance_before": f"{recipient_balance_before}",
+            "recipient_balance_after": f"{recipient_balance_after}",
+            "amount": 1,
+            "type": "erc20_spl",
+        }
+        return tx, info
+
     @task
     @dump_history("logs")
     def prepare_data_by_erc20_wrapped(
         self,
     ) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Make number of `ERC20Wrapper` transfer transactions between different client accounts"""
-        return super(ERC20WrappedPreparationStage, self).task_send_erc20_spl()
+        return self.send_erc20spl()
 
 
 @tag("prepare")

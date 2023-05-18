@@ -835,14 +835,37 @@ def download_logs():
 @infra.command(name="gen-accounts", help="Setup accounts with balance")
 @click.option("-c", "--count", default=2, help="How many users prepare")
 @click.option("-a", "--amount", default=10000, help="How many airdrop")
-def prepare_accounts(count, amount):
-    dapps_cli.prepare_accounts(count, amount)
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+def prepare_accounts(count, amount, network):
+    dapps_cli.prepare_accounts(network, count, amount)
+
+
+def get_network_param(network, param):
+    value = ""
+    if network in networks:
+        value = networks[network][param]
+    if isinstance(value, str):
+        if os.environ.get("SOLANA_IP"):
+            value = value.replace("<solana_ip>", os.environ.get("SOLANA_IP"))
+        if os.environ.get("PROXY_IP"):
+            value = value.replace("<proxy_ip>", os.environ.get("PROXY_IP"))
+    return value
+
+
+@infra.command("print-network-param")
+@click.option(
+    "-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+@click.option(
+    "-p", "--param", type=str, help="any network param like proxy_url, network_id e.t.c")
+def print_network_param(network, param):
+    print(get_network_param(network, param))
 
 
 infra.add_command(deploy, "deploy")
 infra.add_command(destroy, "destroy")
 infra.add_command(download_logs, "download-logs")
 infra.add_command(prepare_accounts, "gen-accounts")
+infra.add_command(print_network_param, "print-network-param")
 
 
 @cli.group("dapps", help="Manage dapps")

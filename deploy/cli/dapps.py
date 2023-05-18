@@ -10,10 +10,10 @@ from paramiko.client import SSHClient
 from scp import SCPClient
 from solana.transaction import Signature
 
+from clickfile import get_network_param
 from deploy.cli import faucet as faucet_cli
 from utils.web3client import NeonWeb3Client
 from utils.solana_client import SolanaClient
-
 
 NEON_COST = 0.25
 
@@ -34,8 +34,8 @@ TF_ENV = {
 TF_ENV.update(
     {
         "TF_BACKEND_CONFIG": f"-backend-config=\"bucket={TF_ENV['AWS_S3_BUCKET']}\" "
-        f"-backend-config=\"key={TF_ENV['TF_STATE_KEY']}\" "
-        f"-backend-config=\"region={TF_ENV['AWS_REGION']}\" ",
+                             f"-backend-config=\"key={TF_ENV['TF_STATE_KEY']}\" "
+                             f"-backend-config=\"region={TF_ENV['AWS_REGION']}\" ",
     }
 )
 
@@ -103,11 +103,11 @@ def download_remote_docker_logs():
     os.mkdir(artifact_logs)
     if not os.path.exists(f"{home_path}/.ssh"):
         os.mkdir(f"{home_path}/.ssh")
-    
+
     subprocess.run(
-       f'ssh-keyscan -H {solana_ip} >> {home_path}/.ssh/known_hosts', shell=True)
+        f'ssh-keyscan -H {solana_ip} >> {home_path}/.ssh/known_hosts', shell=True)
     subprocess.run(
-       f'ssh-keyscan -H {proxy_ip} >> {home_path}/.ssh/known_hosts', shell=True)
+        f'ssh-keyscan -H {proxy_ip} >> {home_path}/.ssh/known_hosts', shell=True)
     ssh_client = SSHClient()
     ssh_client.load_system_host_keys()
     ssh_client.connect(solana_ip, username='ubuntu',
@@ -133,13 +133,20 @@ def upload_service_logs(ssh_client, service, artifact_logs):
     scp_client.get(f'/tmp/{service}.log.bz2', artifact_logs)
 
 
-def prepare_accounts(count, amount) -> tp.List:
-    network = {
-        "proxy_url": f"http://{os.environ.get('PROXY_IP')}:9090/solana",
-        "network_id": 111,
-        "solana_url": f"http://{os.environ.get('SOLANA_IP')}:8899/",
-        "faucet_url": f"http://{os.environ.get('PROXY_IP')}:3333/",
-    }
+def prepare_accounts(network_name, count, amount) -> tp.List:
+    if network_name == "aws":
+        network = {
+            "proxy_url": os.environ.get("PROXY_URL"),
+            "solana_url": os.environ.get("SOLANA_URL"),
+            "faucet_url": os.environ.get("FAUCET_URL"),
+        }
+    else:
+        network = {
+            "proxy_url": get_network_param(network_name, "proxy_url"),
+            "solana_url": get_network_param(network_name, "solana_url"),
+            "faucet_url": get_network_param(network_name, "faucet_url"),
+        }
+    network["network_id"] = get_network_param(network_name, "network_id"),
     accounts = faucet_cli.prepare_wallets_with_balance(network, count, amount)
     if os.environ.get("CI"):
         set_github_env(dict(accounts=",".join(accounts)))

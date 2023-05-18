@@ -1,0 +1,19 @@
+name: "Define image tag"
+description: "Define image tag by ref name"
+outputs:
+  tag:
+    description: "image tag"
+    value: ${{ steps.define-tag.outputs.tag }}
+runs:
+  using: composite
+  steps:
+    - name: Define image tag
+      id: define-tag
+      shell: bash
+      run: |
+          if [[ "${{ github.ref_name }}" == "develop" ]]; then
+              tag='latest'
+          else
+              tag='${{ github.sha }}'
+          fi
+          echo "tag=${tag}" >> $GITHUB_OUTPUT

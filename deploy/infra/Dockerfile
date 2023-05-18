@@ -38,7 +38,6 @@ RUN python3 -m ensurepip \
   -r ${HOME_DIR}/deploy/requirements/prod.txt \
   -r ${HOME_DIR}/deploy/requirements/devel.txt \
   -r ${HOME_DIR}/deploy/requirements/ui.txt \
-  #-r ${HOME_DIR}/deploy/requirements/nodeps.txt \
   --src=/usr/local/lib/python3.8/site-packages ;
 
 # Fixes for ctypes.cdll.LoadLibrary:

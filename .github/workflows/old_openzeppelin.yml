@@ -1,0 +1,165 @@
+name: "Old OpenZeppelin with previous versions of solc"
+
+on:
+  schedule:
+    - cron: "0 4 1 * *"
+  workflow_dispatch:
+    inputs:
+      network:
+        type: choice
+        default: night-stand
+        required: true
+        description: "Stand name"
+        options:
+          - night-stand
+          - devnet
+      runner:
+        type: choice
+        default: neon-hosted
+        required: true
+        description: "Where to run tests (our runner or github)"
+        options:
+          - neon-hosted
+          - ubuntu-20.04
+      jobsNumber:
+        description: "Count of parallel jobs"
+        required: true
+        default: "8"
+
+env:
+  JOBS_NUMBER: "8"
+  NETWORK: night-stand
+  RUNNER: neon-hosted
+  IMAGE:  neonlabsorg/neon_tests
+  BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+jobs:
+  prepare-env:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Setup env
+        id: setup
+        run: |
+          # $1 - inputs
+          # $2 - env.VAR
+          function setVar {
+            if [ -z "$1" ]
+              then
+                RESULT="$2"
+              else
+                RESULT="$1"
+            fi
+            echo $RESULT
+          }
+
+          NETWORK=$( setVar "${{ github.event.inputs.network }}" "${{ env.NETWORK }}" )
+          RUNNER=$( setVar "${{ github.event.inputs.runner }}" "${{ env.RUNNER }}" )
+          JOBS_NUMBER=$( setVar "${{ github.event.inputs.jobsNumber }}" "${{ env.JOBS_NUMBER }}" )
+
+          echo "Network: ${NETWORK}"
+          echo "Runner: ${RUNNER}"
+          echo "Jobs: ${JOBS_NUMBER}"
+
+          echo "network=${NETWORK}" >> $GITHUB_OUTPUT
+          echo "runner=${RUNNER}" >> $GITHUB_OUTPUT
+          echo "jobs=${JOBS_NUMBER}" >> $GITHUB_OUTPUT
+    outputs:
+      network: ${{ steps.setup.outputs.network }}
+      runner: ${{ steps.setup.outputs.runner }}
+      jobs: ${{ steps.setup.outputs.jobs }}
+
+  tests-v3_4:
+    name: OpenZeppelin tests v3.4 (solc 0.7)
+    needs:
+      - prepare-env
+    runs-on: ${{ needs.prepare-env.outputs.runner }}
+    env:
+      AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+      AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+      IMAGE_TAG: "neon-release-v3.4-solc0.7"
+      CONTAINER:  oz-3.4-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Pull docker image
+        run: docker pull ${{ env.IMAGE }}:${{ env.IMAGE_TAG }}
+      - name: Run docker container
+        run: |
+          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ env.IMAGE_TAG }} /bin/bash
+      - name: Run OpenZeppelin tests
+        run: |
+          docker exec -i ${{ env.CONTAINER }} ./clickfile.py run oz \
+            --network ${{ needs.prepare-env.outputs.network }} \
+            --jobs ${{ needs.prepare-env.outputs.jobs }} \
+            --users 12
+      - name: Print OpenZeppelin report
+        run: |
+          docker exec -i ${{ env.CONTAINER }} ./clickfile.py ozreport
+      - name: "Generate allure report"
+        id: requirements
+        uses: ./.github/actions/generate-allure-report
+        with:
+          container: ${{ env.CONTAINER }}
+          network: ${{ env.NETWORK }}
+          aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          tests_name: oz
+      - name: Analyze tests results
+        run: |
+          docker exec -i ${{ env.CONTAINER }} ./clickfile.py analyze-openzeppelin-results
+      - name: "Notify on failure."
+        if: failure()
+        run: |
+          docker exec -i ${{ env.CONTAINER }} \
+            ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+          -b ${{ env.BUILD_URL }} -n ${{ needs.prepare-env.outputs.network }}
+      - name: Remove docker container
+        if: always()
+        run: docker rm -f ${{ env.CONTAINER }}
+
+  tests-v2_5:
+    name: OpenZeppelin tests v2.5 (solc 0.5)
+    needs:
+      - prepare-env
+    runs-on: ${{ needs.prepare-env.outputs.runner }}
+    env:
+      AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+      AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+      IMAGE_TAG: "neon-release-v2.5-solc0.5"
+      CONTAINER:  oz-2.5-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Pull docker image
+        run: docker pull ${{ env.IMAGE }}:${{ env.IMAGE_TAG }}
+      - name: Run docker container
+        run: |
+          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ env.IMAGE_TAG }} /bin/bash
+      - name: Run OpenZeppelin tests
+        run: |
+          docker exec -i ${{ env.CONTAINER }} ./clickfile.py run oz \
+            --network ${{ needs.prepare-env.outputs.network }} \
+            --jobs ${{ needs.prepare-env.outputs.jobs }} \
+            --users 13
+      - name: Print OpenZeppelin report
+        run: |
+          docker exec -i ${{ env.CONTAINER }} ./clickfile.py ozreport
+      - name: "Generate allure report"
+        id: requirements
+        uses: ./.github/actions/generate-allure-report
+        with:
+          container: ${{ env.CONTAINER }}
+          network: ${{ env.NETWORK }}
+          aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          tests_name: oz
+      - name: Analyze tests results
+        run: |
+          docker exec -i ${{ env.CONTAINER }} ./clickfile.py analyze-openzeppelin-results
+      - name: "Notify on failure."
+        if: failure()
+        run: |
+          docker exec -i ${{ env.CONTAINER }} \
+            ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+          -b ${{ env.BUILD_URL }} -n ${{ needs.prepare-env.outputs.network }}
+      - name: Remove docker container
+        if: always()
+        run: docker rm -f ${{ env.CONTAINER }}

@@ -42,13 +42,21 @@ jobs:
         if: ${{ steps.requirements.outcome == 'success' }}
         run: |
           ssh_key=/tmp/dapps-stand
-          echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
+          echo "${{ secrets.SSH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           ./clickfile.py infra deploy
       - uses: actions/upload-artifact@v3
         if: ${{ steps.deploy.outcome == 'success' }}
         with:
           name: tf-state
           path: deploy/aws/
+
+      - name: Wait until proxy is ready
+        timeout-minutes: 5
+        run: |
+            while [[ "$(curl -s -X POST -o /dev/null -w ''%{http_code}'' http://${{ env.PROXY_IP }}:9090/solana)" != "200" ]];
+              do echo  "Proxy is not ready yet. Waiting 5 seconds...";
+              sleep 5;
+            done
 
       - name: Set outputs
         id: share
@@ -265,11 +273,11 @@ jobs:
         with:
           name: saddle-report
           path: reports/
-      - uses: actions/download-artifact@v3
-        continue-on-error: true
-        with:
-          name: yearn-report
-          path: reports/
+#      - uses: actions/download-artifact@v3
+#        continue-on-error: true
+#        with:
+#          name: yearn-report
+#          path: reports/
       - uses: actions/download-artifact@v3
         continue-on-error: true
         with:
@@ -288,6 +296,7 @@ jobs:
         with:
           name: tf-state
       - name: Install python requirements
+        if: always()
         id: requirements
         uses: ./.github/actions/python-requirements
       - name: Prepare server for destroy terraform stand
@@ -306,7 +315,7 @@ jobs:
           sudo apt update
           sudo apt-get install terraform
           ssh_key=/tmp/dapps-stand
-          echo "${{ secrets.SHH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
+          echo "${{ secrets.SSH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
       - name: Download docker logs
         run: ./clickfile.py infra download-logs
       - name: Destroy stand with terraform

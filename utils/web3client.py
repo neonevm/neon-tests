@@ -6,8 +6,10 @@ import web3
 import web3.types
 import requests
 import eth_account.signers.local
+from eth_abi import abi
 
 from utils import helpers
+from utils.helpers import decode_function_signature
 
 
 class NeonWeb3Client:
@@ -37,6 +39,12 @@ class NeonWeb3Client:
 
     def get_evm_version(self):
         return self._get_evm_info("web3_clientVersion")
+    
+    def get_neon_emulate(self, params):
+        return requests.post(
+            self._proxy_url,
+            json={"jsonrpc": "2.0", "method": "neon_emulate", "params": [params], "id": 0},
+        ).json()
 
     def get_solana_trx_by_neon(self, tr_id: str):
         return requests.post(
@@ -54,7 +62,7 @@ class NeonWeb3Client:
     def get_balance(self, address: tp.Union[str, eth_account.signers.local.LocalAccount]):
         if not isinstance(address, str):
             address = address.address
-        return web3.Web3.fromWei(self._web3.eth.get_balance(address, "pending"), "ether")
+        return web3.Web3.from_wei(self._web3.eth.get_balance(address, "pending"), "ether")
 
     def get_block_number(self):
         return self._web3.eth.get_block_number()
@@ -81,7 +89,7 @@ class NeonWeb3Client:
         transaction = {
             "from": from_.address,
             "to": to_addr,
-            "value": web3.Web3.toWei(amount, "ether"),
+            "value": web3.Web3.to_wei(amount, "ether"),
             "chainId": self._chain_id,
             "gasPrice": gas_price or self.gas_price(),
             "gas": gas,
@@ -102,13 +110,13 @@ class NeonWeb3Client:
         gas: tp.Optional[int] = 0,
         gas_price: tp.Optional[int] = None,
         constructor_args: tp.Optional[tp.List] = None,
-    ):
+    ) -> web3.types.TxReceipt:
         """Proxy doesn't support send_transaction"""
         gas_price = gas_price or self.gas_price()
         constructor_args = constructor_args or []
 
         contract = self._web3.eth.contract(abi=abi, bytecode=bytecode)
-        transaction = contract.constructor(*constructor_args).buildTransaction(
+        transaction = contract.constructor(*constructor_args).build_transaction(
             {
                 "chainId": self._chain_id,
                 "from": from_.address,
@@ -134,11 +142,11 @@ class NeonWeb3Client:
         abi,
         gas: tp.Optional[int] = 0,
         gas_price: tp.Optional[int] = None,
-    ):
+    ) -> web3.types.TxReceipt:
         to_addr = to if isinstance(to, str) else to.address
         gas_price = gas_price or self.gas_price()
         contract = self._web3.eth.contract(address=address, abi=abi)
-        transaction = contract.functions.transfer(to_addr, amount).buildTransaction(
+        transaction = contract.functions.transfer(to_addr, amount).build_transaction(
             {
                 "chainId": self._chain_id,
                 "gas": gas,
@@ -158,7 +166,7 @@ class NeonWeb3Client:
     def send_transaction(
         self, account: eth_account.signers.local.LocalAccount, transaction: tp.Dict,
             gas_multiplier: tp.Optional[float] = None  # fix for some event depends transactions
-    ):
+    ) -> web3.types.TxReceipt:
         if "gasPrice" not in transaction:
             transaction["gasPrice"] = self.gas_price()
         if "gas" not in transaction:
@@ -194,3 +202,16 @@ class NeonWeb3Client:
         contract = self.eth.contract(address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"])
 
         return contract, contract_deploy_tx
+
+    @staticmethod
+    def text_to_bytes32(text: str) -> bytes:
+        return text.encode().ljust(32, b'\0')
+
+    def call_function_at_address(self, contract_address, signature, args, result_types):
+        calldata = decode_function_signature(signature, args)
+        tx = {
+            "data": calldata,
+            "to": contract_address,
+        }
+        result = self._web3.eth.call(tx)
+        return abi.decode(result_types, result)[0]

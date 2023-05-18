@@ -6,7 +6,10 @@ import string
 import time
 import typing as tp
 
+import sha3
 import solcx
+from eth_abi import abi
+from eth_utils import keccak
 from pythclient.pythaccounts import PythPriceAccount
 from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP_ENDPOINT
 
@@ -48,6 +51,8 @@ def get_contract_interface(contract: str, version: str, contract_name: tp.Option
         contract_path = pathlib.Path(contract)
     else:
         contract_path = (pathlib.Path.cwd() / "contracts" / f"{contract}").absolute()
+        if not contract_path.exists():
+            contract_path = (pathlib.Path.cwd() / "contracts" / "external" / f"{contract}").absolute()
 
     assert contract_path.exists(), f"Can't found contract: {contract_path}"
 
@@ -67,8 +72,10 @@ def gen_hash_of_block(size: int) -> str:
     """Generates a block hash of the given size"""
     try:
         block_hash = hex(int.from_bytes(os.urandom(size), "big"))
-        if bytes.fromhex(block_hash[2:]) or len(block_hash[2:]) != size * 2:
+        if len(block_hash[2:]) == size * 2:
             return block_hash
+        else:
+            return gen_hash_of_block(size)
     except ValueError:
         return gen_hash_of_block(size)
 
@@ -94,3 +101,32 @@ def wait_condition(func_cond, timeout_sec=15, delay=0.5):
             print(f"Error during waiting: {e}")
         time.sleep(delay)
     return True
+
+
+def decode_function_signature(function_name: str, args=None) -> str:
+    data = keccak(text=function_name)[:4]
+    if args is not None:
+        types = function_name.split("(")[1].split(")")[0].split(",")
+        data += abi.encode(types, args)
+    return "0x" + data.hex()
+
+
+def get_selectors(abi):
+    """Get functions signatures with params as keccak256 from contract abi"""
+    selectors = []
+    for function in filter(lambda item: item["type"] == "function", abi):
+        input_types = ""
+        for input in function["inputs"]:
+            if 'struct' in input["internalType"]:
+                struct_name = input["name"]
+                struct_types = ",".join(i["type"] for i in input["components"] if i["name"] != struct_name)
+                input_types += "," + f"({struct_types})[]"
+            else:
+                input_types += "," + input["type"]
+
+        input_types = input_types[1:]
+        keccak256 = sha3.keccak_256()
+        keccak256.update(f"{function['name']}({input_types})".encode())
+        encoded_selector = f"{function['name']}({input_types})"
+        selectors.append(keccak(text=encoded_selector)[:4])
+    return selectors

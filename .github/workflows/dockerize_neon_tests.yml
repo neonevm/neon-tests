@@ -3,24 +3,43 @@ name: Docker Image for all neon tests
 on:
   push:
     branches: ["develop"]
-
-env:
-  IMAGE_ID: neonlabsorg/neon_tests
-  DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-  DOCKER_HUB_USER: ${{ secrets.DOCKER_USERNAME }}
+  workflow_dispatch:
+    inputs:
+      oz_branch:
+        type: string
+        default: master
+        required: true
+        description: "Which OZ branch to use"
 
 jobs:
   dockerize:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - name: Build and push neon tests docker image
-        id: docker_pipeline
+      - name: Define env
+        id: define-env
         run: |
-          delimeter=$(printf "%0.s-" {1..30})
-          echo " ${delimeter} Build new docker image ${{ env.IMAGE_ID }} ${delimeter}"
-          docker build . --tag ${{ env.IMAGE_ID }}:latest --tag ${{ env.IMAGE_ID }}:${GITHUB_SHA::8}
-          echo "${delimeter} Login into Docker registry as ${{ env.DOCKER_HUB_USER }} ${delimeter}"
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-          echo "${delimeter} Push image ${{ env.IMAGE_ID }} to Docker registry ${delimeter}"
-          docker push --all-tags ${{ env.IMAGE_ID }}
+            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == 'develop'  ]]; then
+                tag='latest'
+                oz_branch='master'
+            elif [["${{ github.event_name }}" == "workflow_dispatch" && "${{ github.ref_name }}" == 'develop' && "${{ github.event.inputs.oz_branch }}" == 'master' ]]; then
+                tag='latest'
+                oz_branch='master'
+            elif [[ "${{ github.event.inputs.oz_branch }}" != "" ]]; then
+                tag='${{ github.event.inputs.oz_branch }}'
+                oz_branch='${{ github.event.inputs.oz_branch }}'
+            else
+                tag='${{ github.sha }}'
+                oz_branch='master'
+            fi
+            echo "tag=${tag}"
+            echo "oz_branch=${oz_branch}"
+            echo "tag=${tag}" >> $GITHUB_OUTPUT
+            echo "oz_branch=${oz_branch}" >> $GITHUB_OUTPUT
+      - name: "Dockerize neon tests"
+        uses: ./.github/actions/dockerize-neon-tests
+        with:
+          image_tag: ${{ steps.define-env.outputs.tag }}
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
+          oz_branch: ${{ steps.define-env.outputs.oz_branch }}

@@ -28,9 +28,18 @@ class EnvironmentConfig:
 
 
 def pytest_addoption(parser):
-    parser.addoption("--network", action="store", default="night-stand", help="Which stand use")
-    parser.addoption("--make-report", action="store_true", default=False, help="Store tests result to file")
-    parser.addoption("--envs", action="store", default="envs.json", help="Filename with environments")
+    parser.addoption(
+        "--network", action="store", default="night-stand", help="Which stand use"
+    )
+    parser.addoption(
+        "--make-report",
+        action="store_true",
+        default=False,
+        help="Store tests result to file",
+    )
+    parser.addoption(
+        "--envs", action="store", default="envs.json", help="Filename with environments"
+    )
 
 
 def pytest_sessionstart(session):
@@ -59,16 +68,25 @@ def pytest_configure(config: Config):
     envs_file = config.getoption("--envs")
     with open(pathlib.Path().parent.parent / envs_file, "r+") as f:
         environments = json.load(f)
-    assert network_name in environments, f"Environment {network_name} doesn't exist in envs.json"
+    assert (
+        network_name in environments
+    ), f"Environment {network_name} doesn't exist in envs.json"
     env = environments[network_name]
     if network_name == "devnet":
-        if "SOLANA_URL" in os.environ:
+        if "SOLANA_URL" in os.environ and os.environ["SOLANA_URL"]:
             env["solana_url"] = os.environ.get("SOLANA_URL")
-        if "PROXY_URL" in os.environ:
+        if "PROXY_URL" in os.environ and os.environ["PROXY_URL"]:
             env["proxy_url"] = os.environ.get("PROXY_URL")
     if "use_bank" not in env:
         env["use_bank"] = False
     if network_name == "aws":
-            env["solana_url"] = env["solana_url"].replace("<solana_ip>", os.environ.get("SOLANA_IP"))
-            env["proxy_url"] = env["proxy_url"].replace("<proxy_ip>", os.environ.get("PROXY_IP"))
+        env["solana_url"] = env["solana_url"].replace(
+            "<solana_ip>", os.environ.get("SOLANA_IP")
+        )
+        env["proxy_url"] = env["proxy_url"].replace(
+            "<proxy_ip>", os.environ.get("PROXY_IP")
+        )
+        env["faucet_url"] = env["faucet_url"].replace(
+            "<proxy_ip>", os.environ.get("PROXY_IP")
+        )
     config.environment = EnvironmentConfig(**env)

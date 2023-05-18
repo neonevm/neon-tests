@@ -76,7 +76,7 @@ class BaseMixin(BaseTests):
 
     def get_balance_from_wei(self, address: str) -> float:
         """Gets balance from Wei"""
-        return float(self.web3_client.fromWei(self.web3_client.eth.get_balance(address), Unit.ETHER))
+        return float(self.web3_client.from_wei(self.web3_client.eth.get_balance(address), Unit.ETHER))
 
     def create_account_with_balance(
             self, amount: int = InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value
@@ -142,14 +142,14 @@ class BaseMixin(BaseTests):
 
     @allure.step("calculating gas")
     def calculate_trx_gas(self, tx_receipt: web3.types.TxReceipt) -> float:
-        gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.fromWei(
+        gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.from_wei(
             self.web3_client.gas_price(), Unit.ETHER
         )
         return float(round(gas_used_in_tx, InputTestConstants.ROUND_DIGITS.value))
 
     @allure.step("calculating gas")
     def calculate_trx_gas(self, tx_receipt: web3.types.TxReceipt) -> float:
-        gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.fromWei(
+        gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.from_wei(
             self.web3_client.gas_price(), Unit.ETHER
         )
         return float(round(gas_used_in_tx, InputTestConstants.ROUND_DIGITS.value))
@@ -176,7 +176,7 @@ class BaseMixin(BaseTests):
             time.sleep(1)
         raise TimeoutError(f"Transaction is not accepted for {timeout} seconds")
 
-    def create_tx_object(self, sender=None, recipient=None, amount=2, nonce=None, gas_price=None):
+    def create_tx_object(self, sender=None, recipient=None, amount=2, nonce=None, gas_price=None, data=None):
         if gas_price is None:
             gas_price = self.web3_client.gas_price()
         if sender is None:
@@ -188,14 +188,32 @@ class BaseMixin(BaseTests):
         transaction = {
             "from": sender,
             "to": recipient,
-            "value": self.web3_client.toWei(amount, Unit.ETHER),
+            "value": self.web3_client.to_wei(amount, Unit.ETHER),
             "chainId": self.web3_client._chain_id,
             "gasPrice": gas_price,
             "gas": 0,
             "nonce": nonce,
         }
+        if data is not None:
+            transaction["data"] = data
         transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
         return transaction
+
+    def create_contract_call_tx_object(self, sender=None, amount=None):
+        if sender is None:
+            sender = self.sender_account
+        tx = {
+            "from": sender.address,
+            "nonce": self.web3_client.eth.get_transaction_count(
+                sender.address
+            ),
+            "gasPrice": self.web3_client.gas_price(),
+        }
+        if amount is not None:
+            tx["value"] = self.web3_client.to_wei(amount, Unit.ETHER)
+        return tx
+
+
 
     def get_solana_resps_by_neon_resp(self, resp):
         solana_resps = []

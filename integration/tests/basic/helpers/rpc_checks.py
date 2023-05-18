@@ -1,5 +1,6 @@
 import typing as tp
-import web3
+
+from web3 import types
 
 from integration.tests.basic.helpers.assert_message import AssertMessage
 
@@ -11,8 +12,7 @@ def is_hex(hex_data: str) -> bool:
     except (ValueError, TypeError):
         return False
 
-
-def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[web3.types.TxReceipt],
+def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[types.TxReceipt],
                         pending: bool = False):
     assert "error" not in block
     assert "result" in block, AssertMessage.DOES_NOT_CONTAIN_RESULT
@@ -39,10 +39,10 @@ def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[web
             assert tx_receipt.transactionHash.hex() in [transaction["hash"] for transaction in
                                                         transactions], "Created transaction should be in block"
         for transaction in transactions:
-            expected_hex_fields = ["hash", "nonce", "blockHash", "blockNumber", "transactionIndex", "from", "to",
+            expected_hex_fields = ["hash", "nonce", "blockHash", "blockNumber", "transactionIndex", "from",
                                    "value", "gas", "gasPrice", "v", "r", "s"]
             for field in expected_hex_fields:
-                assert is_hex(transaction[field]), f"field {field} is not correct. Actual : {transaction[field]}"
+                assert is_hex(transaction[field]), f"field '{field}' is not correct. Actual : {transaction[field]}"
             if tx_receipt is not None:
                 if tx_receipt.transactionHash.hex() == transaction["hash"]:
                     assert transaction["from"].upper() == tx_receipt['from'].upper()
@@ -67,7 +67,6 @@ def assert_log_field_in_neon_trx_receipt(responce, events_count):
 
     event_types = [log["neonEventType"] for log in sorted(logs, key=lambda x: int(x["neonEventOrder"], 0))]
 
-    print("event_types: ", event_types)
     assert event_types == expected_event_types, f"Actual: {event_types}; Expected: {expected_event_types}"
 
 

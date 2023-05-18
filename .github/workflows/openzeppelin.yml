@@ -31,8 +31,23 @@ env:
   JOBS_NUMBER: "8"
   NETWORK: night-stand
   RUNNER: neon-hosted
+  IMAGE:  neonlabsorg/neon_tests
+  CONTAINER:  oz-${{ github.run_id }}
+  BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
 jobs:
+  dockerize:
+    if: ${{ github.ref_name != 'develop'}}
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Dockerize neon tests"
+        id: requirements
+        uses: ./.github/actions/dockerize-neon-tests
+        with:
+          image_tag: ${{ github.sha }}
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
   prepare-env:
     runs-on: ubuntu-20.04
     steps:
@@ -59,51 +74,64 @@ jobs:
           echo "Runner: ${RUNNER}"
           echo "Jobs: ${JOBS_NUMBER}"
 
-          echo "::set-output name=network::${NETWORK}"
-          echo "::set-output name=runner::${RUNNER}"
-          echo "::set-output name=jobs::${JOBS_NUMBER}"
+          echo "network=${NETWORK}" >> $GITHUB_OUTPUT
+          echo "runner=${RUNNER}" >> $GITHUB_OUTPUT
+          echo "jobs=${JOBS_NUMBER}" >> $GITHUB_OUTPUT
     outputs:
       network: ${{ steps.setup.outputs.network }}
       runner: ${{ steps.setup.outputs.runner }}
       jobs: ${{ steps.setup.outputs.jobs }}
 
   tests:
-    name: "OpenZeppelin tests"
+    name: OpenZeppelin tests
     needs:
       - prepare-env
+      - dockerize
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
     runs-on: ${{ needs.prepare-env.outputs.runner }}
+    env:
+      AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+      AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
     steps:
-      - name: "Cleanup"
-        run: sudo rm -rf allure-report
-      - uses: actions/checkout@v2
-      - name: Update openzeppelin
-        run: git submodule update --init --recursive
-      - name: "Install deps"
-        uses: ./.github/actions/requirements
-      - name: "Run OpenZeppelin tests"
-        run: "./clickfile.py run oz --network ${{ needs.prepare-env.outputs.network }} --jobs ${{ needs.prepare-env.outputs.jobs }}"
-      - name: "Print OpenZeppelin report"
-        run: "./clickfile.py ozreport"
-      - name: "Archive report"
-        run: tar -czf allure-results.tar.gz allure-results
-      - uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: "allure-results.tar.gz"
-          path: allure-results.tar.gz
-      - name: "Download allure history"
-        run: "./clickfile.py get-allure-history openzeppelin --network ${{ needs.prepare-env.outputs.network }}"
-        env:
-          AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-          AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+      - uses: actions/checkout@v3
+      - name: Define image tag
+        id: image_tag
+        uses: ./.github/actions/define-image-tag
+      - name: Pull docker image
+        run: docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
+      - name: Run docker container
+        run: |
+          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
+      - name: Run OpenZeppelin tests
+        run: |
+          docker exec -i -e OZ_BALANCES_REPORT_FLAG=1 ${{ env.CONTAINER }}  ./clickfile.py run oz \
+            --network ${{ needs.prepare-env.outputs.network }} \
+            --jobs ${{ needs.prepare-env.outputs.jobs }} \
+            --users 10
+      - name: Print OpenZeppelin report
+        run: |
+          docker exec -i ${{ env.CONTAINER }} ./clickfile.py ozreport
       - name: "Generate allure report"
-        uses: QuintilianoNery/action-allure-report-V2@master
-      - name: "Fix permissions"
+        id: requirements
+        uses: ./.github/actions/generate-allure-report
+        with:
+          container: ${{ env.CONTAINER }}
+          network: ${{ env.NETWORK }}
+          aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          tests_name: oz
+      - name: Analyze tests results
+        run: |
+          docker exec -i ${{ env.CONTAINER }} ./clickfile.py analyze-openzeppelin-results
+      - name: "Notify on failure."
+        if: failure()
+        run: |
+          docker exec -i ${{ env.CONTAINER }} \
+            ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+          -b ${{ env.BUILD_URL }} -n ${{ needs.prepare-env.outputs.network }}
+      - name: Remove docker container
         if: always()
-        continue-on-error: true
-        run: sudo chown deploy:deploy -R allure-report
-      - name: "Upload allure history"
-        run: "./clickfile.py upload-allure-report openzeppelin --network ${{ needs.prepare-env.outputs.network }}"
-        env:
-          AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-          AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+        run: docker rm -f ${{ env.CONTAINER }}

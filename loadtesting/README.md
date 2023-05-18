@@ -21,13 +21,11 @@ Python 3.6 or later, if you dont already have it.
 
 Test configuration via environment variables settings:
 
-- `NEON_CRED`
-  Relative path to environment credentials file. Used in all cases.
-  
-- `NEON_RPC`
-  Endpoint to Neon-RPC. Neon-RPC is a single RPC entrypoint to Neon-EVM. 
+- `NEON_TRACING_URL`
+  Endpoint to Neon-RPC. Neon-RPC is a single RPC entrypoint to Neon-EVM (specified for tracing tests). 
   The function of this service is so route requests between Tracer API and Neon Proxy services. 
-  Used only in tracer API cases. 
+  Used only in tracer API cases.
+-  `SAVE_TRANSACTIONS` Save all neon transactions and their solana transactions to "transactions-{id}.json" files
 
 
 ## Running the test and analyzing the results in the console without using the web interface 
@@ -63,10 +61,6 @@ Options:
                                   file name.  [default:
                                   loadtesting/{test_group}/locustfile.py]
                                   Choices between ["proxy", "synthetic", "tracerapi"]
-  --credentials 
-  or -c                           Relative path to credentials module. Defaults envs.json
-  
-  --neon-rpc                      Entry point to Neon RPC. Used only in Tracer API test cases.
   -h, --host [night-stand|release-stand|devnet|local]
                                   In which stand run tests.  [default: night-
                                   stand]

@@ -1,0 +1,32 @@
+name: "Build image"
+description: "Build and push neon test docker image"
+inputs:
+  image_tag:  # id of input
+    description: 'neon tests image tag'
+    required: true
+  oz_branch:
+    description: 'branch name for oz tests'
+    required: true
+    default: master
+  docker_username:
+    description: 'docker hub username'
+    required: true
+  docker_password:
+    description: 'docker hub password'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Build and push neon tests docker image
+      id: docker_pipeline
+      shell: bash
+      run: |
+        image_id="neonlabsorg/neon_tests"
+        delimeter=$(printf "%0.s-" {1..30})
+        echo " ${delimeter} Build new docker image ${image_id} ${delimeter}"
+        docker build . --tag ${image_id}:${{ inputs.image_tag }} --build-arg OZ_BRANCH='${{ inputs.oz_branch }}'
+        echo "${delimeter} Login into Docker registry as ${{ inputs.docker_username }} ${delimeter}"
+        echo "${{ inputs.docker_password }}" | docker login -u ${{ inputs.docker_username }} --password-stdin
+        echo "${delimeter} Push image ${image_id} to Docker registry ${delimeter}"
+        docker push --all-tags ${image_id}

@@ -271,6 +271,12 @@ jobs:
     runs-on: ubuntu-20.04
     needs:
       - prepare
+    env:
+      SOLANA_URL: ${{ needs.prepare.outputs.solana_url }}
+      PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
+      FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
+      NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
+      NETWORK: ${{ needs.prepare.outputs.network }}
     steps:
       - uses: actions/checkout@v3
       - name: Install python requirements
@@ -279,14 +285,10 @@ jobs:
 
       - name: Prepare accounts
         id: accounts
-        env:
-          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
-          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
         run: |
-          ./clickfile.py infra gen-accounts -c 4 -a 10000
+          ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch curve tests
-        if: ${{ steps.accounts.outcome == 'success' }}
         id: curve
         env:
           PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
@@ -295,6 +297,8 @@ jobs:
         run: |
           CWD=/tmp/curve-${{ github.run_id }}
           mkdir -p ${CWD}
+          echo "${{ secrets.SSH_TESTS_PRIV_KEY }}" > ${HOME}/.ssh/neon-tests
+          chmod 644 ${HOME}/.ssh/neon-tests
           git clone https://github.com/neonlabsorg/curve-contracts-ci ${CWD}
           docker build -t curve:latest --build-arg PROXY_URL='http://${{ env.PROXY_IP }}:9090/solana' --build-arg CHAIN_ID='111' ${CWD}
           docker run --rm --network host \
@@ -365,7 +369,7 @@ jobs:
 
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, aave]
+    needs: [prepare, uniswap, saddle, aave, curve]
     if: always()
     env:
       SOLANA_URL: ${{ needs.prepare.outputs.solana_url || secrets.SOLANA_URL }}
@@ -407,7 +411,7 @@ jobs:
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, aave, swap-report]
+    needs: [prepare, uniswap, saddle, curve, aave, swap-report]
     if: always() && ${{ needs.prepare.outputs.network }} == 'aws'
     steps:
       - uses: actions/checkout@v3
@@ -456,8 +460,8 @@ jobs:
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, aave]
-    if: ${{ failure() }}
+    needs: [prepare, uniswap, saddle, aave, curve]
+    if: failure()  && github.ref_name == 'develop'
     steps:
       - uses: actions/checkout@v3
       - name: Install python requirements

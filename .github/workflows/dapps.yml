@@ -315,6 +315,7 @@ jobs:
         run: |
           CWD=/tmp/curve-${{ github.run_id }}
           mkdir -p ${CWD}
+          eval `ssh-agent -s`
           echo "${{ secrets.SSH_TESTS_PRIV_KEY }}" > /tmp/neon-tests
           ssh-add /tmp/neon-tests
           git clone git@github.com:neonlabsorg/curve-contracts-ci.git ${CWD}

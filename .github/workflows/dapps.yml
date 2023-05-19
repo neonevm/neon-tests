@@ -327,7 +327,7 @@ jobs:
             bash -c " \
               brownie test \
               -vvvv --network neon"
-          docker cp curve-${{ github.run_id }}:/app/report.json curve-report.json
+          docker cp curve-${{ github.run_id }}:/app/curve-report.json curve-report.json
           docker rm -f curve-${{ github.run_id }}
       - name: Save report
         uses: actions/upload-artifact@v3

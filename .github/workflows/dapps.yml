@@ -1,4 +1,4 @@
-name: "dApps testing"
+name: dApps testing ${{ github.event.inputs.dapps }} ${{ github.event.inputs.network }}
 on:
   schedule:
     - cron: "0 1 * * 6"

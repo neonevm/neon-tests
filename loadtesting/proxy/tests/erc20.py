@@ -19,10 +19,29 @@ ERC20_CONTRACT_VERSION = "0.8.0"
 @tag("erc20")
 class ERC20TasksSet(NeonProxyTasksSet):
     """Implements ERC20 base pipeline tasks"""
+    nonce: str = None
+    recipient: str = None
 
     def on_start(self) -> None:
         super(ERC20TasksSet, self).on_start()
+        super(ERC20TasksSet, self).prepare_account()
+        self.log = logging.getLogger(
+            "neon-consumer[%s]" % self.account.address[-8:])
         self._buffer = self.user.environment.shared.erc20_contracts
+        self.recipient = self.get_account()
+    
+    def get_account(self):
+        return random.choice(self.user.environment.shared.accounts)
+    
+    def create_account(self):
+        return self.web3_client.create_account()
+
+    def get_balances(self):
+        sender_balance = self.web3_client.get_balance(
+            self.account.address)
+        recipient_balance = self.web3_client.get_balance(
+            self.recipient.address)
+        return sender_balance, recipient_balance
 
     @task(1)
     def task_deploy_contract(self):
@@ -55,27 +74,29 @@ class ERC20TasksSet(NeonProxyTasksSet):
             )
             del contracts[contract_address]
             return
-        recipient = random.choice(self.user.environment.shared.accounts)
+
         self.log.info(
-            f"Send `{ERC20_CONTRACT_NAME}` tokens from contract {str(contract.address)[-8:]} to {str(recipient.address)[-8:]}."
+            f"Send `{ERC20_CONTRACT_NAME}` tokens from contract {str(contract.address)[-8:]} to {str(self.recipient.address)[-8:]}."
         )
+
         tx_receipt = self.web3_client.send_erc20(
-            self.account, recipient, 1, contract.address, abi=contract.abi
+            self.account, self.recipient, 1, contract.address, abi=contract.abi
         )
+
         if tx_receipt:
             tx_receipt = dict(tx_receipt)  # AttributeDict -> dict
             tx_receipt["contractAddress"] = contract.address
             self._buffer[self.account.address][contract.address]["amount"] -= 1
-            recipient_contracts = self._buffer.get(recipient.address, {})
+            recipient_contracts = self._buffer.get(self.recipient.address, {})
             recipient_contract = recipient_contracts.get(contract.address, {})
             if not recipient_contract:
                 recipient_contract.update({"contract": contract, "amount": 0})
             recipient_contract["amount"] += 1
-            self._buffer.setdefault(recipient.address, {}).update(
+            self._buffer.setdefault(self.recipient.address, {}).update(
                 {contract.address: recipient_contract}
             )
             tx_receipt["contract"] = {"address": contract.address}
-        return tx_receipt
+        return tx_receipt, self.web3_client.get_nonce(self.account)
 
 
 @events.test_start.add_listener
@@ -104,7 +125,8 @@ def prepare_one_contract_for_erc20(environment: "locust.env.Environment", **kwar
         ERC20_CONTRACT_NAME,
         account=eth_account,
         version=ERC20_CONTRACT_VERSION,
-        constructor_args=["Test Token", "TT", web3.Web3.to_wei(10000000000, "ether")],
+        constructor_args=["Test Token", "TT",
+                          web3.Web3.to_wei(10000000000, "ether")],
     )
     environment.erc20_one = {"user": eth_account, "contract": erc_contract}
 
@@ -133,7 +155,7 @@ class ERC20OneContractTasksSet(NeonProxyTasksSet):
         """Send ERC20 tokens"""
         LOG.debug("Send erc20 ", self.account.address)
         contract = self.user.environment.erc20_one["contract"]
-        recipient = random.choice(self.user.environment.shared.accounts)
+        recipient = self.web3_client.create_account()
         self.web3_client.send_erc20(
             self.account, recipient, 1, contract.address, abi=contract.abi
         )

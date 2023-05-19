@@ -32,9 +32,11 @@ Test configuration via environment variables settings:
 
 ##### Instant load method without locust web interface 
 ```bash
-
 locust -f ./loadtesting/{test_group}/locustfile.py --headless --host=night-stand -u 10 -r 10
+```
 
+```bash
+Options:
 -f             : Python module to import, e.g. '../other_test.py'. Either a .py file or a package directory.
                  Defaults to 'locustfile'
 -u             : Peak number of concurrent Locust users. Primarily used together with --headless or
@@ -49,15 +51,20 @@ locust -f ./loadtesting/{test_group}/locustfile.py --headless --host=night-stand
 
 ### Running the test with clickfile
 ```bash
-./clickfile locust --help
+./clickfile.py locust --help
 
+Commands:
+  prepare  Run preparation stage for `tracer api` performance test
+  run      Run `neon` pipeline performance test
+```
 
-Usage: clickfile.py locust [OPTIONS]
+```bash
+Usage: ./clickfile.py locust [OPTIONS]
 
   Run `neon` pipeline performance test
 
 Options:
-  -f, --locustfile TEXT           Python module to import. It's sub-folder and
+  -f, --locustfile TEXT           Python module to import. It is sub-folder and
                                   file name.  [default:
                                   loadtesting/{test_group}/locustfile.py]
                                   Choices between ["proxy", "synthetic", "tracerapi"]
@@ -79,9 +86,31 @@ Options:
                                   is enabled`]
   --help                          Show this message and exit.
 ```
+
+```bash
+Usage: ./clickfile.py locust prepare [OPTIONS]
+
+  Run preparation stage for `tracer api` performance test
+
+Options:
+  -c, --credentials TEXT    Relative path to credentials. Default repo
+                            root/envs.json
+  -h, --host TEXT           In which stand run tests.  [default: night-stand]
+  -u, --users INTEGER       Peak number of concurrent Locust users.  [default:
+                            50]
+  -r, --spawn-rate INTEGER  Rate to spawn users at (users per second)
+                            [default: 1]
+  -t, --run-time INTEGER    Stop after the specified amount of time, e.g.
+                            (300s, 20m, 3h, 1h30m, etc.). Only used together
+                            without Locust Web UI. [default: always run]
+  -T, --tag TEXT            tag to include in the test, so only tasks with any
+                            matching tags will be executed
+  --help                    Show this message and exit.
+```
+
 ##### Running test with Web UI
 ```bash
-./clifile locust
+./clickfile.py locust
 then go to http://0.0.0.0:8089/
 
 [2022-03-17 16:21:43,161] local/INFO/locust.main: Starting web interface at http://0.0.0.0:8089 (accepting connections from all network interfaces)
@@ -94,7 +123,7 @@ for more options use --help
 
 ##### Running test without Web UI (headless mode)
 ```bash
-./clifile locust --headless | -w 
+./clickfile.py locust --headless | -w 
 Test will start immediately. Use -u and -t to control user count and run time
 
 for exit press Ctrl+C

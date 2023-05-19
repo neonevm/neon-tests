@@ -316,8 +316,9 @@ jobs:
           CWD=/tmp/curve-${{ github.run_id }}
           mkdir -p ${CWD}
           eval `ssh-agent -s`
-          echo "${{ secrets.SSH_TESTS_PRIV_KEY }}" > /tmp/neon-tests
-          ssh-add /tmp/neon-tests
+          ssh_key='/tmp/neon-tests'
+          echo "${{ secrets.SSH_TESTS_PRIV_KEY }}" > ${ssh_key} && chmod 400 ${ssh_key}
+          ssh-add ${ssh_key}
           git clone git@github.com:neonlabsorg/curve-contracts-ci.git ${CWD}
           docker build -t curve:latest --build-arg PROXY_URL='${{ env.PROXY_URL }}' --build-arg CHAIN_ID='${{ env.NETWORK_ID }}' ${CWD}
           docker run --rm --network host \

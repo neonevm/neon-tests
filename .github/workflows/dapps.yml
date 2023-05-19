@@ -1,5 +1,5 @@
 name: dApps testing
-run-name: dApps testing (${{ github.event.inputs.dapps || "all dapps"}}, ${{ github.event.inputs.network || "aws" }})
+run-name: dApps testing (${{ github.event.inputs.dapps || all dapps}}, ${{ github.event.inputs.network || aws }})
 
 on:
   schedule:

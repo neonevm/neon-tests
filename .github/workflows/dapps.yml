@@ -14,6 +14,10 @@ on:
           - devnet
           - aws
           - custom
+      dapps:
+        type: string
+        required: false
+        description: "List of dapps separated by commas (if empty, all will be run)"
       proxy_url:
         type: string
         required: false
@@ -36,12 +40,23 @@ env:
   AWS_REGION: us-east-2
   AWS_S3_BUCKET: neon-tests-dapps
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
+  ALL_DAPPS: "aave,curve,uniswap,saddle"
 jobs:
   prepare:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+      - name: Define dapps to run
+        id: dapps
+        run: |
+          if [[ "${{ github.event.inputs.dapps }}" != "" ]]; then
+            list=${{ github.event.inputs.dapps }}
+          else
+            list=${{env.ALL_DAPPS}}
+          fi;
+          echo "list=${list}"
+          echo "list=${list}" >> $GITHUB_OUTPUT
+
       - name: Define network
         id: stand
         run: |
@@ -131,9 +146,11 @@ jobs:
       faucet_url: ${{ steps.share.outputs.faucet_url }}
       network_id: ${{ steps.share.outputs.network_id }}
       network: ${{ steps.stand.outputs.network }}
+      dapps: ${{ steps.dapps.outputs.list }}
 
   uniswap:
     runs-on: ubuntu-20.04
+    if: contains( needs.prepare.outputs.dapps, 'uniswap')
     needs:
       - prepare
     env:
@@ -182,6 +199,7 @@ jobs:
 
   saddle:
     runs-on: neon-hosted
+    if: contains( needs.prepare.outputs.dapps, 'saddle')
     needs:
       - prepare
     env:
@@ -229,6 +247,7 @@ jobs:
           path: saddle-report.json
   aave:
     runs-on: ubuntu-20.04
+    if: contains( needs.prepare.outputs.dapps, 'aave')
     needs:
       - prepare
     env:
@@ -269,6 +288,7 @@ jobs:
           path: aave-report.json
   curve:
     runs-on: ubuntu-20.04
+    if: contains( needs.prepare.outputs.dapps, 'curve')
     needs:
       - prepare
     env:
@@ -291,16 +311,14 @@ jobs:
       - name: Launch curve tests
         id: curve
         env:
-          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
           ACCOUNTS: ${{ env.ACCOUNTS }}
         run: |
           CWD=/tmp/curve-${{ github.run_id }}
           mkdir -p ${CWD}
-          echo "${{ secrets.SSH_TESTS_PRIV_KEY }}" > ${HOME}/.ssh/neon-tests
-          chmod 644 ${HOME}/.ssh/neon-tests
+          echo "${{ secrets.SSH_TESTS_PRIV_KEY }}" > /tmp/neon-tests
+          ssh-add /tmp/neon-tests
           git clone https://github.com/neonlabsorg/curve-contracts-ci ${CWD}
-          docker build -t curve:latest --build-arg PROXY_URL='http://${{ env.PROXY_IP }}:9090/solana' --build-arg CHAIN_ID='111' ${CWD}
+          docker build -t curve:latest --build-arg PROXY_URL='${{ env.PROXY_URL }}' --build-arg CHAIN_ID='${{ env.NETWORK_ID }}' ${CWD}
           docker run --rm --network host \
             -e ACCOUNTS=${{ env.ACCOUNTS }} \
             curve:latest \

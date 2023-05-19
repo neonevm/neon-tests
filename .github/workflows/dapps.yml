@@ -88,7 +88,6 @@ jobs:
 
       - name: Install python requirements
         id: requirements
-        if: steps.stand.outputs.network == 'aws'
         uses: ./.github/actions/python-requirements
 
       - name: Deploy stand with terraform

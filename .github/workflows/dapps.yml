@@ -1,4 +1,6 @@
-name: dApps testing (${{ github.event.inputs.dapps || "all dapps"}}, ${{ github.event.inputs.network || "aws" }})
+name: dApps testing
+run-name: dApps testing (${{ github.event.inputs.dapps || "all dapps"}}, ${{ github.event.inputs.network || "aws" }})
+
 on:
   schedule:
     - cron: "0 1 * * 6"

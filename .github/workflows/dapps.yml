@@ -1,4 +1,6 @@
-name: "dApps testing"
+name: dApps testing
+run-name: dApps testing (${{ github.event.inputs.dapps || 'all dapps'}}, ${{ github.event.inputs.network || 'aws' }})
+
 on:
   schedule:
     - cron: "0 1 * * 6"
@@ -14,6 +16,10 @@ on:
           - devnet
           - aws
           - custom
+      dapps:
+        type: string
+        required: false
+        description: "List of dapps separated by commas (if empty, all will be run)"
       proxy_url:
         type: string
         required: false
@@ -36,12 +42,23 @@ env:
   AWS_REGION: us-east-2
   AWS_S3_BUCKET: neon-tests-dapps
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
+  ALL_DAPPS: "aave,curve,uniswap,saddle"
 jobs:
   prepare:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+      - name: Define dapps to run
+        id: dapps
+        run: |
+          if [[ "${{ github.event.inputs.dapps }}" != "" ]]; then
+            list=${{ github.event.inputs.dapps }}
+          else
+            list=${{env.ALL_DAPPS}}
+          fi;
+          echo "list=${list}"
+          echo "list=${list}" >> $GITHUB_OUTPUT
+
       - name: Define network
         id: stand
         run: |
@@ -131,9 +148,11 @@ jobs:
       faucet_url: ${{ steps.share.outputs.faucet_url }}
       network_id: ${{ steps.share.outputs.network_id }}
       network: ${{ steps.stand.outputs.network }}
+      dapps: ${{ steps.dapps.outputs.list }}
 
   uniswap:
     runs-on: ubuntu-20.04
+    if: contains( needs.prepare.outputs.dapps, 'uniswap')
     needs:
       - prepare
     env:
@@ -182,6 +201,7 @@ jobs:
 
   saddle:
     runs-on: neon-hosted
+    if: contains( needs.prepare.outputs.dapps, 'saddle')
     needs:
       - prepare
     env:
@@ -229,6 +249,7 @@ jobs:
           path: saddle-report.json
   aave:
     runs-on: ubuntu-20.04
+    if: contains( needs.prepare.outputs.dapps, 'aave')
     needs:
       - prepare
     env:
@@ -262,12 +283,63 @@ jobs:
           docker exec -i -e NEON_PROXY_URL=${{env.PROXY_URL}} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} -e NEON_CHAIN_ID=${{ env.NETWORK_ID }} aave-${{ github.run_id }} npm run neonlabs:deploy --network=neonlabs
           docker cp aave-${{ github.run_id }}:/usr/src/app/report.json aave-report.json
           docker rm -f aave-${{ github.run_id }}
-
       - name: Save report
         uses: actions/upload-artifact@v3
         with:
           name: aave-report
           path: aave-report.json
+  curve:
+    runs-on: ubuntu-20.04
+    if: contains( needs.prepare.outputs.dapps, 'curve')
+    needs:
+      - prepare
+    env:
+      SOLANA_URL: ${{ needs.prepare.outputs.solana_url }}
+      PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
+      FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
+      NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
+      NETWORK: ${{ needs.prepare.outputs.network }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        run: |
+          ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK}}
+
+      - name: Launch curve tests
+        id: curve
+        env:
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+        run: |
+          CWD=/tmp/curve-${{ github.run_id }}
+          mkdir -p ${CWD}
+          eval `ssh-agent -s`
+          ssh_key='/tmp/neon-tests'
+          echo "${{ secrets.SSH_TESTS_PRIV_KEY }}" > ${ssh_key} && chmod 400 ${ssh_key}
+          ssh-add ${ssh_key}
+          git clone git@github.com:neonlabsorg/curve-contracts-ci.git ${CWD}
+          docker build -t curve:latest --build-arg PROXY_URL='${{ env.PROXY_URL }}' --build-arg CHAIN_ID='${{ env.NETWORK_ID }}' ${CWD}
+          test -t 1 && USE_TTY="-t"
+          docker run -i ${USE_TTY} --name=curve-${{ github.run_id }} \
+            -e ACCOUNTS=${{ env.ACCOUNTS }} \
+            curve:latest \
+            bash -c " \
+              brownie test \
+              -vvvv --network neon"
+          docker cp curve-${{ github.run_id }}:/app/curve-report.json curve-report.json
+          docker rm -f curve-${{ github.run_id }}
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: curve-report
+          path: curve-report.json
+
+
+
 
 
 #  yearn:
@@ -320,7 +392,7 @@ jobs:
 
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, aave]
+    needs: [prepare, uniswap, saddle, aave, curve]
     if: always()
     env:
       SOLANA_URL: ${{ needs.prepare.outputs.solana_url || secrets.SOLANA_URL }}
@@ -352,12 +424,17 @@ jobs:
         with:
           name: aave-report
           path: reports/
+      - uses: actions/download-artifact@v3
+        continue-on-error: true
+        with:
+          name: curve-report
+          path: reports/
       - name: "Swap report"
         run: ./clickfile.py dapps report --directory=reports
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, aave, swap-report]
+    needs: [prepare, uniswap, saddle, curve, aave, swap-report]
     if: always() && ${{ needs.prepare.outputs.network }} == 'aws'
     steps:
       - uses: actions/checkout@v3
@@ -406,8 +483,8 @@ jobs:
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, aave]
-    if: ${{ failure() }}
+    needs: [prepare, uniswap, saddle, aave, curve]
+    if: failure()  && github.ref_name == 'develop'
     steps:
       - uses: actions/checkout@v3
       - name: Install python requirements

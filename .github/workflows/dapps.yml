@@ -171,7 +171,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK}}
+          ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch uniswap tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -221,7 +221,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK}}
+          ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch saddle tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -270,7 +270,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 5 -a 20000 -n ${{env.NETWORK}}
+          ./clickfile.py infra gen-accounts -c 5 -a 20000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch aave tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -312,7 +312,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK}}
+          ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch curve tests
         id: curve

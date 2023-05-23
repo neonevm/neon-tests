@@ -161,6 +161,7 @@ jobs:
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       NETWORK: ${{ needs.prepare.outputs.network }}
+      DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
       - name: Install python requirements
@@ -210,6 +211,7 @@ jobs:
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       NETWORK: ${{ needs.prepare.outputs.network }}
+      DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
       - name: Install python requirements
@@ -258,6 +260,7 @@ jobs:
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       NETWORK: ${{ needs.prepare.outputs.network }}
+      DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
       - name: Install python requirements
@@ -299,6 +302,7 @@ jobs:
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       NETWORK: ${{ needs.prepare.outputs.network }}
+      DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
       - name: Install python requirements

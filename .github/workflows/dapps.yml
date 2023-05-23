@@ -160,7 +160,7 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      NETWORK: ${{ needs.prepare.outputs.network }}
+      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
       DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
@@ -210,7 +210,7 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      NETWORK: ${{ needs.prepare.outputs.network }}
+      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
       DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
@@ -259,7 +259,7 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      NETWORK: ${{ needs.prepare.outputs.network }}
+      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
       DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
@@ -301,7 +301,7 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      NETWORK: ${{ needs.prepare.outputs.network }}
+      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
       DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3

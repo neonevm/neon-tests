@@ -23,7 +23,7 @@ class TestERC721Extensions(BaseMixin):
         token_id = erc4907.mint(seed, erc4907.account.address, uri)
         tx = self.create_contract_call_tx_object(erc4907.account)
 
-        expires = datetime.datetime.now() + datetime.timedelta(seconds=30)
+        expires = datetime.datetime.now() + datetime.timedelta(seconds=25)
         expires = int(expires.timestamp())
 
         instr = erc4907.contract.functions.setUser(token_id, self.recipient_account.address, expires).build_transaction(

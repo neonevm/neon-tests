@@ -74,4 +74,4 @@ class TestExtCodeHashOpcode(BaseMixin):
         # Check the EXTCODEHASH of a precompiled contract.
         precompiled_acc = AccountData(address='0x0000000000000000000000000000000000000007')
         contract_hash = eip1052_checker.functions.getContractHash(precompiled_acc.address).call()
-        assert contract_hash == ZERO_HASH
+        assert contract_hash.hex() == ZERO_HASH

@@ -72,7 +72,7 @@ jobs:
       solana_ip: ${{ steps.share.outputs.solana_ip }}
       proxy_ip: ${{ steps.share.outputs.proxy_ip }}
 
-  uniswap:
+  uniswap-v2:
     runs-on: ubuntu-20.04
     needs:
       - prepare
@@ -114,6 +114,49 @@ jobs:
         with:
           name: uniswap-report
           path: uniswap-report.json
+
+uniswap-v3:
+  runs-on: ubuntu-20.04
+  needs:
+    - prepare
+  steps:
+    - uses: actions/checkout@v3
+    - name: Install python requirements
+      id: requirements
+      uses: ./.github/actions/python-requirements
+
+    - name: Prepare accounts
+      id: accounts
+      env:
+        SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+        PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+      run: |
+        ./clickfile.py infra gen-accounts -c 3 -a 10000
+
+    - name: Launch uniswap tests
+      if: ${{ steps.accounts.outcome == 'success' }}
+      id: uniswap
+      env:
+        PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+        SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+        ACCOUNTS: ${{ env.ACCOUNTS }}
+      run: |
+        CWD=/tmp/uniswap-${{ github.run_id }}
+        mkdir -p ${CWD}
+        git clone https://github.com/neonlabsorg/Uniswap-V3-NEON.git ${CWD}
+        docker build -t uniswap:latest ${CWD}
+        proxy_url=http://${{ env.PROXY_IP }}:9090/solana
+        test -t 1 && USE_TTY="-t"
+        docker run -i ${USE_TTY} --name=uniswap-${{ github.run_id }} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} --entrypoint /bin/bash uniswap:latest -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
+        docker cp uniswap-${{ github.run_id }}:/usr/src/app/report.json report.json
+        docker rm -f uniswap-${{ github.run_id }}
+        mv report.json uniswap-report.json
+
+    - name: Save report
+      uses: actions/upload-artifact@v3
+      with:
+        name: uniswap-report
+        path: uniswap-report.json
 
   saddle:
     runs-on: neon-hosted

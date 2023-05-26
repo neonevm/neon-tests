@@ -182,17 +182,16 @@ jobs:
           CWD=/tmp/uniswap-v2-${{ github.run_id }}
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
-          docker build -t uniswap:latest ${CWD}
+          docker build -t uniswap:v2 ${CWD}
           test -t 1 && USE_TTY="-t"
           docker run -i ${USE_TTY} --name=uniswap-v2-${{ github.run_id }} \
             -e NEON_PROXY_URL=${{ env.PROXY_URL }} \
             -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} \
             -e NEON_CHAIN_ID=${{ env.NETWORK_ID }} \
-            --entrypoint /bin/bash uniswap:latest \
+            --entrypoint /bin/bash uniswap:v2 \
             -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
-          docker cp uniswap-v2-${{ github.run_id }}:/usr/src/app/report.json report.json
+          docker cp uniswap-v2-${{ github.run_id }}:/usr/src/app/report.json uniswap-report-v2.json
           docker rm -f uniswap-v2-${{ github.run_id }}
-          mv report.json uniswap-report-v2.json
 
       - name: Save report
         uses: actions/upload-artifact@v3
@@ -232,17 +231,15 @@ jobs:
           CWD=/tmp/uniswap-v3-${{ github.run_id }}
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/Uniswap-V3-NEON.git ${CWD}
-          docker build -t uniswap:latest ${CWD}
+          docker build -t uniswap:v3 ${CWD}
           test -t 1 && USE_TTY="-t"
           docker run -i ${USE_TTY} --name=uniswap-v3-${{ github.run_id }} \
             -e NEON_PROXY_URL=${{ env.PROXY_URL }} \
             -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} \
             -e NEON_CHAIN_ID=${{ env.NETWORK_ID }} \
-            --entrypoint /bin/sh uniswap:latest \
-            -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
-          docker cp uniswap-v3-${{ github.run_id }}:/usr/src/app/report.json report.json
+            uniswap:v3
+          docker cp uniswap-v3-${{ github.run_id }}:/usr/src/app/report.json uniswap-report-v3.json
           docker rm -f uniswap-v3-${{ github.run_id }}
-          mv report.json uniswap-report-v3.json
 
       - name: Save report
         uses: actions/upload-artifact@v3

@@ -152,7 +152,7 @@ jobs:
 
   uniswap-v2:
     runs-on: ubuntu-20.04
-    if: contains( needs.prepare.outputs.dapps, 'uniswap')
+    if: contains( needs.prepare.outputs.dapps, 'uniswap-v2')
     needs:
       - prepare
     env:
@@ -175,7 +175,7 @@ jobs:
 
       - name: Launch uniswap v2 tests
         if: ${{ steps.accounts.outcome == 'success' }}
-        id: uniswap
+        id: uniswap-v2
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
         run: |
@@ -200,52 +200,55 @@ jobs:
           name: uniswap-report-v2
           path: uniswap-report-v2.json
 
-uniswap-v3:
-  runs-on: ubuntu-20.04
-  needs:
-    - prepare
-  steps:
-    - uses: actions/checkout@v3
-    - name: Install python requirements
-      id: requirements
-      uses: ./.github/actions/python-requirements
+  uniswap-v3:
+    runs-on: ubuntu-20.04
+    if: contains( needs.prepare.outputs.dapps, 'uniswap-v3')
+    needs:
+      - prepare
+    env:
+      SOLANA_URL: ${{ needs.prepare.outputs.solana_url }}
+      PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
+      FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
+      NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
+      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
+      DUMP_ENVS: True
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
 
-    - name: Prepare accounts
-      id: accounts
-      env:
-        SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
-        PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-      run: |
-        ./clickfile.py infra gen-accounts -c 3 -a 10000
+      - name: Prepare accounts
+        id: accounts
+        run: |
+          ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
 
-    - name: Launch uniswap v3 tests
-      if: ${{ steps.accounts.outcome == 'success' }}
-      id: uniswap
-      env:
-        PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-        SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
-        ACCOUNTS: ${{ env.ACCOUNTS }}
-      run: |
-        CWD=/tmp/uniswap-v3-${{ github.run_id }}
-        mkdir -p ${CWD}
-        git clone https://github.com/neonlabsorg/Uniswap-V3-NEON.git ${CWD}
-        docker build -t uniswap:latest ${CWD}
-        proxy_url=http://${{ env.PROXY_IP }}:9090/solana
-        test -t 1 && USE_TTY="-t"
-        docker run -i ${USE_TTY} --name=uniswap-v3-${{ github.run_id }} \
-          -e NEON_PROXY_URL=${proxy_url} \
-          -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} \
-          --entrypoint /bin/bash uniswap:latest \
-          -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
-        docker cp uniswap-v3-${{ github.run_id }}:/usr/src/app/report.json report.json
-        docker rm -f uniswap-v3-${{ github.run_id }}
-        mv report.json uniswap-report-v3.json
+      - name: Launch uniswap v3 tests
+        if: ${{ steps.accounts.outcome == 'success' }}
+        id: uniswap-v3
+        env:
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+        run: |
+          CWD=/tmp/uniswap-v3-${{ github.run_id }}
+          mkdir -p ${CWD}
+          git clone https://github.com/neonlabsorg/Uniswap-V3-NEON.git ${CWD}
+          docker build -t uniswap:latest ${CWD}
+          test -t 1 && USE_TTY="-t"
+          docker run -i ${USE_TTY} --name=uniswap-v3-${{ github.run_id }} \
+            -e NEON_PROXY_URL=${{ env.PROXY_URL }} \
+            -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} \
+            -e NEON_CHAIN_ID=${{ env.NETWORK_ID }} \
+            --entrypoint /bin/bash uniswap:latest \
+            -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
+          docker cp uniswap-v3-${{ github.run_id }}:/usr/src/app/report.json report.json
+          docker rm -f uniswap-v3-${{ github.run_id }}
+          mv report.json uniswap-report-v3.json
 
-    - name: Save report
-      uses: actions/upload-artifact@v3
-      with:
-        name: uniswap-report-v3
-        path: uniswap-report-v3.json
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: uniswap-report-v3
+          path: uniswap-report-v3.json
 
   saddle:
     runs-on: neon-hosted

@@ -238,7 +238,7 @@ jobs:
             -e NEON_PROXY_URL=${{ env.PROXY_URL }} \
             -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} \
             -e NEON_CHAIN_ID=${{ env.NETWORK_ID }} \
-            --entrypoint /bin/bash uniswap:latest \
+            --entrypoint /bin/sh uniswap:latest \
             -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
           docker cp uniswap-v3-${{ github.run_id }}:/usr/src/app/report.json report.json
           docker rm -f uniswap-v3-${{ github.run_id }}

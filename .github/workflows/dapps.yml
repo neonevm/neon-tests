@@ -182,7 +182,7 @@ jobs:
           CWD=/tmp/uniswap-v2-${{ github.run_id }}
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
-          docker build -t uniswap-v2:latest ${CWD}
+          docker build -t uniswap:latest ${CWD}
           test -t 1 && USE_TTY="-t"
           docker run -i ${USE_TTY} --name=uniswap-v2-${{ github.run_id }} \
             -e NEON_PROXY_URL=${{ env.PROXY_URL }} \
@@ -232,7 +232,7 @@ jobs:
           CWD=/tmp/uniswap-v3-${{ github.run_id }}
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/Uniswap-V3-NEON.git ${CWD}
-          docker build -t uniswap-v3:latest ${CWD}
+          docker build -t uniswap:latest ${CWD}
           test -t 1 && USE_TTY="-t"
           docker run -i ${USE_TTY} --name=uniswap-v3-${{ github.run_id }} \
             -e NEON_PROXY_URL=${{ env.PROXY_URL }} \

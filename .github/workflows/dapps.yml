@@ -90,7 +90,7 @@ jobs:
         run: |
           ./clickfile.py infra gen-accounts -c 3 -a 10000
 
-      - name: Launch uniswap tests
+      - name: Launch uniswap v2 tests
         if: ${{ steps.accounts.outcome == 'success' }}
         id: uniswap
         env:
@@ -98,7 +98,7 @@ jobs:
           SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
           ACCOUNTS: ${{ env.ACCOUNTS }}
         run: |
-          CWD=/tmp/uniswap-${{ github.run_id }}
+          CWD=/tmp/uniswap-v2-${{ github.run_id }}
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
           docker build -t uniswap:latest ${CWD}
@@ -107,13 +107,13 @@ jobs:
           docker run -i ${USE_TTY} --name=uniswap-${{ github.run_id }} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} --entrypoint /bin/bash uniswap:latest -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
           docker cp uniswap-${{ github.run_id }}:/usr/src/app/report.json report.json
           docker rm -f uniswap-${{ github.run_id }}
-          mv report.json uniswap-report.json
+          mv report.json uniswap-report-v2.json
 
       - name: Save report
         uses: actions/upload-artifact@v3
         with:
-          name: uniswap-report
-          path: uniswap-report.json
+          name: uniswap-report-v2
+          path: uniswap-report-v2.json
 
 uniswap-v3:
   runs-on: ubuntu-20.04
@@ -133,7 +133,7 @@ uniswap-v3:
       run: |
         ./clickfile.py infra gen-accounts -c 3 -a 10000
 
-    - name: Launch uniswap tests
+    - name: Launch uniswap v3 tests
       if: ${{ steps.accounts.outcome == 'success' }}
       id: uniswap
       env:
@@ -141,7 +141,7 @@ uniswap-v3:
         SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
         ACCOUNTS: ${{ env.ACCOUNTS }}
       run: |
-        CWD=/tmp/uniswap-${{ github.run_id }}
+        CWD=/tmp/uniswap-v3-${{ github.run_id }}
         mkdir -p ${CWD}
         git clone https://github.com/neonlabsorg/Uniswap-V3-NEON.git ${CWD}
         docker build -t uniswap:latest ${CWD}
@@ -150,13 +150,13 @@ uniswap-v3:
         docker run -i ${USE_TTY} --name=uniswap-${{ github.run_id }} -e NEON_PROXY_URL=${proxy_url} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} --entrypoint /bin/bash uniswap:latest -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
         docker cp uniswap-${{ github.run_id }}:/usr/src/app/report.json report.json
         docker rm -f uniswap-${{ github.run_id }}
-        mv report.json uniswap-report.json
+        mv report.json uniswap-report-v3.json
 
     - name: Save report
       uses: actions/upload-artifact@v3
       with:
-        name: uniswap-report
-        path: uniswap-report.json
+        name: uniswap-report-v3
+        path: uniswap-report-v3.json
 
   saddle:
     runs-on: neon-hosted
@@ -296,7 +296,7 @@ uniswap-v3:
 
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, aave]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave]
     if: always()
     env:
       SOLANA_URL: "http://${{ needs.prepare.outputs.solana_ip }}:8899"
@@ -309,7 +309,12 @@ uniswap-v3:
       - uses: actions/download-artifact@v3
         continue-on-error: true
         with:
-          name: uniswap-report
+          name: uniswap-report-v2
+          path: reports/
+      - uses: actions/download-artifact@v3
+        continue-on-error: true
+        with:
+          name: uniswap-report-v3
           path: reports/
       - uses: actions/download-artifact@v3
         continue-on-error: true
@@ -331,7 +336,7 @@ uniswap-v3:
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, aave, swap-report]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, swap-report]
     if: always()
     steps:
       - uses: actions/checkout@v3
@@ -374,13 +379,14 @@ uniswap-v3:
       - name: Remove tmp directories
         run: |
           rm -rf /tmp/saddle-${{ github.run_id }}
-          rm -rf /tmp/uniswap-${{ github.run_id }}
+          rm -rf /tmp/uniswap-v2-${{ github.run_id }}
+          rm -rf /tmp/uniswap-v3-${{ github.run_id }}
           rm -rf /tmp/aave-${{ github.run_id }}
 #          rm -rf /tmp/yearn-${{ github.run_id }}
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, aave]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave]
     if: ${{ failure() }}
     steps:
       - uses: actions/checkout@v3

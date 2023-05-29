@@ -395,7 +395,7 @@ jobs:
 
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, aave, curve]
+    needs: [prepare, uniswap, saddle, aave, curve, yearn]
     if: always()
     env:
       SOLANA_URL: ${{ needs.prepare.outputs.solana_url || secrets.SOLANA_URL }}
@@ -437,7 +437,7 @@ jobs:
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, curve, aave]
+    needs: [prepare, uniswap, saddle, curve, aave, yearn]
     if: always() && needs.prepare.outputs.network == 'aws'
     steps:
       - uses: actions/checkout@v3
@@ -486,7 +486,7 @@ jobs:
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, aave, curve]
+    needs: [prepare, uniswap, saddle, aave, curve, yearn]
     if: failure() && github.ref_name == 'develop'
     steps:
       - uses: actions/checkout@v3

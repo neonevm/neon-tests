@@ -364,7 +364,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK_NAME}}
+          ./clickfile.py infra gen-accounts -c 10 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch yearn tests
         id: yearn

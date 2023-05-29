@@ -378,7 +378,7 @@ jobs:
           docker pull ${{ env.IMAGE }}
           docker run -i -d --name yearn-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash
           docker exec -i -e ACCOUNTS=${{ env.ACCOUNTS }} yearn-${{ github.run_id }} \
-              brownie networks add live neon host="${{ env.SOLANA_URL }}" chainid=${{env.NETWORK_ID}} timeout=60
+              brownie networks add live neon host="${{ env.PROXY_URL }}" chainid=${{env.NETWORK_ID}} timeout=60
           docker exec -i -e ACCOUNTS=${{ env.ACCOUNTS }} yearn-${{ github.run_id }} \
             bash -c " \
               brownie test \

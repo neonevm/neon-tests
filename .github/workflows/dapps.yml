@@ -437,7 +437,7 @@ jobs:
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap, saddle, curve, aave, yearn]
+    needs: [prepare, uniswap, saddle, curve, aave, yearn, swap-report]
     if: always() && needs.prepare.outputs.network == 'aws'
     steps:
       - uses: actions/checkout@v3

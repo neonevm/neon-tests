@@ -222,16 +222,20 @@ jobs:
         run: |
           ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
 
-      - name: Launch uniswap v3 tests
-        if: ${{ steps.accounts.outcome == 'success' }}
-        id: uniswap-v3
-        env:
-          ACCOUNTS: ${{ env.ACCOUNTS }}
+      - name: Build uniswap v3 docker image
+        id: docker-uniswap-v3
         run: |
           CWD=/tmp/uniswap-v3-${{ github.run_id }}
           mkdir -p ${CWD}
           git clone https://github.com/neonlabsorg/Uniswap-V3-NEON.git ${CWD}
           docker build -t uniswap:v3 ${CWD}
+
+      - name: Launch uniswap v3 tests
+        if: ${{ steps.accounts.outcome == 'success' && steps.docker-uniswap-v3.outcome == 'success'}}
+        id: uniswap-v3
+        env:
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+        run: |
           test -t 1 && USE_TTY="-t"
           docker run -i ${USE_TTY} --name=uniswap-v3-${{ github.run_id }} \
             -e NEON_PROXY_URL=${{ env.PROXY_URL }} \

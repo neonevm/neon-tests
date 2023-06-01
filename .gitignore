@@ -242,3 +242,6 @@ ui/extensions/chrome/user_data/
 
 # downloaded files
 contracts/external/
+
+.DS_Store
+reports

@@ -178,26 +178,24 @@ jobs:
         id: uniswap-v2
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
+          IMAGE: neonlabsorg/uniswap-v2:latest
         run: |
-          CWD=/tmp/uniswap-v2-${{ github.run_id }}
-          mkdir -p ${CWD}
-          git clone https://github.com/neonlabsorg/Uniswap-V2-NEON.git ${CWD}
-          docker build -t uniswap:v2 ${CWD}
           test -t 1 && USE_TTY="-t"
+          docker pull ${{ env.IMAGE }}
           docker run -i ${USE_TTY} --name=uniswap-v2-${{ github.run_id }} \
             -e NEON_PROXY_URL=${{ env.PROXY_URL }} \
             -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} \
             -e NEON_CHAIN_ID=${{ env.NETWORK_ID }} \
-            --entrypoint /bin/bash uniswap:v2 \
+            --entrypoint /bin/bash ${{ env.IMAGE }} \
             -c "npx hardhat run /usr/src/app/scripts/deploy.ts"
-          docker cp uniswap-v2-${{ github.run_id }}:/usr/src/app/report.json uniswap-report-v2.json
+          docker cp uniswap-v2-${{ github.run_id }}:/usr/src/app/report.json uniswap-v2-report.json
           docker rm -f uniswap-v2-${{ github.run_id }}
 
       - name: Save report
         uses: actions/upload-artifact@v3
         with:
-          name: uniswap-report-v2
-          path: uniswap-report-v2.json
+          name: uniswap-v2-report
+          path: uniswap-v2-report.json
 
   uniswap-v3:
     runs-on: ubuntu-20.04
@@ -222,34 +220,28 @@ jobs:
         run: |
           ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
 
-      - name: Build uniswap v3 docker image
-        id: docker-uniswap-v3
-        run: |
-          CWD=/tmp/uniswap-v3-${{ github.run_id }}
-          mkdir -p ${CWD}
-          git clone https://github.com/neonlabsorg/Uniswap-V3-NEON.git ${CWD}
-          docker build -t uniswap:v3 ${CWD}
-
       - name: Launch uniswap v3 tests
-        if: ${{ steps.accounts.outcome == 'success' && steps.docker-uniswap-v3.outcome == 'success'}}
+        if: ${{ steps.accounts.outcome == 'success'}}
         id: uniswap-v3
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
+          IMAGE: neonlabsorg/uniswap-v3:latest
         run: |
           test -t 1 && USE_TTY="-t"
+          docker pull ${{ env.IMAGE }}
           docker run -i ${USE_TTY} --name=uniswap-v3-${{ github.run_id }} \
             -e NEON_PROXY_URL=${{ env.PROXY_URL }} \
             -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} \
             -e NEON_CHAIN_ID=${{ env.NETWORK_ID }} \
-            uniswap:v3
-          docker cp uniswap-v3-${{ github.run_id }}:/usr/src/app/report.json uniswap-report-v3.json
+            ${{ env.IMAGE }}
+          docker cp uniswap-v3-${{ github.run_id }}:/usr/src/app/report.json uniswap-v3-report.json
           docker rm -f uniswap-v3-${{ github.run_id }}
 
       - name: Save report
         uses: actions/upload-artifact@v3
         with:
-          name: uniswap-report-v3
-          path: uniswap-report-v3.json
+          name: uniswap-v3-report
+          path: uniswap-v3-report.json
 
   saddle:
     runs-on: neon-hosted
@@ -449,12 +441,12 @@ jobs:
       - uses: actions/download-artifact@v3
         continue-on-error: true
         with:
-          name: uniswap-report-v2
+          name: uniswap-v2-report
           path: reports/
       - uses: actions/download-artifact@v3
         continue-on-error: true
         with:
-          name: uniswap-report-v3
+          name: uniswap-v3-report
           path: reports/
       - uses: actions/download-artifact@v3
         continue-on-error: true

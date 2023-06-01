@@ -280,7 +280,7 @@ jobs:
           docker pull ${{ env.IMAGE }} 
           docker run -i -d --name=aave-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash
           docker exec -i -e NEON_PROXY_URL=${{env.PROXY_URL}} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} -e NEON_CHAIN_ID=${{ env.NETWORK_ID }} aave-${{ github.run_id }} npm run neonlabs:deploy --network=neonlabs
-          docker cp aave-${{ github.run_id }}:/usr/src/app/report.json aave-report.json
+          docker cp aave-${{ github.run_id }}:/app/report.json aave-report.json
           docker rm -f aave-${{ github.run_id }}
       - name: Save report
         uses: actions/upload-artifact@v3

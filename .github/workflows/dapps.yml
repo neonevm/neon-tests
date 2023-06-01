@@ -42,7 +42,7 @@ env:
   AWS_REGION: us-east-2
   AWS_S3_BUCKET: neon-tests-dapps
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle"
+  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn"
 jobs:
   prepare:
     runs-on: ubuntu-20.04
@@ -279,12 +279,10 @@ jobs:
         id: saddle
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
+          IMAGE: neonlabsorg/saddle_tests:latest
         run: |
-          CWD=/tmp/saddle-${{ github.run_id }}
-          mkdir -p ${CWD}
-          git clone https://github.com/neonlabsorg/saddle-contract ${CWD}
-          docker build -t saddle:latest ${CWD}
-          docker run -i -d --name=saddle-${{ github.run_id }} saddle:latest /bin/bash
+          docker pull ${{ env.IMAGE }}
+          docker run -i -d --name=saddle-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash
           env_args="-e NEON_PROXY_URL=${{env.PROXY_URL}} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} -e NEON_CHAIN_ID=${{ env.NETWORK_ID }}"
           echo "Run Saddle 2 tokens pool tests"
           docker exec -i $env_args saddle-${{ github.run_id }} npx hardhat run /usr/src/app/scripts/deploy2Tokens.ts
@@ -328,14 +326,12 @@ jobs:
         id: aave
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
+          IMAGE: neonlabsorg/aave_tests:latest
         run: |
-          CWD=/tmp/aave-${{ github.run_id }}
-          mkdir -p ${CWD}
-          git clone -b master --single-branch https://github.com/neonlabsorg/aave-protocol-v2 ${CWD}
-          docker build -t aave:latest ${CWD}
-          docker run -i -d --name=aave-${{ github.run_id }} aave:latest /bin/bash
+          docker pull ${{ env.IMAGE }} 
+          docker run -i -d --name=aave-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash
           docker exec -i -e NEON_PROXY_URL=${{env.PROXY_URL}} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} -e NEON_CHAIN_ID=${{ env.NETWORK_ID }} aave-${{ github.run_id }} npm run neonlabs:deploy --network=neonlabs
-          docker cp aave-${{ github.run_id }}:/usr/src/app/report.json aave-report.json
+          docker cp aave-${{ github.run_id }}:/app/report.json aave-report.json
           docker rm -f aave-${{ github.run_id }}
       - name: Save report
         uses: actions/upload-artifact@v3
@@ -369,19 +365,14 @@ jobs:
         id: curve
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
+          IMAGE: neonlabsorg/curve_tests:latest
         run: |
-          CWD=/tmp/curve-${{ github.run_id }}
-          mkdir -p ${CWD}
-          eval `ssh-agent -s`
-          ssh_key='/tmp/neon-tests'
-          echo "${{ secrets.SSH_TESTS_PRIV_KEY }}" > ${ssh_key} && chmod 400 ${ssh_key}
-          ssh-add ${ssh_key}
-          git clone git@github.com:neonlabsorg/curve-contracts-ci.git ${CWD}
-          docker build -t curve:latest --build-arg PROXY_URL='${{ env.PROXY_URL }}' --build-arg CHAIN_ID='${{ env.NETWORK_ID }}' ${CWD}
+          docker pull ${{ env.IMAGE }}
+          docker run -i -d --name curve-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash
           test -t 1 && USE_TTY="-t"
-          docker run -i ${USE_TTY} --name=curve-${{ github.run_id }} \
-            -e ACCOUNTS=${{ env.ACCOUNTS }} \
-            curve:latest \
+          docker exec -i ${USE_TTY} curve-${{ github.run_id }} \
+              brownie networks add live neon host="${{ env.PROXY_URL }}" chainid=${{env.NETWORK_ID}}  explorer=https://neonscan.org timeout=60
+          docker exec -i ${USE_TTY} -e ACCOUNTS=${{ env.ACCOUNTS }} curve-${{ github.run_id }} \
             bash -c " \
               brownie test \
               -vvvv --network neon"
@@ -394,60 +385,56 @@ jobs:
           path: curve-report.json
 
 
+  yearn:
+    if: contains( needs.prepare.outputs.dapps, 'yearn')
+    runs-on: neon-hosted
+    needs:
+      - prepare
+    env:
+      SOLANA_URL: ${{ needs.prepare.outputs.solana_url }}
+      PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
+      FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
+      NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
+      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
+      DUMP_ENVS: True
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
 
+      - name: Prepare accounts
+        id: accounts
+        run: |
+          ./clickfile.py infra gen-accounts -c 10 -a 10000 -n ${{env.NETWORK_NAME}}
 
+      - name: Launch yearn tests
+        id: yearn
+        env:
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+          IMAGE: neonlabsorg/yearn_tests:latest
+        run: |
+          docker pull ${{ env.IMAGE }}
+          docker run -i -d --name yearn-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash
+          docker exec -i -e ACCOUNTS=${{ env.ACCOUNTS }} yearn-${{ github.run_id }} \
+              brownie networks add live neon host="${{ env.PROXY_URL }}" chainid=${{env.NETWORK_ID}} timeout=60
+          docker exec -i -e ACCOUNTS=${{ env.ACCOUNTS }} yearn-${{ github.run_id }} \
+            bash -c " \
+              brownie test \
+                tests/functional -m ci \
+              -vvvv --network neon"
+          docker cp yearn-${{ github.run_id }}:/app/report.json yearn-report.json
+          docker rm -f yearn-${{ github.run_id }}
 
-#  yearn:
-#    runs-on: neon-hosted
-#    needs:
-#      - prepare
-#    steps:
-#      - uses: actions/checkout@v3
-#      - name: Install python requirements
-#        id: requirements
-#        uses: ./.github/actions/python-requirements
-#
-#      - name: Prepare accounts
-#        id: accounts
-#        env:
-#          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
-#          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-#        run: |
-#          ./clickfile.py infra gen-accounts -c 10 -a 50000
-#
-#      - name: Launch yearn tests
-#        id: yearn
-#        env:
-#          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-#          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
-#          ACCOUNTS: ${{ env.ACCOUNTS }}
-#        run: |
-#          CWD=/tmp/yearn-${{ github.run_id }}
-#          mkdir -p ${CWD}
-#          git clone https://github.com/neonlabsorg/yearn-vaults ${CWD}
-#          docker build -t yearn:latest --build-arg PROXY_URL='http://${{ env.PROXY_IP }}:9090/solana' ${CWD}
-#          docker run --rm --network host \
-#            -e ACCOUNTS=${{ env.ACCOUNTS }} \
-#            yearn:latest \
-#            bash -c " \
-#              brownie test \
-#                tests/integration \
-#                tests/functional/registry \
-#                tests/functional/strategy \
-#                tests/functional/wrappers \
-#              -vvvv --network neon"
-#          docker cp yearn-${{ github.run_id }}:/app/report.json yearn-report.json
-#          docker rm -f yearn-${{ github.run_id }}
-#
-#      - name: Save report
-#        uses: actions/upload-artifact@v3
-#        with:
-#          name: yearn-report
-#          path: yearn-report.json
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: yearn-report
+          path: yearn-report.json
 
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn]
     if: always()
     env:
       SOLANA_URL: ${{ needs.prepare.outputs.solana_url || secrets.SOLANA_URL }}
@@ -474,11 +461,11 @@ jobs:
         with:
           name: saddle-report
           path: reports/
-#      - uses: actions/download-artifact@v3
-#        continue-on-error: true
-#        with:
-#          name: yearn-report
-#          path: reports/
+      - uses: actions/download-artifact@v3
+        continue-on-error: true
+        with:
+          name: yearn-report
+          path: reports/
       - uses: actions/download-artifact@v3
         continue-on-error: true
         with:
@@ -494,7 +481,7 @@ jobs:
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, swap-report]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, swap-report]
     if: always() && needs.prepare.outputs.network == 'aws'
     steps:
       - uses: actions/checkout@v3
@@ -544,8 +531,8 @@ jobs:
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve]
-    if: failure()  && github.ref_name == 'develop'
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn]
+    if: failure() && github.ref_name == 'develop'
     steps:
       - uses: actions/checkout@v3
       - name: Install python requirements

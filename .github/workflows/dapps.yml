@@ -316,17 +316,14 @@ jobs:
         id: curve
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
+          IMAGE: neonlabsorg/curve_tests:latest
         run: |
-          CWD=/tmp/curve-${{ github.run_id }}
-          mkdir -p ${CWD}
-          eval `ssh-agent -s`
-          ssh_key='/tmp/neon-tests'
-          echo "${{ secrets.SSH_TESTS_PRIV_KEY }}" > ${ssh_key} && chmod 400 ${ssh_key}
-          ssh-add ${ssh_key}
-          git clone git@github.com:neonlabsorg/curve-contracts-ci.git ${CWD}
-          docker build -t curve:latest --build-arg PROXY_URL='${{ env.PROXY_URL }}' --build-arg CHAIN_ID='${{ env.NETWORK_ID }}' ${CWD}
+          docker pull ${{ env.IMAGE }}
+          docker run -i -d --name curve-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash
           test -t 1 && USE_TTY="-t"
-          docker run -i ${USE_TTY} --name=curve-${{ github.run_id }} \
+          docker exec -i ${USE_TTY} curve-${{ github.run_id }} \
+              brownie networks add live neon host="${{ env.PROXY_URL }}" chainid=${{env.NETWORK_ID}}  explorer=https://neonscan.org timeout=60
+          docker exec -i ${USE_TTY} curve-${{ github.run_id }} \
             -e ACCOUNTS=${{ env.ACCOUNTS }} \
             curve:latest \
             bash -c " \

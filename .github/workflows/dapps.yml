@@ -275,12 +275,10 @@ jobs:
         id: aave
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
+          IMAGE: neonlabsorg/aave_tests:latest
         run: |
-          CWD=/tmp/aave-${{ github.run_id }}
-          mkdir -p ${CWD}
-          git clone -b master --single-branch https://github.com/neonlabsorg/aave-protocol-v2 ${CWD}
-          docker build -t aave:latest ${CWD}
-          docker run -i -d --name=aave-${{ github.run_id }} aave:latest /bin/bash
+          docker pull ${{ env.IMAGE }} 
+          docker run -i -d --name=aave-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash
           docker exec -i -e NEON_PROXY_URL=${{env.PROXY_URL}} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} -e NEON_CHAIN_ID=${{ env.NETWORK_ID }} aave-${{ github.run_id }} npm run neonlabs:deploy --network=neonlabs
           docker cp aave-${{ github.run_id }}:/usr/src/app/report.json aave-report.json
           docker rm -f aave-${{ github.run_id }}
@@ -323,9 +321,7 @@ jobs:
           test -t 1 && USE_TTY="-t"
           docker exec -i ${USE_TTY} curve-${{ github.run_id }} \
               brownie networks add live neon host="${{ env.PROXY_URL }}" chainid=${{env.NETWORK_ID}}  explorer=https://neonscan.org timeout=60
-          docker exec -i ${USE_TTY} curve-${{ github.run_id }} \
-            -e ACCOUNTS=${{ env.ACCOUNTS }} \
-            curve:latest \
+          docker exec -i ${USE_TTY} -e ACCOUNTS=${{ env.ACCOUNTS }} curve-${{ github.run_id }} \
             bash -c " \
               brownie test \
               -vvvv --network neon"

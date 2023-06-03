@@ -47,14 +47,15 @@ def save_transactions_list(environment: "locust.env.Environment", **kwargs):
                 print(f"Can't get solana trx from tx {tr}: {resp}")
                 continue
             trx[tr] = resp["result"]
-        with(open(f"transactions-{random.randint(0, 1000)}.json", "w+")) as f:
+        with (open(f"transactions-{random.randint(0, 1000)}.json", "w+")) as f:
             json.dump(trx, f)
         print("Results saved")
 
 
 def init_session(size: int = 1000) -> requests.Session:
     """init request session with extended connection pool size"""
-    adapter = requests.adapters.HTTPAdapter(pool_connections=size, pool_maxsize=size, pool_block=True)
+    adapter = requests.adapters.HTTPAdapter(
+        pool_connections=size, pool_maxsize=size, pool_block=True)
     session = requests.Session()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
@@ -86,10 +87,17 @@ class NeonProxyTasksSet(TaskSet):
 
     def setup(self) -> None:
         """Prepare data requirements"""
-        # create new account for each simulating user
+        # create new shared account for each simulating user
         self.account = self.web3_client.create_account()
         self.check_balance()
         self.user.environment.shared.accounts.append(self.account)
+        LOG.info(f"New account {self.account.address} created")
+
+    def prepare_account(self) -> None:
+        """Prepare data requirements"""
+        # create new account for each simulating user
+        self.account = self.web3_client.create_account()
+        self.check_balance()
         LOG.info(f"New account {self.account.address} created")
 
     def on_start(self) -> None:
@@ -103,9 +111,8 @@ class NeonProxyTasksSet(TaskSet):
         self.web3_client = NeonWeb3ClientExt(
             self.credentials["proxy_url"], self.credentials["network_id"], session=session
         )
-        self.faucet = Faucet(self.credentials["faucet_url"], self.web3_client, session=session)
-        self.setup()
-        self.log = logging.getLogger("neon-consumer[%s]" % self.account.address[-8:])
+        self.faucet = Faucet(
+            self.credentials["faucet_url"], self.web3_client, session=session)
 
     def task_block_number(self) -> None:
         """Check the number of the most recent block"""
@@ -124,7 +131,8 @@ class NeonProxyTasksSet(TaskSet):
                     continue
                 break
             else:
-                raise AssertionError(f"Account {account.address} balance didn't change after 15 seconds")
+                raise AssertionError(
+                    f"Account {account.address} balance didn't change after 15 seconds")
 
     def deploy_contract(
         self,
@@ -137,7 +145,8 @@ class NeonProxyTasksSet(TaskSet):
     ) -> "web3._utils.datatypes.Contract":
         """contract deployments"""
 
-        contract_interface = self._compile_contract_interface(name, version, contract_name)
+        contract_interface = self._compile_contract_interface(
+            name, version, contract_name)
         contract_deploy_tx = self.web3_client.deploy_contract(
             account,
             abi=contract_interface["abi"],

@@ -2,6 +2,7 @@ import enum
 import functools
 import json
 import logging
+import math
 import os
 import pathlib
 import random
@@ -14,7 +15,7 @@ from dataclasses import dataclass
 import gevent
 import requests
 import web3
-from locust import User, TaskSet, between, task, events, tag
+from locust import User, TaskSet, task, events, tag
 
 from loadtesting.proxy.common import env
 from utils import apiclient
@@ -22,14 +23,14 @@ from utils.web3client import NeonWeb3Client
 
 LOG = logging.getLogger("neon_client")
 
+# where save dumped data
+DUMPED_DATA = "dumped_data/transaction.json"
 
-DUMPED_DATA = "dumped_data/transaction.json"  # where save dumped data
-
-NEON_RPC = os.environ.get("NEON_TRACING_URL", "")  # url for history endpoint proxy
+# url for history endpoint proxy
+NEON_RPC = os.environ.get("NEON_TRACING_URL", "")
 
 
 class RPCType(enum.Enum):
-
     logs = ["eth_getLogs"]
     store = ["eth_getStorageAt", "eth_call"]
     transfer = ["eth_getBalance", "eth_getTransactionCount"]
@@ -37,7 +38,8 @@ class RPCType(enum.Enum):
     @classmethod
     def get(cls, key: str) -> str:
         return list(
-            filter(lambda i: i if key in i.value else None, cls.__members__.values())
+            filter(lambda i: i if key in i.value else None,
+                   cls.__members__.values())
         )[0].name
 
 
@@ -166,8 +168,6 @@ class BaseEthRPCATasksSet(TaskSet):
     """Implements base behavior for task set measured by the maximum request rates
     for EIP-1898 methods implemented inside Tracer API"""
 
-    wait_time = between(3, 5)
-
     _setup_class_locker = gevent.threading.Lock()
     _setup_class_done = False
 
@@ -242,15 +242,22 @@ class BaseEthRPCATasksSet(TaskSet):
             args = []
         elif not isinstance(args, list):
             args = [args]
+
         kwargs = kwargs or {}
         kwargs.update({req_type: transaction[req_type]})
         args.append(kwargs)
-        args.insert(0, transaction["to"])
-        response = self._rpc_client.send_rpc(method, req_type=req_type, params=args)
+
+        if method == 'eth_getTransactionCount':
+            args.insert(0, transaction["from"])
+        else:
+            args.insert(0, transaction["to"])
+
+        response = self._rpc_client.send_rpc(
+            method, req_type=req_type, params=args)
         self.log.info(
             f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}"
         )
-        return response
+        return response, transaction
 
 
 @tag("getBalance")
@@ -261,13 +268,37 @@ class EthGetBalanceTasksSet(BaseEthRPCATasksSet):
     @task
     def task_eth_get_balance_by_hash(self) -> tp.Dict:
         """the eth_getBalance method by blockHash"""
-        self._do_call(method="eth_getBalance", req_type="blockHash")
+        response, tx = self._do_call(method="eth_getBalance",
+                                     req_type="blockHash")
+        expected_balance = float(
+            tx['additional_info']['recipient_balance_after'])
+        response_balance = float.fromhex(response['result']) / 1e18
+
+        if tx['additional_info']['type'] == 'neon':
+            assert math.isclose(
+                abs(round(response_balance - expected_balance, 3)), 0.0, rel_tol=1e-3)
+        else:
+            current_balance = self.web3_client.get_balance(tx['to'])
+            assert math.isclose(
+                abs(round(response_balance - current_balance, 3)), 0.0, rel_tol=1e-3)
 
     @tag("getBalance_by_num")
     @task
     def task_eth_get_balance_by_num(self) -> tp.Dict:
         """the eth_getBalance method by blockNumber"""
-        self._do_call(method="eth_getBalance", req_type="blockNumber")
+        response, tx = self._do_call(method="eth_getBalance",
+                                     req_type="blockNumber")
+        expected_balance = float(
+            tx['additional_info']['recipient_balance_after'])
+        response_balance = float.fromhex(response['result']) / 1e18
+
+        if tx['additional_info']['type'] == 'neon':
+            assert math.isclose(
+                abs(round(response_balance - expected_balance, 3)), 0.0, rel_tol=1e-3)
+        else:
+            current_balance = self.web3_client.get_balance(tx['to'])
+            assert math.isclose(
+                abs(round(response_balance - current_balance, 3)), 0.0, rel_tol=1e-3)
 
 
 @tag("getTransactionCount")
@@ -278,13 +309,19 @@ class EthGetTransactionCountTasksSet(BaseEthRPCATasksSet):
     @task
     def task_eth_get_transaction_count_by_hash(self) -> tp.Dict:
         """the eth_getTransactionCount method by blockHash"""
-        self._do_call(method="eth_getTransactionCount", req_type="blockHash")
+        response, tx = self._do_call(method="eth_getTransactionCount",
+                                     req_type="blockHash")
+        assert int(response['result'], 16) == int(
+            tx['additional_info']['sender_nonce'])
 
     @tag("getTransactionCount_by_num")
     @task
     def task_eth_get_transaction_count_by_num(self) -> tp.Dict:
         """the eth_getTransactionCount method by blockNumber"""
-        self._do_call(method="eth_getTransactionCount", req_type="blockNumber")
+        response, tx = self._do_call(method="eth_getTransactionCount",
+                                     req_type="blockNumber")
+        assert int(response['result'], 16) == int(
+            tx['additional_info']['sender_nonce'])
 
 
 @tag("getStorageAt")
@@ -295,13 +332,19 @@ class EthGetStorageAtTasksSet(BaseEthRPCATasksSet):
     @task
     def task_eth_get_storage_at_by_hash(self) -> tp.Dict:
         """the eth_getStorageAt method by blockHash"""
-        self._do_call(method="eth_getStorageAt", req_type="blockHash", args="0x0")
+        response, _ = self._do_call(method="eth_getStorageAt",
+                                    req_type="blockHash",
+                                    args="0x0")
+        assert response['result'] != '0x0'
 
     @tag("getStorageAt_by_num")
     @task
     def task_eth_get_storage_at_by_num(self) -> tp.Dict:
         """the eth_getStorageAt method by blockNumber"""
-        self._do_call(method="eth_getStorageAt", req_type="blockNumber", args="0x0")
+        response, _ = self._do_call(method="eth_getStorageAt",
+                                    req_type="blockNumber",
+                                    args="0x0")
+        assert response['result'] != '0x0'
 
 
 @tag("getLogs")
@@ -418,18 +461,21 @@ class EthCall(BaseEthRPCATasksSet):
         self.log.info(
             f"Call {method}, get data by `{req_type}`: {transaction[req_type]}. Response: {response}"
         )
+        return response
 
     @tag("call_by_hash")
     @task
     def task_eth_call_by_hash(self) -> tp.Dict:
         """the eth_call method by blockHash"""
-        self._do_call(method="eth_call", req_type="blockHash")
+        response = self._do_call(method="eth_call", req_type="blockHash")
+        assert response['result'] != '0x0'
 
     @tag("call_by_num")
     @task
     def task_eth_call_by_num(self) -> tp.Dict:
         """the eth_call method by blockNumber"""
-        self._do_call(method="eth_call", req_type="blockNumber")
+        response = self._do_call(method="eth_call", req_type="blockNumber")
+        assert response['result'] != '0x0'
 
 
 class EthRPCAPICallUsers(User):
@@ -439,6 +485,6 @@ class EthRPCAPICallUsers(User):
         EthGetBalanceTasksSet: 1,
         EthGetTransactionCountTasksSet: 1,
         EthGetStorageAtTasksSet: 1,
-        EthGetLogs: 1,
+        # EthGetLogs: 1,
         EthCall: 1,
     }

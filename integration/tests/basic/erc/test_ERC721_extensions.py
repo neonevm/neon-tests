@@ -23,7 +23,7 @@ class TestERC721Extensions(BaseMixin):
         token_id = erc4907.mint(seed, erc4907.account.address, uri)
         tx = self.create_contract_call_tx_object(erc4907.account)
 
-        expires = datetime.datetime.now() + datetime.timedelta(seconds=5)
+        expires = datetime.datetime.now() + datetime.timedelta(seconds=25)
         expires = int(expires.timestamp())
 
         instr = erc4907.contract.functions.setUser(token_id, self.recipient_account.address, expires).build_transaction(
@@ -31,7 +31,7 @@ class TestERC721Extensions(BaseMixin):
         self.web3_client.send_transaction(erc4907.account, instr)
         assert erc4907.contract.functions.userOf(token_id).call() == self.recipient_account.address
         assert erc4907.contract.functions.ownerOf(token_id).call() == erc4907.account.address
-        time.sleep(6)  # wait for expiration
+        time.sleep(30)  # wait for expiration
         assert erc4907.contract.functions.userOf(token_id).call() == ZERO_ADDRESS
 
     def test_ERC2981_default_royalty(self, web3_client, faucet):

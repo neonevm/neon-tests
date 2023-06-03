@@ -104,7 +104,7 @@ def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
     shutil.copy(categories_from, categories_to)
 
     if "CI" in os.environ:
-        with open(allure_path / "executor.json") as f:
+        with open(allure_path / "executor.json", "w+") as f:
             json.dump(
                 {
                     "name": "Github Action",

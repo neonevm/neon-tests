@@ -155,7 +155,6 @@ class TestSelfDestructOpcode(BaseMixin):
         assert self.web3_client.eth.get_code(destroyable_contract.address) != "0x"
         self.check_contract_code_is_empty(contract_caller.address)
 
-    @pytest.mark.xfail(reason="NDEV-1570")
     def test_destroy_contract_via_delegatecall_and_create_new_contract(self, destroyable_contract, contract_caller):
         tx = self.create_contract_call_tx_object(self.sender_account)
         instr = contract_caller.functions\

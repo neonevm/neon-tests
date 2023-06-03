@@ -8,8 +8,7 @@ import typing as tp
 
 import gevent
 import web3
-from locust import User, events, tag, task, between
-
+from locust import User, between, events, tag, task
 from loadtesting.proxy import locustfile as head
 
 RETRIEVE_STORE_VERSION = "0.8.10"
@@ -36,7 +35,7 @@ def dump_history(attr) -> tp.Callable:
     def ext_runner(func: tp.Callable) -> tp.Callable:
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs) -> tp.Any:
-            tx = func(self, *args, **kwargs)
+            tx, info = func(self, *args, **kwargs)
             if tx:
                 transaction_history[attr][str(tx["from"])].append(
                     {
@@ -44,6 +43,7 @@ def dump_history(attr) -> tp.Callable:
                         "blockNumber": hex(tx["blockNumber"]),
                         "contract": tx.get("contract", ""),
                         "to": str(tx["to"]),
+                        "additional_info": info,
                     }
                 )
             return tx
@@ -60,14 +60,18 @@ def teardown(*args, **kwargs) -> None:
         dumped_path = pathlib.Path(__file__).parent.parent / DEFAULT_DUMP_FILE
         dumped_path.parents[0].mkdir(parents=True, exist_ok=True)
         with open(dumped_path, "w") as fp:
-            LOG.info(f"Dumped transaction history to `{dumped_path.as_posix()}`")
+            LOG.info(
+                f"Dumped transaction history to `{dumped_path.as_posix()}`")
             json.dump(transaction_history, fp=fp, indent=4, sort_keys=True)
 
 
 @tag("store")
 @tag("call")
 class EthGetStorageAtPreparationStage(head.NeonTasksSet):
-    """Preparation stage for eth_getStorageAt and eth_call test suite"""
+    """
+        Preparation stage for eth_getStorageAt and eth_call test suite. 
+        Deploy RetrieveStore contract.
+    """
 
     _deploy_contract_locker = gevent.threading.Lock()
     _deploy_contract_done = False
@@ -82,7 +86,7 @@ class EthGetStorageAtPreparationStage(head.NeonTasksSet):
         self.check_balance(account=account)
         contract_name = "RetrieveStore"
         self.log.info(f"`{contract_name}`: deploy contract.")
-        contract, contract_tx = self.deploy_contract(
+        contract, _ = self.deploy_contract(
             contract_name, RETRIEVE_STORE_VERSION, account, contract_name="Storage"
         )
         if not contract:
@@ -117,48 +121,111 @@ class EthGetStorageAtPreparationStage(head.NeonTasksSet):
                     "gasPrice": self.web3_client.gas_price(),
                 }
             )
-            tx_receipt = dict(self.web3_client.send_transaction(self.account, tx))
+            tx_receipt = dict(
+                self.web3_client.send_transaction(self.account, tx))
             tx_receipt.update(
                 {"contract": {"address": contract.address, "abi": contract.abi}}
             )
-            return tx_receipt
+            return tx_receipt, {}
         self.log.info(f"no `storage` contracts found, data store canceled.")
 
 
 @tag("neon")
 @tag("transfer")
 class NeonTransferPreparationStage(head.NeonTasksSet):
+    def get_account(self):
+        return super(NeonTransferPreparationStage, self).create_account()
+
+    def send_neon(self):
+        recipient_balance_before, sender_balance_before = super(
+            NeonTransferPreparationStage, self).get_balances()
+        tx, nonce = super(NeonTransferPreparationStage, self).task_send_neon()
+        recipient_balance_after, sender_balance_after = super(
+            NeonTransferPreparationStage, self).get_balances()
+        info = {
+            "sender_balance_before": f"{sender_balance_before}",
+            "sender_balance_after": f"{sender_balance_after}",
+            "sender_nonce": f"{nonce}",
+            "recipient_balance_before": f"{recipient_balance_before}",
+            "recipient_balance_after": f"{recipient_balance_after}",
+            "amount": 1,
+            "type": "neon",
+        }
+        return tx, info
+
     @task
     @dump_history("transfer")
     def prepare_data_by_neon_transfer(
         self,
     ) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Make number of `NEONs` transfer transactions between different client accounts"""
-        return super(NeonTransferPreparationStage, self).task_send_neon()
+        return self.send_neon()
 
 
 @tag("erc20")
 @tag("transfer")
 class ERC20TransferPreparationStage(head.ERC20TasksSet):
+    def get_account(self):
+        return super(ERC20TransferPreparationStage, self).create_account()
+
+    def send_erc20(self):
+        recipient_balance_before, sender_balance_before = super(
+            ERC20TransferPreparationStage, self).get_balances()
+        tx, nonce = super(ERC20TransferPreparationStage,
+                          self).task_send_erc20()
+        recipient_balance_after, sender_balance_after = super(
+            ERC20TransferPreparationStage, self).get_balances()
+        info = {
+            "sender_balance_before": f"{sender_balance_before}",
+            "sender_balance_after": f"{sender_balance_after}",
+            "sender_nonce": f"{nonce}",
+            "recipient_balance_before": f"{recipient_balance_before}",
+            "recipient_balance_after": f"{recipient_balance_after}",
+            "amount": 1,
+            "type": "erc20",
+        }
+        return tx, info
+
     @task
     @dump_history("transfer")
     def prepare_data_by_erc20_transfer(
         self,
     ) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Make number of `ERC20` transfer transactions between different client accounts"""
-        return super(ERC20TransferPreparationStage, self).task_send_erc20()
+        return self.send_erc20()
 
 
-@tag("spl")
+@tag("erc20spl")
 @tag("logs")
 class ERC20WrappedPreparationStage(head.ERC20SPLTasksSet):
+    def get_account(self):
+        return super(ERC20WrappedPreparationStage, self).create_account()
+
+    def send_erc20spl(self):
+        recipient_balance_before, sender_balance_before = super(
+            ERC20WrappedPreparationStage, self).get_balances()
+        tx, nonce = super(ERC20WrappedPreparationStage,
+                          self).task_send_erc20_spl()
+        recipient_balance_after, sender_balance_after = super(
+            ERC20WrappedPreparationStage, self).get_balances()
+        info = {
+            "sender_balance_before": f"{sender_balance_before}",
+            "sender_balance_after": f"{sender_balance_after}",
+            "sender_nonce": f"{nonce}",
+            "recipient_balance_before": f"{recipient_balance_before}",
+            "recipient_balance_after": f"{recipient_balance_after}",
+            "amount": 1,
+            "type": "erc20_spl",
+        }
+        return tx, info
+
     @task
     @dump_history("logs")
     def prepare_data_by_erc20_wrapped(
         self,
     ) -> tp.Union[None, web3.datastructures.AttributeDict]:
         """Make number of `ERC20Wrapper` transfer transactions between different client accounts"""
-        return super(ERC20WrappedPreparationStage, self).task_send_erc20_spl()
+        return self.send_erc20spl()
 
 
 @tag("prepare")

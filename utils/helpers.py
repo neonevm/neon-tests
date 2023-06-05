@@ -1,6 +1,7 @@
 import os
 import asyncio
 import pathlib
+import logging
 import random
 import string
 import time
@@ -11,19 +12,55 @@ import solcx
 from eth_abi import abi
 from eth_utils import keccak
 from pythclient.pythaccounts import PythPriceAccount
-from pythclient.solana import SolanaClient, SolanaPublicKey, SOLANA_MAINNET_HTTP_ENDPOINT
+from pythclient.solana import (
+    SolanaClient,
+    SolanaPublicKey,
+    SOLANA_MAINNET_HTTP_ENDPOINT,
+    SOLANA_DEVNET_HTTP_ENDPOINT,
+    SOLANA_TESTNET_HTTP_ENDPOINT,
+)
+
+
+LOG = logging.getLogger(__name__)
+
+
+FEED_ADDRESSES = {
+    "mainnet": {
+        "feed_address": "H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG",
+        "solana_address": SOLANA_MAINNET_HTTP_ENDPOINT,
+    },
+    "testnet": {
+        "feed_address": "7VJsBtJzgTftYzEeooSDYyjKXvYRWJHdwvbwfBvTg9K",
+        "solana_address": SOLANA_TESTNET_HTTP_ENDPOINT,
+    },
+    "devnet": {
+        "feed_address": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix",
+        "solana_address": SOLANA_DEVNET_HTTP_ENDPOINT,
+    },
+}
 
 
 def get_sol_price() -> float:
     """Get SOL price from Solana mainnet"""
 
     async def get_price():
-        account_key = SolanaPublicKey("H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG")
-        solana_client = SolanaClient(endpoint=SOLANA_MAINNET_HTTP_ENDPOINT)
-        price: PythPriceAccount = PythPriceAccount(account_key, solana_client)
-        await price.update()
-        await solana_client.close()
-        return price.aggregate_price
+        for network in FEED_ADDRESSES:
+            account_key = SolanaPublicKey(FEED_ADDRESSES[network]["feed_address"])
+            solana_client = SolanaClient(
+                endpoint=FEED_ADDRESSES[network]["solana_address"]
+            )
+            price: PythPriceAccount = PythPriceAccount(account_key, solana_client)
+            try:
+                await price.update()
+            except Exception as e:
+                LOG.warning(f"Can't get price from Pyth network '{network}' {e}")
+                time.sleep(5)
+            else:
+                return price.aggregate_price
+            finally:
+                await solana_client.close()
+        else:
+            raise Exception("Can't get SOL/USD price from Pyth network!")
 
     result = asyncio.run(get_price())
     return result
@@ -35,8 +72,12 @@ def get_contract_abi(name, compiled):
             return compiled[key]
 
 
-def get_contract_interface(contract: str, version: str, contract_name: tp.Optional[str] = None,
-                           import_remapping: tp.Optional[dict] = None):
+def get_contract_interface(
+    contract: str,
+    version: str,
+    contract_name: tp.Optional[str] = None,
+    import_remapping: tp.Optional[dict] = None,
+):
     if not contract.endswith(".sol"):
         contract += ".sol"
     if contract_name is None:
@@ -52,17 +93,20 @@ def get_contract_interface(contract: str, version: str, contract_name: tp.Option
     else:
         contract_path = (pathlib.Path.cwd() / "contracts" / f"{contract}").absolute()
         if not contract_path.exists():
-            contract_path = (pathlib.Path.cwd() / "contracts" / "external" / f"{contract}").absolute()
+            contract_path = (
+                pathlib.Path.cwd() / "contracts" / "external" / f"{contract}"
+            ).absolute()
 
     assert contract_path.exists(), f"Can't found contract: {contract_path}"
 
-    compiled = solcx.compile_files([contract_path],
-                                   output_values=["abi", "bin"],
-                                   solc_version=version,
-                                   import_remappings=import_remapping,
-                                   allow_paths=["."],
-                                   optimize=True
-                                   )  # this allow_paths isn't very good...
+    compiled = solcx.compile_files(
+        [contract_path],
+        output_values=["abi", "bin"],
+        solc_version=version,
+        import_remappings=import_remapping,
+        allow_paths=["."],
+        optimize=True,
+    )  # this allow_paths isn't very good...
     contract_interface = get_contract_abi(contract_name, compiled)
 
     return contract_interface
@@ -86,7 +130,7 @@ def generate_text(min_len: int = 2, max_len: int = 200, simple: bool = True) -> 
         chars = string.ascii_letters + string.digits
     else:
         chars = string.printable[:-5]
-    return ''.join(random.choice(chars) for _i in range(length)).strip()
+    return "".join(random.choice(chars) for _i in range(length)).strip()
 
 
 def wait_condition(func_cond, timeout_sec=15, delay=0.5):
@@ -117,9 +161,11 @@ def get_selectors(abi):
     for function in filter(lambda item: item["type"] == "function", abi):
         input_types = ""
         for input in function["inputs"]:
-            if 'struct' in input["internalType"]:
+            if "struct" in input["internalType"]:
                 struct_name = input["name"]
-                struct_types = ",".join(i["type"] for i in input["components"] if i["name"] != struct_name)
+                struct_types = ",".join(
+                    i["type"] for i in input["components"] if i["name"] != struct_name
+                )
                 input_types += "," + f"({struct_types})[]"
             else:
                 input_types += "," + input["type"]

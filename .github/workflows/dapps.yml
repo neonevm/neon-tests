@@ -42,7 +42,7 @@ env:
   AWS_REGION: us-east-2
   AWS_S3_BUCKET: neon-tests-dapps
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn"
+  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn,compound"
 jobs:
   prepare:
     runs-on: ubuntu-20.04
@@ -375,6 +375,51 @@ jobs:
         with:
           name: curve-report
           path: curve-report.json
+  compound:
+    runs-on: ubuntu-20.04
+    if: contains( needs.prepare.outputs.dapps, 'compound')
+    needs:
+      - prepare
+    env:
+      SOLANA_URL: ${{ needs.prepare.outputs.solana_url }}
+      PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
+      FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
+      NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
+      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
+      DUMP_ENVS: True
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        run: |
+          ./clickfile.py infra gen-accounts -c 2 -a 10000 -n ${{env.NETWORK_NAME}}
+
+      - name: Launch curve tests
+        id: curve
+        env:
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+          IMAGE: neonlabsorg/compound_tests:latest
+        run: |
+          docker pull ${{ env.IMAGE }}
+          docker run -i -d --name compound-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash
+          test -t 1 && USE_TTY="-t"
+          docker exec -i ${USE_TTY} compound-${{ github.run_id }} \
+              brownie networks add live neon host="${{ env.PROXY_URL }}" chainid=${{env.NETWORK_ID}} timeout=60
+          docker exec -i ${USE_TTY} -e ACCOUNTS=${{ env.ACCOUNTS }} compound-${{ github.run_id }} \
+            bash -c " \
+              brownie test \
+              -vvvv --network neon"
+          docker cp curve-${{ github.run_id }}:/app/compound-report.json compound-report.json
+          docker rm -f compound-${{ github.run_id }}
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: compound-report
+          path: compound-report.json
 
 
   yearn:
@@ -466,6 +511,11 @@ jobs:
       - uses: actions/download-artifact@v3
         continue-on-error: true
         with:
+          name: compound-report
+          path: reports/
+      - uses: actions/download-artifact@v3
+        continue-on-error: true
+        with:
           name: curve-report
           path: reports/
       - name: "Swap report"
@@ -473,7 +523,7 @@ jobs:
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, swap-report]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, swap-report, compound]
     if: always() && needs.prepare.outputs.network == 'aws'
     steps:
       - uses: actions/checkout@v3
@@ -523,7 +573,7 @@ jobs:
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn, compound]
     if: failure() && github.ref_name == 'develop'
     steps:
       - uses: actions/checkout@v3

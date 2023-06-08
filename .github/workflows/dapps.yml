@@ -563,13 +563,6 @@ jobs:
         with:
           name: AWS docker logs
           path: ./logs/*
-      - name: Remove tmp directories
-        run: |
-          rm -rf /tmp/saddle-${{ github.run_id }}
-          rm -rf /tmp/uniswap-v2-${{ github.run_id }}
-          rm -rf /tmp/uniswap-v3-${{ github.run_id }}
-          rm -rf /tmp/aave-${{ github.run_id }}
-#          rm -rf /tmp/yearn-${{ github.run_id }}
 
   notify:
     runs-on: ubuntu-20.04

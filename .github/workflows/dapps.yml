@@ -471,7 +471,7 @@ jobs:
 
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn, compound]
     if: always()
     env:
       SOLANA_URL: ${{ needs.prepare.outputs.solana_url || secrets.SOLANA_URL }}

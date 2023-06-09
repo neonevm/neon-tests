@@ -25,7 +25,7 @@ runs:
         image_id="neonlabsorg/neon_tests"
         delimeter=$(printf "%0.s-" {1..30})
         echo " ${delimeter} Build new docker image ${image_id} ${delimeter}"
-        docker build . --tag ${image_id}:${{ inputs.image_tag }} --build-arg OZ_BRANCH='${{ inputs.oz_branch }}'
+        docker build . --tag ${image_id}:${{ inputs.image_tag }} --build-arg OZ_BRANCH='${{ inputs.oz_branch }} --no-cache'
         echo "${delimeter} Login into Docker registry as ${{ inputs.docker_username }} ${delimeter}"
         echo "${{ inputs.docker_password }}" | docker login -u ${{ inputs.docker_username }} --password-stdin
         echo "${delimeter} Push image ${image_id} to Docker registry ${delimeter}"

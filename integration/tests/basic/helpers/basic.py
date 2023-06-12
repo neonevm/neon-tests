@@ -31,10 +31,12 @@ class BaseMixin(BaseTests):
     _recipient_account: eth_account.signers.local.LocalAccount = None
     _invalid_account: AccountData = None
     evm_loader_id = None
+    bank_account = None
 
     @pytest.fixture(autouse=True)
-    def prepare_env(self, json_rpc_client):
+    def prepare_env(self, json_rpc_client, eth_bank_account):
         self.proxy_api = json_rpc_client
+        self.bank_account = eth_bank_account
 
     @property
     def sender_account(self):
@@ -74,24 +76,13 @@ class BaseMixin(BaseTests):
         """Creates a new account"""
         return self.web3_client.create_account()
 
+    def create_account_with_balance(self, amount: int = InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value,
+                                    ):
+        return self.web3_client.create_account_with_balance(self.faucet, amount, self.bank_account)
+
     def get_balance_from_wei(self, address: str) -> float:
         """Gets balance from Wei"""
         return float(self.web3_client.from_wei(self.web3_client.eth.get_balance(address), Unit.ETHER))
-
-    def create_account_with_balance(
-            self, amount: int = InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value
-    ):
-        """Creates a new account with balance"""
-        account = self.create_account()
-        balance_before = self.get_balance_from_wei(account.address)
-        self.faucet.request_neon(account.address, amount=amount)
-        for _ in range(20):
-            if self.get_balance_from_wei(account.address) >= (balance_before + amount):
-                break
-            time.sleep(1)
-        else:
-            raise AssertionError(f"Balance didn't changed after 20 seconds ({account.address})")
-        return account
 
     @staticmethod
     def create_invalid_account() -> AccountData:
@@ -212,8 +203,6 @@ class BaseMixin(BaseTests):
         if amount is not None:
             tx["value"] = self.web3_client.to_wei(amount, Unit.ETHER)
         return tx
-
-
 
     def get_solana_resps_by_neon_resp(self, resp):
         solana_resps = []

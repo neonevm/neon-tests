@@ -13,15 +13,9 @@ facet_cut_action = {"Add": 0, "Replace": 1, "Remove": 2}
 class TestDiamond(BaseMixin):
 
     @pytest.fixture(scope="class")
-    def sender(self, faucet, web3_client):
-        acc = web3_client.create_account()
-        faucet.request_neon(acc.address, 100)
-        return acc
-
-    @pytest.fixture(scope="class")
-    def diamond_init(self, web3_client, sender):
+    def diamond_init(self, web3_client, class_account):
         contract, _ = web3_client.deploy_and_get_contract(
-            "diamond/upgradeInitializers/DiamondInit.sol", "0.8.10", sender, contract_name="DiamondInit")
+            "diamond/upgradeInitializers/DiamondInit.sol", "0.8.10", class_account, contract_name="DiamondInit")
         return contract
 
     @pytest.fixture(scope="class")
@@ -32,28 +26,28 @@ class TestDiamond(BaseMixin):
         return facet_cuts
 
     @pytest.fixture(scope="class")
-    def diamond_cut_facet(self, web3_client, sender):
+    def diamond_cut_facet(self, web3_client, class_account):
         contract, _ = web3_client.deploy_and_get_contract(
-            "diamond/facets/DiamondCutFacet.sol", "0.8.10", sender, contract_name="DiamondCutFacet")
+            "diamond/facets/DiamondCutFacet.sol", "0.8.10", class_account, contract_name="DiamondCutFacet")
         return contract
 
     @pytest.fixture(scope="class")
-    def diamond_loupe_facet(self, web3_client, sender):
+    def diamond_loupe_facet(self, web3_client, class_account):
         contract, _ = web3_client.deploy_and_get_contract(
-            "diamond/facets/DiamondLoupeFacet.sol", "0.8.10", sender, contract_name="DiamondLoupeFacet")
+            "diamond/facets/DiamondLoupeFacet.sol", "0.8.10", class_account, contract_name="DiamondLoupeFacet")
         return contract
 
     @pytest.fixture(scope="class")
-    def ownership_facet(self, web3_client, sender):
+    def ownership_facet(self, web3_client, class_account):
         contract, _ = web3_client.deploy_and_get_contract(
-            "diamond/facets/OwnershipFacet.sol", "0.8.10", sender, contract_name="OwnershipFacet")
+            "diamond/facets/OwnershipFacet.sol", "0.8.10", class_account, contract_name="OwnershipFacet")
         return contract
 
     @pytest.fixture(scope="class")
-    def diamond(self, web3_client, diamond_init, facet_cuts, sender):
+    def diamond(self, web3_client, diamond_init, facet_cuts, class_account):
         calldata = decode_function_signature("init()")
-        diamond_args = [sender.address, diamond_init.address, calldata]
-        contract, tx = web3_client.deploy_and_get_contract("diamond/Diamond.sol", "0.8.10", sender,
+        diamond_args = [class_account.address, diamond_init.address, calldata]
+        contract, tx = web3_client.deploy_and_get_contract("diamond/Diamond.sol", "0.8.10", class_account,
                                                            contract_name="Diamond",
                                                            constructor_args=[facet_cuts, diamond_args])
         return contract
@@ -73,16 +67,16 @@ class TestDiamond(BaseMixin):
             for i in range(len(result)):
                 assert result[i] == selectors[i]
 
-    def test_add_and_remove_function(self, diamond, diamond_cut_facet, sender):
+    def test_add_and_remove_function(self, diamond, diamond_cut_facet, class_account):
         new_facet, _ = self.web3_client.deploy_and_get_contract(
-            "diamond/facets/Test1Facet.sol", "0.8.10", sender, contract_name="Test1Facet")
+            "diamond/facets/Test1Facet.sol", "0.8.10", class_account, contract_name="Test1Facet")
         facet_cuts = [(new_facet.address, facet_cut_action["Add"], get_selectors(new_facet.abi))]
         calldata = keccak(text="diamondCut((address,uint8,bytes4[])[],address,bytes)")[:4] \
                    + abi.encode(["(address,uint8,bytes4[])[]", "address", "bytes"],
                                 [facet_cuts, ZERO_ADDRESS, b"0x"])
 
-        tx = self.create_tx_object(sender.address, diamond.address, 0, data=calldata)
-        self.web3_client.send_transaction(sender, tx)
+        tx = self.create_tx_object(class_account.address, diamond.address, 0, data=calldata)
+        self.web3_client.send_transaction(class_account, tx)
         result = self.web3_client.call_function_at_address(diamond.address, "facetFunctionSelectors(address)",
                                                            [new_facet.address], ['bytes4[]'])
         assert set(get_selectors(new_facet.abi)) - set(result) == set(), "selectors not added"
@@ -99,8 +93,8 @@ class TestDiamond(BaseMixin):
                    + abi.encode(["(address,uint8,bytes4[])[]", "address", "bytes"],
                                 [facet_cuts, ZERO_ADDRESS, b"0x"])
 
-        tx = self.create_tx_object(sender.address, diamond.address, 0, data=calldata)
-        self.web3_client.send_transaction(sender, tx)
+        tx = self.create_tx_object(class_account.address, diamond.address, 0, data=calldata)
+        self.web3_client.send_transaction(class_account, tx)
 
         result = self.web3_client.call_function_at_address(diamond.address, "facetFunctionSelectors(address)",
                                                            [new_facet.address], ['bytes4[]'])

@@ -11,11 +11,9 @@ from utils.consts import ZERO_HASH
 @allure.story("EIP-1052: EXTCODEHASH opcode")
 class TestExtCodeHashOpcode(BaseMixin):
     @pytest.fixture(scope="class")
-    def eip1052_checker(self, web3_client, faucet):
-        acc = web3_client.create_account()
-        faucet.request_neon(acc.address, 100)
+    def eip1052_checker(self, web3_client, faucet, class_account):
         contract, _ = web3_client.deploy_and_get_contract(
-            "EIPs/EIP1052_extcodehash", "0.8.10", acc, contract_name="EIP1052Checker")
+            "EIPs/EIP1052_extcodehash", "0.8.10", class_account, contract_name="EIP1052Checker")
         return contract
 
     def test_extcodehash_for_contract_address(self, eip1052_checker):

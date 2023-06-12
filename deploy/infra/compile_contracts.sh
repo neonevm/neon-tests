@@ -11,7 +11,7 @@ while [ $attempts -le 10 ]; do
 
   file_count=$(ls -1 $path | wc -l)
 
-  if [ $file_count -gt 2 ]; then
+  if [ $file_count -ge 2 ]; then
     echo "Hardhat compiled files successfully"
     exit 0
   else

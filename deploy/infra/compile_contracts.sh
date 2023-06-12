@@ -1,6 +1,6 @@
 #!/bin/bash
 
-path="~/.cache/hardhat-nodejs/compilers-v2/linux-amd64/"
+path=$HOME/.cache/hardhat-nodejs/compilers-v2/linux-amd64/
 attempts=1
 
 while [ $attempts -le 10 ]; do
@@ -8,11 +8,6 @@ while [ $attempts -le 10 ]; do
 
   npx hardhat compile
   wait $!
-  ls -la ~/.cache/
-  ls -la ~/.cache/hardhat-nodejs/
-  ls -la ~/.cache/hardhat-nodejs/compilers-v2/
-  ls -la ~/.cache/hardhat-nodejs/compilers-v2/linux-amd64/
-
 
   file_count=$(ls -1 $path | wc -l)
 

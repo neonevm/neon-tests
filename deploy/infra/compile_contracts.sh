@@ -2,6 +2,7 @@
 
 path="~/.cache/hardhat-nodejs/compilers-v2/linux-amd64/"
 attempts=1
+ls -la ~/.cache/hardhat-nodejs/compilers-v2/
 
 while [ $attempts -le 10 ]; do
   echo "Attempt $attempts"

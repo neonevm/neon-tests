@@ -72,7 +72,7 @@ def nft_receiver(web3_client, faucet, class_account):
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
         "ERC721/erc721_receiver", "0.8.10", class_account, contract_name="ERC721Receiver"
     )
-    return class_account
+    return contract
 
 
 @pytest.fixture(scope="class")

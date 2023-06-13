@@ -10,6 +10,15 @@ contract EIP1052Checker {
             hash := extcodehash(a)
         }
     }
+
+    function getContractHashWithLog(address a) public returns (bytes32 hash) {
+        assembly {
+            hash := extcodehash(a)
+        }
+
+        emit ReceivedHash(hash);
+    }
+
     function getHashForDestroyedContract() public returns (bytes32 hash1, bytes32 hash2, address adr) {
         SelfDestroyable contr = new SelfDestroyable();
         hash1 = getContractHash(address(contr));

@@ -22,7 +22,14 @@ class TestExtCodeHashOpcode(BaseMixin):
         contract_hash = eip1052_checker.functions.getContractHash(eip1052_checker.address).call()
         assert contract_hash == keccak(self.web3_client.eth.get_code(eip1052_checker.address, "latest"))
 
-    @pytest.mark.xfail(reason="NDEV-1550")
+    def test_extcodehash_with_send_tx_for_contract_address(self, eip1052_checker):
+        tx = self.create_contract_call_tx_object(self.sender_account)
+        instruction_tx = eip1052_checker.functions.getContractHashWithLog(eip1052_checker.address).build_transaction(tx)
+        receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt)
+        contract_hash = event_logs[0]['args']['hash']
+        assert contract_hash == keccak(self.web3_client.eth.get_code(eip1052_checker.address, "latest"))
+
     def test_extcodehash_for_empty_account(self, eip1052_checker):
         # Check the EXTCODEHASH of the account without code is
         # c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470
@@ -31,9 +38,30 @@ class TestExtCodeHashOpcode(BaseMixin):
         assert contract_hash.hex() == keccak(
             self.web3_client.eth.get_code(self.recipient_account.address, "latest")).hex()
 
+    def test_extcodehash_with_send_tx_for_empty_account(self, eip1052_checker):
+        # Check with send_tx the EXTCODEHASH of the account without code is
+        # c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470
+        # what is the keccack256 hash of empty data.
+        tx = self.create_contract_call_tx_object(self.sender_account)
+        instruction_tx = eip1052_checker.functions.getContractHashWithLog(self.recipient_account.address).build_transaction(tx)
+        receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt)
+        contract_hash = event_logs[0]['args']['hash']
+        assert contract_hash.hex() == keccak(
+            self.web3_client.eth.get_code(self.recipient_account.address, "latest")).hex()
+
     def test_extcodehash_for_non_existing_account(self, eip1052_checker):
         non_existing_account = self.web3_client.to_checksum_address(self.create_invalid_account().address)
         contract_hash = eip1052_checker.functions.getContractHash(non_existing_account).call()
+        assert contract_hash.hex() == ZERO_HASH
+
+    def test_extcodehash_with_send_tx_for_non_existing_account(self, eip1052_checker):
+        non_existing_account = self.web3_client.to_checksum_address(self.create_invalid_account().address)
+        tx = self.create_contract_call_tx_object(self.sender_account)
+        instruction_tx = eip1052_checker.functions.getContractHashWithLog(non_existing_account).build_transaction(tx)
+        receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt)
+        contract_hash = event_logs[0]['args']['hash']
         assert contract_hash.hex() == ZERO_HASH
 
     def test_extcodehash_for_destroyed_contract(self, eip1052_checker):
@@ -48,6 +76,20 @@ class TestExtCodeHashOpcode(BaseMixin):
         destroyed_contract_address = event_logs[0]['args']['addr']
         assert eip1052_checker.functions.getContractHash(
             destroyed_contract_address).call().hex() == ZERO_HASH
+
+    def test_extcodehash_with_send_tx_for_destroyed_contract(self, eip1052_checker):
+        # Check the EXTCODEHASH of an account that selfdestructed in the current transaction with send_tx.
+        tx = self.create_contract_call_tx_object(self.sender_account)
+        instruction_tx = eip1052_checker.functions.getHashForDestroyedContract().build_transaction(tx)
+        receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        event_logs = eip1052_checker.events.DestroyedContract().process_receipt(receipt)
+        destroyed_contract_address = event_logs[0]['args']['addr']
+        tx2 = self.create_contract_call_tx_object(self.sender_account)
+        instruction_tx = eip1052_checker.functions\
+            .getContractHashWithLog(destroyed_contract_address).build_transaction(tx2)
+        receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt)
+        assert event_logs[0]['args']['hash'].hex() == ZERO_HASH
 
     def test_extcodehash_for_reverted_destroyed_contract(self, eip1052_checker):
         # Check the EXTCODEHASH of an account that selfdestructed and later the selfdestruct has been reverted.
@@ -69,9 +111,18 @@ class TestExtCodeHashOpcode(BaseMixin):
         assert len(data) == 3
         assert all(x == data[0] for x in data)
 
-    @pytest.mark.xfail(reason="NDEV-1550")
     def test_extcodehash_for_precompiled_contract(self, eip1052_checker):
         # Check the EXTCODEHASH of a precompiled contract.
         precompiled_acc = AccountData(address='0x0000000000000000000000000000000000000007')
         contract_hash = eip1052_checker.functions.getContractHash(precompiled_acc.address).call()
+        assert contract_hash.hex() == ZERO_HASH
+
+    def test_extcodehash_with_send_tx_for_precompiled_contract(self, eip1052_checker):
+        # Check the EXTCODEHASH of a precompiled contract with send_tx.
+        precompiled_acc = AccountData(address='0x0000000000000000000000000000000000000007')
+        tx = self.create_contract_call_tx_object(self.sender_account)
+        instruction_tx = eip1052_checker.functions.getContractHashWithLog(precompiled_acc.address).build_transaction(tx)
+        receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt)
+        contract_hash = event_logs[0]['args']['hash']
         assert contract_hash.hex() == ZERO_HASH

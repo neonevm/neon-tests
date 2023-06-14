@@ -232,5 +232,22 @@
       "GZ3vKajaDjxFkiczL4g6as3qhMg7tdMgrMrpuApGWF8D",
       "5dyQQATyk4yga4f4m8BCrUF1jdfGQ1mShV4ezFLxyCqW"
     ]
+  },
+    "geth": {
+    "evm_loader": "",
+    "proxy_url": "http://3.67.164.222:8545",
+    "network_id": 22222,
+    "solana_url": "",
+    "faucet_url": "",
+    "spl_neon_mint": "",
+    "neon_erc20wrapper_address": "",
+    "eth_bank_account": "0x9c10beb3e7eae0fa3e4695fe378bfa3bbf668aded6440e4a8412844d319c19b4",
+
+    "operator_neon_rewards_address": [
+      ""
+    ],
+    "operator_keys": [
+      ""
+    ]
   }
 }

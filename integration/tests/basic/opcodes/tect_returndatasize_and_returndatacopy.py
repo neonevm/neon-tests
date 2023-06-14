@@ -22,11 +22,9 @@ DATA_32_64 = "000000000000000000000000000000000000000000000000000000000000000a74
 @allure.story("EIP-211: New opcodes: RETURNDATASIZE and RETURNDATACOPY")
 class TestReturnDataSizeAndCopyOpcodes(BaseMixin):
     @pytest.fixture(scope="class")
-    def eip211_checker(self, web3_client, faucet):
-        acc = web3_client.create_account()
-        faucet.request_neon(acc.address, 100)
+    def eip211_checker(self, web3_client, faucet, class_account):
         contract, _ = web3_client.deploy_and_get_contract(
-            "EIPs/EIP211_returndatasize_copy", "0.8.10", acc, contract_name="EIP211Checker")
+            "EIPs/EIP211_returndatasize_copy", "0.8.10", class_account, contract_name="EIP211Checker")
         return contract
 
     def get_size_from_event_logs(self, contract, receipt):

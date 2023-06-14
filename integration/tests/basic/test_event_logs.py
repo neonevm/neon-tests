@@ -12,11 +12,9 @@ from integration.tests.basic.helpers.rpc_checks import (
 
 
 @pytest.fixture(scope="class")
-def event_caller(web3_client, faucet):
-    acc = web3_client.create_account()
-    faucet.request_neon(acc.address, 100)
+def event_caller(web3_client, faucet, class_account):
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "EventCaller", "0.8.12", acc
+        "EventCaller", "0.8.12", class_account
     )
     return contract
 

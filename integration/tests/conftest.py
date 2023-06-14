@@ -165,7 +165,6 @@ def eth_bank_account(pytestconfig: Config, web3_client) -> tp.Optional[Keypair]:
     account = None
     if pytestconfig.environment.eth_bank_account != "":
         account = web3_client.eth.account.from_key(pytestconfig.environment.eth_bank_account)
-    print(eth_bank_account)
     yield account
 
 

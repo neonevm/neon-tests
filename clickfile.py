@@ -425,6 +425,11 @@ def contracts():
     response = requests.get(
         "https://api.github.com/repos/neonlabsorg/neon-evm/contents/evm_loader/solidity?ref=develop"
     ).json()
+    if response.status_code != 200:
+        raise click.ClickException(
+            f"The code is not 200. Responce: {response}"
+        )
+
     for item in response:
         r = requests.get(
             f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/develop/evm_loader/solidity/{item['name']}"

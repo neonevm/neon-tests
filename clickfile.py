@@ -453,6 +453,7 @@ def update_contracts(branch):
         if r.status_code == 200:
             with open(contract_path / item["name"], "wb") as f:
                 f.write(r.content)
+            click.echo(f"{item['name']} downloaded")
         else:
             raise click.ClickException(
                 f"The contract {item['name']} is not downloaded. Error: {r.text}"

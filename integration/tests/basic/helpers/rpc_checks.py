@@ -17,9 +17,9 @@ def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[typ
     assert "error" not in block
     assert "result" in block, AssertMessage.DOES_NOT_CONTAIN_RESULT
     result = block["result"]
-    expected_hex_fields = ["difficulty", "extraData", "gasLimit", "gasUsed", "hash", "logsBloom", "miner",
+    expected_hex_fields = ["difficulty", "gasLimit", "gasUsed", "hash", "logsBloom", "miner",
                            "mixHash", "nonce", "number", "parentHash", "receiptsRoot", "sha3Uncles", "size",
-                           "stateRoot", "timestamp", "totalDifficulty", "transactionsRoot"]
+                           "stateRoot", "timestamp", "transactionsRoot"]
     if pending:
         for i in ["hash", "nonce", "miner"]:
             expected_hex_fields.remove(i)
@@ -32,6 +32,8 @@ def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[typ
             f"Actual:{result['number']}; Expected: {hex(tx_receipt.blockNumber)}"
         assert int(result["gasUsed"], 16) >= int(hex(tx_receipt.gasUsed), 16), \
             f"Actual:{result['gasUsed']} or more; Expected: {hex(tx_receipt.gasUsed)}"
+        assert result["extraData"] == '0x'
+        assert result["totalDifficulty"] == None
     assert result["uncles"] == []
     transactions = result["transactions"]
     if full_trx:

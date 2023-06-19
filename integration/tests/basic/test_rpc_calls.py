@@ -477,7 +477,6 @@ class TestRpcCalls(BaseMixin):
         ), f"Invalid response: {response['result']}"
 
 
-    @pytest.mark.xfail(reason="NDEV-1782")
     @pytest.mark.parametrize("param", ["0x6865", "param", None, True])
     def test_web3_sha3(self, param: tp.Union[str, None]):
         """Verify implemented rpc calls work web3_sha3"""
@@ -552,7 +551,7 @@ class TestRpcCalls(BaseMixin):
         assert "error" in response
         assert "message" in response["error"]
         assert (
-            response["error"]["message"] == f"method {method} is not supported"
+            response["error"]["message"] == f"method {method} does not exist/is not available"
         ), response
 
     @pytest.mark.parametrize(

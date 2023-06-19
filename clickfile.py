@@ -429,7 +429,7 @@ def is_neon_evm_branch_exist(branch):
         return False
 
 @cli.command(help="Download test contracts from neon-evm repo")
-@click.option("--branch", default="dvelop", help="neon_evm branch name. " 
+@click.option("--branch", default="develop", help="neon_evm branch name. " 
                                "If branch doesn't exist, develop branch will be used")
 
 def update_contracts(branch):

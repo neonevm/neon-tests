@@ -17,7 +17,7 @@ from ui import libs
 from ui.pages import metamask, neonpass
 from ui.plugins import browser
 
-NEON_PASS_URL = "https://neonpass.live/"
+NEON_PASS_URL = "http://devnet.neonpass.live"
 """tokens transfer service
 """
 
@@ -80,7 +80,9 @@ def request_sol() -> None:
         "method": "requestAirdrop",
         "params": [Wallets.wall_1.address, 1000000000],
     }
-    assert requests.Session().post(url=SOL_API_URL, json=json_doc).ok
+    response = requests.Session().post(url=SOL_API_URL, json=json_doc)
+    print(response.json())
+    assert response.ok
 
 
 class TestPhantomPipeLIne:
@@ -123,26 +125,23 @@ class TestPhantomPipeLIne:
     )
     def test_send_tokens(
         self,
-        request_sol: requests.Response,
+        # request_sol: requests.Response,
         metamask_page: metamask.MetaMaskAccountsPage,
         neonpass_page: neonpass.NeonPassPage,
         evm: str,
         tokens: str,
     ) -> None:
         """Prepare test environment"""
-
         def get_balance() -> float:
             return float(getattr(metamask_page, f"{tokens.name.lower()}_balance"))
 
         init_balance = get_balance()
-        neonpass_page.change_transfer_source(evm)
-        neonpass_page.connect_wallet()
-        neonpass_page.set_source_token(tokens.name, 1)
-        neonpass_page.next_tab()
-        neonpass_page.connect_wallet()
-        neonpass_page.next_tab()
+        neonpass_page.connect_phantom()
+        neonpass_page.connect_metamask()
+        neonpass_page.set_source_token(tokens.name, 0.1)
         neonpass_page.confirm_tokens_transfer()
         metamask_page.page.bring_to_front()
+
         # check balance
         libs.try_until(
             lambda: init_balance < get_balance() if evm == EVM.solana else init_balance > get_balance(),

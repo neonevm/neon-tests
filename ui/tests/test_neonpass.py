@@ -17,13 +17,6 @@ from ui import libs
 from ui.pages import metamask, neonpass
 from ui.plugins import browser
 
-NEON_PASS_URL = "http://devnet.neonpass.live"
-"""tokens transfer service
-"""
-
-SOL_API_URL = "https://api.devnet.solana.com/"
-"""Solana DevNet API url"""
-
 
 @dataclass
 class EVM:
@@ -72,7 +65,7 @@ def context(
 
 
 @pytest.fixture
-def request_sol() -> None:
+def request_sol(solana_url: str) -> None:
     """Airdrop SOL"""
     json_doc = {
         "jsonrpc": "2.0",
@@ -80,7 +73,7 @@ def request_sol() -> None:
         "method": "requestAirdrop",
         "params": [Wallets.wall_1.address, 1000000000],
     }
-    response = requests.Session().post(url=SOL_API_URL, json=json_doc)
+    response = requests.Session().post(url=solana_url, json=json_doc)
     print(response.json())
     assert response.ok
 
@@ -108,9 +101,9 @@ class TestPhantomPipeLIne:
         page.close()
 
     @pytest.fixture
-    def neonpass_page(self, context: BrowserContext) -> neonpass.NeonPassPage:
+    def neonpass_page(self, context: BrowserContext, neonpass_url: str) -> neonpass.NeonPassPage:
         page = context.new_page()
-        page.goto(NEON_PASS_URL)
+        page.goto(neonpass_url)
         yield neonpass.NeonPassPage(page)
         page.close()
 

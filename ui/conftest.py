@@ -25,14 +25,19 @@ CHROME_USER_DATA_DIR = "user_data"
 """
 
 
-def pytest_addoption(parser):
-    parser.addoption("--network", action="store", default="devnet", help="Which stand use")
-
-
 @pytest.fixture(scope="session")
 def network(pytestconfig: tp.Any) -> tp.Optional[str]:
     return EVM_NETWORKS.get(pytestconfig.getoption("--network"), EVM_NETWORKS["devnet"])
 
+
+@pytest.fixture(scope="session")
+def neonpass_url(pytestconfig: tp.Any) -> tp.Optional[str]:
+    return pytestconfig.environment.neonpass_url
+
+
+@pytest.fixture(scope="session")
+def solana_url(pytestconfig: tp.Any) -> tp.Optional[str]:
+    return pytestconfig.environment.solana_url
 
 @pytest.fixture
 def chrome_extensions_path(required_extensions: tp.Union[tp.List, str]) -> pathlib.Path:

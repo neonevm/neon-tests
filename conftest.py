@@ -24,6 +24,7 @@ class EnvironmentConfig:
     neon_erc20wrapper_address: str
     operator_keys: tp.List[str]
     use_bank: bool
+    neonpass_url: str = ""
     account_seed_version: str = "\3"
 
 

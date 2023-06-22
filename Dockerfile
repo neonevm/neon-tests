@@ -37,7 +37,7 @@ COPY ./deploy/oz/run-full-test-suite.sh /opt/neon-tests/
 
 WORKDIR /opt/neon-tests
 ADD ./ /opt/neon-tests
-RUN python3 ./clickfile.py contracts
+RUN python3 ./clickfile.py update-contracts
 
 ARG OZ_BRANCH=master
 

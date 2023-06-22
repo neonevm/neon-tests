@@ -1,6 +1,7 @@
 import os
 import pathlib
 import typing as tp
+import uuid
 from datetime import datetime
 
 import allure
@@ -15,14 +16,9 @@ EVM_NETWORKS = {
     "devnet": "NeonEVM DevNet",
 }
 
-
-CHROME_EXT_DIR = "extensions/chrome/plugins"
-"""Relative path to Chrome extension source
-"""
-
-CHROME_USER_DATA_DIR = "user_data"
-"""Relative path to Chrome extensions user data
-"""
+CHROME_TAR_PATH = pathlib.Path(__file__).absolute().parent / "extensions" / "data"
+CHROME_DATA_PATH = pathlib.Path(__file__).absolute().parent.parent / "chrome-data" / uuid.uuid4().hex
+"""CHROME_DATA_PATH is temporary local destination in project to untar chrome data directory and plugins"""
 
 
 @pytest.fixture(scope="session")
@@ -39,25 +35,26 @@ def neonpass_url(pytestconfig: tp.Any) -> tp.Optional[str]:
 def solana_url(pytestconfig: tp.Any) -> tp.Optional[str]:
     return pytestconfig.environment.solana_url
 
+
 @pytest.fixture
 def chrome_extensions_path(required_extensions: tp.Union[tp.List, str]) -> pathlib.Path:
+    """Extracting Chrome Plugins"""
     path = ""
     if isinstance(required_extensions, str):
         required_extensions = [required_extensions]
     for ext in required_extensions:
-        source = pathlib.Path(__file__).parent / CHROME_EXT_DIR / ext
+        source = libs.extract_tar_gz(CHROME_TAR_PATH / f"{ext}.extension.tar.gz", CHROME_DATA_PATH / "plugins") / ext
         if not path:
             path = source
         else:
             path = path / f",{source}"
-    return path
+    yield path
 
 
 @pytest.fixture(scope="session", autouse=True)
 def chrome_extension_user_data() -> pathlib.Path:
-    """Path to Chrome extension user data"""
-    path = (pathlib.Path(__file__).absolute().parent / CHROME_EXT_DIR).parent / CHROME_USER_DATA_DIR
-    user_data = libs.clone_user_data(path)
+    """Extracting Chrome extension user data"""
+    user_data = libs.extract_tar_gz(CHROME_TAR_PATH / "user_data.tar.gz", CHROME_DATA_PATH) / "user_data"
     yield user_data
     libs.rm_tree(user_data)
 

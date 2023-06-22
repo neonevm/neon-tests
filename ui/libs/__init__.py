@@ -3,6 +3,7 @@ import logging
 import pathlib
 import shutil
 import sys
+import tarfile
 import time
 import uuid
 from dataclasses import dataclass
@@ -89,6 +90,14 @@ def clone_user_data(extensions_dir: pathlib.Path) -> pathlib.Path:
         extensions_dir,
         pathlib.Path(TMP_USER_DATA_DIR) / uuid.uuid4().hex,
     )
+
+
+def extract_tar_gz(source: pathlib.Path, dest: pathlib.Path) -> pathlib.Path:
+    """Extract source into destination"""
+    file = tarfile.open(source)
+    file.extractall(dest)
+    file.close()
+    return dest
 
 
 def try_until(func, try_msg=None, error_msg=None, log=None, interval=1, timeout=360, times=None, raise_on_timeout=True):

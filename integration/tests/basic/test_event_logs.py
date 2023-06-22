@@ -178,10 +178,27 @@ class TestLogs(BaseMixin):
         changes_count = 50
         instruction_tx = event_caller.functions.causeOutOfMemory(
         ).build_transaction(tx)
-        resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-        assert resp["status"] == 0
-        event_logs = event_caller.events.NonIndexedArg().process_receipt(resp)
-        assert len(event_logs) == 0
+        try:
+            # TODO: wait for receipt
+            resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+            assert resp["status"] == 0
+            event_logs = event_caller.events.NonIndexedArg().process_receipt(resp)
+            assert len(event_logs) == 0
+        except ValueError as exc:
+            assert exc.args[0] == {
+                'code': -32000,
+                'message': (
+                    '[0]>+ ComputeBudget. ' +
+                    '[0]>+ ComputeBudget. ' +
+                    '[0]>+ NeonEVM. ' +
+                    '[1]=- Instruction: Begin or Continue Transaction from Instruction. ' +
+                    '[1]=- Bump Allocator out of memory. ' +
+                    '[1]=- Error: memory allocation failed, out of memory. ' +
+                    '[1]=- BPF program panicked. ' +
+                    '[1]<- Program failed to complete'
+                )
+            }
+
 
     def test_nested_calls_with_revert(self):
         contract_a, _ = self.web3_client.deploy_and_get_contract(

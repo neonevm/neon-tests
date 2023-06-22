@@ -133,14 +133,14 @@ class BaseMixin(BaseTests):
 
     @allure.step("calculating gas")
     def calculate_trx_gas(self, tx_receipt: web3.types.TxReceipt) -> float:
-        gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.from_wei(
+        gas_used_in_tx = tx_receipt.gasUsed * self.web3_client.from_wei(
             self.web3_client.gas_price(), Unit.ETHER
         )
         return float(round(gas_used_in_tx, InputTestConstants.ROUND_DIGITS.value))
 
     @allure.step("calculating gas")
     def calculate_trx_gas(self, tx_receipt: web3.types.TxReceipt) -> float:
-        gas_used_in_tx = tx_receipt.cumulativeGasUsed * self.web3_client.from_wei(
+        gas_used_in_tx = tx_receipt.gasUsed * self.web3_client.from_wei(
             self.web3_client.gas_price(), Unit.ETHER
         )
         return float(round(gas_used_in_tx, InputTestConstants.ROUND_DIGITS.value))

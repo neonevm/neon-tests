@@ -7,8 +7,8 @@ on:
     inputs:
       oz_branch:
         type: string
-        required: true
-        description: "Which OZ branch to use"
+        required: false
+        description: "Which OZ branch to use (if it is empty 'master', branch will be used)"
 
 jobs:
   dockerize:

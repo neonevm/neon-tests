@@ -103,9 +103,19 @@ class MetaMaskAccountsPage(BasePage):
         return self._get_balance(self.active_account, libs.Tokens.neon.name)
 
     @property
+    def sol_balance(self) -> float:
+        self.switch_assets()
+        return self._get_balance(self.active_account, libs.Tokens.sol.name)
+
+    @property
     def usdt_balance(self) -> float:
         self.switch_assets()
         return self._get_balance(self.active_account, libs.Tokens.usdt.name)
+
+    @property
+    def usdc_balance(self) -> float:
+        self.switch_assets()
+        return self._get_balance(self.active_account, libs.Tokens.usdc.name)
 
     def change_network(self, network: str) -> None:
         """Select EVM network"""

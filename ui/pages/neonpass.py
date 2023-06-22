@@ -11,6 +11,7 @@ from playwright._impl._api_types import TimeoutError
 from ui import components
 from ui.pages import phantom, metamask
 from . import BasePage
+from ..libs import EVM
 
 
 class NeonPassPage(BasePage):
@@ -35,15 +36,18 @@ class NeonPassPage(BasePage):
         mm_page.connect()
 
     @staticmethod
-    def _handle_withdraw_confirm(page) -> None:
+    def _handle_mm_withdraw_confirm(page) -> None:
         """MetaMask withdraw confirm"""
         page.wait_for_load_state()
-        try:
-            mm_confirm_page = metamask.MetaMaskWithdrawConfirmPage(page)
-            mm_confirm_page.withdraw_confirm()
-        except TimeoutError:
-            phantom_confirm_page = phantom.PhantomWithdrawConfirmPage(page)
-            phantom_confirm_page.withdraw_confirm()
+        mm_confirm_page = metamask.MetaMaskWithdrawConfirmPage(page)
+        mm_confirm_page.withdraw_confirm()
+
+    @staticmethod
+    def _handle_pt_withdraw_confirm(page) -> None:
+        """Phantom withdraw confirm"""
+        page.wait_for_load_state()
+        phantom_confirm_page = phantom.PhantomWithdrawConfirmPage(page)
+        phantom_confirm_page.withdraw_confirm()
 
     @property
     def _is_source_tab_loaded(self) -> bool:
@@ -65,16 +69,22 @@ class NeonPassPage(BasePage):
         except TimeoutError:
             return False
 
-    def change_transfer_source(self, source: str) -> None:
-        """Change transfer source"""
-        components.Button(self.page, selector="//app-wallet-button[@label='From']//button").click()
-        self.page.wait_for_selector(selector=f"//app-wallet-button[@label='From']//span[text()='{source}']")
+    def switch_evm_source(self, evm: str) -> None:
+        """Change transfer source evm (Neon/Solana)"""
+        selector = f"//app-wallet-button[@label='From']//*[text()='{evm}']"  # desired evm
+
+        if not self.page.query_selector(selector):  # if it's not already set -> switch
+            components.Button(
+                self.page,
+                selector="//button[@class='switch-button']",
+            ).click()
+            self.page.wait_for_selector(selector)
 
     def connect_phantom(self, timeout: float = 5000) -> None:
+        """Connect Phantom Wallet"""
         # Wait page loaded
         if self._is_source_tab_loaded or self._is_target_tab_loaded:
             pass
-        # Connect to Wallet
         try:
             with self.page.context.expect_page(timeout=timeout) as phantom_page_info:
                 components.Button(
@@ -88,10 +98,10 @@ class NeonPassPage(BasePage):
                 raise e
 
     def connect_metamask(self, timeout: float = 5000) -> None:
+        """Connect Metamask Wallet"""
         # Wait page loaded
         if self._is_target_tab_loaded:
             pass
-        # Connect to Wallet
         try:
             with self.page.context.expect_page(timeout=timeout) as mm_page_connect:
                 components.Button(
@@ -118,11 +128,14 @@ class NeonPassPage(BasePage):
 
     def confirm_tokens_transfer(self, timeout: float = 5000) -> None:
         """Confirm tokens withdraw"""
-        # Confirm withdraw
         with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
             self.page.wait_for_selector(selector="//button[contains(@class, 'transfer-button')]").click()
         confirm_page = confirm_page_info.value
-        self._handle_withdraw_confirm(confirm_page)
+
+        with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
+            self._handle_pt_withdraw_confirm(confirm_page)
+            confirm_page = confirm_page_info.value
+        self._handle_mm_withdraw_confirm(confirm_page)
         self.page.wait_for_selector(selector="//*[text()='Transfer complete']")
         components.Button(self.page, selector="//*[text()='Close']").click()
         self._is_source_tab_loaded

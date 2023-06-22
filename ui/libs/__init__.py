@@ -8,6 +8,7 @@ import uuid
 from dataclasses import dataclass
 
 import six
+from playwright.sync_api import BrowserContext, Page
 
 from ui.libs import exc
 
@@ -21,9 +22,17 @@ class Token:
 
 
 @dataclass
+class EVM:
+    solana: str = "Solana"
+    neon: str = "Neon"
+
+
+@dataclass
 class Tokens:
     neon = Token("NEON", "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g")
-    usdt = Token("USDT", "3vxj94fSd3jrhaGAwaEKGDPEwn5Yqs81Ay5j1BcdMqSZ")
+    sol = Token("SOL")
+    usdt = Token("USDT", "0x6eEf939FC6e2B3F440dCbB72Ea81Cd63B5a519A5")
+    usdc = Token("USDC", "0x512E48836Cd42F3eB6f50CEd9ffD81E0a7F15103")
 
 
 BASE_USER_DATA_DIR = "user_data"
@@ -34,6 +43,19 @@ TMP_USER_DATA_DIR = f"/tmp/{BASE_USER_DATA_DIR}"
 """Temporary path to a MetaMask extensions User Data Directory, which stores browser session data like cookies and local storage.
 """
 
+
+@staticmethod
+def open_safe(context: BrowserContext, url: str, retry_count: int = 3) -> Page:
+    while retry_count > 0:
+        try:
+            page = context.new_page()
+            page.goto(url)
+            return page
+        except:
+            retry_count -= 1
+            if retry_count == 0:
+                raise TimeoutError
+            page.close()
 
 def insert_cookies_to_context(resp_cookies, context):
     cookies = []

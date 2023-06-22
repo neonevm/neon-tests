@@ -14,14 +14,9 @@ from playwright.sync_api import BrowserContext
 from playwright.sync_api import BrowserType
 
 from ui import libs
+from ui.libs import EVM, open_safe
 from ui.pages import metamask, neonpass
 from ui.plugins import browser
-
-
-@dataclass
-class EVM:
-    solana: str = "Solana"
-    neon: str = "Neon"
 
 
 @dataclass
@@ -37,6 +32,7 @@ class Wallets:
     wall_1 = Wallet("Wallet 1", "B4t7nCPsqKm38SZfV6k3pfrY7moQqYy7EBeMc7LgwYQ8")
     wall_2 = Wallet("Wallet 2")
     wall_3 = Wallet("Wallet 3")
+    mm_wall_1 = Wallet("MM Wallet 1", "0x4701D3F6B2407911AFDf90c20537bD0c27214c9A")
 
 
 @pytest.fixture
@@ -102,8 +98,7 @@ class TestPhantomPipeLIne:
 
     @pytest.fixture
     def neonpass_page(self, context: BrowserContext, neonpass_url: str) -> neonpass.NeonPassPage:
-        page = context.new_page()
-        page.goto(neonpass_url)
+        page = open_safe(context, neonpass_url)
         yield neonpass.NeonPassPage(page)
         page.close()
 
@@ -111,9 +106,12 @@ class TestPhantomPipeLIne:
         "evm, tokens",
         [
             (EVM.solana, libs.Tokens.neon),
+            (EVM.solana, libs.Tokens.sol),
             (EVM.solana, libs.Tokens.usdt),
+            (EVM.solana, libs.Tokens.usdc),
             (EVM.neon, libs.Tokens.neon),
             (EVM.neon, libs.Tokens.usdt),
+            (EVM.neon, libs.Tokens.usdc),
         ],
     )
     def test_send_tokens(
@@ -131,6 +129,7 @@ class TestPhantomPipeLIne:
         init_balance = get_balance()
         neonpass_page.connect_phantom()
         neonpass_page.connect_metamask()
+        neonpass_page.switch_evm_source(evm)
         neonpass_page.set_source_token(tokens.name, 0.1)
         neonpass_page.confirm_tokens_transfer()
         metamask_page.page.bring_to_front()

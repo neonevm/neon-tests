@@ -35,7 +35,7 @@ class Wallets:
     mm_wall_1 = Wallet("MM Wallet 1", "0x4701D3F6B2407911AFDf90c20537bD0c27214c9A")
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def required_extensions() -> tp.List:
     return ["metamask", "phantom"]
 
@@ -74,8 +74,8 @@ def request_sol(solana_url: str) -> None:
     assert response.ok
 
 
-class TestPhantomPipeLIne:
-    """Tests NeonPass functionality via Phantom"""
+class TestPhantomPipeline:
+    """Tests NeonPass functionality"""
 
     @staticmethod
     def check_balance(init_balance: float, page: metamask.MetaMaskAccountsPage, evm: str, token: str) -> bool:
@@ -103,16 +103,18 @@ class TestPhantomPipeLIne:
         page.close()
 
     @pytest.mark.parametrize(
-        "evm, tokens",
+        "evm, token",
         [
             (EVM.solana, libs.Tokens.neon),
             (EVM.solana, libs.Tokens.sol),
             (EVM.solana, libs.Tokens.usdt),
             (EVM.solana, libs.Tokens.usdc),
             (EVM.neon, libs.Tokens.neon),
+            (EVM.neon, libs.Tokens.wsol),
             (EVM.neon, libs.Tokens.usdt),
             (EVM.neon, libs.Tokens.usdc),
         ],
+        ids=str
     )
     def test_send_tokens(
         self,
@@ -120,18 +122,18 @@ class TestPhantomPipeLIne:
         metamask_page: metamask.MetaMaskAccountsPage,
         neonpass_page: neonpass.NeonPassPage,
         evm: str,
-        tokens: str,
+        token: str,
     ) -> None:
         """Prepare test environment"""
         def get_balance() -> float:
-            return float(getattr(metamask_page, f"{tokens.name.lower()}_balance"))
+            return float(getattr(metamask_page, f"{token.name.lower()}_balance"))
 
         init_balance = get_balance()
         neonpass_page.connect_phantom()
         neonpass_page.connect_metamask()
         neonpass_page.switch_evm_source(evm)
-        neonpass_page.set_source_token(tokens.name, 0.1)
-        neonpass_page.confirm_tokens_transfer()
+        neonpass_page.set_source_token(token.name, 0.001)
+        neonpass_page.confirm_tokens_transfer(evm, token)
         metamask_page.page.bring_to_front()
 
         # check balance
@@ -139,5 +141,5 @@ class TestPhantomPipeLIne:
             lambda: init_balance < get_balance() if evm == EVM.solana else init_balance > get_balance(),
             timeout=60,
             interval=5,
-            error_msg=f"{tokens.name} balance was not changed after tokens transfer",
+            error_msg=f"{token.name} balance was not changed after tokens transfer",
         )

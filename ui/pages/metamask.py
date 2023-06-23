@@ -50,6 +50,7 @@ class MetaMaskConnectPage(BasePage):
     def connect(self):
         components.Button(self.page, text="Connect").click()
 
+
 class MetaMaskAccountsPage(BasePage):
 
     _networks_menu: components.Menu = None
@@ -104,6 +105,11 @@ class MetaMaskAccountsPage(BasePage):
 
     @property
     def sol_balance(self) -> float:
+        self.switch_assets()
+        return self._get_balance(self.active_account, libs.Tokens.sol.name)
+
+    @property
+    def wsol_balance(self) -> float:
         self.switch_assets()
         return self._get_balance(self.active_account, libs.Tokens.sol.name)
 

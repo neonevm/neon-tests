@@ -36,22 +36,23 @@ def solana_url(pytestconfig: tp.Any) -> tp.Optional[str]:
     return pytestconfig.environment.solana_url
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def chrome_extensions_path(required_extensions: tp.Union[tp.List, str]) -> pathlib.Path:
     """Extracting Chrome Plugins"""
-    path = ""
+    result_path = ""
     if isinstance(required_extensions, str):
         required_extensions = [required_extensions]
     for ext in required_extensions:
         source = libs.extract_tar_gz(CHROME_TAR_PATH / f"{ext}.extension.tar.gz", CHROME_DATA_PATH / "plugins") / ext
-        if not path:
-            path = source
+        if not result_path:
+            result_path = source
         else:
-            path = path / f",{source}"
-    yield path
+            result_path = result_path / f",{source}"
+    yield result_path
+    libs.rm_tree(CHROME_DATA_PATH)
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="function", autouse=True)
 def chrome_extension_user_data() -> pathlib.Path:
     """Extracting Chrome extension user data"""
     user_data = libs.extract_tar_gz(CHROME_TAR_PATH / "user_data.tar.gz", CHROME_DATA_PATH) / "user_data"

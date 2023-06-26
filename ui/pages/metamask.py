@@ -8,7 +8,7 @@ from playwright._impl._api_types import TimeoutError
 
 from ui import components
 from ui import libs
-from ui.conftest import EVM_NETWORKS
+from ui.conftest import PLATFORM_NETWORKS
 from ui.pages import phantom
 from . import BasePage
 
@@ -161,7 +161,7 @@ class MetaMaskAccountsPage(BasePage):
 class MetaMaskWithdrawConfirmPage(BasePage):
     def page_loaded(self):
         self.page.wait_for_selector(
-            selector=f"//div[@class='confirm-page-container-header']/descendant::span[text()='{EVM_NETWORKS['devnet']}']",
+            selector=f"//div[@class='confirm-page-container-header']/descendant::span[text()='{PLATFORM_NETWORKS['devnet']}']",
             timeout=10000,
         )
 

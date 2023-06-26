@@ -11,7 +11,7 @@ from playwright._impl._api_types import TimeoutError
 from ui import components, libs
 from ui.pages import phantom, metamask
 from . import BasePage
-from ..libs import EVM
+from ..libs import Platform
 
 
 class NeonPassPage(BasePage):
@@ -69,9 +69,9 @@ class NeonPassPage(BasePage):
         except TimeoutError:
             return False
 
-    def switch_evm_source(self, evm: str) -> None:
-        """Change transfer source evm (Neon/Solana)"""
-        selector = f"//app-wallet-button[@label='From']//*[text()='{evm}']"  # desired evm
+    def switch_platform_source(self, platform: str) -> None:
+        """Change transfer source platform (Neon/Solana)"""
+        selector = f"//app-wallet-button[@label='From']//*[text()='{platform}']"  # desired platform
 
         if not self.page.query_selector(selector):  # if it's not already set -> switch
             components.Button(
@@ -125,20 +125,20 @@ class NeonPassPage(BasePage):
         button = self.page.wait_for_selector(selector="//div[contains(@class, 'button') and text()='Next']")
         button.click()
 
-    def confirm_tokens_transfer(self, evm: str, token: str, timeout: float = 30000) -> None:
+    def confirm_tokens_transfer(self, platform: str, token: str, timeout: float = 30000) -> None:
         """Confirm tokens withdraw"""
         with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
             self.page.wait_for_selector(selector="//button[contains(@class, 'transfer-button')]").click()
         confirm_page = confirm_page_info.value
 
-        if evm == EVM.solana:
+        if platform == Platform.solana:
             if token in [libs.Tokens.sol]:
                 with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
                     self._handle_pt_withdraw_confirm(confirm_page)
                 confirm_page = confirm_page_info.value
             self._handle_pt_withdraw_confirm(confirm_page)
 
-        if evm == EVM.neon:
+        if platform == Platform.neon:
             if token in [libs.Tokens.wsol]:
                 with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
                     self._handle_pt_withdraw_confirm(confirm_page)

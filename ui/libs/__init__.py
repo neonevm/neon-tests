@@ -26,7 +26,7 @@ class Token:
 
 
 @dataclass
-class EVM:
+class Platform:
     solana: str = "Solana"
     neon: str = "Neon"
 
@@ -50,7 +50,6 @@ TMP_USER_DATA_DIR = f"/tmp/{BASE_USER_DATA_DIR}"
 """
 
 
-@staticmethod
 def open_safe(context: BrowserContext, url: str, retry_count: int = 3) -> Page:
     while retry_count > 0:
         try:
@@ -99,9 +98,8 @@ def clone_user_data(extensions_dir: pathlib.Path) -> pathlib.Path:
 
 def extract_tar_gz(source: pathlib.Path, dest: pathlib.Path) -> pathlib.Path:
     """Extract source into destination"""
-    file = tarfile.open(source)
-    file.extractall(dest)
-    file.close()
+    with tarfile.open(source) as file:
+        file.extractall(dest)
     return dest
 
 

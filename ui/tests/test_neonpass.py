@@ -14,7 +14,7 @@ from playwright.sync_api import BrowserContext
 from playwright.sync_api import BrowserType
 
 from ui import libs
-from ui.libs import EVM, open_safe
+from ui.libs import Platform, open_safe
 from ui.pages import metamask, neonpass
 from ui.plugins import browser
 
@@ -78,12 +78,12 @@ class TestPhantomPipeline:
     """Tests NeonPass functionality"""
 
     @staticmethod
-    def check_balance(init_balance: float, page: metamask.MetaMaskAccountsPage, evm: str, token: str) -> bool:
+    def check_balance(init_balance: float, page: metamask.MetaMaskAccountsPage, platform: str, token: str) -> bool:
         """Compare balance"""
         balance = float(getattr(page, f"{token.name.lower()}_balance"))
-        if evm == EVM.neon:
+        if platform == Platform.neon:
             return init_balance > balance
-        elif evm == EVM.solana:
+        elif platform == Platform.solana:
             return init_balance < balance
 
     @pytest.fixture
@@ -103,16 +103,16 @@ class TestPhantomPipeline:
         page.close()
 
     @pytest.mark.parametrize(
-        "evm, token",
+        "platform, token",
         [
-            (EVM.solana, libs.Tokens.neon),
-            (EVM.solana, libs.Tokens.sol),
-            (EVM.solana, libs.Tokens.usdt),
-            (EVM.solana, libs.Tokens.usdc),
-            (EVM.neon, libs.Tokens.neon),
-            (EVM.neon, libs.Tokens.wsol),
-            (EVM.neon, libs.Tokens.usdt),
-            (EVM.neon, libs.Tokens.usdc),
+            (Platform.solana, libs.Tokens.neon),
+            (Platform.solana, libs.Tokens.sol),
+            (Platform.solana, libs.Tokens.usdt),
+            (Platform.solana, libs.Tokens.usdc),
+            (Platform.neon, libs.Tokens.neon),
+            (Platform.neon, libs.Tokens.wsol),
+            (Platform.neon, libs.Tokens.usdt),
+            (Platform.neon, libs.Tokens.usdc),
         ],
         ids=str
     )
@@ -121,7 +121,7 @@ class TestPhantomPipeline:
         # request_sol: requests.Response,
         metamask_page: metamask.MetaMaskAccountsPage,
         neonpass_page: neonpass.NeonPassPage,
-        evm: str,
+        platform: str,
         token: str,
     ) -> None:
         """Prepare test environment"""
@@ -131,14 +131,14 @@ class TestPhantomPipeline:
         init_balance = get_balance()
         neonpass_page.connect_phantom()
         neonpass_page.connect_metamask()
-        neonpass_page.switch_evm_source(evm)
+        neonpass_page.switch_platform_source(platform)
         neonpass_page.set_source_token(token.name, 0.001)
-        neonpass_page.confirm_tokens_transfer(evm, token)
+        neonpass_page.confirm_tokens_transfer(platform, token)
         metamask_page.page.bring_to_front()
 
         # check balance
         libs.try_until(
-            lambda: init_balance < get_balance() if evm == EVM.solana else init_balance > get_balance(),
+            lambda: init_balance < get_balance() if platform == Platform.solana else init_balance > get_balance(),
             timeout=60,
             interval=5,
             error_msg=f"{token.name} balance was not changed after tokens transfer",

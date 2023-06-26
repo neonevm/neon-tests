@@ -11,7 +11,7 @@ from playwright.sync_api import Page
 
 from ui import libs
 
-EVM_NETWORKS = {
+PLATFORM_NETWORKS = {
     "night-stand": "NEON EVM night-stand",
     "devnet": "NeonEVM DevNet",
 }
@@ -23,7 +23,7 @@ CHROME_DATA_PATH = pathlib.Path(__file__).absolute().parent.parent / "chrome-dat
 
 @pytest.fixture(scope="session")
 def network(pytestconfig: tp.Any) -> tp.Optional[str]:
-    return EVM_NETWORKS.get(pytestconfig.getoption("--network"), EVM_NETWORKS["devnet"])
+    return PLATFORM_NETWORKS.get(pytestconfig.getoption("--network"), PLATFORM_NETWORKS["devnet"])
 
 
 @pytest.fixture(scope="session")

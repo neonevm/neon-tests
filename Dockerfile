@@ -31,6 +31,13 @@ RUN apt install default-jdk -y && \
     tar -zxvf allure-2.21.0.tgz -C /opt/  && \
     ln -s /opt/allure-2.21.0/bin/allure /usr/bin/allure
 
+# Install UI libs
+RUN apt install -y libxkbcommon0 \
+    libxdamage1 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libcairo2
+
 COPY ./deploy/requirements/* /opt/
 RUN pip3 install -r /opt/prod.txt -r /opt/ui.txt
 COPY ./deploy/oz/run-full-test-suite.sh /opt/neon-tests/
@@ -38,6 +45,9 @@ COPY ./deploy/oz/run-full-test-suite.sh /opt/neon-tests/
 WORKDIR /opt/neon-tests
 ADD ./ /opt/neon-tests
 RUN python3 ./clickfile.py update-contracts
+
+# Install UI requirements
+RUN python3 ./clickfile.py requirements -d ui
 
 ARG OZ_BRANCH=master
 

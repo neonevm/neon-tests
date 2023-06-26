@@ -372,19 +372,8 @@ def install_ui_requirements():
             )
     # install ui test deps,
     # download the Playwright package and install browser binaries for Chromium, Firefox and WebKit.
-    click.echo(green("Install browser binaries for Chromium, Firefox and WebKit."))
-    subprocess.check_call("playwright install", shell=True)
-    click.echo(green("prepare ui tests extensions and extensions user_data"))
-    # prepare ui tests extensions and extensions user_data
-    base_path = pathlib.Path(__file__).absolute().parent
-    for item in (base_path / BASE_EXTENSIONS_TPL_DATA).iterdir():
-        if "extension" in item.name:
-            cmd = f"tar -xf {item.as_posix()} -C {base_path / EXTENSIONS_PATH}"
-        elif "user_data" in item.name:
-            cmd = (
-                f"tar -xf {item.as_posix()} -C {base_path / EXTENSIONS_USER_DATA_PATH}"
-            )
-        subprocess.check_call(cmd, shell=True)
+    click.echo(green("Install browser binaries for Chromium."))
+    subprocess.check_call("playwright install chromium", shell=True)
 
 def install_oz_requirements():
     cwd = pathlib.Path().absolute() / "compatibility/openzeppelin-contracts"

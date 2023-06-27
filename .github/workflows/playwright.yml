@@ -1,0 +1,78 @@
+name: Playwright Tests
+
+on:
+  schedule:
+    - cron: "0 5 * * 6"
+  push:
+    branches: [develop, master]
+  pull_request:
+    branches: [develop, master]
+    types: [ opened, reopened, synchronize ]
+  workflow_dispatch:
+jobs:
+  playwright:
+    timeout-minutes: 60
+    runs-on: ubuntu-22.04
+    env:
+      CHROME_EXT_PASSWORD: "1234Neon5678"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - uses: ./.github/actions/python-requirements
+        with:
+          node-version: 18
+      - name: "Install Playwright Browsers"
+        run: ./clickfile.py requirements -d ui
+      - name: "Run Playwright tests"
+        run: xvfb-run python3 ./clickfile.py run ui --network=devnet --ui-item=neonpass
+      - name: "Generate allure report"
+        uses: ./.github/actions/generate-allure-report
+        if: always()
+        with:
+          container: ${{ env.CONTAINER }}
+          network: ${{ env.NETWORK }}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          tests_name: ui
+
+
+#name: "Playwright Tests"
+#
+#on:
+##  push:
+##    branches: [develop, master]
+##  pull_request:
+##    branches: [develop, master]
+#  pull_request:
+#    types: [ opened, reopened, synchronize ]
+#  workflow_dispatch:
+#jobs:
+#  playwright:
+#    timeout-minutes: 60
+#    runs-on: ubuntu-20.04
+#    env:
+#      CHROME_EXT_PASSWORD: ${{ secrets.CHROME_EXT_PASSWORD }}
+#      NETWORK_NAME: "devnet"
+#    steps:
+#      - name: Launch Playwright tests
+#        id: playwright
+#        env:
+#          ACCOUNTS: ${{ env.ACCOUNTS }}
+#          IMAGE: neonlabsorg/neon_tests:latest
+#        run: |
+#          docker pull ${{ env.IMAGE }}
+#          docker run -i --name=neontests-${{ github.run_id }} \
+#            -e CHROME_EXT_PASSWORD=${{ env.CHROME_EXT_PASSWORD }} \
+#            --entrypoint /bin/bash ${{ env.IMAGE }} \
+#            -c python3 ./clickfile.py run ui --network=devnet --ui-item=neonpass
+# docker logs
+#          docker exec neontests-${{ github.run_id }} pwd
+#          docker exec neontests-${{ github.run_id }} ls -lah
+#          docker cp neontests-${{ github.run_id }}:/usr/src/app/allure-results allure-results
+#          docker rm -f neontests-${{ github.run_id }}
+#
+#      - name: Save report
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: allure-results
+#          path: allure-results

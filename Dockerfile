@@ -36,7 +36,8 @@ RUN apt install -y libxkbcommon0 \
     libxdamage1 \
     libgbm1 \
     libpango-1.0-0 \
-    libcairo2
+    libcairo2 \
+    xvfb
 
 COPY ./deploy/requirements/* /opt/
 RUN pip3 install -r /opt/prod.txt -r /opt/ui.txt

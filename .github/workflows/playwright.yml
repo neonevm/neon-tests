@@ -15,26 +15,39 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       CHROME_EXT_PASSWORD: "1234Neon5678"
-      NETWORK_NAME: "devnet"
+      NETWORK: "devnet"
+      IMAGE: neonlabsorg/neon_tests:7c15ce11a94873cf61e4180ffc2c047b8dfff064
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-      - uses: ./.github/actions/python-requirements
-        with:
-          node-version: 18
-      - name: "Install Playwright Browsers"
-        run: ./clickfile.py requirements -d ui
-      - name: "Run Playwright tests"
-        run: xvfb-run python3 ./clickfile.py run ui --network=${{ env.NETWORK_NAME }} --ui-item=neonpass
+      - name: "Checkout repository"
+        uses: actions/checkout@v3
+#      - uses: actions/checkout@v3
+#      - uses: actions/setup-node@v3
+#      - uses: ./.github/actions/python-requirements
+#        with:
+#          node-version: 18
+#      - name: "Install Playwright Browsers"
+#        run: ./clickfile.py requirements -d ui
+#      - name: "Run Playwright tests"
+#        run: xvfb-run python3 ./clickfile.py run ui --network=${{ env.NETWORK }} --ui-item=neonpass
+      - name: "Pull Docker Test Image"
+        run: docker pull ${{ env.IMAGE }}
+      - name: "Run Playwright Tests"
+        run: |
+          docker run -i --name=neontests-${{ github.run_id }} \
+            -e CHROME_EXT_PASSWORD=${{ env.CHROME_EXT_PASSWORD }} \
+            --entrypoint /bin/bash ${{ env.IMAGE }} \
+            -c "xvfb-run python3 ./clickfile.py run ui --network=${{ env.NETWORK }} --ui-item=neonpass"
       - name: "Generate allure report"
-        uses: ./.github/actions/generate-allure-report
         if: always()
+        uses: ./.github/actions/generate-allure-report
         with:
-          container: ${{ env.CONTAINER }}
+          container: neontests-${{ github.run_id }}
           network: ${{ env.NETWORK }}
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           tests_name: ui
+      - name: "Remove Docker Container"
+        run: docker rm -f neontests-${{ github.run_id }}
 
 
 #name: "Playwright Tests"
@@ -53,7 +66,7 @@ jobs:
 #    runs-on: ubuntu-20.04
 #    env:
 #      CHROME_EXT_PASSWORD: ${{ secrets.CHROME_EXT_PASSWORD }}
-#      NETWORK_NAME: "devnet"
+#      NETWORK: "devnet"
 #    steps:
 #      - name: Launch Playwright tests
 #        id: playwright

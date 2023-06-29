@@ -16,7 +16,8 @@ jobs:
     env:
       CHROME_EXT_PASSWORD: "1234Neon5678"
       NETWORK: "devnet"
-      IMAGE: neonlabsorg/neon_tests:7c15ce11a94873cf61e4180ffc2c047b8dfff064
+      IMAGE: neonlabsorg/neon_tests:94982cd4fbc561f7e41f8fcf5e67acee401de306
+      CONTAINER: neontests-${{ github.run_id }}
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v3
@@ -31,23 +32,26 @@ jobs:
 #        run: xvfb-run python3 ./clickfile.py run ui --network=${{ env.NETWORK }} --ui-item=neonpass
       - name: "Pull Docker Test Image"
         run: docker pull ${{ env.IMAGE }}
+      - name: "Run docker container"
+        run: |
+          docker run -i -d --name=${{ env.CONTAINER }} \
+            -e CHROME_EXT_PASSWORD=${{ env.CHROME_EXT_PASSWORD }} \
+            --entrypoint /bin/bash ${{ env.IMAGE }}
       - name: "Run Playwright Tests"
         run: |
-          docker run -i --name=neontests-${{ github.run_id }} \
-            -e CHROME_EXT_PASSWORD=${{ env.CHROME_EXT_PASSWORD }} \
-            --entrypoint /bin/bash ${{ env.IMAGE }} \
-            -c "xvfb-run python3 ./clickfile.py run ui --network=${{ env.NETWORK }} --ui-item=neonpass"
+          docker exec -i ${{ env.CONTAINER }} \
+            xvfb-run python3 ./clickfile.py run ui --network=${{ env.NETWORK }} --ui-item=neonpass
       - name: "Generate allure report"
         if: always()
         uses: ./.github/actions/generate-allure-report
         with:
-          container: neontests-${{ github.run_id }}
+          container: ${{ env.CONTAINER }}
           network: ${{ env.NETWORK }}
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           tests_name: ui
       - name: "Remove Docker Container"
-        run: docker rm -f neontests-${{ github.run_id }}
+        run: docker rm -f ${{ env.CONTAINER }}
 
 
 #name: "Playwright Tests"

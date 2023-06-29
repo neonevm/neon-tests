@@ -61,6 +61,8 @@ SRC_ALLURE_CATEGORIES = pathlib.Path("./allure/categories.json")
 
 DST_ALLURE_CATEGORIES = pathlib.Path("./allure-results/categories.json")
 
+DST_ALLURE_ENVIRONMENT = pathlib.Path("./allure-results/environment.properties")
+
 BASE_EXTENSIONS_TPL_DATA = "ui/extensions/data"
 
 EXTENSIONS_PATH = "ui/extensions/chrome/plugins"
@@ -339,9 +341,10 @@ def print_oz_balances():
 
 
 def create_allure_environment_opts(opts: dict):
-    with open("./allure-results/environment.properties", "w+") as file:
-        file.write("\n".join(map(lambda x: f"{x[0]}={x[1]}", opts.items())))
-    file.write("\n")
+    with open(DST_ALLURE_ENVIRONMENT, "w+") as file:
+        file.write("\n".join(
+            map(lambda x: f"{x[0]}={x[1] if x[1] and len(x[1]) > 0 else 'empty value'}", opts.items())))
+        file.write("\n")
 
 
 def generate_allure_environment(network_name: str):

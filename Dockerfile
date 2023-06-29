@@ -62,6 +62,15 @@ RUN chmod a+x run-full-test-suite.sh && \
     python3 clickfile.py requirements -d devel && \
     npm install --save-dev hardhat
 
+# Download solc separatly as hardhat implementation is flucky
+ENV DOWNLOAD_PATH="/root/.cache/hardhat-nodejs/compilers-v2/linux-amd64" \
+    REPOSITORY_PATH="https://binaries.soliditylang.org/linux-amd64" \
+    SOLC_BINARY="solc-linux-amd64-v0.7.6+commit.7338295f"
+RUN mkdir -p ${DOWNLOAD_PATH} && \
+    curl -o ${DOWNLOAD_PATH}/${SOLC_BINARY} ${REPOSITORY_PATH}/${SOLC_BINARY} && \
+    curl -o ${DOWNLOAD_PATH}/list.json ${REPOSITORY_PATH}/list.json && \
+    chmod -R 755 ${DOWNLOAD_PATH}
+
 COPY deploy/infra/compile_contracts.sh compatibility/openzeppelin-contracts
 RUN cd compatibility/openzeppelin-contracts npm set audit false
 RUN cd compatibility/openzeppelin-contracts && npm ci

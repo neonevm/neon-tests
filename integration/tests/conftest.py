@@ -12,6 +12,8 @@ import pytest
 from _pytest.config import Config
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
+
+from clickfile import create_allure_environment_opts
 from utils.consts import LAMPORT_PER_SOL
 from utils.erc20wrapper import ERC20Wrapper
 from utils.faucet import Faucet
@@ -99,9 +101,7 @@ def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
 
     allure_dir = pytestconfig.getoption("--alluredir")
     allure_path = pathlib.Path() / allure_dir
-    with open(allure_path / "environment.properties", "w+") as f:
-        f.write("\n".join(map(lambda x: f"{x[0]}={x[1]}", opts.items())))
-        f.write("\n")
+    create_allure_environment_opts(opts)
     categories_from = pathlib.Path() / "allure" / "categories.json"
     categories_to = allure_path / "categories.json"
     shutil.copy(categories_from, categories_to)

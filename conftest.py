@@ -25,6 +25,7 @@ class EnvironmentConfig:
     operator_keys: tp.List[str]
     use_bank: bool
     eth_bank_account: str
+    neonpass_url: str = ""
     account_seed_version: str = "\3"
 
 

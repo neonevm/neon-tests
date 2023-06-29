@@ -17,8 +17,10 @@ class PhantomUnlockPage(BasePage):
 
     def unlock(self, password: str) -> "PhantomWalletsPage":
         components.Input(self.page, placeholder="Password").fill(password)
-        components.Button(self.page, selector="//button[text()='Unlock']").click()
+        components.Button(self.page, text="Unlock").click()
 
+    def connect(self):
+        components.Button(self.page, text="Connect").click()
 
 class PhantomWalletsPage(BasePage):
 

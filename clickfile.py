@@ -255,9 +255,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         "EVM.Version": web3_client.get_evm_version()["result"],
         "CLI.Version": web3_client.get_cli_version()["result"],
     }
-    with open("./allure-results/environment.properties", "w+") as f:
-        f.write("\n".join(map(lambda x: f"{x[0]}={x[1]}", opts.items())))
-        f.write("\n")
+    create_allure_environment_opts(opts)
     # Add epic name for allure result files
     openzeppelin_reports = pathlib.Path("./allure-results")
     res_file_list = [
@@ -338,6 +336,12 @@ def print_oz_balances():
     )
     print(green("\nOZ tests suite profitability:"))
     print(yellow(report))
+
+
+def create_allure_environment_opts(opts: dict):
+    with open("./allure-results/environment.properties", "w+") as file:
+        file.write("\n".join(map(lambda x: f"{x[0]}={x[1]}", opts.items())))
+    file.write("\n")
 
 
 def generate_allure_environment(network_name: str):
@@ -502,7 +506,8 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
 
     command += f" -s --network={network} --make-report"
     cmd = subprocess.run(command, shell=True)
-    shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
+    if name != "ui":
+        shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
 
     if cmd.returncode != 0:
         sys.exit(cmd.returncode)

@@ -62,6 +62,7 @@ def open_safe(context: BrowserContext, url: str, retry_count: int = 3) -> Page:
                 raise TimeoutError
             page.close()
 
+
 def insert_cookies_to_context(resp_cookies, context):
     cookies = []
     for cook in resp_cookies:

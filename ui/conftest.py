@@ -2,12 +2,10 @@ import os
 import pathlib
 import typing as tp
 import uuid
-from datetime import datetime
 
 import allure
 import pytest
 from _pytest.config import Config
-from playwright.sync_api import Page
 
 from ui import libs
 
@@ -75,19 +73,28 @@ def use_persistent_context() -> bool:
     return True
 
 
-@pytest.fixture
-def save_screenshot_on_fail(request: pytest.FixtureRequest, page: Page):
-    fail_count = request.session.testsfailed
-    yield
-    if request.session.testsfailed > fail_count:
-        file_path = (pathlib.Path("/tmp") / f"{datetime.now().strftime('%Y%M%D-%h:%m:%s')}.png").as_posix()
-        page.screenshot(path=file_path, full_page=True)
-        allure.attach.file(
-            file_path,
-            name="fail_screenshot",
-            attachment_type=allure.attachment_type.PNG,
-            extension="png",
-        )
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Save screenshot on fail"""
+    outcome = yield
+    rep = outcome.get_result()
+    if rep.when == 'call' and rep.failed:
+        mode = 'a' if os.path.exists('failures') else 'w'
+        try:
+            with open('failures', mode):
+                if 'page' in item.fixturenames:
+                    page = item.funcargs['page']
+                else:
+                    print('Fail to take screenshot')
+                    return
+            allure.attach(
+                page.screenshot(full_page=True),
+                name='screenshot',
+                attachment_type=allure.attachment_type.PNG,
+                extension="png"
+            )
+        except Exception as e:
+            print('Fail to take screenshot: {}'.format(e))
 
 
 def pytest_generate_tests(metafunc: tp.Any) -> None:

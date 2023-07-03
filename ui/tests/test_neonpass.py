@@ -10,10 +10,12 @@ from dataclasses import dataclass
 
 import pytest
 import requests
+from _pytest.fixtures import FixtureRequest
 from playwright.sync_api import BrowserContext
 from playwright.sync_api import BrowserType
 
 from ui import libs
+from ui.conftest import save_screenshot_on_fail
 from ui.libs import Platform, open_safe
 from ui.pages import metamask, neonpass
 from ui.plugins import browser
@@ -87,19 +89,21 @@ class TestPhantomPipeline:
             return init_balance < balance
 
     @pytest.fixture
-    def metamask_page(self, page, network: str, chrome_extension_password):
+    def metamask_page(self, request: FixtureRequest, page, network: str, chrome_extension_password):
         login_page = metamask.MetaMaskLoginPage(page)
         mm_page = login_page.login(password=chrome_extension_password)
         mm_page.check_funds_protection()
         mm_page.change_network(network)
         mm_page.switch_assets()
         yield mm_page
+        save_screenshot_on_fail(request, page)
         page.close()
 
     @pytest.fixture
-    def neonpass_page(self, context: BrowserContext, neonpass_url: str) -> neonpass.NeonPassPage:
+    def neonpass_page(self, request: FixtureRequest, context: BrowserContext, neonpass_url: str) -> neonpass.NeonPassPage:
         page = open_safe(context, neonpass_url)
         yield neonpass.NeonPassPage(page)
+        save_screenshot_on_fail(request, page)
         page.close()
 
     @pytest.mark.parametrize(

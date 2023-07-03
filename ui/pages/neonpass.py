@@ -71,7 +71,7 @@ class NeonPassPage(BasePage):
 
     def switch_platform_source(self, platform: str) -> None:
         """Change transfer source platform (Neon/Solana)"""
-        selector = f"//1app-wallet-button[@label='From']//*[text()='{platform}']"  # desired platform
+        selector = f"//app-wallet-button[@label='From']//*[text()='{platform}']"  # desired platform
 
         if not self.page.query_selector(selector):  # if it's not already set -> switch
             components.Button(

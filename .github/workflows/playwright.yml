@@ -3,11 +3,6 @@ name: Playwright Tests
 on:
   schedule:
     - cron: "0 1 * * 5"
-  push:
-    branches: [develop, master]
-  pull_request:
-    branches: [develop, master]
-    types: [ opened, reopened, synchronize ]
   workflow_dispatch:
 jobs:
   playwright:

@@ -6,6 +6,7 @@ import uuid
 import allure
 import pytest
 from _pytest.config import Config
+from playwright.sync_api import Page
 
 from ui import libs
 
@@ -73,28 +74,38 @@ def use_persistent_context() -> bool:
     return True
 
 
-@pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):
-    """Save screenshot on fail"""
-    outcome = yield
-    rep = outcome.get_result()
-    if rep.when == 'call' and rep.failed:
-        mode = 'a' if os.path.exists('failures') else 'w'
-        try:
-            with open('failures', mode):
-                if 'page' in item.fixturenames:
-                    page = item.funcargs['page']
-                else:
-                    print('Fail to take screenshot')
-                    return
-            allure.attach(
-                page.screenshot(full_page=True),
-                name='screenshot',
-                attachment_type=allure.attachment_type.PNG,
-                extension="png"
-            )
-        except Exception as e:
-            print('Fail to take screenshot: {}'.format(e))
+# @pytest.hookimpl(tryfirst=True, hookwrapper=True)
+# def pytest_runtest_makereport(item, call):
+#     """Save screenshot on fail"""
+#     outcome = yield
+#     rep = outcome.get_result()
+#     if rep.when == 'call' and rep.failed:
+#         mode = 'a' if os.path.exists('failures') else 'w'
+#         try:
+#             with open('failures', mode):
+#                 if 'page' in item.fixturenames:
+#                     page = item.funcargs['page']
+#                 else:
+#                     print('Fail to take screenshot')
+#                     return
+#             allure.attach(
+#                 page.screenshot(full_page=True),
+#                 name='screenshot',
+#                 attachment_type=allure.attachment_type.PNG,
+#                 extension="png"
+#             )
+#         except Exception as e:
+#             print('Fail to take screenshot: {}'.format(e))
+
+
+def save_screenshot_on_fail(request: pytest.FixtureRequest, page: Page):
+    if request.session.testsfailed:
+        allure.attach(
+            page.screenshot(full_page=True),
+            name='screenshot',
+            attachment_type=allure.attachment_type.PNG,
+            extension="png"
+        )
 
 
 def pytest_generate_tests(metafunc: tp.Any) -> None:

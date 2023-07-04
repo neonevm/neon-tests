@@ -9,7 +9,6 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-22.04
     env:
-      CHROME_EXT_PASSWORD: "1234Neon5678"
       NETWORK: "devnet"
       IMAGE: neonlabsorg/neon_tests:b59be97d2daaf2a2d080c24269b2c9edd085986f
       CONTAINER: neontests-${{ github.run_id }}
@@ -21,7 +20,7 @@ jobs:
       - name: "Run docker container"
         run: |
           docker run -i -d --name=${{ env.CONTAINER }} \
-            -e CHROME_EXT_PASSWORD=${{ env.CHROME_EXT_PASSWORD }} \
+            -e CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} \
             --entrypoint /bin/bash ${{ env.IMAGE }}
       - name: "Run Playwright Tests"
         run: |
@@ -36,5 +35,3 @@ jobs:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           tests_name: ui
-      - name: "Remove Docker Container"
-        run: docker rm -f ${{ env.CONTAINER }}

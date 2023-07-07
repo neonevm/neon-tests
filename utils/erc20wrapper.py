@@ -64,10 +64,10 @@ class ERC20Wrapper:
 
             instruction_tx = contract.functions.createErc20ForSplMintable(
                 self.name, self.symbol, self.decimals, self.account.address
-            ).buildTransaction(tx_object)
+            ).build_transaction(tx_object)
         else:
             self.token_mint = self.create_spl(self.solana_acc, self.decimals)
-            metadata = create_metadata_instruction_data(self.name, self.symbol, 0, ())
+            metadata = create_metadata_instruction_data(self.name, self.symbol)
             txn = Transaction()
             txn.add(
                 create_metadata_instruction(
@@ -81,13 +81,13 @@ class ERC20Wrapper:
             self.sol_client.send_transaction(
                 txn, self.solana_acc, opts=TxOpts(preflight_commitment=Confirmed, skip_confirmation=False)
             )
-            instruction_tx = contract.functions.createErc20ForSpl(bytes(self.token_mint.pubkey)).buildTransaction(
+            instruction_tx = contract.functions.createErc20ForSpl(bytes(self.token_mint.pubkey)).build_transaction(
                 tx_object
             )
 
         instruction_receipt = self.web3_client.send_transaction(self.account, instruction_tx)
         if instruction_receipt:
-            logs = contract.events.ERC20ForSplCreated().processReceipt(instruction_receipt)
+            logs = contract.events.ERC20ForSplCreated().process_receipt(instruction_receipt)
             return logs[0]["args"]["pair"]
         return instruction_receipt
 
@@ -125,60 +125,60 @@ class ERC20Wrapper:
     # TODO: In all this methods verify if exist self.account
     def mint_tokens(self, signer, to_address, amount: int = INIT_TOKEN_AMOUNT, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
-        instruction_tx = self.contract.functions.mint(to_address, amount).buildTransaction(tx)
+        instruction_tx = self.contract.functions.mint(to_address, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def claim(self, signer, from_address, amount: int = INIT_TOKEN_AMOUNT, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
-        instruction_tx = self.contract.functions.claim(from_address, amount).buildTransaction(tx)
+        instruction_tx = self.contract.functions.claim(from_address, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def claim_to(self, signer, from_address, to_address, amount, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
-        instruction_tx = self.contract.functions.claimTo(from_address, to_address, amount).buildTransaction(tx)
+        instruction_tx = self.contract.functions.claimTo(from_address, to_address, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def burn(self, signer, sender_address, amount, gas_price=None, gas=None):
         tx = self.make_tx_object(sender_address, gas_price, gas)
-        instruction_tx = self.contract.functions.burn(amount).buildTransaction(tx)
+        instruction_tx = self.contract.functions.burn(amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def burn_from(self, signer, from_address, amount, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
-        instruction_tx = self.contract.functions.burnFrom(from_address, amount).buildTransaction(tx)
+        instruction_tx = self.contract.functions.burnFrom(from_address, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def approve(self, signer, spender_address, amount, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
-        instruction_tx = self.contract.functions.approve(spender_address, amount).buildTransaction(tx)
+        instruction_tx = self.contract.functions.approve(spender_address, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def transfer(self, signer, address_to, amount, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
-        instruction_tx = self.contract.functions.transfer(address_to, amount).buildTransaction(tx)
+        instruction_tx = self.contract.functions.transfer(address_to, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def transfer_from(self, signer, address_from, address_to, amount, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
-        instruction_tx = self.contract.functions.transferFrom(address_from, address_to, amount).buildTransaction(tx)
+        instruction_tx = self.contract.functions.transferFrom(address_from, address_to, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def transfer_solana(self, signer, address_to, amount, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
-        instruction_tx = self.contract.functions.transferSolana(address_to, amount).buildTransaction(tx)
+        instruction_tx = self.contract.functions.transferSolana(address_to, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def approve_solana(self, signer, spender, amount, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
-        instruction_tx = self.contract.functions.approveSolana(spender, amount).buildTransaction(tx)
+        instruction_tx = self.contract.functions.approveSolana(spender, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp

@@ -7,9 +7,8 @@ on:
     inputs:
       oz_branch:
         type: string
-        default: master
-        required: true
-        description: "Which OZ branch to use"
+        required: false
+        description: "Which OZ branch to use (if it is empty 'master', branch will be used)"
 
 jobs:
   dockerize:
@@ -20,6 +19,9 @@ jobs:
         id: define-env
         run: |
             if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == 'develop'  ]]; then
+                tag='latest'
+                oz_branch='master'
+            elif [["${{ github.event_name }}" == "workflow_dispatch" && "${{ github.ref_name }}" == 'develop' && "${{ github.event.inputs.oz_branch }}" == 'master' ]]; then
                 tag='latest'
                 oz_branch='master'
             elif [[ "${{ github.event.inputs.oz_branch }}" != "" ]]; then
@@ -33,10 +35,21 @@ jobs:
             echo "oz_branch=${oz_branch}"
             echo "tag=${tag}" >> $GITHUB_OUTPUT
             echo "oz_branch=${oz_branch}" >> $GITHUB_OUTPUT
+      - name: Define version branch
+        id: version_branch
+        run: |
+          if [[ "${{ github.ref }}" =~ "refs/heads/"[vt][0-9]+\.[0-9]+\.x ]]; then
+            value=${{ github.ref_name }}
+          else
+            value=""
+          fi
+            echo "value=${value}"
+            echo "value=${value}" >> $GITHUB_OUTPUT
       - name: "Dockerize neon tests"
         uses: ./.github/actions/dockerize-neon-tests
         with:
           image_tag: ${{ steps.define-env.outputs.tag }}
+          version_tag: ${{ steps.version_branch.outputs.value }}
           docker_username: ${{ secrets.DOCKER_USERNAME }}
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
           oz_branch: ${{ steps.define-env.outputs.oz_branch }}

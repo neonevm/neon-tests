@@ -8,7 +8,7 @@ from playwright._impl._api_types import TimeoutError
 
 from ui import components
 from ui import libs
-from ui.conftest import EVM_NETWORKS
+from ui.conftest import PLATFORM_NETWORKS
 from ui.pages import phantom
 from . import BasePage
 
@@ -35,6 +35,20 @@ class MetaMaskLoginPage(BasePage):
         components.Input(self.page, element_id="password").fill(password)
         components.Button(self.page, selector="//input[@id='password']/following::button").click()
         return MetaMaskAccountsPage(self.page)
+
+
+class MetaMaskConnectPage(BasePage):
+    def __init__(self, *args, **kwargs) -> None:
+        super(MetaMaskConnectPage, self).__init__(*args, **kwargs)
+
+    def page_loaded(self) -> None:
+        self.page.wait_for_selector("//div[text()='Connect With MetaMask']")
+
+    def next(self):
+        components.Button(self.page, text="Next").click()
+
+    def connect(self):
+        components.Button(self.page, text="Connect").click()
 
 
 class MetaMaskAccountsPage(BasePage):
@@ -90,9 +104,24 @@ class MetaMaskAccountsPage(BasePage):
         return self._get_balance(self.active_account, libs.Tokens.neon.name)
 
     @property
+    def sol_balance(self) -> float:
+        self.switch_assets()
+        return self._get_balance(self.active_account, libs.Tokens.sol.name)
+
+    @property
+    def wsol_balance(self) -> float:
+        self.switch_assets()
+        return self._get_balance(self.active_account, libs.Tokens.sol.name)
+
+    @property
     def usdt_balance(self) -> float:
         self.switch_assets()
         return self._get_balance(self.active_account, libs.Tokens.usdt.name)
+
+    @property
+    def usdc_balance(self) -> float:
+        self.switch_assets()
+        return self._get_balance(self.active_account, libs.Tokens.usdc.name)
 
     def change_network(self, network: str) -> None:
         """Select EVM network"""
@@ -132,7 +161,7 @@ class MetaMaskAccountsPage(BasePage):
 class MetaMaskWithdrawConfirmPage(BasePage):
     def page_loaded(self):
         self.page.wait_for_selector(
-            selector=f"//div[@class='confirm-page-container-header']/descendant::span[text()='{EVM_NETWORKS['devnet']}']",
+            selector=f"//div[@class='confirm-page-container-header']/descendant::span[text()='{PLATFORM_NETWORKS['devnet']}']",
             timeout=10000,
         )
 

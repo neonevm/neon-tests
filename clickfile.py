@@ -78,7 +78,7 @@ NETWORK_NAME = os.environ.get("NETWORK_NAME", "full_test_suite")
 HOME_DIR = pathlib.Path(__file__).absolute().parent
 
 OZ_BALANCES = "./compatibility/results/oz_balance.json"
-
+NEON_EVM_GITHUB_URL="https://api.github.com/repos/neonlabsorg/neon-evm"
 
 def green(s):
     return click.style(s, fg="green")
@@ -351,8 +351,6 @@ def generate_allure_environment(network_name: str):
 def install_python_requirements():
     command = "pip3 install --upgrade -r deploy/requirements/prod.txt  -r deploy/requirements/devel.txt -r deploy/requirements/ui.txt"
     subprocess.check_call(command, shell=True)
-    command = "pip3 install --no-deps -r deploy/requirements/nodeps.txt"
-    subprocess.check_call(command, shell=True)
 
 
 def install_ui_requirements():
@@ -418,22 +416,44 @@ def requirements(dep):
     if dep == "ui":
         install_ui_requirements()
 
+def is_neon_evm_branch_exist(branch):
+    if branch:
+        neon_evm_branches_obj = requests.get(
+            f"{NEON_EVM_GITHUB_URL}/branches?per_page=100").json()
+        neon_evm_branches = [item["name"] for item in neon_evm_branches_obj]
+
+        if branch in neon_evm_branches:
+            click.echo(f"The branch {branch} exist in the neon_evm repository")
+            return True
+    else:
+        return False
 
 @cli.command(help="Download test contracts from neon-evm repo")
-def contracts():
+@click.option("--branch", default="develop", help="neon_evm branch name. " 
+                               "If branch doesn't exist, develop branch will be used")
+
+def update_contracts(branch):
+    branch = branch if is_neon_evm_branch_exist(branch) else "develop"
+    click.echo(f"Contracts would be downloaded from {branch} branch")
     contract_path = pathlib.Path.cwd() / "contracts" / "external"
     pathlib.Path(contract_path).mkdir(parents=True, exist_ok=True)
 
     response = requests.get(
-        "https://api.github.com/repos/neonlabsorg/neon-evm/contents/evm_loader/solidity?ref=develop"
-    ).json()
-    for item in response:
+        f"{NEON_EVM_GITHUB_URL}/contents/evm_loader/solidity?ref={branch}"
+    )
+    if response.status_code != 200:
+        raise click.ClickException(
+            f"The code is not 200. Response: {response.json()}"
+        )
+
+    for item in response.json():
         r = requests.get(
-            f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/develop/evm_loader/solidity/{item['name']}"
+            f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/{branch}/evm_loader/solidity/{item['name']}"
         )
         if r.status_code == 200:
             with open(contract_path / item["name"], "wb") as f:
                 f.write(r.content)
+            click.echo(f"{item['name']} downloaded")
         else:
             raise click.ClickException(
                 f"The contract {item['name']} is not downloaded. Error: {r.text}"
@@ -513,20 +533,24 @@ def analyze_openzeppelin_results():
     with open("./compatibility/openzeppelin-contracts/package.json") as f:
         version = json.load(f)["version"]
         print(f"OpenZeppelin version: {version}")
-    if version.startswith("4"):
-        threshold = 2432
-    elif version.startswith("3"):
-        threshold = 1350
-    elif version.startswith("2"):
-        threshold = 2295
+
+    if version.startswith("3") or version.startswith("2"):
+        if version.startswith("3"):
+            threshold = 1350
+        elif version.startswith("2"):
+            threshold = 2295
+        print(f"Threshold: {threshold}")
+        if test_report["passing"] < threshold:
+            raise click.ClickException(f"OpenZeppelin {version} tests failed. \n"
+                                       f"Passed: {test_report['passing']}, expected: {threshold}")
+        else:
+            print("OpenZeppelin tests passed")
     else:
-        raise click.ClickException("Unknown OpenZeppelin version")
-    print(f"Threshold: {threshold}")
-    if test_report["passing"] < threshold:
-        raise click.ClickException(f"OpenZeppelin {version} tests failed. \n"
-                                   f"Passed: {test_report['passing']}, expected: {threshold}")
-    else:
-        print("OpenZeppelin tests passed")
+        if test_report["failing"] > 0 or test_report["passing"] == 0:
+            raise click.ClickException(f"OpenZeppelin {version} tests failed. \n"
+                                       f"Failed: {test_report['failing']}, passed: {test_report['passing']}")
+        else:
+            print("OpenZeppelin tests passed")
 
 
 # Base locust options
@@ -833,14 +857,37 @@ def download_logs():
 @infra.command(name="gen-accounts", help="Setup accounts with balance")
 @click.option("-c", "--count", default=2, help="How many users prepare")
 @click.option("-a", "--amount", default=10000, help="How many airdrop")
-def prepare_accounts(count, amount):
-    dapps_cli.prepare_accounts(count, amount)
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+def prepare_accounts(count, amount, network):
+    dapps_cli.prepare_accounts(network, count, amount)
+
+
+def get_network_param(network, param):
+    value = ""
+    if network in networks:
+        value = networks[network][param]
+    if isinstance(value, str):
+        if os.environ.get("SOLANA_IP"):
+            value = value.replace("<solana_ip>", os.environ.get("SOLANA_IP"))
+        if os.environ.get("PROXY_IP"):
+            value = value.replace("<proxy_ip>", os.environ.get("PROXY_IP"))
+    return value
+
+
+@infra.command("print-network-param")
+@click.option(
+    "-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+@click.option(
+    "-p", "--param", type=str, help="any network param like proxy_url, network_id e.t.c")
+def print_network_param(network, param):
+    print(get_network_param(network, param))
 
 
 infra.add_command(deploy, "deploy")
 infra.add_command(destroy, "destroy")
 infra.add_command(download_logs, "download-logs")
 infra.add_command(prepare_accounts, "gen-accounts")
+infra.add_command(print_network_param, "print-network-param")
 
 
 @cli.group("dapps", help="Manage dapps")

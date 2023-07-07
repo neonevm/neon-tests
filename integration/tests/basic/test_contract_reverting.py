@@ -39,7 +39,7 @@ class TestContractReverting(BaseMixin):
             web3.exceptions.ContractLogicError,
             match="execution reverted: ListConstructable: empty list",
         ):
-            contract.constructor([]).buildTransaction()
+            contract.constructor([]).build_transaction()
 
     def test_constructor_raises_no_argument_error(self, solc_version):
         contract = """
@@ -62,7 +62,7 @@ class TestContractReverting(BaseMixin):
         with pytest.raises(
             web3.exceptions.ContractLogicError, match="execution reverted"
         ):
-            contract.constructor([]).buildTransaction()
+            contract.constructor([]).build_transaction()
 
     def test_method_raises_string_based_error(self):
         contract, _ = self.web3_client.deploy_and_get_contract(

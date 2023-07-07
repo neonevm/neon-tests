@@ -255,7 +255,7 @@ class TestEconomics(BaseTests):
         neon_balance_before = self.operator.get_neon_balance()
 
         user_neon_balance_before = self.web3_client.get_balance(self.acc)
-        move_amount = self.web3_client._web3.toWei(5, "ether")
+        move_amount = self.web3_client._web3.to_wei(5, "ether")
 
         contract, _ = self.web3_client.deploy_and_get_contract(
             "NeonToken", "0.8.10", account=self.acc
@@ -263,7 +263,7 @@ class TestEconomics(BaseTests):
 
         instruction_tx = contract.functions.withdraw(
             bytes(sol_user.public_key)
-        ).buildTransaction(
+        ).build_transaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
@@ -316,7 +316,7 @@ class TestEconomics(BaseTests):
         neon_balance_before = self.operator.get_neon_balance()
 
         user_neon_balance_before = self.web3_client.get_balance(self.acc)
-        move_amount = self.web3_client._web3.toWei(5, "ether")
+        move_amount = self.web3_client._web3.to_wei(5, "ether")
 
         contract, _ = self.web3_client.deploy_and_get_contract(
             "NeonToken", "0.8.10", account=self.acc
@@ -324,7 +324,7 @@ class TestEconomics(BaseTests):
 
         instruction_tx = contract.functions.withdraw(
             bytes(sol_user.public_key)
-        ).buildTransaction(
+        ).build_transaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
@@ -423,7 +423,7 @@ class TestEconomics(BaseTests):
         sol_balance_after_deploy = self.operator.get_solana_balance()
         neon_balance_after_deploy = self.operator.get_neon_balance()
 
-        inc_tx = contract.functions.inc().buildTransaction(
+        inc_tx = contract.functions.inc().build_transaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
@@ -536,7 +536,7 @@ class TestEconomics(BaseTests):
         sol_balance_before_increase = self.operator.get_solana_balance()
         neon_balance_before_increase = self.operator.get_neon_balance()
 
-        inc_tx = contract.functions.inc().buildTransaction(
+        inc_tx = contract.functions.inc().build_transaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
@@ -573,7 +573,7 @@ class TestEconomics(BaseTests):
         sol_balance_before_increase = self.operator.get_solana_balance()
         neon_balance_before_increase = self.operator.get_neon_balance()
 
-        inc_tx = contract.functions.inc().buildTransaction(
+        inc_tx = contract.functions.inc().build_transaction(
             {
                 "from": acc2.address,
                 "nonce": self.web3_client.eth.get_transaction_count(acc2.address),
@@ -628,7 +628,7 @@ class TestEconomics(BaseTests):
 
         instruction_tx = contract.functions.moreInstruction(
             0, 100
-        ).buildTransaction(  # 1086 steps in evm
+        ).build_transaction(  # 1086 steps in evm
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
@@ -663,7 +663,7 @@ class TestEconomics(BaseTests):
         sol_balance_before_instruction = self.operator.get_solana_balance()
         neon_balance_before_instruction = self.operator.get_neon_balance()
 
-        instruction_tx = contract.functions.moreInstruction(0, 1500).buildTransaction(
+        instruction_tx = contract.functions.moreInstruction(0, 1500).build_transaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
@@ -700,7 +700,7 @@ class TestEconomics(BaseTests):
         sol_balance_before_instruction = self.operator.get_solana_balance()
         neon_balance_before_instruction = self.operator.get_neon_balance()
 
-        instruction_tx = contract.functions.moreInstruction(0, 1500).buildTransaction(
+        instruction_tx = contract.functions.moreInstruction(0, 1500).build_transaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
@@ -733,7 +733,7 @@ class TestEconomics(BaseTests):
         sol_balance_before_instruction = self.operator.get_solana_balance()
         neon_balance_before_instruction = self.operator.get_neon_balance()
 
-        instruction_tx = contract.functions.moreInstruction(0, 1500).buildTransaction(
+        instruction_tx = contract.functions.moreInstruction(0, 1500).build_transaction(
             {
                 "from": acc2.address,
                 "nonce": self.web3_client.eth.get_transaction_count(acc2.address),
@@ -766,7 +766,7 @@ class TestEconomics(BaseTests):
         sol_balance_before_instruction = self.operator.get_solana_balance()
         neon_balance_before_instruction = self.operator.get_neon_balance()
 
-        instruction_tx = contract.functions.bigString(BIG_STRING).buildTransaction(
+        instruction_tx = contract.functions.bigString(BIG_STRING).build_transaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
@@ -806,7 +806,7 @@ class TestEconomics(BaseTests):
         sol_balance_before_instruction = self.operator.get_solana_balance()
         neon_balance_before_instruction = self.operator.get_neon_balance()
 
-        instruction_tx = contract.functions.bigString(BIG_STRING).buildTransaction(
+        instruction_tx = contract.functions.bigString(BIG_STRING).build_transaction(
             {
                 "from": acc2.address,
                 "nonce": self.web3_client.eth.get_transaction_count(acc2.address),
@@ -837,7 +837,7 @@ class TestEconomics(BaseTests):
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
-        instruction_tx = contract.functions.bigString(BIG_STRING).buildTransaction(
+        instruction_tx = contract.functions.bigString(BIG_STRING).build_transaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
@@ -917,7 +917,7 @@ class TestEconomics(BaseTests):
         )[-20:]
 
         self.web3_client.send_neon(
-            acc2, self.web3_client.toChecksumAddress(contract_address.hex()), 0.5
+            acc2, self.web3_client.to_checksum_address(contract_address.hex()), 0.5
         )
 
         sol_balance_before = self.operator.get_solana_balance()
@@ -946,7 +946,7 @@ class TestEconomics(BaseTests):
         neon_balance_before = self.operator.get_neon_balance()
 
         nonce = self.web3_client.eth.get_transaction_count(acc2.address)
-        contract_address = self.web3_client.toChecksumAddress(
+        contract_address = self.web3_client.to_checksum_address(
             self.web3_client.keccak(
                 rlp.encode((bytes.fromhex(acc2.address[2:]), nonce))
             )[-20:].hex()
@@ -981,7 +981,7 @@ class TestEconomics(BaseTests):
         sol_balance_after_deploy = self.operator.get_solana_balance()
         neon_balance_after_deploy = self.operator.get_neon_balance()
 
-        inc_tx = contract.functions.inc().buildTransaction(
+        inc_tx = contract.functions.inc().build_transaction(
             {
                 "from": acc2.address,
                 "nonce": self.web3_client.eth.get_transaction_count(acc2.address),
@@ -1014,7 +1014,7 @@ class TestEconomics(BaseTests):
             "ALT", "0.8.10", account=self.acc, constructor_args=[8]
         )
 
-        tx = contract.functions.fill(accounts_quantity).buildTransaction(
+        tx = contract.functions.fill(accounts_quantity).build_transaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
@@ -1081,7 +1081,7 @@ class TestEconomics(BaseTests):
         sol_balance_after_deploy = self.operator.get_solana_balance()
         neon_balance_after_deploy = self.operator.get_neon_balance()
 
-        tx = contract.functions.fill(accounts_quantity).buildTransaction(
+        tx = contract.functions.fill(accounts_quantity).build_transaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),

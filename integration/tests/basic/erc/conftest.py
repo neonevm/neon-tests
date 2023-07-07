@@ -48,19 +48,17 @@ def solana_associated_token_erc20(erc20_spl, sol_client, solana_account):
 
 
 @pytest.fixture(scope="class")
-def multiple_actions_erc20(web3_client, faucet):
-    acc = web3_client.create_account()
-    faucet.request_neon(acc.address, 100)
+def multiple_actions_erc20(web3_client, faucet, class_account):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
 
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "multiple_actions_erc20",
+        "ERC20/multiple_actions_erc20",
         "0.8.10",
-        acc,
+        class_account,
         contract_name="multipleActionsERC20",
         constructor_args=[f"Test {symbol}", symbol, 18],
     )
-    return acc, contract
+    return class_account, contract
 
 
 @pytest.fixture(scope="class")
@@ -70,40 +68,26 @@ def erc721(web3_client: NeonWeb3Client, faucet, pytestconfig: Config):
 
 
 @pytest.fixture(scope="class")
-def nft_receiver(web3_client, faucet):
-    acc = web3_client.create_account()
-    faucet.request_neon(acc.address, 100)
+def nft_receiver(web3_client, faucet, class_account):
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "erc721_receiver", "0.8.10", acc, contract_name="ERC721Receiver"
+        "ERC721/erc721_receiver", "0.8.10", class_account, contract_name="ERC721Receiver"
     )
     return contract
 
 
 @pytest.fixture(scope="class")
-def invalid_nft_receiver(web3_client, faucet):
-    acc = web3_client.create_account()
-    faucet.request_neon(acc.address, 100)
+def invalid_nft_receiver(web3_client, faucet, class_account):
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "erc721_invalid_receiver", "0.8.10", acc, contract_name="ERC721Receiver"
+        "ERC721/erc721_invalid_receiver", "0.8.10", class_account, contract_name="ERC721Receiver"
     )
     return contract
 
 
 @pytest.fixture(scope="class")
-def multiple_actions_erc721(web3_client, faucet):
-    acc = web3_client.create_account()
-    faucet.request_neon(acc.address)
+def multiple_actions_erc721(web3_client, faucet, class_account):
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "multiple_actions_erc721", "0.8.10", acc, contract_name="multipleActionsERC721"
+        "ERC721/multiple_actions_erc721", "0.8.10", class_account, contract_name="multipleActionsERC721"
     )
-    return acc, contract
+    return class_account, contract
 
 
-@pytest.fixture(scope="function")
-def erc173(web3_client: NeonWeb3Client, faucet, pytestconfig: Config):
-    acc = web3_client.create_account()
-    faucet.request_neon(acc.address)
-    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "ERC173", "0.8.10", acc
-    )
-    return contract, acc

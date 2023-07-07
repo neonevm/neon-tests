@@ -87,10 +87,11 @@
   },
   "devnet": {
     "evm_loader": "eeLSJgWzzxrqKv1UxtRVVH8FX3qCQWUs9QuAjJpETGU",
-    "proxy_url": "https://devnet.neonevm.org/solana",
+    "proxy_url": "https://devnet.neonevm.org/",
     "network_id": 245022926,
     "solana_url": "https://api.devnet.solana.com",
     "faucet_url": "http://3.13.67.238/request_neon",
+    "neonpass_url": "http://devnet.neonpass.live",
     "spl_neon_mint": "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g",
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
     "use_bank": true,
@@ -231,6 +232,23 @@
       "82YcsM5eN83trdhdShGUF4crAC4CGgFJ7EWd2vnGiSsb",
       "GZ3vKajaDjxFkiczL4g6as3qhMg7tdMgrMrpuApGWF8D",
       "5dyQQATyk4yga4f4m8BCrUF1jdfGQ1mShV4ezFLxyCqW"
+    ]
+  },
+    "geth": {
+    "evm_loader": "",
+    "proxy_url": "http://3.67.164.222:8545",
+    "network_id": 22222,
+    "solana_url": "",
+    "faucet_url": "",
+    "spl_neon_mint": "",
+    "neon_erc20wrapper_address": "",
+    "eth_bank_account": "0x9c10beb3e7eae0fa3e4695fe378bfa3bbf668aded6440e4a8412844d319c19b4",
+
+    "operator_neon_rewards_address": [
+      ""
+    ],
+    "operator_keys": [
+      ""
     ]
   }
 }

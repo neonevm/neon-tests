@@ -22,6 +22,8 @@ class EnvironmentConfig:
     neon_erc20wrapper_address: str
     operator_keys: tp.List[str]
     use_bank: bool
+    eth_bank_account: str
+    neonpass_url: str = ""
     account_seed_version: str = "\3"
 
 
@@ -71,12 +73,14 @@ def pytest_configure(config: Config):
     ), f"Environment {network_name} doesn't exist in envs.json"
     env = environments[network_name]
     if network_name == "devnet":
-        if "SOLANA_URL" in os.environ:
+        if "SOLANA_URL" in os.environ and os.environ["SOLANA_URL"]:
             env["solana_url"] = os.environ.get("SOLANA_URL")
-        if "PROXY_URL" in os.environ:
+        if "PROXY_URL" in os.environ and os.environ["PROXY_URL"]:
             env["proxy_url"] = os.environ.get("PROXY_URL")
     if "use_bank" not in env:
         env["use_bank"] = False
+    if "eth_bank_account" not in env:
+        env["eth_bank_account"] = ""
     if network_name == "aws":
         env["solana_url"] = env["solana_url"].replace(
             "<solana_ip>", os.environ.get("SOLANA_IP")

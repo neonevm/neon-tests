@@ -1,13 +1,9 @@
-# coding: utf-8
-"""
-Created on 2022-06-16
-@author: Eugeny Kurkovich
-"""
 import pathlib
 import typing as tp
 import uuid
 from dataclasses import dataclass
 
+import allure
 import pytest
 import requests
 from _pytest.fixtures import FixtureRequest
@@ -72,15 +68,21 @@ def request_sol(solana_url: str) -> None:
         "params": [Wallets.wall_1.address, 1000000000],
     }
     response = requests.Session().post(url=solana_url, json=json_doc)
-    print(response.json())
     assert response.ok
 
 
-class TestPhantomPipeline:
+@allure.feature("UI")
+@allure.story("NeonPass")
+class TestNeonPass:
     """Tests NeonPass functionality"""
 
     @staticmethod
-    def check_balance(init_balance: float, page: metamask.MetaMaskAccountsPage, platform: str, token: str) -> bool:
+    def check_balance(
+        init_balance: float,
+        page: metamask.MetaMaskAccountsPage,
+        platform: str,
+        token: str,
+    ) -> bool:
         """Compare balance"""
         balance = float(getattr(page, f"{token.name.lower()}_balance"))
         if platform == Platform.neon:
@@ -89,7 +91,9 @@ class TestPhantomPipeline:
             return init_balance < balance
 
     @pytest.fixture
-    def metamask_page(self, request: FixtureRequest, page, network: str, chrome_extension_password):
+    def metamask_page(
+        self, request: FixtureRequest, page, network: str, chrome_extension_password
+    ):
         login_page = metamask.MetaMaskLoginPage(page)
         mm_page = login_page.login(password=chrome_extension_password)
         mm_page.check_funds_protection()
@@ -100,7 +104,9 @@ class TestPhantomPipeline:
         page.close()
 
     @pytest.fixture
-    def neonpass_page(self, request: FixtureRequest, context: BrowserContext, neonpass_url: str) -> neonpass.NeonPassPage:
+    def neonpass_page(
+        self, request: FixtureRequest, context: BrowserContext, neonpass_url: str
+    ) -> neonpass.NeonPassPage:
         page = open_safe(context, neonpass_url)
         yield neonpass.NeonPassPage(page)
         save_screenshot_on_fail(request, page)
@@ -118,7 +124,7 @@ class TestPhantomPipeline:
             (Platform.neon, libs.Tokens.usdt),
             (Platform.neon, libs.Tokens.usdc),
         ],
-        ids=str
+        ids=str,
     )
     def test_send_tokens(
         self,
@@ -129,6 +135,7 @@ class TestPhantomPipeline:
         token: str,
     ) -> None:
         """Prepare test environment"""
+
         def get_balance() -> float:
             return float(getattr(metamask_page, f"{token.name.lower()}_balance"))
 
@@ -142,7 +149,9 @@ class TestPhantomPipeline:
 
         # check balance
         libs.try_until(
-            lambda: init_balance < get_balance() if platform == Platform.solana else init_balance > get_balance(),
+            lambda: init_balance < get_balance()
+            if platform == Platform.solana
+            else init_balance > get_balance(),
             timeout=60,
             interval=5,
             error_msg=f"{token.name} balance was not changed after tokens transfer",

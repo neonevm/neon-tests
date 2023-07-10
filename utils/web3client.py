@@ -1,4 +1,5 @@
 import json
+import time
 import typing as tp
 from decimal import Decimal
 
@@ -9,8 +10,8 @@ import eth_account.signers.local
 from eth_abi import abi
 
 from utils import helpers
+from utils.consts import InputTestConstants, Unit
 from utils.helpers import decode_function_signature
-
 
 class NeonWeb3Client:
     def __init__(self, proxy_url: str, chain_id: int, session: tp.Optional[tp.Any] = None):
@@ -58,6 +59,25 @@ class NeonWeb3Client:
 
     def create_account(self):
         return self._web3.eth.account.create()
+
+    def create_account_with_balance(
+            self, faucet, amount: int = InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value, bank_account=None
+    ):
+        """Creates a new account with balance"""
+        account = self.create_account()
+        balance_before =  float(self.from_wei(self.eth.get_balance(account.address), Unit.ETHER))
+
+        if bank_account is not None:
+            self.send_neon(bank_account, account, amount)
+        else:
+            faucet.request_neon(account.address, amount=amount)
+        for _ in range(20):
+            if  float(self.from_wei(self.eth.get_balance(account.address), Unit.ETHER)) >= (balance_before + amount):
+                break
+            time.sleep(1)
+        else:
+            raise AssertionError(f"Balance didn't changed after 20 seconds ({account.address})")
+        return account
 
     def get_balance(self, address: tp.Union[str, eth_account.signers.local.LocalAccount]):
         if not isinstance(address, str):
@@ -215,3 +235,4 @@ class NeonWeb3Client:
         }
         result = self._web3.eth.call(tx)
         return abi.decode(result_types, result)[0]
+

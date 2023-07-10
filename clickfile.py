@@ -78,7 +78,7 @@ NETWORK_NAME = os.environ.get("NETWORK_NAME", "full_test_suite")
 HOME_DIR = pathlib.Path(__file__).absolute().parent
 
 OZ_BALANCES = "./compatibility/results/oz_balance.json"
-
+NEON_EVM_GITHUB_URL="https://api.github.com/repos/neonlabsorg/neon-evm"
 
 def green(s):
     return click.style(s, fg="green")
@@ -416,22 +416,44 @@ def requirements(dep):
     if dep == "ui":
         install_ui_requirements()
 
+def is_neon_evm_branch_exist(branch):
+    if branch:
+        neon_evm_branches_obj = requests.get(
+            f"{NEON_EVM_GITHUB_URL}/branches?per_page=100").json()
+        neon_evm_branches = [item["name"] for item in neon_evm_branches_obj]
+
+        if branch in neon_evm_branches:
+            click.echo(f"The branch {branch} exist in the neon_evm repository")
+            return True
+    else:
+        return False
 
 @cli.command(help="Download test contracts from neon-evm repo")
-def contracts():
+@click.option("--branch", default="develop", help="neon_evm branch name. " 
+                               "If branch doesn't exist, develop branch will be used")
+
+def update_contracts(branch):
+    branch = branch if is_neon_evm_branch_exist(branch) else "develop"
+    click.echo(f"Contracts would be downloaded from {branch} branch")
     contract_path = pathlib.Path.cwd() / "contracts" / "external"
     pathlib.Path(contract_path).mkdir(parents=True, exist_ok=True)
 
     response = requests.get(
-        "https://api.github.com/repos/neonlabsorg/neon-evm/contents/evm_loader/solidity?ref=develop"
-    ).json()
-    for item in response:
+        f"{NEON_EVM_GITHUB_URL}/contents/evm_loader/solidity?ref={branch}"
+    )
+    if response.status_code != 200:
+        raise click.ClickException(
+            f"The code is not 200. Response: {response.json()}"
+        )
+
+    for item in response.json():
         r = requests.get(
-            f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/develop/evm_loader/solidity/{item['name']}"
+            f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/{branch}/evm_loader/solidity/{item['name']}"
         )
         if r.status_code == 200:
             with open(contract_path / item["name"], "wb") as f:
                 f.write(r.content)
+            click.echo(f"{item['name']} downloaded")
         else:
             raise click.ClickException(
                 f"The contract {item['name']} is not downloaded. Error: {r.text}"

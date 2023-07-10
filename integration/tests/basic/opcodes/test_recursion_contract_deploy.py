@@ -3,8 +3,8 @@ import pytest
 
 from integration.tests.basic.helpers.basic import BaseMixin
 from utils.helpers import generate_text
+from utils.consts import ZERO_ADDRESS
 
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 
 @allure.feature("Opcodes verifications")

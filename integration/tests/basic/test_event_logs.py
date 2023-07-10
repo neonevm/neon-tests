@@ -12,11 +12,9 @@ from integration.tests.basic.helpers.rpc_checks import (
 
 
 @pytest.fixture(scope="class")
-def event_caller(web3_client, faucet):
-    acc = web3_client.create_account()
-    faucet.request_neon(acc.address, 100)
+def event_caller(web3_client, faucet, class_account):
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "EventCaller", "0.8.12", acc
+        "EventCaller", "0.8.12", class_account
     )
     return contract
 
@@ -175,18 +173,32 @@ class TestLogs(BaseMixin):
         )
         assert_log_field_in_neon_trx_receipt(response, changes_count)
 
-    @pytest.mark.skip(reason="test is broken")
     def test_event_logs_deleted_if_trx_was_canceled(self, event_caller):
-        # TODO transaction updateStorageMap wasn't canceled, need to find another way to get transaction with 0 status
         tx = self.make_tx_object(self.sender_account.address)
         changes_count = 50
-        instruction_tx = event_caller.functions.updateStorageMap(
-            changes_count
+        instruction_tx = event_caller.functions.causeOutOfMemory(
         ).build_transaction(tx)
-        resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-        assert resp["status"] == 0
-        event_logs = event_caller.events.NonIndexedArg().process_receipt(resp)
-        assert len(event_logs) == 0
+        try:
+            # TODO: wait for receipt
+            resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+            assert resp["status"] == 0
+            event_logs = event_caller.events.NonIndexedArg().process_receipt(resp)
+            assert len(event_logs) == 0
+        except ValueError as exc:
+            assert exc.args[0] == {
+                'code': -32000,
+                'message': (
+                    '[0]>+ ComputeBudget. ' +
+                    '[0]>+ ComputeBudget. ' +
+                    '[0]>+ NeonEVM. ' +
+                    '[1]=- Instruction: Begin or Continue Transaction from Instruction. ' +
+                    '[1]=- Bump Allocator out of memory. ' +
+                    '[1]=- Error: memory allocation failed, out of memory. ' +
+                    '[1]=- BPF program panicked. ' +
+                    '[1]<- Program failed to complete'
+                )
+            }
+
 
     def test_nested_calls_with_revert(self):
         contract_a, _ = self.web3_client.deploy_and_get_contract(

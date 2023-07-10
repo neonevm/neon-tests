@@ -128,7 +128,6 @@ class TestNeonPass:
     )
     def test_send_tokens(
         self,
-        # request_sol: requests.Response,
         metamask_page: metamask.MetaMaskAccountsPage,
         neonpass_page: neonpass.NeonPassPage,
         platform: str,

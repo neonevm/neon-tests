@@ -76,7 +76,7 @@ class NeonPassPage(BasePage):
         if not self.page.query_selector(selector):  # if it's not already set -> switch
             components.Button(
                 self.page,
-                selector="//1button[@class='switch-button']",
+                selector="//button[@class='switch-button']",
             ).click()
             self.page.wait_for_selector(selector)
 

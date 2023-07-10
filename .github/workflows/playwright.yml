@@ -3,6 +3,8 @@ name: Playwright Tests
 on:
   schedule:
     - cron: "0 1 * * 5"
+  pull_request:
+    types: [ opened, reopened, synchronize ]
   workflow_dispatch:
 jobs:
   playwright:
@@ -10,7 +12,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       NETWORK: "devnet"
-      IMAGE: neonlabsorg/neon_tests:b59be97d2daaf2a2d080c24269b2c9edd085986f
+      IMAGE: neonlabsorg/neon_tests:644291b92a11a38424d7e77e69670d83def871a7
       CONTAINER: neontests-${{ github.run_id }}
     steps:
       - name: "Checkout repository"

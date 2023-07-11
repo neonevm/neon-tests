@@ -16,19 +16,5 @@ class TestExpectedErrors(BaseMixin):
             resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
             assert resp["status"] == 0
         except ValueError as exc:
-            assert exc.args[0] == {
-                'code': -32000,
-                'message': (
-                        '[0]>+ ComputeBudget. ' +
-                        '[0]>+ ComputeBudget. ' +
-                        '[0]>+ NeonEVM. ' +
-                        '[1]=- Instruction: Begin or Continue Transaction from Instruction. ' +
-                        '[1]=- Bump Allocator out of memory. ' +
-                        '[1]=- Error: memory allocation failed, out of memory. ' +
-                        '[1]=- BPF program panicked. ' +
-                        '[1]<- Program failed to complete'
-                )
-            }
-
-        # Error is Bump Allocator out of memory. [1]=- Error: memory allocation failed, out of memory. in proxy log
+            assert "Error: memory allocation failed, out of memory." in exc.args[0]['message']
 

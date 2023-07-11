@@ -97,6 +97,32 @@ class TestPrecompiledContracts(BaseMixin):
 
         assert result.hex() == expected
 
+    def test_staticcall_via_contract(
+        self,
+        web3_client: NeonWeb3Client,
+        precompiled_contract,
+        address,
+        input_data,
+        expected,
+    ):
+        contract = precompiled_contract
+        result = contract.functions.staticcall_precompiled(address, input_data).call()
+
+        assert result.hex() == expected
+
+    def test_delegatecall_via_contract(
+        self,
+        web3_client: NeonWeb3Client,
+        precompiled_contract,
+        address,
+        input_data,
+        expected,
+    ):
+        contract = precompiled_contract
+        result = contract.functions.delegatecall_precompiled(address, input_data).call()
+
+        assert result.hex() == expected
+
     def test_call_via_send_trx(self, web3_client: NeonWeb3Client,
                           address,
                           input_data,

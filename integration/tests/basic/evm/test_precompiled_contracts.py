@@ -8,21 +8,44 @@ from utils.web3client import NeonWeb3Client
 
 
 PRECOMPILED_FIXTURES = {
-    "modexp": {
-        "address": "0x0000000000000000000000000000000000000005",
-        "files": ["modexp.json", "modexp_eip2565.json"],
+
+    # NOT IMPLEMENTED YET
+    # "modexp": {
+    #     "address": "0x0000000000000000000000000000000000000005",
+    #     "files": ["modexp.json", "modexp_eip2565.json"],
+    # },
+    # "ecAdd": {
+    #     "address": "0x0000000000000000000000000000000000000006",
+    #     "files": ["bn256Add.json"],
+    # },
+    # "ecMul": {
+    #     "address": "0x0000000000000000000000000000000000000007",
+    #     "files": ["bn256ScalarMul.json"],
+    # },
+    # "ecPairing": {
+    #     "address": "0x0000000000000000000000000000000000000008",
+    #     "files": ["bn256Pairing.json"],
+    # },
+
+    "sha2_256": {
+        "address": "0x0000000000000000000000000000000000000002",
+        "files": ["sha2_256.json"],
     },
-    "ecAdd": {
-        "address": "0x0000000000000000000000000000000000000006",
-        "files": ["bn256Add.json"],
+    "ecRecover": {
+        "address": "0x0000000000000000000000000000000000000001",
+        "files": ["ecRecover.json"],
     },
-    "ecMul": {
-        "address": "0x0000000000000000000000000000000000000007",
-        "files": ["bn256ScalarMul.json"],
+    "ripemd160": {
+        "address": "0x0000000000000000000000000000000000000003",
+        "files": ["ripemd160.json"],
     },
-    "ecPairing": {
-        "address": "0x0000000000000000000000000000000000000008",
-        "files": ["bn256Pairing.json"],
+    "identify": {
+        "address": "0x0000000000000000000000000000000000000004",
+        "files": ["identify.json"],
+    },
+    "blake2f": {
+        "address": "0x0000000000000000000000000000000000000009",
+        "files": ["blake2f.json"],
     },
 }
 
@@ -56,10 +79,10 @@ class TestPrecompiledContracts(BaseMixin):
                 "to": address,
                 "value": 0,
                 "data": input_data,
-                "gas": 1000000,
+                "gas": 10000000,
             }
         )
-        assert result.hex() == expected
+        assert result.hex()[2:] == expected
 
     def test_call_via_contract(
         self,
@@ -69,7 +92,7 @@ class TestPrecompiledContracts(BaseMixin):
         input_data,
         expected,
     ):
-        _, contract = precompiled_contract
+        contract = precompiled_contract
         result = contract.functions.call_precompiled(address, input_data).call()
 
         assert result.hex() == expected

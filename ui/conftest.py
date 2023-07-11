@@ -114,13 +114,17 @@ def use_persistent_context() -> bool:
 
 
 def save_screenshot_on_fail(request: pytest.FixtureRequest, page: Page):
-    if request.session.testsfailed:
+    # if request.session.testsfailed:
+    try:
         allure.attach(
             page.screenshot(full_page=True),
             name="screenshot",
             attachment_type=allure.attachment_type.PNG,
             extension="png",
         )
+    except:
+        allure.attach("The page is not available for screenshot", "Screenshot", allure.attachment_type.TEXT)
+        return
 
 
 def pytest_generate_tests(metafunc: tp.Any) -> None:

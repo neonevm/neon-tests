@@ -96,3 +96,17 @@ class TestPrecompiledContracts(BaseMixin):
         result = contract.functions.call_precompiled(address, input_data).call()
 
         assert result.hex() == expected
+
+    def test_call_via_send_trx(self, web3_client: NeonWeb3Client,
+                          address,
+                          input_data,
+                          expected):
+        instruction_tx = self.create_contract_call_tx_object()
+        instruction_tx["gas"] = 1000000
+        instruction_tx["data"] = input_data
+        instruction_tx["chainId"] = self.web3_client._chain_id
+        instruction_tx["to"] = address
+        instruction_tx["from"] = self.sender_account.address
+
+        receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        assert receipt["status"] == 1

@@ -100,17 +100,18 @@ class TestNeonPass:
         mm_page.change_network(network)
         mm_page.switch_assets()
         yield mm_page
-        save_screenshot_on_fail(request, page)
-        page.close()
+        save_screenshot_on_fail(request, mm_page.page)
+        mm_page.page.close()
 
     @pytest.fixture
     def neonpass_page(
         self, request: FixtureRequest, context: BrowserContext, neonpass_url: str
     ) -> neonpass.NeonPassPage:
         page = open_safe(context, neonpass_url)
-        yield neonpass.NeonPassPage(page)
-        save_screenshot_on_fail(request, page)
-        page.close()
+        neon_page = neonpass.NeonPassPage(page)
+        yield neon_page
+        save_screenshot_on_fail(request, neon_page.page)
+        neon_page.page.close()
 
     @pytest.mark.parametrize(
         "platform, token",

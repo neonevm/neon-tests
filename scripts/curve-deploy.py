@@ -45,6 +45,7 @@ for key in ["factory", "2", "3", "4"]:
             "id": random.randint(1, 1000),
         },
     )
+    print(f"Response on sendRawTransaction: {resp.text}")
     tr_id = resp.json()["result"]
     time.sleep(5)
     receipt = requests.post(

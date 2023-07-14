@@ -41,7 +41,7 @@ for key in ["factory", "2", "3", "4"]:
         json={
             "jsonrpc": "2.0",
             "method": "eth_sendRawTransaction",
-            "params": [tr["raw_tx"]],
+            "params": ["0x" + tr["raw_tx"]],
             "id": random.randint(1, 1000),
         },
     )

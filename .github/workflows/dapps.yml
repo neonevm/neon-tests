@@ -42,8 +42,7 @@ env:
   AWS_REGION: us-east-2
   AWS_S3_BUCKET: neon-tests-dapps
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-#  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn,compound,curve-factory"
-  ALL_DAPPS: "curve-factory"
+  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn,compound,curve-factory"
 jobs:
   prepare:
     runs-on: ubuntu-20.04

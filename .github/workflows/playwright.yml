@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       NETWORK: "devnet"
-      IMAGE: neonlabsorg/neon_tests:b2c843ae65e51b2cfd07f8a2b6b5a74b58caa5a3
+      IMAGE: neonlabsorg/neon_tests:ce68ccd409071902ec774765329aaf9f3266b779
       CONTAINER: neontests-${{ github.run_id }}
     steps:
       - name: "Checkout repository"

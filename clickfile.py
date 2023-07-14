@@ -341,7 +341,7 @@ def print_oz_balances():
 
 
 def create_allure_environment_opts(opts: dict):
-    with open(DST_ALLURE_ENVIRONMENT, "w+") as file:
+    with open(DST_ALLURE_ENVIRONMENT, "a+") as file:
         file.write("\n".join(
             map(lambda x: f"{x[0]}={x[1] if x[1] and len(x[1]) > 0 else 'empty value'}", opts.items())))
         file.write("\n")

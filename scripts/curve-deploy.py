@@ -2,6 +2,7 @@
 import os
 import time
 import random
+import urllib
 
 import requests
 
@@ -26,7 +27,8 @@ curve_data = curve_resp.json()
 
 for tr in curve_data.values():
     resp = requests.post(
-        f"{FAUCET_URL}/request_neon", json={"amount": 2000, "wallet": tr["origin"]}
+        urllib.parse.urljoin(FAUCET_URL, "request_neon"),
+        json={"amount": 2000, "wallet": tr["origin"]},
     )
     print(f"Faucet response: {resp.text} - {resp.status_code}")
     assert resp.status_code == 200, resp.text

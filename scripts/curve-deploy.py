@@ -58,4 +58,6 @@ for key in ["factory", "2", "3", "4"]:
         },
     ).json()
 
-    assert receipt.status == 1, f"Transaction for factory: {key} failed: {receipt}"
+    assert (
+        receipt["result"]["status"] == 1
+    ), f"Transaction for factory: {key} failed: {receipt}"

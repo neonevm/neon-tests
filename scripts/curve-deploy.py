@@ -14,6 +14,8 @@ CURVE_DATA_URL = (
     "https://raw.githubusercontent.com/curvefi/curve-factory/simple-dev/data.json"
 )
 
+print(f"Faucet url: {FAUCET_URL}")
+print(f"Proxy url: {PROXY_URL}")
 
 curve_resp = requests.get(CURVE_DATA_URL)
 
@@ -26,6 +28,7 @@ for tr in curve_data.values():
     resp = requests.post(
         f"{FAUCET_URL}/request_neon", json={"amount": 2000, "wallet": tr["origin"]}
     )
+    print(f"Faucet response: {resp.text} - {resp.status_code}")
     assert resp.status_code == 200, resp.text
 
 

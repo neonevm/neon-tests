@@ -546,7 +546,7 @@ jobs:
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, swap-report, compound]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, swap-report, compound, curve-factory]
     if: always() && needs.prepare.outputs.network == 'aws'
     steps:
       - uses: actions/checkout@v3
@@ -589,7 +589,7 @@ jobs:
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn, compound]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn, compound, curve-factory]
     if: failure() && github.ref_name == 'develop'
     steps:
       - uses: actions/checkout@v3

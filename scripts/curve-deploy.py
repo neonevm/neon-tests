@@ -26,7 +26,7 @@ for tr in curve_data.values():
     resp = requests.post(
         f"{FAUCET_URL}/request_neon", json={"amount": 2000, "wallet": tr["origin"]}
     )
-    assert resp.status_code == 200
+    assert resp.status_code == 200, resp.text
 
 
 for key in ["factory", "2", "3", "4"]:

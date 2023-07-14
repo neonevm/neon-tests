@@ -3,6 +3,7 @@ pragma solidity ^0.8.12;
 contract EventCaller {
     mapping(address => mapping(uint256 => uint256)) public data;
     string text = "sdsd";
+    string[10] text_array;
 
     event NonArgs();
     event AllTypes(address addr, uint256 u, string s, bytes32 b, bool bol);
@@ -68,10 +69,14 @@ contract EventCaller {
     }
 
     function causeOutOfMemory() public {
+        string memory memory_text = text;
         for (uint i; i < 10; i++) {
-            text = string.concat(text, text);
-            emit NonIndexedArg(text);
+            memory_text = string.concat(memory_text, memory_text);
+            emit NonIndexedArg(memory_text);
+        }
 
+        for (uint i; i < 5; i++) {
+            text_array[i] = memory_text;
         }
     }
 

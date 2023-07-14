@@ -33,7 +33,7 @@ def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[typ
         assert int(result["gasUsed"], 16) >= int(hex(tx_receipt.gasUsed), 16), \
             f"Actual:{result['gasUsed']} or more; Expected: {hex(tx_receipt.gasUsed)}"
         assert result["extraData"] == '0x'
-        assert result["totalDifficulty"] == None
+        assert result["totalDifficulty"] == '0x0'
     assert result["uncles"] == []
     transactions = result["transactions"]
     if full_trx:

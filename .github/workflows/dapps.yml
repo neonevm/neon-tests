@@ -397,6 +397,12 @@ jobs:
         run: |
           python3 scripts/curve-deploy.py
 
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: curve-factory-report
+          path: curve-factory-report.json
+
   compound:
     runs-on: ubuntu-20.04
     if: contains( needs.prepare.outputs.dapps, 'compound')
@@ -539,6 +545,11 @@ jobs:
         continue-on-error: true
         with:
           name: curve-report
+          path: reports/
+      - uses: actions/download-artifact@v3
+        continue-on-error: true
+        with:
+          name: curve-factory-report
           path: reports/
       - name: "Swap report"
         run: ./clickfile.py dapps report --directory=reports

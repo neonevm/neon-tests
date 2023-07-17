@@ -1,4 +1,5 @@
 """Script to deploy Curve contracts from: https://github.com/curvefi/curve-factory/blob/simple-dev/data.json"""
+import json
 import os
 import time
 import random
@@ -14,6 +15,8 @@ NETWORK_ID = os.environ.get("NETWORK_ID")
 CURVE_DATA_URL = (
     "https://raw.githubusercontent.com/curvefi/curve-factory/simple-dev/data.json"
 )
+
+report = {"name": "Curve-factory", "actions": []}
 
 print(f"Faucet url: {FAUCET_URL}")
 print(f"Proxy url: {PROXY_URL}")
@@ -57,7 +60,18 @@ for key in ["factory", "2", "3", "4"]:
             "id": random.randint(1, 1000),
         },
     ).json()
+    report["actions"].append(
+        {
+            "name": f"Deploy {key}",
+            "usedGas": receipt["result"]["gasUsed"],
+            "gasPrice": "0",
+            "tx": tr_id,
+        }
+    )
 
     assert (
         receipt["result"]["status"] == "0x1"
     ), f"Transaction for factory: {key} failed: {receipt}"
+
+    with open("curve-factory-report.json", "w") as f:
+        json.dump(receipt["result"], f)

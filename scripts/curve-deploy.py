@@ -74,4 +74,4 @@ for key in ["factory", "2", "3", "4"]:
     ), f"Transaction for factory: {key} failed: {receipt}"
 
     with open("curve-factory-report.json", "w") as f:
-        json.dump(receipt["result"], f)
+        json.dump(report, f)

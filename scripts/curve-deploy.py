@@ -63,7 +63,7 @@ for key in ["factory", "2", "3", "4"]:
     report["actions"].append(
         {
             "name": f"Deploy {key}",
-            "usedGas": receipt["result"]["gasUsed"],
+            "usedGas": int(receipt["result"]["gasUsed"], 16),
             "gasPrice": "0",
             "tx": tr_id,
         }

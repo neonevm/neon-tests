@@ -36,6 +36,18 @@ for tr in curve_data.values():
     print(f"Faucet response: {resp.text} - {resp.status_code}")
     assert resp.status_code == 200, resp.text
 
+gas_price = int(
+    requests.post(
+        PROXY_URL,
+        json={
+            "jsonrpc": "2.0",
+            "method": "eth_gasPrice",
+            "id": random.randint(1, 1000),
+        },
+    ).json()["result"],
+    16,
+)
+
 
 for key in ["factory", "2", "3", "4"]:
     tr = curve_data[key]
@@ -64,7 +76,7 @@ for key in ["factory", "2", "3", "4"]:
         {
             "name": f"Deploy {key}",
             "usedGas": int(receipt["result"]["gasUsed"], 16),
-            "gasPrice": "0",
+            "gasPrice": gas_price,
             "tx": tr_id,
         }
     )

@@ -11,7 +11,6 @@ from playwright.sync_api import BrowserContext
 from playwright.sync_api import BrowserType
 
 from ui import libs
-from ui.conftest import save_screenshot_on_fail
 from ui.libs import Platform, open_safe
 from ui.pages import metamask, neonpass
 from ui.plugins import browser
@@ -100,7 +99,6 @@ class TestNeonPass:
         mm_page.change_network(network)
         mm_page.switch_assets()
         yield mm_page
-        save_screenshot_on_fail(request, mm_page.page)
         mm_page.page.close()
 
     @pytest.fixture
@@ -110,7 +108,6 @@ class TestNeonPass:
         page = open_safe(context, neonpass_url)
         neon_page = neonpass.NeonPassPage(page)
         yield neon_page
-        save_screenshot_on_fail(request, neon_page.page)
         neon_page.page.close()
 
     @pytest.mark.parametrize(
@@ -139,20 +136,24 @@ class TestNeonPass:
         def get_balance() -> float:
             return float(getattr(metamask_page, f"{token.name.lower()}_balance"))
 
-        init_balance = get_balance()
-        neonpass_page.connect_phantom()
-        neonpass_page.connect_metamask()
-        neonpass_page.switch_platform_source(platform)
-        neonpass_page.set_source_token(token.name, 0.001)
-        neonpass_page.confirm_tokens_transfer(platform, token)
-        metamask_page.page.bring_to_front()
+        with allure.step("Get initial balance in the wallet"):
+            init_balance = get_balance()
 
-        # check balance
-        libs.try_until(
-            lambda: init_balance < get_balance()
-            if platform == Platform.solana
-            else init_balance > get_balance(),
-            timeout=60,
-            interval=5,
-            error_msg=f"{token.name} balance was not changed after tokens transfer",
+        with allure.step(f"On the Neonpass page connect wallets and transfer {token.name} from {platform}"):
+            neonpass_page.connect_phantom()
+            neonpass_page.connect_metamask()
+            neonpass_page.switch_platform_source(platform)
+            neonpass_page.set_source_token(token.name, 0.001)
+            neonpass_page.confirm_tokens_transfer(platform, token)
+
+        with allure.step("Making sure that the balance in the wallet changed"):
+            metamask_page.page.bring_to_front()
+            # check balance
+            libs.try_until(
+                lambda: init_balance < get_balance()
+                if platform == Platform.solana
+                else init_balance > get_balance(),
+                timeout=60,
+                interval=5,
+                error_msg=f"{token.name} balance was not changed after tokens transfer",
         )

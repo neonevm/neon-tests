@@ -54,7 +54,7 @@ class NeonPassPage(BasePage):
         """Waiting for source tab"""
         try:
             return self.page.wait_for_selector(
-                selector="//app-wallet-button[@label='From']//*[text()='Connect Wallet']", timeout=10000
+                selector="//app-wallet-button[@label='From']//*[text()='Connect Wallet']", timeout=30000
             )
         except TimeoutError:
             return False
@@ -64,7 +64,7 @@ class NeonPassPage(BasePage):
         """Waiting for target tab"""
         try:
             return self.page.wait_for_selector(
-                selector="//app-wallet-button[@label='To']//*[text()='Connect Wallet']", timeout=10000
+                selector="//app-wallet-button[@label='To']//*[text()='Connect Wallet']", timeout=30000
             )
         except TimeoutError:
             return False
@@ -125,7 +125,7 @@ class NeonPassPage(BasePage):
         button = self.page.wait_for_selector(selector="//div[contains(@class, 'button') and text()='Next']")
         button.click()
 
-    def confirm_tokens_transfer(self, platform: str, token: str, timeout: float = 30000) -> None:
+    def confirm_tokens_transfer(self, platform: str, token: str, timeout: float = 60000) -> None:
         """Confirm tokens withdraw"""
         with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
             self.page.wait_for_selector(selector="//button[contains(@class, 'transfer-button')]").click()

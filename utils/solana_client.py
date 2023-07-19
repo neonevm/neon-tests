@@ -2,15 +2,18 @@ import time
 import typing as tp
 
 import solana.rpc.api
+import spl.token.client
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
 from solana.rpc.commitment import Commitment, Finalized
+from solana.rpc.types import TxOpts
 from solana.system_program import TransferParams, transfer
 from solana.transaction import Transaction
 from solders.rpc.errors import InternalErrorMessage
 from solders.rpc.responses import RequestAirdropResp
 
 from utils.helpers import wait_condition
+from spl.token.constants import TOKEN_PROGRAM_ID
 
 
 class SolanaClient(solana.rpc.api.Client):
@@ -87,3 +90,22 @@ class SolanaClient(solana.rpc.api.Client):
             ],
             PublicKey(evm_loader_id),
         )[0]
+
+    def create_spl(self, owner: Keypair, decimals: int = 9):
+        token_mint = spl.token.client.Token.create_mint(
+            conn=self,
+            payer=owner,
+            mint_authority=owner.public_key,
+            decimals=decimals,
+            program_id=TOKEN_PROGRAM_ID,
+        )
+        assoc_addr = token_mint.create_associated_token_account(owner.public_key)
+        self.solana_associated_token_acc = assoc_addr
+        token_mint.mint_to(
+            dest=assoc_addr,
+            mint_authority=owner,
+            amount=1000000000000000,
+            opts=TxOpts(skip_confirmation=False),
+        )
+
+        return token_mint

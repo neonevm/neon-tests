@@ -29,7 +29,7 @@ class EnvironmentConfig:
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--network", action="store", default="local", help="Which stand use"
+        "--network", action="store", default="night-stand", help="Which stand use"
     )
     parser.addoption(
         "--make-report",

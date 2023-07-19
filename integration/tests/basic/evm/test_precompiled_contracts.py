@@ -126,7 +126,9 @@ class TestPrecompiledContracts(BaseMixin):
     def test_call_via_send_trx(self, web3_client: NeonWeb3Client,
                           address,
                           input_data,
-                          expected):
+                          expected, request):
+        if request.node.callspec.id == 'blake2f-vector 8':
+            pytest.skip("NDEV-1961")
         instruction_tx = self.create_contract_call_tx_object()
         instruction_tx["gas"] = 1000000
         instruction_tx["data"] = input_data

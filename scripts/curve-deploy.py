@@ -72,6 +72,26 @@ for key in ["factory", "2", "3", "4"]:
             "id": random.randint(1, 1000),
         },
     ).json()
+
+    for _ in range(5):
+        receipt = requests.post(
+            PROXY_URL,
+            json={
+                "jsonrpc": "2.0",
+                "method": "eth_getTransactionReceipt",
+                "params": [tr_id],
+                "id": random.randint(1, 1000),
+            },
+        ).json()
+
+        if receipt["result"] is None:
+            time.sleep(5)
+            continue
+        break
+    else:
+        print(f"Can't get receipt for {tr_id} ({key})")
+        continue
+
     report["actions"].append(
         {
             "name": f"Deploy {key}",

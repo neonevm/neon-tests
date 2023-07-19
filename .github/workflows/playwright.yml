@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       NETWORK: "devnet"
-      IMAGE: neonlabsorg/neon_tests:50a7d3af0ff82a8d3b779c0dbc48fd3116f5e575
+      IMAGE: neonlabsorg/neon_tests:ebd371e6341c088b04b8cf41cde0e9d91804874c
       CONTAINER: neontests-${{ github.run_id }}
     steps:
       - name: "Checkout repository"
@@ -42,6 +42,8 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ playwright ]
     if: failure() && github.ref_name == 'develop'
+    env:
+      BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
     steps:
       - uses: actions/checkout@v3
       - name: Install python requirements

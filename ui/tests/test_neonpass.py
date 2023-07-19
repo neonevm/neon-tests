@@ -11,7 +11,7 @@ from playwright.sync_api import BrowserContext
 from playwright.sync_api import BrowserType
 
 from ui import libs
-from ui.libs import Platform, open_safe
+from ui.libs import Platform, open_safe, Token, Tokens, FeeType
 from ui.pages import metamask, neonpass
 from ui.plugins import browser
 
@@ -111,16 +111,17 @@ class TestNeonPass:
         neon_page.page.close()
 
     @pytest.mark.parametrize(
-        "platform, token",
+        "platform, token, fee_type",
         [
-            (Platform.solana, libs.Tokens.neon),
-            (Platform.solana, libs.Tokens.sol),
-            (Platform.solana, libs.Tokens.usdt),
-            (Platform.solana, libs.Tokens.usdc),
-            (Platform.neon, libs.Tokens.neon),
-            (Platform.neon, libs.Tokens.wsol),
-            (Platform.neon, libs.Tokens.usdt),
-            (Platform.neon, libs.Tokens.usdc),
+            (Platform.solana, Tokens.neon, FeeType.neon),
+            (Platform.solana, Tokens.neon, FeeType.sol),
+            (Platform.solana, Tokens.sol, FeeType.none),
+            (Platform.solana, Tokens.usdt, FeeType.none),
+            (Platform.solana, Tokens.usdc, FeeType.none),
+            (Platform.neon, Tokens.neon, FeeType.none),
+            (Platform.neon, Tokens.wsol, FeeType.none),
+            (Platform.neon, Tokens.usdt, FeeType.none),
+            (Platform.neon, Tokens.usdc, FeeType.none),
         ],
         ids=str,
     )
@@ -129,7 +130,8 @@ class TestNeonPass:
         metamask_page: metamask.MetaMaskAccountsPage,
         neonpass_page: neonpass.NeonPassPage,
         platform: str,
-        token: str,
+        token: Token,
+        fee_type: str,
     ) -> None:
         """Prepare test environment"""
 
@@ -144,6 +146,7 @@ class TestNeonPass:
             neonpass_page.connect_metamask()
             neonpass_page.switch_platform_source(platform)
             neonpass_page.set_source_token(token.name, 0.001)
+            neonpass_page.set_transaction_fee(platform, token.name, fee_type)
             neonpass_page.confirm_tokens_transfer(platform, token)
 
         with allure.step("Making sure that the balance in the wallet changed"):

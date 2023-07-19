@@ -49,7 +49,7 @@ class TestPrecompiledSplToken(BaseMixin):
 
     @pytest.fixture(scope="class")
     def token_mint(self, solana_account, sol_client, spl_token_caller, class_account, web3_client):
-        token_mint = sol_client.create_spl(solana_account, DECIMALS)
+        token_mint, _ = sol_client.create_spl(solana_account, DECIMALS)
         metadata = create_metadata_instruction_data(NAME, SYMBOL)
         txn = Transaction()
         txn.add(
@@ -80,7 +80,7 @@ class TestPrecompiledSplToken(BaseMixin):
 
     @pytest.fixture(scope="class")
     def non_initialized_token_mint(self, solana_account, sol_client, spl_token_caller, class_account, web3_client):
-        token_mint = sol_client.create_spl(solana_account, DECIMALS)
+        token_mint, _ = sol_client.create_spl(solana_account, DECIMALS)
         metadata = create_metadata_instruction_data(NAME, SYMBOL)
         txn = Transaction()
         txn.add(

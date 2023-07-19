@@ -100,7 +100,6 @@ class SolanaClient(solana.rpc.api.Client):
             program_id=TOKEN_PROGRAM_ID,
         )
         assoc_addr = token_mint.create_associated_token_account(owner.public_key)
-        self.solana_associated_token_acc = assoc_addr
         token_mint.mint_to(
             dest=assoc_addr,
             mint_authority=owner,
@@ -108,4 +107,4 @@ class SolanaClient(solana.rpc.api.Client):
             opts=TxOpts(skip_confirmation=False),
         )
 
-        return token_mint
+        return token_mint, assoc_addr

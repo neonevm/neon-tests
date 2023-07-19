@@ -34,8 +34,8 @@ TF_ENV = {
 TF_ENV.update(
     {
         "TF_BACKEND_CONFIG": f"-backend-config=\"bucket={TF_ENV['AWS_S3_BUCKET']}\" "
-                             f"-backend-config=\"key={TF_ENV['TF_STATE_KEY']}\" "
-                             f"-backend-config=\"region={TF_ENV['AWS_REGION']}\" ",
+        f"-backend-config=\"key={TF_ENV['TF_STATE_KEY']}\" "
+        f"-backend-config=\"region={TF_ENV['AWS_REGION']}\" ",
     }
 )
 
@@ -56,7 +56,7 @@ def get_solana_ip() -> str:
         env=TF_ENV,
         cwd="deploy/aws",
         stdout=subprocess.PIPE,
-        text=True
+        text=True,
     ).stdout.strip()
     if isinstance(solana_ip, bytes):
         solana_ip = solana_ip.decode()
@@ -70,7 +70,7 @@ def get_proxy_ip() -> str:
         env=TF_ENV,
         cwd="deploy/aws",
         stdout=subprocess.PIPE,
-        text=True
+        text=True,
     ).stdout.strip()
     if isinstance(proxy_ip, bytes):
         proxy_ip = proxy_ip.decode()
@@ -78,8 +78,15 @@ def get_proxy_ip() -> str:
 
 
 def deploy_infrastructure() -> dict:
-    subprocess.check_call(f"terraform init {TF_ENV['TF_BACKEND_CONFIG']}", shell=True, env=TF_ENV, cwd=TF_CWD)
-    subprocess.check_call("terraform apply --auto-approve=true", shell=True, env=TF_ENV, cwd=TF_CWD)
+    subprocess.check_call(
+        f"terraform init {TF_ENV['TF_BACKEND_CONFIG']}",
+        shell=True,
+        env=TF_ENV,
+        cwd=TF_CWD,
+    )
+    subprocess.check_call(
+        "terraform apply --auto-approve=true", shell=True, env=TF_ENV, cwd=TF_CWD
+    )
     proxy_ip = get_proxy_ip()
     solana_ip = get_solana_ip()
     infra = dict(solana_ip=solana_ip, proxy_ip=proxy_ip)
@@ -88,12 +95,24 @@ def deploy_infrastructure() -> dict:
 
 
 def destroy_infrastructure():
-    subprocess.run(f"terraform init {TF_ENV['TF_BACKEND_CONFIG']}", shell=True, env=TF_ENV, cwd=TF_CWD)
-    subprocess.run("terraform destroy --auto-approve=true", shell=True, env=TF_ENV, cwd=TF_CWD)
+    subprocess.run(
+        f"terraform init {TF_ENV['TF_BACKEND_CONFIG']}",
+        shell=True,
+        env=TF_ENV,
+        cwd=TF_CWD,
+    )
+    subprocess.run(
+        "terraform destroy --auto-approve=true", shell=True, env=TF_ENV, cwd=TF_CWD
+    )
 
 
 def download_remote_docker_logs():
-    subprocess.run(f"terraform init {TF_ENV['TF_BACKEND_CONFIG']}", shell=True, env=TF_ENV, cwd=TF_CWD)
+    subprocess.run(
+        f"terraform init {TF_ENV['TF_BACKEND_CONFIG']}",
+        shell=True,
+        env=TF_ENV,
+        cwd=TF_CWD,
+    )
     proxy_ip = get_proxy_ip()
     solana_ip = get_solana_ip()
 
@@ -105,18 +124,18 @@ def download_remote_docker_logs():
         os.mkdir(f"{home_path}/.ssh")
 
     subprocess.run(
-        f'ssh-keyscan -H {solana_ip} >> {home_path}/.ssh/known_hosts', shell=True)
+        f"ssh-keyscan -H {solana_ip} >> {home_path}/.ssh/known_hosts", shell=True
+    )
     subprocess.run(
-        f'ssh-keyscan -H {proxy_ip} >> {home_path}/.ssh/known_hosts', shell=True)
+        f"ssh-keyscan -H {proxy_ip} >> {home_path}/.ssh/known_hosts", shell=True
+    )
     ssh_client = SSHClient()
     ssh_client.load_system_host_keys()
-    ssh_client.connect(solana_ip, username='ubuntu',
-                       key_filename=ssh_key, timeout=120)
+    ssh_client.connect(solana_ip, username="ubuntu", key_filename=ssh_key, timeout=120)
 
     upload_service_logs(ssh_client, "solana", artifact_logs)
 
-    ssh_client.connect(proxy_ip, username='ubuntu',
-                       key_filename=ssh_key, timeout=120)
+    ssh_client.connect(proxy_ip, username="ubuntu", key_filename=ssh_key, timeout=120)
     services = ["postgres", "dbcreation", "indexer", "proxy", "faucet"]
     for service in services:
         upload_service_logs(ssh_client, service, artifact_logs)
@@ -127,10 +146,11 @@ def upload_service_logs(ssh_client, service, artifact_logs):
     print(f"Upload logs for service: {service}")
     ssh_client.exec_command(f"touch /tmp/{service}.log.bz2")
     stdin, stdout, stderr = ssh_client.exec_command(
-        f'sudo docker logs {service} 2>&1 | pbzip2 -f > /tmp/{service}.log.bz2')
+        f"sudo docker logs {service} 2>&1 | pbzip2 -f > /tmp/{service}.log.bz2"
+    )
     print(stdout.read())
     print(stderr.read())
-    scp_client.get(f'/tmp/{service}.log.bz2', artifact_logs)
+    scp_client.get(f"/tmp/{service}.log.bz2", artifact_logs)
 
 
 def prepare_accounts(network_name, count, amount) -> tp.List:
@@ -146,7 +166,7 @@ def prepare_accounts(network_name, count, amount) -> tp.List:
             "solana_url": get_network_param(network_name, "solana_url"),
             "faucet_url": get_network_param(network_name, "faucet_url"),
         }
-    network["network_id"] = get_network_param(network_name, "network_id"),
+    network["network_id"] = (get_network_param(network_name, "network_id"),)
     accounts = faucet_cli.prepare_wallets_with_balance(network, count, amount)
     if os.environ.get("CI"):
         set_github_env(dict(accounts=",".join(accounts)))
@@ -154,15 +174,23 @@ def prepare_accounts(network_name, count, amount) -> tp.List:
 
 
 def get_solana_accounts_in_tx(eth_transaction):
-    web3_client = NeonWeb3Client(os.environ.get("PROXY_URL"), os.environ.get("CHAIN_ID", 111))
+    web3_client = NeonWeb3Client(
+        os.environ.get("PROXY_URL"), os.environ.get("CHAIN_ID", 111)
+    )
     sol_client = SolanaClient(os.environ.get("SOLANA_URL"))
     trx = web3_client.get_solana_trx_by_neon(eth_transaction)
-    tr = sol_client.get_transaction(Signature.from_string(trx["result"][0]), max_supported_transaction_version=0)
+    tr = sol_client.get_transaction(
+        Signature.from_string(trx["result"][0]), max_supported_transaction_version=0
+    )
     if tr.value.transaction.transaction.message.address_table_lookups:
         alt = tr.value.transaction.transaction.message.address_table_lookups
-        return len(alt[0].writable_indexes) + len(alt[0].readonly_indexes), len(trx["result"])
+        return len(alt[0].writable_indexes) + len(alt[0].readonly_indexes), len(
+            trx["result"]
+        )
     else:
-        return len(tr.value.transaction.transaction.message.account_keys), len(trx["result"])
+        return len(tr.value.transaction.transaction.message.account_keys), len(
+            trx["result"]
+        )
 
 
 def print_report(directory):
@@ -172,7 +200,8 @@ def print_report(directory):
     for path in glob.glob(str(pathlib.Path(directory) / "*-report.json")):
         with open(path, "r") as f:
             rep = json.load(f)
-            reports[rep["name"]] = rep["actions"]
+            if "actions" in rep:
+                reports[rep["name"]] = rep["actions"]
 
     for app in reports:
         out[app] = []
@@ -187,6 +216,6 @@ def print_report(directory):
             out[app].append(row)
 
     for app in out:
-        print(f"Cost report for \"{app.title()}\" dApp")
+        print(f'Cost report for "{app.title()}" dApp')
         print("----------------------------------------")
         print(tabulate.tabulate(out[app], headers, tablefmt="simple_grid"))

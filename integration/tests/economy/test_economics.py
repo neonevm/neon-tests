@@ -20,6 +20,7 @@ from spl.token.instructions import (
     create_associated_token_account,
     get_associated_token_address,
 )
+
 from utils.consts import LAMPORT_PER_SOL
 from utils.helpers import wait_condition
 
@@ -37,21 +38,23 @@ SOLCX_VERSIONS = ["0.6.6", "0.8.6", "0.8.10"]
 INSUFFICIENT_FUNDS_ERROR = "insufficient funds for"
 GAS_LIMIT_ERROR = "gas limit reached"
 LOGGER = logging.getLogger(__name__)
-BIG_STRING = "But I must explain to you how all this mistaken idea of denouncing pleasure and " \
-             "praising pain was born and I will give you a complete account of the system, and " \
-             "expound the actual teachings of the great explorer of the truth, the master-builder " \
-             "of human happiness. No one rejects, dislikes, or avoids pleasure itself, because it" \
-             " is pleasure, but because those who do not know how to pursue pleasure rationally" \
-             " encounter consequences that are extremely painful. Nor again is there anyone who" \
-             " loves or pursues or desires to obtain pain of itself, because it is pain, but" \
-             " because occasionally circumstances occur in which toil and pain can procure him" \
-             " some great pleasure. To take a trivial example, which of us ever undertakes laborious" \
-             " physical exercise, except to obtain some advantage from it? But who has any right to" \
-             " find fault with a man who chooses to enjoy a pleasure that has no annoying consequences," \
-             " or one who avoids a pain that produces no resultant pleasure? On the other hand," \
-             " we denounce with righteous indigna" \
-             " some great pleasure. To take a trivial example, which of us ever undertakes laborious" \
-             " physical exercise, except to obtain some advantage from it? But who has any right to"
+BIG_STRING = (
+    "But I must explain to you how all this mistaken idea of denouncing pleasure and "
+    "praising pain was born and I will give you a complete account of the system, and "
+    "expound the actual teachings of the great explorer of the truth, the master-builder "
+    "of human happiness. No one rejects, dislikes, or avoids pleasure itself, because it"
+    " is pleasure, but because those who do not know how to pursue pleasure rationally"
+    " encounter consequences that are extremely painful. Nor again is there anyone who"
+    " loves or pursues or desires to obtain pain of itself, because it is pain, but"
+    " because occasionally circumstances occur in which toil and pain can procure him"
+    " some great pleasure. To take a trivial example, which of us ever undertakes laborious"
+    " physical exercise, except to obtain some advantage from it? But who has any right to"
+    " find fault with a man who chooses to enjoy a pleasure that has no annoying consequences,"
+    " or one who avoids a pain that produces no resultant pleasure? On the other hand,"
+    " we denounce with righteous indigna"
+    " some great pleasure. To take a trivial example, which of us ever undertakes laborious"
+    " physical exercise, except to obtain some advantage from it? But who has any right to"
+)
 
 
 # @pytest.fixture(scope="session", autouse=True)
@@ -136,9 +139,9 @@ class TestEconomics(BaseTests):
 
     @allure.step("Get gas used percent")
     def get_gas_used_percent(self, receipt):
-        trx = self.web3_client.eth.get_transaction(receipt['transactionHash'])
-        estimated_gas = trx['gas']
-        percent = round(receipt['gasUsed'] / estimated_gas * 100, 2)
+        trx = self.web3_client.eth.get_transaction(receipt["transactionHash"])
+        estimated_gas = trx["gas"]
+        percent = round(receipt["gasUsed"] / estimated_gas * 100, 2)
         with allure.step(f"Gas used percent: {percent}%"):
             pass
 
@@ -954,7 +957,9 @@ class TestEconomics(BaseTests):
         with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
             self.web3_client.send_neon(acc2, contract_address, 1, gas=1)
 
-        _, contract_deploy_tx = self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
+        _, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
+            "Counter", "0.8.10", account=acc2
+        )
 
         sol_balance_after_deploy = self.operator.get_solana_balance()
         neon_balance_after_deploy = self.operator.get_neon_balance()

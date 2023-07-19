@@ -2,6 +2,10 @@
 line-length = 120
 target-version = ['py39']
 
+[tool.isort]
+py_version=39
+profile="black"
+
 [tool.pytest.ini_options]
 timeout = 300
 markers = [

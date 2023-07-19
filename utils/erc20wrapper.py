@@ -66,7 +66,8 @@ class ERC20Wrapper:
                 self.name, self.symbol, self.decimals, self.account.address
             ).build_transaction(tx_object)
         else:
-            self.token_mint = self.create_spl(self.solana_acc, self.decimals)
+            self.token_mint, self.solana_associated_token_acc = self.sol_client.create_spl(self.solana_acc,
+                                                                                           self.decimals)
             metadata = create_metadata_instruction_data(self.name, self.symbol)
             txn = Transaction()
             txn.add(
@@ -90,25 +91,6 @@ class ERC20Wrapper:
             logs = contract.events.ERC20ForSplCreated().process_receipt(instruction_receipt)
             return logs[0]["args"]["pair"]
         return instruction_receipt
-
-    def create_spl(self, owner: Keypair, decimals: int = 9):
-        token_mint = spl.token.client.Token.create_mint(
-            conn=self.sol_client,
-            payer=owner,
-            mint_authority=owner.public_key,
-            decimals=decimals,
-            program_id=TOKEN_PROGRAM_ID,
-        )
-        assoc_addr = token_mint.create_associated_token_account(owner.public_key)
-        self.solana_associated_token_acc = assoc_addr
-        token_mint.mint_to(
-            dest=assoc_addr,
-            mint_authority=owner,
-            amount=INIT_TOKEN_AMOUNT,
-            opts=TxOpts(skip_confirmation=False),
-        )
-
-        return token_mint
 
     def get_wrapper_contract(self):
         contract_path = (pathlib.Path.cwd() / "contracts" / "erc20interface.sol").absolute()

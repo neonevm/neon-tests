@@ -1,3 +1,4 @@
+import allure
 import pytest
 import web3
 from eth_utils import is_hex
@@ -24,10 +25,6 @@ class Mint:
         self.freeze_authority = data[3].hex()
         self.mint_authority = data[4].hex()
 
-    def __str__(self):
-        return {"supply": self.supply, "decimal": self.decimals, "is_initialized": self.is_initialized,
-                "freeze_authority": self.freeze_authority, "mint_authority": self.mint_authority}.__str__()
-
 
 class Account:
     def __init__(self, data):
@@ -39,7 +36,8 @@ class Account:
         self.close_authority = data[5].hex()
         self.state = data[6]
 
-
+@allure.feature("EVM tests")
+@allure.story("Verify precompiled spl token contract")
 class TestPrecompiledSplToken(BaseMixin):
 
     def get_account(self, contract, account):

@@ -1,3 +1,4 @@
+import allure
 import pytest
 from solana.keypair import Keypair
 
@@ -8,6 +9,8 @@ SYMBOL = "MPX"
 URI = "uri"
 
 
+@allure.feature("EVM tests")
+@allure.story("Verify precompiled metaplex contract")
 class TestPrecompiledMetaplex(BaseMixin):
 
     @pytest.fixture(scope="class")

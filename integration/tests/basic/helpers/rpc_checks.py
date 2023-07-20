@@ -12,6 +12,7 @@ def is_hex(hex_data: str) -> bool:
     except (ValueError, TypeError):
         return False
 
+
 def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[types.TxReceipt],
                         pending: bool = False):
     assert "error" not in block
@@ -59,29 +60,38 @@ def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[typ
 
 
 def assert_log_field_in_neon_trx_receipt(responce, events_count):
-    # TODO: fix checking of format
-    return
-
-    logs = responce["result"]["logs"]
-    assert_neon_logs(logs)
+    print(responce)
     expected_event_types = ["ENTER CALL"]
     for i in range(events_count):
         expected_event_types.append("LOG")
     expected_event_types.append("EXIT STOP")
     expected_event_types.append("RETURN")
+    all_logs = []
 
-    event_types = [log["neonEventType"] for log in sorted(logs, key=lambda x: int(x["neonEventOrder"], 0))]
+    for trx in responce["result"]["solanaTransactions"]:
+        expected_hex_fields = ["solanaBlockNumber", "solanaLamportSpent"]
+        assert_fields_are_hex(trx, expected_hex_fields)
+
+        assert trx['solanaTransactionIsSuccess'] == True
+        instructions = trx["solanaInstructions"]
+        assert instructions != []
+        for instruction in instructions:
+            expected_hex_fields = ["solanaInstructionIndex", "svmHeapSizeLimit",
+                                   "svmHeapSizeUsed", "svmCyclesLimit", "svmCyclesUsed", "neonInstructionCode",
+                                   "neonAlanIncome", "neonGasUsed", "neonTotalGasUsed"]
+            assert_fields_are_hex(instruction, expected_hex_fields)
+            assert instruction["solanaProgram"] == "NeonEVM"
+            assert instruction["solanaInnerInstructionIndex"] is None
+            assert instruction["neonStepLimit"] is None
+            neon_logs = instruction["neonLogs"]
+            assert neon_logs != []
+            for log in neon_logs:
+                all_logs.append(log)
+    event_types = [log["neonEventType"] for log in sorted(all_logs, key=lambda x: x["neonEventOrder"])]
 
     assert event_types == expected_event_types, f"Actual: {event_types}; Expected: {expected_event_types}"
 
 
-def assert_neon_logs(logs):
-    # TODO: fix checking of format
-    return
-
-    expected_hex_fields = ["neonIxIdx", "neonEventLevel", "neonEventOrder", "transactionHash", "blockHash",
-                           "blockNumber", "transactionIndex"]
-
-    for item in logs:
-        for field in expected_hex_fields:
-            assert is_hex(item[field]), f"field {field} is not correct. Actual : {item[field]}"
+def assert_fields_are_hex(object, expected_hex_fields):
+    for field in expected_hex_fields:
+        assert is_hex(object[field]), f"field {field} is not correct. Actual : {object[field]}"

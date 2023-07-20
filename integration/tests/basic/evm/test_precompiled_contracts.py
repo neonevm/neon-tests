@@ -133,7 +133,7 @@ class TestPrecompiledContracts(BaseMixin):
         balance_before = self.get_balance_from_wei(address)
 
         instruction_tx = self.create_contract_call_tx_object()
-        instruction_tx["gas"] = 1000000
+        instruction_tx["gas"] = 10000000
         instruction_tx["data"] = input_data
         instruction_tx["chainId"] = self.web3_client._chain_id
         instruction_tx["to"] = address

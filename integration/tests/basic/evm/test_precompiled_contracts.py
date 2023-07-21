@@ -132,12 +132,11 @@ class TestPrecompiledContracts(BaseMixin):
         amount = random.choice([0, 10])
         balance_before = self.get_balance_from_wei(address)
 
-        instruction_tx = self.create_contract_call_tx_object()
-        instruction_tx["gas"] = 10000000
+        instruction_tx = self.create_contract_call_tx_object(amount=amount)
+        instruction_tx["gas"] = 100000000
         instruction_tx["data"] = input_data
         instruction_tx["chainId"] = self.web3_client._chain_id
         instruction_tx["to"] = address
-        instruction_tx["value"] = amount
         instruction_tx["from"] = self.sender_account.address
 
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)

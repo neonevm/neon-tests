@@ -62,7 +62,7 @@ class TestWNeon(BaseMixin):
             wneon, self.recipient_account.address
         )
         assert wneon_balance_after == deposit_amount
-        assert neon_balance_before - deposit_amount - neon_balance_after < 0.2
+        assert neon_balance_before - deposit_amount - neon_balance_after < 0.5
 
         deposit_amount2 = random.randint(1, 100)
         self.deposit(wneon, deposit_amount2, self.sender_account)

@@ -14,7 +14,7 @@ inputs:
     description: 'aws secret access key'
     required: true
   tests_name:
-    description: 'basic/oz/economic'
+    description: 'basic/oz/economic/ui'
     required: true
 runs:
   using: composite

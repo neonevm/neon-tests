@@ -162,7 +162,7 @@ class MetaMaskWithdrawConfirmPage(BasePage):
     def page_loaded(self):
         self.page.wait_for_selector(
             selector=f"//div[@class='confirm-page-container-header']/descendant::span[text()='{PLATFORM_NETWORKS['devnet']}']",
-            timeout=10000,
+            timeout=30000,
         )
 
     def _close_withdraw_notice_box(self):
@@ -178,7 +178,7 @@ class MetaMaskWithdrawConfirmPage(BasePage):
         except TimeoutError:
             pass
 
-    def withdraw_confirm(self, timeout: float = 10000) -> None:
+    def withdraw_confirm(self, timeout: float = 60000) -> None:
         """Confirm token transfer via neonpass"""
         self._close_withdraw_notice_box()
         try:

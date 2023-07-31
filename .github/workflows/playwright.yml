@@ -1,4 +1,5 @@
-name: Playwright Tests
+name: "Playwright Tests"
+run-name: Playwright tests for ${{ github.event.pull_request.title }}
 
 on:
   schedule:
@@ -12,7 +13,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       NETWORK: "devnet"
-      IMAGE: neonlabsorg/neon_tests:ebd371e6341c088b04b8cf41cde0e9d91804874c
+      IMAGE: neonlabsorg/neon_tests:latest
       CONTAINER: neontests-${{ github.run_id }}
     steps:
       - name: "Checkout repository"

@@ -1,4 +1,5 @@
 name: "Basic tests"
+run-name: Basic tests for ${{ github.event.pull_request.title }}
 
 on:
   schedule:

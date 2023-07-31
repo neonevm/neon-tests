@@ -487,7 +487,7 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
     elif name == "basic":
         command = "py.test integration/tests/basic"
         if numprocesses:
-            command = f"{command} --numprocesses {numprocesses}"
+            command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
     elif name == "oz":
         run_openzeppelin_tests(
             network, jobs=int(jobs), amount=int(amount), users=int(users)

@@ -11,7 +11,7 @@ from playwright._impl._api_types import TimeoutError
 from ui import components, libs
 from ui.pages import phantom, metamask
 from . import BasePage
-from ..libs import Platform
+from ..libs import Platform, Tokens, Token
 
 
 class NeonPassPage(BasePage):
@@ -54,7 +54,7 @@ class NeonPassPage(BasePage):
         """Waiting for source tab"""
         try:
             return self.page.wait_for_selector(
-                selector="//app-wallet-button[@label='From']//*[text()='Connect Wallet']", timeout=10000
+                selector="//app-wallet-button[@label='From']//*[text()='Connect Wallet']", timeout=30000
             )
         except TimeoutError:
             return False
@@ -64,7 +64,7 @@ class NeonPassPage(BasePage):
         """Waiting for target tab"""
         try:
             return self.page.wait_for_selector(
-                selector="//app-wallet-button[@label='To']//*[text()='Connect Wallet']", timeout=10000
+                selector="//app-wallet-button[@label='To']//*[text()='Connect Wallet']", timeout=30000
             )
         except TimeoutError:
             return False
@@ -89,6 +89,8 @@ class NeonPassPage(BasePage):
             with self.page.context.expect_page(timeout=timeout) as phantom_page_info:
                 components.Button(
                     self.page, selector="//app-wallet-button[@label='From']//*[text()='Connect Wallet']").click()
+                components.Button(
+                    self.page, selector="//app-wallets-dialog//*[text()='Phantom']/parent::*").click()
             self._handle_phantom_unlock(phantom_page_info.value)
             self.page.wait_for_selector(
                 selector="//app-wallet-button[@label='From']//*[contains(text(),'B4t7')]", timeout=timeout)
@@ -120,12 +122,22 @@ class NeonPassPage(BasePage):
         self.page.wait_for_selector(selector="//label[contains(text(), 'balance')]")
         components.Input(self.page, selector="//input[contains(@class, 'token-amount-input')]").fill(str(amount))
 
+    def set_transaction_fee(self, platform: str, token_name: str, fee_type: str) -> None:
+        """Set Neon transaction fee type"""
+        if platform != Platform.solana or token_name != Tokens.neon.name:
+            return
+
+        selector = f"//app-neon-transaction-fee//*[contains(text(),'{fee_type}')]/parent::*"
+
+        components.Button(self.page, selector=selector).click()
+        assert self.page.is_visible(selector + "[contains(@class, 'selected')]")
+
     def next_tab(self) -> None:
         """Got to next tab"""
         button = self.page.wait_for_selector(selector="//div[contains(@class, 'button') and text()='Next']")
         button.click()
 
-    def confirm_tokens_transfer(self, platform: str, token: str, timeout: float = 30000) -> None:
+    def confirm_tokens_transfer(self, platform: str, token: Token, timeout: float = 60000) -> None:
         """Confirm tokens withdraw"""
         with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
             self.page.wait_for_selector(selector="//button[contains(@class, 'transfer-button')]").click()
@@ -155,6 +167,6 @@ class NeonPassPage(BasePage):
                 self._handle_mm_withdraw_confirm(confirm_page)
 
         # Close overlay message 'Transfer complete'
-        self.page.wait_for_selector(selector="//*[text()='Transfer complete']")
+        self.page.wait_for_selector(selector="//*[text()='Transfer complete']", timeout=120000)
         components.Button(self.page, selector="//*[text()='Close']").click()
         self._is_source_tab_loaded

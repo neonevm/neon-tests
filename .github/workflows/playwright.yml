@@ -1,0 +1,58 @@
+name: Playwright Tests
+
+on:
+  schedule:
+    - cron: "0 1 * * 5"
+  pull_request:
+    types: [ opened, reopened, synchronize ]
+  workflow_dispatch:
+jobs:
+  playwright:
+    timeout-minutes: 60
+    runs-on: ubuntu-22.04
+    env:
+      NETWORK: "devnet"
+      IMAGE: neonlabsorg/neon_tests:ebd371e6341c088b04b8cf41cde0e9d91804874c
+      CONTAINER: neontests-${{ github.run_id }}
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v3
+      - name: "Pull Docker Test Image"
+        run: docker pull ${{ env.IMAGE }}
+      - name: "Run docker container"
+        run: |
+          docker run -i -d --name=${{ env.CONTAINER }} \
+            -e CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} \
+            --entrypoint /bin/bash ${{ env.IMAGE }}
+      - name: "Run Playwright Tests"
+        run: |
+          docker exec -i ${{ env.CONTAINER }} \
+            xvfb-run python3 ./clickfile.py run ui --network=${{ env.NETWORK }} --ui-item=neonpass
+      - name: "Generate allure report"
+        if: always()
+        uses: ./.github/actions/generate-allure-report
+        with:
+          container: ${{ env.CONTAINER }}
+          network: ${{ env.NETWORK }}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          tests_name: ui
+
+  notify:
+    runs-on: ubuntu-20.04
+    needs: [ playwright ]
+    if: failure() && github.ref_name == 'develop'
+    env:
+      BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+      - name: Notify on failure
+        id: notification
+        run: |
+          ./clickfile.py send-notification \
+          -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+          -b ${{ env.BUILD_URL }} \
+          -t "Playwright testing failed, please check!"

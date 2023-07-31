@@ -78,8 +78,7 @@ class TestPrecompiledContracts(BaseMixin):
             {
                 "to": address,
                 "value": 0,
-                "data": input_data,
-                "gas": 10000000,
+                "data": input_data
             }
         )
         assert result.hex()[2:] == expected
@@ -133,7 +132,6 @@ class TestPrecompiledContracts(BaseMixin):
         balance_before = self.get_balance_from_wei(address)
 
         instruction_tx = self.create_contract_call_tx_object(amount=amount)
-        instruction_tx["gas"] = 100000000
         instruction_tx["data"] = input_data
         instruction_tx["chainId"] = self.web3_client._chain_id
         instruction_tx["to"] = address

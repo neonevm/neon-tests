@@ -70,6 +70,7 @@ def load_parametrized_data():
 
 
 class TestPrecompiledContracts(BaseMixin):
+
     @pytest.mark.parametrize(**load_parametrized_data())
     def test_call_direct(
             self, web3_client: NeonWeb3Client, address, input_data, expected
@@ -125,6 +126,7 @@ class TestPrecompiledContracts(BaseMixin):
 
         assert result.hex() == expected
 
+    @pytest.mark.xdist_group("precompiled_contract_balance")
     @pytest.mark.parametrize(**load_parametrized_data())
     def test_call_via_send_trx(self, web3_client: NeonWeb3Client,
                                address,
@@ -145,6 +147,7 @@ class TestPrecompiledContracts(BaseMixin):
         assert receipt["status"] == 1
         assert self.get_balance_from_wei(address)-balance_before == amount
 
+    @pytest.mark.xdist_group("precompiled_contract_balance")
     @pytest.mark.parametrize("contract", PRECOMPILED_FIXTURES)
     def test_send_neon_without_data(self, contract):
         address = PRECOMPILED_FIXTURES[contract]["address"]

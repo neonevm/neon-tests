@@ -2,6 +2,7 @@ import typing as tp
 import urllib
 import pathlib
 
+import httpagentparser
 import pytest
 from _pytest.config import Config
 from playwright.sync_api import Browser
@@ -10,6 +11,8 @@ from playwright.sync_api import BrowserType
 from playwright.sync_api import Page
 from playwright.sync_api import Playwright
 from playwright.sync_api import sync_playwright
+
+from clickfile import create_allure_environment_opts
 
 
 def create_persistent_context(
@@ -141,6 +144,15 @@ def page(context: BrowserContext, base_url: str, use_persistent_context: bool) -
         page = context.new_page()
     page._goto = page.goto  # type: ignore
     page.goto = lambda *args, **kwargs: _handle_page_goto(page, list(args), kwargs, base_url)  # type: ignore
+
+    user_agent = page.evaluate("navigator.userAgent")
+    agent_data = httpagentparser.detect(user_agent)
+    opts = {
+        "Browser": agent_data['browser']['name'],
+        "Browser.Version": agent_data['browser']['version'],
+    }
+    create_allure_environment_opts(opts)
+
     yield page
     page.close()
 

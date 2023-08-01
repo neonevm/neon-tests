@@ -1,3 +1,4 @@
 # deps for ui tests
 playwright>=1.22
 pyperclip3==0.4.1
+httpagentparser==1.9.5

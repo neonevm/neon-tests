@@ -684,7 +684,7 @@ class TestRpcCalls(BaseMixin):
                     "r",
                 ]
                 for field in expected_hex_fields:
-                    assert rpc_checks.is_hex(result[field])
+                    assert rpc_checks.is_hex(result[field]),  f"Field {field} must be hex but '{result[field]}'"
                 assert result["blockHash"] == tx_receipt.blockHash.hex()
                 assert result["from"].upper() == tx_receipt["from"].upper()
                 assert result["to"].upper() == tx_receipt["to"].upper()

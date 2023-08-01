@@ -2,7 +2,6 @@ import json
 import os
 import pathlib
 import random
-import shutil
 import typing as tp
 import string
 
@@ -12,6 +11,7 @@ import pytest
 from _pytest.config import Config
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
+
 from utils.consts import LAMPORT_PER_SOL
 from utils.erc20wrapper import ERC20Wrapper
 from utils.faucet import Faucet
@@ -21,7 +21,7 @@ from utils.apiclient import JsonRPCSession
 from utils.solana_client import SolanaClient
 from solana.rpc.types import TxOpts
 from solana.rpc.commitment import Confirmed
-from utils.consts import INITIAL_ACCOUNT_AMOUNT
+
 
 NEON_AIRDROP_AMOUNT = 10_000
 
@@ -55,14 +55,6 @@ def json_rpc_client(pytestconfig: Config) -> JsonRPCSession:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def web3_client(pytestconfig: Config) -> NeonWeb3Client:
-    client = NeonWeb3Client(
-        pytestconfig.environment.proxy_url, pytestconfig.environment.network_id
-    )
-    return client
-
-
-@pytest.fixture(scope="session", autouse=True)
 def sol_client(pytestconfig: Config):
     client = SolanaClient(
         pytestconfig.environment.solana_url,
@@ -84,66 +76,27 @@ def operator(pytestconfig: Config, web3_client: NeonWeb3Client) -> Operator:
     )
 
 
-@pytest.fixture(scope="session", autouse=True)
-def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
-    opts = {}
-    if pytestconfig.getoption("--network") != 'geth':
-        opts = {
-            "Network": pytestconfig.environment.proxy_url,
-            "Proxy.Version": web3_client.get_proxy_version()["result"],
-            "EVM.Version": web3_client.get_evm_version()["result"],
-            "CLI.Version": web3_client.get_cli_version()["result"],
-        }
-
-    yield opts
-
-    allure_dir = pytestconfig.getoption("--alluredir")
-    allure_path = pathlib.Path() / allure_dir
-    with open(allure_path / "environment.properties", "w+") as f:
-        f.write("\n".join(map(lambda x: f"{x[0]}={x[1]}", opts.items())))
-        f.write("\n")
-    categories_from = pathlib.Path() / "allure" / "categories.json"
-    categories_to = allure_path / "categories.json"
-    shutil.copy(categories_from, categories_to)
-
-    if "CI" in os.environ:
-        with open(allure_path / "executor.json", "w+") as f:
-            json.dump(
-                {
-                    "name": "Github Action",
-                    "type": "github",
-                    "url": "https://github.com/neonlabsorg/neon-tests/actions",
-                    "buildOrder": os.environ.get("GITHUB_RUN_ID", "0"),
-                    "buildName": os.environ.get("GITHUB_WORKFLOW", "neon-tests"),
-                    "buildUrl": f'{os.environ.get("GITHUB_SERVER_URL", "https://github.com")}/{os.environ.get("GITHUB_REPOSITORY", "neon-tests")}/actions/runs/{os.environ.get("GITHUB_RUN_ID", "0")}',
-                    "reportUrl": "",
-                    "reportName": "Allure report for neon-tests",
-                },
-                f,
-            )
-
-
 @pytest.fixture(scope="class")
 def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
     """Create new account for tests and save operator pre and post balances"""
     with allure.step("Create account for tests"):
         acc = web3_client.eth.account.create()
     with allure.step(
-            f"Request {NEON_AIRDROP_AMOUNT} NEON from faucet for {acc.address}"
+        f"Request {NEON_AIRDROP_AMOUNT} NEON from faucet for {acc.address}"
     ):
         faucet.request_neon(acc.address, NEON_AIRDROP_AMOUNT)
         assert web3_client.get_balance(acc) == NEON_AIRDROP_AMOUNT
     start_neon_balance = operator.get_neon_balance()
     start_sol_balance = operator.get_solana_balance()
     with allure.step(
-            f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
+        f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
     ):
         pass
     yield acc
     end_neon_balance = operator.get_neon_balance()
     end_sol_balance = operator.get_solana_balance()
     with allure.step(
-            f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
+        f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
     ):
         pass
     with allure.step(f"Account end balance: {web3_client.get_balance(acc)} NEON"):
@@ -164,7 +117,9 @@ def bank_account(pytestconfig: Config) -> tp.Optional[Keypair]:
 def eth_bank_account(pytestconfig: Config, web3_client) -> tp.Optional[Keypair]:
     account = None
     if pytestconfig.environment.eth_bank_account != "":
-        account = web3_client.eth.account.from_key(pytestconfig.environment.eth_bank_account)
+        account = web3_client.eth.account.from_key(
+            pytestconfig.environment.eth_bank_account
+        )
     yield account
 
 
@@ -185,11 +140,11 @@ def solana_account(bank_account, pytestconfig: Config, sol_client):
 
 @pytest.fixture(scope="session")
 def erc20_spl(
-        web3_client: NeonWeb3Client,
-        faucet,
-        pytestconfig: Config,
-        sol_client,
-        solana_account,
+    web3_client: NeonWeb3Client,
+    faucet,
+    pytestconfig: Config,
+    sol_client,
+    solana_account,
 ):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
     erc20 = ERC20Wrapper(
@@ -211,7 +166,7 @@ def erc20_spl(
         ),
         owner=erc20.solana_acc.public_key,
         amount=1000000000000000,
-        opts=TxOpts(preflight_commitment=Confirmed, skip_confirmation=False)
+        opts=TxOpts(preflight_commitment=Confirmed, skip_confirmation=False),
     )
 
     erc20.claim(

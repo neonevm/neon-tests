@@ -50,7 +50,6 @@ def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[typ
                 if tx_receipt.transactionHash.hex() == transaction["hash"]:
                     assert transaction["from"].upper() == tx_receipt['from'].upper()
                     assert transaction["to"].upper() == tx_receipt['to'].upper()
-                    # FIXME: fix next assert if input field should have hex value
                     assert transaction["input"] == '0x'
     else:
         for transaction in transactions:
@@ -59,8 +58,7 @@ def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[typ
             assert tx_receipt.transactionHash.hex() in transactions, "Created transaction should be in block"
 
 
-def assert_log_field_in_neon_trx_receipt(responce, events_count):
-    print(responce)
+def assert_log_field_in_neon_trx_receipt(response, events_count):
     expected_event_types = ["ENTER CALL"]
     for i in range(events_count):
         expected_event_types.append("LOG")
@@ -68,7 +66,7 @@ def assert_log_field_in_neon_trx_receipt(responce, events_count):
     expected_event_types.append("RETURN")
     all_logs = []
 
-    for trx in responce["result"]["solanaTransactions"]:
+    for trx in response["result"]["solanaTransactions"]:
         expected_hex_fields = ["solanaBlockNumber", "solanaLamportSpent"]
         assert_fields_are_hex(trx, expected_hex_fields)
 

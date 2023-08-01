@@ -12,7 +12,7 @@ from eth_utils import keccak
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
-from integration.tests.basic.helpers.rpc_checks import assert_neon_logs
+from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex
 from utils import helpers
 from utils.helpers import gen_hash_of_block
 
@@ -151,7 +151,7 @@ class TestRpcCalls(BaseMixin):
         response = self.proxy_api.send_rpc("eth_call", params=params)
         assert "error" not in response
         assert (
-            response["result"] == "0x"
+                response["result"] == "0x"
         ), f"Invalid response result, `{response['result']}`"
 
     def test_rpc_call_eth_get_transaction_receipt_with_incorrect_hash(self):
@@ -239,7 +239,7 @@ class TestRpcCalls(BaseMixin):
             return
         assert "error" not in response
         assert (
-            response["result"] == "0x"
+                response["result"] == "0x"
         ), f"Invalid result code {response['result']} at a given address."
 
     @pytest.mark.parametrize("param", [None, "param"])
@@ -261,7 +261,7 @@ class TestRpcCalls(BaseMixin):
             return
         assert "error" not in response
         assert (
-            int(response["result"]) == self.web3_client._chain_id
+                int(response["result"]) == self.web3_client._chain_id
         ), f"Invalid response result {response['result']}"
 
     @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, None])
@@ -476,7 +476,6 @@ class TestRpcCalls(BaseMixin):
             response["result"]
         ), f"Invalid response: {response['result']}"
 
-
     @pytest.mark.parametrize("param", ["0x6865", "param", None, True])
     def test_web3_sha3(self, param: tp.Union[str, None]):
         """Verify implemented rpc calls work web3_sha3"""
@@ -504,7 +503,7 @@ class TestRpcCalls(BaseMixin):
 
     @pytest.mark.parametrize("param", [32, Tag.EARLIEST.value, "param", None])
     def test_eth_get_block_transaction_count_by_number(
-        self, param: tp.Union[int, str, None]
+            self, param: tp.Union[int, str, None]
     ):
         """Verify implemented rpc calls work eth_getBlockTransactionCountByNumber"""
         if isinstance(param, int):
@@ -529,7 +528,7 @@ class TestRpcCalls(BaseMixin):
             return
         assert "error" not in response
         assert (
-            len(response["result"]) >= 3
+                len(response["result"]) >= 3
         ), f"Invalid response result: {response['result']}"
 
     @pytest.mark.parametrize("param", [None, "param"])
@@ -551,7 +550,7 @@ class TestRpcCalls(BaseMixin):
         assert "error" in response
         assert "message" in response["error"]
         assert (
-            response["error"]["message"] == f"method {method} does not exist/is not available"
+                response["error"]["message"] == f"method {method} does not exist/is not available"
         ), response
 
     @pytest.mark.parametrize(
@@ -684,7 +683,7 @@ class TestRpcCalls(BaseMixin):
                     "r",
                 ]
                 for field in expected_hex_fields:
-                    assert rpc_checks.is_hex(result[field]),  f"Field {field} must be hex but '{result[field]}'"
+                    assert rpc_checks.is_hex(result[field]), f"Field {field} must be hex but '{result[field]}'"
                 assert result["blockHash"] == tx_receipt.blockHash.hex()
                 assert result["from"].upper() == tx_receipt["from"].upper()
                 assert result["to"].upper() == tx_receipt["to"].upper()
@@ -723,7 +722,7 @@ class TestRpcCalls(BaseMixin):
         ]
         for field in expected_fields:
             assert (
-                field in response["result"]
+                    field in response["result"]
             ), f"Field {field} is not in response: {response}"
 
     def test_neon_cli_version(self):
@@ -772,7 +771,7 @@ class TestRpcCalls(BaseMixin):
         ).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
         topic = (
-            "0x" + keccak(text="AllTypes(address,uint256,string,bytes32,bool)").hex()
+                "0x" + keccak(text="AllTypes(address,uint256,string,bytes32,bool)").hex()
         )
 
         params = {}
@@ -790,7 +789,11 @@ class TestRpcCalls(BaseMixin):
         assert "error" not in response
         if response["result"]:
             assert topic in response["result"][0]["topics"]
-        assert_neon_logs(response["result"])
+            assert_fields_are_hex(response["result"][0],
+                              ["transactionHash", "blockHash",
+                               "blockNumber", "transactionIndex",
+                               "address", "logIndex", "data",
+                               "transactionLogIndex"])
 
     @pytest.mark.parametrize("method", ["neon_getLogs", "eth_getLogs"])
     @pytest.mark.parametrize(
@@ -800,9 +803,9 @@ class TestRpcCalls(BaseMixin):
             ([], ["text1"], 3),
             (["Event2(string,string)"], ["text2"], 1),
             (
-                ["Event2(string,string)", "Event3(string,string,string)"],
-                ["text2", "text3", "text1", "text5"],
-                3,
+                    ["Event2(string,string)", "Event3(string,string,string)"],
+                    ["text2", "text3", "text1", "text5"],
+                    3,
             ),
             ([], None, 4),
         ],
@@ -856,7 +859,7 @@ class TestRpcCalls(BaseMixin):
         )
 
         assert (
-            len(response["result"]) == log_count
+                len(response["result"]) == log_count
         ), f"Expected {log_count} event logs, but found {len(response['result'])}"
 
         is_event_topic_in_list = False
@@ -894,7 +897,7 @@ class TestRpcCallsMoreComplex(BaseMixin):
 
     @pytest.fixture(params=["BigGasFactory1", "BigGasFactory2"])
     def deploy_big_gas_requirements_contract(
-        self, request: tp.Any, constructor_args: tp.List[int]
+            self, request: tp.Any, constructor_args: tp.List[int]
     ) -> "web3._utils.datatypes.Contract":
         """Deploy contracts"""
         self.account = self.sender_account
@@ -936,7 +939,7 @@ class TestRpcCallsMoreComplex(BaseMixin):
         )
 
     def test_check_eth_estimate_gas_with_big_int(
-        self, deploy_big_gas_requirements_contract: tp.Any
+            self, deploy_big_gas_requirements_contract: tp.Any
     ) -> None:
         """Check eth_estimateGas request on contracts with big int"""
         big_gas_contract = deploy_big_gas_requirements_contract

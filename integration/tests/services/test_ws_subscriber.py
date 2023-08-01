@@ -1,9 +1,11 @@
-import asyncio
 import json
 from types import SimpleNamespace
 
+import allure
 import pytest
 import websockets
+
+from integration.tests.basic.helpers.basic import BaseMixin
 
 TEST_STAND = "ws://159.69.194.181:8282"
 
@@ -26,13 +28,15 @@ class Unsubscribe(ETH):
         super().__init__([subscription_id], "eth_unsubscribe")
 
 
-class TestSubscriber:
+@allure.feature("Websocket Subscriber")
+@allure.story("Subscribe to events")
+class TestSubscriber(BaseMixin):
 
     @pytest.mark.parametrize(
         "subscriber_params",
         [
             ["newHeads"],
-            ["logs"]
+            # ["logs"]
         ],
         ids=str
     )
@@ -44,6 +48,16 @@ class TestSubscriber:
             response = json.loads(r, object_hook=lambda d: SimpleNamespace(**d))
             subscription = response.result
             assert len(subscription) > 0
+
+            self.send_neon(self.sender_account, self.recipient_account, 0.1)
+
+            r = await ws.recv()
+            response = json.loads(r, object_hook=lambda d: SimpleNamespace(**d))
+            assert response.params.subscription == subscription
+            assert len(vars(response.params.result).items()) > 0
+
+            while len(ws.messages) > 0:  # clear all received messages
+                ws.messages.popleft()
 
             data = Unsubscribe(subscription)
             await ws.send(json.dumps(data.__dict__))

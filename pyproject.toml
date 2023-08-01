@@ -8,6 +8,7 @@ markers = [
     "only_stands: this tests works only on test stands",
     "only_devnet: this tests works only on devnet env"
 ]
+asyncio_mode = "auto"
 addopts = "--alluredir=allure-results"
 log_cli = true
 log_cli_level = "INFO"

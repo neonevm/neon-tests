@@ -175,6 +175,7 @@ jobs:
 
       - name: Launch uniswap v2 tests
         if: ${{ steps.accounts.outcome == 'success' }}
+        timeout-minutes: 30
         id: uniswap-v2
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
@@ -223,6 +224,7 @@ jobs:
       - name: Launch uniswap v3 tests
         if: ${{ steps.accounts.outcome == 'success'}}
         id: uniswap-v3
+        timeout-minutes: 30
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: neonlabsorg/uniswap-v3:latest
@@ -269,6 +271,7 @@ jobs:
       - name: Launch saddle tests
         if: ${{ steps.accounts.outcome == 'success' }}
         id: saddle
+        timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: neonlabsorg/saddle_tests:latest
@@ -316,6 +319,7 @@ jobs:
       - name: Launch aave tests
         if: ${{ steps.accounts.outcome == 'success' }}
         id: aave
+        timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: neonlabsorg/aave_tests:latest
@@ -355,6 +359,7 @@ jobs:
 
       - name: Launch curve tests
         id: curve
+        timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: neonlabsorg/curve_tests:latest
@@ -394,6 +399,7 @@ jobs:
         uses: ./.github/actions/python-requirements
 
       - name: Run deployment
+        timeout-minutes: 10
         run: |
           python3 scripts/curve-deploy.py
 
@@ -426,8 +432,8 @@ jobs:
         run: |
           ./clickfile.py infra gen-accounts -c 2 -a 10000 -n ${{env.NETWORK_NAME}}
 
-      - name: Launch curve tests
-        id: curve
+      - name: Launch compound tests
+        timeout-minutes: 30
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: neonlabsorg/compound_tests:latest
@@ -475,6 +481,7 @@ jobs:
 
       - name: Launch yearn tests
         id: yearn
+        timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: neonlabsorg/yearn_tests:latest

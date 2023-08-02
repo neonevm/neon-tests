@@ -86,6 +86,7 @@ jobs:
         run: |
           docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ env.IMAGE_TAG }} /bin/bash
       - name: Run OpenZeppelin tests
+        timeout-minutes: 120
         run: |
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py run oz \
             --network ${{ needs.prepare-env.outputs.network }} \
@@ -134,6 +135,7 @@ jobs:
         run: |
           docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ env.IMAGE_TAG }} /bin/bash
       - name: Run OpenZeppelin tests
+        timeout-minutes: 120
         run: |
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py run oz \
             --network ${{ needs.prepare-env.outputs.network }} \

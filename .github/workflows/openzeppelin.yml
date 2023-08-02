@@ -106,6 +106,7 @@ jobs:
         run: |
           docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
       - name: Run OpenZeppelin tests
+        timeout-minutes: 90
         run: |
           docker exec -i -e OZ_BALANCES_REPORT_FLAG=1 ${{ env.CONTAINER }}  ./clickfile.py run oz \
             --network ${{ needs.prepare-env.outputs.network }} \

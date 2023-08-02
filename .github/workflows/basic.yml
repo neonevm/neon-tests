@@ -1,4 +1,5 @@
 name: "Basic tests"
+run-name: Basic tests for ${{ github.event.pull_request.title }}
 
 on:
   schedule:
@@ -128,6 +129,7 @@ jobs:
           docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
           docker run -i -d -e CI -e GITHUB_RUN_ID -e GITHUB_WORKFLOW -e BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }} -e PROXY_URL -e SOLANA_URL --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
       - name: "Run basic tests"
+        timeout-minutes: 60
         id: basic
         run: |
           docker exec -i ${{ env.CONTAINER }} \

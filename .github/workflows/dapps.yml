@@ -42,7 +42,7 @@ env:
   AWS_REGION: us-east-2
   AWS_S3_BUCKET: neon-tests-dapps
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn,compound"
+  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn,compound,curve-factory"
 jobs:
   prepare:
     runs-on: ubuntu-20.04
@@ -175,6 +175,7 @@ jobs:
 
       - name: Launch uniswap v2 tests
         if: ${{ steps.accounts.outcome == 'success' }}
+        timeout-minutes: 30
         id: uniswap-v2
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
@@ -223,6 +224,7 @@ jobs:
       - name: Launch uniswap v3 tests
         if: ${{ steps.accounts.outcome == 'success'}}
         id: uniswap-v3
+        timeout-minutes: 30
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: neonlabsorg/uniswap-v3:latest
@@ -269,6 +271,7 @@ jobs:
       - name: Launch saddle tests
         if: ${{ steps.accounts.outcome == 'success' }}
         id: saddle
+        timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: neonlabsorg/saddle_tests:latest
@@ -316,6 +319,7 @@ jobs:
       - name: Launch aave tests
         if: ${{ steps.accounts.outcome == 'success' }}
         id: aave
+        timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: neonlabsorg/aave_tests:latest
@@ -355,6 +359,7 @@ jobs:
 
       - name: Launch curve tests
         id: curve
+        timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: neonlabsorg/curve_tests:latest
@@ -375,6 +380,35 @@ jobs:
         with:
           name: curve-report
           path: curve-report.json
+  curve-factory:
+    runs-on: ubuntu-20.04
+    if: contains( needs.prepare.outputs.dapps, 'curve-factory')
+    needs:
+      - prepare
+    env:
+      SOLANA_URL: ${{ needs.prepare.outputs.solana_url }}
+      PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
+      FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
+      NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
+      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
+      DUMP_ENVS: True
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Run deployment
+        timeout-minutes: 10
+        run: |
+          python3 scripts/curve-deploy.py
+
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: curve-factory-report
+          path: curve-factory-report.json
+
   compound:
     runs-on: ubuntu-20.04
     if: contains( needs.prepare.outputs.dapps, 'compound')
@@ -398,8 +432,8 @@ jobs:
         run: |
           ./clickfile.py infra gen-accounts -c 2 -a 10000 -n ${{env.NETWORK_NAME}}
 
-      - name: Launch curve tests
-        id: curve
+      - name: Launch compound tests
+        timeout-minutes: 30
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: neonlabsorg/compound_tests:latest
@@ -447,6 +481,7 @@ jobs:
 
       - name: Launch yearn tests
         id: yearn
+        timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: neonlabsorg/yearn_tests:latest
@@ -471,7 +506,7 @@ jobs:
 
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn, compound]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn, compound, curve-factory]
     if: always()
     env:
       SOLANA_URL: ${{ needs.prepare.outputs.solana_url || secrets.SOLANA_URL }}
@@ -518,12 +553,17 @@ jobs:
         with:
           name: curve-report
           path: reports/
+      - uses: actions/download-artifact@v3
+        continue-on-error: true
+        with:
+          name: curve-factory-report
+          path: reports/
       - name: "Swap report"
         run: ./clickfile.py dapps report --directory=reports
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, swap-report, compound]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, swap-report, compound, curve-factory]
     if: always() && needs.prepare.outputs.network == 'aws'
     steps:
       - uses: actions/checkout@v3
@@ -566,7 +606,7 @@ jobs:
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn, compound]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn, compound, curve-factory]
     if: failure() && github.ref_name == 'develop'
     steps:
       - uses: actions/checkout@v3

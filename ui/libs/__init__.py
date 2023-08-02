@@ -32,6 +32,12 @@ class Platform:
 
 
 @dataclass
+class FeeType:
+    neon: str = "NEON"
+    sol: str = "SOL"
+    none: str = "none"
+
+@dataclass
 class Tokens:
     neon = Token("NEON", "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g")
     wneon = Token("wNEON", "0x11adC2d986E334137b9ad0a0F290771F31e9517F")
@@ -61,6 +67,7 @@ def open_safe(context: BrowserContext, url: str, retry_count: int = 3) -> Page:
             if retry_count == 0:
                 raise TimeoutError
             page.close()
+
 
 def insert_cookies_to_context(resp_cookies, context):
     cookies = []

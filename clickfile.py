@@ -61,6 +61,8 @@ SRC_ALLURE_CATEGORIES = pathlib.Path("./allure/categories.json")
 
 DST_ALLURE_CATEGORIES = pathlib.Path("./allure-results/categories.json")
 
+DST_ALLURE_ENVIRONMENT = pathlib.Path("./allure-results/environment.properties")
+
 BASE_EXTENSIONS_TPL_DATA = "ui/extensions/data"
 
 EXTENSIONS_PATH = "ui/extensions/chrome/plugins"
@@ -255,9 +257,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         "EVM.Version": web3_client.get_evm_version()["result"],
         "CLI.Version": web3_client.get_cli_version()["result"],
     }
-    with open("./allure-results/environment.properties", "w+") as f:
-        f.write("\n".join(map(lambda x: f"{x[0]}={x[1]}", opts.items())))
-        f.write("\n")
+    create_allure_environment_opts(opts)
     # Add epic name for allure result files
     openzeppelin_reports = pathlib.Path("./allure-results")
     res_file_list = [
@@ -340,6 +340,13 @@ def print_oz_balances():
     print(yellow(report))
 
 
+def create_allure_environment_opts(opts: dict):
+    with open(DST_ALLURE_ENVIRONMENT, "a+") as file:
+        file.write("\n".join(
+            map(lambda x: f"{x[0]}={x[1] if x[1] and len(x[1]) > 0 else 'empty value'}", opts.items())))
+        file.write("\n")
+
+
 def generate_allure_environment(network_name: str):
     network = networks[network_name]
     env = os.environ.copy()
@@ -372,19 +379,8 @@ def install_ui_requirements():
             )
     # install ui test deps,
     # download the Playwright package and install browser binaries for Chromium, Firefox and WebKit.
-    click.echo(green("Install browser binaries for Chromium, Firefox and WebKit."))
-    subprocess.check_call("playwright install", shell=True)
-    click.echo(green("prepare ui tests extensions and extensions user_data"))
-    # prepare ui tests extensions and extensions user_data
-    base_path = pathlib.Path(__file__).absolute().parent
-    for item in (base_path / BASE_EXTENSIONS_TPL_DATA).iterdir():
-        if "extension" in item.name:
-            cmd = f"tar -xf {item.as_posix()} -C {base_path / EXTENSIONS_PATH}"
-        elif "user_data" in item.name:
-            cmd = (
-                f"tar -xf {item.as_posix()} -C {base_path / EXTENSIONS_USER_DATA_PATH}"
-            )
-        subprocess.check_call(cmd, shell=True)
+    click.echo(green("Install browser binaries for Chromium."))
+    subprocess.check_call("playwright install chromium", shell=True)
 
 def install_oz_requirements():
     cwd = pathlib.Path().absolute() / "compatibility/openzeppelin-contracts"
@@ -491,7 +487,7 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
     elif name == "basic":
         command = "py.test integration/tests/basic"
         if numprocesses:
-            command = f"{command} --numprocesses {numprocesses}"
+            command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
     elif name == "oz":
         run_openzeppelin_tests(
             network, jobs=int(jobs), amount=int(amount), users=int(users)
@@ -513,7 +509,8 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
 
     command += f" -s --network={network} --make-report"
     cmd = subprocess.run(command, shell=True)
-    shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
+    if name != "ui":
+        shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
 
     if cmd.returncode != 0:
         sys.exit(cmd.returncode)

@@ -92,4 +92,7 @@ def assert_log_field_in_neon_trx_receipt(response, events_count):
 
 def assert_fields_are_hex(object, expected_hex_fields):
     for field in expected_hex_fields:
-        assert is_hex(object[field]), f"field {field} is not correct. Actual : {object[field]}"
+        try:
+            assert is_hex(object[field]), f"field {field} is not correct. Actual : {object[field]}"
+        except TypeError:
+            assert is_hex(getattr(object, field)), f"field {field} is not correct. Actual : {getattr(object, field)}"

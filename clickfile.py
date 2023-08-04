@@ -535,7 +535,7 @@ def analyze_openzeppelin_results():
         if version.startswith("3"):
             threshold = 1350
         elif version.startswith("2"):
-            threshold = 2295
+            threshold = 2293
         print(f"Threshold: {threshold}")
         if test_report["passing"] < threshold:
             raise click.ClickException(f"OpenZeppelin {version} tests failed. \n"

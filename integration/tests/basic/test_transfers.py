@@ -506,7 +506,10 @@ class TestTransactionsValidation(BaseMixin):
         )
         params = [signed_tx.rawTransaction.hex()]
         response = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
-        self.wait_transaction_accepted(response["result"])
+        receipt = self.wait_transaction_accepted(response["result"])
+        block_num = int(receipt["result"]["blockNumber"], 16)
+        self.wait_finalized_block(block_num)
+
         response = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
         assert ErrorMessage.ALREADY_KNOWN.value in response["error"]["message"]
         assert response["error"]["code"] == -32000
@@ -549,7 +552,9 @@ class TestTransactionsValidation(BaseMixin):
         response = self.proxy_api.send_rpc(
             "eth_sendRawTransaction", [signed_tx.rawTransaction.hex()]
         )
-        self.wait_transaction_accepted(response["result"])
+        receipt = self.wait_transaction_accepted(response["result"])
+        block_num = int(receipt["result"]["blockNumber"], 16)
+        self.wait_finalized_block(block_num)
 
         transaction = self.create_tx_object(amount=2, nonce=nonce)
         signed_tx = self.web3_client.eth.account.sign_transaction(

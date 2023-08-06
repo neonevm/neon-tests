@@ -202,3 +202,22 @@ class TestSubscriber(TestRpcCalls):
 
             assert (is_event_topic_in_list), f"Filter by {topics} works incorrect. Response: {m}"
             assert (is_arg_topic_in_list), f"Filter by {topics} works incorrect. Response: {m}"
+
+    @pytest.mark.parametrize("subscription_type", ["newHeads", "logs"])
+    async def test_another_user_cant_unsubscribe(self, subscription_type: string):
+        async with (
+            websockets.connect(TEST_STAND) as ws1,
+            websockets.connect(TEST_STAND) as ws2
+        ):
+            data = Subscribe([subscription_type])
+            await ws1.send(json.dumps(data.__dict__))
+            r = await ws1.recv()
+            response = json.loads(r, object_hook=lambda d: SimpleNamespace(**d))
+            subscription = response.result
+            assert len(subscription) > 0
+
+            data = Unsubscribe(subscription)
+            await ws2.send(json.dumps(data.__dict__))
+            r = await ws2.recv()
+            assert "error" in r
+            assert "Subscription not found" in r

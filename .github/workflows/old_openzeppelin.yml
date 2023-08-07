@@ -103,7 +103,7 @@ jobs:
           network: ${{ env.NETWORK }}
           aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          tests_name: oz
+          tests_name: oz-v3_4
       - name: Analyze tests results
         run: |
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py analyze-openzeppelin-results
@@ -152,7 +152,7 @@ jobs:
           network: ${{ env.NETWORK }}
           aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          tests_name: oz
+          tests_name: oz-v2_5
       - name: Analyze tests results
         run: |
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py analyze-openzeppelin-results

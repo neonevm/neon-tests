@@ -1,6 +1,7 @@
 import json
 import random
 import string
+import typing
 from types import SimpleNamespace
 
 import allure
@@ -37,7 +38,60 @@ class Unsubscribe(ETH):
 @allure.story("Subscribe to events")
 class TestSubscriber(TestRpcCalls):
 
-    async def test_eth_subscribe(self):
+    @pytest.fixture
+    def event_caller(self) -> typing.Any:
+        event_caller, _ = self.web3_client.deploy_and_get_contract(
+            "EventCaller", "0.8.12", self.sender_account
+        )
+        yield event_caller
+
+    def call_contract_events(self, event_caller: typing.Any):
+        arg1, arg2, arg3 = ("text1", "text2", "text3")
+        tx = self.make_tx_object(self.sender_account.address)
+        instruction_tx = event_caller.functions.callEvent1(arg1).build_transaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        tx = self.make_tx_object(self.sender_account.address)
+        instruction_tx = event_caller.functions.callEvent2(arg1, arg2).build_transaction(
+            tx
+        )
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        tx = self.make_tx_object(self.sender_account.address)
+        instruction_tx = event_caller.functions.callEvent2(arg2, arg3).build_transaction(
+            tx
+        )
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        tx = self.make_tx_object(self.sender_account.address)
+        instruction_tx = event_caller.functions.callEvent3(
+            arg1, arg2, arg3
+        ).build_transaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+    @staticmethod
+    def assert_all_messages(messages: list, topics: list):
+        is_event_topic_in_list = False
+        is_arg_topic_in_list = False
+        for m in messages:
+            log = m.params.result
+            if topics[0]:
+                for topic in topics[0]:
+                    if topic in log.topics:
+                        is_event_topic_in_list = True
+            else:
+                is_event_topic_in_list = True
+            if len(topics) == 2:
+                for topic in topics[1]:
+                    if topic in log.topics:
+                        is_arg_topic_in_list = True
+            else:
+                is_arg_topic_in_list = True
+
+        assert is_event_topic_in_list, f"Filter by {topics} works incorrect. Response: {m}"
+        assert is_arg_topic_in_list, f"Filter by {topics} works incorrect. Response: {m}"
+
+    async def test_subscribe_to_newheads(self):
         async with websockets.connect(TEST_STAND) as ws:
             data = Subscribe(["newHeads"])
             await ws.send(json.dumps(data.__dict__))
@@ -48,13 +102,13 @@ class TestSubscriber(TestRpcCalls):
 
             self.send_neon(self.sender_account, self.recipient_account, 0.1)
 
-            r = await ws.recv()
-            response = json.loads(r, object_hook=lambda d: SimpleNamespace(**d))
+            messages = await ws_receive_all_messages(ws)
+            response = messages[0]
             assert response.params.subscription == subscription
-            assert len(vars(response.params.result).items()) > 0
-
-            while len(ws.messages) > 0:  # clear all received messages
-                ws.messages.popleft()
+            assert_fields_are_hex(response.params.result,
+                                  ["extraData", "gasLimit", "gasUsed", "logsBloom",
+                                   "nonce", "parentHash", "sha3Uncles",
+                                   "stateRoot", "timestamp", "transactionsRoot"])
 
             data = Unsubscribe(subscription)
             await ws.send(json.dumps(data.__dict__))
@@ -62,12 +116,14 @@ class TestSubscriber(TestRpcCalls):
             response = json.loads(r, object_hook=lambda d: SimpleNamespace(**d))
             assert response.result == 'true'
 
+            self.send_neon(self.sender_account, self.recipient_account, 0.1)
+            messages = await ws_receive_all_messages(ws)
+            assert len(messages) == 0, \
+                f"Expected no events to be received after unsubscription, but got {len(messages)} events"
+
     @pytest.mark.parametrize("param_fields", [("address", "topics"), ("topics",), ("address",), ()], ids=str)
-    async def test_logs(self, param_fields):
+    async def test_logs(self, param_fields, event_caller: typing.Any):
         async with websockets.connect(TEST_STAND) as ws:
-            event_caller, _ = self.web3_client.deploy_and_get_contract(
-                "EventCaller", "0.8.12", self.sender_account
-            )
             optional_fields = {}
             topic = False
 
@@ -127,13 +183,9 @@ class TestSubscriber(TestRpcCalls):
             ([], None, 4),
         ],
     )
-    async def test_filter_log_by_topics(self, event_filter, arg_filter, log_count):
+    async def test_filter_log_by_topics(self, event_filter, arg_filter, log_count, event_caller: typing.Any):
         async with websockets.connect(TEST_STAND) as ws:
-            event_caller, _ = self.web3_client.deploy_and_get_contract(
-                "EventCaller", "0.8.12", self.sender_account
-            )
-
-            arg1, arg2, arg3 = ("text1", "text2", "text3")
+            # prepare params with specified topics and send them to websocket service
             topics = []
             if event_filter is not None:
                 event_topics = []
@@ -146,7 +198,7 @@ class TestSubscriber(TestRpcCalls):
                     arg_topics.append("0x" + keccak(text=item).hex())
                 topics.append(arg_topics)
 
-            optional_fields = {"address": event_caller.address}
+            optional_fields = {}
             if topics:
                 optional_fields["topics"] = topics
             params = ["logs", optional_fields]
@@ -158,50 +210,13 @@ class TestSubscriber(TestRpcCalls):
             subscription = response.result
             assert len(subscription) > 0
 
-            tx = self.make_tx_object(self.sender_account.address)
-            instruction_tx = event_caller.functions.callEvent1(arg1).build_transaction(tx)
-            self.web3_client.send_transaction(self.sender_account, instruction_tx)
+            # send transactions to trigger messages in websocket service
+            self.call_contract_events()
 
-            tx = self.make_tx_object(self.sender_account.address)
-            instruction_tx = event_caller.functions.callEvent2(arg1, arg2).build_transaction(
-                tx
-            )
-            self.web3_client.send_transaction(self.sender_account, instruction_tx)
-
-            tx = self.make_tx_object(self.sender_account.address)
-            instruction_tx = event_caller.functions.callEvent2(arg2, arg3).build_transaction(
-                tx
-            )
-            self.web3_client.send_transaction(self.sender_account, instruction_tx)
-
-            tx = self.make_tx_object(self.sender_account.address)
-            instruction_tx = event_caller.functions.callEvent3(
-                arg1, arg2, arg3
-            ).build_transaction(tx)
-            self.web3_client.send_transaction(self.sender_account, instruction_tx)
-
+            # validate result — all the received messages
             messages = await ws_receive_all_messages(ws)
             assert (len(messages) == log_count), f"Expected {log_count} event logs, but found {len(messages)}"
-
-            is_event_topic_in_list = False
-            is_arg_topic_in_list = False
-            for m in messages:
-                log = m.params.result
-                if topics[0]:
-                    for topic in topics[0]:
-                        if topic in log.topics:
-                            is_event_topic_in_list = True
-                else:
-                    is_event_topic_in_list = True
-                if len(topics) == 2:
-                    for topic in topics[1]:
-                        if topic in log.topics:
-                            is_arg_topic_in_list = True
-                else:
-                    is_arg_topic_in_list = True
-
-            assert (is_event_topic_in_list), f"Filter by {topics} works incorrect. Response: {m}"
-            assert (is_arg_topic_in_list), f"Filter by {topics} works incorrect. Response: {m}"
+            self.assert_all_messages(messages, topics)
 
     @pytest.mark.parametrize("subscription_type", ["newHeads", "logs"])
     async def test_another_user_cant_unsubscribe(self, subscription_type: string):

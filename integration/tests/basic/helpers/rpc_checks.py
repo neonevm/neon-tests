@@ -1,4 +1,5 @@
 import typing as tp
+from types import SimpleNamespace
 
 from web3 import types
 
@@ -91,8 +92,12 @@ def assert_log_field_in_neon_trx_receipt(response, events_count):
 
 
 def assert_fields_are_hex(object, expected_hex_fields):
-    for field in expected_hex_fields:
-        try:
-            assert is_hex(object[field]), f"field {field} is not correct. Actual : {object[field]}"
-        except TypeError:
+    if isinstance(object, SimpleNamespace):
+        for field in expected_hex_fields:
+            assert hasattr(object, field), f"no expected field {field} in the object"
             assert is_hex(getattr(object, field)), f"field {field} is not correct. Actual : {getattr(object, field)}"
+        return
+
+    for field in expected_hex_fields:
+        assert field in object, f"no expected field {field} in the object"
+        assert is_hex(object[field]), f"field {field} is not correct. Actual : {object[field]}"

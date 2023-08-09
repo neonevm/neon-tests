@@ -21,9 +21,9 @@ RUN apt update && \
 # Install 18.x Node.js
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt install -y nodejs && \
-# Install py3.8 from deadsnakes repository and pip from standard ubuntu packages
+# Install py3.10 from deadsnakes repository and pip from standard ubuntu packages
     add-apt-repository ppa:deadsnakes/ppa && apt update && \
-    apt install -y python3.8 python3-pip
+    apt install -y python3.10 python3-pip
 
 # Install allure
 RUN apt install default-jdk -y && \

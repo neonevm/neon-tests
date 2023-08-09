@@ -23,7 +23,10 @@ RUN apt update && \
     apt install -y nodejs && \
 # Install py3.10 from deadsnakes repository and pip from standard ubuntu packages
     add-apt-repository ppa:deadsnakes/ppa && apt update && \
-    apt install -y python3.10 python3-pip
+    apt install -y python3.10 python3-pip python3.10-distutils
+
+RUN update-alternatives --install /usr/bin/python3 python /usr/bin/python3.10 2
+RUN update-alternatives --install /usr/bin/python3 python /usr/bin/python3.8 1
 
 # Install allure
 RUN apt install default-jdk -y && \
@@ -40,6 +43,8 @@ RUN apt install -y libxkbcommon0 \
     xvfb
 
 COPY ./deploy/requirements/* /opt/
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
+RUN pip3 install setuptools wheel
 RUN pip3 install -r /opt/prod.txt -r /opt/ui.txt
 COPY ./deploy/oz/run-full-test-suite.sh /opt/neon-tests/
 

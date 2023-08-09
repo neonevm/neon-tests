@@ -104,7 +104,7 @@ class TestSubscriber(TestRpcCalls):
             r = await ws.recv()
             response = json.loads(r, object_hook=lambda d: SimpleNamespace(**d))
             assert hasattr_recursive(response, "params.subscription")
-            assert hasattr_recursive(response, "params.result")
+            assert hasattr(response.params, "result")
             assert response.params.subscription == subscription
             assert_fields_are_hex(response.params.result,
                                   ["extraData", "gasLimit", "gasUsed", "logsBloom",
@@ -158,8 +158,11 @@ class TestSubscriber(TestRpcCalls):
             messages = await ws_receive_all_messages(ws)
             assert (len(messages) == 1), f"Expected 1 event log, but found {len(messages)}"
             response = messages[0]
+            assert hasattr_recursive(response, "params.subscription")
+            assert hasattr(response.params, "result")
             assert response.params.subscription == subscription
             if topic:
+                assert hasattr(response.params.result, "topics")
                 assert topic in response.params.result.topics
             assert_fields_are_hex(response.params.result,
                                   ["transactionHash", "blockHash",

@@ -7,11 +7,10 @@ from types import SimpleNamespace
 import allure
 import pytest
 import websockets
-from eth_utils import keccak
 
 from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex
 from integration.tests.basic.test_rpc_calls import TestRpcCalls
-from integration.tests.services.helpers.basic import ws_receive_all_messages
+from integration.tests.services.helpers.basic import ws_receive_all_messages, cryptohex, hasattr_recursive
 
 TEST_STAND = "ws://159.69.194.181:8282"
 
@@ -102,8 +101,10 @@ class TestSubscriber(TestRpcCalls):
 
             self.send_neon(self.sender_account, self.recipient_account, 0.1)
 
-            messages = await ws_receive_all_messages(ws)
-            response = messages[0]
+            r = await ws.recv()
+            response = json.loads(r, object_hook=lambda d: SimpleNamespace(**d))
+            assert hasattr_recursive(response, "params.subscription")
+            assert hasattr_recursive(response, "params.result")
             assert response.params.subscription == subscription
             assert_fields_are_hex(response.params.result,
                                   ["extraData", "gasLimit", "gasUsed", "logsBloom",
@@ -112,8 +113,8 @@ class TestSubscriber(TestRpcCalls):
 
             data = Unsubscribe(subscription)
             await ws.send(json.dumps(data.__dict__))
-            r = await ws.recv()
-            response = json.loads(r, object_hook=lambda d: SimpleNamespace(**d))
+            messages = await ws_receive_all_messages(ws)
+            response = messages[len(messages) - 1]
             assert response.result == 'true'
 
             self.send_neon(self.sender_account, self.recipient_account, 0.1)
@@ -130,9 +131,7 @@ class TestSubscriber(TestRpcCalls):
             if "address" in param_fields:
                 optional_fields["address"] = event_caller.address
             if "topics" in param_fields:
-                topic = (
-                        "0x" + keccak(text="AllTypes(address,uint256,string,bytes32,bool)").hex()
-                )
+                topic = cryptohex("AllTypes(address,uint256,string,bytes32,bool)")
                 optional_fields["topics"] = [topic]
 
             params = ["logs"]
@@ -190,12 +189,12 @@ class TestSubscriber(TestRpcCalls):
             if event_filter is not None:
                 event_topics = []
                 for item in event_filter:
-                    event_topics.append("0x" + keccak(text=item).hex())
+                    event_topics.append(cryptohex(item))
                 topics.append(event_topics)
             if arg_filter is not None:
                 arg_topics = []
                 for item in arg_filter:
-                    arg_topics.append("0x" + keccak(text=item).hex())
+                    arg_topics.append(cryptohex(item))
                 topics.append(arg_topics)
 
             optional_fields = {}
@@ -218,11 +217,52 @@ class TestSubscriber(TestRpcCalls):
             assert (len(messages) == log_count), f"Expected {log_count} event logs, but found {len(messages)}"
             self.assert_all_messages(messages, topics)
 
+    async def test_multiples_users_different_logs(self, event_caller: typing.Any):
+        topic1 = cryptohex("Event1(string)")
+        topic2 = cryptohex("Event3(string,string,string)")
+        params1 = ["logs", {"address": event_caller.address, "topics": [topic1]}]
+        params2 = ["logs", {"address": event_caller.address, "topics": [topic2]}]
+
+        data1, data2 = Subscribe(params1), Subscribe(params2)
+
+        async with (
+            websockets.connect(TEST_STAND) as ws1, websockets.connect(TEST_STAND) as ws2
+        ):
+            await ws1.send(json.dumps(data1.__dict__))
+            r1 = await ws1.recv()
+            response1 = json.loads(r1, object_hook=lambda d: SimpleNamespace(**d))
+            subscription1 = response1.result
+
+            await ws2.send(json.dumps(data2.__dict__))
+            r2 = await ws2.recv()
+            response2 = json.loads(r2, object_hook=lambda d: SimpleNamespace(**d))
+            subscription2 = response2.result
+
+            self.call_contract_events(event_caller)
+
+            messages1, messages2 = await ws_receive_all_messages(ws1), await ws_receive_all_messages(ws2)
+            assert len(messages1) == 1, f"expected to receive 1 event for user1, but received {len(messages1)}"
+            assert len(messages2) == 1, f"expected to receive 1 event for user2, but received {len(messages2)}"
+            message1, message2 = messages1[0], messages2[0]
+            assert hasattr_recursive(message1, "params.subscription")
+            assert hasattr_recursive(message2, "params.subscription")
+            assert hasattr_recursive(message1, "params.result.topics")
+            assert hasattr_recursive(message2, "params.result.topics")
+            r_subscription1, r_subscription2 = message1.params.subscription, message2.params.subscription
+            topics1, topics2 = message1.params.result.topics, message2.params.result.topics
+            assert r_subscription1 == subscription1, \
+                f"expected received subscription {r_subscription1} to be equal {subscription1}"
+            assert messages2[0].params.subscription == subscription2, \
+                f"expected received subscription {r_subscription2} to be equal {subscription2}"
+            assert topics1[0] == topic1, f"expected received topic {topics1[0]} equal to {topic1}"
+            assert len(topics1) == 2, f"expected 2 topics for Event1, but received {len(topics1)}"
+            assert topics2[0] == topic2, f"expected received topic {topics2[0]} equal to {topic2}"
+            assert len(topics2) == 4, f"expected 4 topics for Event3, but received {len(topics2)}"
+
     @pytest.mark.parametrize("subscription_type", ["newHeads", "logs"])
     async def test_another_user_cant_unsubscribe(self, subscription_type: string):
         async with (
-            websockets.connect(TEST_STAND) as ws1,
-            websockets.connect(TEST_STAND) as ws2
+            websockets.connect(TEST_STAND) as ws1, websockets.connect(TEST_STAND) as ws2
         ):
             data = Subscribe([subscription_type])
             await ws1.send(json.dumps(data.__dict__))

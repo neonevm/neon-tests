@@ -5,12 +5,11 @@ import typing
 from types import SimpleNamespace
 
 import allure
-import hexbytes
 import pytest
 import websockets
 
+from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex
-from integration.tests.basic.test_rpc_calls import TestRpcCalls
 from integration.tests.services.helpers.basic import cryptohex, hasattr_recursive
 from integration.tests.services.helpers.websockets import ws_receive_all_messages, ws_receive_messages_limit_time
 
@@ -37,12 +36,12 @@ class Unsubscribe(ETH):
 
 @allure.feature("Websocket Subscriber")
 @allure.story("Subscribe to events")
-class TestSubscriber(TestRpcCalls):
+class TestSubscriber(BaseMixin):
 
-    @pytest.fixture()
-    def event_caller_contract(self) -> typing.Any:
-        event_caller, _ = self.web3_client.deploy_and_get_contract(
-            "EventCaller", "0.8.12", self.sender_account
+    @pytest.fixture(scope="class")
+    def event_caller_contract(self, web3_client, class_account) -> typing.Any:
+        event_caller, _ = web3_client.deploy_and_get_contract(
+            "EventCaller", "0.8.12", class_account
         )
         yield event_caller
 
@@ -56,9 +55,17 @@ class TestSubscriber(TestRpcCalls):
         }
         for i in instructions:
             for args in instructions[i]:
-                tx = self.make_tx_object(self.sender_account.address)
+                tx = self.make_tx_object()
                 instruction_tx = getattr(event_caller_contract.functions, i)(*args).build_transaction(tx)
                 self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+    def make_tx_object(self) -> typing.Dict:
+        return {
+            "chainId": self.web3_client._chain_id,
+            "gasPrice": self.web3_client.gas_price(),
+            "nonce": self.web3_client.eth.get_transaction_count(self.sender_account.address),
+            "value": 0,
+        }
 
     @staticmethod
     def assert_all_messages(messages: list, topics: list):
@@ -108,12 +115,18 @@ class TestSubscriber(TestRpcCalls):
                 if hasattr_recursive(message, "params.result.hash"):
                     result = message.params.result
                     if receipt.blockHash.hex() == result.hash:
+                        # TODO additional checks:
+                        #  response.number == receipt.blockNumber
+                        #  response.receiptsRoot == receipt.transactionHash
+                        #  after https://neonlabs.atlassian.net/browse/NDEV-2040
                         response = message
             assert response is not None, \
                 f"no message with required blockHash {receipt.blockHash.hex()} in received messages"
             assert hasattr(response.params, "subscription")
             assert response.params.subscription == subscription
             assert_fields_are_hex(response.params.result,
+                                  # TODO add ["number", "receiptsRoot"]
+                                  #  after https://neonlabs.atlassian.net/browse/NDEV-2040
                                   ["extraData", "gasLimit", "gasUsed", "logsBloom",
                                    "nonce", "parentHash", "sha3Uncles",
                                    "stateRoot", "timestamp", "transactionsRoot"])
@@ -186,9 +199,10 @@ class TestSubscriber(TestRpcCalls):
         "event_filter, arg_filter, log_count",
         [
             (["Event2(string,string)"], None, 2),
-            ([], ["text1"], 3),
+            # TODO add following testcases after https://neonlabs.atlassian.net/browse/NDEV-2036
+            # ([], ["text1"], 3),
             (["Event2(string,string)"], ["text2"], 1),
-            (["Event2(string,string)", "Event3(string,string,string)"], ["text2", "text3", "text1", "text5"], 3,),
+            # (["Event2(string,string)", "Event3(string,string,string)"], ["text2", "text3", "text1", "text5"], 3,),
             ([], None, 4),
         ],
     )

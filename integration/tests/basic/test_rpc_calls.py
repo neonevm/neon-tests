@@ -6,7 +6,6 @@ from enum import Enum
 
 import allure
 import pytest
-import sha3
 from eth_utils import keccak
 
 from integration.tests.basic.helpers import rpc_checks
@@ -92,9 +91,8 @@ def get_event_signatures(abi: tp.List[tp.Dict]) -> tp.List[str]:
     topics = []
     for event in filter(lambda item: item["type"] == "event", abi):
         input_types = ",".join(i["type"] for i in event["inputs"])
-        keccak256 = sha3.keccak_256()
-        keccak256.update(f"{event['name']}({input_types})".encode())
-        topics.append(f"0x{keccak256.hexdigest()}")
+        signature = f"{event['name']}({input_types})"
+        topics.append(f"0x{keccak(signature.encode()).hex()}")
     return topics
 
 

@@ -97,6 +97,7 @@ class TestSubscriber(BaseMixin):
         assert is_event_topic_in_list, f"Filter by {topics} works incorrect. Response: {m}"
         assert is_arg_topic_in_list, f"Filter by {topics} works incorrect. Response: {m}"
 
+    @pytest.mark.only_devnet
     async def test_subscribe_to_newheads(self):
         async with websockets.connect(TEST_STAND) as ws:
             data = Subscribe(["newHeads"])
@@ -142,6 +143,7 @@ class TestSubscriber(BaseMixin):
             assert len(messages) == 0, \
                 f"Expected no events to be received after unsubscription, but got {len(messages)} events"
 
+    @pytest.mark.only_devnet
     @pytest.mark.parametrize("param_fields", [("address", "topics"), ("topics",), ("address",), ()], ids=str)
     async def test_logs(self, param_fields, event_caller_contract):
         async with websockets.connect(TEST_STAND) as ws:
@@ -195,6 +197,7 @@ class TestSubscriber(BaseMixin):
             response = json.loads(r, object_hook=lambda d: SimpleNamespace(**d))
             assert response.result == 'true'
 
+    @pytest.mark.only_devnet
     @pytest.mark.parametrize(
         "event_filter, arg_filter, log_count",
         [
@@ -241,6 +244,7 @@ class TestSubscriber(BaseMixin):
             assert (len(messages) == log_count), f"Expected {log_count} event logs, but found {len(messages)}"
             self.assert_all_messages(messages, topics)
 
+    @pytest.mark.only_devnet
     async def test_multiples_users_different_logs(self, event_caller_contract):
         topic1 = cryptohex("Event1(string)")
         topic2 = cryptohex("Event3(string,string,string)")
@@ -283,6 +287,7 @@ class TestSubscriber(BaseMixin):
             assert topics2[0] == topic2, f"expected received topic {topics2[0]} equal to {topic2}"
             assert len(topics2) == 4, f"expected 4 topics for Event3, but received {len(topics2)}"
 
+    @pytest.mark.only_devnet
     @pytest.mark.parametrize("subscription_type", ["newHeads", "logs"])
     async def test_another_user_cant_unsubscribe(self, subscription_type: string):
         async with (

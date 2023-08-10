@@ -5,12 +5,14 @@ import typing
 from types import SimpleNamespace
 
 import allure
+import hexbytes
 import pytest
 import websockets
 
 from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex
 from integration.tests.basic.test_rpc_calls import TestRpcCalls
-from integration.tests.services.helpers.basic import ws_receive_all_messages, cryptohex, hasattr_recursive
+from integration.tests.services.helpers.basic import cryptohex, hasattr_recursive
+from integration.tests.services.helpers.websockets import ws_receive_all_messages, ws_receive_messages_limit_time
 
 TEST_STAND = "ws://159.69.194.181:8282"
 
@@ -37,41 +39,39 @@ class Unsubscribe(ETH):
 @allure.story("Subscribe to events")
 class TestSubscriber(TestRpcCalls):
 
-    @pytest.fixture
-    def event_caller(self) -> typing.Any:
+    @pytest.fixture()
+    def event_caller_contract(self) -> typing.Any:
         event_caller, _ = self.web3_client.deploy_and_get_contract(
             "EventCaller", "0.8.12", self.sender_account
         )
         yield event_caller
 
-    def call_contract_events(self, event_caller: typing.Any):
+    def call_contract_events(self, event_caller_contract):
         arg1, arg2, arg3 = ("text1", "text2", "text3")
-        tx = self.make_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.callEvent1(arg1).build_transaction(tx)
-        self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
-        tx = self.make_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.callEvent2(arg1, arg2).build_transaction(
-            tx
-        )
-        self.web3_client.send_transaction(self.sender_account, instruction_tx)
-
-        tx = self.make_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.callEvent2(arg2, arg3).build_transaction(
-            tx
-        )
-        self.web3_client.send_transaction(self.sender_account, instruction_tx)
-
-        tx = self.make_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.callEvent3(
-            arg1, arg2, arg3
-        ).build_transaction(tx)
-        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        instructions = {
+            "callEvent1": [[arg1]],
+            "callEvent2": [[arg1, arg2], [arg2, arg3]],
+            "callEvent3": [[arg1, arg2, arg3]]
+        }
+        for i in instructions:
+            for args in instructions[i]:
+                tx = self.make_tx_object(self.sender_account.address)
+                instruction_tx = getattr(event_caller_contract.functions, i)(*args).build_transaction(tx)
+                self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
     @staticmethod
     def assert_all_messages(messages: list, topics: list):
+        """
+        Validate that messages from the response contain all the initial topics
+        (including additional arguments as topics)
+
+        :param list messages: Messages from the websocket response
+        :param list topics: Topics that have been subscribed to
+        """
         is_event_topic_in_list = False
         is_arg_topic_in_list = False
+
         for m in messages:
             log = m.params.result
             if topics[0]:
@@ -99,12 +99,19 @@ class TestSubscriber(TestRpcCalls):
             subscription = response.result
             assert len(subscription) > 0
 
-            self.send_neon(self.sender_account, self.recipient_account, 0.1)
+            receipt = self.send_neon(self.sender_account, self.recipient_account, 0.1)
 
-            r = await ws.recv()
-            response = json.loads(r, object_hook=lambda d: SimpleNamespace(**d))
-            assert hasattr_recursive(response, "params.subscription")
-            assert hasattr(response.params, "result")
+            messages = await ws_receive_messages_limit_time(ws, limit_time=20)
+
+            # find required newHeads message by blockHash
+            for message in messages:
+                if hasattr_recursive(message, "params.result.hash"):
+                    result = message.params.result
+                    if receipt.blockHash.hex() == result.hash:
+                        response = message
+            assert response is not None, \
+                f"no message with required blockHash {receipt.blockHash.hex()} in received messages"
+            assert hasattr(response.params, "subscription")
             assert response.params.subscription == subscription
             assert_fields_are_hex(response.params.result,
                                   ["extraData", "gasLimit", "gasUsed", "logsBloom",
@@ -123,13 +130,13 @@ class TestSubscriber(TestRpcCalls):
                 f"Expected no events to be received after unsubscription, but got {len(messages)} events"
 
     @pytest.mark.parametrize("param_fields", [("address", "topics"), ("topics",), ("address",), ()], ids=str)
-    async def test_logs(self, param_fields, event_caller: typing.Any):
+    async def test_logs(self, param_fields, event_caller_contract):
         async with websockets.connect(TEST_STAND) as ws:
             optional_fields = {}
             topic = False
 
             if "address" in param_fields:
-                optional_fields["address"] = event_caller.address
+                optional_fields["address"] = event_caller_contract.address
             if "topics" in param_fields:
                 topic = cryptohex("AllTypes(address,uint256,string,bytes32,bool)")
                 optional_fields["topics"] = [topic]
@@ -150,7 +157,7 @@ class TestSubscriber(TestRpcCalls):
             bytes_array = text.encode().ljust(32, b'\0')
             bol = True
             tx = self.make_tx_object()
-            instruction_tx = event_caller.functions.allTypes(
+            instruction_tx = event_caller_contract.functions.allTypes(
                 self.sender_account.address, number, text, bytes_array, bol
             ).build_transaction(tx)
             self.web3_client.send_transaction(self.sender_account, instruction_tx)
@@ -185,7 +192,7 @@ class TestSubscriber(TestRpcCalls):
             ([], None, 4),
         ],
     )
-    async def test_filter_log_by_topics(self, event_filter, arg_filter, log_count, event_caller: typing.Any):
+    async def test_filter_log_by_topics(self, event_filter, arg_filter, log_count, event_caller_contract):
         async with websockets.connect(TEST_STAND) as ws:
             # prepare params with specified topics and send them to websocket service
             topics = []
@@ -213,18 +220,18 @@ class TestSubscriber(TestRpcCalls):
             assert len(subscription) > 0
 
             # send transactions to trigger messages in websocket service
-            self.call_contract_events()
+            self.call_contract_events(event_caller_contract)
 
             # validate result — all the received messages
             messages = await ws_receive_all_messages(ws)
             assert (len(messages) == log_count), f"Expected {log_count} event logs, but found {len(messages)}"
             self.assert_all_messages(messages, topics)
 
-    async def test_multiples_users_different_logs(self, event_caller: typing.Any):
+    async def test_multiples_users_different_logs(self, event_caller_contract):
         topic1 = cryptohex("Event1(string)")
         topic2 = cryptohex("Event3(string,string,string)")
-        params1 = ["logs", {"address": event_caller.address, "topics": [topic1]}]
-        params2 = ["logs", {"address": event_caller.address, "topics": [topic2]}]
+        params1 = ["logs", {"address": event_caller_contract.address, "topics": [topic1]}]
+        params2 = ["logs", {"address": event_caller_contract.address, "topics": [topic2]}]
 
         data1, data2 = Subscribe(params1), Subscribe(params2)
 
@@ -241,7 +248,7 @@ class TestSubscriber(TestRpcCalls):
             response2 = json.loads(r2, object_hook=lambda d: SimpleNamespace(**d))
             subscription2 = response2.result
 
-            self.call_contract_events(event_caller)
+            self.call_contract_events(event_caller_contract)
 
             messages1, messages2 = await ws_receive_all_messages(ws1), await ws_receive_all_messages(ws2)
             assert len(messages1) == 1, f"expected to receive 1 event for user1, but received {len(messages1)}"

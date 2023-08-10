@@ -44,7 +44,6 @@ RUN apt install -y libxkbcommon0 \
 
 COPY ./deploy/requirements/* /opt/
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
-RUN pip3 install setuptools wheel
 RUN pip3 install -r /opt/prod.txt -r /opt/ui.txt
 COPY ./deploy/oz/run-full-test-suite.sh /opt/neon-tests/
 

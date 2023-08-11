@@ -7,7 +7,6 @@ import string
 import time
 import typing as tp
 
-import sha3
 import solcx
 from eth_abi import abi
 from eth_utils import keccak
@@ -171,8 +170,6 @@ def get_selectors(abi):
                 input_types += "," + input["type"]
 
         input_types = input_types[1:]
-        keccak256 = sha3.keccak_256()
-        keccak256.update(f"{function['name']}({input_types})".encode())
         encoded_selector = f"{function['name']}({input_types})"
         selectors.append(keccak(text=encoded_selector)[:4])
     return selectors

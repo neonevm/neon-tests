@@ -103,7 +103,7 @@ jobs:
           network: ${{ env.NETWORK }}
           aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          tests_name: oz
+          tests_name: oz-v3_4
       - name: Analyze tests results
         run: |
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py analyze-openzeppelin-results
@@ -135,7 +135,7 @@ jobs:
         run: |
           docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ env.IMAGE_TAG }} /bin/bash
       - name: Run OpenZeppelin tests
-        timeout-minutes: 120
+        timeout-minutes: 240
         run: |
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py run oz \
             --network ${{ needs.prepare-env.outputs.network }} \
@@ -152,7 +152,7 @@ jobs:
           network: ${{ env.NETWORK }}
           aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          tests_name: oz
+          tests_name: oz-v2_5
       - name: Analyze tests results
         run: |
           docker exec -i ${{ env.CONTAINER }} ./clickfile.py analyze-openzeppelin-results

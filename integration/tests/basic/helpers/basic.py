@@ -167,6 +167,13 @@ class BaseMixin(BaseTests):
             time.sleep(1)
         raise TimeoutError(f"Transaction is not accepted for {timeout} seconds")
 
+    def wait_finalized_block(self, block_num: int):
+        fin_block_num = block_num - 32
+        while block_num > fin_block_num:
+            time.sleep(1)
+            response = self.proxy_api.send_rpc("neon_finalizedBlockNumber", [])
+            fin_block_num = int(response["result"], 16)
+
     def create_tx_object(self, sender=None, recipient=None, amount=2, nonce=None, gas_price=None, data=None):
         if gas_price is None:
             gas_price = self.web3_client.gas_price()

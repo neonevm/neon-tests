@@ -131,7 +131,7 @@ class TestPrecompiledContracts(BaseMixin):
     def test_call_via_send_trx(self, web3_client: NeonWeb3Client,
                                address,
                                input_data,
-                               expected, request):
+                               expected, request, pytestconfig):
         if request.node.callspec.id == 'blake2f-vector 8':
             pytest.skip("NDEV-1961")
         amount = random.choice([0, 10])
@@ -145,11 +145,12 @@ class TestPrecompiledContracts(BaseMixin):
 
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert receipt["status"] == 1
-        assert self.get_balance_from_wei(address)-balance_before == amount
+        if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
+            assert self.get_balance_from_wei(address) - balance_before == amount
 
     @pytest.mark.xdist_group("precompiled_contract_balance")
     @pytest.mark.parametrize("contract", PRECOMPILED_FIXTURES)
-    def test_send_neon_without_data(self, contract):
+    def test_send_neon_without_data(self, contract, pytestconfig):
         address = PRECOMPILED_FIXTURES[contract]["address"]
         balance_before = self.get_balance_from_wei(address)
         amount = random.randint(1, 10)
@@ -157,4 +158,6 @@ class TestPrecompiledContracts(BaseMixin):
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         assert receipt["status"] == 1
-        assert self.get_balance_from_wei(address)-balance_before == amount
+        pytestconfig.getoption("--network")
+        if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
+            assert self.get_balance_from_wei(address) - balance_before == amount

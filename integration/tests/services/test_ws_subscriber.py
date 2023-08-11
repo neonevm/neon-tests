@@ -177,7 +177,7 @@ class TestSubscriber(BaseMixin):
             self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
             messages = await ws_receive_all_messages(ws)
-            assert (len(messages) == 1), f"Expected 1 event log, but found {len(messages)}"
+            assert (len(messages) == 1), f"Expected 1 event log, but found {len(messages)}: {messages}"
             response = messages[0]
             assert hasattr_recursive(response, "params.subscription")
             assert hasattr(response.params, "result")
@@ -241,7 +241,8 @@ class TestSubscriber(BaseMixin):
 
             # validate result — all the received messages
             messages = await ws_receive_all_messages(ws)
-            assert (len(messages) == log_count), f"Expected {log_count} event logs, but found {len(messages)}"
+            assert (len(messages) == log_count), \
+                f"Expected {log_count} event logs, but found {len(messages)}: {messages}"
             self.assert_all_messages(messages, topics)
 
     @pytest.mark.only_devnet
@@ -283,9 +284,9 @@ class TestSubscriber(BaseMixin):
             assert messages2[0].params.subscription == subscription2, \
                 f"expected received subscription {r_subscription2} to be equal {subscription2}"
             assert topics1[0] == topic1, f"expected received topic {topics1[0]} equal to {topic1}"
-            assert len(topics1) == 2, f"expected 2 topics for Event1, but received {len(topics1)}"
+            assert len(topics1) == 2, f"expected 2 topics for Event1, but received {len(topics1)}: {topics1}"
             assert topics2[0] == topic2, f"expected received topic {topics2[0]} equal to {topic2}"
-            assert len(topics2) == 4, f"expected 4 topics for Event3, but received {len(topics2)}"
+            assert len(topics2) == 4, f"expected 4 topics for Event3, but received {len(topics2)}: {topics2}"
 
     @pytest.mark.only_devnet
     @pytest.mark.parametrize("subscription_type", ["newHeads", "logs"])

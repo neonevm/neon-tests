@@ -149,9 +149,8 @@ class TestNeonPass:
             neonpass_page.set_transaction_fee(platform, token.name, fee_type)
             neonpass_page.confirm_tokens_transfer(platform, token)
 
-        with allure.step("Making sure that the balance in the wallet changed"):
+        with allure.step("Assert the balance in the wallet changed"):
             metamask_page.page.bring_to_front()
-            # check balance
             libs.try_until(
                 lambda: init_balance < get_balance()
                 if platform == Platform.solana

@@ -6,6 +6,7 @@ Created on 2022-06-16
 
 import os
 
+import allure
 from playwright._impl._api_types import TimeoutError
 
 from ui import components, libs
@@ -71,66 +72,70 @@ class NeonPassPage(BasePage):
 
     def switch_platform_source(self, platform: str) -> None:
         """Change transfer source platform (Neon/Solana)"""
-        selector = f"//app-wallet-button[@label='From']//*[text()='{platform}']"  # desired platform
+        with allure.step(f"Switch platform source to {platform}"):
+            selector = f"//app-wallet-button[@label='From']//*[text()='{platform}']"  # desired platform
 
-        if not self.page.query_selector(selector):  # if it's not already set -> switch
-            components.Button(
-                self.page,
-                selector="//button[@class='switch-button']",
-            ).click()
-            self.page.wait_for_selector(selector)
+            if not self.page.query_selector(selector):  # if it's not already set -> switch
+                components.Button(
+                    self.page,
+                    selector="//button[@class='switch-button']",
+                ).click()
+                self.page.wait_for_selector(selector)
 
     def connect_phantom(self, timeout: float = 30000) -> None:
         """Connect Phantom Wallet"""
-        # Wait page loaded
-        if self._is_source_tab_loaded:
-            pass
-        try:
-            with self.page.context.expect_page(timeout=timeout) as phantom_page_info:
-                components.Button(
-                    self.page, selector="//app-wallet-button[@label='From']//*[text()='Connect Wallet']").click()
-                components.Button(
-                    self.page, selector="//app-wallets-dialog//*[text()='Phantom']/parent::*").click()
-            self._handle_phantom_unlock(phantom_page_info.value)
-            self.page.wait_for_selector(
-                selector="//app-wallet-button[@label='From']//*[contains(text(),'B4t7')]", timeout=timeout)
-        except TimeoutError as e:
-            if 'waiting for event "page"' not in e.message:
-                raise e
+        with allure.step("Connect phantom wallet"):
+            # Wait page loaded
+            if self._is_source_tab_loaded:
+                pass
+            try:
+                with self.page.context.expect_page(timeout=timeout) as phantom_page_info:
+                    components.Button(
+                        self.page, selector="//app-wallet-button[@label='From']//*[text()='Connect Wallet']").click()
+                    components.Button(
+                        self.page, selector="//app-wallets-dialog//*[text()='Phantom']/parent::*").click()
+                self._handle_phantom_unlock(phantom_page_info.value)
+                self.page.wait_for_selector(
+                    selector="//app-wallet-button[@label='From']//*[contains(text(),'B4t7')]", timeout=timeout)
+            except TimeoutError as e:
+                if 'waiting for event "page"' not in e.message:
+                    raise e
 
     def connect_metamask(self, timeout: float = 30000) -> None:
         """Connect Metamask Wallet"""
-        # Wait page loaded
-        if self._is_target_tab_loaded:
-            pass
-        try:
-            with self.page.context.expect_page(timeout=timeout) as mm_page_connect:
-                components.Button(
-                    self.page, selector="//app-wallet-button[@label='To']//*[text()='Connect Wallet']").click()
-            self._handle_metamask_connect(mm_page_connect.value)
-            self.page.wait_for_selector(
-                selector="//app-wallet-button[@label='To']//*[contains(text(),'0x4701')]", timeout=timeout)
-        except TimeoutError as e:
-            if 'waiting for event "page"' not in e.message:
-                raise e
+        with allure.step("Connect metamask wallet"):
+            # Wait page loaded
+            if self._is_target_tab_loaded:
+                pass
+            try:
+                with self.page.context.expect_page(timeout=timeout) as mm_page_connect:
+                    components.Button(
+                        self.page, selector="//app-wallet-button[@label='To']//*[text()='Connect Wallet']").click()
+                self._handle_metamask_connect(mm_page_connect.value)
+                self.page.wait_for_selector(
+                    selector="//app-wallet-button[@label='To']//*[contains(text(),'0x4701')]", timeout=timeout)
+            except TimeoutError as e:
+                if 'waiting for event "page"' not in e.message:
+                    raise e
 
     def set_source_token(self, token: str, amount: float) -> None:
         """Set source token and amount ti transfer"""
-        components.Button(self.page, text="Select token").click()
-        self.page.wait_for_selector(selector="//div[contains(@class, 'tokens-options')]")
-        components.Button(self.page, selector=f"//button//*[text()='{token}']").click()
-        self.page.wait_for_selector(selector="//label[contains(text(), 'balance')]")
-        components.Input(self.page, selector="//input[contains(@class, 'token-amount-input')]").fill(str(amount))
+        with allure.step(f"Set source token to {token.name} and amount to {amount}"):
+            components.Button(self.page, text="Select token").click()
+            self.page.wait_for_selector(selector="//div[contains(@class, 'tokens-options')]")
+            components.Button(self.page, selector=f"//button//*[text()='{token}']").click()
+            self.page.wait_for_selector(selector="//label[contains(text(), 'balance')]")
+            components.Input(self.page, selector="//input[contains(@class, 'token-amount-input')]").fill(str(amount))
 
     def set_transaction_fee(self, platform: str, token_name: str, fee_type: str) -> None:
         """Set Neon transaction fee type"""
         if platform != Platform.solana or token_name != Tokens.neon.name:
             return
+        with allure.step(f"Set transaction fee for platform {platform}, token {token_name} and fee type {fee_type}"):
+            selector = f"//app-neon-transaction-fee//*[contains(text(),'{fee_type}')]/parent::*"
 
-        selector = f"//app-neon-transaction-fee//*[contains(text(),'{fee_type}')]/parent::*"
-
-        components.Button(self.page, selector=selector).click()
-        assert self.page.is_visible(selector + "[contains(@class, 'selected')]")
+            components.Button(self.page, selector=selector).click()
+            assert self.page.is_visible(selector + "[contains(@class, 'selected')]")
 
     def next_tab(self) -> None:
         """Got to next tab"""
@@ -139,34 +144,35 @@ class NeonPassPage(BasePage):
 
     def confirm_tokens_transfer(self, platform: str, token: Token, timeout: float = 60000) -> None:
         """Confirm tokens withdraw"""
-        with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
-            self.page.wait_for_selector(selector="//button[contains(@class, 'transfer-button')]").click()
-        confirm_page = confirm_page_info.value
+        with allure.step(f"Confirm tokens transfer for platform {platform} and token {token}"):
+            with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
+                self.page.wait_for_selector(selector="//button[contains(@class, 'transfer-button')]").click()
+            confirm_page = confirm_page_info.value
 
-        if platform == Platform.solana:
-            if token in [libs.Tokens.sol]:
-                with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
-                    self._handle_pt_withdraw_confirm(confirm_page)
-                confirm_page = confirm_page_info.value
-            self._handle_pt_withdraw_confirm(confirm_page)
-
-        if platform == Platform.neon:
-            if token in [libs.Tokens.wsol]:
-                with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
-                    self._handle_pt_withdraw_confirm(confirm_page)
-                confirm_page = confirm_page_info.value
-                with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
-                    self._handle_mm_withdraw_confirm(confirm_page)
-                confirm_page = confirm_page_info.value
-                self._handle_pt_withdraw_confirm(confirm_page)
-            else:
-                if token in [libs.Tokens.usdt, libs.Tokens.usdc]:
+            if platform == Platform.solana:
+                if token in [libs.Tokens.sol]:
                     with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
                         self._handle_pt_withdraw_confirm(confirm_page)
                     confirm_page = confirm_page_info.value
-                self._handle_mm_withdraw_confirm(confirm_page)
+                self._handle_pt_withdraw_confirm(confirm_page)
 
-        # Close overlay message 'Transfer complete'
-        self.page.wait_for_selector(selector="//*[text()='Transfer complete']", timeout=120000)
-        components.Button(self.page, selector="//*[text()='Close']").click()
-        self._is_source_tab_loaded
+            if platform == Platform.neon:
+                if token in [libs.Tokens.wsol]:
+                    with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
+                        self._handle_pt_withdraw_confirm(confirm_page)
+                    confirm_page = confirm_page_info.value
+                    with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
+                        self._handle_mm_withdraw_confirm(confirm_page)
+                    confirm_page = confirm_page_info.value
+                    self._handle_pt_withdraw_confirm(confirm_page)
+                else:
+                    if token in [libs.Tokens.usdt, libs.Tokens.usdc]:
+                        with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
+                            self._handle_pt_withdraw_confirm(confirm_page)
+                        confirm_page = confirm_page_info.value
+                    self._handle_mm_withdraw_confirm(confirm_page)
+
+            # Close overlay message 'Transfer complete'
+            self.page.wait_for_selector(selector="//*[text()='Transfer complete']", timeout=120000)
+            components.Button(self.page, selector="//*[text()='Close']").click()
+            self._is_source_tab_loaded

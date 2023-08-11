@@ -13,8 +13,6 @@ from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex
 from integration.tests.services.helpers.basic import cryptohex, hasattr_recursive
 from integration.tests.services.helpers.websockets import ws_receive_all_messages, ws_receive_messages_limit_time
 
-TEST_STAND = "ws://159.69.194.181:8282"
-
 
 class ETH:
     def __init__(self, params: list, method: str):
@@ -98,8 +96,8 @@ class TestSubscriber(BaseMixin):
         assert is_arg_topic_in_list, f"Filter by {topics} works incorrect. Response: {m}"
 
     @pytest.mark.only_devnet
-    async def test_subscribe_to_newheads(self):
-        async with websockets.connect(TEST_STAND) as ws:
+    async def test_subscribe_to_newheads(self, ws_subscriber_url):
+        async with websockets.connect(ws_subscriber_url) as ws:
             data = Subscribe(["newHeads"])
             await ws.send(json.dumps(data.__dict__))
             r = await ws.recv()
@@ -112,6 +110,7 @@ class TestSubscriber(BaseMixin):
             messages = await ws_receive_messages_limit_time(ws, limit_time=20)
 
             # find required newHeads message by blockHash
+            response = None
             for message in messages:
                 if hasattr_recursive(message, "params.result.hash"):
                     result = message.params.result
@@ -145,8 +144,8 @@ class TestSubscriber(BaseMixin):
 
     @pytest.mark.only_devnet
     @pytest.mark.parametrize("param_fields", [("address", "topics"), ("topics",), ("address",), ()], ids=str)
-    async def test_logs(self, param_fields, event_caller_contract):
-        async with websockets.connect(TEST_STAND) as ws:
+    async def test_logs(self, param_fields, event_caller_contract, ws_subscriber_url):
+        async with websockets.connect(ws_subscriber_url) as ws:
             optional_fields = {}
             topic = False
 
@@ -209,8 +208,9 @@ class TestSubscriber(BaseMixin):
             ([], None, 4),
         ],
     )
-    async def test_filter_log_by_topics(self, event_filter, arg_filter, log_count, event_caller_contract):
-        async with websockets.connect(TEST_STAND) as ws:
+    async def test_filter_log_by_topics(
+            self, event_filter, arg_filter, log_count, event_caller_contract, ws_subscriber_url):
+        async with websockets.connect(ws_subscriber_url) as ws:
             # prepare params with specified topics and send them to websocket service
             topics = []
             if event_filter is not None:
@@ -245,7 +245,7 @@ class TestSubscriber(BaseMixin):
             self.assert_all_messages(messages, topics)
 
     @pytest.mark.only_devnet
-    async def test_multiples_users_different_logs(self, event_caller_contract):
+    async def test_multiples_users_different_logs(self, event_caller_contract, ws_subscriber_url):
         topic1 = cryptohex("Event1(string)")
         topic2 = cryptohex("Event3(string,string,string)")
         params1 = ["logs", {"address": event_caller_contract.address, "topics": [topic1]}]
@@ -254,7 +254,7 @@ class TestSubscriber(BaseMixin):
         data1, data2 = Subscribe(params1), Subscribe(params2)
 
         async with (
-            websockets.connect(TEST_STAND) as ws1, websockets.connect(TEST_STAND) as ws2
+            websockets.connect(ws_subscriber_url) as ws1, websockets.connect(ws_subscriber_url) as ws2
         ):
             await ws1.send(json.dumps(data1.__dict__))
             r1 = await ws1.recv()
@@ -289,9 +289,9 @@ class TestSubscriber(BaseMixin):
 
     @pytest.mark.only_devnet
     @pytest.mark.parametrize("subscription_type", ["newHeads", "logs"])
-    async def test_another_user_cant_unsubscribe(self, subscription_type: string):
+    async def test_another_user_cant_unsubscribe(self, subscription_type: string, ws_subscriber_url):
         async with (
-            websockets.connect(TEST_STAND) as ws1, websockets.connect(TEST_STAND) as ws2
+            websockets.connect(ws_subscriber_url) as ws1, websockets.connect(ws_subscriber_url) as ws2
         ):
             data = Subscribe([subscription_type])
             await ws1.send(json.dumps(data.__dict__))

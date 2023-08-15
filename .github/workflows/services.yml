@@ -1,5 +1,6 @@
 name: "Services tests"
-run-name: Services tests for ${{ github.event.pull_request.title }}
+run-name:
+  Services tests (${{ github.event.inputs.network || 'devnet' }}, ${{ github.event.inputs.numprocesses || '4'}})
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -28,7 +29,6 @@ on:
           - 12
           - auto
 env:
-  NETWORK: devnet
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   SOLANA_URL: "${{ secrets.SOLANA_URL }}"
   NUMPROCESSES: 4
@@ -54,7 +54,7 @@ jobs:
       - dockerize
     runs-on: ubuntu-20.04
     env:
-      NETWORK: ${{ github.event.inputs.network }} | ${{ env.NETWORK }}
+      NETWORK: ${{ github.event.inputs.network || 'devnet'}}
 #      TODO Add parallel execution for test_ws_subscriber after https://neonlabs.atlassian.net/browse/NDEV-2064
       NUMPROCESSES: 1
     if: |
@@ -81,7 +81,7 @@ jobs:
         run: |
           docker exec -i ${{ env.CONTAINER }} \
             ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
-          -b ${{ env.BUILD_URL }} -n ${{ NETWORK }}
+          -b ${{ env.BUILD_URL }} -n ${{ env.NETWORK }}
       - name: "Generate allure report"
         if: always()
         id: requirements

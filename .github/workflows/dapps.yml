@@ -487,7 +487,7 @@ jobs:
           IMAGE: neonlabsorg/robonomics_tests:ea0ee2070c6bcd0e60d7ba61e213241fceafb257
         run: |
           docker pull ${{ env.IMAGE }}
-          docker run -i -d --name=robonomics-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash
+          docker run -i -d --entrypoint "sleep" --name=robonomics-${{ github.run_id }} ${{ env.IMAGE }} infinity
           env_args="-e NEON_PROXY_URL=${{env.PROXY_URL}} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} -e NEON_CHAIN_ID=${{ env.NETWORK_ID }}"
           echo "Run Robonomics tests"
           docker exec -i $env_args robonomics-${{ github.run_id }} ./run_tests.sh

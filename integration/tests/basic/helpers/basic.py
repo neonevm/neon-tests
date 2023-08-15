@@ -175,27 +175,11 @@ class BaseMixin(BaseTests):
             fin_block_num = int(response["result"], 16)
 
     def create_tx_object(self, sender=None, recipient=None, amount=2, nonce=None, gas_price=None, data=None):
-        if gas_price is None:
-            gas_price = self.web3_client.gas_price()
         if sender is None:
             sender = self.sender_account.address
         if recipient is None:
             recipient = self.recipient_account.address
-        if nonce is None:
-            nonce = self.web3_client.eth.get_transaction_count(sender)
-        transaction = {
-            "from": sender,
-            "to": recipient,
-            "value": self.web3_client.to_wei(amount, Unit.ETHER),
-            "chainId": self.web3_client._chain_id,
-            "gasPrice": gas_price,
-            "gas": 0,
-            "nonce": nonce,
-        }
-        if data is not None:
-            transaction["data"] = data
-        transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
-        return transaction
+        super().create_tx_object(sender,recipient, amount, nonce, gas_price, data)
 
     def create_contract_call_tx_object(self, sender=None, amount=None):
         if sender is None:

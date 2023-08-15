@@ -280,6 +280,7 @@ class TestRpcCalls(BaseMixin):
     def test_rpc_call_eth_send_raw_transaction(self):
         """Verify implemented rpc calls work eth_sendRawTransaction"""
         transaction = self.create_tx_object(amount=1)
+
         signed_tx = self.web3_client.eth.account.sign_transaction(
             transaction, self.sender_account.key
         )
@@ -290,6 +291,8 @@ class TestRpcCalls(BaseMixin):
         assert rpc_checks.is_hex(
             response["result"]
         ), f"Invalid response result {response['result']}"
+
+
 
     @pytest.mark.parametrize("param", [128, 32, 16, None])
     def test_rpc_call_eth_get_transaction_by_hash(self, param: tp.Union[int, None]):

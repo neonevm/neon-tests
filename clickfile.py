@@ -473,7 +473,8 @@ def update_contracts(branch):
     help="Which UI test run",
 )
 @click.argument(
-    "name", required=True, type=click.Choice(["economy", "basic", "services", "oz", "ui"])
+    "name", required=True, type=click.Choice(["economy", "basic", "services", "oz", "ui",
+                                              "compiler_compatibility"])
 )
 @catch_traceback
 def run(name, jobs, numprocesses, ui_item, amount, users, network):
@@ -491,7 +492,11 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
     elif name == "services":
         command = "py.test integration/tests/services"
         if numprocesses:
-            command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
+            command = f"{command} --numprocesses {numprocesses}"
+    elif name == "compiler_compatibility":
+        command = "py.test integration/tests/compiler_compatibility"
+        if numprocesses:
+            command = f"{command} --numprocesses {numprocesses} --dist loadscope"
     elif name == "oz":
         run_openzeppelin_tests(
             network, jobs=int(jobs), amount=int(amount), users=int(users)
@@ -605,7 +610,7 @@ locust_tags = click.option(
     type=str,
     multiple=True,
     help="tag to include in the test, so only tasks "
-    "with any matching tags will be executed",
+         "with any matching tags will be executed",
 )
 
 locust_headless = click.option(
@@ -613,7 +618,7 @@ locust_headless = click.option(
     " /-w",
     default=True,
     help="Enable the web interface. "
-    "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
+         "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
 )
 
 
@@ -646,7 +651,7 @@ def locust(ctx):
     show_default=True,
 )
 def run(
-    credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile, neon_rpc
+        credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile, neon_rpc
 ):
     """Run `Neon` pipeline performance test
 

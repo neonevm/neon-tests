@@ -455,7 +455,7 @@ jobs:
           name: compound-report
           path: compound-report.json
 
-robonomics:
+  robonomics:
     runs-on: neon-hosted
     if: contains( needs.prepare.outputs.dapps, 'robonomics')
     needs:
@@ -492,7 +492,6 @@ robonomics:
           echo "Run Robonomics tests"
           docker exec -i $env_args robonomics-${{ github.run_id }} ./run_tests.sh
           docker rm -f robonomics-${{ github.run_id }}
-
   yearn:
     if: contains( needs.prepare.outputs.dapps, 'yearn')
     runs-on: neon-hosted

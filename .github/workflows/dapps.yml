@@ -484,7 +484,7 @@ jobs:
         timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
-          IMAGE: neonlabsorg/robonomics_tests:af089f003cd143c11a4b4b1ff6bf0255c6c85adb
+          IMAGE: neonlabsorg/robonomics_tests:ea0ee2070c6bcd0e60d7ba61e213241fceafb257
         run: |
           docker pull ${{ env.IMAGE }}
           docker run -i -d --name=robonomics-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash

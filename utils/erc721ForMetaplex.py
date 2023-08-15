@@ -10,7 +10,7 @@ class ERC721ForMetaplex:
                  contract_name="ERC721ForMetaplex"):
         self.web3_client = web3_client
         self.account = account or web3_client.create_account()
-        faucet.request_neon(self.account.address, 100)
+        faucet.request_neon(self.account.address, 300)
         self.contract = self.deploy(contract, contract_name)
 
     def make_tx_object(self, from_address, gasPrice=None, gas=None):

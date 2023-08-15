@@ -22,6 +22,7 @@ class PhantomUnlockPage(BasePage):
     def connect(self):
         components.Button(self.page, text="Connect").click()
 
+
 class PhantomWalletsPage(BasePage):
 
     _networks_menu: components.Menu = None
@@ -38,7 +39,7 @@ class PhantomWalletsPage(BasePage):
 
 class PhantomWithdrawConfirmPage(BasePage):
     def page_loaded(self):
-        self.page.wait_for_selector(selector="//p[text()='Approve Transaction']", timeout=10000)
+        self.page.wait_for_selector(selector="//p[text()='Approve Transaction']", timeout=60000)
 
     def withdraw_confirm(self) -> None:
         """Confirm tokens transfer"""

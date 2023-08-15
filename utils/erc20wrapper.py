@@ -36,7 +36,7 @@ class ERC20Wrapper:
         self.account = account
         if self.account is None:
             self.account = web3_client.create_account()
-            faucet.request_neon(self.account.address, 100)
+            faucet.request_neon(self.account.address, 300)
         self.name = name
         self.symbol = symbol
         self.decimals = decimals

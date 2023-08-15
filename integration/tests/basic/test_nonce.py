@@ -15,7 +15,7 @@ class TestNonce(BaseMixin):
 
     def check_transaction_list(self, tx_hash_list):
         for tx_hash in tx_hash_list:
-            tx_receipt = self.wait_transaction_accepted(tx_hash, timeout=30)
+            tx_receipt = self.wait_transaction_accepted(tx_hash, timeout=60)
             assert tx_receipt["result"]["status"] == "0x1"
 
     def test_get_receipt_sequence(self):

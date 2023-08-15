@@ -1,13 +1,16 @@
 import os
 import json
+import shutil
 import pathlib
 import typing as tp
 from dataclasses import dataclass
 
+import pytest
 from _pytest.config import Config
 from _pytest.runner import runtestprotocol
 
-import clickfile
+from clickfile import create_allure_environment_opts
+from utils.web3client import NeonWeb3Client
 
 pytest_plugins = ["ui.plugins.browser"]
 
@@ -26,6 +29,7 @@ class EnvironmentConfig:
     use_bank: bool
     eth_bank_account: str
     neonpass_url: str = ""
+    ws_subscriber_url: str = ""
     account_seed_version: str = "\3"
 
 
@@ -46,7 +50,7 @@ def pytest_addoption(parser):
 
 def pytest_sessionstart(session):
     """Hook for clearing the error log used by the Slack notifications utility"""
-    path = pathlib.Path(f"{clickfile.CMD_ERROR_LOG}")
+    path = pathlib.Path(f"click_cmd_err.log")
     if path.exists():
         path.unlink()
 
@@ -57,7 +61,7 @@ def pytest_runtest_protocol(item, nextitem):
     reports = runtestprotocol(item, nextitem=nextitem)
     ihook.pytest_runtest_logfinish(nodeid=item.nodeid, location=item.location)
     if item.config.getoption("--make-report"):
-        path = pathlib.Path(f"{clickfile.CMD_ERROR_LOG}")
+        path = pathlib.Path(f"click_cmd_err.log")
         with path.open("a") as fd:
             for report in reports:
                 if report.when == "call" and report.outcome == "failed":
@@ -94,3 +98,48 @@ def pytest_configure(config: Config):
             "<proxy_ip>", os.environ.get("PROXY_IP")
         )
     config.environment = EnvironmentConfig(**env)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
+    opts = {}
+    if pytestconfig.getoption("--network") != "geth":
+        opts = {
+            "Network": pytestconfig.environment.proxy_url,
+            "Proxy.Version": web3_client.get_proxy_version()["result"],
+            "EVM.Version": web3_client.get_evm_version()["result"],
+            "CLI.Version": web3_client.get_cli_version()["result"],
+        }
+
+    yield opts
+
+    allure_dir = pytestconfig.getoption("--alluredir")
+    allure_path = pathlib.Path() / allure_dir
+    create_allure_environment_opts(opts)
+    categories_from = pathlib.Path() / "allure" / "categories.json"
+    categories_to = allure_path / "categories.json"
+    shutil.copy(categories_from, categories_to)
+
+    if "CI" in os.environ:
+        with open(allure_path / "executor.json", "w+") as f:
+            json.dump(
+                {
+                    "name": "Github Action",
+                    "type": "github",
+                    "url": "https://github.com/neonlabsorg/neon-tests/actions",
+                    "buildOrder": os.environ.get("GITHUB_RUN_ID", "0"),
+                    "buildName": os.environ.get("GITHUB_WORKFLOW", "neon-tests"),
+                    "buildUrl": f'{os.environ.get("GITHUB_SERVER_URL", "https://github.com")}/{os.environ.get("GITHUB_REPOSITORY", "neon-tests")}/actions/runs/{os.environ.get("GITHUB_RUN_ID", "0")}',
+                    "reportUrl": "",
+                    "reportName": "Allure report for neon-tests",
+                },
+                f,
+            )
+
+
+@pytest.fixture(scope="session", autouse=True)
+def web3_client(pytestconfig: Config) -> NeonWeb3Client:
+    client = NeonWeb3Client(
+        pytestconfig.environment.proxy_url, pytestconfig.environment.network_id
+    )
+    return client

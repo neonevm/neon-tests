@@ -6,7 +6,7 @@ attempts=1
 while [ $attempts -le 10 ]; do
   echo "Attempt $attempts"
 
-  npx hardhat compile --verbose
+  npm run compile
   wait $!
 
   file_count=$(ls -1 $path | wc -l)

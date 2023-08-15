@@ -492,6 +492,11 @@ jobs:
           echo "Run Robonomics tests"
           docker exec -i $env_args robonomics-${{ github.run_id }} ./run_tests.sh
           docker rm -f robonomics-${{ github.run_id }}
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: robonomics-report
+          path: robonomics-report.json
   yearn:
     if: contains( needs.prepare.outputs.dapps, 'yearn')
     runs-on: neon-hosted
@@ -542,7 +547,7 @@ jobs:
 
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn, compound, curve-factory]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory]
     if: always()
     env:
       SOLANA_URL: ${{ needs.prepare.outputs.solana_url || secrets.SOLANA_URL }}
@@ -642,7 +647,7 @@ jobs:
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn, compound, curve-factory]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory]
     if: failure() && github.ref_name == 'develop'
     steps:
       - uses: actions/checkout@v3

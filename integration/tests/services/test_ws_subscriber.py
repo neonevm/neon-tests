@@ -177,7 +177,16 @@ class TestSubscriber(BaseMixin):
             self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
             messages = await ws_receive_all_messages(ws)
-            assert (len(messages) == 1), f"Expected 1 event log, but found {len(messages)}: {messages}"
+            if len(param_fields) == 0:
+                assert (len(messages) >= 1), f"Expected 1 event log or more, but found {len(messages)}"
+            else:
+                assert (len(messages) == 1), \
+                    f"Expected 1 event log, but found {len(messages)}, " \
+                    f"contract address {event_caller_contract.address}," \
+                    f"messages: {messages}"
+                assert hasattr_recursive(messages[0], "params.result.address")
+                assert messages[0].params.result.address == event_caller_contract.address.lower(), \
+                    "filter by address should emit only events with the same address, but received different"
             response = messages[0]
             assert hasattr_recursive(response, "params.subscription")
             assert hasattr(response.params, "result")
@@ -224,7 +233,7 @@ class TestSubscriber(BaseMixin):
                     arg_topics.append(cryptohex(item))
                 topics.append(arg_topics)
 
-            optional_fields = {}
+            optional_fields = {"address": event_caller_contract.address}
             if topics:
                 optional_fields["topics"] = topics
             params = ["logs", optional_fields]

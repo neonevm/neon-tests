@@ -55,6 +55,7 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       NETWORK: ${{ github.event.inputs.network }} | ${{ env.NETWORK }}
+#      TODO Add parallel execution for test_ws_subscriber after https://neonlabs.atlassian.net/browse/NDEV-2064
       NUMPROCESSES: 1
     if: |
       always() &&

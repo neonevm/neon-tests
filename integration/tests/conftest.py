@@ -1,6 +1,4 @@
-import json
 import os
-import pathlib
 import random
 import typing as tp
 import string
@@ -47,6 +45,11 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture(scope="session", autouse=True)
 def faucet(pytestconfig: Config, web3_client) -> Faucet:
     return Faucet(pytestconfig.environment.faucet_url, web3_client)
+
+
+@pytest.fixture(scope="session")
+def ws_subscriber_url(pytestconfig: tp.Any) -> tp.Optional[str]:
+    return pytestconfig.environment.ws_subscriber_url
 
 
 @pytest.fixture(scope="session")

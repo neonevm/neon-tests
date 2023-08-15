@@ -29,6 +29,7 @@ class EnvironmentConfig:
     use_bank: bool
     eth_bank_account: str
     neonpass_url: str = ""
+    ws_subscriber_url: str = ""
     account_seed_version: str = "\3"
 
 

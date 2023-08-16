@@ -30,7 +30,7 @@ try:
     from utils import cloud
     from utils.operator import Operator
     from utils.web3client import NeonWeb3Client
-    from utils.helpers import get_sol_price
+    from utils.prices import get_sol_price
 
     from deploy.cli import dapps as dapps_cli
     from deploy.cli import faucet as faucet_cli
@@ -80,7 +80,8 @@ NETWORK_NAME = os.environ.get("NETWORK_NAME", "full_test_suite")
 HOME_DIR = pathlib.Path(__file__).absolute().parent
 
 OZ_BALANCES = "./compatibility/results/oz_balance.json"
-NEON_EVM_GITHUB_URL="https://api.github.com/repos/neonlabsorg/neon-evm"
+NEON_EVM_GITHUB_URL = "https://api.github.com/repos/neonlabsorg/neon-evm"
+
 
 def green(s):
     return click.style(s, fg="green")
@@ -342,8 +343,14 @@ def print_oz_balances():
 
 def create_allure_environment_opts(opts: dict):
     with open(DST_ALLURE_ENVIRONMENT, "a+") as file:
-        file.write("\n".join(
-            map(lambda x: f"{x[0]}={x[1] if x[1] and len(x[1]) > 0 else 'empty value'}", opts.items())))
+        file.write(
+            "\n".join(
+                map(
+                    lambda x: f"{x[0]}={x[1] if x[1] and len(x[1]) > 0 else 'empty value'}",
+                    opts.items(),
+                )
+            )
+        )
         file.write("\n")
 
 
@@ -382,6 +389,7 @@ def install_ui_requirements():
     click.echo(green("Install browser binaries for Chromium."))
     subprocess.check_call("playwright install chromium", shell=True)
 
+
 def install_oz_requirements():
     cwd = pathlib.Path().absolute() / "compatibility/openzeppelin-contracts"
     subprocess.check_call("npm set audit false", shell=True, cwd=cwd.as_posix())
@@ -412,10 +420,12 @@ def requirements(dep):
     if dep == "ui":
         install_ui_requirements()
 
+
 def is_neon_evm_branch_exist(branch):
     if branch:
         neon_evm_branches_obj = requests.get(
-            f"{NEON_EVM_GITHUB_URL}/branches?per_page=100").json()
+            f"{NEON_EVM_GITHUB_URL}/branches?per_page=100"
+        ).json()
         neon_evm_branches = [item["name"] for item in neon_evm_branches_obj]
 
         if branch in neon_evm_branches:
@@ -424,10 +434,14 @@ def is_neon_evm_branch_exist(branch):
     else:
         return False
 
-@cli.command(help="Download test contracts from neon-evm repo")
-@click.option("--branch", default="develop", help="neon_evm branch name. " 
-                               "If branch doesn't exist, develop branch will be used")
 
+@cli.command(help="Download test contracts from neon-evm repo")
+@click.option(
+    "--branch",
+    default="develop",
+    help="neon_evm branch name. "
+    "If branch doesn't exist, develop branch will be used",
+)
 def update_contracts(branch):
     branch = branch if is_neon_evm_branch_exist(branch) else "develop"
     click.echo(f"Contracts would be downloaded from {branch} branch")
@@ -438,9 +452,7 @@ def update_contracts(branch):
         f"{NEON_EVM_GITHUB_URL}/contents/evm_loader/solidity?ref={branch}"
     )
     if response.status_code != 200:
-        raise click.ClickException(
-            f"The code is not 200. Response: {response.json()}"
-        )
+        raise click.ClickException(f"The code is not 200. Response: {response.json()}")
 
     for item in response.json():
         r = requests.get(
@@ -473,7 +485,9 @@ def update_contracts(branch):
     help="Which UI test run",
 )
 @click.argument(
-    "name", required=True, type=click.Choice(["economy", "basic", "services", "oz", "ui"])
+    "name",
+    required=True,
+    type=click.Choice(["economy", "basic", "services", "oz", "ui"]),
 )
 @catch_traceback
 def run(name, jobs, numprocesses, ui_item, amount, users, network):
@@ -542,14 +556,18 @@ def analyze_openzeppelin_results():
             threshold = 2293
         print(f"Threshold: {threshold}")
         if test_report["passing"] < threshold:
-            raise click.ClickException(f"OpenZeppelin {version} tests failed. \n"
-                                       f"Passed: {test_report['passing']}, expected: {threshold}")
+            raise click.ClickException(
+                f"OpenZeppelin {version} tests failed. \n"
+                f"Passed: {test_report['passing']}, expected: {threshold}"
+            )
         else:
             print("OpenZeppelin tests passed")
     else:
         if test_report["failing"] > 0 or test_report["passing"] == 0:
-            raise click.ClickException(f"OpenZeppelin {version} tests failed. \n"
-                                       f"Failed: {test_report['failing']}, passed: {test_report['passing']}")
+            raise click.ClickException(
+                f"OpenZeppelin {version} tests failed. \n"
+                f"Failed: {test_report['failing']}, passed: {test_report['passing']}"
+            )
         else:
             print("OpenZeppelin tests passed")
 
@@ -858,7 +876,9 @@ def download_logs():
 @infra.command(name="gen-accounts", help="Setup accounts with balance")
 @click.option("-c", "--count", default=2, help="How many users prepare")
 @click.option("-a", "--amount", default=10000, help="How many airdrop")
-@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+@click.option(
+    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
+)
 def prepare_accounts(count, amount, network):
     dapps_cli.prepare_accounts(network, count, amount)
 
@@ -877,9 +897,11 @@ def get_network_param(network, param):
 
 @infra.command("print-network-param")
 @click.option(
-    "-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
+)
 @click.option(
-    "-p", "--param", type=str, help="any network param like proxy_url, network_id e.t.c")
+    "-p", "--param", type=str, help="any network param like proxy_url, network_id e.t.c"
+)
 def print_network_param(network, param):
     print(get_network_param(network, param))
 

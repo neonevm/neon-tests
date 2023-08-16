@@ -1,7 +1,5 @@
 import os
-import asyncio
 import pathlib
-import logging
 import random
 import string
 import time
@@ -10,59 +8,6 @@ import typing as tp
 import solcx
 from eth_abi import abi
 from eth_utils import keccak
-from pythclient.pythaccounts import PythPriceAccount
-from pythclient.solana import (
-    SolanaClient,
-    SolanaPublicKey,
-    SOLANA_MAINNET_HTTP_ENDPOINT,
-    SOLANA_DEVNET_HTTP_ENDPOINT,
-    SOLANA_TESTNET_HTTP_ENDPOINT,
-)
-
-
-LOG = logging.getLogger(__name__)
-
-
-FEED_ADDRESSES = {
-    "mainnet": {
-        "feed_address": "H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG",
-        "solana_address": SOLANA_MAINNET_HTTP_ENDPOINT,
-    },
-    "testnet": {
-        "feed_address": "7VJsBtJzgTftYzEeooSDYyjKXvYRWJHdwvbwfBvTg9K",
-        "solana_address": SOLANA_TESTNET_HTTP_ENDPOINT,
-    },
-    "devnet": {
-        "feed_address": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix",
-        "solana_address": SOLANA_DEVNET_HTTP_ENDPOINT,
-    },
-}
-
-
-def get_sol_price() -> float:
-    """Get SOL price from Solana mainnet"""
-
-    async def get_price():
-        for network in FEED_ADDRESSES:
-            account_key = SolanaPublicKey(FEED_ADDRESSES[network]["feed_address"])
-            solana_client = SolanaClient(
-                endpoint=FEED_ADDRESSES[network]["solana_address"]
-            )
-            price: PythPriceAccount = PythPriceAccount(account_key, solana_client)
-            try:
-                await price.update()
-            except Exception as e:
-                LOG.warning(f"Can't get price from Pyth network '{network}' {e}")
-                time.sleep(5)
-            else:
-                return price.aggregate_price
-            finally:
-                await solana_client.close()
-        else:
-            raise Exception("Can't get SOL/USD price from Pyth network!")
-
-    result = asyncio.run(get_price())
-    return result
 
 
 def get_contract_abi(name, compiled):

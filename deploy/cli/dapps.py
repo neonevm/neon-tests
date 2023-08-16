@@ -14,8 +14,7 @@ from clickfile import get_network_param
 from deploy.cli import faucet as faucet_cli
 from utils.web3client import NeonWeb3Client
 from utils.solana_client import SolanaClient
-
-NEON_COST = 0.25
+from utils.prices import get_neon_price
 
 TF_CWD = "deploy/aws"
 
@@ -210,7 +209,7 @@ def print_report(directory):
             row = [action["name"]]
             fee = int(action["usedGas"]) * int(action["gasPrice"]) / 1000000000000000000
             row.append(fee)
-            row.append(fee * NEON_COST)
+            row.append(fee * get_neon_price())
             row.append(accounts)
             row.append(trx)
             out[app].append(row)

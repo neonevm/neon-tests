@@ -26,8 +26,6 @@ from utils.helpers import wait_condition
 
 from ..base import BaseTests
 
-NEON_PRICE = 0.25
-
 TX_COST = 5000
 
 DECIMAL_CONTEXT = getcontext()
@@ -79,8 +77,9 @@ class TestEconomics(BaseTests):
     acc = None
 
     @pytest.fixture(autouse=True)
-    def setup_sol_cost(self, sol_price):
+    def save_token_costs(self, sol_price, neon_price):
         self.sol_price = sol_price
+        self.neon_price = neon_price
 
     @allure.step("Verify operator profit")
     def assert_profit(self, sol_diff, neon_diff):
@@ -92,7 +91,7 @@ class TestEconomics(BaseTests):
             self.sol_price, DECIMAL_CONTEXT
         )
         neon_cost = Decimal(neon_amount, DECIMAL_CONTEXT) * Decimal(
-            NEON_PRICE, DECIMAL_CONTEXT
+            self.neon_price, DECIMAL_CONTEXT
         )
 
         msg = "Operator receive {:.9f} NEON ({:.2f} $) and spend {:.9f} SOL ({:.2f} $), profit - {:.9f}% ".format(

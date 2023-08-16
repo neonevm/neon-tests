@@ -17,7 +17,6 @@ class TestVyperCompatibility(Erc20CommonChecks):
 
     @pytest.fixture
     def erc20_vyper(self, web3_client, class_account):
-        print("111111111111111!!!!!!!!!!!!")
         return web3_client.compile_by_vyper_and_deploy(class_account, "erc20",
                                                        [INIT_NAME, INIT_SYMBOL, INIT_DECIMALS, INIT_SUPPLY])
 
@@ -44,3 +43,4 @@ class TestVyperCompatibility(Erc20CommonChecks):
         instr = forwarder.functions.deploy(simple.address, class_account.address).build_transaction(tx)
         resp = self.web3_client.send_transaction(class_account, instr)
         assert resp["status"] == 1
+

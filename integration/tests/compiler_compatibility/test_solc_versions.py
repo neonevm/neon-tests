@@ -9,26 +9,39 @@ INIT_DECIMALS = 18
 INIT_SUPPLY = 1000
 
 
-def get_three_last_solc_versions():
-    return [str(item) for item in solcx.get_installable_solc_versions()[0:3]]
+class SolcVersions:
+    def __init__(self):
+        self.instances = [str(item) for item in solcx.get_installable_solc_versions()[0:3]]
 
 
 class TestSolcCompatibility(Erc20CommonChecks):
-    @pytest.fixture(scope="class", params=get_three_last_solc_versions(), ids=get_three_last_solc_versions())
-    def erc20_solc(self, web3_client, class_account, request):
+
+    @staticmethod
+    def load_data():
+        versions = SolcVersions().instances
+        result = {"params": versions, "ids": versions}
+        return result
+
+    @pytest.fixture(scope="class", **load_data())
+    def solc_version(self, request):
+        return request.param
+
+    @pytest.mark.parametrize()
+    @pytest.fixture(scope="class")
+    def erc20_solc(self, web3_client, class_account, solc_version):
         contract, _ = web3_client.deploy_and_get_contract(
             "ERC20/ERC20.sol",
-            request.param,
+            solc_version,
             class_account,
             contract_name="ERC20",
             constructor_args=[INIT_NAME, INIT_SYMBOL, INIT_SUPPLY],
         )
         return contract
 
-    @pytest.fixture(scope="class", params=get_three_last_solc_versions(), ids=get_three_last_solc_versions())
-    def recursion_factory(self, class_account, web3_client, request):
+    @pytest.fixture(scope="class")
+    def recursion_factory(self, class_account, web3_client, solc_version):
         contract, _ = web3_client.deploy_and_get_contract(
-            "Recursion", request.param, class_account,
+            "Recursion", solc_version, class_account,
             contract_name="DeployRecursionFactory",
             constructor_args=[3])
         return contract

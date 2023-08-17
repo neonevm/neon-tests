@@ -9,17 +9,12 @@ INIT_DECIMALS = 18
 INIT_SUPPLY = 1000
 
 
-class SolcVersions:
-    def __init__(self):
-        self.instances = [str(item) for item in solcx.get_installable_solc_versions()[0:3]]
-
-
 class TestSolcCompatibility(Erc20CommonChecks):
 
     @staticmethod
     def load_data():
-        versions = SolcVersions().instances
-        result = {"params": versions, "ids": versions}
+        solc_versions = [str(item) for item in solcx.get_installable_solc_versions()[0:3]]
+        result = {"params": solc_versions, "ids": solc_versions}
         return result
 
     @pytest.fixture(scope="class", **load_data())

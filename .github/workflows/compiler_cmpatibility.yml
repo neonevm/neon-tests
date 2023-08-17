@@ -63,7 +63,7 @@ jobs:
         run: |
           docker exec -i ${{ env.CONTAINER }} \
             ./clickfile.py run compiler_compatibility -n ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}
-      - name: "Notify on failure."
+      - name: "Notify on failure"
         if: failure()
         run: |
           docker exec -i ${{ env.CONTAINER }} \

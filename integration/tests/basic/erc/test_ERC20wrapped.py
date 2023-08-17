@@ -613,7 +613,7 @@ class TestERC20wrapperContract(BaseMixin):
                 .value[0]
                 .account.data.parsed["info"]["tokenAmount"]["amount"]
             )
-            > int(token_balance_before)
+            > int(token_balance_before), timeout_sec=30
         )
 
         sol_balance_after = sol_client.get_balance(acc.public_key).value
@@ -661,7 +661,7 @@ class TestERC20wrapperContract(BaseMixin):
                     acc.public_key, opts
                 ).value
             )
-            > 0
+            > 0, timeout_sec=30
         )
         token_account = (
             sol_client.get_token_accounts_by_delegate_json_parsed(acc.public_key, opts)

@@ -108,13 +108,13 @@ jobs:
       - name: Run OpenZeppelin tests
         timeout-minutes: 150
         run: |
-          docker exec -i -e OZ_BALANCES_REPORT_FLAG=1 ${{ env.CONTAINER }}  ./clickfile.py run oz \
+          docker exec -i -e OZ_BALANCES_REPORT_FLAG=1 ${{ env.CONTAINER }} python3 ./clickfile.py run oz \
             --network ${{ needs.prepare-env.outputs.network }} \
             --jobs ${{ needs.prepare-env.outputs.jobs }} \
             --users 10
       - name: Print OpenZeppelin report
         run: |
-          docker exec -i ${{ env.CONTAINER }} ./clickfile.py ozreport
+          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py ozreport
       - name: "Generate allure report"
         id: requirements
         uses: ./.github/actions/generate-allure-report
@@ -126,12 +126,12 @@ jobs:
           tests_name: oz
       - name: Analyze tests results
         run: |
-          docker exec -i ${{ env.CONTAINER }} ./clickfile.py analyze-openzeppelin-results
+          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py analyze-openzeppelin-results
       - name: "Notify on failure."
         if: failure()
         run: |
           docker exec -i ${{ env.CONTAINER }} \
-            ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
           -b ${{ env.BUILD_URL }} -n ${{ needs.prepare-env.outputs.network }}
       - name: Remove docker container
         if: always()

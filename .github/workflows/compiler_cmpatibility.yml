@@ -39,9 +39,13 @@ jobs:
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
 
   tests:
-    name: "Services tests"
+    name: "Compiler compatibility tests"
     needs:
       - dockerize
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-20.04
     env:
       NETWORK: ${{ github.event.inputs.network || 'devnet'}}
@@ -58,12 +62,12 @@ jobs:
         timeout-minutes: 20
         run: |
           docker exec -i ${{ env.CONTAINER }} \
-            ./clickfile.py run compiler_compatibility -n ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}
-      - name: "Notify on failure."
+            python3 ./clickfile.py run compiler_compatibility -n ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}
+      - name: "Notify on failure"
         if: failure()
         run: |
           docker exec -i ${{ env.CONTAINER }} \
-            ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
           -b ${{ env.BUILD_URL }} -n ${{ env.NETWORK }}
       - name: "Generate allure report"
         if: always()

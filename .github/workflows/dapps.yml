@@ -98,7 +98,7 @@ jobs:
         run: |
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SSH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
-          ./clickfile.py infra deploy
+          python3 ./clickfile.py infra deploy
       - uses: actions/upload-artifact@v3
         if: steps.stand.outputs.network == 'aws'
         with:
@@ -171,7 +171,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch uniswap v2 tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -219,7 +219,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch uniswap v3 tests
         if: ${{ steps.accounts.outcome == 'success'}}
@@ -266,7 +266,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch saddle tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -314,7 +314,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 5 -a 20000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 5 -a 20000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch aave tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -355,7 +355,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch curve tests
         id: curve
@@ -430,7 +430,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 2 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 2 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch compound tests
         timeout-minutes: 30
@@ -477,7 +477,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 10 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 10 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch yearn tests
         id: yearn
@@ -559,7 +559,7 @@ jobs:
           name: curve-factory-report
           path: reports/
       - name: "Swap report"
-        run: ./clickfile.py dapps report --directory=reports
+        run: python3 ./clickfile.py dapps report --directory=reports
 
   destroy:
     runs-on: ubuntu-20.04
@@ -592,12 +592,12 @@ jobs:
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SSH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
       - name: Download docker logs
-        run: ./clickfile.py infra download-logs
+        run: python3 ./clickfile.py infra download-logs
       - name: Destroy stand with terraform
         id: destroy
         if: always()
         run: |
-          ./clickfile.py infra destroy
+          python3 ./clickfile.py infra destroy
       - uses: actions/upload-artifact@v3
         if: always()
         with:
@@ -616,4 +616,4 @@ jobs:
       - name: Notify on failure
         id: notification
         run: |
-          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "DApps testing failed, please check!"
+          python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "DApps testing failed, please check!"

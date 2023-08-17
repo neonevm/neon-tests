@@ -135,12 +135,12 @@ jobs:
         id: basic
         run: |
           docker exec -i ${{ env.CONTAINER }} \
-            ./clickfile.py run basic -n ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}
+            python3 ./clickfile.py run basic -n ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}
       - name: "Notify on failure."
         if: failure()
         run: |
           docker exec -i ${{ env.CONTAINER }} \
-            ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
           -b ${{ env.BUILD_URL }} -n ${{ needs.prepare-env.outputs.network }}
       - name: "Generate allure report"
         if: always()

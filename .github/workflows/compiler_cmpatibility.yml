@@ -39,9 +39,13 @@ jobs:
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
 
   tests:
-    name: "Services tests"
+    name: "Compiler compatibility tests"
     needs:
       - dockerize
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-20.04
     env:
       NETWORK: ${{ github.event.inputs.network || 'devnet'}}

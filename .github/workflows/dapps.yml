@@ -601,6 +601,11 @@ jobs:
         with:
           name: curve-factory-report
           path: reports/
+      - uses: actions/download-artifact@v3
+        continue-on-error: true
+        with:
+          name: robonomics-report
+          path: reports/
       - name: "Swap report"
         run: ./clickfile.py dapps report --directory=reports
 

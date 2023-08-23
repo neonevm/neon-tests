@@ -42,7 +42,7 @@ env:
   AWS_REGION: us-east-2
   AWS_S3_BUCKET: neon-tests-dapps
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn,compound,curve-factory"
+  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn,robonomics,compound,curve-factory"
 jobs:
   prepare:
     runs-on: ubuntu-20.04
@@ -484,13 +484,15 @@ jobs:
         timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
-          IMAGE: neonlabsorg/robonomics_tests:latest
+          IMAGE: neonlabsorg/robonomics_tests:b9dc215dd3b45f85cb91b6a511a113191f884a4d
         run: |
           docker pull ${{ env.IMAGE }}
           docker run -i -d --entrypoint "sleep" --name=robonomics-${{ github.run_id }} ${{ env.IMAGE }} infinity
           env_args="-e NEON_PROXY_URL=${{env.PROXY_URL}} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} -e NEON_CHAIN_ID=${{ env.NETWORK_ID }}"
           echo "Run Robonomics tests"
           docker exec -i $env_args robonomics-${{ github.run_id }} ./run_tests.sh
+          docker exec -i $env_args robonomics-${{ github.run_id }} node create_report.js
+          docker exec -i $env_args robonomics-${{ github.run_id }} cat ./reports/report.json > robonomics-report.json
           docker rm -f robonomics-${{ github.run_id }}
       - name: Save report
         uses: actions/upload-artifact@v3

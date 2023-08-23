@@ -484,7 +484,7 @@ jobs:
         timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
-          IMAGE: neonlabsorg/robonomics_tests:d6ff17a6245cbef554a40a67fd1b427f732d1a15
+          IMAGE: neonlabsorg/robonomics_tests:latest
         run: |
           docker pull ${{ env.IMAGE }}
           docker run -i -d --entrypoint "sleep" --name=robonomics-${{ github.run_id }} ${{ env.IMAGE }} infinity

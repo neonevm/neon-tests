@@ -207,6 +207,7 @@ def print_report(directory):
         out[app] = []
         for action in reports[app]:
             accounts, trx = get_solana_accounts_in_tx(action["tx"])
+            print("Accounts", accounts, "TRx", trx)
             row = [action["name"]]
             fee = int(action["usedGas"]) * int(action["gasPrice"]) / 1000000000000000000
             row.append(fee)

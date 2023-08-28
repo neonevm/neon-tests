@@ -476,7 +476,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch robonomics tests
         if: ${{ steps.accounts.outcome == 'success' }}

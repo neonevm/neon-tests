@@ -1,8 +1,10 @@
 import json
+import pathlib
 import time
 import typing as tp
 from decimal import Decimal
 
+import vyper
 import web3
 import web3.types
 import requests
@@ -12,6 +14,7 @@ from eth_abi import abi
 from utils import helpers
 from utils.consts import InputTestConstants, Unit
 from utils.helpers import decode_function_signature
+
 
 class NeonWeb3Client:
     def __init__(self, proxy_url: str, chain_id: int, session: tp.Optional[tp.Any] = None):
@@ -65,14 +68,14 @@ class NeonWeb3Client:
     ):
         """Creates a new account with balance"""
         account = self.create_account()
-        balance_before =  float(self.from_wei(self.eth.get_balance(account.address), Unit.ETHER))
+        balance_before = float(self.from_wei(self.eth.get_balance(account.address), Unit.ETHER))
 
         if bank_account is not None:
             self.send_neon(bank_account, account, amount)
         else:
             faucet.request_neon(account.address, amount=amount)
         for _ in range(20):
-            if  float(self.from_wei(self.eth.get_balance(account.address), Unit.ETHER)) >= (balance_before + amount):
+            if float(self.from_wei(self.eth.get_balance(account.address), Unit.ETHER)) >= (balance_before + amount):
                 break
             time.sleep(1)
         else:
@@ -222,6 +225,21 @@ class NeonWeb3Client:
         contract = self.eth.contract(address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"])
 
         return contract, contract_deploy_tx
+
+    def compile_by_vyper_and_deploy(self, account, contract_name, constructor_args=None):
+        contract_path = pathlib.Path.cwd() / "contracts" / "vyper"
+        with open(contract_path / f'{contract_name}.vy') as f:
+            contract_code = f.read()
+            contract_interface = vyper.compile_code(contract_code, output_formats=["abi", "bytecode"])
+
+        contract_deploy_tx = self.deploy_contract(
+            account,
+            abi=contract_interface["abi"],
+            bytecode=contract_interface["bytecode"],
+            constructor_args=constructor_args
+        )
+        return self.eth.contract(address=contract_deploy_tx["contractAddress"],
+                                        abi=contract_interface["abi"])
 
     @staticmethod
     def text_to_bytes32(text: str) -> bytes:

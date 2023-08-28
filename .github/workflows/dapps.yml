@@ -42,7 +42,7 @@ env:
   AWS_REGION: us-east-2
   AWS_S3_BUCKET: neon-tests-dapps
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn,compound,curve-factory"
+  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn,robonomics,compound,curve-factory"
 jobs:
   prepare:
     runs-on: ubuntu-20.04
@@ -98,7 +98,7 @@ jobs:
         run: |
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SSH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
-          ./clickfile.py infra deploy
+          python3 ./clickfile.py infra deploy
       - uses: actions/upload-artifact@v3
         if: steps.stand.outputs.network == 'aws'
         with:
@@ -171,7 +171,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch uniswap v2 tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -219,7 +219,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch uniswap v3 tests
         if: ${{ steps.accounts.outcome == 'success'}}
@@ -266,7 +266,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch saddle tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -314,7 +314,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 5 -a 20000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 5 -a 20000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch aave tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -355,7 +355,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch curve tests
         id: curve
@@ -430,7 +430,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 2 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 2 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch compound tests
         timeout-minutes: 30
@@ -455,7 +455,50 @@ jobs:
           name: compound-report
           path: compound-report.json
 
+  robonomics:
+    runs-on: neon-hosted
+    if: contains( needs.prepare.outputs.dapps, 'robonomics')
+    needs:
+      - prepare
+    env:
+      SOLANA_URL: ${{ needs.prepare.outputs.solana_url }}
+      PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
+      FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
+      NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
+      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
+      DUMP_ENVS: True
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
 
+      - name: Prepare accounts
+        id: accounts
+        run: |
+          ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
+
+      - name: Launch robonomics tests
+        if: ${{ steps.accounts.outcome == 'success' }}
+        id: robonomics
+        timeout-minutes: 60
+        env:
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+          IMAGE: neonlabsorg/robonomics_tests:latest
+        run: |
+          docker pull ${{ env.IMAGE }}
+          docker run -i -d --entrypoint "sleep" --name=robonomics-${{ github.run_id }} ${{ env.IMAGE }} infinity
+          env_args="-e NEON_PROXY_URL=${{env.PROXY_URL}} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} -e NEON_CHAIN_ID=${{ env.NETWORK_ID }}"
+          echo "Run Robonomics tests"
+          docker exec -i $env_args robonomics-${{ github.run_id }} ./run_tests.sh
+          docker exec -i $env_args robonomics-${{ github.run_id }} node create_report.js
+          docker exec -i $env_args robonomics-${{ github.run_id }} cat ./reports/report.json > robonomics-report.json
+          docker rm -f robonomics-${{ github.run_id }}
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: robonomics-report
+          path: robonomics-report.json
   yearn:
     if: contains( needs.prepare.outputs.dapps, 'yearn')
     runs-on: neon-hosted
@@ -477,7 +520,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          ./clickfile.py infra gen-accounts -c 10 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 10 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch yearn tests
         id: yearn
@@ -506,7 +549,7 @@ jobs:
 
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn, compound, curve-factory]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory]
     if: always()
     env:
       SOLANA_URL: ${{ needs.prepare.outputs.solana_url || secrets.SOLANA_URL }}
@@ -558,12 +601,17 @@ jobs:
         with:
           name: curve-factory-report
           path: reports/
+      - uses: actions/download-artifact@v3
+        continue-on-error: true
+        with:
+          name: robonomics-report
+          path: reports/
       - name: "Swap report"
-        run: ./clickfile.py dapps report --directory=reports
+        run: python3 ./clickfile.py dapps report --directory=reports
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, swap-report, compound, curve-factory]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, robonomics, swap-report, compound, curve-factory]
     if: always() && needs.prepare.outputs.network == 'aws'
     steps:
       - uses: actions/checkout@v3
@@ -592,12 +640,12 @@ jobs:
           ssh_key=/tmp/dapps-stand
           echo "${{ secrets.SSH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
       - name: Download docker logs
-        run: ./clickfile.py infra download-logs
+        run: python3 ./clickfile.py infra download-logs
       - name: Destroy stand with terraform
         id: destroy
         if: always()
         run: |
-          ./clickfile.py infra destroy
+          python3 ./clickfile.py infra destroy
       - uses: actions/upload-artifact@v3
         if: always()
         with:
@@ -606,7 +654,7 @@ jobs:
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, yearn, compound, curve-factory]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory]
     if: failure() && github.ref_name == 'develop'
     steps:
       - uses: actions/checkout@v3
@@ -616,4 +664,4 @@ jobs:
       - name: Notify on failure
         id: notification
         run: |
-          ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "DApps testing failed, please check!"
+          python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "DApps testing failed, please check!"

@@ -1,12 +1,11 @@
-name: "Services tests"
-run-name:
-  Services tests (${{ github.event.inputs.network || 'devnet' }}, ${{ github.event.inputs.numprocesses || '4'}})
+name: "Compilers compatibility tests"
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 on:
   schedule:
-    - cron: "41 3 * * *"
+    - cron: "0 22 * * 2"
   workflow_dispatch:
     inputs:
       network:
@@ -18,22 +17,13 @@ on:
           - night-stand
           - devnet
           - private-devnet
-      numprocesses:
-        type: choice
-        default: 4
-        required: true
-        description: "Number of parallel jobs"
-        options:
-          - 4
-          - 8
-          - 12
-          - auto
+
 env:
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   SOLANA_URL: "${{ secrets.SOLANA_URL }}"
-  NUMPROCESSES: 4
+  NUMPROCESSES: 2
   IMAGE:  neonlabsorg/neon_tests
-  CONTAINER:  services-${{ github.run_id }}
+  CONTAINER:  compilers-${{ github.run_id }}
 jobs:
   dockerize:
     if: ${{ github.ref_name != 'develop'}}
@@ -49,18 +39,16 @@ jobs:
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
 
   tests:
-    name: "Services tests"
+    name: "Compiler compatibility tests"
     needs:
       - dockerize
-    runs-on: ubuntu-20.04
-    env:
-      NETWORK: ${{ github.event.inputs.network || 'devnet'}}
-#      TODO Add parallel execution for test_ws_subscriber after https://neonlabs.atlassian.net/browse/NDEV-2064
-      NUMPROCESSES: 1
     if: |
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
+    runs-on: ubuntu-20.04
+    env:
+      NETWORK: ${{ github.event.inputs.network || 'devnet'}}
     steps:
       - uses: actions/checkout@v3
       - name: "Define image tag"
@@ -70,13 +58,12 @@ jobs:
         run: |
           docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
           docker run -i -d -e CI -e GITHUB_RUN_ID -e GITHUB_WORKFLOW -e BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }} -e PROXY_URL -e SOLANA_URL --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
-      - name: "Run services tests"
-        timeout-minutes: 60
-        id: services
+      - name: "Run tests"
+        timeout-minutes: 20
         run: |
           docker exec -i ${{ env.CONTAINER }} \
-            python3 ./clickfile.py run services -n ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}
-      - name: "Notify on failure."
+            python3 ./clickfile.py run compiler_compatibility -n ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}
+      - name: "Notify on failure"
         if: failure()
         run: |
           docker exec -i ${{ env.CONTAINER }} \
@@ -91,7 +78,7 @@ jobs:
           network: ${{ env.NETWORK }}
           aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          tests_name: services
+          tests_name: compiler_compatibility
       - name: Remove docker container
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}

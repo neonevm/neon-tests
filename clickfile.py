@@ -14,7 +14,6 @@ from collections import defaultdict
 from multiprocessing.dummy import Pool
 from urllib.parse import urlparse
 
-
 try:
     import click
 except ImportError:
@@ -38,7 +37,6 @@ try:
     from deploy.infra.utils import env
 except ImportError as e:
     print(f"Can't load {e}")
-
 
 CMD_ERROR_LOG = "click_cmd_err.log"
 
@@ -236,7 +234,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         print(stderr)
         keys_env.append(keys)
         log_dirs = (
-            cwd.parent / "results" / file_name.replace(".", "_").replace("/", "_")
+                cwd.parent / "results" / file_name.replace(".", "_").replace("/", "_")
         )
         log_dirs.mkdir(parents=True, exist_ok=True)
         with open(log_dirs / "stdout.log", "w") as f:
@@ -294,7 +292,7 @@ def parse_openzeppelin_results():
 
 
 def print_test_suite_results(
-    test_report: tp.Dict[str, int], skipped_files: tp.List[str]
+        test_report: tp.Dict[str, int], skipped_files: tp.List[str]
 ):
     print("Summarize result:\n")
     for state in test_report:
@@ -379,8 +377,8 @@ def install_ui_requirements():
         except Exception:
             click.echo(
                 red(
-                    f"{10*'!'} Warning: Linux requires `xclip` to work. "
-                    f"Install with your package manager, e.g. `sudo apt install xclip` {10*'!'}"
+                    f"{10 * '!'} Warning: Linux requires `xclip` to work. "
+                    f"Install with your package manager, e.g. `sudo apt install xclip` {10 * '!'}"
                 ),
                 color=True,
             )
@@ -440,7 +438,7 @@ def is_neon_evm_branch_exist(branch):
     "--branch",
     default="develop",
     help="neon_evm branch name. "
-    "If branch doesn't exist, develop branch will be used",
+         "If branch doesn't exist, develop branch will be used",
 )
 def update_contracts(branch):
     branch = branch if is_neon_evm_branch_exist(branch) else "develop"
@@ -485,9 +483,8 @@ def update_contracts(branch):
     help="Which UI test run",
 )
 @click.argument(
-    "name",
-    required=True,
-    type=click.Choice(["economy", "basic", "services", "oz", "ui"]),
+    "name", required=True, type=click.Choice(["economy", "basic", "services", "oz", "ui",
+                                              "compiler_compatibility"])
 )
 @catch_traceback
 def run(name, jobs, numprocesses, ui_item, amount, users, network):
@@ -505,7 +502,11 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
     elif name == "services":
         command = "py.test integration/tests/services"
         if numprocesses:
-            command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
+            command = f"{command} --numprocesses {numprocesses}"
+    elif name == "compiler_compatibility":
+        command = "py.test integration/tests/compiler_compatibility"
+        if numprocesses:
+            command = f"{command} --numprocesses {numprocesses} --dist loadscope"
     elif name == "oz":
         run_openzeppelin_tests(
             network, jobs=int(jobs), amount=int(amount), users=int(users)
@@ -590,7 +591,6 @@ locust_host = click.option(
     show_default=True,
 )
 
-
 locust_users = click.option(
     "-u",
     "--users",
@@ -614,7 +614,7 @@ locust_run_time = click.option(
     "--run-time",
     type=int,
     help="Stop after the specified amount of time, e.g. (300s, 20m, 3h, 1h30m, etc.). "
-    "Only used together without Locust Web UI. [default: always run]",
+         "Only used together without Locust Web UI. [default: always run]",
 )
 
 locust_tags = click.option(
@@ -623,7 +623,7 @@ locust_tags = click.option(
     type=str,
     multiple=True,
     help="tag to include in the test, so only tasks "
-    "with any matching tags will be executed",
+         "with any matching tags will be executed",
 )
 
 locust_headless = click.option(
@@ -631,7 +631,7 @@ locust_headless = click.option(
     " /-w",
     default=True,
     help="Enable the web interface. "
-    "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
+         "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
 )
 
 
@@ -664,7 +664,7 @@ def locust(ctx):
     show_default=True,
 )
 def run(
-    credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile, neon_rpc
+        credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile, neon_rpc
 ):
     """Run `Neon` pipeline performance test
 

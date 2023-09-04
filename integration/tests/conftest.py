@@ -57,6 +57,11 @@ def json_rpc_client(pytestconfig: Config) -> JsonRPCSession:
     return JsonRPCSession(pytestconfig.environment.proxy_url)
 
 
+@pytest.fixture(scope="session")
+def tracer_json_rpc_client(pytestconfig: Config) -> JsonRPCSession:
+    return JsonRPCSession(pytestconfig.environment.tracer_url)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def sol_client(pytestconfig: Config):
     client = SolanaClient(
@@ -71,6 +76,7 @@ def operator(pytestconfig: Config, web3_client: NeonWeb3Client) -> Operator:
     return Operator(
         pytestconfig.environment.proxy_url,
         pytestconfig.environment.solana_url,
+        pytestconfig.environment.tracer_url,
         pytestconfig.environment.network_id,
         pytestconfig.environment.operator_neon_rewards_address,
         pytestconfig.environment.spl_neon_mint,

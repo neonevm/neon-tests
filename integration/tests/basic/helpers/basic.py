@@ -27,6 +27,7 @@ class AccountData:
 
 class BaseMixin(BaseTests):
     proxy_api: JsonRPCSession = None
+    tracer_api: JsonRPCSession = None
     _sender_account: eth_account.signers.local.LocalAccount = None
     _recipient_account: eth_account.signers.local.LocalAccount = None
     _invalid_account: AccountData = None
@@ -34,8 +35,9 @@ class BaseMixin(BaseTests):
     bank_account = None
 
     @pytest.fixture(autouse=True)
-    def prepare_env(self, json_rpc_client, eth_bank_account):
+    def prepare_env(self, json_rpc_client, tracer_json_rpc_client, eth_bank_account):
         self.proxy_api = json_rpc_client
+        self.tracer_api = tracer_json_rpc_client
         self.bank_account = eth_bank_account
 
     @property

@@ -217,6 +217,7 @@ class BaseEthRPCATasksSet(TaskSet):
         LOG.info(f"Create web3 client to: {self.credentials['proxy_url']}")
         self.web3_client = NeonWeb3Client(
             self.credentials["proxy_url"],
+            self.credentials["tracer_url"],
             self.credentials["network_id"],
             session=self._rpc_client,
         )

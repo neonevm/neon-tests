@@ -1,5 +1,3 @@
-import re
-
 import allure
 import pytest
 import web3
@@ -197,7 +195,7 @@ class TestPrecompiledSplToken(BaseMixin):
             receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
             assert receipt["status"] == 0
         except ValueError as e:
-            assert "invalid account data for instruction" in str(e)
+            assert "incorrect program id for instruction" in str(e)
 
     def test_is_system_account(self, spl_token_caller, token_mint):
         assert spl_token_caller.functions.isSystemAccount(self.sender_account.address).call() == True

@@ -17,7 +17,7 @@ from utils.helpers import decode_function_signature
 
 class NeonWeb3Client:
     def __init__(
-        self, proxy_url: str, tracer_url: str, chain_id: int, session: tp.Optional[tp.Any] = None
+        self, proxy_url: str, chain_id: int, tracer_url: tp.Optional[tp.Any] = None, session: tp.Optional[tp.Any] = None
     ):
         self._proxy_url = proxy_url
         self._tracer_url = tracer_url

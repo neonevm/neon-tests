@@ -109,7 +109,7 @@ class NeonProxyTasksSet(TaskSet):
         self.credentials = self.user.environment.credentials
         LOG.info(f"Create web3 client to: {self.credentials['proxy_url']}")
         self.web3_client = NeonWeb3ClientExt(
-            self.credentials["proxy_url"], self.credentials["tracer_url"], self.credentials["network_id"], session=session
+            self.credentials["proxy_url"], self.credentials["network_id"], session=session
         )
         self.faucet = Faucet(
             self.credentials["faucet_url"], self.web3_client, session=session)

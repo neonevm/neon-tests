@@ -141,6 +141,6 @@ def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
 @pytest.fixture(scope="session", autouse=True)
 def web3_client(pytestconfig: Config) -> NeonWeb3Client:
     client = NeonWeb3Client(
-        pytestconfig.environment.proxy_url, pytestconfig.environment.tracer_url, pytestconfig.environment.network_id
+        pytestconfig.environment.proxy_url, pytestconfig.environment.network_id, tracer_url=pytestconfig.environment.tracer_url
     )
     return client

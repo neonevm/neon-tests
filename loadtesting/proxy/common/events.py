@@ -61,7 +61,6 @@ def operator_economy_pre_balance(environment, **kwargs):
         environment.credentials["operator_keys"],
         web3_client=NeonWeb3Client(
             environment.credentials["proxy_url"],
-            environment.credentials["tracer_url"],
             environment.credentials["network_id"],
             session=requests.Session(),
         ),

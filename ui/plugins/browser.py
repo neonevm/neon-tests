@@ -222,3 +222,9 @@ def pytest_addoption(parser: tp.Any) -> None:
         type=int,
         help="Run tests in slow mo",
     )
+    group.addoption(
+        "--screenshot",
+        default="off",
+        choices=["on", "off", "only-on-failure"],
+        help="Whether to automatically capture a screenshot after each test.",
+    )

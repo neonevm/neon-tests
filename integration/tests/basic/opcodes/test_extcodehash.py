@@ -49,12 +49,12 @@ class TestExtCodeHashOpcode(BaseMixin):
             self.web3_client.eth.get_code(self.recipient_account.address, "latest")).hex()
 
     def test_extcodehash_for_non_existing_account(self, eip1052_checker):
-        non_existing_account = self.web3_client.to_checksum_address(self.create_invalid_account().address)
+        non_existing_account = self.web3_client.to_checksum_address(self.create_invalid_address())
         contract_hash = eip1052_checker.functions.getContractHash(non_existing_account).call()
         assert contract_hash.hex() == ZERO_HASH
 
     def test_extcodehash_with_send_tx_for_non_existing_account(self, eip1052_checker):
-        non_existing_account = self.web3_client.to_checksum_address(self.create_invalid_account().address)
+        non_existing_account = self.web3_client.to_checksum_address(self.create_invalid_address())
         tx = self.create_contract_call_tx_object(self.sender_account)
         instruction_tx = eip1052_checker.functions.getContractHashWithLog(non_existing_account).build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)

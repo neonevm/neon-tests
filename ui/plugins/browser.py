@@ -191,40 +191,34 @@ def pytest_addoption(parser: tp.Any) -> None:
         help="base url for the application under test.",
     )
 
-    # parser.addoption(
-    #     "--remote-server",
-    #     action="store",
-    #     default=None,
-    #     help="Endpoint for remote selenium (moon) server",
-    # )
-    #
-    # group.addoption(
-    #     "--browser",
-    #     action="append",
-    #     default=[],
-    #     help="Browser engine which should be used",
-    # )
-    # group.addoption(
-    #     "--headed",
-    #     action="store_true",
-    #     default=False,
-    #     help="Run tests in headed mode.",
-    # )
-    # group.addoption(
-    #     "--browser-channel",
-    #     action="store",
-    #     default=None,
-    #     help="Browser channel to be used.",
-    # )
-    # group.addoption(
-    #     "--slowmo",
-    #     default=0,
-    #     type=int,
-    #     help="Run tests in slow mo",
-    # )
-    # group.addoption(
-    #     "--screenshot",
-    #     default="off",
-    #     choices=["on", "off", "only-on-failure"],
-    #     help="Whether to automatically capture a screenshot after each test.",
-    # )
+    parser.addoption(
+        "--remote-server",
+        action="store",
+        default=None,
+        help="Endpoint for remote selenium (moon) server",
+    )
+
+    group.addoption(
+        "--browser",
+        action="append",
+        default=[],
+        help="Browser engine which should be used",
+    )
+    group.addoption(
+        "--headed",
+        action="store_true",
+        default=False,
+        help="Run tests in headed mode.",
+    )
+    group.addoption(
+        "--browser-channel",
+        action="store",
+        default=None,
+        help="Browser channel to be used.",
+    )
+    group.addoption(
+        "--slowmo",
+        default=0,
+        type=int,
+        help="Run tests in slow mo",
+    )

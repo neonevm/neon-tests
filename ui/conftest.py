@@ -116,19 +116,22 @@ def use_persistent_context() -> bool:
 def pytest_exception_interact(node, call, report):
     """Attach allure screenshot"""
     context = False
-    if hasattr(node, "funcargs") and node.funcargs['context']:
-        context = node.funcargs['context']
+    if hasattr(node, "funcargs") and type(node.funcargs) == dict and node.funcargs.get("context"):
+        context = node.funcargs.get("context")
 
     if report.failed and context and context.pages:
         for page in context.pages:
             if page.is_closed():
                 continue
-            allure.attach(
-                page.screenshot(full_page=True),
-                name="screenshot",
-                attachment_type=allure.attachment_type.PNG,
-                extension="png",
-            )
+            try:
+                allure.attach(
+                    page.screenshot(full_page=True),
+                    name="screenshot",
+                    attachment_type=allure.attachment_type.PNG,
+                    extension="png",
+                )
+            except Exception as e:
+                print("Fail to take screenshot: {}".format(e))
 
 # def save_screenshot_on_fail(request: pytest.FixtureRequest, page: Page):
 #     if request.session.testsfailed and not page.is_closed():
@@ -140,15 +143,15 @@ def pytest_exception_interact(node, call, report):
 #         )
 
 
-# def pytest_generate_tests(metafunc: tp.Any) -> None:
-#     if "browser_name" in metafunc.fixturenames:
-#         browsers = metafunc.config.option.browser or ["chrome"]
-#         for browser in browsers:
-#             if browser not in ["chrome", "chromium", "firefox", "webkit"]:
-#                 raise ValueError(
-#                     f"'{browser}' is not allowed. Only chromium, firefox, or webkit are valid browser names."
-#                 )
-#         metafunc.parametrize("browser_name", browsers, scope="session")
+def pytest_generate_tests(metafunc: tp.Any) -> None:
+    if "browser_name" in metafunc.fixturenames:
+        browsers = metafunc.config.option.browser or ["chrome"]
+        for browser in browsers:
+            if browser not in ["chrome", "chromium", "firefox", "webkit"]:
+                raise ValueError(
+                    f"'{browser}' is not allowed. Only chromium, firefox, or webkit are valid browser names."
+                )
+        metafunc.parametrize("browser_name", browsers, scope="session")
 
 
 def pytest_configure(config: Config) -> None:

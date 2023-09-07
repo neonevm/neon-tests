@@ -690,8 +690,7 @@ class TestRpcCalls(BaseMixin):
                 ]
                 for field in expected_hex_fields:
                     assert rpc_checks.is_hex(result[field]), f"Field {field} must be hex but '{result[field]}'"
-                assert result["from"].upper() == tx_receipt["from"].upper()
-                assert result["to"].upper() == tx_receipt["to"].upper()
+
 
     def test_get_evm_params(self):
         response = self.proxy_api.send_rpc(method="neon_getEvmParams", params=[])

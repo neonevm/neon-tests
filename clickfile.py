@@ -520,7 +520,7 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
                     "Please set the `CHROME_EXT_PASSWORD` environment variable (password for wallets)."
                 )
             )
-        command = "py.test ui/tests"
+        command = "py.test --screenshot off ui/tests"  # we do screenshots with help of pytest
         if ui_item != "all":
             command = command + f"/test_{ui_item}.py"
     else:

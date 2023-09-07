@@ -1,5 +1,5 @@
 name: "Playwright Tests"
-run-name: Playwright tests for ${{ github.event.pull_request.title }}
+run-name: Playwright tests ${{ for github.event.pull_request.title || scheduled }}
 
 on:
   schedule:

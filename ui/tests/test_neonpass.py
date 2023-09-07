@@ -133,29 +133,21 @@ class TestNeonPass:
         token: Token,
         fee_type: str,
     ) -> None:
-        """Prepare test environment"""
-
-        def get_balance() -> float:
-            return float(getattr(metamask_page, f"{token.name.lower()}_balance"))
-
-        with allure.step("Get initial balance in the wallet"):
-            init_balance = get_balance()
-
-        with allure.step(f"On the Neonpass page connect wallets and transfer {token.name} from {platform}"):
-            neonpass_page.connect_phantom()
-            neonpass_page.connect_metamask()
-            neonpass_page.switch_platform_source(platform)
-            neonpass_page.set_source_token(token.name, 0.001)
-            neonpass_page.set_transaction_fee(platform, token.name, fee_type)
-            neonpass_page.confirm_tokens_transfer(platform, token)
+        init_balance = metamask_page.get_balance(token)
+        neonpass_page.connect_phantom()
+        neonpass_page.connect_metamask()
+        neonpass_page.switch_platform_source(platform)
+        neonpass_page.set_source_token(token.name, 0.001)
+        neonpass_page.set_transaction_fee(platform, token.name, fee_type)
+        neonpass_page.confirm_tokens_transfer(platform, token)
 
         with allure.step("Assert the balance in the wallet changed"):
             metamask_page.page.bring_to_front()
             libs.try_until(
-                lambda: init_balance < get_balance()
+                lambda: init_balance < metamask_page.get_balance(token)
                 if platform == Platform.solana
-                else init_balance > get_balance(),
+                else init_balance > metamask_page.get_balance(token),
                 timeout=60,
                 interval=5,
                 error_msg=f"{token.name} balance was not changed after tokens transfer",
-        )
+            )

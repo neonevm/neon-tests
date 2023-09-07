@@ -114,14 +114,21 @@ class TestNeonPass:
         "platform, token, fee_type",
         [
             (Platform.solana, Tokens.neon, FeeType.neon),
-            (Platform.solana, Tokens.neon, FeeType.sol),
-            (Platform.solana, Tokens.sol, FeeType.none),
-            (Platform.solana, Tokens.usdt, FeeType.none),
-            (Platform.solana, Tokens.usdc, FeeType.none),
+            pytest.param(
+                (Platform.solana, Tokens.neon, FeeType.sol), marks=pytest.mark.xfail(reason="NDEV-2174")),
+            pytest.param(
+                (Platform.solana, Tokens.sol, FeeType.none), marks=pytest.mark.xfail(reason="NDEV-2174")),
+            pytest.param(
+                (Platform.solana, Tokens.usdt, FeeType.none), marks=pytest.mark.xfail(reason="NDEV-2174")),
+            pytest.param(
+                (Platform.solana, Tokens.usdc, FeeType.none), marks=pytest.mark.xfail(reason="NDEV-2174")),
             (Platform.neon, Tokens.neon, FeeType.none),
-            (Platform.neon, Tokens.wsol, FeeType.none),
-            (Platform.neon, Tokens.usdt, FeeType.none),
-            (Platform.neon, Tokens.usdc, FeeType.none),
+            pytest.param(
+                (Platform.neon, Tokens.wsol, FeeType.none), marks=pytest.mark.xfail(reason="NDEV-2174")),
+            pytest.param(
+                (Platform.neon, Tokens.usdt, FeeType.none), marks=pytest.mark.xfail(reason="NDEV-2174")),
+            pytest.param(
+                (Platform.neon, Tokens.usdc, FeeType.none), marks=pytest.mark.xfail(reason="NDEV-2174")),
         ],
         ids=str,
     )

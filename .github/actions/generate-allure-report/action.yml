@@ -55,3 +55,8 @@ runs:
         -e AWS_SECRET_ACCESS_KEY=${{ inputs.aws_secret_access_key }} \
         ${{ inputs.container }} \
         python3 ./clickfile.py allure upload-report ${{ inputs.tests_name }} --network ${{ inputs.network }}
+    - name: "Add result info to github page summary"
+      if: always()
+      shell: bash
+      run: |
+        echo "🔗Allure report: [link]($ALLURE_REPORT_URL)" >> $GITHUB_STEP_SUMMARY

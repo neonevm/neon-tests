@@ -59,4 +59,7 @@ runs:
       if: always()
       shell: bash
       run: |
-        echo "🔗Allure report: [link]($ALLURE_REPORT_URL)" >> $GITHUB_STEP_SUMMARY
+        docker exec -i ${{ inputs.container }} \
+        echo "🔗Allure report: [link]($ALLURE_REPORT_URL)" > result_info
+        docker cp ${{ inputs.container }}:/app/result_info result_info
+        cat result_info >> $GITHUB_STEP_SUMMARY

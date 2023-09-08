@@ -25,7 +25,7 @@ runs:
         docker exec -i ${{ inputs.container }} tar -czvf ./allure-results.tar.gz /opt/neon-tests/allure-results
         docker cp ${{ inputs.container }}:/opt/neon-tests/allure-results.tar.gz ./
       shell: bash
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       if: always()
       with:
         name: "allure-results.tar.gz"
@@ -55,3 +55,9 @@ runs:
         -e AWS_SECRET_ACCESS_KEY=${{ inputs.aws_secret_access_key }} \
         ${{ inputs.container }} \
         python3 ./clickfile.py allure upload-report ${{ inputs.tests_name }} --network ${{ inputs.network }}
+    - name: "Add result info to github page summary"
+      if: always()
+      shell: bash
+      run: |
+        docker cp ${{ inputs.container }}:/opt/neon-tests/allure_report_info ./
+        cat allure_report_info >> $GITHUB_STEP_SUMMARY

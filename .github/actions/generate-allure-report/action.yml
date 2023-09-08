@@ -25,7 +25,7 @@ runs:
         docker exec -i ${{ inputs.container }} tar -czvf ./allure-results.tar.gz /opt/neon-tests/allure-results
         docker cp ${{ inputs.container }}:/opt/neon-tests/allure-results.tar.gz ./
       shell: bash
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       if: always()
       with:
         name: "allure-results.tar.gz"
@@ -59,7 +59,5 @@ runs:
       if: always()
       shell: bash
       run: |
-        docker exec -i ${{ inputs.container }} \
-        echo "🔗Allure report: [link]($ALLURE_REPORT_URL)" > result_info
-        docker cp ${{ inputs.container }}:/app/result_info result_info
-        cat result_info >> $GITHUB_STEP_SUMMARY
+        docker cp ${{ inputs.container }}:/opt/neon-tests/allure_report_info ./
+        cat allure_report_info >> $GITHUB_STEP_SUMMARY

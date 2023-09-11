@@ -554,7 +554,7 @@ class TestRpcCalls(BaseMixin):
         assert "error" in response
         assert "message" in response["error"]
         assert (
-                response["error"]["message"] == f"method {method} does not exist/is not available"
+                response["error"]["message"] == f"the method {method} does not exist/is not available"
         ), response
 
     @pytest.mark.parametrize(

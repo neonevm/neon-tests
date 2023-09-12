@@ -6,7 +6,7 @@ from integration.tests.basic.helpers.basic import BaseMixin
 from utils.helpers import wait_condition
 
 
-@allure.story("Tracer API RPC calls check")
+@allure.story("Tracer API RPC calls historical methods check")
 class TestTracerRpcCalls(BaseMixin):
     _contract: tp.Optional[tp.Any] = None
 
@@ -236,3 +236,9 @@ class TestTracerRpcCalls(BaseMixin):
                                                                    params=[self.recipient_account.address,
                                                                            {request_type: request_value}])["result"], 0) / 1e18 == recipient_balance_after,
                        timeout_sec=150)
+
+    @pytest.mark.skip("Wait for NDEV-2135 will be merged and released to devnet")
+    def test_check_neon_revision(self):
+        revision = self.tracer_api.send_rpc(
+            method="get_neon_revision", params={"slot": 1})
+        assert revision["result"]["neon_revision"] is not None

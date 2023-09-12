@@ -76,7 +76,6 @@ def operator(pytestconfig: Config, web3_client: NeonWeb3Client) -> Operator:
     return Operator(
         pytestconfig.environment.proxy_url,
         pytestconfig.environment.solana_url,
-        pytestconfig.environment.tracer_url,
         pytestconfig.environment.network_id,
         pytestconfig.environment.operator_neon_rewards_address,
         pytestconfig.environment.spl_neon_mint,

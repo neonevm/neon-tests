@@ -5,6 +5,9 @@ import pytest
 from integration.tests.basic.helpers.basic import BaseMixin
 from utils.helpers import wait_condition
 
+CONTRACT_CODE = '6060604052600080fd00a165627a7a72305820e75cae05548a56ec53108e39a532f0644e4b92aa900cc9f2cf98b7ab044539380029'
+DEPLOY_CODE = '60606040523415600e57600080fd5b603580601b6000396000f300' + CONTRACT_CODE
+
 
 @allure.story("Tracer API RPC calls historical methods check")
 class TestTracerRpcCalls(BaseMixin):
@@ -236,6 +239,52 @@ class TestTracerRpcCalls(BaseMixin):
                                                                    params=[self.recipient_account.address,
                                                                            {request_type: request_value}])["result"], 0) / 1e18 == recipient_balance_after,
                        timeout_sec=150)
+
+    def test_eth_get_code(self):
+        request_type = "blockNumber"
+
+        nonce = self.web3_client.eth.get_transaction_count(
+            self.sender_account.address
+        )
+        transaction = {
+            "from": self.sender_account.address,
+            "chainId": self.web3_client._chain_id,
+            "gas": 987654321,
+            "gasPrice": self.web3_client.gas_price(),
+            "nonce": nonce,
+            "value": 0,
+            "data": bytes.fromhex(DEPLOY_CODE)
+        }
+        signed_tx = self.web3_client._web3.eth.account.sign_transaction(
+            transaction, self.sender_account.key)
+        tx = self.web3_client._web3.eth.send_raw_transaction(
+            signed_tx.rawTransaction)
+        receipt = self.web3_client._web3.eth.wait_for_transaction_receipt(tx)
+        assert receipt["status"] == 1
+
+        wait_condition(lambda: (self.tracer_api.tracer_send_rpc(method="eth_getCode",
+                                                                req_type=request_type,
+                                                                params=[receipt["contractAddress"],
+                                                                        {request_type: hex(receipt[request_type] - 1)}]))["result"] == "",
+                       timeout_sec=120)
+
+        wait_condition(lambda: (self.tracer_api.tracer_send_rpc(method="eth_getCode",
+                                                                req_type="blockHash",
+                                                                params=[receipt["contractAddress"],
+                                                                        {"blockHash": receipt["blockHash"].hex()}]))["result"] == CONTRACT_CODE,
+                       timeout_sec=120)
+
+        wait_condition(lambda: (self.tracer_api.tracer_send_rpc(method="eth_getCode",
+                                                                req_type=request_type,
+                                                                params=[receipt["contractAddress"],
+                                                                        {request_type: hex(receipt[request_type])}]))["result"] == CONTRACT_CODE,
+                       timeout_sec=120)
+
+        wait_condition(lambda: (self.tracer_api.tracer_send_rpc(method="eth_getCode",
+                                                                req_type=request_type,
+                                                                params=[receipt["contractAddress"],
+                                                                        {request_type: hex(receipt[request_type] + 1)}]))["result"] == CONTRACT_CODE,
+                       timeout_sec=120)
 
     @pytest.mark.skip("Wait for NDEV-2135 will be merged and released to devnet")
     def test_check_neon_revision(self):

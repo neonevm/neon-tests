@@ -1,10 +1,7 @@
-import random
 import typing as tp
 import allure
 import json
-import jsonschema
 from jsonschema import Draft4Validator
-import pytest
 from integration.tests.basic.helpers.basic import BaseMixin
 from utils.helpers import wait_condition
 
@@ -52,18 +49,17 @@ class TestTracerRpcCalls(BaseMixin):
         validator = Draft4Validator(schema)
 
         assert validator.is_valid(response['result'])
-    
+
     def test_debug_transaction_call(self):
         reciept = self.send_neon(
             self.sender_account, self.recipient_account, 0.1)
         assert reciept["status"] == 1
-        print(reciept)
         tx_hash = reciept["transactionHash"].hex()
-       
+
         response = self.tracer_api.send_rpc(
             method="debug_traceTransaction", params=[tx_hash])
         assert "error" not in response, "Error in response"
-        
+
         schema = self.get_schema("debug_traceCall.json")
         validator = Draft4Validator(schema)
 

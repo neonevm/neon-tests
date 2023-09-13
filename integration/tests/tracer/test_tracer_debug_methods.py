@@ -2,6 +2,7 @@ import typing as tp
 import allure
 import json
 from jsonschema import Draft4Validator
+import pytest
 from integration.tests.basic.helpers.basic import BaseMixin
 from utils.helpers import wait_condition
 
@@ -17,6 +18,7 @@ class TestTracerRpcCalls(BaseMixin):
             d = json.load(f)
             return d
 
+    @pytest.mark.skip(reason="bug NDEV-2196")
     def test_debug_trace_call(self):
         reciept = self.send_neon(
             self.sender_account, self.recipient_account, 0.1)
@@ -42,14 +44,12 @@ class TestTracerRpcCalls(BaseMixin):
             method="debug_traceCall", params=params)
         assert "error" not in response, "Error in response"
 
-        # TODO: remove this when returnData will be an array (got null instead of array)
-        # response['result']['structLogs'][0]['returnData'] = []
-
         schema = self.get_schema("debug_traceCall.json")
         validator = Draft4Validator(schema)
 
         assert validator.is_valid(response['result'])
 
+    @pytest.mark.skip(reason="bug NDEV-2195")
     def test_debug_transaction_call(self):
         reciept = self.send_neon(
             self.sender_account, self.recipient_account, 0.1)

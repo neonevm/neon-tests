@@ -46,7 +46,7 @@ class JsonRPCSession(Session):
             if not isinstance(params, (list, tuple)):
                 params = [params]
             body["params"] = params
-        print(body)
+
         resp = self.post(self.proxy_url, json=body, timeout=60)
         response_body = resp.json()
         if "result" not in response_body and "error" not in response_body:

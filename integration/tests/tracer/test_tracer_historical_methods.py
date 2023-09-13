@@ -1,7 +1,9 @@
 import random
 import typing as tp
-import allure
+
 import pytest
+
+import allure
 from integration.tests.basic.helpers.basic import BaseMixin
 from utils.helpers import wait_condition
 
@@ -9,13 +11,14 @@ CONTRACT_CODE = '6060604052600080fd00a165627a7a72305820e75cae05548a56ec53108e39a
 DEPLOY_CODE = '60606040523415600e57600080fd5b603580601b6000396000f300' + CONTRACT_CODE
 
 
+@allure.feature("Tracer API")
 @allure.story("Tracer API RPC calls historical methods check")
-class TestTracerRpcCalls(BaseMixin):
+class TestTracerHistoricalMethods(BaseMixin):
     _contract: tp.Optional[tp.Any] = None
 
     @pytest.fixture
     def storage_contract(self) -> tp.Any:
-        if not TestTracerRpcCalls._contract:
+        if not TestTracerHistoricalMethods._contract:
             contract, _ = self.web3_client.deploy_and_get_contract(
                 "StorageSoliditySource.sol",
                 "0.8.8",
@@ -23,9 +26,9 @@ class TestTracerRpcCalls(BaseMixin):
                 contract_name="Storage",
                 constructor_args=[],
             )
-            TestTracerRpcCalls._contract = contract
-        yield TestTracerRpcCalls._contract
-        self.store_value(0, TestTracerRpcCalls._contract)
+            TestTracerHistoricalMethods._contract = contract
+        yield TestTracerHistoricalMethods._contract
+        self.store_value(0, TestTracerHistoricalMethods._contract)
 
     def store_value(self, value, storage_contract):
         nonce = self.web3_client.eth.get_transaction_count(

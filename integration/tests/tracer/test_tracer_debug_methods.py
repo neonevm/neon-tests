@@ -1,29 +1,31 @@
-import typing as tp
-import allure
 import json
-from jsonschema import Draft4Validator
+import pathlib
+
 import pytest
+from jsonschema import Draft4Validator
+
+import allure
 from integration.tests.basic.helpers.basic import BaseMixin
 from utils.helpers import wait_condition
 
 SCHEMAS = "./integration/tests/tracer/schemas/"
 
 
+@allure.feature("Tracer API")
 @allure.story("Tracer API RPC calls debug methods check")
-class TestTracerRpcCalls(BaseMixin):
-    _contract: tp.Optional[tp.Any] = None
-
+class TestTracerDebugMethods(BaseMixin):
+    
     def get_schema(self, file_name):
-        with open(SCHEMAS + file_name) as f:
+        with open(pathlib.Path(SCHEMAS, file_name)) as f:
             d = json.load(f)
             return d
 
     @pytest.mark.skip(reason="bug NDEV-2196")
     def test_debug_trace_call(self):
-        reciept = self.send_neon(
+        receipt = self.send_neon(
             self.sender_account, self.recipient_account, 0.1)
-        assert reciept["status"] == 1
-        tx_hash = reciept["transactionHash"].hex()
+        assert receipt["status"] == 1
+        tx_hash = receipt["transactionHash"].hex()
         wait_condition(lambda: self.tracer_api.send_rpc(method="eth_getTransactionByHash", params=[
                        tx_hash])['result'] is not None, timeout_sec=120)
         tx_info = self.tracer_api.send_rpc(
@@ -51,10 +53,10 @@ class TestTracerRpcCalls(BaseMixin):
 
     @pytest.mark.skip(reason="bug NDEV-2195")
     def test_debug_transaction_call(self):
-        reciept = self.send_neon(
+        receipt = self.send_neon(
             self.sender_account, self.recipient_account, 0.1)
-        assert reciept["status"] == 1
-        tx_hash = reciept["transactionHash"].hex()
+        assert receipt["status"] == 1
+        tx_hash = receipt["transactionHash"].hex()
 
         response = self.tracer_api.send_rpc(
             method="debug_traceTransaction", params=[tx_hash])

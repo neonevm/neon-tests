@@ -1,5 +1,5 @@
 name: "Basic tests"
-run-name: Basic tests for ${{ github.event.pull_request.title }}
+run-name: Basic tests / ${{ github.event.pull_request.title || github.event_name }}
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

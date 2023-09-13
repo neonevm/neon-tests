@@ -90,7 +90,7 @@ class TestERC20wrapperContract(BaseMixin):
     def test_balanceOf_with_incorrect_address(
         self, erc20_spl_mintable, erc20_spl, block_len, expected_exception, mintable
     ):
-        address = gen_hash_of_block(block_len)
+        address = self.create_invalid_address(block_len)
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         with pytest.raises(expected_exception):
             return erc20.contract.functions.balanceOf(address).call()
@@ -139,11 +139,11 @@ class TestERC20wrapperContract(BaseMixin):
         ],
     )
     def test_mint_with_incorrect_address(
-        self, erc20_spl_mintable, address_to, expected_exception, msg
+            self, erc20_spl_mintable, address_to, expected_exception, msg
     ):
-        address_to = (
-            gen_hash_of_block(address_to) if isinstance(address_to, int) else address_to
-        )
+        address_to = (self.create_invalid_address(address_to)
+                      if isinstance(address_to, int) else address_to
+                      )
         with pytest.raises(expected_exception, match=msg):
             erc20_spl_mintable.mint_tokens(erc20_spl_mintable.account, address_to, 10)
 
@@ -243,7 +243,7 @@ class TestERC20wrapperContract(BaseMixin):
         mintable,
     ):
         address = (
-            gen_hash_of_block(block_len) if isinstance(block_len, int) else block_len
+            self.create_invalid_address(block_len) if isinstance(block_len, int) else block_len
         )
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         with pytest.raises(expected_exception, match=msg):
@@ -316,7 +316,7 @@ class TestERC20wrapperContract(BaseMixin):
     def test_burnFrom_incorrect_address(self, erc20_spl_mintable, erc20_spl, mintable):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         with pytest.raises(web3.exceptions.InvalidAddress):
-            erc20.burn_from(erc20.account, gen_hash_of_block(20), 1)
+            erc20.burn_from(erc20.account, self.create_invalid_address(), 1)
 
     @pytest.mark.parametrize("mintable", [True, False])
     @pytest.mark.parametrize("param, msg", NO_ENOUGH_GAS_PARAMS)
@@ -362,7 +362,7 @@ class TestERC20wrapperContract(BaseMixin):
         mintable,
     ):
         address = (
-            gen_hash_of_block(block_len) if isinstance(block_len, int) else block_len
+            self.create_invalid_address(block_len) if isinstance(block_len, int) else block_len
         )
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         with pytest.raises(expected_exception, match=msg):
@@ -382,7 +382,7 @@ class TestERC20wrapperContract(BaseMixin):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         with pytest.raises(web3.exceptions.InvalidAddress):
             erc20.contract.functions.allowance(
-                erc20.account.address, gen_hash_of_block(20)
+                erc20.account.address, self.create_invalid_address()
             ).call()
 
     @pytest.mark.parametrize("mintable", [True, False])
@@ -540,7 +540,7 @@ class TestERC20wrapperContract(BaseMixin):
             erc20.transfer_from(
                 signer=erc20.account,
                 address_from=erc20.account.address,
-                address_to=gen_hash_of_block(20),
+                address_to=self.create_invalid_address(),
                 amount=1,
             )
 

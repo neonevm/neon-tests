@@ -795,6 +795,9 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
     cloud.upload("/tmp/index.html", path)
     print(f"Allure report link: {report_url}")
 
+    with open("allure_report_info", "w") as f:
+        f.write(f"🔗Allure report: [link]({report_url})\n")
+
 
 @allure_cli.command("generate", help="Generate allure history")
 def generate_allure_report():

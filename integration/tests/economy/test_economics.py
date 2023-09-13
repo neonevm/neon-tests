@@ -993,7 +993,7 @@ class TestEconomics(BaseTests):
             }
         )
 
-        instruction_receipt = self.web3_client.send_transaction(acc2, inc_tx)
+        self.web3_client.send_transaction(acc2, inc_tx)
 
         assert contract.functions.get().call() == 1
 
@@ -1030,16 +1030,25 @@ class TestEconomics(BaseTests):
         solana_trx = self.web3_client.get_solana_trx_by_neon(
             receipt["transactionHash"].hex()
         )
+        sol_trx_with_alt = None
 
-        trx_sol = sol_client.get_transaction(
-            Signature.from_string(solana_trx["result"][0]),
-            max_supported_transaction_version=0,
-        )
+        for trx in solana_trx["result"]:
+            trx_sol = sol_client.get_transaction(
+                Signature.from_string(trx),
+                max_supported_transaction_version=0,
+            )
+            if trx_sol.value.transaction.transaction.message.address_table_lookups:
+                sol_trx_with_alt = trx_sol
+
+        if not sol_trx_with_alt:
+            raise ValueError(f"There are no lookup table for {solana_trx}")
+
         operator = PublicKey(
-            trx_sol.value.transaction.transaction.message.account_keys[0]
+            sol_trx_with_alt.value.transaction.transaction.message.account_keys[0]
         )
+
         alt_address = (
-            trx_sol.value.transaction.transaction.message.address_table_lookups[
+            sol_trx_with_alt.value.transaction.transaction.message.address_table_lookups[
                 0
             ].account_key
         )

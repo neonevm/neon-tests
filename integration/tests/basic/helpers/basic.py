@@ -57,8 +57,8 @@ class BaseMixin(BaseTests):
     @property
     def invalid_account(self):
         if not self._recipient_account:
-            account = self.create_invalid_account()
-            self._invalid_account = account
+            account = self.create_invalid_address()
+            self._invalid_account_address = account
         return self._invalid_account
 
     @property
@@ -87,9 +87,12 @@ class BaseMixin(BaseTests):
         return float(self.web3_client.from_wei(self.web3_client.eth.get_balance(address), Unit.ETHER))
 
     @staticmethod
-    def create_invalid_account() -> AccountData:
-        """Create non existing account"""
-        return AccountData(address=gen_hash_of_block(20))
+    def create_invalid_address(len = 20) -> str:
+        """Create non existing account address"""
+        address = gen_hash_of_block(len)
+        while web3.Web3.is_checksum_address(address):
+            address = gen_hash_of_block(len)
+        return address
 
     def send_neon(
             self,

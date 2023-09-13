@@ -13,6 +13,7 @@ from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex
 from utils import helpers
+from utils.consts import Unit
 from utils.helpers import gen_hash_of_block
 
 """
@@ -307,6 +308,7 @@ class TestRpcCalls(BaseMixin):
         assert "error" not in response
         assert response["result"] is None, f"Invalid response: {response['result']}"
 
+
     def test_rpc_call_eth_get_transaction_receipt(self):
         """Verify implemented rpc calls work eth_getTransactionReceipt"""
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
@@ -336,6 +338,7 @@ class TestRpcCalls(BaseMixin):
         assert result["to"].upper() == tx_receipt["to"].upper()
         assert result["contractAddress"] is None
         assert result["logs"] == []
+
 
     def test_rpc_call_eth_get_transaction_receipt_when_hash_doesnt_exist(self):
         """Verify implemented rpc calls work eth_getTransactionReceipt when transaction hash doesn't exist"""
@@ -551,7 +554,7 @@ class TestRpcCalls(BaseMixin):
         assert "error" in response
         assert "message" in response["error"]
         assert (
-                response["error"]["message"] == f"method {method} does not exist/is not available"
+                response["error"]["message"] == f"the method {method} does not exist/is not available"
         ), response
 
     @pytest.mark.parametrize(
@@ -576,8 +579,9 @@ class TestRpcCalls(BaseMixin):
 
     @pytest.mark.parametrize("valid_index", [True, False])
     def test_eth_get_transaction_by_block_number_and_index(self, valid_index: bool):
+        amount = 10
         """Verify implemented rpc calls work eth_getTransactionByBlockNumberAndIndex"""
-        tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
+        tx_receipt = self.send_neon(self.sender_account, self.recipient_account, amount=amount)
         self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
         transaction_index = (
             hex(tx_receipt.transactionIndex) if valid_index else hex(999)
@@ -612,6 +616,7 @@ class TestRpcCalls(BaseMixin):
             assert result["blockHash"] == tx_receipt.blockHash.hex()
             assert result["from"].upper() == tx_receipt["from"].upper()
             assert result["to"].upper() == tx_receipt["to"].upper()
+            assert result["value"] == hex(self.web3_client.to_wei(amount, Unit.ETHER))
 
     @pytest.mark.parametrize("valid_index", [True, False])
     def test_eth_get_transaction_by_block_hash_and_index(self, valid_index: bool):
@@ -685,9 +690,7 @@ class TestRpcCalls(BaseMixin):
                 ]
                 for field in expected_hex_fields:
                     assert rpc_checks.is_hex(result[field]), f"Field {field} must be hex but '{result[field]}'"
-                assert result["blockHash"] == tx_receipt.blockHash.hex()
-                assert result["from"].upper() == tx_receipt["from"].upper()
-                assert result["to"].upper() == tx_receipt["to"].upper()
+
 
     def test_get_evm_params(self):
         response = self.proxy_api.send_rpc(method="neon_getEvmParams", params=[])

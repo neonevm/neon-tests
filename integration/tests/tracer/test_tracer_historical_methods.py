@@ -43,7 +43,6 @@ class TestTracerHistoricalMethods(BaseMixin):
         receipt = self.web3_client.send_transaction(
             self.sender_account, instruction_tx)
         assert receipt["status"] == 1
-        return instruction_tx, receipt
 
     def retrieve_value(self, storage_contract):
         nonce = self.web3_client.eth.get_transaction_count(
@@ -78,7 +77,7 @@ class TestTracerHistoricalMethods(BaseMixin):
 
     def call_storage(self, storage_contract, storage_value, request_type):
         request_value = None
-        _, _ = self.store_value(storage_value, storage_contract)
+        self.store_value(storage_value, storage_contract)
         tx, reciept = self.retrieve_value(storage_contract)
         tx_obj = self.make_tx_object(
             self.sender_account.address, storage_contract.address, tx)

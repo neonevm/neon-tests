@@ -10,8 +10,8 @@ from paramiko.client import SSHClient
 from scp import SCPClient
 from solana.transaction import Signature
 
-from clickfile import get_network_param
 from deploy.cli import faucet as faucet_cli
+from deploy.cli.network_manager import NetworkManager
 from utils.web3client import NeonWeb3Client
 from utils.solana_client import SolanaClient
 from utils.prices import get_neon_price
@@ -153,6 +153,7 @@ def upload_service_logs(ssh_client, service, artifact_logs):
 
 
 def prepare_accounts(network_name, count, amount) -> tp.List:
+    network_manager = NetworkManager()
     if network_name == "aws":
         network = {
             "proxy_url": os.environ.get("PROXY_URL"),
@@ -161,11 +162,11 @@ def prepare_accounts(network_name, count, amount) -> tp.List:
         }
     else:
         network = {
-            "proxy_url": get_network_param(network_name, "proxy_url"),
-            "solana_url": get_network_param(network_name, "solana_url"),
-            "faucet_url": get_network_param(network_name, "faucet_url"),
+            "proxy_url": network_manager.get_network_param(network_name, "proxy_url"),
+            "solana_url": network_manager.get_network_param(network_name, "solana_url"),
+            "faucet_url": network_manager.get_network_param(network_name, "faucet_url"),
         }
-    network["network_id"] = (get_network_param(network_name, "network_id"),)
+    network["network_id"] = (network_manager.get_network_param(network_name, "network_id"),)
     accounts = faucet_cli.prepare_wallets_with_balance(network, count, amount)
     if os.environ.get("CI"):
         set_github_env(dict(accounts=",".join(accounts)))

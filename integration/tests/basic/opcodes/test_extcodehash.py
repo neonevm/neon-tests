@@ -1,5 +1,6 @@
 import allure
 import pytest
+from web3.logs import DISCARD
 
 from integration.tests.basic.helpers.basic import BaseMixin, AccountData
 from eth_utils import keccak
@@ -67,7 +68,7 @@ class TestExtCodeHashOpcode(BaseMixin):
         tx = self.create_contract_call_tx_object(self.sender_account)
         instruction_tx = eip1052_checker.functions.getHashForDestroyedContract().build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-        event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt)
+        event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt, errors=DISCARD)
         assert event_logs[1]['args']['hash'].hex() != ZERO_HASH
         assert event_logs[0]['args']['hash'].hex() == event_logs[1]['args']['hash'].hex()
         event_logs = eip1052_checker.events.DestroyedContract().process_receipt(receipt)
@@ -80,7 +81,7 @@ class TestExtCodeHashOpcode(BaseMixin):
         tx = self.create_contract_call_tx_object(self.sender_account)
         instruction_tx = eip1052_checker.functions.getHashForDestroyedContract().build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-        event_logs = eip1052_checker.events.DestroyedContract().process_receipt(receipt)
+        event_logs = eip1052_checker.events.DestroyedContract().process_receipt(receipt, errors=DISCARD)
         destroyed_contract_address = event_logs[0]['args']['addr']
         tx2 = self.create_contract_call_tx_object(self.sender_account)
         instruction_tx = eip1052_checker.functions\

@@ -71,7 +71,7 @@ class TestExtCodeHashOpcode(BaseMixin):
         event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt, errors=DISCARD)
         assert event_logs[1]['args']['hash'].hex() != ZERO_HASH
         assert event_logs[0]['args']['hash'].hex() == event_logs[1]['args']['hash'].hex()
-        event_logs = eip1052_checker.events.DestroyedContract().process_receipt(receipt)
+        event_logs = eip1052_checker.events.DestroyedContract().process_receipt(receipt, errors=DISCARD)
         destroyed_contract_address = event_logs[0]['args']['addr']
         assert eip1052_checker.functions.getContractHash(
             destroyed_contract_address).call().hex() == ZERO_HASH
@@ -87,7 +87,7 @@ class TestExtCodeHashOpcode(BaseMixin):
         instruction_tx = eip1052_checker.functions\
             .getContractHashWithLog(destroyed_contract_address).build_transaction(tx2)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-        event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt)
+        event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt,  errors=DISCARD)
         assert event_logs[0]['args']['hash'].hex() == ZERO_HASH
 
     def test_extcodehash_for_reverted_destroyed_contract(self, eip1052_checker):

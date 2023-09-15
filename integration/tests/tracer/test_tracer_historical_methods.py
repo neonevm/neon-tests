@@ -301,7 +301,7 @@ class TestTracerHistoricalMethods(BaseMixin):
                                                                 params=[receipt["contractAddress"],
                                                                         {request_type: hex(receipt[request_type] + 1)}]))["result"] == CONTRACT_CODE,
                        timeout_sec=120)
-
+    @pytest.mark.skip("Not released yet")
     def test_check_neon_revision(self):
         revision = self.tracer_api.send_rpc(
             method="get_neon_revision", params={"slot": 1})

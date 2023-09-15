@@ -1,4 +1,6 @@
+import math
 import random
+import time
 import typing as tp
 
 import pytest
@@ -87,6 +89,11 @@ class TestTracerHistoricalMethods(BaseMixin):
         else:
             request_value = reciept[request_type].hex()
         return tx_obj, request_value, reciept
+
+    def compare_values(self, value, value_to_compare):
+        return math.isclose(abs(round(int(value, 0) / 1e18, 9) - value_to_compare),
+                            0.0,
+                            rel_tol=1e-9)
 
     def test_eth_call_without_params(self):
         response = self.tracer_api.send_rpc(method="eth_call", params=[None])
@@ -194,53 +201,60 @@ class TestTracerHistoricalMethods(BaseMixin):
 
         reciept_1 = self.send_neon(
             self.sender_account, self.recipient_account, transfer_amount)
+        assert reciept_1["status"] == 1
 
-        sender_balance = self.get_balance_from_wei(
-            self.sender_account.address)
-        recipient_balance = self.get_balance_from_wei(
-            self.recipient_account.address)
+        sender_balance = round(self.get_balance_from_wei(
+            self.sender_account.address), 9)
+        recipient_balance = round(self.get_balance_from_wei(
+            self.recipient_account.address), 9)
 
         if request_type == "blockNumber":
             request_value = hex(reciept_1[request_type])
         else:
             request_value = reciept_1[request_type].hex()
-
-        wait_condition(lambda: int(self.tracer_api.tracer_send_rpc(method="eth_getBalance",
-                                                                   req_type=request_type,
-                                                                   params=[self.sender_account.address,
-                                                                           {request_type: request_value}])["result"], 0) / 1e18 == sender_balance,
+        
+        wait_condition(lambda: self.compare_values(self.tracer_api.tracer_send_rpc(method="eth_getBalance",
+                                                                                   req_type=request_type,
+                                                                                   params=[self.sender_account.address,
+                                                                                           {request_type: request_value}])["result"],
+                                                   sender_balance),
                        timeout_sec=120)
+        
+        wait_condition(lambda: self.compare_values(self.tracer_api.tracer_send_rpc(method="eth_getBalance",
+                                                                                   req_type=request_type,
+                                                                                   params=[self.recipient_account.address,
+                                                                                           {request_type: request_value}])["result"],
+                                                   recipient_balance),
 
-        wait_condition(lambda: int(self.tracer_api.tracer_send_rpc(method="eth_getBalance",
-                                                                   req_type=request_type,
-                                                                   params=[self.recipient_account.address,
-                                                                           {request_type: request_value}])["result"], 0) / 1e18 == recipient_balance,
-                       timeout_sec=150)
+                       timeout_sec=120)
 
         reciept_2 = self.send_neon(
             self.sender_account, self.recipient_account, transfer_amount)
+        assert reciept_2["status"] == 1
 
-        sender_balance_after = self.get_balance_from_wei(
-            self.sender_account.address)
-        recipient_balance_after = self.get_balance_from_wei(
-            self.recipient_account.address)
+        sender_balance_after = round(self.get_balance_from_wei(
+            self.sender_account.address), 9)
+        recipient_balance_after = round(self.get_balance_from_wei(
+            self.recipient_account.address), 9)
 
         if request_type == "blockNumber":
             request_value = hex(reciept_2[request_type])
         else:
             request_value = reciept_2[request_type].hex()
-
-        wait_condition(lambda: int(self.tracer_api.tracer_send_rpc(method="eth_getBalance",
-                                                                   req_type=request_type,
-                                                                   params=[self.sender_account.address,
-                                                                           {request_type: request_value}])["result"], 0) / 1e18 == sender_balance_after,
+        
+        wait_condition(lambda: self.compare_values(self.tracer_api.tracer_send_rpc(method="eth_getBalance",
+                                                                                   req_type=request_type,
+                                                                                   params=[self.sender_account.address,
+                                                                                           {request_type: request_value}])["result"],
+                                                   sender_balance_after),
                        timeout_sec=120)
-
-        wait_condition(lambda: int(self.tracer_api.tracer_send_rpc(method="eth_getBalance",
-                                                                   req_type=request_type,
-                                                                   params=[self.recipient_account.address,
-                                                                           {request_type: request_value}])["result"], 0) / 1e18 == recipient_balance_after,
-                       timeout_sec=150)
+        
+        wait_condition(lambda: self.compare_values(self.tracer_api.tracer_send_rpc(method="eth_getBalance",
+                                                                                   req_type=request_type,
+                                                                                   params=[self.recipient_account.address,
+                                                                                           {request_type: request_value}])["result"],
+                                                   recipient_balance_after),
+                       timeout_sec=120)
 
     def test_eth_get_code(self):
         request_type = "blockNumber"
@@ -288,7 +302,6 @@ class TestTracerHistoricalMethods(BaseMixin):
                                                                         {request_type: hex(receipt[request_type] + 1)}]))["result"] == CONTRACT_CODE,
                        timeout_sec=120)
 
-    @pytest.mark.skip("Wait for NDEV-2135 will be merged and released to devnet")
     def test_check_neon_revision(self):
         revision = self.tracer_api.send_rpc(
             method="get_neon_revision", params={"slot": 1})

@@ -3,6 +3,7 @@
 Created on 2022-05-19
 @author: Eugeny Kurkovich
 """
+import allure
 import pyperclip3 as clipboard
 from playwright._impl._api_types import TimeoutError
 
@@ -11,6 +12,7 @@ from ui import libs
 from ui.conftest import PLATFORM_NETWORKS
 from ui.pages import phantom
 from . import BasePage
+from ..libs import Token
 
 
 class MetaMaskWelcomePage(BasePage):
@@ -122,6 +124,12 @@ class MetaMaskAccountsPage(BasePage):
     def usdc_balance(self) -> float:
         self.switch_assets()
         return self._get_balance(self.active_account, libs.Tokens.usdc.name)
+
+    @allure.step("Get balance in the wallet")
+    def get_balance(self, token: Token) -> float:
+        balance = float(getattr(self, f"{token.name.lower()}_balance"))
+        allure.attach(f"{token.name.lower()} balance: {balance}", "balance", allure.attachment_type.TEXT)
+        return balance
 
     def change_network(self, network: str) -> None:
         """Select EVM network"""

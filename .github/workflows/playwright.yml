@@ -1,28 +1,52 @@
 name: "Playwright Tests"
-run-name: Playwright tests for ${{ github.event.pull_request.title }}
+run-name: Playwright tests / ${{ github.event.pull_request.title || github.event_name }}
 
 on:
   schedule:
     - cron: "0 1 * * 5"
   workflow_dispatch:
+env:
+  IMAGE:  neonlabsorg/neon_tests
+  CONTAINER:  services-${{ github.run_id }}
 jobs:
+  dockerize:
+    if: ${{ github.ref_name != 'develop'}}
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Dockerize neon tests"
+        id: requirements
+        uses: ./.github/actions/dockerize-neon-tests
+        with:
+          image_tag: ${{ github.sha }}
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
+
   playwright:
-    timeout-minutes: 60
+    name: "Playwright UI tests"
+    needs:
+      - dockerize
+    if: |
+      always() &&
+      !contains(dockerize.*.result, 'failure') &&
+      !contains(dockerize.*.result, 'cancelled')
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     env:
       NETWORK: "devnet"
-      IMAGE: neonlabsorg/neon_tests:latest
-      CONTAINER: neontests-${{ github.run_id }}
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v3
+      - name: "Define image tag"
+        id: image_tag
+        uses: ./.github/actions/define-image-tag
       - name: "Pull Docker Test Image"
-        run: docker pull ${{ env.IMAGE }}
+        run: docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
       - name: "Run docker container"
         run: |
           docker run -i -d --name=${{ env.CONTAINER }} \
             -e CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} \
-            --entrypoint /bin/bash ${{ env.IMAGE }}
+            --entrypoint /bin/bash ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
       - name: "Run Playwright Tests"
         run: |
           docker exec -i ${{ env.CONTAINER }} \
@@ -36,22 +60,14 @@ jobs:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           tests_name: ui
-
-  notify:
-    runs-on: ubuntu-20.04
-    needs: [ playwright ]
-    if: failure() && github.ref_name == 'develop'
-    env:
-      BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install python requirements
-        id: requirements
-        uses: ./.github/actions/python-requirements
-      - name: Notify on failure
-        id: notification
+      - name: "Notify on failure"
+        if: failure() && github.ref_name == 'develop'
         run: |
-          python3 ./clickfile.py send-notification \
-          -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
-          -b ${{ env.BUILD_URL }} \
-          -t "Playwright testing failed, please check!"
+          docker exec -i ${{ env.CONTAINER }} \
+            python3 ./clickfile.py send-notification \
+            -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+            -b ${{ env.BUILD_URL }} \
+            -n ${{ env.NETWORK }}
+      - name: Remove docker container
+        if: always()
+        run: docker rm -f ${{ env.CONTAINER }}

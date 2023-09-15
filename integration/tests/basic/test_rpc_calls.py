@@ -1,6 +1,7 @@
 import random
 import re
 import string
+import typing
 import typing as tp
 from enum import Enum
 
@@ -11,7 +12,8 @@ from eth_utils import keccak
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
-from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex
+from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex, assert_fields_are_boolean
+from integration.tests.services.helpers.basic import cryptohex
 from utils import helpers
 from utils.helpers import gen_hash_of_block
 
@@ -100,6 +102,13 @@ def get_event_signatures(abi: tp.List[tp.Dict]) -> tp.List[str]:
 @allure.story("Verify JSON-RPC proxy calls work")
 class TestRpcCalls(BaseMixin):
     _erc20_contract: tp.Optional[tp.Any] = None
+
+    @pytest.fixture(scope="class")
+    def event_caller_contract(self, web3_client, class_account) -> typing.Any:
+        event_caller, _ = web3_client.deploy_and_get_contract(
+            "EventCaller", "0.8.12", class_account
+        )
+        yield event_caller
 
     @pytest.fixture
     def erc20_contract(self) -> tp.Any:
@@ -194,22 +203,47 @@ class TestRpcCalls(BaseMixin):
             (Tag.EARLIEST, None),
         ],
     )
-    def test_eth_get_logs_via_tags(self, tag1: Tag, tag2: Tag, erc20_contract: tp.Any):
-        """Verify implemented rpc calls work eth_getLogs"""
-        contract, deploy_tx, _ = erc20_contract
-        topics = get_event_signatures(contract.abi)
-        params = {
-            "address": deploy_tx.contractAddress,
-            "topics": topics,
-        }
+    @pytest.mark.parametrize(
+        "param_fields", [("address", "topics"), ("address",), ("topics",)]
+    )
+    def test_get_rpc_logs(self, event_caller_contract, param_fields, tag1, tag2):
+        number = random.randint(1, 100)
+        text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
+        bytes_array = text.encode().ljust(32, b'\0')
+        bol = True
+        tx = self.make_tx_object()
+        instruction_tx = event_caller_contract.functions.allTypes(
+            self.sender_account.address, number, text, bytes_array, bol
+        ).build_transaction(tx)
+        receipt =self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        topic = False
+        params = {}
+        if "address" in param_fields:
+            params["address"] = event_caller_contract.address
+        if "topics" in param_fields:
+            topic = cryptohex("AllTypes(address,uint256,string,bytes32,bool)")
+            params["topics"] = [topic]
+
         if tag1:
             params["fromBlock"] = tag1.value
         if tag2:
             params["toBlock"] = tag2.value
+
         response = self.proxy_api.send_rpc("eth_getLogs", params=params)
         assert "error" not in response
         if response["result"]:
-            assert any(topic in response["result"][0]["topics"] for topic in topics)
+            if topic:
+                assert topic in response["result"][0]["topics"]
+            assert_fields_are_hex(response["result"][0],
+                                  ["transactionHash", "blockHash",
+                                   "blockNumber", "transactionIndex", "address",
+                                   "logIndex", "data", "transactionLogIndex"])
+            assert_fields_are_boolean(response["result"][0], ["removed"])
+            if "address" in param_fields:
+                assert response["result"][0]["address"] == receipt["to"].lower(), \
+                    f"address from response {response['result'][0]['address']} " \
+                    f"is not equal to address from receipt {receipt['to'].lower()}"
 
     @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, None])
     @pytest.mark.only_stands
@@ -291,8 +325,6 @@ class TestRpcCalls(BaseMixin):
         assert rpc_checks.is_hex(
             response["result"]
         ), f"Invalid response result {response['result']}"
-
-
 
     @pytest.mark.parametrize("param", [128, 32, 16, None])
     def test_rpc_call_eth_get_transaction_by_hash(self, param: tp.Union[int, None]):
@@ -757,17 +789,13 @@ class TestRpcCalls(BaseMixin):
     @pytest.mark.parametrize(
         "param_fields", [("address", "topics"), ("address",), ("topics",)]
     )
-    def test_get_neon_logs(self, param_fields, tag1, tag2):
-        event_caller, _ = self.web3_client.deploy_and_get_contract(
-            "EventCaller", "0.8.12", self.sender_account
-        )
-
+    def test_get_neon_logs(self, event_caller_contract, param_fields, tag1, tag2):
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
         bytes_array = text.encode().ljust(32, b'\0')
         bol = True
         tx = self.make_tx_object()
-        instruction_tx = event_caller.functions.allTypes(
+        instruction_tx = event_caller_contract.functions.allTypes(
             self.sender_account.address, number, text, bytes_array, bol
         ).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
@@ -777,7 +805,7 @@ class TestRpcCalls(BaseMixin):
 
         params = {}
         if "address" in param_fields:
-            params["address"] = event_caller.address
+            params["address"] = event_caller_contract.address
         if "topics" in param_fields:
             params["topics"] = [topic]
 
@@ -791,10 +819,10 @@ class TestRpcCalls(BaseMixin):
         if response["result"]:
             assert topic in response["result"][0]["topics"]
             assert_fields_are_hex(response["result"][0],
-                              ["transactionHash", "blockHash",
-                               "blockNumber", "transactionIndex",
-                               "address", "logIndex", "data",
-                               "transactionLogIndex"])
+                                  ["transactionHash", "blockHash",
+                                   "blockNumber", "transactionIndex",
+                                   "address", "logIndex", "data",
+                                   "transactionLogIndex"])
 
     @pytest.mark.parametrize("method", ["neon_getLogs", "eth_getLogs"])
     @pytest.mark.parametrize(

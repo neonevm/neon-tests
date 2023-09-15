@@ -101,3 +101,9 @@ def assert_fields_are_hex(object, expected_hex_fields):
     for field in expected_hex_fields:
         assert field in object, f"no expected field {field} in the object"
         assert is_hex(object[field]), f"field {field} is not correct. Actual : {object[field]}"
+
+
+def assert_fields_are_boolean(object, expected_boolean_fields):
+    for field in expected_boolean_fields:
+        assert field in object, f"no expected field {field} in the object"
+        assert type(object[field]) == bool, f"field {field} is not boolean. Actual : {type(object[field])}"

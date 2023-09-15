@@ -26,6 +26,10 @@ jobs:
     name: "Playwright UI tests"
     needs:
       - dockerize
+    if: |
+      always() &&
+      !contains(dockerize.*.result, 'failure') &&
+      !contains(dockerize.*.result, 'cancelled')
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     env:

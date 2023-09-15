@@ -1,7 +1,6 @@
 import random
 import re
 import string
-import typing
 import typing as tp
 from enum import Enum
 
@@ -102,13 +101,6 @@ def get_event_signatures(abi: tp.List[tp.Dict]) -> tp.List[str]:
 @allure.story("Verify JSON-RPC proxy calls work")
 class TestRpcCalls(BaseMixin):
     _erc20_contract: tp.Optional[tp.Any] = None
-
-    @pytest.fixture(scope="class")
-    def event_caller_contract(self, web3_client, class_account) -> typing.Any:
-        event_caller, _ = web3_client.deploy_and_get_contract(
-            "EventCaller", "0.8.12", class_account
-        )
-        yield event_caller
 
     @pytest.fixture
     def erc20_contract(self) -> tp.Any:

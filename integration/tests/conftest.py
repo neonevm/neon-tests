@@ -1,5 +1,6 @@
 import os
 import random
+import typing
 import typing as tp
 import string
 
@@ -230,3 +231,10 @@ def meta_proxy_contract(web3_client, faucet, class_account):
         "./EIPs/MetaProxy.sol", "0.8.10", account=class_account
     )
     return contract
+
+@pytest.fixture(scope="class")
+def event_caller_contract(self, web3_client, class_account) -> typing.Any:
+    event_caller, _ = web3_client.deploy_and_get_contract(
+        "EventCaller", "0.8.12", class_account
+    )
+    yield event_caller

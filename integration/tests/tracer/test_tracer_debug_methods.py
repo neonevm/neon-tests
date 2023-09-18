@@ -14,7 +14,7 @@ SCHEMAS = "./integration/tests/tracer/schemas/"
 @allure.feature("Tracer API")
 @allure.story("Tracer API RPC calls debug methods check")
 class TestTracerDebugMethods(BaseMixin):
-    
+
     def get_schema(self, file_name):
         with open(pathlib.Path(SCHEMAS, file_name)) as f:
             d = json.load(f)

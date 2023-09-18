@@ -28,7 +28,7 @@ class BaseTests:
     def prepare_account(self, prepare_account):
         self.acc = prepare_account
 
-    def create_tx_object(self, sender, recipient=None, amount=0, nonce=None, gas_price=None, data=None,
+    def create_tx_object(self, sender, recipient=None, value=None, amount=0, nonce=None, gas=None, gas_price=None, data=None,
                          estimate_gas=True):
         if gas_price is None:
             gas_price = self.web3_client.gas_price()
@@ -37,15 +37,24 @@ class BaseTests:
             nonce = self.web3_client.eth.get_transaction_count(sender)
         transaction = {
             "from": sender,
-            "value": self.web3_client.to_wei(amount, Unit.ETHER),
             "chainId": self.web3_client._chain_id,
             "gasPrice": gas_price,
             "nonce": nonce,
         }
+        if gas is not None:
+            transaction["gas"] = gas
+            
+        if value is not None:
+            transaction["value"] = value
+        else:
+            transaction["value"] = self.web3_client.to_wei(amount, Unit.ETHER)
+
         if recipient is not None:
             transaction["to"] = recipient
+
         if data is not None:
             transaction["data"] = data
+
         if estimate_gas:
             transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
         return transaction

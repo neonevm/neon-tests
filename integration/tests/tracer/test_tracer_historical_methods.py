@@ -1,6 +1,5 @@
 import math
 import random
-import time
 import typing as tp
 
 import pytest
@@ -62,27 +61,18 @@ class TestTracerHistoricalMethods(BaseMixin):
         assert receipt["status"] == 1
         return instruction_tx, receipt
 
-    def make_tx_object(self, sender=None, receiver=None, tx=None) -> tp.Dict:
-        if sender is None:
-            sender = self.sender_account.address
-
-        tx_call_obj = {
-            "from": sender,
-            "to": receiver,
-            "value": hex(tx["value"]),
-            "gas": hex(tx["gas"]),
-            "gasPrice": hex(tx["gasPrice"]),
-            "data": tx["data"],
-        }
-
-        return tx_call_obj
-
     def call_storage(self, storage_contract, storage_value, request_type):
         request_value = None
         self.store_value(storage_value, storage_contract)
         tx, reciept = self.retrieve_value(storage_contract)
-        tx_obj = self.make_tx_object(
-            self.sender_account.address, storage_contract.address, tx)
+
+        tx_obj = self.create_tx_object(sender=self.sender_account.address,
+                                       recipient=storage_contract.address,
+                                       value=hex(tx["value"]),
+                                       gas=hex(tx["gas"]),
+                                       gas_price=hex(tx["gasPrice"]),
+                                       data=tx["data"],
+                                       estimate_gas=False)
 
         if request_type == "blockNumber":
             request_value = hex(reciept[request_type])
@@ -212,14 +202,14 @@ class TestTracerHistoricalMethods(BaseMixin):
             request_value = hex(reciept_1[request_type])
         else:
             request_value = reciept_1[request_type].hex()
-        
+
         wait_condition(lambda: self.compare_values(self.tracer_api.tracer_send_rpc(method="eth_getBalance",
                                                                                    req_type=request_type,
                                                                                    params=[self.sender_account.address,
                                                                                            {request_type: request_value}])["result"],
                                                    sender_balance),
                        timeout_sec=120)
-        
+
         wait_condition(lambda: self.compare_values(self.tracer_api.tracer_send_rpc(method="eth_getBalance",
                                                                                    req_type=request_type,
                                                                                    params=[self.recipient_account.address,
@@ -241,14 +231,14 @@ class TestTracerHistoricalMethods(BaseMixin):
             request_value = hex(reciept_2[request_type])
         else:
             request_value = reciept_2[request_type].hex()
-        
+
         wait_condition(lambda: self.compare_values(self.tracer_api.tracer_send_rpc(method="eth_getBalance",
                                                                                    req_type=request_type,
                                                                                    params=[self.sender_account.address,
                                                                                            {request_type: request_value}])["result"],
                                                    sender_balance_after),
                        timeout_sec=120)
-        
+
         wait_condition(lambda: self.compare_values(self.tracer_api.tracer_send_rpc(method="eth_getBalance",
                                                                                    req_type=request_type,
                                                                                    params=[self.recipient_account.address,
@@ -259,23 +249,11 @@ class TestTracerHistoricalMethods(BaseMixin):
     def test_eth_get_code(self):
         request_type = "blockNumber"
 
-        nonce = self.web3_client.eth.get_transaction_count(
-            self.sender_account.address
-        )
-        transaction = {
-            "from": self.sender_account.address,
-            "chainId": self.web3_client._chain_id,
-            "gas": 987654321,
-            "gasPrice": self.web3_client.gas_price(),
-            "nonce": nonce,
-            "value": 0,
-            "data": bytes.fromhex(DEPLOY_CODE)
-        }
-        signed_tx = self.web3_client._web3.eth.account.sign_transaction(
-            transaction, self.sender_account.key)
-        tx = self.web3_client._web3.eth.send_raw_transaction(
-            signed_tx.rawTransaction)
-        receipt = self.web3_client._web3.eth.wait_for_transaction_receipt(tx)
+        tx = self.create_tx_object(sender=self.sender_account.address,
+                                   value=0,
+                                   data=bytes.fromhex(DEPLOY_CODE))
+        receipt = self.web3_client.send_transaction(
+            account=self.sender_account, transaction=tx)
         assert receipt["status"] == 1
 
         wait_condition(lambda: (self.tracer_api.tracer_send_rpc(method="eth_getCode",
@@ -301,6 +279,7 @@ class TestTracerHistoricalMethods(BaseMixin):
                                                                 params=[receipt["contractAddress"],
                                                                         {request_type: hex(receipt[request_type] + 1)}]))["result"] == CONTRACT_CODE,
                        timeout_sec=120)
+
     @pytest.mark.skip("Not released yet")
     def test_check_neon_revision(self):
         revision = self.tracer_api.send_rpc(

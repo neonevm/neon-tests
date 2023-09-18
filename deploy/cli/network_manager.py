@@ -11,11 +11,10 @@ EXPANDED_ENVS = [
     "SOLANA_URL",
 ]
 
+
 class NetworkManager():
     def __init__(self):
         self.networks = {}
-
-
 
         with open(pathlib.Path.cwd() / "envs.json", "r") as f:
             self.networks = json.load(f)
@@ -35,4 +34,3 @@ class NetworkManager():
             if os.environ.get("PROXY_IP"):
                 value = value.replace("<proxy_ip>", os.environ.get("PROXY_IP"))
         return value
-

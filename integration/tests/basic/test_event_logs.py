@@ -4,6 +4,7 @@ import string
 import allure
 import pytest
 import web3
+from web3.logs import DISCARD
 
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.rpc_checks import (
@@ -145,9 +146,9 @@ class TestLogs(BaseMixin):
         instruction_tx = event_caller.functions.emitThreeEvents().build_transaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
-        event1_logs = event_caller.events.IndexedArgs().process_receipt(resp)
-        event2_logs = event_caller.events.NonIndexedArg().process_receipt(resp)
-        event3_logs = event_caller.events.AllTypes().process_receipt(resp)
+        event1_logs = event_caller.events.IndexedArgs().process_receipt(resp, errors=DISCARD)
+        event2_logs = event_caller.events.NonIndexedArg().process_receipt(resp, errors=DISCARD)
+        event3_logs = event_caller.events.AllTypes().process_receipt(resp, errors=DISCARD)
         assert event1_logs[0].event == "IndexedArgs"
         assert event2_logs[0].event == "NonIndexedArg"
         assert event3_logs[0].event == "AllTypes"
@@ -201,13 +202,13 @@ class TestLogs(BaseMixin):
             contract_b.address, contract_c.address
         ).build_transaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-        event_a1_logs = contract_a.events.EventA1().process_receipt(resp)
+        event_a1_logs = contract_a.events.EventA1().process_receipt(resp, errors=DISCARD)
         assert len(event_a1_logs) == 1
-        event_b1_logs = contract_b.events.EventB1().process_receipt(resp)
+        event_b1_logs = contract_b.events.EventB1().process_receipt(resp, errors=DISCARD)
         assert len(event_b1_logs) == 1
-        event_b2_logs = contract_b.events.EventB2().process_receipt(resp)
-        event_c1_logs = contract_c.events.EventC1().process_receipt(resp)
-        event_c2_logs = contract_c.events.EventC2().process_receipt(resp)
+        event_b2_logs = contract_b.events.EventB2().process_receipt(resp, errors=DISCARD)
+        event_c1_logs = contract_c.events.EventC1().process_receipt(resp, errors=DISCARD)
+        event_c2_logs = contract_c.events.EventC2().process_receipt(resp, errors=DISCARD)
         for log in (event_b2_logs, event_c1_logs, event_c2_logs):
             assert (
                 log == ()

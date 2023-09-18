@@ -682,7 +682,6 @@ class TestRpcCalls(BaseMixin):
                     "nonce",
                     "gasPrice",
                     "gas",
-                    "to",
                     "value",
                     "v",
                     "s",

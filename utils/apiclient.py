@@ -9,7 +9,7 @@ class JsonRPCSession(Session):
         super(JsonRPCSession, self).__init__()
         self.url = url
 
-    def send_rpc(self, method: str, req_type: tp.Optional[str] = None, params: tp.Optional[tp.Any] = None) -> tp.Dict:
+    def send_rpc(self, method: str, params: tp.Optional[tp.Any] = None, req_type: tp.Optional[str] = None,) -> tp.Dict:
         req_id = random.randint(0, 100)
         body = {
             "jsonrpc": "2.0",

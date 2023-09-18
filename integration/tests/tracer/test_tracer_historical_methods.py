@@ -74,6 +74,8 @@ class TestTracerHistoricalMethods(BaseMixin):
                                        gas_price=hex(tx["gasPrice"]),
                                        data=tx["data"],
                                        estimate_gas=False)
+        del tx_obj["chainId"]
+        del tx_obj["nonce"]
 
         if request_type == "blockNumber":
             request_value = hex(reciept[request_type])
@@ -251,7 +253,11 @@ class TestTracerHistoricalMethods(BaseMixin):
 
         tx = self.create_tx_object(sender=self.sender_account.address,
                                    value=0,
+                                   nonce=self.web3_client.eth.get_transaction_count(self.sender_account.address),
                                    data=bytes.fromhex(DEPLOY_CODE))
+        del tx["to"]
+        del tx["gas"]
+
         receipt = self.web3_client.send_transaction(
             account=self.sender_account, transaction=tx)
         assert receipt["status"] == 1

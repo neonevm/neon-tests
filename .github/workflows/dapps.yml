@@ -355,7 +355,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 8 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch curve tests
         id: curve

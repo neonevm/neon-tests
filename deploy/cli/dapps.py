@@ -214,8 +214,11 @@ def print_report(directory):
             row.append(accounts)
             row.append(trx)
             out[app].append(row)
-
+    report_content = ""
     for app in out:
-        print(f'Cost report for "{app.title()}" dApp')
-        print("----------------------------------------")
-        print(tabulate.tabulate(out[app], headers, tablefmt="simple_grid"))
+        report_content += f'Cost report for "{app.title()}" dApp\n'
+        report_content += "----------------------------------------\n"
+        report_content += tabulate.tabulate(out[app], headers, tablefmt="simple_grid") + "\n"
+
+    print(report_content)
+    return report_content

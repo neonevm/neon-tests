@@ -28,7 +28,7 @@ class BaseTests:
     def prepare_account(self, prepare_account):
         self.acc = prepare_account
 
-    def create_tx_object(self, sender, recipient=None, value=None, amount=0, nonce=None, gas=None, gas_price=None, data=None,
+    def create_tx_object(self, sender, recipient=None, amount=0, nonce=None, gas=None, gas_price=None, data=None,
                          estimate_gas=True):
         self.create_common_tx_obj(sender,
                                   recipient,

@@ -613,7 +613,7 @@ jobs:
       - name: "Swap report"
         run: |
           python3 ./clickfile.py dapps report --directory=reports \
-          --pr_url_for_report=${{ github.event.inputs.pr_url_for_report }}
+          --pr_url_for_report=${{ github.event.inputs.pr_url_for_report }} \
           --token=${{secrets.GHTOKEN}}
 
   destroy:

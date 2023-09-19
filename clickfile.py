@@ -904,7 +904,6 @@ def dapps():
 @click.option("--token", default="", help="github token")
 def make_dapps_report(directory, pr_url_for_report, token):
     report_content = dapps_cli.print_report(directory)
-    print(f"pr_url_for_report{pr_url_for_report}")
     if pr_url_for_report:
         gh_client = GithubClient(token)
         gh_client.add_comment_to_pr(pr_url_for_report, report_content)

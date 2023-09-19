@@ -67,13 +67,13 @@ class TestTracerHistoricalMethods(BaseMixin):
         self.store_value(storage_value, storage_contract)
         tx, reciept = self.retrieve_value(storage_contract)
 
-        tx_obj = self.create_tx_object(sender=self.sender_account.address,
-                                       recipient=storage_contract.address,
-                                       value=hex(tx["value"]),
-                                       gas=hex(tx["gas"]),
-                                       gas_price=hex(tx["gasPrice"]),
-                                       data=tx["data"],
-                                       estimate_gas=False)
+        tx_obj = self.create_common_tx_obj(sender=self.sender_account.address,
+                                           recipient=storage_contract.address,
+                                           value=hex(tx["value"]),
+                                           gas=hex(tx["gas"]),
+                                           gas_price=hex(tx["gasPrice"]),
+                                           data=tx["data"],
+                                           estimate_gas=False)
         del tx_obj["chainId"]
         del tx_obj["nonce"]
 
@@ -251,11 +251,11 @@ class TestTracerHistoricalMethods(BaseMixin):
     def test_eth_get_code(self):
         request_type = "blockNumber"
 
-        tx = self.create_tx_object(sender=self.sender_account.address,
-                                   value=0,
-                                   nonce=self.web3_client.eth.get_transaction_count(self.sender_account.address),
-                                   data=bytes.fromhex(DEPLOY_CODE))
-        del tx["to"]
+        tx = self.create_common_tx_obj(sender=self.sender_account.address,
+                                       value=0,
+                                       nonce=self.web3_client.eth.get_transaction_count(
+                                           self.sender_account.address),
+                                       data=bytes.fromhex(DEPLOY_CODE))
         del tx["gas"]
 
         receipt = self.web3_client.send_transaction(

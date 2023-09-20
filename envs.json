@@ -5,6 +5,7 @@
     "network_id": 111,
     "solana_url": "http://proxy.night.stand.neontest.xyz/node-solana",
     "faucet_url": "http://proxy.night.stand.neontest.xyz",
+    "tracer_url": "",
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
     "operator_neon_rewards_address": [
@@ -78,6 +79,7 @@
     "network_id": 111,
     "solana_url": "http://proxy.release.stand.neontest.xyz/node-solana",
     "faucet_url": "http://proxy.release.stand.neontest.xyz/",
+    "tracer_url": "",
     "operator_neon_rewards_address": [],
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "neon_erc20wrapper_address": "",
@@ -92,7 +94,8 @@
     "solana_url": "https://api.devnet.solana.com",
     "faucet_url": "http://3.13.67.238/request_neon",
     "neonpass_url": "http://devnet.neonpass.live",
-    "ws_subscriber_url": "ws://159.69.194.181:8282",
+    "tracer_url": "https://ch2-graph.neontest.xyz/neon-rpc",
+    "ws_subscriber_url": "ws://ws.devnet.neonevm.org/websocket/",
     "spl_neon_mint": "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g",
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
     "use_bank": true,
@@ -109,6 +112,7 @@
     "network_id": 245022940,
     "solana_url": "http://145.40.68.143",
     "faucet_url": "https://proxy.testnet.neonlabs.org/request_neon",
+    "tracer_url": "",
     "spl_neon_mint": "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g",
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
     "use_bank": true,
@@ -125,6 +129,7 @@
     "network_id": 111,
     "solana_url": "http://127.0.0.1:8899/",
     "faucet_url": "http://127.0.0.1:3333/",
+    "tracer_url": "http://neon-rpc:9090",
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
     "operator_neon_rewards_address": [
@@ -168,6 +173,7 @@
     "network_id": 111,
     "solana_url": "http://<solana_ip>:8899/",
     "faucet_url": "http://<proxy_ip>:3333/",
+    "tracer_url": "",
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
     "operator_neon_rewards_address": [
@@ -235,21 +241,40 @@
       "5dyQQATyk4yga4f4m8BCrUF1jdfGQ1mShV4ezFLxyCqW"
     ]
   },
-    "geth": {
+  "geth": {
     "evm_loader": "",
     "proxy_url": "http://3.67.164.222:8545",
     "network_id": 22222,
     "solana_url": "",
     "faucet_url": "",
+    "tracer_url": "",
     "spl_neon_mint": "",
     "neon_erc20wrapper_address": "",
     "eth_bank_account": "0x9c10beb3e7eae0fa3e4695fe378bfa3bbf668aded6440e4a8412844d319c19b4",
-
     "operator_neon_rewards_address": [
       ""
     ],
     "operator_keys": [
       ""
+    ]
+  },
+  "tracer_ci": {
+    "evm_loader": "eeLSJgWzzxrqKv1UxtRVVH8FX3qCQWUs9QuAjJpETGU",
+    "proxy_url": "https://devnet.neonevm.org/",
+    "network_id": 245022926,
+    "solana_url": "https://api.devnet.solana.com",
+    "faucet_url": "http://3.13.67.238/request_neon",
+    "neonpass_url": "http://devnet.neonpass.live",
+    "tracer_url": "http://neon-rpc:9090",
+    "ws_subscriber_url": "ws://159.69.194.181:8282",
+    "spl_neon_mint": "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g",
+    "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
+    "use_bank": true,
+    "operator_neon_rewards_address": [
+      "0x04fb33d72b5c836e468e217f79c404a32fe5003a"
+    ],
+    "operator_keys": [
+      "1W6Z2oWehbpAK4AHvtEhXbqPQPyZpTKT74SMS4hGd39"
     ]
   }
 }

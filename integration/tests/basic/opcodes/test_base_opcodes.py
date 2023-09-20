@@ -5,7 +5,6 @@ import web3
 from integration.tests.basic.helpers.basic import BaseMixin
 
 
-
 @allure.feature("Opcodes verifications")
 @allure.story("Go-etherium opCodes tests")
 class TestOpCodes(BaseMixin):

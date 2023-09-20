@@ -27,6 +27,7 @@ class AccountData:
 
 class BaseMixin(BaseTests):
     proxy_api: JsonRPCSession = None
+    tracer_api: JsonRPCSession = None
     _sender_account: eth_account.signers.local.LocalAccount = None
     _recipient_account: eth_account.signers.local.LocalAccount = None
     _invalid_account: AccountData = None
@@ -34,8 +35,9 @@ class BaseMixin(BaseTests):
     bank_account = None
 
     @pytest.fixture(autouse=True)
-    def prepare_env(self, json_rpc_client, eth_bank_account):
+    def prepare_env(self, json_rpc_client, tracer_json_rpc_client, eth_bank_account):
         self.proxy_api = json_rpc_client
+        self.tracer_api = tracer_json_rpc_client
         self.bank_account = eth_bank_account
 
     @property
@@ -55,8 +57,8 @@ class BaseMixin(BaseTests):
     @property
     def invalid_account(self):
         if not self._recipient_account:
-            account = self.create_invalid_account()
-            self._invalid_account = account
+            account = self.create_invalid_address()
+            self._invalid_account_address = account
         return self._invalid_account
 
     @property
@@ -85,9 +87,12 @@ class BaseMixin(BaseTests):
         return float(self.web3_client.from_wei(self.web3_client.eth.get_balance(address), Unit.ETHER))
 
     @staticmethod
-    def create_invalid_account() -> AccountData:
-        """Create non existing account"""
-        return AccountData(address=gen_hash_of_block(20))
+    def create_invalid_address(len = 20) -> str:
+        """Create non existing account address"""
+        address = gen_hash_of_block(len)
+        while web3.Web3.is_checksum_address(address):
+            address = gen_hash_of_block(len)
+        return address
 
     def send_neon(
             self,
@@ -174,13 +179,13 @@ class BaseMixin(BaseTests):
             response = self.proxy_api.send_rpc("neon_finalizedBlockNumber", [])
             fin_block_num = int(response["result"], 16)
 
-    def create_tx_object(self, sender=None, recipient=None, amount=2, nonce=None, gas_price=None, data=None,
+    def create_tx_object(self, sender=None, recipient=None, amount=2, nonce=None, gas=None, gas_price=None, data=None,
                          estimate_gas=True):
         if sender is None:
             sender = self.sender_account.address
         if recipient is None:
             recipient = self.recipient_account.address
-        return super().create_tx_object(sender, recipient, amount, nonce, gas_price, data, estimate_gas)
+        return super().create_tx_object(sender, recipient, amount, nonce, gas, gas_price, data, estimate_gas)
 
     def create_contract_call_tx_object(self, sender=None, amount=None):
         if sender is None:

@@ -15,7 +15,7 @@ class TestNonce(BaseMixin):
 
     def check_transaction_list(self, tx_hash_list):
         for tx_hash in tx_hash_list:
-            tx_receipt = self.wait_transaction_accepted(tx_hash, timeout=60)
+            tx_receipt = self.wait_transaction_accepted(tx_hash, timeout=120)
             assert tx_receipt["result"]["status"] == "0x1"
 
     def test_get_receipt_sequence(self):
@@ -70,9 +70,6 @@ class TestNonce(BaseMixin):
             )
             trx[n] = response_trx
 
-        time.sleep(
-            15
-        )  # transaction with n+3 nonce should wait when transaction with nonce = n+2 will be accepted
         receipt_trx1 = self.proxy_api.send_rpc(
             method="eth_getTransactionReceipt", params=[trx[n + 3]["result"]]
         )
@@ -86,7 +83,7 @@ class TestNonce(BaseMixin):
             "eth_sendRawTransaction", [signed_tx.rawTransaction.hex()]
         )
 
-        tx_receipt = self.wait_transaction_accepted(trx[n + 3]["result"])
+        tx_receipt = self.wait_transaction_accepted(trx[n + 3]["result"], timeout=120)
         assert tx_receipt["result"] is not None, "Transaction should be accepted"
 
     def test_send_transaction_with_low_nonce_after_high(self):

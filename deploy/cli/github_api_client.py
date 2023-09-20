@@ -9,7 +9,7 @@ class GithubClient:
                         "Accept": "application/vnd.github+json"}
 
     def add_comment_to_pr(self, url, msg):
-        data = {"body": f"```{msg}```"}
+        data = {"body": f"```\n{msg}\n```"}
         click.echo(f"Sent data: {data}")
         click.echo(f"Headers: {self.headers}")
         response = requests.post(url, json=data, headers=self.headers)

@@ -1,0 +1,80 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+        "failed": {
+            "type": "boolean"
+        },
+        "gas": {
+            "type": "integer"
+        },
+        "returnValue": {
+            "type": "string"
+        },
+        "structLogs": {
+            "type": "array",
+            "items": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "depth": {
+                            "type": "integer"
+                        },
+                        "gas": {
+                            "type": "integer"
+                        },
+                        "gasCost": {
+                            "type": "integer"
+                        },
+                        "op": {
+                            "type": "string"
+                        },
+                        "pc": {
+                            "type": "integer"
+                        },
+                        "memory": {
+                            "type": "array",
+                            "items": {}
+                        },
+                        "memSize": {
+                            "type": "integer"
+                        },
+                        "returnData": {
+                            "type": "array",
+                            "items": {}
+                        },
+                        "stack": {
+                            "type": "array",
+                            "items": {}
+                        },
+                        "storage": {
+                            "type": "object",
+                            "properties": {}
+                        },
+                        "refund": {
+                            "type": "integer"
+                        },
+                        "error": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "depth",
+                        "gas",
+                        "gasCost",
+                        "op",
+                        "pc",
+                        "returnData",
+                        "stack"
+                    ]
+                }
+            ]
+        }
+    },
+    "required": [
+        "failed",
+        "gas",
+        "returnValue",
+        "structLogs"
+    ]
+}

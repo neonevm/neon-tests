@@ -470,7 +470,7 @@ def update_contracts(branch):
     help="Which UI test run",
 )
 @click.argument(
-    "name", required=True, type=click.Choice(["economy", "basic", "services", "oz", "ui",
+    "name", required=True, type=click.Choice(["economy", "basic", "tracer", "services", "oz", "ui",
                                               "compiler_compatibility"])
 )
 @catch_traceback
@@ -486,6 +486,8 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
         command = "py.test integration/tests/basic"
         if numprocesses:
             command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
+    elif name == "tracer":
+        command = "py.test integration/tests/tracer"
     elif name == "services":
         command = "py.test integration/tests/services"
         if numprocesses:

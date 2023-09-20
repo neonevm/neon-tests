@@ -29,17 +29,6 @@ class BaseTests:
         self.acc = prepare_account
 
     def create_tx_object(self, sender, recipient=None, amount=0, nonce=None, gas=None, gas_price=None, data=None,
-                         estimate_gas=True):
-        self.create_common_tx_obj(sender,
-                                  recipient,
-                                  self.web3_client.to_wei(amount, Unit.ETHER),
-                                  nonce,
-                                  gas,
-                                  gas_price,
-                                  data,
-                                  estimate_gas)
-
-    def create_common_tx_obj(self, sender, recipient=None, value=None, nonce=None, gas=None, gas_price=None, data=None,
                              estimate_gas=True):
         if gas_price is None:
             gas_price = self.web3_client.gas_price()
@@ -55,8 +44,8 @@ class BaseTests:
         if gas is not None:
             transaction["gas"] = gas
 
-        if value is not None:
-            transaction["value"] = value
+        if amount is not None:
+            transaction["value"] = self.web3_client.to_wei(amount, Unit.ETHER)
 
         if recipient is not None:
             transaction["to"] = recipient

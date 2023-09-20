@@ -179,13 +179,13 @@ class BaseMixin(BaseTests):
             response = self.proxy_api.send_rpc("neon_finalizedBlockNumber", [])
             fin_block_num = int(response["result"], 16)
 
-    def create_tx_object(self, sender=None, recipient=None, value=None, amount=2, nonce=None, gas=None, gas_price=None, data=None,
+    def create_tx_object(self, sender=None, recipient=None, amount=2, nonce=None, gas=None, gas_price=None, data=None,
                          estimate_gas=True):
         if sender is None:
             sender = self.sender_account.address
         if recipient is None:
             recipient = self.recipient_account.address
-        return super().create_tx_object(sender, recipient, value, amount, nonce, gas, gas_price, data, estimate_gas)
+        return super().create_tx_object(sender, recipient, amount, nonce, gas, gas_price, data, estimate_gas)
 
     def create_contract_call_tx_object(self, sender=None, amount=None):
         if sender is None:

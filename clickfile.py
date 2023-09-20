@@ -12,6 +12,7 @@ import typing as tp
 from multiprocessing.dummy import Pool
 from urllib.parse import urlparse
 
+from deploy.cli.github_api_client import GithubClient
 from deploy.cli.network_manager import NetworkManager
 
 try:
@@ -899,8 +900,13 @@ def dapps():
 
 @dapps.command("report", help="Print dapps report (from .json files)")
 @click.option("-d", "--directory", default="reports", help="Directory with reports")
-def make_dapps_report(directory):
-    dapps_cli.print_report(directory)
+@click.option("--pr_url_for_report", default="", help="Url to send the report as comment for PR")
+@click.option("--token", default="", help="github token")
+def make_dapps_report(directory, pr_url_for_report, token):
+    report_content = dapps_cli.print_report(directory)
+    if pr_url_for_report:
+        gh_client = GithubClient(token)
+        gh_client.add_comment_to_pr(pr_url_for_report, report_content)
 
 
 if __name__ == "__main__":

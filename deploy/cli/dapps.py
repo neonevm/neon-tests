@@ -9,11 +9,10 @@ import tabulate
 from paramiko.client import SSHClient
 from scp import SCPClient
 
+from deploy.cli.network_manager import NetworkManager
 try:
     from solana.transaction import Signature
-
     from deploy.cli import faucet as faucet_cli
-    from deploy.cli.network_manager import NetworkManager
     from utils.web3client import NeonWeb3Client
     from utils.solana_client import SolanaClient
     from utils.prices import get_neon_price

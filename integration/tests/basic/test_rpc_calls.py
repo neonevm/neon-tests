@@ -219,7 +219,7 @@ class TestRpcCalls(BaseMixin):
             (None, Tag.LATEST),
         ]
     )
-    def test_eth_get_logs_blockhash_negative(self, event_caller_contract, tag1, tag2):
+    def test_eth_get_logs_blockhash_negative_tags(self, event_caller_contract, tag1, tag2):
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
         bytes_array = text.encode().ljust(32, b'\0')
@@ -240,6 +240,40 @@ class TestRpcCalls(BaseMixin):
         assert "error" in response
         assert "message" in response
         assert "invalid filter" in response["message"]
+
+    @pytest.mark.parametrize(
+        ("p_name", "p_value", "p_error"), [
+            ("address", "0xc0ffee254729296a45a3885639AC7E10F9d54979", None),
+            ("address", "12345", "bad address"),
+            ("topics", "Invalid(address,uint256,string,bytes32,bool)", "bad topic"),
+        ]
+    )
+    def test_get_rpc_logs_negative_params(self, event_caller_contract, p_name, p_value, p_error):
+        number = random.randint(1, 100)
+        text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
+        bytes_array = text.encode().ljust(32, b'\0')
+        bol = True
+        tx = self.make_tx_object()
+        instruction_tx = event_caller_contract.functions.allTypes(
+            self.sender_account.address, number, text, bytes_array, bol
+        ).build_transaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        params = {"fromBlock": Tag.EARLIEST.value, "toBlock": Tag.LATEST.value}
+        if p_name == "address":
+            params["address"] = p_value
+        if p_name == "topics":
+            params["topics"] = [p_value]
+
+        response = self.proxy_api.send_rpc("eth_getLogs", params=params)
+        if not p_error and p_name == "address":
+            assert "error" not in response
+            assert "result" in response
+            assert len(response["result"]) == 0, "should not find any logs since the wrong address was provided"
+        else:
+            assert "error" in response
+            assert "message" in response["error"]
+            assert p_error in response["error"]["message"]
 
     @pytest.mark.parametrize(
         "tag1, tag2",
@@ -323,7 +357,7 @@ class TestRpcCalls(BaseMixin):
         ).build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
-        params = {"fromBlock": Tag.EARLIEST.value, "toBlock": Tag.LATEST.value,
+        params = {"fromBlock": Tag.LATEST.value, "toBlock": Tag.LATEST.value,
                   "address": event_caller_contract.address}
         topic = cryptohex("AllTypes(address,uint256,string,bytes32,bool)")
         params["topics"] = [topic]

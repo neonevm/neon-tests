@@ -18,7 +18,7 @@ try:
     from utils.solana_client import SolanaClient
     from utils.prices import get_neon_price
 except ImportError as e:
-    print(f"Can't load {e}")
+    pass
 
 TF_CWD = "deploy/aws"
 

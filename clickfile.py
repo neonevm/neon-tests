@@ -4,15 +4,16 @@ import glob
 import json
 import os
 import pathlib
-import platform
 import re
 import shutil
 import subprocess
 import sys
 import typing as tp
-from collections import defaultdict
 from multiprocessing.dummy import Pool
 from urllib.parse import urlparse
+
+from deploy.cli.github_api_client import GithubClient
+from deploy.cli.network_manager import NetworkManager
 
 try:
     import click
@@ -66,21 +67,15 @@ BASE_EXTENSIONS_TPL_DATA = "ui/extensions/data"
 EXTENSIONS_PATH = "ui/extensions/chrome/plugins"
 EXTENSIONS_USER_DATA_PATH = "ui/extensions/chrome"
 
-EXPANDED_ENVS = [
-    "PROXY_URL",
-    "NETWORK_ID",
-    "FAUCET_URL",
-    "SOLANA_URL",
-]
 
-NETWORK_NAME = os.environ.get("NETWORK_NAME", "full_test_suite")
+
 
 HOME_DIR = pathlib.Path(__file__).absolute().parent
 
 OZ_BALANCES = "./compatibility/results/oz_balance.json"
 NEON_EVM_GITHUB_URL = "https://api.github.com/repos/neonlabsorg/neon-evm"
 
-
+network_manager = NetworkManager()
 def green(s):
     return click.style(s, fg="green")
 
@@ -125,14 +120,6 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
     return wrap
 
 
-networks = {}
-with open("./envs.json", "r") as f:
-    networks = json.load(f)
-    if NETWORK_NAME not in networks.keys() and os.environ.get("DUMP_ENVS"):
-        environments = defaultdict(dict)
-        for var in EXPANDED_ENVS:
-            environments[NETWORK_NAME].update({var.lower(): os.environ.get(var, "")})
-        networks.update(environments)
 
 
 def check_profitability(func: tp.Callable) -> tp.Callable:
@@ -151,7 +138,7 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
             return dict(map(lambda i: (i[0], str(i[1])), d.items()))
 
         if os.environ.get("OZ_BALANCES_REPORT_FLAG") is not None:
-            network = networks[args[0]]
+            network = network_manager.networks[args[0]]
             op = Operator(
                 network["proxy_url"],
                 network["solana_url"],
@@ -201,7 +188,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
     keys_env = [
         faucet_cli.prepare_wallets_with_balance(
-            networks[network], count=users, airdrop_amount=amount
+            network_manager.networks[network], count=users, airdrop_amount=amount
         )
         for i in range(jobs)
     ]
@@ -217,8 +204,8 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         keys = keys_env.pop(0)
         env = os.environ.copy()
         env["PRIVATE_KEYS"] = ",".join(keys)
-        env["NETWORK_ID"] = str(networks[network]["network_id"])
-        env["PROXY_URL"] = networks[network]["proxy_url"]
+        env["NETWORK_ID"] = str(network_manager.get_network_param(network, "network_id"))
+        env["PROXY_URL"] = network_manager.get_network_param(network, "proxy_url")
 
         out = subprocess.run(
             f"npx hardhat test {file_name}",
@@ -247,7 +234,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     pool.close()
     pool.join()
     # Add allure environment
-    settings = networks[network]
+    settings = network_manager.networks[network]
     web3_client = web3client.NeonWeb3Client(
         settings["proxy_url"], settings["network_id"]
     )
@@ -353,7 +340,7 @@ def create_allure_environment_opts(opts: dict):
 
 
 def generate_allure_environment(network_name: str):
-    network = networks[network_name]
+    network = network_manager.networks[network_name]
     env = os.environ.copy()
     env["NETWORK_ID"] = str(network["network_id"])
     env["PROXY_URL"] = network["proxy_url"]
@@ -483,7 +470,7 @@ def update_contracts(branch):
     help="Which UI test run",
 )
 @click.argument(
-    "name", required=True, type=click.Choice(["economy", "basic", "services", "oz", "ui",
+    "name", required=True, type=click.Choice(["economy", "basic", "tracer", "services", "oz", "ui",
                                               "compiler_compatibility"])
 )
 @catch_traceback
@@ -499,6 +486,8 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
         command = "py.test integration/tests/basic"
         if numprocesses:
             command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
+    elif name == "tracer":
+        command = "py.test integration/tests/tracer"
     elif name == "services":
         command = "py.test integration/tests/services"
         if numprocesses:
@@ -553,7 +542,7 @@ def analyze_openzeppelin_results():
     if version.startswith("3") or version.startswith("2"):
         if version.startswith("3"):
             threshold = 1350
-        elif version.startswith("2"):
+        else:
             threshold = 2293
         print(f"Threshold: {threshold}")
         if test_report["passing"] < threshold:
@@ -838,7 +827,7 @@ def send_notification(url, build_url, traceback, network):
     "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
 )
 def get_operator_balances(network: str):
-    net = networks[network]
+    net = network_manager.networks[network]
     operator = Operator(
         net["proxy_url"],
         net["solana_url"],
@@ -886,16 +875,6 @@ def prepare_accounts(count, amount, network):
     dapps_cli.prepare_accounts(network, count, amount)
 
 
-def get_network_param(network, param):
-    value = ""
-    if network in networks:
-        value = networks[network][param]
-    if isinstance(value, str):
-        if os.environ.get("SOLANA_IP"):
-            value = value.replace("<solana_ip>", os.environ.get("SOLANA_IP"))
-        if os.environ.get("PROXY_IP"):
-            value = value.replace("<proxy_ip>", os.environ.get("PROXY_IP"))
-    return value
 
 
 @infra.command("print-network-param")
@@ -906,7 +885,7 @@ def get_network_param(network, param):
     "-p", "--param", type=str, help="any network param like proxy_url, network_id e.t.c"
 )
 def print_network_param(network, param):
-    print(get_network_param(network, param))
+    print(network_manager.get_network_param(network, param))
 
 
 infra.add_command(deploy, "deploy")
@@ -923,8 +902,13 @@ def dapps():
 
 @dapps.command("report", help="Print dapps report (from .json files)")
 @click.option("-d", "--directory", default="reports", help="Directory with reports")
-def make_dapps_report(directory):
-    dapps_cli.print_report(directory)
+@click.option("--pr_url_for_report", default="", help="Url to send the report as comment for PR")
+@click.option("--token", default="", help="github token")
+def make_dapps_report(directory, pr_url_for_report, token):
+    report_content = dapps_cli.print_report(directory)
+    if pr_url_for_report:
+        gh_client = GithubClient(token)
+        gh_client.add_comment_to_pr(pr_url_for_report, report_content)
 
 
 if __name__ == "__main__":

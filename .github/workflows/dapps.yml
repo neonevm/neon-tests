@@ -36,6 +36,10 @@ on:
         type: string
         required: false
         description: "network_id (fill only for custom stand)"
+      pr_url_for_report:
+        type: string
+        required: false
+        description: "Url to send the report as comment for PR"
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.DAPPS_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.DAPPS_AWS_SECRET_ACCESS_KEY }}
@@ -355,7 +359,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 8 -a 10000 -n ${{env.NETWORK_NAME}}
 
       - name: Launch curve tests
         id: curve
@@ -607,7 +611,10 @@ jobs:
           name: robonomics-report
           path: reports/
       - name: "Swap report"
-        run: python3 ./clickfile.py dapps report --directory=reports
+        run: |
+          python3 ./clickfile.py dapps report --directory=reports \
+          --pr_url_for_report=${{ github.event.inputs.pr_url_for_report }} \
+          --token=${{secrets.GHTOKEN}}
 
   destroy:
     runs-on: ubuntu-20.04

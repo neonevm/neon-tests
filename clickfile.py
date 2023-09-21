@@ -14,16 +14,12 @@ from urllib.parse import urlparse
 
 from deploy.cli.github_api_client import GithubClient
 from deploy.cli.network_manager import NetworkManager
-
+from deploy.cli import dapps as dapps_cli
 try:
     import click
 except ImportError:
     print("Please install click library: pip install click==8.0.3")
     sys.exit(1)
-try:
-    from deploy.cli import dapps as dapps_cli
-except ImportError as e:
-    print(f"Can't load {e}")
 try:
     import requests
     import tabulate
@@ -39,7 +35,7 @@ try:
     from deploy.infra.utils import docker as docker_utils
     from deploy.infra.utils import env
 except ImportError as e:
-    print(f"Can't load {e}")
+    pass
 
 CMD_ERROR_LOG = "click_cmd_err.log"
 

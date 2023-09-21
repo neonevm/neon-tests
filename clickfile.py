@@ -20,7 +20,10 @@ try:
 except ImportError:
     print("Please install click library: pip install click==8.0.3")
     sys.exit(1)
-
+try:
+    from deploy.cli import dapps as dapps_cli
+except ImportError as e:
+    print(f"Can't load {e}")
 try:
     import requests
     import tabulate
@@ -32,7 +35,6 @@ try:
     from utils.web3client import NeonWeb3Client
     from utils.prices import get_sol_price
 
-    from deploy.cli import dapps as dapps_cli
     from deploy.cli import faucet as faucet_cli
     from deploy.infra.utils import docker as docker_utils
     from deploy.infra.utils import env

@@ -176,7 +176,10 @@ class TestRpcCalls(BaseMixin):
             response["result"]
         ), f"Invalid current gas price `{response['result']}` in wei"
 
-    def test_eth_get_logs_blockhash(self, event_caller_contract):
+    @pytest.mark.parametrize(
+        "param_fields", [(), ("address", "topics"), ("address",), ("topics",)]
+    )
+    def test_eth_get_logs_blockhash(self, event_caller_contract, param_fields):
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
         bytes_array = text.encode().ljust(32, b'\0')
@@ -189,8 +192,17 @@ class TestRpcCalls(BaseMixin):
 
         params = {"blockHash": receipt["blockHash"].hex()}
 
+        topic = False
+        if "address" in param_fields:
+            params["address"] = event_caller_contract.address
+        if "topics" in param_fields:
+            topic = cryptohex("AllTypes(address,uint256,string,bytes32,bool)")
+            params["topics"] = [topic]
+
         response = self.proxy_api.send_rpc("eth_getLogs", params=params)
         assert "error" not in response
+        if topic:
+            assert topic in response["result"][0]["topics"]
         assert_fields_are_hex(response["result"][0],
                               ["transactionHash", "blockHash",
                                "blockNumber", "transactionIndex", "address",

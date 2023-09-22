@@ -10,5 +10,5 @@ runs:
         python-version: "3.9"
     - name: "Install python requirements"
       run: |
-        pip3 install --upgrade -r deploy/requirements/prod.txt  -r deploy/requirements/devel.txt -r deploy/requirements/ui.txt
+        pip3 install --upgrade -r deploy/requirements/click.txt
       shell: bash

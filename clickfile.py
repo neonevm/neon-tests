@@ -14,30 +14,26 @@ from urllib.parse import urlparse
 
 from deploy.cli.github_api_client import GithubClient
 from deploy.cli.network_manager import NetworkManager
-
+from deploy.cli import dapps as dapps_cli
 try:
     import click
 except ImportError:
     print("Please install click library: pip install click==8.0.3")
     sys.exit(1)
+import requests
+import tabulate
 
-try:
-    import requests
-    import tabulate
+from utils import web3client
+from utils import faucet
+from utils import cloud
+from utils.operator import Operator
+from utils.web3client import NeonWeb3Client
+from utils.prices import get_sol_price
 
-    from utils import web3client
-    from utils import faucet
-    from utils import cloud
-    from utils.operator import Operator
-    from utils.web3client import NeonWeb3Client
-    from utils.prices import get_sol_price
+from deploy.cli import faucet as faucet_cli
+from deploy.infra.utils import docker as docker_utils
+from deploy.infra.utils import env
 
-    from deploy.cli import dapps as dapps_cli
-    from deploy.cli import faucet as faucet_cli
-    from deploy.infra.utils import docker as docker_utils
-    from deploy.infra.utils import env
-except ImportError as e:
-    print(f"Can't load {e}")
 
 CMD_ERROR_LOG = "click_cmd_err.log"
 
@@ -348,7 +344,7 @@ def generate_allure_environment(network_name: str):
 
 
 def install_python_requirements():
-    command = "pip3 install --upgrade -r deploy/requirements/prod.txt  -r deploy/requirements/devel.txt -r deploy/requirements/ui.txt"
+    command = "pip3 install --upgrade -r deploy/requirements/click.txt -r deploy/requirements/prod.txt  -r deploy/requirements/devel.txt -r deploy/requirements/ui.txt"
     subprocess.check_call(command, shell=True)
 
 

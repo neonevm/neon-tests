@@ -42,7 +42,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: "Dockerize neon tests"
-        id: requirements
         uses: ./.github/actions/dockerize-neon-tests
         with:
           image_tag: ${{ github.sha }}
@@ -116,7 +115,6 @@ jobs:
         run: |
           docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py ozreport
       - name: "Generate allure report"
-        id: requirements
         uses: ./.github/actions/generate-allure-report
         with:
           container: ${{ env.CONTAINER }}

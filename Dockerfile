@@ -44,15 +44,13 @@ RUN apt install -y libxkbcommon0 \
 
 COPY ./deploy/requirements/* /opt/
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
-RUN pip3 install -r /opt/prod.txt -r /opt/ui.txt
+RUN pip3 install -r /opt/click.txt -r /opt/prod.txt -r /opt/ui.txt
 COPY ./deploy/oz/run-full-test-suite.sh /opt/neon-tests/
 
 WORKDIR /opt/neon-tests
 ADD ./ /opt/neon-tests
 RUN python3 ./clickfile.py update-contracts
 
-# Install UI requirements
-RUN python3 ./clickfile.py requirements -d ui
 
 ARG OZ_BRANCH=master
 

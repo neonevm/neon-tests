@@ -2,7 +2,6 @@ import random
 import string
 
 import allure
-import pytest
 import web3
 from web3.logs import DISCARD
 
@@ -10,14 +9,6 @@ from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.rpc_checks import (
     assert_log_field_in_neon_trx_receipt,
 )
-
-
-@pytest.fixture(scope="class")
-def event_caller(web3_client, faucet, class_account):
-    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "EventCaller", "0.8.12", class_account
-    )
-    return contract
 
 
 @allure.feature("JSON-RPC validation")
@@ -37,30 +28,30 @@ class TestLogs(BaseMixin):
             tx["value"] = web3.Web3.to_wei(value, "ether")
         return tx
 
-    def test_non_args_event(self, event_caller):
+    def test_non_args_event(self, event_caller_contract):
         tx = self.make_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.nonArgs().build_transaction(tx)
+        instruction_tx = event_caller_contract.functions.nonArgs().build_transaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 1
-        event_logs = event_caller.events.NonArgs().process_receipt(resp)
+        event_logs = event_caller_contract.events.NonArgs().process_receipt(resp)
         assert len(event_logs) == 1
         assert event_logs[0].args == {}
         assert event_logs[0].event == "NonArgs"
 
-    def test_all_types_args_event(self, event_caller):
+    def test_all_types_args_event(self, event_caller_contract):
         tx = self.make_tx_object(self.sender_account.address)
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
         bytes_array = text.encode().ljust(32, b'\0')
         bol = True
 
-        instruction_tx = event_caller.functions.allTypes(
+        instruction_tx = event_caller_contract.functions.allTypes(
             self.sender_account.address, number, text, bytes_array, bol
         ).build_transaction(tx)
 
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 1
-        event_logs = event_caller.events.AllTypes().process_receipt(resp)
+        event_logs = event_caller_contract.events.AllTypes().process_receipt(resp)
         assert len(event_logs) == 1
         assert len(event_logs[0].args) == 5
         assert event_logs[0].args.addr == self.sender_account.address
@@ -74,13 +65,13 @@ class TestLogs(BaseMixin):
         )
         assert_log_field_in_neon_trx_receipt(response, 1)
 
-    def test_indexed_args_event(self, event_caller):
+    def test_indexed_args_event(self, event_caller_contract):
         amount = random.randint(1, 100)
         tx = self.make_tx_object(self.sender_account.address, value=amount)
-        instruction_tx = event_caller.functions.indexedArgs().build_transaction(tx)
+        instruction_tx = event_caller_contract.functions.indexedArgs().build_transaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 3
-        event_logs = event_caller.events.IndexedArgs().process_receipt(resp)
+        event_logs = event_caller_contract.events.IndexedArgs().process_receipt(resp)
         assert len(event_logs) == 1
         assert len(event_logs[0].args) == 2
         assert event_logs[0].args.who == self.sender_account.address
@@ -92,15 +83,15 @@ class TestLogs(BaseMixin):
         )
         assert_log_field_in_neon_trx_receipt(response, 1)
 
-    def test_non_indexed_args_event(self, event_caller):
+    def test_non_indexed_args_event(self, event_caller_contract):
         amount = random.randint(1, 100)
         tx = self.make_tx_object(self.sender_account.address, value=amount)
-        instruction_tx = event_caller.functions.nonIndexedArg("world").build_transaction(
+        instruction_tx = event_caller_contract.functions.nonIndexedArg("world").build_transaction(
             tx
         )
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 1
-        event_logs = event_caller.events.NonIndexedArg().process_receipt(resp)
+        event_logs = event_caller_contract.events.NonIndexedArg().process_receipt(resp)
         assert len(event_logs) == 1
         assert len(event_logs[0].args) == 1
         assert event_logs[0].args.hello == "world"
@@ -110,12 +101,12 @@ class TestLogs(BaseMixin):
         )
         assert_log_field_in_neon_trx_receipt(response, 1)
 
-    def test_unnamed_args_event(self, event_caller):
+    def test_unnamed_args_event(self, event_caller_contract):
         tx = self.make_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.unnamedArg("hello").build_transaction(tx)
+        instruction_tx = event_caller_contract.functions.unnamedArg("hello").build_transaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 1
-        event_logs = event_caller.events.UnnamedArg().process_receipt(resp)
+        event_logs = event_caller_contract.events.UnnamedArg().process_receipt(resp)
         assert len(event_logs) == 1
         assert len(event_logs[0].args) == 1
         assert event_logs[0].event == "UnnamedArg"
@@ -124,14 +115,14 @@ class TestLogs(BaseMixin):
         )
         assert_log_field_in_neon_trx_receipt(response, 1)
 
-    def test_big_args_count(self, event_caller):
+    def test_big_args_count(self, event_caller_contract):
         tx = self.make_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.bigArgsCount("hello").build_transaction(
+        instruction_tx = event_caller_contract.functions.bigArgsCount("hello").build_transaction(
             tx
         )
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 4
-        event_logs = event_caller.events.BigArgsCount().process_receipt(resp)
+        event_logs = event_caller_contract.events.BigArgsCount().process_receipt(resp)
         assert len(event_logs) == 1
         assert len(event_logs[0].args) == 10
         assert event_logs[0].event == "BigArgsCount"
@@ -141,14 +132,14 @@ class TestLogs(BaseMixin):
         )
         assert_log_field_in_neon_trx_receipt(response, 1)
 
-    def test_several_events_in_one_trx(self, event_caller):
+    def test_several_events_in_one_trx(self, event_caller_contract):
         tx = self.make_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.emitThreeEvents().build_transaction(tx)
+        instruction_tx = event_caller_contract.functions.emitThreeEvents().build_transaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
-        event1_logs = event_caller.events.IndexedArgs().process_receipt(resp, errors=DISCARD)
-        event2_logs = event_caller.events.NonIndexedArg().process_receipt(resp, errors=DISCARD)
-        event3_logs = event_caller.events.AllTypes().process_receipt(resp, errors=DISCARD)
+        event1_logs = event_caller_contract.events.IndexedArgs().process_receipt(resp, errors=DISCARD)
+        event2_logs = event_caller_contract.events.NonIndexedArg().process_receipt(resp, errors=DISCARD)
+        event3_logs = event_caller_contract.events.AllTypes().process_receipt(resp, errors=DISCARD)
         assert event1_logs[0].event == "IndexedArgs"
         assert event2_logs[0].event == "NonIndexedArg"
         assert event3_logs[0].event == "AllTypes"
@@ -157,15 +148,15 @@ class TestLogs(BaseMixin):
         )
         assert_log_field_in_neon_trx_receipt(response, 3)
 
-    def test_many_the_same_events_in_one_trx(self, event_caller):
+    def test_many_the_same_events_in_one_trx(self, event_caller_contract):
         tx = self.make_tx_object(self.sender_account.address)
         changes_count = 20
-        instruction_tx = event_caller.functions.updateStorageMap(
+        instruction_tx = event_caller_contract.functions.updateStorageMap(
             changes_count
         ).build_transaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert resp["status"] == 1
-        event_logs = event_caller.events.NonIndexedArg().process_receipt(resp)
+        event_logs = event_caller_contract.events.NonIndexedArg().process_receipt(resp)
         assert len(event_logs) == changes_count
         for log in event_logs:
             assert log.event == "NonIndexedArg"
@@ -174,14 +165,14 @@ class TestLogs(BaseMixin):
         )
         assert_log_field_in_neon_trx_receipt(response, changes_count)
 
-    def test_event_logs_deleted_if_trx_was_canceled(self, event_caller):
+    def test_event_logs_deleted_if_trx_was_canceled(self, event_caller_contract):
         tx = self.make_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.causeOutOfMemory(
+        instruction_tx = event_caller_contract.functions.causeOutOfMemory(
         ).build_transaction(tx)
         try:
             resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
             assert resp["status"] == 0
-            event_logs = event_caller.events.NonIndexedArg().process_receipt(resp)
+            event_logs = event_caller_contract.events.NonIndexedArg().process_receipt(resp)
             assert len(event_logs) == 0
         except ValueError as exc:
             assert "Error: memory allocation failed, out of memory." in exc.args[0]['message']

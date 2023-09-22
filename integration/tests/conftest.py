@@ -1,6 +1,6 @@
 import os
 import random
-import typing as tp
+import typing
 import string
 
 import allure
@@ -19,7 +19,6 @@ from utils.apiclient import JsonRPCSession
 from utils.solana_client import SolanaClient
 from solana.rpc.types import TxOpts
 from solana.rpc.commitment import Confirmed
-
 
 NEON_AIRDROP_AMOUNT = 10_000
 
@@ -48,7 +47,7 @@ def faucet(pytestconfig: Config, web3_client) -> Faucet:
 
 
 @pytest.fixture(scope="session")
-def ws_subscriber_url(pytestconfig: tp.Any) -> tp.Optional[str]:
+def ws_subscriber_url(pytestconfig: typing.Any) -> typing.Optional[str]:
     return pytestconfig.environment.ws_subscriber_url
 
 
@@ -90,21 +89,21 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
     with allure.step("Create account for tests"):
         acc = web3_client.eth.account.create()
     with allure.step(
-        f"Request {NEON_AIRDROP_AMOUNT} NEON from faucet for {acc.address}"
+            f"Request {NEON_AIRDROP_AMOUNT} NEON from faucet for {acc.address}"
     ):
         faucet.request_neon(acc.address, NEON_AIRDROP_AMOUNT)
         assert web3_client.get_balance(acc) == NEON_AIRDROP_AMOUNT
     start_neon_balance = operator.get_neon_balance()
     start_sol_balance = operator.get_solana_balance()
     with allure.step(
-        f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
+            f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
     ):
         pass
     yield acc
     end_neon_balance = operator.get_neon_balance()
     end_sol_balance = operator.get_solana_balance()
     with allure.step(
-        f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
+            f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
     ):
         pass
     with allure.step(f"Account end balance: {web3_client.get_balance(acc)} NEON"):
@@ -112,7 +111,7 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
 
 
 @pytest.fixture(scope="session")
-def bank_account(pytestconfig: Config) -> tp.Optional[Keypair]:
+def bank_account(pytestconfig: Config) -> typing.Optional[Keypair]:
     account = None
     if pytestconfig.environment.use_bank:
         private_key = os.environ.get("BANK_PRIVATE_KEY")
@@ -122,7 +121,7 @@ def bank_account(pytestconfig: Config) -> tp.Optional[Keypair]:
 
 
 @pytest.fixture(scope="session")
-def eth_bank_account(pytestconfig: Config, web3_client) -> tp.Optional[Keypair]:
+def eth_bank_account(pytestconfig: Config, web3_client) -> typing.Optional[Keypair]:
     account = None
     if pytestconfig.environment.eth_bank_account != "":
         account = web3_client.eth.account.from_key(
@@ -148,11 +147,11 @@ def solana_account(bank_account, pytestconfig: Config, sol_client):
 
 @pytest.fixture(scope="session")
 def erc20_spl(
-    web3_client: NeonWeb3Client,
-    faucet,
-    pytestconfig: Config,
-    sol_client,
-    solana_account,
+        web3_client: NeonWeb3Client,
+        faucet,
+        pytestconfig: Config,
+        sol_client,
+        solana_account,
 ):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
     erc20 = ERC20Wrapper(
@@ -235,3 +234,11 @@ def meta_proxy_contract(web3_client, faucet, class_account):
         "./EIPs/MetaProxy.sol", "0.8.10", account=class_account
     )
     return contract
+
+
+@pytest.fixture(scope="class")
+def event_caller_contract(web3_client, class_account) -> typing.Any:
+    event_caller, _ = web3_client.deploy_and_get_contract(
+        "EventCaller", "0.8.12", class_account
+    )
+    yield event_caller

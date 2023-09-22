@@ -1,7 +1,6 @@
 import os
 import random
 import typing
-import typing as tp
 import string
 
 import allure
@@ -48,7 +47,7 @@ def faucet(pytestconfig: Config, web3_client) -> Faucet:
 
 
 @pytest.fixture(scope="session")
-def ws_subscriber_url(pytestconfig: tp.Any) -> tp.Optional[str]:
+def ws_subscriber_url(pytestconfig: typing.Any) -> typing.Optional[str]:
     return pytestconfig.environment.ws_subscriber_url
 
 
@@ -112,7 +111,7 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
 
 
 @pytest.fixture(scope="session")
-def bank_account(pytestconfig: Config) -> tp.Optional[Keypair]:
+def bank_account(pytestconfig: Config) -> typing.Optional[Keypair]:
     account = None
     if pytestconfig.environment.use_bank:
         private_key = os.environ.get("BANK_PRIVATE_KEY")
@@ -122,7 +121,7 @@ def bank_account(pytestconfig: Config) -> tp.Optional[Keypair]:
 
 
 @pytest.fixture(scope="session")
-def eth_bank_account(pytestconfig: Config, web3_client) -> tp.Optional[Keypair]:
+def eth_bank_account(pytestconfig: Config, web3_client) -> typing.Optional[Keypair]:
     account = None
     if pytestconfig.environment.eth_bank_account != "":
         account = web3_client.eth.account.from_key(

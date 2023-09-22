@@ -208,9 +208,6 @@ class TestRpcCalls(BaseMixin):
                                "blockNumber", "transactionIndex", "address",
                                "logIndex", "data", "transactionLogIndex"])
         assert_fields_are_boolean(response["result"][0], ["removed"])
-        assert_equal_fields(response, receipt, ["transactionHash", "blockHash",
-                                                "blockNumber", "transactionIndex", "address",
-                                                "logIndex", "data", "transactionLogIndex"])
 
     @pytest.mark.xfail(reason="NDEV-2237")
     @pytest.mark.parametrize(

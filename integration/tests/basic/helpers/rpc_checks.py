@@ -1,6 +1,7 @@
 import typing as tp
 from types import SimpleNamespace
 
+from hexbytes import HexBytes
 from web3 import types
 
 from integration.tests.basic.helpers.assert_message import AssertMessage
@@ -101,3 +102,22 @@ def assert_fields_are_hex(object, expected_hex_fields):
     for field in expected_hex_fields:
         assert field in object, f"no expected field {field} in the object"
         assert is_hex(object[field]), f"field {field} is not correct. Actual : {object[field]}"
+
+
+def assert_fields_are_boolean(object, expected_boolean_fields):
+    for field in expected_boolean_fields:
+        assert field in object, f"no expected field {field} in the object"
+        assert type(object[field]) == bool, f"field {field} is not boolean. Actual : {type(object[field])}"
+
+
+def assert_equal_fields(response, receipt, comparable_fields):
+    for field in comparable_fields:
+        l = response["result"][0][field]
+        r = receipt["logs"][0][field]
+        if isinstance(r, str):
+            r = r.lower()
+        if isinstance(r, int):
+            r = hex(r)
+        if isinstance(r, HexBytes):
+            r = r.hex()
+        assert l == r, f"{field} from response {l} is not equal to {field} from receipt {r}"

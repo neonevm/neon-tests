@@ -9,10 +9,10 @@ class GithubClient:
                         "Accept": "application/vnd.github+json"}
 
     def add_comment_to_pr(self, url, msg):
-        data = {"body": f"```{msg}```"}
-        response = requests.post(url, json=data, headers=self.headers)
+        data = {"body": f"```\n{msg}\n```"}
         click.echo(f"Sent data: {data}")
         click.echo(f"Headers: {self.headers}")
+        response = requests.post(url, json=data, headers=self.headers)
         click.echo(f"Status code: {response.status_code}")
-        if response.status_code != 204:
+        if response.status_code != 201:
             raise RuntimeError(f"Attempt to leave a comment on a PR failed: {response.text}")

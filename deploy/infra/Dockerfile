@@ -35,6 +35,7 @@ RUN apt-get update && apt-get install -qy --no-install-recommends ${PIP_BUILD_DE
 RUN python3 -m ensurepip \
   && pip install -U --upgrade-strategy=only-if-needed wheel pip pip-tools \
   && pip install --upgrade \
+  -r ${HOME_DIR}/deploy/requirements/click.txt \
   -r ${HOME_DIR}/deploy/requirements/prod.txt \
   -r ${HOME_DIR}/deploy/requirements/devel.txt \
   -r ${HOME_DIR}/deploy/requirements/ui.txt \

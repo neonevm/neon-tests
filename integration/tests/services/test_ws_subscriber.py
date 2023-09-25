@@ -35,14 +35,6 @@ class Unsubscribe(ETH):
 @allure.feature("Websocket Subscriber")
 @allure.story("Subscribe to events")
 class TestSubscriber(BaseMixin):
-
-    @pytest.fixture(scope="class")
-    def event_caller_contract(self, web3_client, class_account) -> typing.Any:
-        event_caller, _ = web3_client.deploy_and_get_contract(
-            "EventCaller", "0.8.12", class_account
-        )
-        yield event_caller
-
     def call_contract_events(self, event_caller_contract):
         arg1, arg2, arg3 = ("text1", "text2", "text3")
 

@@ -177,7 +177,7 @@ class TestRpcCalls(BaseMixin):
         ), f"Invalid current gas price `{response['result']}` in wei"
 
     @pytest.mark.parametrize(
-        "param_fields", [(), ("address", "topics"), ("address",), ("topics",)]
+        "param_fields", [("address", "topics"), ("address",), ("topics",)]
     )
     def test_eth_get_logs_blockhash(self, event_caller_contract, param_fields):
         number = random.randint(1, 100)
@@ -208,6 +208,34 @@ class TestRpcCalls(BaseMixin):
                                "blockNumber", "transactionIndex", "address",
                                "logIndex", "data", "transactionLogIndex"])
         assert_fields_are_boolean(response["result"][0], ["removed"])
+        assert_equal_fields(response, receipt, ["transactionHash", "blockHash",
+                                                "blockNumber", "transactionIndex", "address",
+                                                "logIndex", "data", "transactionLogIndex"])
+
+    def test_eth_get_logs_blockhash_empty_params(self, event_caller_contract):
+        number = random.randint(1, 100)
+        text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
+        bytes_array = text.encode().ljust(32, b'\0')
+        bol = True
+        tx = self.make_tx_object()
+        instruction_tx = event_caller_contract.functions.allTypes(
+            self.sender_account.address, number, text, bytes_array, bol
+        ).build_transaction(tx)
+        receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        params = {"blockHash": receipt["blockHash"].hex()}
+
+        response = self.proxy_api.send_rpc("eth_getLogs", params=params)
+        assert "error" not in response
+
+        assert_fields_are_hex(response["result"][0],
+                              ["transactionHash", "blockHash",
+                               "blockNumber", "transactionIndex", "address",
+                               "logIndex", "transactionLogIndex"])
+        assert_fields_are_boolean(response["result"][0], ["removed"])
+        assert_equal_fields(response, receipt, ["transactionHash", "blockHash",
+                                                "blockNumber", "transactionIndex", "address",
+                                                "logIndex", "transactionLogIndex"])
 
     @pytest.mark.xfail(reason="NDEV-2237")
     @pytest.mark.parametrize(
@@ -342,34 +370,6 @@ class TestRpcCalls(BaseMixin):
                 assert response["result"][0]["address"] == receipt["to"].lower(), \
                     f"address from response {response['result'][0]['address']} " \
                     f"is not equal to address from receipt {receipt['to'].lower()}"
-
-    def test_get_rpc_logs_eq_val(self, event_caller_contract):
-        number = random.randint(1, 100)
-        text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
-        bytes_array = text.encode().ljust(32, b'\0')
-        bol = True
-        tx = self.make_tx_object()
-        instruction_tx = event_caller_contract.functions.allTypes(
-            self.sender_account.address, number, text, bytes_array, bol
-        ).build_transaction(tx)
-        receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-
-        params = {"fromBlock": Tag.LATEST.value, "toBlock": Tag.LATEST.value,
-                  "address": event_caller_contract.address}
-        topic = cryptohex("AllTypes(address,uint256,string,bytes32,bool)")
-        params["topics"] = [topic]
-
-        response = self.proxy_api.send_rpc("eth_getLogs", params=params)
-        assert "error" not in response
-        assert topic in response["result"][0]["topics"]
-        assert_fields_are_hex(response["result"][0],
-                              ["transactionHash", "blockHash",
-                               "blockNumber", "transactionIndex", "address",
-                               "logIndex", "data", "transactionLogIndex"])
-        assert_fields_are_boolean(response["result"][0], ["removed"])
-        assert_equal_fields(response, receipt, ["transactionHash", "blockHash",
-                                                "blockNumber", "transactionIndex", "address",
-                                                "logIndex", "data", "transactionLogIndex"])
 
     @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, None])
     @pytest.mark.only_stands

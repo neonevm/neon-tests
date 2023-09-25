@@ -904,6 +904,7 @@ def make_dapps_report(directory, pr_url_for_report, token):
     report_content = dapps_cli.print_report(directory)
     if pr_url_for_report:
         gh_client = GithubClient(token)
+        gh_client.delete_last_comment(pr_url_for_report)
         gh_client.add_comment_to_pr(pr_url_for_report, report_content)
 
 

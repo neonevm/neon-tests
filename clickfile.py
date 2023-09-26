@@ -24,15 +24,13 @@ import requests
 import tabulate
 
 from utils import web3client
-from utils import faucet
 from utils import cloud
 from utils.operator import Operator
 from utils.web3client import NeonWeb3Client
 from utils.prices import get_sol_price
 
 from deploy.cli import faucet as faucet_cli
-from deploy.infra.utils import docker as docker_utils
-from deploy.infra.utils import env
+
 
 
 CMD_ERROR_LOG = "click_cmd_err.log"

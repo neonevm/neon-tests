@@ -2,6 +2,7 @@
 import json
 import os
 import random
+import time
 
 import requests
 
@@ -14,7 +15,6 @@ sys.path.append(str(root))
 
 from utils.web3client import NeonWeb3Client
 from utils.faucet import Faucet
-from integration.tests.basic.helpers.basic import BaseMixin
 
 FAUCET_URL = os.environ.get("FAUCET_URL")
 PROXY_URL = os.environ.get("PROXY_URL")
@@ -31,6 +31,25 @@ report = {"name": "Curve-factory", "actions": []}
 
 print(f"Faucet url: {FAUCET_URL}")
 print(f"Proxy url: {PROXY_URL}")
+
+
+def wait_transaction_accepted(transaction, timeout=20):
+    started = time.time()
+    while (time.time() - started) < timeout:
+        response = requests.post(
+            PROXY_URL,
+            json={
+                "jsonrpc": "2.0",
+                "method": "eth_getTransactionReceipt",
+                "params": [transaction],
+                "id": random.randint(1, 1000),
+            },
+        ).json()
+        if response['result'] is not None:
+            return response
+        time.sleep(1)
+    raise TimeoutError(f"Transaction is not accepted for {timeout} seconds")
+
 
 curve_resp = requests.get(CURVE_DATA_URL)
 
@@ -68,19 +87,7 @@ for key in ["factory", "2", "3", "4"]:
     )
     print(f"Response on sendRawTransaction: {resp.text}")
     tr_id = resp.json()["result"]
-    BaseMixin().wait_transaction_accepted(tr_id, timeout=20)
-
-    receipt = requests.post(
-        PROXY_URL,
-        json={
-            "jsonrpc": "2.0",
-            "method": "eth_getTransactionReceipt",
-            "params": [tr_id],
-            "id": random.randint(1, 1000),
-        },
-    ).json()
-
-    assert receipt["result"] is not None, f"Can't get receipt for {tr_id} ({key})"
+    receipt = wait_transaction_accepted(tr_id, timeout=20)
 
     report["actions"].append(
         {

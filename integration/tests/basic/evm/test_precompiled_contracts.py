@@ -120,6 +120,7 @@ class TestPrecompiledContracts(BaseMixin):
             expected,
     ):
         contract = precompiled_contract
+        input_data = b'' if input_data=='' else input_data
         result = contract.functions.delegatecall_precompiled(address, input_data).call()
 
         assert result.hex() == expected

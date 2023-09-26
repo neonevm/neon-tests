@@ -5,8 +5,17 @@ import time
 import random
 
 import requests
-from utils import faucet
+
+import sys
+from pathlib import Path  # if you haven't already done so
+
+file = Path(__file__).resolve()
+parent, root = file.parent, file.parents[1]
+sys.path.append(str(root))
+
 from utils.web3client import NeonWeb3Client
+from utils.faucet import Faucet
+
 
 FAUCET_URL = os.environ.get("FAUCET_URL")
 PROXY_URL = os.environ.get("PROXY_URL")
@@ -14,7 +23,7 @@ NETWORK_ID = os.environ.get("NETWORK_ID")
 web3_client = NeonWeb3Client(PROXY_URL, int(NETWORK_ID),
                              session=requests.Session(),
                              )
-faucet_client = faucet.Faucet(FAUCET_URL, web3_client)
+faucet_client = Faucet(FAUCET_URL, web3_client)
 CURVE_DATA_URL = (
     "https://raw.githubusercontent.com/curvefi/curve-factory/simple-dev/data.json"
 )

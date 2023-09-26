@@ -3,15 +3,18 @@ import json
 import os
 import time
 import random
-import urllib
 
 import requests
-
+from utils import faucet
+from utils.web3client import NeonWeb3Client
 
 FAUCET_URL = os.environ.get("FAUCET_URL")
 PROXY_URL = os.environ.get("PROXY_URL")
 NETWORK_ID = os.environ.get("NETWORK_ID")
-
+web3_client = NeonWeb3Client(PROXY_URL, int(NETWORK_ID),
+                             session=requests.Session(),
+                             )
+faucet_client = faucet.Faucet(FAUCET_URL, web3_client)
 CURVE_DATA_URL = (
     "https://raw.githubusercontent.com/curvefi/curve-factory/simple-dev/data.json"
 )
@@ -29,12 +32,7 @@ if curve_resp.status_code != 200:
 curve_data = curve_resp.json()
 
 for tr in curve_data.values():
-    resp = requests.post(
-        urllib.parse.urljoin(FAUCET_URL, "request_neon"),
-        json={"amount": 2000, "wallet": tr["origin"]},
-    )
-    print(f"Faucet response: {resp.text} - {resp.status_code}")
-    assert resp.status_code == 200, resp.text
+    faucet_client.request_neon(tr["origin"], 2000)
 
 gas_price = int(
     requests.post(
@@ -47,7 +45,6 @@ gas_price = int(
     ).json()["result"],
     16,
 )
-
 
 for key in ["factory", "2", "3", "4"]:
     tr = curve_data[key]
@@ -102,7 +99,7 @@ for key in ["factory", "2", "3", "4"]:
     )
 
     assert (
-        receipt["result"]["status"] == "0x1"
+            receipt["result"]["status"] == "0x1"
     ), f"Transaction for factory: {key} failed: {receipt}"
 
     with open("curve-factory-report.json", "w") as f:

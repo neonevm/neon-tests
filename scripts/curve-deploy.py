@@ -1,7 +1,6 @@
 """Script to deploy Curve contracts from: https://github.com/curvefi/curve-factory/blob/simple-dev/data.json"""
 import json
 import os
-import time
 import random
 
 import requests
@@ -15,7 +14,7 @@ sys.path.append(str(root))
 
 from utils.web3client import NeonWeb3Client
 from utils.faucet import Faucet
-
+from integration.tests.basic.helpers.basic import BaseMixin
 
 FAUCET_URL = os.environ.get("FAUCET_URL")
 PROXY_URL = os.environ.get("PROXY_URL")
@@ -57,6 +56,7 @@ gas_price = int(
 
 for key in ["factory", "2", "3", "4"]:
     tr = curve_data[key]
+
     resp = requests.post(
         PROXY_URL,
         json={
@@ -68,7 +68,8 @@ for key in ["factory", "2", "3", "4"]:
     )
     print(f"Response on sendRawTransaction: {resp.text}")
     tr_id = resp.json()["result"]
-    time.sleep(5)
+    BaseMixin().wait_transaction_accepted(tr_id, timeout=20)
+
     receipt = requests.post(
         PROXY_URL,
         json={
@@ -79,24 +80,7 @@ for key in ["factory", "2", "3", "4"]:
         },
     ).json()
 
-    for _ in range(5):
-        receipt = requests.post(
-            PROXY_URL,
-            json={
-                "jsonrpc": "2.0",
-                "method": "eth_getTransactionReceipt",
-                "params": [tr_id],
-                "id": random.randint(1, 1000),
-            },
-        ).json()
-
-        if receipt["result"] is None:
-            time.sleep(5)
-            continue
-        break
-    else:
-        print(f"Can't get receipt for {tr_id} ({key})")
-        continue
+    assert receipt["result"] is not None, f"Can't get receipt for {tr_id} ({key})"
 
     report["actions"].append(
         {

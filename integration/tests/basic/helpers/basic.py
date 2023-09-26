@@ -7,9 +7,6 @@ import allure
 import pytest
 import web3
 import eth_account.signers.local
-from solana.publickey import PublicKey
-from solana.rpc.commitment import Finalized
-from solders.rpc.errors import InternalErrorMessage
 from solders.rpc.responses import GetTransactionResp
 from solders.signature import Signature
 

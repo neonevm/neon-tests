@@ -8,24 +8,22 @@ from integration.tests.basic.helpers.basic import BaseMixin
 from utils.web3client import NeonWeb3Client
 
 PRECOMPILED_FIXTURES = {
-
-    # NOT IMPLEMENTED YET
-    # "modexp": {
-    #     "address": "0x0000000000000000000000000000000000000005",
-    #     "files": ["modexp.json", "modexp_eip2565.json"],
-    # },
-    # "ecAdd": {
-    #     "address": "0x0000000000000000000000000000000000000006",
-    #     "files": ["bn256Add.json"],
-    # },
-    # "ecMul": {
-    #     "address": "0x0000000000000000000000000000000000000007",
-    #     "files": ["bn256ScalarMul.json"],
-    # },
-    # "ecPairing": {
-    #     "address": "0x0000000000000000000000000000000000000008",
-    #     "files": ["bn256Pairing.json"],
-    # },
+    "modexp": {
+        "address": "0x0000000000000000000000000000000000000005",
+        "files": ["modexp.json", "modexp_eip2565.json"],
+    },
+    "ecAdd": {
+        "address": "0x0000000000000000000000000000000000000006",
+        "files": ["bn256Add.json"],
+    },
+    "ecMul": {
+        "address": "0x0000000000000000000000000000000000000007",
+        "files": ["bn256ScalarMul.json"],
+    },
+    "ecPairing": {
+        "address": "0x0000000000000000000000000000000000000008",
+        "files": ["bn256Pairing.json"],
+    },
 
     "sha2_256": {
         "address": "0x0000000000000000000000000000000000000002",
@@ -46,7 +44,7 @@ PRECOMPILED_FIXTURES = {
     "blake2f": {
         "address": "0x0000000000000000000000000000000000000009",
         "files": ["blake2f.json"],
-    },
+    }
 }
 
 

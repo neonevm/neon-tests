@@ -7,4 +7,4 @@ web3==6.9.0
 solana==0.28.0
 py-solc-x==1.1.1
 pythclient==0.0.2
-boto3==1.21.40
+boto3==1.28.54

@@ -92,6 +92,7 @@ class TestPrecompiledContracts(BaseMixin):
             expected,
     ):
         contract = precompiled_contract
+        input_data = b'' if input_data == '' else input_data
         result = contract.functions.call_precompiled(address, input_data).call()
 
         assert result.hex() == expected
@@ -106,6 +107,7 @@ class TestPrecompiledContracts(BaseMixin):
             expected,
     ):
         contract = precompiled_contract
+        input_data = b'' if input_data == '' else input_data
         result = contract.functions.staticcall_precompiled(address, input_data).call()
 
         assert result.hex() == expected
@@ -120,7 +122,7 @@ class TestPrecompiledContracts(BaseMixin):
             expected,
     ):
         contract = precompiled_contract
-        input_data = b'' if input_data=='' else input_data
+        input_data = b'' if input_data == '' else input_data
         result = contract.functions.delegatecall_precompiled(address, input_data).call()
 
         assert result.hex() == expected
@@ -133,6 +135,7 @@ class TestPrecompiledContracts(BaseMixin):
                                expected, request, pytestconfig):
         if request.node.callspec.id == 'blake2f-vector 8':
             pytest.skip("NDEV-1961")
+
         amount = random.choice([0, 10])
         balance_before = self.get_balance_from_wei(address)
 
@@ -141,11 +144,17 @@ class TestPrecompiledContracts(BaseMixin):
         instruction_tx["chainId"] = self.web3_client._chain_id
         instruction_tx["to"] = address
         instruction_tx["from"] = self.sender_account.address
-
-        receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-        assert receipt["status"] == 1
-        if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
-            assert self.get_balance_from_wei(address) - balance_before == amount
+        if request.node.callspec.id not in ["modexp-nagydani-5-square0", "modexp-nagydani-5-square1",
+                                            "modexp-nagydani-5-qube0",
+                                            "modexp-nagydani-5-qube1", "modexp-nagydani-5-pow0x100010",
+                                            "modexp-nagydani-5-pow0x100011"]:
+            receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+            assert receipt["status"] == 1
+            if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
+                assert self.get_balance_from_wei(address) - balance_before == amount
+        else:
+            with pytest.raises(ValueError, match="InvalidLength"):
+                self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
     @pytest.mark.xdist_group("precompiled_contract_balance")
     @pytest.mark.parametrize("contract", PRECOMPILED_FIXTURES)

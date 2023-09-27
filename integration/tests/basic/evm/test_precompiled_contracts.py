@@ -153,6 +153,7 @@ class TestPrecompiledContracts(BaseMixin):
             if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
                 assert self.get_balance_from_wei(address) - balance_before == amount
         else:
+            # solana limits
             with pytest.raises(ValueError, match="InvalidLength"):
                 self.web3_client.send_transaction(self.sender_account, instruction_tx)
 

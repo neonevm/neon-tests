@@ -8,8 +8,10 @@ from solders.rpc.responses import GetTransactionResp
 from solders.signature import Signature
 from spl.token.client import Token as SplToken
 from spl.token.constants import TOKEN_PROGRAM_ID
-from spl.token.instructions import (create_associated_token_account,
-                                    get_associated_token_address)
+from spl.token.instructions import (
+    create_associated_token_account,
+    get_associated_token_address,
+)
 
 import allure
 from integration.tests.basic.helpers.basic import BaseMixin
@@ -18,7 +20,9 @@ from utils.helpers import wait_condition
 
 @pytest.fixture(scope="class")
 def wneon(web3_client, faucet, class_account):
-    contract, _ = web3_client.deploy_and_get_contract("WNEON", "0.4.26", account=class_account)
+    contract, _ = web3_client.deploy_and_get_contract(
+        "WNEON", "0.4.26", account=class_account
+    )
     return contract
 
 
@@ -179,7 +183,9 @@ class TestWNeon(BaseMixin):
         assert neon_balance_sender_after - neon_balance_sender_before < 0.2
         assert neon_balance_recipient_after - neon_balance_recipient_before < 0.2
 
-    def test_withdraw_wneon_from_neon_to_solana(self, wneon, neon_mint, solana_account, withdraw_contract):
+    def test_withdraw_wneon_from_neon_to_solana(
+        self, wneon, neon_mint, solana_account, withdraw_contract
+    ):
         deposit_amount = 100
         self.deposit(wneon, deposit_amount, self.recipient_account)
 
@@ -187,23 +193,28 @@ class TestWNeon(BaseMixin):
         full_amount = self.web3_client._web3.to_wei(withdraw_amount, "ether")
 
         neon_balance_before, wneon_balance_before = self.get_balances(
-            wneon, self.recipient_account.address)
+            wneon, self.recipient_account.address
+        )
 
         instruction_tx = wneon.functions.withdraw(full_amount).build_transaction(
-            self.make_tx_object(self.recipient_account))
+            self.make_tx_object(self.recipient_account)
+        )
 
         receipt = self.web3_client.send_transaction(
-            self.recipient_account, instruction_tx)
+            self.recipient_account, instruction_tx
+        )
         assert receipt["status"] == 1
 
         neon_balance_after, wneon_balance_after = self.get_balances(
-            wneon, self.recipient_account.address)
+            wneon, self.recipient_account.address
+        )
 
         assert wneon_balance_after == wneon_balance_before - withdraw_amount
         assert neon_balance_after - neon_balance_before < withdraw_amount
 
-        wait_condition(lambda: self.sol_client.get_balance(
-            solana_account.public_key) != 0)
+        wait_condition(
+            lambda: self.sol_client.get_balance(solana_account.public_key) != 0
+        )
 
         trx = Transaction()
         trx.add(
@@ -215,38 +226,49 @@ class TestWNeon(BaseMixin):
         self.sol_client.send_transaction(trx, solana_account, opts=opts)
 
         dest_token_acc = get_associated_token_address(
-            solana_account.public_key, neon_mint)
+            solana_account.public_key, neon_mint
+        )
 
         spl_neon_token = SplToken(
-            self.sol_client, neon_mint, TOKEN_PROGRAM_ID, solana_account)
+            self.sol_client, neon_mint, TOKEN_PROGRAM_ID, solana_account
+        )
 
         destination_balance_before = spl_neon_token.get_balance(
-            dest_token_acc, commitment=Commitment("confirmed"))
+            dest_token_acc, commitment=Commitment("confirmed")
+        )
         neon_balance_before, wneon_balance_before = self.get_balances(
-            wneon, self.recipient_account.address)
+            wneon, self.recipient_account.address
+        )
 
         instruction_tx = withdraw_contract.functions.withdraw(
             bytes(solana_account.public_key),
         ).build_transaction(
             {
                 "from": self.recipient_account.address,
-                "nonce": self.web3_client.eth.get_transaction_count(self.recipient_account.address),
+                "nonce": self.web3_client.eth.get_transaction_count(
+                    self.recipient_account.address
+                ),
                 "gasPrice": self.web3_client.gas_price(),
                 "value": self.web3_client._web3.to_wei(withdraw_amount, "ether"),
             }
         )
 
         receipt = self.web3_client.send_transaction(
-            self.recipient_account, instruction_tx)
+            self.recipient_account, instruction_tx
+        )
         assert receipt["status"] == 1
 
         destination_balance_after = spl_neon_token.get_balance(
             dest_token_acc, commitment=Commitment("confirmed")
         )
         neon_balance_after, wneon_balance_after = self.get_balances(
-            wneon, self.recipient_account.address)
+            wneon, self.recipient_account.address
+        )
 
-        assert int(destination_balance_after.value.amount) == int(
-            destination_balance_before.value.amount) + full_amount / 1_000_000_000
+        assert (
+            int(destination_balance_after.value.amount)
+            == int(destination_balance_before.value.amount)
+            + full_amount / 1_000_000_000
+        )
         assert wneon_balance_after == wneon_balance_before
         assert neon_balance_after - neon_balance_before < withdraw_amount

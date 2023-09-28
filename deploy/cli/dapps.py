@@ -13,7 +13,6 @@ from deploy.cli.network_manager import NetworkManager
 
 from solana.transaction import Signature
 from deploy.cli import faucet as faucet_cli
-from utils.apiclient import JsonRPCSession
 from utils.web3client import NeonWeb3Client
 from utils.solana_client import SolanaClient
 from utils.prices import get_neon_price
@@ -40,6 +39,8 @@ TF_ENV.update(
         f"-backend-config=\"region={TF_ENV['AWS_REGION']}\" ",
     }
 )
+
+WEB3_CLIENT = NeonWeb3Client(os.environ.get("PROXY_URL"), os.environ.get("CHAIN_ID", 111))
 
 
 def set_github_env(envs: tp.Dict, upper=True) -> None:
@@ -177,11 +178,8 @@ def prepare_accounts(network_name, count, amount) -> tp.List:
 
 
 def get_solana_accounts_in_tx(eth_transaction):
-    web3_client = NeonWeb3Client(
-        os.environ.get("PROXY_URL"), os.environ.get("CHAIN_ID", 111)
-    )
     sol_client = SolanaClient(os.environ.get("SOLANA_URL"))
-    trx = web3_client.get_solana_trx_by_neon(eth_transaction)
+    trx = WEB3_CLIENT.get_solana_trx_by_neon(eth_transaction)
     tr = sol_client.get_transaction(
         Signature.from_string(trx["result"][0]), max_supported_transaction_version=0
     )
@@ -194,15 +192,6 @@ def get_solana_accounts_in_tx(eth_transaction):
         return len(tr.value.transaction.transaction.message.account_keys), len(
             trx["result"]
         )
-
-
-def get_transaction_by_hash(eth_transaction):
-    client = JsonRPCSession(os.environ.get("PROXY_URL"))
-    response = client.send_rpc(method="eth_getTransactionByHash", params=eth_transaction)
-    if "error" not in response and response["result"]:
-        return response["result"]
-    else:
-        return None
 
 
 def print_report(directory):
@@ -219,8 +208,8 @@ def print_report(directory):
         out[app] = []
         for action in reports[app]:
             accounts, trx = get_solana_accounts_in_tx(action["tx"])
-            tx = get_transaction_by_hash(action["tx"])
-            estimated_gas = int(tx["gas"], 16) if tx and tx["gas"] else None
+            tx = WEB3_CLIENT.get_transaction_by_hash(action["tx"])
+            estimated_gas = int(tx.gas) if tx and tx.gas else None
             used_gas = int(action["usedGas"])
             row = [action["name"]]
             fee = used_gas * int(action["gasPrice"]) / 1000000000000000000

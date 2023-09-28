@@ -428,14 +428,14 @@ def update_contracts(branch):
     pathlib.Path(contract_path).mkdir(parents=True, exist_ok=True)
 
     response = requests.get(
-        f"{NEON_EVM_GITHUB_URL}/contents/evm_loader/solidity?ref={branch}"
+        f"{NEON_EVM_GITHUB_URL}/contents/solidity?ref={branch}"
     )
     if response.status_code != 200:
         raise click.ClickException(f"The code is not 200. Response: {response.json()}")
 
     for item in response.json():
         r = requests.get(
-            f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/{branch}/evm_loader/solidity/{item['name']}"
+            f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/{branch}/solidity/{item['name']}"
         )
         if r.status_code == 200:
             with open(contract_path / item["name"], "wb") as f:

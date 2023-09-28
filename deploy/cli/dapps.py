@@ -13,6 +13,7 @@ from deploy.cli.network_manager import NetworkManager
 
 from solana.transaction import Signature
 from deploy.cli import faucet as faucet_cli
+from utils.apiclient import JsonRPCSession
 from utils.web3client import NeonWeb3Client
 from utils.solana_client import SolanaClient
 from utils.prices import get_neon_price
@@ -195,8 +196,17 @@ def get_solana_accounts_in_tx(eth_transaction):
         )
 
 
+def get_transaction_by_hash(eth_transaction):
+    client = JsonRPCSession(os.environ.get("PROXY_URL"))
+    response = client.send_rpc(method="eth_getTransactionByHash", params=eth_transaction)
+    if "error" not in response and response["result"]:
+        return response["result"]
+    else:
+        return None
+
+
 def print_report(directory):
-    headers = ["Action", "Fee", "Cost in $", "Accounts", "TRx"]
+    headers = ["Action", "Fee", "Cost in $", "Accounts", "TRx", "Estimated Gas", "Used Gas", "Used % of EG"]
     out = {}
     reports = {}
     for path in glob.glob(str(pathlib.Path(directory) / "*-report.json")):
@@ -209,12 +219,19 @@ def print_report(directory):
         out[app] = []
         for action in reports[app]:
             accounts, trx = get_solana_accounts_in_tx(action["tx"])
+            tx = get_transaction_by_hash(action["tx"])
+            estimated_gas = int(tx["gas"], 16) if tx and tx["gas"] else None
+            used_gas = int(action["usedGas"])
             row = [action["name"]]
-            fee = int(action["usedGas"]) * int(action["gasPrice"]) / 1000000000000000000
+            fee = used_gas * int(action["gasPrice"]) / 1000000000000000000
+            used_gas_percentage = round(used_gas * 100 / estimated_gas, 2) if estimated_gas else None
             row.append(fee)
             row.append(fee * get_neon_price())
             row.append(accounts)
             row.append(trx)
+            row.append(estimated_gas)
+            row.append(used_gas)
+            row.append(used_gas_percentage)
             out[app].append(row)
     report_content = ""
     for app in out:

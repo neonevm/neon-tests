@@ -475,6 +475,29 @@ class TestRpcCalls(BaseMixin):
             response["result"]
         ), f"Invalid response result {response['result']}"
 
+    def test_eth_sendRawTransaction_max_size(self):
+        """Validate max size for transaction, 127 KB"""
+        size = 127 * 1024
+        transaction = self.create_tx_object(amount=1)
+
+        transaction["data"] = gen_hash_of_block(size)
+        signed_tx = self.web3_client.eth.account.sign_transaction(
+            transaction, self.sender_account.key
+        )
+        response = self.proxy_api.send_rpc(
+            "eth_sendRawTransaction", params=signed_tx.rawTransaction.hex()
+        )
+        assert "error" not in response
+        assert rpc_checks.is_hex(
+            response["result"]
+        ), f"Invalid response result {response['result']}"
+
+    def test_eth_sendRawTransaction_max_contract_size(self):
+        """Validate max size for contract, 24 KB"""
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
+            "Contract_24k", "0.8.12", account=self.sender_account)
+        assert rpc_checks.is_hex(contract.address)
+
     @pytest.mark.parametrize("param", [128, 32, 16, None])
     def test_rpc_call_eth_get_transaction_by_hash(self, param: tp.Union[int, None]):
         """Verify implemented rpc calls work eth_getTransactionByHash"""

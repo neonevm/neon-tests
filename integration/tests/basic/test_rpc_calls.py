@@ -452,7 +452,7 @@ class TestRpcCalls(BaseMixin):
             response["result"]
         ), f"Invalid response result {response['result']}"
 
-    def test_max_transaction_size(self):
+    def test_eth_sendRawTransaction_max_size(self):
         """Validate max size for transaction, 127 KB"""
         size = 127 * 1024
         transaction = self.create_tx_object(amount=1)
@@ -469,7 +469,7 @@ class TestRpcCalls(BaseMixin):
             response["result"]
         ), f"Invalid response result {response['result']}"
 
-    def test_max_contract_size(self):
+    def test_eth_sendRawTransaction_max_contract_size(self):
         """Validate max size for contract, 24 KB"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
             "Contract_24k", "0.8.12", account=self.sender_account)

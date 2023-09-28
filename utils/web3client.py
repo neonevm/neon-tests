@@ -9,6 +9,7 @@ import web3.types
 import requests
 import eth_account.signers.local
 from eth_abi import abi
+from web3.exceptions import TransactionNotFound
 
 from utils import helpers
 from utils.consts import InputTestConstants, Unit
@@ -70,6 +71,13 @@ class NeonWeb3Client:
                 "id": 0,
             },
         ).json()
+
+    def get_transaction_by_hash(self, transaction_hash):
+        try:
+            return self._web3.eth.get_transaction(transaction_hash)
+        except TransactionNotFound:
+            return None
+
 
     def gas_price(self):
         gas = self._web3.eth.gas_price

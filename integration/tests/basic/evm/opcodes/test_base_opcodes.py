@@ -6,12 +6,13 @@ from integration.tests.basic.helpers.basic import BaseMixin
 
 
 @allure.feature("Opcodes verifications")
-@allure.story("Go-etherium opCodes tests")
+@allure.story("Go-ethereum opCodes tests")
 class TestOpCodes(BaseMixin):
     @pytest.fixture(scope="class")
     def opcodes_checker(self, web3_client, faucet, class_account):
         contract, _ = web3_client.deploy_and_get_contract(
-            "OpCodes", "0.5.16", class_account, contract_name="OpCodes")
+            "OpCodes", "0.5.16", class_account, contract_name="OpCodes"
+        )
         return contract
 
     def test_base_opcodes(self, opcodes_checker):
@@ -28,10 +29,14 @@ class TestOpCodes(BaseMixin):
 
     def test_invalid_opcode(self, opcodes_checker):
         tx = self.create_contract_call_tx_object(self.sender_account)
-        with pytest.raises(web3.exceptions.ContractLogicError, match="EVM encountered invalid opcode"):
+        with pytest.raises(
+            web3.exceptions.ContractLogicError, match="EVM encountered invalid opcode"
+        ):
             opcodes_checker.functions.test_invalid().build_transaction(tx)
 
     def test_revert(self, opcodes_checker):
         tx = self.create_contract_call_tx_object(self.sender_account)
-        with pytest.raises(web3.exceptions.ContractLogicError, match="execution reverted"):
+        with pytest.raises(
+            web3.exceptions.ContractLogicError, match="execution reverted"
+        ):
             opcodes_checker.functions.test_revert().build_transaction(tx)

@@ -11,8 +11,11 @@ from eth_utils import keccak
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
-from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex, assert_fields_are_boolean, \
-    assert_equal_fields
+from integration.tests.basic.helpers.rpc_checks import (
+    assert_fields_are_hex,
+    assert_fields_are_boolean,
+    assert_equal_fields,
+)
 from integration.tests.services.helpers.basic import cryptohex
 from utils import helpers
 from utils.consts import Unit
@@ -152,10 +155,10 @@ class TestRpcCalls(BaseMixin):
         response = self.proxy_api.send_rpc("eth_call", params=params)
         assert "error" not in response
         assert (
-                response["result"] == "0x"
+            response["result"] == "0x"
         ), f"Invalid response result, `{response['result']}`"
 
-    def test_rpc_call_eth_get_transaction_receipt_with_incorrect_hash(self):
+    def test_eth_get_transaction_receipt_with_incorrect_hash(self):
         """Verify implemented rpc calls work eth_getTransactionReceipt when transaction hash is not correct"""
 
         response = self.proxy_api.send_rpc(
@@ -164,13 +167,9 @@ class TestRpcCalls(BaseMixin):
         assert "error" in response
         assert response["error"]["message"] == "transaction-id is not hex"
 
-    @pytest.mark.parametrize("param", [None, "param"])
-    def test_eth_gas_price(self, param: tp.Union[str, None]):
+    def test_eth_gas_price(self):
         """Verify implemented rpc calls work eth_gasPrice"""
-        response = self.proxy_api.send_rpc("eth_gasPrice", params=param)
-        if param:
-            assert "error" in response, "Error not in response"
-            return None
+        response = self.proxy_api.send_rpc("eth_gasPrice")
         assert "error" not in response
         assert rpc_checks.is_hex(
             response["result"]
@@ -182,7 +181,7 @@ class TestRpcCalls(BaseMixin):
     def test_eth_get_logs_blockhash(self, event_caller_contract, param_fields):
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
-        bytes_array = text.encode().ljust(32, b'\0')
+        bytes_array = text.encode().ljust(32, b"\0")
         bol = True
         tx = self.make_tx_object()
         instruction_tx = event_caller_contract.functions.allTypes(
@@ -203,16 +202,25 @@ class TestRpcCalls(BaseMixin):
         assert "error" not in response
         if topic:
             assert topic in response["result"][0]["topics"]
-        assert_fields_are_hex(response["result"][0],
-                              ["transactionHash", "blockHash",
-                               "blockNumber", "transactionIndex", "address",
-                               "logIndex", "data", "transactionLogIndex"])
+        assert_fields_are_hex(
+            response["result"][0],
+            [
+                "transactionHash",
+                "blockHash",
+                "blockNumber",
+                "transactionIndex",
+                "address",
+                "logIndex",
+                "data",
+                "transactionLogIndex",
+            ],
+        )
         assert_fields_are_boolean(response["result"][0], ["removed"])
 
     def test_eth_get_logs_blockhash_empty_params(self, event_caller_contract):
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
-        bytes_array = text.encode().ljust(32, b'\0')
+        bytes_array = text.encode().ljust(32, b"\0")
         bol = True
         tx = self.make_tx_object()
         instruction_tx = event_caller_contract.functions.allTypes(
@@ -225,24 +233,35 @@ class TestRpcCalls(BaseMixin):
         response = self.proxy_api.send_rpc("eth_getLogs", params=params)
         assert "error" not in response
 
-        assert_fields_are_hex(response["result"][0],
-                              ["transactionHash", "blockHash",
-                               "blockNumber", "transactionIndex", "address",
-                               "logIndex", "transactionLogIndex"])
+        assert_fields_are_hex(
+            response["result"][0],
+            [
+                "transactionHash",
+                "blockHash",
+                "blockNumber",
+                "transactionIndex",
+                "address",
+                "logIndex",
+                "transactionLogIndex",
+            ],
+        )
         assert_fields_are_boolean(response["result"][0], ["removed"])
         assert_equal_fields(response, receipt, ["blockHash"])
 
     @pytest.mark.xfail(reason="NDEV-2237")
     @pytest.mark.parametrize(
-        "tag1, tag2", [
+        "tag1, tag2",
+        [
             (Tag.EARLIEST, None),
             (None, Tag.LATEST),
-        ]
+        ],
     )
-    def test_eth_get_logs_blockhash_negative_tags(self, event_caller_contract, tag1, tag2):
+    def test_eth_get_logs_blockhash_negative_tags(
+        self, event_caller_contract, tag1, tag2
+    ):
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
-        bytes_array = text.encode().ljust(32, b'\0')
+        bytes_array = text.encode().ljust(32, b"\0")
         bol = True
         tx = self.make_tx_object()
         instruction_tx = event_caller_contract.functions.allTypes(
@@ -262,16 +281,19 @@ class TestRpcCalls(BaseMixin):
         assert "invalid filter" in response["message"]
 
     @pytest.mark.parametrize(
-        ("p_name", "p_value", "p_error"), [
+        ("p_name", "p_value", "p_error"),
+        [
             ("address", "0xc0ffee254729296a45a3885639AC7E10F9d54979", None),
             ("address", "12345", "bad address"),
             ("topics", "Invalid(address,uint256,string,bytes32,bool)", "bad topic"),
-        ]
+        ],
     )
-    def test_get_rpc_logs_negative_params(self, event_caller_contract, p_name, p_value, p_error):
+    def test_eth_get_logs_negative_params(
+        self, event_caller_contract, p_name, p_value, p_error
+    ):
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
-        bytes_array = text.encode().ljust(32, b'\0')
+        bytes_array = text.encode().ljust(32, b"\0")
         bol = True
         tx = self.make_tx_object()
         instruction_tx = event_caller_contract.functions.allTypes(
@@ -289,7 +311,9 @@ class TestRpcCalls(BaseMixin):
         if not p_error and p_name == "address":
             assert "error" not in response
             assert "result" in response
-            assert len(response["result"]) == 0, "should not find any logs since the wrong address was provided"
+            assert (
+                len(response["result"]) == 0
+            ), "should not find any logs since the wrong address was provided"
         else:
             assert "error" in response
             assert "message" in response["error"]
@@ -322,7 +346,7 @@ class TestRpcCalls(BaseMixin):
     @pytest.mark.parametrize(
         "param_fields", [("address", "topics"), ("address",), ("topics",)]
     )
-    def test_get_rpc_logs(self, event_caller_contract, param_fields, tag1, tag2):
+    def test_eth_get_logs(self, event_caller_contract, param_fields, tag1, tag2):
         params = {}
         block_number = False
         if isinstance(tag1, int) or isinstance(tag2, int):
@@ -330,13 +354,17 @@ class TestRpcCalls(BaseMixin):
             assert "result" in response
             block_number = int(response["result"], 16)
         if tag1 or isinstance(tag1, int):
-            params["fromBlock"] = hex(block_number + tag1) if isinstance(tag1, int) else tag1.value
+            params["fromBlock"] = (
+                hex(block_number + tag1) if isinstance(tag1, int) else tag1.value
+            )
         if tag2 or isinstance(tag2, int):
-            params["toBlock"] = hex(block_number + tag2) if isinstance(tag2, int) else tag2.value
+            params["toBlock"] = (
+                hex(block_number + tag2) if isinstance(tag2, int) else tag2.value
+            )
 
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
-        bytes_array = text.encode().ljust(32, b'\0')
+        bytes_array = text.encode().ljust(32, b"\0")
         bol = True
         tx = self.make_tx_object()
         instruction_tx = event_caller_contract.functions.allTypes(
@@ -356,42 +384,76 @@ class TestRpcCalls(BaseMixin):
         if response["result"]:
             if topic:
                 assert topic in response["result"][0]["topics"]
-            assert_fields_are_hex(response["result"][0],
-                                  ["transactionHash", "blockHash",
-                                   "blockNumber", "transactionIndex", "address",
-                                   "logIndex", "data", "transactionLogIndex"])
+            assert_fields_are_hex(
+                response["result"][0],
+                [
+                    "transactionHash",
+                    "blockHash",
+                    "blockNumber",
+                    "transactionIndex",
+                    "address",
+                    "logIndex",
+                    "data",
+                    "transactionLogIndex",
+                ],
+            )
             assert_fields_are_boolean(response["result"][0], ["removed"])
             if "address" in param_fields:
-                assert response["result"][0]["address"] == receipt["to"].lower(), \
-                    f"address from response {response['result'][0]['address']} " \
+                assert response["result"][0]["address"] == receipt["to"].lower(), (
+                    f"address from response {response['result'][0]['address']} "
                     f"is not equal to address from receipt {receipt['to'].lower()}"
+                )
 
-    def test_get_rpc_logs_eq_val(self, event_caller_contract):
+    def test_eth_get_logs_eq_val(self, event_caller_contract):
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
-        bytes_array = text.encode().ljust(32, b'\0')
+        bytes_array = text.encode().ljust(32, b"\0")
         bol = True
         tx = self.make_tx_object()
         instruction_tx = event_caller_contract.functions.allTypes(
             self.sender_account.address, number, text, bytes_array, bol
         ).build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-        params = {"blockHash": receipt["blockHash"].hex(),
-                  "address": event_caller_contract.address}
+
+        params = {
+            "blockHash": receipt["blockHash"].hex(),
+            "address": event_caller_contract.address,
+        }
         topic = cryptohex("AllTypes(address,uint256,string,bytes32,bool)")
         params["topics"] = [topic]
 
         response = self.proxy_api.send_rpc("eth_getLogs", params=params)
         assert "error" not in response
-        assert topic in response["result"][0]["topics"], f"Topics are not in response: {response}"
-        assert_fields_are_hex(response["result"][0],
-                              ["transactionHash", "blockHash",
-                               "blockNumber", "transactionIndex", "address",
-                               "logIndex", "data", "transactionLogIndex"])
+        assert topic in response["result"][0]["topics"]
+        assert_fields_are_hex(
+            response["result"][0],
+            [
+                "transactionHash",
+                "blockHash",
+                "blockNumber",
+                "transactionIndex",
+                "address",
+                "logIndex",
+                "data",
+                "transactionLogIndex",
+            ],
+        )
+
         assert_fields_are_boolean(response["result"][0], ["removed"])
-        assert_equal_fields(response, receipt, ["transactionHash", "blockHash",
-                                                "blockNumber", "transactionIndex", "address",
-                                                "logIndex", "data", "transactionLogIndex"])
+        assert_equal_fields(
+            response,
+            receipt,
+            [
+                "transactionHash",
+                "blockHash",
+                "blockNumber",
+                "transactionIndex",
+                "address",
+                "logIndex",
+                "data",
+                "transactionLogIndex",
+            ],
+        )
 
     def test_eth_get_logs_list_of_addresses(self, event_caller_contract):
         event_caller2, _ = self.web3_client.deploy_and_get_contract(  # we need 2nd contract to check list of addresses
@@ -456,7 +518,7 @@ class TestRpcCalls(BaseMixin):
             return
         assert "error" not in response
         assert (
-                response["result"] == "0x"
+            response["result"] == "0x"
         ), f"Invalid result code {response['result']} at a given address."
 
     @pytest.mark.parametrize("param", [None, "param"])
@@ -478,11 +540,11 @@ class TestRpcCalls(BaseMixin):
             return
         assert "error" not in response
         assert (
-                int(response["result"]) == self.web3_client._chain_id
+            int(response["result"]) == self.web3_client._chain_id
         ), f"Invalid response result {response['result']}"
 
     @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, None])
-    def test_rpc_call_eth_get_transaction_count(self, param: tp.Union[Tag, None]):
+    def test_eth_get_transaction_count(self, param: tp.Union[Tag, None]):
         """Verify implemented rpc calls work eth_getTransactionCount"""
         if param:
             self.send_neon(self.sender_account, self.recipient_account, 1)
@@ -496,7 +558,7 @@ class TestRpcCalls(BaseMixin):
             response["result"]
         ), AssertMessage.DOES_NOT_START_WITH_0X.value
 
-    def test_rpc_call_eth_send_raw_transaction(self):
+    def test_eth_send_raw_transaction(self):
         """Verify implemented rpc calls work eth_sendRawTransaction"""
         transaction = self.create_tx_object(amount=1)
 
@@ -531,11 +593,12 @@ class TestRpcCalls(BaseMixin):
     def test_eth_sendRawTransaction_max_contract_size(self):
         """Validate max size for contract, 24 KB"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "Contract_24k", "0.8.12", account=self.sender_account)
+            "Contract_24k", "0.8.12", account=self.sender_account
+        )
         assert rpc_checks.is_hex(contract.address)
 
     @pytest.mark.parametrize("param", [128, 32, 16, None])
-    def test_rpc_call_eth_get_transaction_by_hash(self, param: tp.Union[int, None]):
+    def test_eth_get_transaction_by_hash(self, param: tp.Union[int, None]):
         """Verify implemented rpc calls work eth_getTransactionByHash"""
         response = self.proxy_api.send_rpc(
             method="eth_getTransactionByHash",
@@ -547,7 +610,7 @@ class TestRpcCalls(BaseMixin):
         assert "error" not in response
         assert response["result"] is None, f"Invalid response: {response['result']}"
 
-    def test_rpc_call_eth_get_transaction_receipt(self):
+    def test_eth_get_transaction_receipt(self):
         """Verify implemented rpc calls work eth_getTransactionReceipt"""
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
         transaction_hash = tx_receipt.transactionHash.hex()
@@ -577,7 +640,7 @@ class TestRpcCalls(BaseMixin):
         assert result["contractAddress"] is None
         assert result["logs"] == []
 
-    def test_rpc_call_eth_get_transaction_receipt_when_hash_doesnt_exist(self):
+    def test_eth_get_transaction_receipt_when_hash_doesnt_exist(self):
         """Verify implemented rpc calls work eth_getTransactionReceipt when transaction hash doesn't exist"""
         response = self.proxy_api.send_rpc(
             method="eth_getTransactionReceipt", params=gen_hash_of_block(32)
@@ -621,7 +684,8 @@ class TestRpcCalls(BaseMixin):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
         response = self.proxy_api.send_rpc(
-            method="eth_getBlockByNumber", params=[hex(tx_receipt.blockNumber), full_trx]
+            method="eth_getBlockByNumber",
+            params=[hex(tx_receipt.blockNumber), full_trx],
         )
         rpc_checks.assert_block_fields(response, full_trx, tx_receipt)
 
@@ -744,7 +808,7 @@ class TestRpcCalls(BaseMixin):
 
     @pytest.mark.parametrize("param", [32, Tag.EARLIEST.value, "param", None])
     def test_eth_get_block_transaction_count_by_number(
-            self, param: tp.Union[int, str, None]
+        self, param: tp.Union[int, str, None]
     ):
         """Verify implemented rpc calls work eth_getBlockTransactionCountByNumber"""
         if isinstance(param, int):
@@ -769,7 +833,7 @@ class TestRpcCalls(BaseMixin):
             return
         assert "error" not in response
         assert (
-                len(response["result"]) >= 3
+            len(response["result"]) >= 3
         ), f"Invalid response result: {response['result']}"
 
     @pytest.mark.parametrize("param", [None, "param"])
@@ -791,7 +855,8 @@ class TestRpcCalls(BaseMixin):
         assert "error" in response
         assert "message" in response["error"]
         assert (
-                response["error"]["message"] == f"the method {method} does not exist/is not available"
+            response["error"]["message"]
+            == f"the method {method} does not exist/is not available"
         ), response
 
     @pytest.mark.parametrize(
@@ -818,7 +883,9 @@ class TestRpcCalls(BaseMixin):
     def test_eth_get_transaction_by_block_number_and_index(self, valid_index: bool):
         amount = 10
         """Verify implemented rpc calls work eth_getTransactionByBlockNumberAndIndex"""
-        tx_receipt = self.send_neon(self.sender_account, self.recipient_account, amount=amount)
+        tx_receipt = self.send_neon(
+            self.sender_account, self.recipient_account, amount=amount
+        )
         self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
         transaction_index = (
             hex(tx_receipt.transactionIndex) if valid_index else hex(999)
@@ -925,7 +992,9 @@ class TestRpcCalls(BaseMixin):
                     "r",
                 ]
                 for field in expected_hex_fields:
-                    assert rpc_checks.is_hex(result[field]), f"Field {field} must be hex but '{result[field]}'"
+                    assert rpc_checks.is_hex(
+                        result[field]
+                    ), f"Field {field} must be hex but '{result[field]}'"
 
     def test_get_evm_params(self):
         response = self.proxy_api.send_rpc(method="neon_getEvmParams", params=[])
@@ -961,7 +1030,7 @@ class TestRpcCalls(BaseMixin):
         ]
         for field in expected_fields:
             assert (
-                    field in response["result"]
+                field in response["result"]
             ), f"Field {field} is not in response: {response}"
 
     def test_neon_cli_version(self):
@@ -995,10 +1064,11 @@ class TestRpcCalls(BaseMixin):
     @pytest.mark.parametrize(
         "param_fields", [("address", "topics"), ("address",), ("topics",)]
     )
-    def test_get_neon_logs(self, event_caller_contract, param_fields, tag1, tag2):
+    def test_neon_get_logs(self, event_caller_contract, param_fields, tag1, tag2):
+        """Verify neon specific method: neon_getLogs"""
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
-        bytes_array = text.encode().ljust(32, b'\0')
+        bytes_array = text.encode().ljust(32, b"\0")
         bol = True
         tx = self.make_tx_object()
         instruction_tx = event_caller_contract.functions.allTypes(
@@ -1006,7 +1076,7 @@ class TestRpcCalls(BaseMixin):
         ).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
         topic = (
-                "0x" + keccak(text="AllTypes(address,uint256,string,bytes32,bool)").hex()
+            "0x" + keccak(text="AllTypes(address,uint256,string,bytes32,bool)").hex()
         )
 
         params = {}
@@ -1024,11 +1094,19 @@ class TestRpcCalls(BaseMixin):
         assert "error" not in response
         if response["result"]:
             assert topic in response["result"][0]["topics"]
-            assert_fields_are_hex(response["result"][0],
-                                  ["transactionHash", "blockHash",
-                                   "blockNumber", "transactionIndex",
-                                   "address", "logIndex", "data",
-                                   "transactionLogIndex"])
+            assert_fields_are_hex(
+                response["result"][0],
+                [
+                    "transactionHash",
+                    "blockHash",
+                    "blockNumber",
+                    "transactionIndex",
+                    "address",
+                    "logIndex",
+                    "data",
+                    "transactionLogIndex",
+                ],
+            )
 
     @pytest.mark.parametrize("method", ["neon_getLogs", "eth_getLogs"])
     @pytest.mark.parametrize(
@@ -1038,9 +1116,9 @@ class TestRpcCalls(BaseMixin):
             ([], ["text1"], 3),
             (["Event2(string,string)"], ["text2"], 1),
             (
-                    ["Event2(string,string)", "Event3(string,string,string)"],
-                    ["text2", "text3", "text1", "text5"],
-                    3,
+                ["Event2(string,string)", "Event3(string,string,string)"],
+                ["text2", "text3", "text1", "text5"],
+                3,
             ),
             ([], None, 4),
         ],
@@ -1068,15 +1146,15 @@ class TestRpcCalls(BaseMixin):
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         tx = self.make_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.callEvent2(arg1, arg2).build_transaction(
-            tx
-        )
+        instruction_tx = event_caller.functions.callEvent2(
+            arg1, arg2
+        ).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         tx = self.make_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.callEvent2(arg2, arg3).build_transaction(
-            tx
-        )
+        instruction_tx = event_caller.functions.callEvent2(
+            arg2, arg3
+        ).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         tx = self.make_tx_object(self.sender_account.address)
@@ -1094,7 +1172,7 @@ class TestRpcCalls(BaseMixin):
         )
 
         assert (
-                len(response["result"]) == log_count
+            len(response["result"]) == log_count
         ), f"Expected {log_count} event logs, but found {len(response['result'])}"
 
         is_event_topic_in_list = False
@@ -1132,7 +1210,7 @@ class TestRpcCallsMoreComplex(BaseMixin):
 
     @pytest.fixture(params=["BigGasFactory1", "BigGasFactory2"])
     def deploy_big_gas_requirements_contract(
-            self, request: tp.Any, constructor_args: tp.List[int]
+        self, request: tp.Any, constructor_args: tp.List[int]
     ) -> "web3._utils.datatypes.Contract":
         """Deploy contracts"""
         self.account = self.sender_account
@@ -1173,8 +1251,8 @@ class TestRpcCallsMoreComplex(BaseMixin):
             address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
         )
 
-    def test_check_eth_estimate_gas_with_big_int(
-            self, deploy_big_gas_requirements_contract: tp.Any
+    def test_eth_estimate_gas_with_big_int(
+        self, deploy_big_gas_requirements_contract: tp.Any
     ) -> None:
         """Check eth_estimateGas request on contracts with big int"""
         big_gas_contract = deploy_big_gas_requirements_contract

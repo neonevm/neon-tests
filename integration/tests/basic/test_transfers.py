@@ -8,8 +8,7 @@ import web3
 import web3.exceptions
 
 import allure
-from integration.tests.basic.helpers.assert_message import (AssertMessage,
-                                                            ErrorMessage)
+from integration.tests.basic.helpers.assert_message import AssertMessage, ErrorMessage
 from integration.tests.basic.helpers.basic import AccountData, BaseMixin
 from utils.consts import InputTestConstants
 from utils.helpers import gen_hash_of_block
@@ -356,10 +355,10 @@ class TestTransfer(BaseMixin):
         transfer_amount = 2
         balance_before = self.sender_account_balance
 
-        self.send_neon(self.sender_account, self.recipient_account, transfer_amount)
+        self.send_neon(self.sender_account, self.sender_account, transfer_amount)
         self.assert_balance_less(
             self.sender_account.address,
-            balance_before - transfer_amount,
+            balance_before,
         )
 
     def test_send_token_to_self_erc20(self):

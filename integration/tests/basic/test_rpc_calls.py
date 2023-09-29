@@ -393,6 +393,43 @@ class TestRpcCalls(BaseMixin):
                                                 "blockNumber", "transactionIndex", "address",
                                                 "logIndex", "data", "transactionLogIndex"])
 
+    def test_eth_get_logs_list_of_addresses(self, event_caller_contract):
+        event_caller2, _ = self.web3_client.deploy_and_get_contract(  # we need 2nd contract to check list of addresses
+                "EventCaller", "0.8.12", self.sender_account
+            )
+
+        number = random.randint(1, 100)
+        text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
+        bytes_array = text.encode().ljust(32, b'\0')
+        bol = True
+        tx = self.make_tx_object()
+        instruction_tx = event_caller_contract.functions.allTypes(  # transaction for first contract
+            self.sender_account.address, number, text, bytes_array, bol
+        ).build_transaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        tx2 = self.make_tx_object()
+        instruction_tx2 = event_caller2.functions.allTypes(  # transaction for second contract
+            self.sender_account.address, number, text, bytes_array, bol
+        ).build_transaction(tx2)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx2)
+
+        params = {"address": [event_caller_contract.address, event_caller2.address]}  # list of addresses
+        topic = cryptohex("AllTypes(address,uint256,string,bytes32,bool)")
+        params["topics"] = [topic]
+
+        response = self.proxy_api.send_rpc("eth_getLogs", params=params)
+        assert "error" not in response
+        assert len(response["result"]) == 2, \
+            f"there should be 2 logs events from 2 contract, but got {len(response['result'])}"
+        for event in response["result"]:
+            assert topic in event["topics"]
+            assert_fields_are_hex(event,
+                                  ["transactionHash", "blockHash",
+                                   "blockNumber", "transactionIndex", "address",
+                                   "logIndex", "data", "transactionLogIndex"])
+            assert_fields_are_boolean(event, ["removed"])
+
     @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, None])
     @pytest.mark.only_stands
     def test_eth_get_balance(self, param: tp.Union[Tag, None]):

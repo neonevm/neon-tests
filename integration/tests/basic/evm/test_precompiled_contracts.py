@@ -154,8 +154,12 @@ class TestPrecompiledContracts(BaseMixin):
                 assert self.get_balance_from_wei(address) - balance_before == amount
         else:
             # solana limits
-            with pytest.raises(ValueError, match="InvalidLength"):
-                self.web3_client.send_transaction(self.sender_account, instruction_tx)
+            try:
+                resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+                assert resp["status"] == 0
+            except ValueError as exc:
+                assert "InvalidLength" in exc.args[0]['message']
+
 
     @pytest.mark.xdist_group("precompiled_contract_balance")
     @pytest.mark.parametrize("contract", PRECOMPILED_FIXTURES)

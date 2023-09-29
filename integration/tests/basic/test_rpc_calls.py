@@ -376,15 +376,14 @@ class TestRpcCalls(BaseMixin):
             self.sender_account.address, number, text, bytes_array, bol
         ).build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-
-        params = {"fromBlock": Tag.LATEST.value, "toBlock": Tag.LATEST.value,
+        params = {"blockHash": receipt["blockHash"].hex(),
                   "address": event_caller_contract.address}
         topic = cryptohex("AllTypes(address,uint256,string,bytes32,bool)")
         params["topics"] = [topic]
 
         response = self.proxy_api.send_rpc("eth_getLogs", params=params)
         assert "error" not in response
-        assert topic in response["result"][0]["topics"]
+        assert topic in response["result"][0]["topics"], f"Topics are not in response: {response}"
         assert_fields_are_hex(response["result"][0],
                               ["transactionHash", "blockHash",
                                "blockNumber", "transactionIndex", "address",

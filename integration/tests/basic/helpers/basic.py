@@ -209,3 +209,13 @@ class BaseMixin(BaseTests):
             trx_sol = self.sol_client.get_transaction(Signature.from_string(trx), max_supported_transaction_version=0)
             solana_resps.append(trx_sol)
         return solana_resps
+
+    def make_tx_object(self, sender=None) -> tp.Dict:
+        if sender is None:
+            sender = self.sender_account.address
+        return {
+            "chainId": self.web3_client._chain_id,
+            "gasPrice": self.web3_client.gas_price(),
+            "nonce": self.web3_client.eth.get_transaction_count(sender),
+            "value": 0,
+        }

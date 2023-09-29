@@ -1,6 +1,6 @@
 # Overview
 
-A main repository for all types of tests in NEON for proxy and evm.
+A main repository for all types of tests in NEON for Proxy and EVM.
 
 
 ## Table of contents
@@ -9,4 +9,4 @@ A main repository for all types of tests in NEON for proxy and evm.
 2. [Structure](docs/structure.md)
 3. [Useful tips](docs/useful.md)
 4. [dApps testing](docs/dapps.md)
-5. [Information for basic tests](docs/tests/basic.md)
+5. [Information about basic tests](docs/tests/basic.md)

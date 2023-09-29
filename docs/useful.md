@@ -3,7 +3,7 @@
 
 ## How to get NEON operator reward address
 
-To get neon operator reward address from solana private, we need to use:
+To get the NEON Operator reward address from Solana Private, we need to use:
 ```python
 import os
 import json
@@ -18,9 +18,9 @@ for f in os.listdir("operator-keypairs"):
 ```
 
 
-## How to get NEON address for chainlink
+## How to get NEON address for Chainlink feed
 
-To get NEON address for oracles solana feeds:
+To get a NEON address for Oracles Solana feeds:
 
 ```python
 print(f'0x{binascii.hexlify(base58.b58decode(solana_address)).decode()}')

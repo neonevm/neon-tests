@@ -9,7 +9,7 @@ from integration.tests.basic.rpc.test_rpc_calls import Tag
 from utils.consts import Unit
 
 
-@allure.feature("JSON-RPC-GET_TRANSACTION validation")
+@allure.feature("JSON-RPC-GET-TRANSACTION validation")
 @allure.story("Verify getTransaction methods")
 class TestGetTransaction(BaseMixin):
 

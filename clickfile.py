@@ -24,15 +24,13 @@ import requests
 import tabulate
 
 from utils import web3client
-from utils import faucet
 from utils import cloud
 from utils.operator import Operator
 from utils.web3client import NeonWeb3Client
 from utils.prices import get_sol_price
 
 from deploy.cli import faucet as faucet_cli
-from deploy.infra.utils import docker as docker_utils
-from deploy.infra.utils import env
+
 
 
 CMD_ERROR_LOG = "click_cmd_err.log"
@@ -430,14 +428,14 @@ def update_contracts(branch):
     pathlib.Path(contract_path).mkdir(parents=True, exist_ok=True)
 
     response = requests.get(
-        f"{NEON_EVM_GITHUB_URL}/contents/evm_loader/solidity?ref={branch}"
+        f"{NEON_EVM_GITHUB_URL}/contents/solidity?ref={branch}"
     )
     if response.status_code != 200:
         raise click.ClickException(f"The code is not 200. Response: {response.json()}")
 
     for item in response.json():
         r = requests.get(
-            f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/{branch}/evm_loader/solidity/{item['name']}"
+            f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/{branch}/solidity/{item['name']}"
         )
         if r.status_code == 200:
             with open(contract_path / item["name"], "wb") as f:
@@ -904,6 +902,7 @@ def make_dapps_report(directory, pr_url_for_report, token):
     report_content = dapps_cli.print_report(directory)
     if pr_url_for_report:
         gh_client = GithubClient(token)
+        gh_client.delete_last_comment(pr_url_for_report)
         gh_client.add_comment_to_pr(pr_url_for_report, report_content)
 
 

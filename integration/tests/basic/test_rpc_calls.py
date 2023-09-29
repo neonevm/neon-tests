@@ -176,7 +176,7 @@ class TestRpcCalls(BaseMixin):
         ), f"Invalid current gas price `{response['result']}` in wei"
 
     @pytest.mark.parametrize(
-        "param_fields", [(), ("address", "topics"), ("address",), ("topics",)]
+        "param_fields", [("address", "topics"), ("address",), ("topics",)]
     )
     def test_eth_get_logs_blockhash(self, event_caller_contract, param_fields):
         number = random.randint(1, 100)
@@ -216,6 +216,37 @@ class TestRpcCalls(BaseMixin):
             ],
         )
         assert_fields_are_boolean(response["result"][0], ["removed"])
+
+    def test_eth_get_logs_blockhash_empty_params(self, event_caller_contract):
+        number = random.randint(1, 100)
+        text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
+        bytes_array = text.encode().ljust(32, b"\0")
+        bol = True
+        tx = self.make_tx_object()
+        instruction_tx = event_caller_contract.functions.allTypes(
+            self.sender_account.address, number, text, bytes_array, bol
+        ).build_transaction(tx)
+        receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        params = {"blockHash": receipt["blockHash"].hex()}
+
+        response = self.proxy_api.send_rpc("eth_getLogs", params=params)
+        assert "error" not in response
+
+        assert_fields_are_hex(
+            response["result"][0],
+            [
+                "transactionHash",
+                "blockHash",
+                "blockNumber",
+                "transactionIndex",
+                "address",
+                "logIndex",
+                "transactionLogIndex",
+            ],
+        )
+        assert_fields_are_boolean(response["result"][0], ["removed"])
+        assert_equal_fields(response, receipt, ["blockHash"])
 
     @pytest.mark.xfail(reason="NDEV-2237")
     @pytest.mark.parametrize(
@@ -385,8 +416,7 @@ class TestRpcCalls(BaseMixin):
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         params = {
-            "fromBlock": Tag.LATEST.value,
-            "toBlock": Tag.LATEST.value,
+            "blockHash": receipt["blockHash"].hex(),
             "address": event_caller_contract.address,
         }
         topic = cryptohex("AllTypes(address,uint256,string,bytes32,bool)")
@@ -408,6 +438,7 @@ class TestRpcCalls(BaseMixin):
                 "transactionLogIndex",
             ],
         )
+
         assert_fields_are_boolean(response["result"][0], ["removed"])
         assert_equal_fields(
             response,
@@ -504,6 +535,30 @@ class TestRpcCalls(BaseMixin):
         assert rpc_checks.is_hex(
             response["result"]
         ), f"Invalid response result {response['result']}"
+
+    def test_eth_sendRawTransaction_max_size(self):
+        """Validate max size for transaction, 127 KB"""
+        size = 127 * 1024
+        transaction = self.create_tx_object(amount=1)
+
+        transaction["data"] = gen_hash_of_block(size)
+        signed_tx = self.web3_client.eth.account.sign_transaction(
+            transaction, self.sender_account.key
+        )
+        response = self.proxy_api.send_rpc(
+            "eth_sendRawTransaction", params=signed_tx.rawTransaction.hex()
+        )
+        assert "error" not in response
+        assert rpc_checks.is_hex(
+            response["result"]
+        ), f"Invalid response result {response['result']}"
+
+    def test_eth_sendRawTransaction_max_contract_size(self):
+        """Validate max size for contract, 24 KB"""
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
+            "Contract_24k", "0.8.12", account=self.sender_account
+        )
+        assert rpc_checks.is_hex(contract.address)
 
     @pytest.mark.parametrize("param", [128, 32, 16, None])
     def test_eth_get_transaction_by_hash(self, param: tp.Union[int, None]):

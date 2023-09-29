@@ -8,6 +8,8 @@ on:
 env:
   IMAGE:  neonlabsorg/neon_tests
   CONTAINER:  services-${{ github.run_id }}
+  BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
 jobs:
   dockerize:
     if: ${{ github.ref_name != 'develop'}}

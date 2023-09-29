@@ -40,6 +40,8 @@ TF_ENV.update(
     }
 )
 
+WEB3_CLIENT = NeonWeb3Client(os.environ.get("PROXY_URL"), os.environ.get("CHAIN_ID", 111))
+
 
 def set_github_env(envs: tp.Dict, upper=True) -> None:
     """Set environment for github action"""
@@ -176,11 +178,8 @@ def prepare_accounts(network_name, count, amount) -> tp.List:
 
 
 def get_solana_accounts_in_tx(eth_transaction):
-    web3_client = NeonWeb3Client(
-        os.environ.get("PROXY_URL"), os.environ.get("CHAIN_ID", 111)
-    )
     sol_client = SolanaClient(os.environ.get("SOLANA_URL"))
-    trx = web3_client.get_solana_trx_by_neon(eth_transaction)
+    trx = WEB3_CLIENT.get_solana_trx_by_neon(eth_transaction)
     tr = sol_client.get_transaction(
         Signature.from_string(trx["result"][0]), max_supported_transaction_version=0
     )
@@ -196,7 +195,7 @@ def get_solana_accounts_in_tx(eth_transaction):
 
 
 def print_report(directory):
-    headers = ["Action", "Fee", "Cost in $", "Accounts", "TRx"]
+    headers = ["Action", "Fee", "Cost in $", "Accounts", "TRx", "Estimated Gas", "Used Gas", "Used % of EG"]
     out = {}
     reports = {}
     for path in glob.glob(str(pathlib.Path(directory) / "*-report.json")):
@@ -209,12 +208,19 @@ def print_report(directory):
         out[app] = []
         for action in reports[app]:
             accounts, trx = get_solana_accounts_in_tx(action["tx"])
+            tx = WEB3_CLIENT.get_transaction_by_hash(action["tx"])
+            estimated_gas = int(tx.gas) if tx and tx.gas else None
+            used_gas = int(action["usedGas"])
             row = [action["name"]]
-            fee = int(action["usedGas"]) * int(action["gasPrice"]) / 1000000000000000000
+            fee = used_gas * int(action["gasPrice"]) / 1000000000000000000
+            used_gas_percentage = round(used_gas * 100 / estimated_gas, 2) if estimated_gas else None
             row.append(fee)
             row.append(fee * get_neon_price())
             row.append(accounts)
             row.append(trx)
+            row.append(estimated_gas)
+            row.append(used_gas)
+            row.append(used_gas_percentage)
             out[app].append(row)
     report_content = ""
     for app in out:

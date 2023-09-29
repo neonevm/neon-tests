@@ -46,7 +46,7 @@ To run OpenZeppelin tests just use next command:
 
 ## Run tests manual
 
-You can run all tests manual uif know which framework it uses. For example economy tests:
+You can run all tests manually if know which framework it uses. For example economy tests:
 
 ```bash
 py.test integration/tests/economy/test_economics.py

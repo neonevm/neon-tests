@@ -1,6 +1,4 @@
-import random
 import re
-import string
 import typing as tp
 from enum import Enum
 
@@ -11,35 +9,8 @@ from eth_utils import keccak
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
-from integration.tests.basic.helpers.rpc_checks import (
-    assert_fields_are_hex,
-    assert_fields_are_boolean,
-    assert_equal_fields,
-)
-from integration.tests.services.helpers.basic import cryptohex
 from utils import helpers
-from utils.consts import Unit
 from utils.helpers import gen_hash_of_block
-
-"""
-12.	Verify implemented rpc calls work
-12.1.	eth_getBlockByHash		
-12.2.	eth_getBlockByNumber		
-12.11.	eth_blockNumber		
-12.12.	eth_call		
-12.13.	eth_estimateGas		
-12.14.	eth_gasPrice		
-12.22.	eth_getLogs		
-12.30.	eth_getBalance		
-12.32.	eth_getTransactionCount		
-12.33.	eth_getCode		
-12.35.	eth_sendRawTransaction		
-12.36.	eth_getTransactionByHash		
-12.39.	eth_getTransactionReceipt		
-12.40.	eht_getStorageAt		
-12.61.	web3_clientVersion		
-12.63.	net_version
-"""
 
 
 class Tag(Enum):
@@ -104,12 +75,12 @@ def get_event_signatures(abi: tp.List[tp.Dict]) -> tp.List[str]:
 
 @allure.feature("JSON-RPC validation")
 @allure.story("Verify JSON-RPC proxy calls work")
-class TestRpcCalls(BaseMixin):
+class TestRpcBaseCalls(BaseMixin):
     _erc20_contract: tp.Optional[tp.Any] = None
 
     @pytest.fixture
     def erc20_contract(self) -> tp.Any:
-        if not TestRpcCalls._erc20_contract:
+        if not TestRpcBaseCalls._erc20_contract:
             contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
                 "ERC20/ERC20.sol",
                 "0.8.8",
@@ -126,8 +97,8 @@ class TestRpcCalls(BaseMixin):
                 abi=contract.abi,
             )
             self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
-            TestRpcCalls._erc20_contract = contract, contract_deploy_tx, tx_receipt
-        return TestRpcCalls._erc20_contract
+            TestRpcBaseCalls._erc20_contract = contract, contract_deploy_tx, tx_receipt
+        return TestRpcBaseCalls._erc20_contract
 
     def test_eth_call_without_params(self):
         """Verify implemented rpc calls work eth_call without params"""
@@ -319,7 +290,6 @@ class TestRpcCalls(BaseMixin):
             method="eth_getTransactionReceipt", params=gen_hash_of_block(32)
         )
         assert response["result"] is None, "Result should be None"
-
 
     @pytest.mark.parametrize("param", [None, "param"])
     def test_eth_block_number(self, param: tp.Union[str, None]):

@@ -8,7 +8,7 @@ from utils.helpers import gen_hash_of_block
 
 @allure.feature("JSON-RPC-GET-BLOCK validation")
 @allure.story("Verify getBlock methods")
-class TestGetBlock(BaseMixin):
+class TestRpcGetBlock(BaseMixin):
     @pytest.mark.parametrize("full_trx", [False, True])
     def test_eth_get_block_by_hash(self, full_trx: bool):
         """Verify implemented rpc calls work eth_getBlockByHash"""

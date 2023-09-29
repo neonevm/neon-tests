@@ -1,17 +1,18 @@
+import typing as tp
+
 import allure
 import pytest
-import typing as tp
 import web3
 
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.basic import BaseMixin
-from integration.tests.basic.rpc.test_rpc_calls import Tag
+from integration.tests.basic.rpc.test_rpc_base_calls import Tag
 from utils.consts import Unit
 
 
 @allure.feature("JSON-RPC-GET-TRANSACTION validation")
 @allure.story("Verify getTransaction methods")
-class TestGetTransaction(BaseMixin):
+class TestRpcGetTransaction(BaseMixin):
 
     @staticmethod
     def validate_response(result, tx_receipt: tp.Union[web3.types.TxReceipt, None]):

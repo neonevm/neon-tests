@@ -1,21 +1,20 @@
-import allure
-import pytest
 import random
 import string
 
+import allure
+import pytest
 from web3.types import TxParams
 
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex, assert_fields_are_boolean, \
     assert_equal_fields
-from integration.tests.basic.rpc.test_rpc_calls import Tag
+from integration.tests.basic.rpc.test_rpc_base_calls import Tag
 from integration.tests.services.helpers.basic import cryptohex
 
 
 @allure.feature("JSON-RPC-GET-LOGS validation")
 @allure.story("Verify getLogs method")
-class TestGetLogs(BaseMixin):
-
+class TestRpcGetLogs(BaseMixin):
     def create_all_types_instruction(self, event_caller_contract) -> TxParams:
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])

@@ -457,7 +457,7 @@ class TestRpcCalls(BaseMixin):
 
     def test_eth_get_logs_list_of_addresses(self, event_caller_contract):
         event_caller2, _ = self.web3_client.deploy_and_get_contract(  # we need 2nd contract to check list of addresses
-                "EventCaller", "0.8.12", self.sender_account
+                "common/EventCaller", "0.8.12", self.sender_account
             )
 
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
@@ -588,7 +588,7 @@ class TestRpcCalls(BaseMixin):
     def test_eth_sendRawTransaction_max_contract_size(self):
         """Validate max size for contract, 24 KB"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "Contract_24k", "0.8.12", account=self.sender_account
+            "common/BigMemoryValue", "0.8.12", contract_name="ValueOf24K", account=self.sender_account
         )
         assert rpc_checks.is_hex(contract.address)
 
@@ -1120,7 +1120,7 @@ class TestRpcCalls(BaseMixin):
     )
     def test_filter_log_by_topics(self, event_filter, arg_filter, log_count, method):
         event_caller, _ = self.web3_client.deploy_and_get_contract(
-            "EventCaller", "0.8.12", self.sender_account
+            "common/EventCaller", "0.8.12", self.sender_account
         )
 
         arg1, arg2, arg3 = ("text1", "text2", "text3")
@@ -1211,7 +1211,7 @@ class TestRpcCallsMoreComplex(BaseMixin):
         self.account = self.sender_account
         #  contract
         contract_interface = helpers.get_contract_interface(
-            contract="NDEV49", version="0.8.10", contract_name=request.param
+            contract="issues/NDEV49", version="0.8.10", contract_name=request.param
         )
         counter = self.web3_client.eth.contract(
             abi=contract_interface["abi"], bytecode=contract_interface["bin"]

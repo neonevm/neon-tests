@@ -4,17 +4,18 @@ from utils import helpers
 SPL_TOKEN_ADDRESS = "0xFf00000000000000000000000000000000000004"
 METAPLEX_ADDRESS = "0xff00000000000000000000000000000000000005"
 
+
 @pytest.fixture(scope="class")
 def precompiled_contract(web3_client, faucet, class_account):
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "precompiled", "0.8.10", class_account, contract_name="TestPrecompiledContracts")
+        "precompiled/CommonCaller", "0.8.10", class_account)
     return contract
 
 
 @pytest.fixture(scope="class")
 def metaplex_caller(web3_client, class_account):
     contract, _ = web3_client.deploy_and_get_contract(
-        "metaplex_caller.sol", "0.8.10", account=class_account, contract_name="metaplexCaller"
+        "precompiled/MetaplexCaller", "0.8.10", account=class_account, contract_name="MetaplexCaller"
     )
     return contract
 
@@ -35,9 +36,21 @@ def spl_token(web3_client):
                                         abi=contract_interface["abi"])
     return contract
 
+
 @pytest.fixture(scope="class")
 def spl_token_caller(web3_client, class_account):
     contract, _ = web3_client.deploy_and_get_contract(
-        "spl_token_caller.sol", "0.8.10", account=class_account, contract_name="splTokenCaller"
+        "precompiled/splTokenCaller", "0.8.10", account=class_account, contract_name="splTokenCaller"
+    )
+    return contract
+
+
+@pytest.fixture(scope="class")
+def blockhash_contract(web3_client, class_account):
+    contract, _ = web3_client.deploy_and_get_contract(
+        "opcodes/BlockHash",
+        "0.8.10",
+        contract_name="BlockHashTest",
+        account=class_account,
     )
     return contract

@@ -7,12 +7,12 @@ contract Test1 {
   }
 }
 
-contract OpCodes {
+contract BaseOpCodes {
 
     Test1 test1;
 
-    constructor() public {  //Constructor function
-      test1 = new Test1();  //Create new "Test1" function
+    constructor() public {
+      test1 = new Test1();
     }
 
    modifier onlyOwner(address _owner) {

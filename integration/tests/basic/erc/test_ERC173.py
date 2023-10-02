@@ -14,7 +14,7 @@ class TestERC173ContractOwnershipStandard(BaseMixin):
     @pytest.fixture(scope="function")
     def erc173(self):
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "ERC173", "0.8.10", self.sender_account
+            "EIPs/ERC173", "0.8.10", self.sender_account
         )
         return contract
 
@@ -51,7 +51,7 @@ class TestERC173ContractOwnershipStandard(BaseMixin):
 
     def test_contract_call_ownership_transfer(self, erc173, new_account):
         erc173_caller_contract, _ = self.web3_client.deploy_and_get_contract(
-            "ERC173", "0.8.10", self.sender_account, contract_name="ERC173Caller",
+            "EIPs/ERC173", "0.8.10", self.sender_account, contract_name="ERC173Caller",
             constructor_args=[erc173.address]
         )
 

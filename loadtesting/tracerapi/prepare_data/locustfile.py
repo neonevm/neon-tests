@@ -84,7 +84,7 @@ class EthGetStorageAtPreparationStage(head.NeonTasksSet):
         EthGetStorageAtPreparationStage._deploy_contract_done = True
         account = self.web3_client.create_account()
         self.check_balance(account=account)
-        contract_name = "RetrieveStore"
+        contract_name = "common/StorageSoliditySource"
         self.log.info(f"`{contract_name}`: deploy contract.")
         contract, _ = self.deploy_contract(
             contract_name, RETRIEVE_STORE_VERSION, account, contract_name="Storage"

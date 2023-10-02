@@ -50,7 +50,7 @@ class TestRejectingContractsStartingWith0xEF(BaseMixin):
     @pytest.fixture(scope="function")
     def eip3541_checker(self, web3_client):
         contract, _ = web3_client.deploy_and_get_contract(
-            "EIPs/EIP3541_reject_0xEF",
+            "EIPs/EIP3541Reject0xEF",
             "0.8.10",
             self.sender_account,
             contract_name="EIP3541",

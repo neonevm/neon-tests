@@ -1,9 +1,9 @@
 pragma solidity >=0.7.0;
 pragma abicoder v2;
 
-import "../external/erc20_for_spl.sol";
+import "../../external/erc20_for_spl.sol";
 
-contract multipleActionsERC20 {
+contract MultipleActionsERC20 {
     uint256 data;
     ERC20ForSplMintable erc20;
 

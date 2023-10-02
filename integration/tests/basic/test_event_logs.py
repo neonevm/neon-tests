@@ -179,13 +179,13 @@ class TestLogs(BaseMixin):
 
     def test_nested_calls_with_revert(self):
         contract_a, _ = self.web3_client.deploy_and_get_contract(
-            "NestedCallsChecker", "0.8.12", self.sender_account, contract_name="A"
+            "common/NestedCallsChecker", "0.8.12", self.sender_account, contract_name="A"
         )
         contract_b, _ = self.web3_client.deploy_and_get_contract(
-            "NestedCallsChecker", "0.8.12", self.sender_account, contract_name="B"
+            "common/NestedCallsChecker", "0.8.12", self.sender_account, contract_name="B"
         )
         contract_c, _ = self.web3_client.deploy_and_get_contract(
-            "NestedCallsChecker", "0.8.12", self.sender_account, contract_name="C"
+            "common/NestedCallsChecker", "0.8.12", self.sender_account, contract_name="C"
         )
         tx = self.make_tx_object(self.sender_account.address)
 

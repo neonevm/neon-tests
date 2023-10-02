@@ -11,7 +11,7 @@ class TestOpCodes(BaseMixin):
     @pytest.fixture(scope="class")
     def opcodes_checker(self, web3_client, faucet, class_account):
         contract, _ = web3_client.deploy_and_get_contract(
-            "OpCodes", "0.5.16", class_account, contract_name="OpCodes"
+            "opcodes/BaseOpCodes", "0.5.16", class_account, contract_name="BaseOpCodes"
         )
         return contract
 

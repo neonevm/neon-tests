@@ -1,6 +1,6 @@
 pragma solidity ^0.8.3;
 
-contract TestPrecompiledContracts {
+contract CommonCaller {
     function call_precompiled(address precompiledAddr, bytes memory callData)
         public
         returns (bytes memory)

@@ -38,7 +38,7 @@ wSOL = {
 class TestDeposit(BaseMixin):
     def withdraw_neon(self, dest_acc, move_amount):
         contract, _ = self.web3_client.deploy_and_get_contract(
-            "NeonToken", "0.8.10", account=self.sender_account
+            "precompiled/NeonToken", "0.8.10", account=self.sender_account
         )
 
         instruction_tx = contract.functions.withdraw(

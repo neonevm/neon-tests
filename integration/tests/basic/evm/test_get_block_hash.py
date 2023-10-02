@@ -9,15 +9,8 @@ from integration.tests.basic.helpers.basic import BaseMixin
 @allure.feature("EVM tests")
 @allure.story("Verify block hash")
 class TestGetBlockHash(BaseMixin):
-    def test_get_current_block_hash(self):
-        contract, _ = self.web3_client.deploy_and_get_contract(
-            "BlockHash",
-            "0.8.10",
-            contract_name="BlockHashTest",
-            account=self.sender_account,
-        )
-
-        instruction_tx = contract.functions.getCurrentValues().build_transaction(
+    def test_get_current_block_hash(self, blockhash_contract):
+        instruction_tx = blockhash_contract.functions.getCurrentValues().build_transaction(
             {
                 "from": self.sender_account.address,
                 "nonce": self.web3_client.eth.get_transaction_count(
@@ -51,13 +44,7 @@ class TestGetBlockHash(BaseMixin):
 
         assert False, "Slot not found"
 
-    def test_get_block_hash_from_history(self):
-        contract, _ = self.web3_client.deploy_and_get_contract(
-            "BlockHash",
-            "0.8.10",
-            contract_name="BlockHashTest",
-            account=self.sender_account,
-        )
+    def test_get_block_hash_from_history(self, blockhash_contract):
         for _ in range(5):
             self.send_neon(self.sender_account, self.recipient_account, 1)
 
@@ -65,7 +52,7 @@ class TestGetBlockHash(BaseMixin):
         block_number_history = current_block_number - 4
         block_hash_history = self._get_slot_hash(block_number_history)
 
-        instruction_tx = contract.functions.getValues(
+        instruction_tx = blockhash_contract.functions.getValues(
             block_number_history
         ).build_transaction(
             {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: CC0-1.0
 pragma solidity >=0.7.6;
 
-import "./EIP3448_meta_proxy_factory.sol";
+import "./EIP3448MetaProxyFactory.sol";
 
 /// @notice This contract includes test cases for the MetaProxy standard.
 contract MetaProxy is MetaProxyFactory {

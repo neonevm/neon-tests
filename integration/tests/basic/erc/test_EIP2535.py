@@ -17,7 +17,7 @@ class TestDiamond(BaseMixin):
     @pytest.fixture(scope="class")
     def diamond_init(self, web3_client, class_account):
         contract, _ = web3_client.deploy_and_get_contract(
-            "diamond/upgradeInitializers/DiamondInit.sol",
+            "EIPs/EIP2535/upgradeInitializers/DiamondInit.sol",
             "0.8.10",
             class_account,
             contract_name="DiamondInit",
@@ -38,7 +38,7 @@ class TestDiamond(BaseMixin):
     @pytest.fixture(scope="class")
     def diamond_cut_facet(self, web3_client, class_account):
         contract, _ = web3_client.deploy_and_get_contract(
-            "diamond/facets/DiamondCutFacet.sol",
+            "EIPs/EIP2535/facets/DiamondCutFacet",
             "0.8.10",
             class_account,
             contract_name="DiamondCutFacet",
@@ -48,7 +48,7 @@ class TestDiamond(BaseMixin):
     @pytest.fixture(scope="class")
     def diamond_loupe_facet(self, web3_client, class_account):
         contract, _ = web3_client.deploy_and_get_contract(
-            "diamond/facets/DiamondLoupeFacet.sol",
+            "EIPs/EIP2535/facets/DiamondLoupeFacet.sol",
             "0.8.10",
             class_account,
             contract_name="DiamondLoupeFacet",
@@ -58,7 +58,7 @@ class TestDiamond(BaseMixin):
     @pytest.fixture(scope="class")
     def ownership_facet(self, web3_client, class_account):
         contract, _ = web3_client.deploy_and_get_contract(
-            "diamond/facets/OwnershipFacet.sol",
+            "EIPs/EIP2535/facets/OwnershipFacet",
             "0.8.10",
             class_account,
             contract_name="OwnershipFacet",
@@ -70,7 +70,7 @@ class TestDiamond(BaseMixin):
         calldata = decode_function_signature("init()")
         diamond_args = [class_account.address, diamond_init.address, calldata]
         contract, tx = web3_client.deploy_and_get_contract(
-            "diamond/Diamond.sol",
+            "EIPs/EIP2535/Diamond",
             "0.8.10",
             class_account,
             contract_name="Diamond",
@@ -102,7 +102,7 @@ class TestDiamond(BaseMixin):
 
     def test_add_and_remove_function(self, diamond, diamond_cut_facet, class_account):
         new_facet, _ = self.web3_client.deploy_and_get_contract(
-            "diamond/facets/Test1Facet.sol",
+            "EIPs/EIP2535/facets/Test1Facet",
             "0.8.10",
             class_account,
             contract_name="Test1Facet",

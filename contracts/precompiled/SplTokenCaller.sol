@@ -4,7 +4,7 @@ pragma solidity >=0.7.0 <0.9.0;
 import "../external/SPLToken.sol";
 
 
-contract splTokenCaller {
+contract SplTokenCaller {
 
     SPLToken constant _splToken = SPLToken(0xFf00000000000000000000000000000000000004);
 

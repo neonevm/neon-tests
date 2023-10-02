@@ -1211,7 +1211,7 @@ class TestRpcCallsMoreComplex(BaseMixin):
         self.account = self.sender_account
         #  contract
         contract_interface = helpers.get_contract_interface(
-            contract="issues/NDEV49", version="0.8.10", contract_name=request.param
+            contract="issues/Ndev49", version="0.8.10", contract_name=request.param
         )
         counter = self.web3_client.eth.contract(
             abi=contract_interface["abi"], bytecode=contract_interface["bin"]

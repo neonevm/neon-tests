@@ -40,7 +40,7 @@ def spl_token(web3_client):
 @pytest.fixture(scope="class")
 def spl_token_caller(web3_client, class_account):
     contract, _ = web3_client.deploy_and_get_contract(
-        "precompiled/splTokenCaller", "0.8.10", account=class_account, contract_name="splTokenCaller"
+        "precompiled/SplTokenCaller", "0.8.10", account=class_account, contract_name="SplTokenCaller"
     )
     return contract
 

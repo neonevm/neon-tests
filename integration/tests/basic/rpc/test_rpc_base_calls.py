@@ -9,6 +9,8 @@ from eth_utils import keccak
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
+from integration.tests.basic.helpers.rpc_checks import is_hex
+from integration.tests.services.helpers.basic import cryptohex
 from utils import helpers
 from utils.helpers import gen_hash_of_block
 
@@ -151,19 +153,40 @@ class TestRpcBaseCalls(BaseMixin):
         assert rpc_checks.is_hex(response["result"]), AssertMessage.WRONG_AMOUNT.value
 
     @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, None])
-    def test_eth_get_code(self, param: tp.Union[Tag, None]):
+    def test_eth_get_code(self, event_caller_contract, param: tp.Union[Tag, None]):
         """Verify implemented rpc calls work eth_getCode"""
         response = self.proxy_api.send_rpc(
             "eth_getCode",
-            params=[self.sender_account.address, param.value] if param else param,
+            params=[event_caller_contract.address, param.value] if param else param,
         )
         if not param:
             assert "error" in response, "Error not in response"
             return
         assert "error" not in response
         assert (
-                response["result"] == "0x"
-        ), f"Invalid result code {response['result']} at a given address."
+                is_hex(response["result"])
+        ), f"Invalid compiled byte code in response {response['result']} at a given contract address"
+
+    def test_eth_get_code_sender_address(self):
+        """Verify implemented rpc calls work eth_getCode"""
+        response = self.proxy_api.send_rpc(
+            "eth_getCode",
+            params=[self.sender_account.address, Tag.LATEST.value],
+        )
+        assert "error" not in response
+        assert (
+            response["result"] == "0x"
+        ), f"Invalid response {response['result']} at a given contract address"
+
+    def test_eth_get_code_wrong_address(self):
+        """Verify implemented rpc calls work eth_getCode"""
+        response = self.proxy_api.send_rpc(
+            "eth_getCode",
+            params=[cryptohex("12345"), Tag.LATEST.value],
+        )
+        assert "error" in response
+        assert "message" in response["error"]
+        assert "bad address" in response["error"]["message"]
 
     def test_web3_client_version(self):
         """Verify implemented rpc calls work web3_clientVersion"""

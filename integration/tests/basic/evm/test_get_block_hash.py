@@ -6,7 +6,7 @@ from hexbytes import HexBytes
 from integration.tests.basic.helpers.basic import BaseMixin
 
 
-@allure.feature("JSON-RPC validation")
+@allure.feature("EVM tests")
 @allure.story("Verify block hash")
 class TestGetBlockHash(BaseMixin):
     def test_get_current_block_hash(self):
@@ -31,23 +31,25 @@ class TestGetBlockHash(BaseMixin):
         )
 
         assert (
-                instruction_receipt["logs"][0]["data"].hex()
-                == "0x0000000000000000000000000000000000000000000000000000000000000000"
+            instruction_receipt["logs"][0]["data"].hex()
+            == "0x0000000000000000000000000000000000000000000000000000000000000000"
         )
 
     def _get_slot_hash(self, number: int) -> HexBytes:
         slot_hashes_id = PublicKey("SysvarS1otHashes111111111111111111111111111")
-        account_info = self.sol_client.get_account_info(slot_hashes_id, 'confirmed').value
-        count = int.from_bytes(account_info.data[:8], 'little')
+        account_info = self.sol_client.get_account_info(
+            slot_hashes_id, "confirmed"
+        ).value
+        count = int.from_bytes(account_info.data[:8], "little")
         for i in range(0, count):
             offset = 8 + 40 * i
-            slot = int.from_bytes(account_info.data[offset:(offset+8)], 'little')
+            slot = int.from_bytes(account_info.data[offset : (offset + 8)], "little")
             if slot != number:
                 continue
 
-            return HexBytes(account_info.data[(offset+8):(offset+40)])
+            return HexBytes(account_info.data[(offset + 8) : (offset + 40)])
 
-        assert False, 'Slot not found'
+        assert False, "Slot not found"
 
     def test_get_block_hash_from_history(self):
         contract, _ = self.web3_client.deploy_and_get_contract(

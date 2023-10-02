@@ -8,24 +8,22 @@ from integration.tests.basic.helpers.basic import BaseMixin
 from utils.web3client import NeonWeb3Client
 
 PRECOMPILED_FIXTURES = {
-
-    # NOT IMPLEMENTED YET
-    # "modexp": {
-    #     "address": "0x0000000000000000000000000000000000000005",
-    #     "files": ["modexp.json", "modexp_eip2565.json"],
-    # },
-    # "ecAdd": {
-    #     "address": "0x0000000000000000000000000000000000000006",
-    #     "files": ["bn256Add.json"],
-    # },
-    # "ecMul": {
-    #     "address": "0x0000000000000000000000000000000000000007",
-    #     "files": ["bn256ScalarMul.json"],
-    # },
-    # "ecPairing": {
-    #     "address": "0x0000000000000000000000000000000000000008",
-    #     "files": ["bn256Pairing.json"],
-    # },
+    "modexp": {
+        "address": "0x0000000000000000000000000000000000000005",
+        "files": ["modexp.json", "modexp_eip2565.json"],
+    },
+    "ecAdd": {
+        "address": "0x0000000000000000000000000000000000000006",
+        "files": ["bn256Add.json"],
+    },
+    "ecMul": {
+        "address": "0x0000000000000000000000000000000000000007",
+        "files": ["bn256ScalarMul.json"],
+    },
+    "ecPairing": {
+        "address": "0x0000000000000000000000000000000000000008",
+        "files": ["bn256Pairing.json"],
+    },
 
     "sha2_256": {
         "address": "0x0000000000000000000000000000000000000002",
@@ -46,7 +44,7 @@ PRECOMPILED_FIXTURES = {
     "blake2f": {
         "address": "0x0000000000000000000000000000000000000009",
         "files": ["blake2f.json"],
-    },
+    }
 }
 
 
@@ -94,6 +92,7 @@ class TestPrecompiledContracts(BaseMixin):
             expected,
     ):
         contract = precompiled_contract
+        input_data = b'' if input_data == '' else input_data
         result = contract.functions.call_precompiled(address, input_data).call()
 
         assert result.hex() == expected
@@ -108,6 +107,7 @@ class TestPrecompiledContracts(BaseMixin):
             expected,
     ):
         contract = precompiled_contract
+        input_data = b'' if input_data == '' else input_data
         result = contract.functions.staticcall_precompiled(address, input_data).call()
 
         assert result.hex() == expected
@@ -122,6 +122,7 @@ class TestPrecompiledContracts(BaseMixin):
             expected,
     ):
         contract = precompiled_contract
+        input_data = b'' if input_data == '' else input_data
         result = contract.functions.delegatecall_precompiled(address, input_data).call()
 
         assert result.hex() == expected
@@ -134,6 +135,7 @@ class TestPrecompiledContracts(BaseMixin):
                                expected, request, pytestconfig):
         if request.node.callspec.id == 'blake2f-vector 8':
             pytest.skip("NDEV-1961")
+
         amount = random.choice([0, 10])
         balance_before = self.get_balance_from_wei(address)
 
@@ -142,11 +144,22 @@ class TestPrecompiledContracts(BaseMixin):
         instruction_tx["chainId"] = self.web3_client._chain_id
         instruction_tx["to"] = address
         instruction_tx["from"] = self.sender_account.address
+        if request.node.callspec.id not in ["modexp-nagydani-5-square0", "modexp-nagydani-5-square1",
+                                            "modexp-nagydani-5-qube0",
+                                            "modexp-nagydani-5-qube1", "modexp-nagydani-5-pow0x100010",
+                                            "modexp-nagydani-5-pow0x100011"]:
+            receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+            assert receipt["status"] == 1
+            if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
+                assert self.get_balance_from_wei(address) - balance_before == amount
+        else:
+            # solana limits
+            try:
+                resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+                assert resp["status"] == 0
+            except ValueError as exc:
+                assert "InvalidLength" in exc.args[0]['message']
 
-        receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-        assert receipt["status"] == 1
-        if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
-            assert self.get_balance_from_wei(address) - balance_before == amount
 
     @pytest.mark.xdist_group("precompiled_contract_balance")
     @pytest.mark.parametrize("contract", PRECOMPILED_FIXTURES)

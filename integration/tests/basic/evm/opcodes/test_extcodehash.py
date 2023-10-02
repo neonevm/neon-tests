@@ -113,13 +113,13 @@ class TestExtCodeHashOpcode(BaseMixin):
 
     def test_extcodehash_for_precompiled_contract(self, eip1052_checker):
         # Check the EXTCODEHASH of a precompiled contract.
-        precompiled_acc = AccountData(address='0x0000000000000000000000000000000000000007')
+        precompiled_acc = AccountData(address='0xFf00000000000000000000000000000000000004')
         contract_hash = eip1052_checker.functions.getContractHash(precompiled_acc.address).call()
         assert contract_hash.hex() == ZERO_HASH
 
     def test_extcodehash_with_send_tx_for_precompiled_contract(self, eip1052_checker):
         # Check the EXTCODEHASH of a precompiled contract with send_tx.
-        precompiled_acc = AccountData(address='0x0000000000000000000000000000000000000007')
+        precompiled_acc = AccountData(address='0xFf00000000000000000000000000000000000004')
         tx = self.create_contract_call_tx_object(self.sender_account)
         instruction_tx = eip1052_checker.functions.getContractHashWithLog(precompiled_acc.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)

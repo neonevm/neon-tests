@@ -110,10 +110,22 @@ def assert_fields_are_boolean(object, expected_boolean_fields):
         assert type(object[field]) == bool, f"field {field} is not boolean. Actual : {type(object[field])}"
 
 
-def assert_equal_fields(response, receipt, comparable_fields):
+def assert_equal_fields(result, comparable_object, comparable_fields, keys_mappings):
+    """
+    Assert that fields in the result object are equal to fields in comparable_object
+
+    :param result:
+    :param comparable_object:
+    :param comparable_fields: list of comparable fields
+    :param keys_mappings: map name of the field in the result object to the field in comparable_object
+    :return:
+    """
     for field in comparable_fields:
-        l = response["result"][0][field]
-        r = receipt["logs"][0][field]
+        l = result[field]
+        if keys_mappings and keys_mappings.get(field):
+            r = comparable_object[keys_mappings.get(field)]
+        else:
+            r = comparable_object[field]
         if isinstance(r, str):
             r = r.lower()
         if isinstance(r, int):

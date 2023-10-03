@@ -9,7 +9,7 @@ from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex, assert_fields_are_boolean, \
     assert_equal_fields
 from integration.tests.basic.rpc.test_rpc_base_calls import Tag
-from integration.tests.services.helpers.basic import cryptohex
+from integration.tests.helpers.basic import cryptohex
 
 
 @allure.feature("JSON-RPC-GET-LOGS validation")
@@ -65,26 +65,22 @@ class TestRpcGetLogs(BaseMixin):
     def test_eth_get_logs_blockhash_empty_params(self, event_caller_contract):
         instruction_tx = self.create_all_types_instruction(event_caller_contract)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-
         params = {"blockHash": receipt["blockHash"].hex()}
-
         response = self.proxy_api.send_rpc("eth_getLogs", params=params)
-        assert "error" not in response
 
-        assert_fields_are_hex(
-            response["result"][0],
-            [
-                "transactionHash",
-                "blockHash",
-                "blockNumber",
-                "transactionIndex",
-                "address",
-                "logIndex",
-                "transactionLogIndex",
-            ],
-        )
-        assert_fields_are_boolean(response["result"][0], ["removed"])
-        assert_equal_fields(response, receipt, ["blockHash"])
+        assert "error" not in response
+        result = response["result"][0]
+        assert_fields_are_hex(result, [
+            "transactionHash",
+            "blockHash",
+            "blockNumber",
+            "transactionIndex",
+            "address",
+            "logIndex",
+            "transactionLogIndex",
+        ])
+        assert_fields_are_boolean(result, ["removed"])
+        assert_equal_fields(result, receipt["logs"][0], ["blockHash"])
 
     @pytest.mark.xfail(reason="NDEV-2237")
     @pytest.mark.parametrize(
@@ -231,35 +227,29 @@ class TestRpcGetLogs(BaseMixin):
         response = self.proxy_api.send_rpc("eth_getLogs", params=params)
         assert "error" not in response
         assert topic in response["result"][0]["topics"]
-        assert_fields_are_hex(
-            response["result"][0],
-            [
-                "transactionHash",
-                "blockHash",
-                "blockNumber",
-                "transactionIndex",
-                "address",
-                "logIndex",
-                "data",
-                "transactionLogIndex",
-            ],
-        )
+        result = response["result"][0]
+        assert_fields_are_hex(result, [
+            "transactionHash",
+            "blockHash",
+            "blockNumber",
+            "transactionIndex",
+            "address",
+            "logIndex",
+            "data",
+            "transactionLogIndex",
+        ])
 
-        assert_fields_are_boolean(response["result"][0], ["removed"])
-        assert_equal_fields(
-            response,
-            receipt,
-            [
-                "transactionHash",
-                "blockHash",
-                "blockNumber",
-                "transactionIndex",
-                "address",
-                "logIndex",
-                "data",
-                "transactionLogIndex",
-            ],
-        )
+        assert_fields_are_boolean(result, ["removed"])
+        assert_equal_fields(result, receipt["logs"][0], [
+            "transactionHash",
+            "blockHash",
+            "blockNumber",
+            "transactionIndex",
+            "address",
+            "logIndex",
+            "data",
+            "transactionLogIndex",
+        ])
 
     def test_eth_get_logs_list_of_addresses(self, event_caller_contract):
         event_caller2, _ = self.web3_client.deploy_and_get_contract(  # we need 2nd contract to check list of addresses
@@ -351,3 +341,93 @@ class TestRpcGetLogs(BaseMixin):
                     "transactionLogIndex",
                 ],
             )
+
+    @pytest.mark.parametrize("method", ["neon_getLogs", "eth_getLogs"])
+    @pytest.mark.parametrize(
+        "event_filter, arg_filter, log_count",
+        [
+            (["Event2(string,string)"], None, 2),
+            ([], ["text1"], 3),
+            (["Event2(string,string)"], ["text2"], 1),
+            (
+                    ["Event2(string,string)", "Event3(string,string,string)"],
+                    ["text2", "text3", "text1", "text5"],
+                    3,
+            ),
+            ([], None, 4),
+        ],
+    )
+    def test_filter_log_by_topics(self, event_filter, arg_filter, log_count, method):
+        event_caller, _ = self.web3_client.deploy_and_get_contract(
+            "common/EventCaller", "0.8.12", self.sender_account
+        )
+
+        arg1, arg2, arg3 = ("text1", "text2", "text3")
+        topics = []
+        if event_filter is not None:
+            event_topics = []
+            for item in event_filter:
+                event_topics.append(cryptohex(item))
+            topics.append(event_topics)
+        if arg_filter is not None:
+            arg_topics = []
+            for item in arg_filter:
+                arg_topics.append(cryptohex(item))
+            topics.append(arg_topics)
+
+        tx = self.make_tx_object(self.sender_account.address)
+        instruction_tx = event_caller.functions.callEvent1(arg1).build_transaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        tx = self.make_tx_object(self.sender_account.address)
+        instruction_tx = event_caller.functions.callEvent2(
+            arg1, arg2
+        ).build_transaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        tx = self.make_tx_object(self.sender_account.address)
+        instruction_tx = event_caller.functions.callEvent2(
+            arg2, arg3
+        ).build_transaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        tx = self.make_tx_object(self.sender_account.address)
+        instruction_tx = event_caller.functions.callEvent3(
+            arg1, arg2, arg3
+        ).build_transaction(tx)
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        response = self.proxy_api.send_rpc(
+            method,
+            params={
+                "address": event_caller.address,
+                "topics": topics,
+            },
+        )
+
+        assert (
+                len(response["result"]) == log_count
+        ), f"Expected {log_count} event logs, but found {len(response['result'])}"
+
+        is_event_topic_in_list = False
+        is_arg_topic_in_list = False
+        for log in response["result"]:
+            if topics[0]:
+                for topic in topics[0]:
+                    if topic in log["topics"]:
+                        is_event_topic_in_list = True
+            else:
+                is_event_topic_in_list = True
+            if len(topics) == 2:
+                for topic in topics[1]:
+                    if topic in log["topics"]:
+                        is_arg_topic_in_list = True
+            else:
+                is_arg_topic_in_list = True
+
+        assert (
+            is_event_topic_in_list
+        ), f"Filter by {topics} works incorrect. Response: {response}"
+        assert (
+            is_arg_topic_in_list
+        ), f"Filter by {topics} works incorrect. Response: {response}"

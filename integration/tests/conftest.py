@@ -12,6 +12,7 @@ from solana.publickey import PublicKey
 
 from utils.consts import LAMPORT_PER_SOL
 from utils.erc20wrapper import ERC20Wrapper
+from utils.erc20 import ERC20
 from utils.faucet import Faucet
 from utils.operator import Operator
 from utils.web3client import NeonWeb3Client
@@ -180,6 +181,12 @@ def erc20_spl(
         erc20.account, bytes(erc20.solana_associated_token_acc), 100000000000000
     )
     yield erc20
+
+
+@pytest.fixture(scope="session")
+def erc20_simple(web3_client, faucet):
+    erc20 = ERC20(web3_client,faucet)
+    return erc20
 
 
 @pytest.fixture(scope="session")

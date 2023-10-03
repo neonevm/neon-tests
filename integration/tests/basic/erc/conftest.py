@@ -52,10 +52,10 @@ def multiple_actions_erc20(web3_client, faucet, class_account):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
 
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "ERC20/multiple_actions_erc20",
+        "EIPs/ERC20/MultipleActions",
         "0.8.10",
         class_account,
-        contract_name="multipleActionsERC20",
+        contract_name="MultipleActionsERC20",
         constructor_args=[f"Test {symbol}", symbol, 18],
     )
     return class_account, contract
@@ -70,7 +70,7 @@ def erc721(web3_client: NeonWeb3Client, faucet, pytestconfig: Config):
 @pytest.fixture(scope="class")
 def nft_receiver(web3_client, faucet, class_account):
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "ERC721/erc721_receiver", "0.8.10", class_account, contract_name="ERC721Receiver"
+        "EIPs/ERC721/ERC721Receiver", "0.8.10", class_account, contract_name="ERC721Receiver"
     )
     return contract
 
@@ -78,7 +78,7 @@ def nft_receiver(web3_client, faucet, class_account):
 @pytest.fixture(scope="class")
 def invalid_nft_receiver(web3_client, faucet, class_account):
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "ERC721/erc721_invalid_receiver", "0.8.10", class_account, contract_name="ERC721Receiver"
+        "EIPs/ERC721/ERC721InvalidReceiver", "0.8.10", class_account, contract_name="ERC721Receiver"
     )
     return contract
 
@@ -86,7 +86,7 @@ def invalid_nft_receiver(web3_client, faucet, class_account):
 @pytest.fixture(scope="class")
 def multiple_actions_erc721(web3_client, faucet, class_account):
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "ERC721/multiple_actions_erc721", "0.8.10", class_account, contract_name="multipleActionsERC721"
+        "EIPs/ERC721/MultipleActions", "0.8.10", class_account, contract_name="MultipleActionsERC721"
     )
     return class_account, contract
 

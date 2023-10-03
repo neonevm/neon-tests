@@ -32,7 +32,7 @@ class TestAbstractStorageBonds(BaseMixin):
     @pytest.fixture(scope="class")
     def bond_contract(self, web3_client, sender):
         contract, _ = web3_client.deploy_and_get_contract(
-            "ERC3475", "0.8.10", sender)
+            "EIPs/ERC3475", "0.8.10", sender)
         return contract
 
     def issue(self, bond_contract, lender, sender, amount, class_id=CLASS_ID, nonce_id=NONCE_ID):

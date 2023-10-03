@@ -21,7 +21,7 @@ from utils.helpers import wait_condition
 @pytest.fixture(scope="class")
 def wneon(web3_client, faucet, class_account):
     contract, _ = web3_client.deploy_and_get_contract(
-        "WNEON", "0.4.26", account=class_account
+        "common/WNeon", "0.4.26", account=class_account, contract_name="WNEON"
     )
     return contract
 

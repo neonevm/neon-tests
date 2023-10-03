@@ -223,7 +223,7 @@ def neon_mint(pytestconfig: Config):
 @pytest.fixture(scope="class")
 def withdraw_contract(web3_client, faucet, class_account):
     contract, _ = web3_client.deploy_and_get_contract(
-        "NeonToken", "0.8.10", account=class_account
+        "precompiled/NeonToken", "0.8.10", account=class_account
     )
     return contract
 
@@ -231,7 +231,7 @@ def withdraw_contract(web3_client, faucet, class_account):
 @pytest.fixture(scope="class")
 def meta_proxy_contract(web3_client, faucet, class_account):
     contract, _ = web3_client.deploy_and_get_contract(
-        "./EIPs/MetaProxy.sol", "0.8.10", account=class_account
+        "./EIPs/MetaProxy", "0.8.10", account=class_account
     )
     return contract
 
@@ -239,6 +239,6 @@ def meta_proxy_contract(web3_client, faucet, class_account):
 @pytest.fixture(scope="class")
 def event_caller_contract(web3_client, class_account) -> typing.Any:
     event_caller, _ = web3_client.deploy_and_get_contract(
-        "EventCaller", "0.8.12", class_account
+        "common/EventCaller", "0.8.12", class_account
     )
     yield event_caller

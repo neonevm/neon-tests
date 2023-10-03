@@ -14,7 +14,7 @@ class TestExtCodeHashOpcode(BaseMixin):
     @pytest.fixture(scope="class")
     def eip1052_checker(self, web3_client, faucet, class_account):
         contract, _ = web3_client.deploy_and_get_contract(
-            "EIPs/EIP1052_extcodehash", "0.8.10", class_account, contract_name="EIP1052Checker")
+            "EIPs/EIP1052Extcodehash", "0.8.10", class_account, contract_name="EIP1052Checker")
         return contract
 
     def test_extcodehash_for_contract_address(self, eip1052_checker):
@@ -93,9 +93,9 @@ class TestExtCodeHashOpcode(BaseMixin):
     def test_extcodehash_for_reverted_destroyed_contract(self, eip1052_checker):
         # Check the EXTCODEHASH of an account that selfdestructed and later the selfdestruct has been reverted.
         selfDestroyableContract, _ = self.web3_client.deploy_and_get_contract(
-            "SelfDestroyable", "0.8.10", self.sender_account)
+            "opcodes/SelfDestroyable", "0.8.10", self.sender_account)
         destroyCaller, _ = self.web3_client.deploy_and_get_contract(
-            "EIPs/EIP1052_extcodehash", "0.8.10", self.sender_account, contract_name="DestroyCaller")
+            "EIPs/EIP1052Extcodehash", "0.8.10", self.sender_account, contract_name="DestroyCaller")
 
         tx = self.create_contract_call_tx_object(self.sender_account)
         instruction_tx = eip1052_checker.functions.getHashForDestroyedContractAfterRevert(

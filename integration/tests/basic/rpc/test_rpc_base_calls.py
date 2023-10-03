@@ -1,4 +1,5 @@
 import re
+import time
 import typing as tp
 from enum import Enum
 
@@ -348,6 +349,16 @@ class TestRpcBaseCalls(BaseMixin):
         response = self.proxy_api.send_rpc(method="eth_blockNumber")
         assert "error" not in response
         assert rpc_checks.is_hex(response["result"]), f"Invalid response result {response['result']}"
+
+    def test_eth_block_number_next_block_different(self):
+        response = self.proxy_api.send_rpc(method="eth_blockNumber")
+        time.sleep(1)
+        response2 = self.proxy_api.send_rpc(method="eth_blockNumber")
+
+        assert "error" not in response and response2
+        assert rpc_checks.is_hex(response["result"]), f"Invalid response result {response['result']}"
+        assert rpc_checks.is_hex(response2["result"]), f"Invalid response result {response2['result']}"
+        assert response['result'] != response2['result']
 
     @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, None])
     def test_eth_get_storage_at(self, param: tp.Union[Tag, None]):

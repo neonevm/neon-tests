@@ -56,7 +56,7 @@ class TestTransfer(BaseMixin):
         """Send erc20 token from one account to another"""
 
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "ERC20/ERC20.sol",
+            "EIPs/ERC20/ERC20.sol",
             "0.8.8",
             self.sender_account,
             contract_name="ERC20",
@@ -182,7 +182,7 @@ class TestTransfer(BaseMixin):
         """Send more than exist on account: ERC20"""
 
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "ERC20/ERC20.sol",
+            "EIPs/ERC20/ERC20.sol",
             "0.8.8",
             self.sender_account,
             contract_name="ERC20",
@@ -310,7 +310,7 @@ class TestTransfer(BaseMixin):
         """Send negative sum from account: ERC20"""
 
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "ERC20/ERC20.sol",
+            "EIPs/ERC20/ERC20.sol",
             "0.8.8",
             self.sender_account,
             contract_name="ERC20",
@@ -366,7 +366,7 @@ class TestTransfer(BaseMixin):
 
         transfer_amount = 10
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "ERC20/ERC20.sol",
+            "EIPs/ERC20/ERC20.sol",
             "0.8.8",
             self.sender_account,
             contract_name="ERC20",
@@ -451,12 +451,12 @@ class TestTransfer(BaseMixin):
     def test_transaction_does_not_fail_nested_contract(self):
         """Send Neon to contract via low level call"""
         _, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "./NDEV1004/ContractOne.sol", "0.8.15", account=self.sender_account
+            "issues/ndev1004/ContractOne", "0.8.15", account=self.sender_account
         )
         address = contract_deploy_tx["contractAddress"]
 
         contractTwo, _ = self.web3_client.deploy_and_get_contract(
-            "./NDEV1004/ContractTwo.sol", "0.8.15", account=self.sender_account
+            "issues/ndev1004/ContractTwo", "0.8.15", account=self.sender_account
         )
         balance = contractTwo.functions.getBalance().call()
         assert balance == 0
@@ -593,7 +593,7 @@ class TestTransactionsValidation(BaseMixin):
     @pytest.mark.xfail(reason="NDEV-628")
     def test_big_memory_value(self):
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "BigMemoryValue", "0.8.12", account=self.sender_account
+            "BigMemoryValue", "0.8.12", contract_name='BigMemoryValue', account=self.sender_account
         )
         bytes_amount = contract.functions.makeBigMemoryValue(13).call()
         assert bytes_amount > 16 * 1024 * 1024

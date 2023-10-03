@@ -12,7 +12,7 @@ from loadtesting.proxy.common.base import NeonProxyTasksSet
 
 LOG = logging.getLogger(__name__)
 
-ERC20_CONTRACT_NAME = "ERC20/ERC20.sol"
+ERC20_CONTRACT_NAME = "EIPs/ERC20/ERC20.sol"
 ERC20_CONTRACT_VERSION = "0.8.0"
 
 

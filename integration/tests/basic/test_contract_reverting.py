@@ -66,10 +66,9 @@ class TestContractReverting(BaseMixin):
 
     def test_method_raises_string_based_error(self):
         contract, _ = self.web3_client.deploy_and_get_contract(
-            "trivial_revert",
+            "common/TrivialRevert",
             "0.7.0",
             self.sender_account,
-            contract_name="TrivialRevert",
             constructor_args=[],
         )
         with pytest.raises(
@@ -80,10 +79,9 @@ class TestContractReverting(BaseMixin):
 
     def test_method_raises_trivial_error(self):
         contract, _ = self.web3_client.deploy_and_get_contract(
-            "trivial_revert",
+            "common/TrivialRevert",
             "0.7.0",
             self.sender_account,
-            contract_name="TrivialRevert",
             constructor_args=[],
         )
         with pytest.raises(

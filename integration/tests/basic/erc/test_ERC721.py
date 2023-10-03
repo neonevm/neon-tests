@@ -668,7 +668,7 @@ class TestERC721Extensions(BaseMixin):
         erc4907 = ERC721ForMetaplex(
             web3_client,
             faucet,
-            contract="ERC721/extensions/ERC4907",
+            contract="EIPs/ERC721/extensions/ERC4907",
             contract_name="ERC4907",
         )
 
@@ -699,7 +699,7 @@ class TestERC721Extensions(BaseMixin):
         erc2981 = ERC721ForMetaplex(
             web3_client,
             faucet,
-            contract="ERC721/extensions/ERC2981",
+            contract="EIPs/ERC721/extensions/ERC2981",
             contract_name="ERC721Royalty",
         )
 
@@ -723,7 +723,7 @@ class TestERC721Extensions(BaseMixin):
         erc2981 = ERC721ForMetaplex(
             web3_client,
             faucet,
-            contract="ERC721/extensions/ERC2981",
+            contract="EIPs/ERC721/extensions/ERC2981",
             contract_name="ERC721Royalty",
         )
 

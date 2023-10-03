@@ -17,16 +17,16 @@ class TestVyperCompatibility(Erc20CommonChecks):
 
     @pytest.fixture
     def erc20_vyper(self, web3_client, class_account):
-        return web3_client.compile_by_vyper_and_deploy(class_account, "erc20",
+        return web3_client.compile_by_vyper_and_deploy(class_account, "Erc20",
                                                        [INIT_NAME, INIT_SYMBOL, INIT_DECIMALS, INIT_SUPPLY])
 
     @pytest.fixture
     def forwarder(self, web3_client, class_account):
-        return web3_client.compile_by_vyper_and_deploy(class_account, "forwarder")
+        return web3_client.compile_by_vyper_and_deploy(class_account, "Forwarder")
 
     @pytest.fixture
     def simple(self, web3_client, class_account):
-        return web3_client.compile_by_vyper_and_deploy(class_account, "simple")
+        return web3_client.compile_by_vyper_and_deploy(class_account, "Simple")
 
     def test_name(self, erc20_vyper):
         assert erc20_vyper.functions.name().call() == INIT_NAME

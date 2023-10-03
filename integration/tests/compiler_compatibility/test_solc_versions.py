@@ -25,7 +25,7 @@ class TestSolcCompatibility(Erc20CommonChecks):
     @pytest.fixture(scope="class")
     def erc20_solc(self, web3_client, class_account, solc_version):
         contract, _ = web3_client.deploy_and_get_contract(
-            "ERC20/ERC20.sol",
+            "EIPs/ERC20/ERC20.sol",
             solc_version,
             class_account,
             contract_name="ERC20",
@@ -36,7 +36,7 @@ class TestSolcCompatibility(Erc20CommonChecks):
     @pytest.fixture(scope="class")
     def recursion_factory(self, class_account, web3_client, solc_version):
         contract, _ = web3_client.deploy_and_get_contract(
-            "Recursion", solc_version, class_account,
+            "common/Recursion", solc_version, class_account,
             contract_name="DeployRecursionFactory",
             constructor_args=[3])
         return contract

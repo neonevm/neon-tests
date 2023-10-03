@@ -1,4 +1,3 @@
-pragma solidity ^0.8.12;
 
 contract A {
     int a = 0;

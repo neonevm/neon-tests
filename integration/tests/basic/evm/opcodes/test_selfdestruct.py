@@ -13,13 +13,13 @@ class TestSelfDestructOpcode(BaseMixin):
     @pytest.fixture(scope="function")
     def destroyable_contract(self):
         contract, _ = self.web3_client.deploy_and_get_contract(
-            "SelfDestroyable", "0.8.10", self.sender_account)
+            "opcodes/SelfDestroyable", "0.8.10", self.sender_account)
         return contract
 
     @pytest.fixture(scope="function")
     def contract_caller(self, destroyable_contract):
         contract, _ = self.web3_client.deploy_and_get_contract(
-            "SelfDestroyable", "0.8.10", self.sender_account,
+            "opcodes/SelfDestroyable", "0.8.10", self.sender_account,
             contract_name="SelfDestroyableContractCaller",
             constructor_args=[destroyable_contract.address])
         return contract

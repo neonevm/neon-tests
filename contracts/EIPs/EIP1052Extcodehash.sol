@@ -1,5 +1,5 @@
 pragma solidity ^0.8.0;
-import '../SelfDestroyable.sol';
+import '../opcodes/SelfDestroyable.sol';
 
 contract EIP1052Checker {
     event ReceivedHash(bytes32 hash);

@@ -93,7 +93,7 @@ class ERC20Wrapper:
         return instruction_receipt
 
     def get_wrapper_contract(self):
-        contract_path = (pathlib.Path.cwd() / "contracts" / "erc20interface.sol").absolute()
+        contract_path = (pathlib.Path.cwd() / "contracts" / "EIPs"/ "ERC20" / "IERC20ForSpl.sol").absolute()
 
         with open(contract_path, "r") as s:
             source = s.read()

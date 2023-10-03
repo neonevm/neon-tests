@@ -14,7 +14,7 @@ class TestContractRecursion(BaseMixin):
     @pytest.fixture(scope="function")
     def recursion_factory(self):
         contract, _ = self.web3_client.deploy_and_get_contract(
-            "Recursion", "0.8.10", self.sender_account,
+            "common/Recursion", "0.8.10", self.sender_account,
             contract_name="DeployRecursionFactory",
             constructor_args=[3])
         return contract
@@ -67,11 +67,11 @@ class TestContractRecursion(BaseMixin):
 
     def test_recursion_in_function_calls(self):
         contract_caller2, _ = self.web3_client.deploy_and_get_contract(
-            "Recursion", "0.8.10", self.sender_account,
+            "common/Recursion", "0.8.10", self.sender_account,
             contract_name="RecursionCaller2")
         depth = 5
         contract_caller1, _ = self.web3_client.deploy_and_get_contract(
-            "Recursion", "0.8.10", self.sender_account,
+            "common/Recursion", "0.8.10", self.sender_account,
             contract_name="RecursionCaller1",
             constructor_args=[depth, contract_caller2.address, False])
         tx = self.create_contract_call_tx_object(self.sender_account)
@@ -85,10 +85,10 @@ class TestContractRecursion(BaseMixin):
 
     def test_recursion_in_constructor_calls(self):
         contract_caller2, _ = self.web3_client.deploy_and_get_contract(
-            "Recursion", "0.8.10", self.sender_account,
+            "common/Recursion", "0.8.10", self.sender_account,
             contract_name="RecursionCaller2")
         contract_caller1, _ = self.web3_client.deploy_and_get_contract(
-            "Recursion", "0.8.10", self.sender_account,
+            "common/Recursion", "0.8.10", self.sender_account,
             contract_name="RecursionCaller1",
             constructor_args=[5, contract_caller2.address, True])
 

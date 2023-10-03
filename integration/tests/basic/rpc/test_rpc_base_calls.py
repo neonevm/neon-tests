@@ -10,6 +10,7 @@ from eth_utils import keccak
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
+from integration.tests.basic.helpers.errors import MISSING_ARGUMENT, NOT_HEX
 from integration.tests.basic.helpers.rpc_checks import is_hex, assert_fields_are_hex, assert_equal_fields
 from integration.tests.helpers.basic import cryptohex
 from utils import helpers
@@ -20,6 +21,8 @@ class Tag(Enum):
     EARLIEST = "earliest"
     LATEST = "latest"
     PENDING = "pending"
+    SAFE = "safe"
+    FINALIZED = "finalized"
 
 
 GET_LOGS_TEST_DATA = [
@@ -270,12 +273,17 @@ class TestRpcBaseCalls(BaseMixin):
             return
 
         assert "error" in response, "error field not in response"
+        assert "code" in response["error"]
         assert "message" in response["error"], "message field not in response"
+        code = response["error"]["code"]
+        message = response["error"]["message"]
         if param is None:
-            assert "missing 1 required positional argument" in response["error"]["message"]
+            assert code == MISSING_ARGUMENT.code, "wrong code"
+            assert MISSING_ARGUMENT.message in message, "wrong message"
             return
 
-        assert "transaction-id is not hex" in response["error"]["message"]
+        assert code == NOT_HEX.code, "wrong code"
+        assert NOT_HEX.message in message, "wrong message"
 
     def test_eth_get_transaction_by_hash(self):
         receipt = self.send_neon(
@@ -360,12 +368,12 @@ class TestRpcBaseCalls(BaseMixin):
         assert rpc_checks.is_hex(response2["result"]), f"Invalid response result {response2['result']}"
         assert response['result'] != response2['result']
 
-    @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, None])
-    def test_eth_get_storage_at(self, param: tp.Union[Tag, None]):
+    @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, Tag.SAFE, Tag.FINALIZED, None])
+    def test_eth_get_storage_at(self, event_caller_contract, param: tp.Union[Tag, None]):
         """Verify implemented rpc calls work eht_getStorageAt"""
         response = self.proxy_api.send_rpc(
             method="eth_getStorageAt",
-            params=[self.sender_account.address, hex(1), param.value]
+            params=[event_caller_contract.address, hex(1), param.value]
             if param
             else param,
         )
@@ -373,9 +381,9 @@ class TestRpcBaseCalls(BaseMixin):
             assert "error" in response, "Error not in response"
             return
         assert "error" not in response
-        assert rpc_checks.is_hex(
-            response["result"]
-        ), f"Invalid response: {response['result']}"
+        result = response["result"]
+        assert rpc_checks.is_hex(result), f"Invalid response: {result}"
+        assert int(result, 16) != 0, "expected that result is not 0, but got 0"
 
     def test_eth_mining(self):
         """Verify implemented rpc calls work eth_mining"""
@@ -412,6 +420,16 @@ class TestRpcBaseCalls(BaseMixin):
             assert response["result"][2:].startswith("e5105")
         else:
             assert "error" in response, "Error not in response"
+            assert "code" in response["error"], "no error code in response"
+            assert "message" in response["error"]
+            code = response["error"]["code"]
+            message = response["error"]["message"]
+            if param is None:
+                assert code == MISSING_ARGUMENT.code, "wrong code"
+                assert MISSING_ARGUMENT.message in message, "wrong error message"
+            else:
+                assert code == NOT_HEX.code, "wrong code"
+                assert NOT_HEX.message in message, "wrong error message"
 
     def test_eth_get_work(self):
         """Verify implemented rpc calls work eth_getWork"""

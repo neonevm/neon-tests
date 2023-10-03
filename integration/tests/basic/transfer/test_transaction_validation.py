@@ -60,8 +60,7 @@ class TestTransactionsValidation(BaseMixin):
             InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value,
         )
 
-
-    def test_send_transaction_with_small_gas_amount(self):
+    def test_send_underpriced_transaction(self):
         """Check that transaction can't be sent if gas value is too small"""
         gas_price = random.randint(0, 10000)
         transaction = self.create_tx_object(gas_price=gas_price)
@@ -72,7 +71,7 @@ class TestTransactionsValidation(BaseMixin):
             "eth_sendRawTransaction", [signed_tx.rawTransaction.hex()]
         )
         pattern = (
-            str.format(ErrorMessage.TRANSACTION_UNDERPRICED.value, gas_price) + r" \d.*"
+                str.format(ErrorMessage.TRANSACTION_UNDERPRICED.value, gas_price) + r" \d.*"
         )
         assert re.match(pattern, response["error"]["message"])
         assert response["error"]["code"] == -32000
@@ -110,4 +109,3 @@ class TestTransactionsValidation(BaseMixin):
         )
         bytes_amount = contract.functions.makeBigMemoryValue(5).call()
         assert bytes_amount == 32 * 1024
-

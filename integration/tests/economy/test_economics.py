@@ -452,7 +452,7 @@ class TestEconomics(BaseTests):
 
         with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
             self.web3_client.deploy_and_get_contract(
-                "Counter", "0.8.10", gas=1000, account=self.acc
+                "common/Counter", "0.8.10", gas=1000, account=self.acc
             )
 
         sol_balance_after = self.operator.get_solana_balance()
@@ -469,7 +469,7 @@ class TestEconomics(BaseTests):
         neon_balance_before = self.operator.get_neon_balance()
 
         with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
-            self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
+            self.web3_client.deploy_and_get_contract("common/Counter", "0.8.10", account=acc2)
 
         sol_balance_after_deploy = self.operator.get_solana_balance()
         neon_balance_after_deploy = self.operator.get_neon_balance()
@@ -485,7 +485,7 @@ class TestEconomics(BaseTests):
         self.web3_client.send_neon(self.acc, acc2, 0.001)
 
         with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
-            self.web3_client.deploy_and_get_contract("Counter", "0.8.10", account=acc2)
+            self.web3_client.deploy_and_get_contract("common/Counter", "0.8.10", account=acc2)
 
         self.web3_client.send_neon(self.acc, acc2, 50)
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
@@ -564,7 +564,7 @@ class TestEconomics(BaseTests):
     def test_cost_resize_account_less_neon(self):
         """Verify how much cost account resize"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "IncreaseStorage", "0.8.10", account=self.acc
+            "common/IncreaseStorage", "0.8.10", account=self.acc
         )
 
         acc2 = self.web3_client.create_account()
@@ -924,7 +924,7 @@ class TestEconomics(BaseTests):
         neon_balance_before = self.operator.get_neon_balance()
 
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "Counter", "0.8.10", account=self.acc
+            "common/Counter", "0.8.10", account=self.acc
         )
 
         sol_balance_after = self.operator.get_solana_balance()
@@ -955,7 +955,7 @@ class TestEconomics(BaseTests):
             self.web3_client.send_neon(acc2, contract_address, 1, gas=1)
 
         _, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "Counter", "0.8.10", account=acc2
+            "common/Counter", "0.8.10", account=acc2
         )
 
         sol_balance_after_deploy = self.operator.get_solana_balance()

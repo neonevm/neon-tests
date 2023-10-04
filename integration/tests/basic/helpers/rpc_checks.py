@@ -110,7 +110,7 @@ def assert_fields_are_boolean(object, expected_boolean_fields):
         assert type(object[field]) == bool, f"field {field} is not boolean. Actual : {type(object[field])}"
 
 
-def assert_equal_fields(result, comparable_object, comparable_fields, keys_mappings):
+def assert_equal_fields(result, comparable_object, comparable_fields, keys_mappings=None):
     """
     Assert that fields in the result object are equal to fields in comparable_object
 

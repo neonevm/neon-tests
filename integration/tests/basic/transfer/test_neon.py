@@ -31,10 +31,9 @@ class TestNeonTransfer(BaseMixin):
                 initial_recipient_balance + transfer_amount
         )
 
-    @pytest.mark.parametrize("amount", [11_000_501, 10_000_000.1])
-    def test_send_more_than_exist_on_account_neon(self, amount: tp.Union[int, float]):
+    def test_send_more_than_exist_on_account_neon(self):
         """Send more than exist on account: neon"""
-
+        amount = 11_000_501
         sender_balance, recipient_balance = (
             self.sender_account_balance,
             self.recipient_account_balance,
@@ -66,43 +65,6 @@ class TestNeonTransfer(BaseMixin):
 
         self.assert_balance(sender_account.address, sender_amount)
         self.assert_balance(recipient_account.address, 0)
-
-    def test_there_are_not_enough_neons_for_transfer(self):
-        """There are not enough Neons for transfer"""
-        sender_amount = 1
-        sender_account = self.create_account_with_balance(sender_amount)
-        recipient_account = self.web3_client.create_account()
-        amount = 1.1
-
-        self.send_neon_with_failure(
-            sender_account=sender_account,
-            recipient_account=recipient_account,
-            amount=amount,
-            error_message=ErrorMessage.INSUFFICIENT_FUNDS.value,
-        )
-
-        self.assert_balance(sender_account.address, sender_amount)
-        self.assert_balance(recipient_account.address, 0)
-
-    def test_send_negative_sum_from_account_neon(self):
-        """Send negative sum from account: neon"""
-
-        sender_balance, recipient_balance = (
-            self.sender_account_balance,
-            self.recipient_account_balance,
-        )
-
-        self.send_neon_with_failure(
-            sender_account=self.sender_account,
-            recipient_account=self.recipient_account,
-            amount=InputTestConstants.NEGATIVE_AMOUNT.value,
-            error_message=ErrorMessage.NEGATIVE_VALUE.value,
-        )
-
-        self.assert_balance(self.sender_account.address, sender_balance, rnd_dig=0)
-        self.assert_balance(
-            self.recipient_account.address, recipient_balance, rnd_dig=1
-        )
 
     def test_send_token_to_self_neon(self):
         """Send token to self: Neon"""

@@ -10,7 +10,7 @@ from eth_utils import keccak
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
-from integration.tests.basic.helpers.errors import MISSING_ARGUMENT, NOT_HEX
+from integration.tests.basic.helpers.errors import Error32000, Error32602
 from integration.tests.basic.helpers.rpc_checks import is_hex, assert_fields_are_hex, assert_equal_fields
 from integration.tests.helpers.basic import cryptohex
 from utils import helpers
@@ -278,12 +278,12 @@ class TestRpcBaseCalls(BaseMixin):
         code = response["error"]["code"]
         message = response["error"]["message"]
         if param is None:
-            assert code == MISSING_ARGUMENT.code, "wrong code"
-            assert MISSING_ARGUMENT.message in message, "wrong message"
+            assert code == Error32000.CODE, "wrong code"
+            assert Error32000.MISSING_ARGUMENT in message, "wrong message"
             return
 
-        assert code == NOT_HEX.code, "wrong code"
-        assert NOT_HEX.message in message, "wrong message"
+        assert code == Error32602.CODE, "wrong code"
+        assert Error32602.NOT_HEX in message, "wrong message"
 
     def test_eth_get_transaction_by_hash(self):
         receipt = self.send_neon(
@@ -425,11 +425,11 @@ class TestRpcBaseCalls(BaseMixin):
             code = response["error"]["code"]
             message = response["error"]["message"]
             if param is None:
-                assert code == MISSING_ARGUMENT.code, "wrong code"
-                assert MISSING_ARGUMENT.message in message, "wrong error message"
+                assert code == Error32000.CODE, "wrong code"
+                assert Error32000.MISSING_ARGUMENT in message, "wrong error message"
             else:
-                assert code == NOT_HEX.code, "wrong code"
-                assert NOT_HEX.message in message, "wrong error message"
+                assert code == Error32602.CODE, "wrong code"
+                assert Error32602.NOT_HEX in message, "wrong error message"
 
     def test_eth_get_work(self):
         """Verify implemented rpc calls work eth_getWork"""

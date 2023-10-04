@@ -1,12 +1,9 @@
-class Error:
-    code: int
-    message: str
-
-    def __init__(self, code, message):
-        self.code = code
-        self.message = message
+class Error32000:
+    CODE = -32000
+    MISSING_ARGUMENT = "missing 1 required positional argument"
 
 
-MISSING_ARGUMENT = Error(-32000, "missing 1 required positional argument")
-NOT_HEX = Error(-32602, "is not hex")
-
+class Error32602:
+    CODE = -32602
+    NOT_HEX = "is not hex"
+    BAD_BLOCK_HASH = "bad block hash"

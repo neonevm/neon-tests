@@ -105,10 +105,10 @@ class BaseMixin(BaseTests):
             self,
             sender_account: eth_account.signers.local.LocalAccount,
             recipient_account: tp.Union[eth_account.signers.local.LocalAccount, AccountData],
-            amount: tp.Union[int, float, Decimal],
+            amount: tp.Any,
             gas: tp.Optional[int] = 0,
             gas_price: tp.Optional[int] = None,
-            error_message: str = None,
+            error_message: tp.Any = None,
             exception: tp.Any = None,
     ) -> tp.Union[web3.types.TxReceipt, None]:
         """Processes transaction, expects a failure"""

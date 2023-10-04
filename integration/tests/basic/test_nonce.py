@@ -165,3 +165,55 @@ class TestNonce(BaseMixin):
         )
         assert "error" not in response
         assert "result" in response
+
+    def test_send_the_same_transactions_if_accepted(self):
+        """Transaction cannot be sent again if it was accepted"""
+        transaction = self.create_tx_object()
+        signed_tx = self.web3_client.eth.account.sign_transaction(
+            transaction, self.sender_account.key
+        )
+        params = [signed_tx.rawTransaction.hex()]
+        response = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
+        receipt = self.wait_transaction_accepted(response["result"])
+        block_num = int(receipt["result"]["blockNumber"], 16)
+        self.wait_finalized_block(block_num)
+
+        response = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
+        assert ErrorMessage.ALREADY_KNOWN.value in response["error"]["message"]
+        assert response["error"]["code"] == -32000
+
+    def test_send_the_same_transactions_if_not_accepted(self):
+        """Transaction can be sent again if it was not accepted"""
+        transaction = self.create_tx_object()
+        signed_tx = self.web3_client.eth.account.sign_transaction(
+            transaction, self.sender_account.key
+        )
+        params = [signed_tx.rawTransaction.hex()]
+        self.proxy_api.send_rpc("eth_sendRawTransaction", params)
+        response = self.proxy_api.send_rpc("eth_sendRawTransaction", params)
+        assert "error" not in response
+        assert "result" in response
+
+    def test_send_transaction_with_old_nonce(self):
+        """Check that transaction with old nonce can't be sent"""
+        nonce = self.web3_client.eth.get_transaction_count(self.sender_account.address)
+        transaction = self.create_tx_object(amount=1, nonce=nonce)
+        signed_tx = self.web3_client.eth.account.sign_transaction(
+            transaction, self.sender_account.key
+        )
+        response = self.proxy_api.send_rpc(
+            "eth_sendRawTransaction", [signed_tx.rawTransaction.hex()]
+        )
+        receipt = self.wait_transaction_accepted(response["result"])
+        block_num = int(receipt["result"]["blockNumber"], 16)
+        self.wait_finalized_block(block_num)
+
+        transaction = self.create_tx_object(amount=2, nonce=nonce)
+        signed_tx = self.web3_client.eth.account.sign_transaction(
+            transaction, self.sender_account.key
+        )
+        response = self.proxy_api.send_rpc(
+            "eth_sendRawTransaction", [signed_tx.rawTransaction.hex()]
+        )
+        assert ErrorMessage.NONCE_TOO_LOW.value in response["error"]["message"]
+        assert response["error"]["code"] == -32002

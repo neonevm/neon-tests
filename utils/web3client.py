@@ -196,36 +196,6 @@ class NeonWeb3Client:
         tx = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
         return self._web3.eth.wait_for_transaction_receipt(tx)
 
-    def send_erc20(
-        self,
-        from_: eth_account.signers.local.LocalAccount,
-        to: tp.Union[str, eth_account.signers.local.LocalAccount],
-        amount: tp.Union[int, float, Decimal],
-        address: str,
-        abi,
-        gas: tp.Optional[int] = 0,
-        gas_price: tp.Optional[int] = None,
-    ) -> web3.types.TxReceipt:
-        to_addr = to if isinstance(to, str) else to.address
-        gas_price = gas_price or self.gas_price()
-        contract = self._web3.eth.contract(address=address, abi=abi)
-        transaction = contract.functions.transfer(to_addr, amount).build_transaction(
-            {
-                "chainId": self._chain_id,
-                "gas": gas,
-                "gasPrice": gas_price,
-                "nonce": self.get_nonce(from_),
-                "from": from_.address,
-            }
-        )
-
-        if transaction["gas"] == 0:
-            transaction["gas"] = self._web3.eth.estimate_gas(transaction)
-
-        signed_tx = self._web3.eth.account.sign_transaction(transaction, from_.key)
-        tx = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-        return self._web3.eth.wait_for_transaction_receipt(tx)
-
     def send_transaction(
         self,
         account: eth_account.signers.local.LocalAccount,

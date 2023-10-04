@@ -22,6 +22,7 @@ from spl.token.instructions import (
 )
 
 from utils.consts import LAMPORT_PER_SOL
+from utils.erc20 import ERC20
 from utils.helpers import wait_condition
 
 from ..base import BaseTests
@@ -225,14 +226,7 @@ class TestEconomics(BaseTests):
             erc20_spl_mintable.contract.functions.balanceOf(self.acc.address).call()
             == 0
         )
-
-        transfer_tx = self.web3_client.send_erc20(
-            erc20_spl_mintable.account,
-            self.acc,
-            25,
-            erc20_spl_mintable.contract.address,
-            abi=erc20_spl_mintable.contract.abi,
-        )
+        transfer_tx = erc20_spl_mintable.transfer(erc20_spl_mintable.account, self.acc, 25)
 
         assert (
             erc20_spl_mintable.contract.functions.balanceOf(self.acc.address).call()
@@ -384,23 +378,16 @@ class TestEconomics(BaseTests):
 
     def test_erc20_transfer(self):
         """Verify ERC20 token send"""
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "EIPs/ERC20/ERC20.sol",
-            "0.8.8",
-            self.acc,
-            constructor_args=["Test Token", "TT", 1000],
-        )
 
-        assert contract.functions.balanceOf(self.acc.address).call() == 1000
+        contract = ERC20(self.web3_client, self.faucet, owner=self.acc)
 
         sol_balance_before = self.operator.get_solana_balance()
         neon_balance_before = self.operator.get_neon_balance()
 
         acc2 = self.web3_client.create_account()
 
-        transfer_tx = self.web3_client.send_erc20(
-            self.acc, acc2, 500, contract_deploy_tx["contractAddress"], abi=contract.abi
-        )
+        transfer_tx = contract.transfer( self.acc, acc2, 25)
+
         sol_balance_after = self.operator.get_solana_balance()
         neon_balance_after = self.operator.get_neon_balance()
         sol_diff = sol_balance_before - sol_balance_after

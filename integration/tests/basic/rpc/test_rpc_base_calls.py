@@ -5,6 +5,7 @@ from enum import Enum
 
 import allure
 import pytest
+import web3
 from eth_utils import keccak
 
 from integration.tests.basic.helpers import rpc_checks
@@ -384,6 +385,36 @@ class TestRpcBaseCalls(BaseMixin):
         result = response["result"]
         assert rpc_checks.is_hex(result), f"Invalid response: {result}"
         assert int(result, 16) != 0, "expected that result is not 0, but got 0"
+
+    def test_eth_get_storage_at_eq_val(self):
+        """Verify implemented rpc calls work eht_getStorageAt and equal values"""
+        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
+            "common/Storage", "0.8.12",
+            contract_name="Storage", account=self.sender_account
+        )
+        responses = [
+            self.proxy_api.send_rpc("eth_getStorageAt", [contract.address, hex(0), Tag.LATEST.value]),
+            self.proxy_api.send_rpc("eth_getStorageAt", [contract.address, hex(1), Tag.EARLIEST.value]),
+            self.proxy_api.send_rpc("eth_getStorageAt", [contract.address, hex(2), Tag.LATEST.value])
+        ]
+
+        for i in range(len(responses)):
+            assert "error" not in responses[i]
+            assert "result" in responses[i]
+
+        assert "test" in web3.Web3.to_text(responses[0]["result"]), "wrong variable value"
+        assert int(responses[1]["result"], 16) == 0, "wrong storage value"
+        assert int(responses[2]["result"], 16) == 0, "wrong storage value"
+
+        new_data = "new"
+        instruction_tx = contract.functions.setData(new_data).build_transaction(self.make_tx_object())
+        self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        response = (
+            self.proxy_api.send_rpc("eth_getStorageAt", [contract.address, hex(0), Tag.LATEST.value]))
+        assert "error" not in response
+        assert "result" in response
+        assert new_data in web3.Web3.to_text(response["result"]), "wrong variable value"
 
     def test_eth_mining(self):
         """Verify implemented rpc calls work eth_mining"""

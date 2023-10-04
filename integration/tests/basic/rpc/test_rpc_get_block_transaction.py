@@ -6,7 +6,6 @@ import pytest
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.errors import Error32000, Error32602
-from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex, assert_equal_fields
 from integration.tests.basic.rpc.test_rpc_base_calls import Tag
 from utils.helpers import gen_hash_of_block
 
@@ -49,10 +48,12 @@ class TestRpcGetBlockTransaction(BaseMixin):
         )
 
         assert "error" not in response
+        result = response["result"]
+        assert rpc_checks.is_hex(result), f"Invalid response: {result}"
         assert int(response["result"], 16) != 0, "transaction count shouldn't be 0"
 
-    @pytest.mark.parametrize("param", [32, Tag.EARLIEST.value, "param", None])
-    def test_eth_get_block_transaction_count_by_number(
+    @pytest.mark.parametrize("param", [32, "param", None])
+    def test_eth_get_block_transaction_count_by_number_negative(
             self, param: tp.Union[int, str, None]
     ):
         """Verify implemented rpc calls work eth_getBlockTransactionCountByNumber"""
@@ -68,3 +69,24 @@ class TestRpcGetBlockTransaction(BaseMixin):
         assert rpc_checks.is_hex(
             response["result"]
         ), f"Invalid response: {response['result']}"
+
+    @pytest.mark.parametrize("tag", [Tag.LATEST, Tag.EARLIEST, Tag.PENDING])
+    def test_eth_get_block_transaction_count_by_number_tags(self, tag: Tag):
+        response = self.proxy_api.send_rpc(
+            method="eth_getBlockTransactionCountByNumber", params=tag.value
+        )
+        assert "error" not in response
+        result = response["result"]
+        assert rpc_checks.is_hex(result), f"Invalid response: {result}"
+
+    def test_eth_get_block_transaction_count_by_number(self):
+        receipt = self.send_neon(
+            self.sender_account, self.recipient_account, amount=0.001
+        )
+        response = self.proxy_api.send_rpc(
+            method="eth_getBlockTransactionCountByNumber", params=receipt["blockNumber"]
+        )
+        assert "error" not in response
+        result = response["result"]
+        assert rpc_checks.is_hex(result), f"Invalid response: {result}"
+        assert int(result, 16) != 0, "transaction count shouldn't be 0"

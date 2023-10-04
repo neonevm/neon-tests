@@ -253,7 +253,7 @@ class TestRpcGetLogs(BaseMixin):
 
     def test_eth_get_logs_list_of_addresses(self, event_caller_contract):
         event_caller2, _ = self.web3_client.deploy_and_get_contract(  # we need 2nd contract to check list of addresses
-            "EventCaller", "0.8.12", self.sender_account
+            "common/EventCaller", "0.8.12", self.sender_account
         )
 
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])

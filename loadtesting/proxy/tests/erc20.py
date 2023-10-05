@@ -5,6 +5,7 @@ import web3
 from gevent import time
 from locust import tag, task, User, events
 
+from utils.erc20 import ERC20
 from utils.web3client import NeonWeb3Client
 from utils.faucet import Faucet
 
@@ -49,14 +50,9 @@ class ERC20TasksSet(NeonProxyTasksSet):
         self.log.info(f"Deploy ERC20 contract.")
         amount_range = pow(10, 15)
         amount = random.randint(amount_range, amount_range + pow(10, 3))
-        contract, _ = self.deploy_contract(
-            ERC20_CONTRACT_NAME,
-            ERC20_CONTRACT_VERSION,
-            self.account,
-            constructor_args=["Test Token", "TT", amount],
-        )
+        erc20 = ERC20(self.web3_client,self.faucet, amount=amount)
         self._buffer.setdefault(self.account.address, {}).update(
-            {contract.address: {"contract": contract, "amount": amount}}
+            {erc20.contract.address: {"contract": erc20, "amount": amount}}
         )
 
     @task(10)
@@ -67,7 +63,7 @@ class ERC20TasksSet(NeonProxyTasksSet):
             return
 
         contract_address = random.choice(list(contracts.keys()))
-        contract = contracts[contract_address]["contract"]
+        erc20 = contracts[contract_address]["contract"]
         if contracts[contract_address]["amount"] < 1:
             self.log.info(
                 f"low balance on contract: {contracts[contract_address]}, skip transfer"
@@ -76,26 +72,24 @@ class ERC20TasksSet(NeonProxyTasksSet):
             return
 
         self.log.info(
-            f"Send `{ERC20_CONTRACT_NAME}` tokens from contract {str(contract.address)[-8:]} to {str(self.recipient.address)[-8:]}."
+            f"Send `{ERC20_CONTRACT_NAME}` tokens from contract {str(erc20.contract.address)[-8:]} to {str(self.recipient.address)[-8:]}."
         )
 
-        tx_receipt = self.web3_client.send_erc20(
-            self.account, self.recipient, 1, contract.address, abi=contract.abi
-        )
+        tx_receipt = erc20.transfer(self.account, self.recipient, 1)
 
         if tx_receipt:
             tx_receipt = dict(tx_receipt)  # AttributeDict -> dict
-            tx_receipt["contractAddress"] = contract.address
-            self._buffer[self.account.address][contract.address]["amount"] -= 1
+            tx_receipt["contractAddress"] = erc20.contract.address
+            self._buffer[self.account.address][erc20.contract.address]["amount"] -= 1
             recipient_contracts = self._buffer.get(self.recipient.address, {})
-            recipient_contract = recipient_contracts.get(contract.address, {})
+            recipient_contract = recipient_contracts.get(erc20.contract.address, {})
             if not recipient_contract:
-                recipient_contract.update({"contract": contract, "amount": 0})
+                recipient_contract.update({"contract": erc20, "amount": 0})
             recipient_contract["amount"] += 1
             self._buffer.setdefault(self.recipient.address, {}).update(
-                {contract.address: recipient_contract}
+                {erc20.contract.address: recipient_contract}
             )
-            tx_receipt["contract"] = {"address": contract.address}
+            tx_receipt["contract"] = {"address": erc20.contract.address}
         return tx_receipt, self.web3_client.get_nonce(self.account)
 
 
@@ -140,15 +134,11 @@ class ERC20OneContractTasksSet(NeonProxyTasksSet):
         contract = self.user.environment.erc20_one["contract"]
         LOG.debug(
             f"Main user {self.user.environment.erc20_one['user'].address} balance: "
-            f"{contract.functions.balanceOf(self.user.environment.erc20_one['user'].address).call()}"
+            f"{contract.get_balance(self.user.environment.erc20_one['user'].address)}"
         )
-        self.web3_client.send_erc20(
-            self.user.environment.erc20_one["user"],
-            self.account,
-            web3.Web3.to_wei(1000, "ether"),
-            contract.address,
-            abi=contract.abi,
-        )
+        contract.transfer(self.user.environment.erc20_one["user"],
+                          self.account,
+                          web3.Web3.to_wei(1000, "ether"))
 
     @task
     def task_send_erc20(self):
@@ -156,9 +146,7 @@ class ERC20OneContractTasksSet(NeonProxyTasksSet):
         LOG.debug("Send erc20 ", self.account.address)
         contract = self.user.environment.erc20_one["contract"]
         recipient = self.web3_client.create_account()
-        self.web3_client.send_erc20(
-            self.account, recipient, 1, contract.address, abi=contract.abi
-        )
+        contract.transfer(self.account, recipient, 1)
 
 
 class ERC20User(User):

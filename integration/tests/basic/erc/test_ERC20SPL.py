@@ -67,20 +67,10 @@ class TestERC20wrapperContract(BaseMixin):
     def test_balanceOf(self, erc20_spl, erc20_spl_mintable, mintable):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         transfer_amount = random.randint(0, 100)
-        initial_balance = erc20.contract.functions.balanceOf(
-            self.recipient_account.address
-        ).call()
-        self.web3_client.send_erc20(
-            erc20.account,
-            self.recipient_account,
-            transfer_amount,
-            erc20.contract.address,
-            abi=erc20.contract.abi,
-        )
-        assert (
-            erc20.contract.functions.balanceOf(self.recipient_account.address).call()
-            == initial_balance + transfer_amount
-        )
+        initial_balance = erc20.get_balance(self.recipient_account)
+        erc20.transfer(erc20.account, self.recipient_account, transfer_amount)
+        assert erc20.get_balance(self.recipient_account) == initial_balance + transfer_amount
+
 
     @pytest.mark.parametrize("mintable", [True, False])
     @pytest.mark.parametrize(
@@ -88,7 +78,7 @@ class TestERC20wrapperContract(BaseMixin):
         [(20, web3.exceptions.InvalidAddress), (5, web3.exceptions.ValidationError)],
     )
     def test_balanceOf_with_incorrect_address(
-        self, erc20_spl_mintable, erc20_spl, block_len, expected_exception, mintable
+            self, erc20_spl_mintable, erc20_spl, block_len, expected_exception, mintable
     ):
         address = self.create_invalid_address(block_len)
         erc20 = erc20_spl_mintable if mintable else erc20_spl
@@ -120,8 +110,8 @@ class TestERC20wrapperContract(BaseMixin):
 
     def test_mint_by_no_minter_role(self, erc20_spl_mintable):
         with pytest.raises(
-            web3.exceptions.ContractLogicError,
-            match=ErrorMessage.MUST_HAVE_MINTER_ROLE_ERC20.value,
+                web3.exceptions.ContractLogicError,
+                match=ErrorMessage.MUST_HAVE_MINTER_ROLE_ERC20.value,
         ):
             erc20_spl_mintable.mint_tokens(
                 self.recipient_account, self.recipient_account.address, 0
@@ -132,9 +122,9 @@ class TestERC20wrapperContract(BaseMixin):
         [
             (20, web3.exceptions.InvalidAddress, ErrorMessage.INVALID_ADDRESS.value),
             (
-                ZERO_ADDRESS,
-                web3.exceptions.ContractLogicError,
-                str.format(ErrorMessage.ZERO_ACCOUNT_ERC20.value, "mint to"),
+                    ZERO_ADDRESS,
+                    web3.exceptions.ContractLogicError,
+                    str.format(ErrorMessage.ZERO_ACCOUNT_ERC20.value, "mint to"),
             ),
         ],
     )
@@ -149,8 +139,8 @@ class TestERC20wrapperContract(BaseMixin):
 
     def test_mint_with_too_big_amount(self, erc20_spl_mintable):
         with pytest.raises(
-            web3.exceptions.ContractLogicError,
-            match="total mint amount exceeds uint64 max",
+                web3.exceptions.ContractLogicError,
+                match="total mint amount exceeds uint64 max",
         ):
             erc20_spl_mintable.mint_tokens(
                 erc20_spl_mintable.account,
@@ -227,20 +217,20 @@ class TestERC20wrapperContract(BaseMixin):
             (20, web3.exceptions.InvalidAddress, ErrorMessage.INVALID_ADDRESS.value),
             (25, web3.exceptions.InvalidAddress, "is invalid"),
             (
-                ZERO_ADDRESS,
-                web3.exceptions.ContractLogicError,
-                str.format(ErrorMessage.ZERO_ACCOUNT_ERC20.value, "burn from"),
+                    ZERO_ADDRESS,
+                    web3.exceptions.ContractLogicError,
+                    str.format(ErrorMessage.ZERO_ACCOUNT_ERC20.value, "burn from"),
             ),
         ],
     )
     def test_burn_incorrect_address(
-        self,
-        erc20_spl_mintable,
-        erc20_spl,
-        block_len,
-        expected_exception,
-        msg,
-        mintable,
+            self,
+            erc20_spl_mintable,
+            erc20_spl,
+            block_len,
+            expected_exception,
+            msg,
+            mintable,
     ):
         address = (
             self.create_invalid_address(block_len) if isinstance(block_len, int) else block_len
@@ -254,15 +244,15 @@ class TestERC20wrapperContract(BaseMixin):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         total = erc20.contract.functions.totalSupply().call()
         with pytest.raises(
-            web3.exceptions.ContractLogicError,
-            match=str.format(ErrorMessage.AMOUNT_EXCEEDS_BALANCE_ERC20.value, "burn"),
+                web3.exceptions.ContractLogicError,
+                match=str.format(ErrorMessage.AMOUNT_EXCEEDS_BALANCE_ERC20.value, "burn"),
         ):
             erc20.burn(erc20.account, erc20.account.address, total + 1)
 
     @pytest.mark.parametrize("mintable", [True, False])
     @pytest.mark.parametrize("param, msg", NO_ENOUGH_GAS_PARAMS)
     def test_burn_no_enough_gas(
-        self, erc20_spl_mintable, erc20_spl, param, msg, mintable
+            self, erc20_spl_mintable, erc20_spl, param, msg, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         with pytest.raises(ValueError, match=msg):
@@ -270,7 +260,7 @@ class TestERC20wrapperContract(BaseMixin):
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_burnFrom(
-        self, erc20_spl_mintable, erc20_spl, new_account, restore_balance, mintable
+            self, erc20_spl_mintable, erc20_spl, new_account, restore_balance, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         balance_before = erc20.contract.functions.balanceOf(
@@ -290,25 +280,25 @@ class TestERC20wrapperContract(BaseMixin):
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_burnFrom_without_allowance(
-        self, erc20_spl_mintable, erc20_spl, new_account, mintable
+            self, erc20_spl_mintable, erc20_spl, new_account, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         with pytest.raises(
-            web3.exceptions.ContractLogicError,
-            match=ErrorMessage.INSUFFICIENT_ALLOWANCE_ERC20.value,
+                web3.exceptions.ContractLogicError,
+                match=ErrorMessage.INSUFFICIENT_ALLOWANCE_ERC20.value,
         ):
             erc20.burn_from(new_account, erc20.account.address, 10)
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_burnFrom_more_than_allowanced(
-        self, erc20_spl_mintable, erc20_spl, new_account, mintable
+            self, erc20_spl_mintable, erc20_spl, new_account, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         amount = 2
         erc20.approve(erc20.account, new_account.address, amount)
         with pytest.raises(
-            web3.exceptions.ContractLogicError,
-            match=ErrorMessage.INSUFFICIENT_ALLOWANCE_ERC20.value,
+                web3.exceptions.ContractLogicError,
+                match=ErrorMessage.INSUFFICIENT_ALLOWANCE_ERC20.value,
         ):
             erc20.burn_from(new_account, erc20.account.address, amount + 1)
 
@@ -321,7 +311,7 @@ class TestERC20wrapperContract(BaseMixin):
     @pytest.mark.parametrize("mintable", [True, False])
     @pytest.mark.parametrize("param, msg", NO_ENOUGH_GAS_PARAMS)
     def test_burnFrom_no_enough_gas(
-        self, erc20_spl_mintable, erc20_spl, new_account, param, msg, mintable
+            self, erc20_spl_mintable, erc20_spl, new_account, param, msg, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         erc20.approve(erc20.account, new_account.address, 1)
@@ -330,7 +320,7 @@ class TestERC20wrapperContract(BaseMixin):
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_approve_more_than_total_supply(
-        self, erc20_spl_mintable, erc20_spl, new_account, mintable
+            self, erc20_spl_mintable, erc20_spl, new_account, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         amount = erc20.contract.functions.totalSupply().call() + 1
@@ -346,20 +336,20 @@ class TestERC20wrapperContract(BaseMixin):
         [
             (20, web3.exceptions.InvalidAddress, ErrorMessage.INVALID_ADDRESS.value),
             (
-                ZERO_ADDRESS,
-                web3.exceptions.ContractLogicError,
-                str.format(ErrorMessage.ZERO_ACCOUNT_ERC20.value, "approve to"),
+                    ZERO_ADDRESS,
+                    web3.exceptions.ContractLogicError,
+                    str.format(ErrorMessage.ZERO_ACCOUNT_ERC20.value, "approve to"),
             ),
         ],
     )
     def test_approve_incorrect_address(
-        self,
-        erc20_spl_mintable,
-        erc20_spl,
-        block_len,
-        expected_exception,
-        msg,
-        mintable,
+            self,
+            erc20_spl_mintable,
+            erc20_spl,
+            block_len,
+            expected_exception,
+            msg,
+            mintable,
     ):
         address = (
             self.create_invalid_address(block_len) if isinstance(block_len, int) else block_len
@@ -371,7 +361,7 @@ class TestERC20wrapperContract(BaseMixin):
     @pytest.mark.parametrize("mintable", [True, False])
     @pytest.mark.parametrize("param, msg", NO_ENOUGH_GAS_PARAMS)
     def test_approve_no_enough_gas(
-        self, erc20_spl_mintable, erc20_spl, param, msg, mintable
+            self, erc20_spl_mintable, erc20_spl, param, msg, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         with pytest.raises(ValueError, match=msg):
@@ -387,7 +377,7 @@ class TestERC20wrapperContract(BaseMixin):
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_allowance_for_new_account(
-        self, erc20_spl_mintable, erc20_spl, new_account, mintable
+            self, erc20_spl_mintable, erc20_spl, new_account, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         allowance = erc20.contract.functions.allowance(
@@ -397,7 +387,7 @@ class TestERC20wrapperContract(BaseMixin):
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_transfer(
-        self, erc20_spl_mintable, erc20_spl, new_account, restore_balance, mintable
+            self, erc20_spl_mintable, erc20_spl, new_account, restore_balance, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         balance_acc1_before = erc20.contract.functions.balanceOf(
@@ -426,20 +416,20 @@ class TestERC20wrapperContract(BaseMixin):
         [
             (20, web3.exceptions.InvalidAddress, ErrorMessage.INVALID_ADDRESS.value),
             (
-                ZERO_ADDRESS,
-                web3.exceptions.ContractLogicError,
-                str.format(ErrorMessage.ZERO_ACCOUNT_ERC20.value, "transfer to"),
+                    ZERO_ADDRESS,
+                    web3.exceptions.ContractLogicError,
+                    str.format(ErrorMessage.ZERO_ACCOUNT_ERC20.value, "transfer to"),
             ),
         ],
     )
     def test_transfer_incorrect_address(
-        self,
-        erc20_spl_mintable,
-        erc20_spl,
-        block_len,
-        expected_exception,
-        msg,
-        mintable,
+            self,
+            erc20_spl_mintable,
+            erc20_spl,
+            block_len,
+            expected_exception,
+            msg,
+            mintable,
     ):
         address = (
             gen_hash_of_block(block_len) if isinstance(block_len, int) else block_len
@@ -453,17 +443,17 @@ class TestERC20wrapperContract(BaseMixin):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         balance = erc20.contract.functions.balanceOf(erc20.account.address).call()
         with pytest.raises(
-            web3.exceptions.ContractLogicError,
-            match=str.format(
-                ErrorMessage.AMOUNT_EXCEEDS_BALANCE_ERC20.value, "transfer"
-            ),
+                web3.exceptions.ContractLogicError,
+                match=str.format(
+                    ErrorMessage.AMOUNT_EXCEEDS_BALANCE_ERC20.value, "transfer"
+                ),
         ):
             erc20.transfer(erc20.account, erc20.account.address, balance + 1)
 
     @pytest.mark.parametrize("mintable", [True, False])
     @pytest.mark.parametrize("param, msg", NO_ENOUGH_GAS_PARAMS)
     def test_transfer_no_enough_gas(
-        self, erc20_spl_mintable, erc20_spl, param, msg, mintable
+            self, erc20_spl_mintable, erc20_spl, param, msg, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         with pytest.raises(ValueError, match=msg):
@@ -471,7 +461,7 @@ class TestERC20wrapperContract(BaseMixin):
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_transferFrom(
-        self, erc20_spl_mintable, erc20_spl, new_account, restore_balance, mintable
+            self, erc20_spl_mintable, erc20_spl, new_account, restore_balance, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         balance_acc1_before = erc20.contract.functions.balanceOf(
@@ -499,12 +489,12 @@ class TestERC20wrapperContract(BaseMixin):
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_transferFrom_without_allowance(
-        self, erc20_spl_mintable, erc20_spl, new_account, mintable
+            self, erc20_spl_mintable, erc20_spl, new_account, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         with pytest.raises(
-            web3.exceptions.ContractLogicError,
-            match=ErrorMessage.INSUFFICIENT_ALLOWANCE_ERC20.value,
+                web3.exceptions.ContractLogicError,
+                match=ErrorMessage.INSUFFICIENT_ALLOWANCE_ERC20.value,
         ):
             erc20.transfer_from(
                 signer=new_account,
@@ -515,14 +505,14 @@ class TestERC20wrapperContract(BaseMixin):
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_transferFrom_more_than_allowanced(
-        self, erc20_spl_mintable, erc20_spl, new_account, mintable
+            self, erc20_spl_mintable, erc20_spl, new_account, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         amount = 2
         erc20.approve(erc20.account, new_account.address, amount)
         with pytest.raises(
-            web3.exceptions.ContractLogicError,
-            match=ErrorMessage.INSUFFICIENT_ALLOWANCE_ERC20.value,
+                web3.exceptions.ContractLogicError,
+                match=ErrorMessage.INSUFFICIENT_ALLOWANCE_ERC20.value,
         ):
             erc20.transfer_from(
                 signer=new_account,
@@ -533,7 +523,7 @@ class TestERC20wrapperContract(BaseMixin):
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_transferFrom_incorrect_address(
-        self, erc20_spl_mintable, erc20_spl, mintable
+            self, erc20_spl_mintable, erc20_spl, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         with pytest.raises(web3.exceptions.InvalidAddress):
@@ -546,16 +536,16 @@ class TestERC20wrapperContract(BaseMixin):
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_transferFrom_more_than_balance(
-        self, erc20_spl_mintable, erc20_spl, new_account, mintable
+            self, erc20_spl_mintable, erc20_spl, new_account, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         amount = erc20.contract.functions.balanceOf(erc20.account.address).call() + 1
         erc20.approve(erc20.account, new_account.address, amount)
         with pytest.raises(
-            web3.exceptions.ContractLogicError,
-            match=str.format(
-                ErrorMessage.AMOUNT_EXCEEDS_BALANCE_ERC20.value, "transfer"
-            ),
+                web3.exceptions.ContractLogicError,
+                match=str.format(
+                    ErrorMessage.AMOUNT_EXCEEDS_BALANCE_ERC20.value, "transfer"
+                ),
         ):
             erc20.transfer_from(
                 signer=new_account,
@@ -567,7 +557,7 @@ class TestERC20wrapperContract(BaseMixin):
     @pytest.mark.parametrize("mintable", [True, False])
     @pytest.mark.parametrize("param, msg", NO_ENOUGH_GAS_PARAMS)
     def test_transferFrom_no_enough_gas(
-        self, erc20_spl_mintable, erc20_spl, new_account, param, msg, mintable
+            self, erc20_spl_mintable, erc20_spl, new_account, param, msg, mintable
     ):
         erc20 = erc20_spl_mintable if mintable else erc20_spl
         erc20.approve(erc20.account, new_account.address, 1)
@@ -578,13 +568,13 @@ class TestERC20wrapperContract(BaseMixin):
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_transferSolana(
-        self,
-        erc20_spl_mintable,
-        erc20_spl,
-        sol_client,
-        solana_associated_token_erc20,
-        solana_associated_token_mintable_erc20,
-        mintable,
+            self,
+            erc20_spl_mintable,
+            erc20_spl,
+            sol_client,
+            solana_associated_token_erc20,
+            solana_associated_token_mintable_erc20,
+            mintable,
     ):
         if mintable:
             erc20 = erc20_spl_mintable
@@ -613,7 +603,7 @@ class TestERC20wrapperContract(BaseMixin):
                 .value[0]
                 .account.data.parsed["info"]["tokenAmount"]["amount"]
             )
-            > int(token_balance_before), timeout_sec=30
+                    > int(token_balance_before), timeout_sec=30
         )
 
         sol_balance_after = sol_client.get_balance(acc.public_key).value
@@ -628,22 +618,22 @@ class TestERC20wrapperContract(BaseMixin):
         ).call()
 
         assert (
-            int(token_balance_after) - int(token_balance_before) == amount
+                int(token_balance_after) - int(token_balance_before) == amount
         ), "Token balance for sol account is not correct"
         assert (
-            contract_balance_before - contract_balance_after == amount
+                contract_balance_before - contract_balance_after == amount
         ), "Contract balance is not correct"
         assert sol_balance_after == sol_balance_before, "Sol balance is changed"
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_approveSolana(
-        self,
-        erc20_spl_mintable,
-        erc20_spl,
-        sol_client,
-        solana_associated_token_mintable_erc20,
-        solana_associated_token_erc20,
-        mintable,
+            self,
+            erc20_spl_mintable,
+            erc20_spl,
+            sol_client,
+            solana_associated_token_mintable_erc20,
+            solana_associated_token_erc20,
+            mintable,
     ):
         if mintable:
             erc20 = erc20_spl_mintable
@@ -661,7 +651,7 @@ class TestERC20wrapperContract(BaseMixin):
                     acc.public_key, opts
                 ).value
             )
-            > 0, timeout_sec=30
+                    > 0, timeout_sec=30
         )
         token_account = (
             sol_client.get_token_accounts_by_delegate_json_parsed(acc.public_key, opts)
@@ -669,24 +659,24 @@ class TestERC20wrapperContract(BaseMixin):
             .account
         )
         assert (
-            int(token_account.data.parsed["info"]["delegatedAmount"]["amount"])
-            == amount
+                int(token_account.data.parsed["info"]["delegatedAmount"]["amount"])
+                == amount
         )
         assert (
-            int(token_account.data.parsed["info"]["delegatedAmount"]["decimals"])
-            == erc20.decimals
+                int(token_account.data.parsed["info"]["delegatedAmount"]["decimals"])
+                == erc20.decimals
         )
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_claim(
-        self,
-        erc20_spl_mintable,
-        sol_client,
-        solana_associated_token_mintable_erc20,
-        solana_associated_token_erc20,
-        erc20_spl,
-        pytestconfig,
-        mintable,
+            self,
+            erc20_spl_mintable,
+            sol_client,
+            solana_associated_token_mintable_erc20,
+            solana_associated_token_erc20,
+            erc20_spl,
+            pytestconfig,
+            mintable,
     ):
         if mintable:
             acc, token_mint, solana_address = solana_associated_token_mintable_erc20
@@ -725,20 +715,20 @@ class TestERC20wrapperContract(BaseMixin):
         balance_after = erc20.contract.functions.balanceOf(erc20.account.address).call()
 
         assert (
-            balance_after == balance_before - sent_amount + claim_amount
+                balance_after == balance_before - sent_amount + claim_amount
         ), "Balance is not correct"
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_claimTo(
-        self,
-        erc20_spl_mintable,
-        erc20_spl,
-        sol_client,
-        solana_associated_token_mintable_erc20,
-        solana_associated_token_erc20,
-        pytestconfig,
-        new_account,
-        mintable,
+            self,
+            erc20_spl_mintable,
+            erc20_spl,
+            sol_client,
+            solana_associated_token_mintable_erc20,
+            solana_associated_token_erc20,
+            pytestconfig,
+            new_account,
+            mintable,
     ):
         if mintable:
             acc, token_mint, solana_address = solana_associated_token_mintable_erc20
@@ -787,10 +777,10 @@ class TestERC20wrapperContract(BaseMixin):
         ).call()
 
         assert (
-            user1_balance_after == user1_balance_before - sent_amount
+                user1_balance_after == user1_balance_before - sent_amount
         ), "User1 balance is not correct"
         assert (
-            user2_balance_after == user2_balance_before + claim_amount
+                user2_balance_after == user2_balance_before + claim_amount
         ), "User2 balance is not correct"
 
 
@@ -825,11 +815,11 @@ class TestMultipleActionsForERC20(BaseMixin):
         user_balance = contract.functions.balance(acc.address).call()
 
         assert (
-            user_balance == transfer_amount + user_balance_before
+                user_balance == transfer_amount + user_balance_before
         ), "User balance is not correct"
         assert (
-            contract_balance
-            == mint_amount - transfer_amount - burn_amount + contract_balance_before
+                contract_balance
+                == mint_amount - transfer_amount - burn_amount + contract_balance_before
         ), "Contract balance is not correct"
 
     def test_mint_transfer_transfer_one_recipient(self, multiple_actions_erc20):
@@ -850,18 +840,18 @@ class TestMultipleActionsForERC20(BaseMixin):
         user_balance = contract.functions.balance(acc.address).call()
 
         assert (
-            user_balance == transfer_amount_1 + transfer_amount_2 + user_balance_before
+                user_balance == transfer_amount_1 + transfer_amount_2 + user_balance_before
         ), "User balance is not correct"
         assert (
-            contract_balance
-            == mint_amount
-            - transfer_amount_1
-            - transfer_amount_2
-            + contract_balance_before
+                contract_balance
+                == mint_amount
+                - transfer_amount_1
+                - transfer_amount_2
+                + contract_balance_before
         ), "Contract balance is not correct"
 
     def test_mint_transfer_transfer_different_recipients(
-        self, multiple_actions_erc20, new_account
+            self, multiple_actions_erc20, new_account
     ):
         acc_1, contract = multiple_actions_erc20
         acc_2 = new_account
@@ -887,15 +877,15 @@ class TestMultipleActionsForERC20(BaseMixin):
         user_2_balance = contract.functions.balance(acc_2.address).call()
 
         assert (
-            user_1_balance == transfer_amount_1 + user_balance_before
+                user_1_balance == transfer_amount_1 + user_balance_before
         ), "User 1 balance is not correct"
         assert user_2_balance == transfer_amount_2, "User 2 balance is not correct"
         assert (
-            contract_balance
-            == mint_amount
-            - transfer_amount_1
-            - transfer_amount_2
-            + contract_balance_before
+                contract_balance
+                == mint_amount
+                - transfer_amount_1
+                - transfer_amount_2
+                + contract_balance_before
         ), "Contract balance is not correct"
 
     def test_transfer_mint_burn(self, multiple_actions_erc20):
@@ -921,15 +911,15 @@ class TestMultipleActionsForERC20(BaseMixin):
         user_balance = contract.functions.balance(acc.address).call()
 
         assert (
-            contract_balance
-            == mint_amount_1
-            + mint_amount_2
-            - transfer_amount
-            - burn_amount
-            + contract_balance_before
+                contract_balance
+                == mint_amount_1
+                + mint_amount_2
+                - transfer_amount
+                - burn_amount
+                + contract_balance_before
         ), "Contract balance is not correct"
         assert (
-            user_balance == transfer_amount + user_balance_before
+                user_balance == transfer_amount + user_balance_before
         ), "User balance is not correct"
 
     def test_transfer_mint_transfer_burn(self, multiple_actions_erc20):
@@ -964,16 +954,16 @@ class TestMultipleActionsForERC20(BaseMixin):
         user_balance = contract.functions.balance(acc.address).call()
 
         assert (
-            contract_balance
-            == mint_amount_1
-            + mint_amount_2
-            - transfer_amount_1
-            - transfer_amount_2
-            - burn_amount
-            + contract_balance_before
+                contract_balance
+                == mint_amount_1
+                + mint_amount_2
+                - transfer_amount_1
+                - transfer_amount_2
+                - burn_amount
+                + contract_balance_before
         ), "Contract balance is not correct"
         assert (
-            user_balance == transfer_amount_1 + transfer_amount_2 + user_balance_before
+                user_balance == transfer_amount_1 + transfer_amount_2 + user_balance_before
         ), "User balance is not correct"
 
     def test_mint_burn_transfer(self, multiple_actions_erc20):
@@ -996,10 +986,10 @@ class TestMultipleActionsForERC20(BaseMixin):
         contract_balance = contract.functions.contractBalance().call()
         user_balance = contract.functions.balance(acc.address).call()
         assert (
-            user_balance == transfer_amount + user_balance_before
+                user_balance == transfer_amount + user_balance_before
         ), "User balance is not correct"
         assert (
-            contract_balance == contract_balance_before
+                contract_balance == contract_balance_before
         ), "Contract balance is not correct"
 
     def test_mint_mint(self, multiple_actions_erc20):
@@ -1017,7 +1007,7 @@ class TestMultipleActionsForERC20(BaseMixin):
 
         contract_balance = contract.functions.contractBalance().call()
         assert (
-            contract_balance == contract_balance_before + mint_amount1 + mint_amount2
+                contract_balance == contract_balance_before + mint_amount1 + mint_amount2
         ), "Contract balance is not correct"
 
     def test_mint_mint_transfer_transfer(self, multiple_actions_erc20):
@@ -1036,10 +1026,10 @@ class TestMultipleActionsForERC20(BaseMixin):
         contract_balance = contract.functions.contractBalance().call()
         user_balance = contract.functions.balance(acc.address).call()
         assert (
-            user_balance == user_balance_before + mint_amount1 + mint_amount2
+                user_balance == user_balance_before + mint_amount1 + mint_amount2
         ), "User balance is not correct"
         assert (
-            contract_balance == contract_balance_before
+                contract_balance == contract_balance_before
         ), "Contract balance is not correct"
 
     def test_burn_transfer_burn_transfer(self, multiple_actions_erc20):
@@ -1075,16 +1065,16 @@ class TestMultipleActionsForERC20(BaseMixin):
         contract_balance = contract.functions.contractBalance().call()
         user_balance = contract.functions.balance(acc.address).call()
         assert (
-            contract_balance
-            == mint_amount
-            - transfer_amount_1
-            - transfer_amount_2
-            - burn_amount_1
-            - burn_amount_2
-            + contract_balance_before
+                contract_balance
+                == mint_amount
+                - transfer_amount_1
+                - transfer_amount_2
+                - burn_amount_1
+                - burn_amount_2
+                + contract_balance_before
         ), "Contract balance is not correct"
         assert (
-            user_balance == transfer_amount_1 + transfer_amount_2 + user_balance_before
+                user_balance == transfer_amount_1 + transfer_amount_2 + user_balance_before
         ), "User balance is not correct"
 
     def test_burn_mint_transfer(self, multiple_actions_erc20):
@@ -1113,13 +1103,13 @@ class TestMultipleActionsForERC20(BaseMixin):
         user_balance = contract.functions.balance(acc.address).call()
 
         assert (
-            contract_balance
-            == mint_amount_1
-            + mint_amount_2
-            - transfer_amount
-            - burn_amount
-            + contract_balance_before
+                contract_balance
+                == mint_amount_1
+                + mint_amount_2
+                - transfer_amount
+                - burn_amount
+                + contract_balance_before
         ), "Contract balance is not correct"
         assert (
-            user_balance == transfer_amount + user_balance_before
+                user_balance == transfer_amount + user_balance_before
         ), "User balance is not correct"

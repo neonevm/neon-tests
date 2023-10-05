@@ -10,14 +10,15 @@ class ERC20:
             faucet,
             owner=None,
             name="Test Token",
-            symbol="TT"
+            symbol="TT",
+            amount=1000000
     ):
         self.web3_client = web3_client
         self.owner = owner
         if self.owner is None:
             self.owner = web3_client.create_account()
             faucet.request_neon(self.owner.address, 300)
-        self.initial_balance = 1000000
+        self.initial_balance = amount
         self.contract = self.deploy(name, symbol)
 
     def _make_tx_object(self, from_address):

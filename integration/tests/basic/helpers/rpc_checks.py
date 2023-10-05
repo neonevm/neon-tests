@@ -17,7 +17,9 @@ def is_hex(hex_data: str) -> bool:
 
 def hex_str_consists_not_only_of_zeros(hex_data: str) -> bool:
     """Helps to verify that long response hex str data is not consists of just zeros"""
-    t = hex_data.split("0x")[1]
+    t = hex_data
+    if t.startswith("0x"):
+        t = hex_data.split("0x")[1]
     for c in t:
         if c != "0":
             return True

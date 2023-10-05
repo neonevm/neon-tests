@@ -83,30 +83,6 @@ def get_event_signatures(abi: tp.List[tp.Dict]) -> tp.List[str]:
 @allure.feature("JSON-RPC validation")
 @allure.story("Verify JSON-RPC proxy calls work")
 class TestRpcBaseCalls(BaseMixin):
-    _erc20_contract: tp.Optional[tp.Any] = None
-
-    @pytest.fixture
-    def erc20_contract(self) -> tp.Any:
-        if not TestRpcBaseCalls._erc20_contract:
-            contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-                "ERC20/ERC20.sol",
-                "0.8.8",
-                self.sender_account,
-                contract_name="ERC20",
-                constructor_args=["Test Token", "TT", 1000],
-            )
-
-            tx_receipt = self.web3_client.send_erc20(
-                self.sender_account,
-                self.recipient_account.address,
-                amount=1,
-                address=contract_deploy_tx["contractAddress"],
-                abi=contract.abi,
-            )
-            self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
-            TestRpcBaseCalls._erc20_contract = contract, contract_deploy_tx, tx_receipt
-        return TestRpcBaseCalls._erc20_contract
-
     def test_eth_call_without_params(self):
         """Verify implemented rpc calls work eth_call without params"""
         response = self.proxy_api.send_rpc("eth_call")

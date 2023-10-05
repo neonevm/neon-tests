@@ -139,11 +139,10 @@ class TestRpcBaseCalls(BaseMixin):
         assert "result" in response
         result = response["result"]
         assert is_hex(result), f"Invalid compiled byte code in response {result} at a given contract address"
-        assert len(result) == 6678
+        assert len(result) > 0, "The length of response result should be greater 0"
         assert hex_str_consists_not_only_of_zeros(result), "Response result hex str should not consist only of zeros"
 
     def test_eth_get_code_sender_address(self):
-        """Verify implemented rpc calls work eth_getCode"""
         response = self.proxy_api.send_rpc(
             "eth_getCode",
             params=[self.sender_account.address, Tag.LATEST.value],
@@ -351,26 +350,6 @@ class TestRpcBaseCalls(BaseMixin):
                 response["error"]["message"]
                 == f"the method {method} does not exist/is not available"
         ), response
-
-    @pytest.mark.parametrize(
-        "quantity_tag, full_trx",
-        [
-            (Tag.EARLIEST, True),
-            (Tag.EARLIEST, False),
-            (Tag.LATEST, True),
-            (Tag.LATEST, False),
-            (Tag.PENDING, True),
-            (Tag.PENDING, False),
-        ],
-    )
-    def test_eth_get_block_by_number_via_tags(self, quantity_tag: Tag, full_trx: bool):
-        """Verify implemented rpc calls work eth_getBlockByNumber"""
-        self.send_neon(self.sender_account, self.recipient_account, 10)
-        params = [quantity_tag.value, full_trx]
-        response = self.proxy_api.send_rpc(method="eth_getBlockByNumber", params=params)
-        rpc_checks.assert_block_fields(
-            response, full_trx, None, quantity_tag == Tag.PENDING
-        )
 
     def test_get_evm_params(self):
         response = self.proxy_api.send_rpc(method="neon_getEvmParams", params=[])

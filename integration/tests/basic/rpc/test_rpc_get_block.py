@@ -3,6 +3,7 @@ import pytest
 
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.basic import BaseMixin
+from integration.tests.basic.rpc.test_rpc_base_calls import Tag
 from utils.helpers import gen_hash_of_block
 
 
@@ -76,3 +77,23 @@ class TestRpcGetBlock(BaseMixin):
             method="eth_getBlockByNumber", params=[gen_hash_of_block(number), full_trx]
         )
         assert response["result"] is None, "Result should be None"
+
+    @pytest.mark.parametrize(
+        "quantity_tag, full_trx",
+        [
+            (Tag.EARLIEST, True),
+            (Tag.EARLIEST, False),
+            (Tag.LATEST, True),
+            (Tag.LATEST, False),
+            (Tag.PENDING, True),
+            (Tag.PENDING, False),
+        ],
+    )
+    def test_eth_get_block_by_number_via_tags(self, quantity_tag: Tag, full_trx: bool):
+        """Verify implemented rpc calls work eth_getBlockByNumber"""
+        self.send_neon(self.sender_account, self.recipient_account, 10)
+        params = [quantity_tag.value, full_trx]
+        response = self.proxy_api.send_rpc(method="eth_getBlockByNumber", params=params)
+        rpc_checks.assert_block_fields(
+            response, full_trx, None, quantity_tag == Tag.PENDING
+        )

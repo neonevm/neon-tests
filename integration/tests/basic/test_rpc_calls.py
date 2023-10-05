@@ -19,6 +19,7 @@ from integration.tests.basic.helpers.rpc_checks import (
 from integration.tests.services.helpers.basic import cryptohex
 from utils import helpers
 from utils.consts import Unit
+from utils.erc20 import ERC20
 from utils.helpers import gen_hash_of_block
 
 """
@@ -105,29 +106,6 @@ def get_event_signatures(abi: tp.List[tp.Dict]) -> tp.List[str]:
 @allure.feature("JSON-RPC validation")
 @allure.story("Verify JSON-RPC proxy calls work")
 class TestRpcCalls(BaseMixin):
-    _erc20_contract: tp.Optional[tp.Any] = None
-
-    @pytest.fixture
-    def erc20_contract(self) -> tp.Any:
-        if not TestRpcCalls._erc20_contract:
-            contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-                "ERC20/ERC20.sol",
-                "0.8.8",
-                self.sender_account,
-                contract_name="ERC20",
-                constructor_args=["Test Token", "TT", 1000],
-            )
-
-            tx_receipt = self.web3_client.send_erc20(
-                self.sender_account,
-                self.recipient_account.address,
-                amount=1,
-                address=contract_deploy_tx["contractAddress"],
-                abi=contract.abi,
-            )
-            self.wait_transaction_accepted(tx_receipt.transactionHash.hex())
-            TestRpcCalls._erc20_contract = contract, contract_deploy_tx, tx_receipt
-        return TestRpcCalls._erc20_contract
 
     def make_tx_object(self, sender=None) -> tp.Dict:
         if sender is None:

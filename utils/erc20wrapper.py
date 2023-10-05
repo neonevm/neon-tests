@@ -168,5 +168,7 @@ class ERC20Wrapper:
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
-    def get_balance(self, account):
-        return self.contract.functions.balanceOf(account.address).call()
+    def get_balance(self, address):
+        if isinstance(address, LocalAccount):
+            address = address.address
+        return self.contract.functions.balanceOf(address).call()

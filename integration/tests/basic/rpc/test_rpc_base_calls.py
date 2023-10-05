@@ -12,7 +12,8 @@ from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.errors import Error32000, Error32602
-from integration.tests.basic.helpers.rpc_checks import is_hex, assert_fields_are_hex, assert_equal_fields
+from integration.tests.basic.helpers.rpc_checks import is_hex, assert_fields_are_hex, assert_equal_fields, \
+    hex_str_consists_not_only_of_zeros
 from integration.tests.helpers.basic import cryptohex
 from utils import helpers
 from utils.helpers import gen_hash_of_block
@@ -169,9 +170,11 @@ class TestRpcBaseCalls(BaseMixin):
             assert "error" in response, "Error not in response"
             return
         assert "error" not in response
-        assert (
-            is_hex(response["result"])
-        ), f"Invalid compiled byte code in response {response['result']} at a given contract address"
+        assert "result" in response
+        result = response["result"]
+        assert is_hex(result), f"Invalid compiled byte code in response {result} at a given contract address"
+        assert len(result) > 0, "The length of response result should be greater 0"
+        assert hex_str_consists_not_only_of_zeros(result), "Response result hex str should not consist only of zeros"
 
     def test_eth_get_code_sender_address(self):
         """Verify implemented rpc calls work eth_getCode"""

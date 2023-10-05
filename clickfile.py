@@ -899,11 +899,13 @@ def dapps():
 @click.option("--pr_url_for_report", default="", help="Url to send the report as comment for PR")
 @click.option("--token", default="", help="github token")
 def make_dapps_report(directory, pr_url_for_report, token):
-    report_content = dapps_cli.print_report(directory)
+    report_data = dapps_cli.prepare_report_data(directory)
+    dapps_cli.print_report(report_data)
     if pr_url_for_report:
         gh_client = GithubClient(token)
         gh_client.delete_last_comment(pr_url_for_report)
-        gh_client.add_comment_to_pr(pr_url_for_report, report_content)
+        format_data = dapps_cli.format_report_for_github_comment(report_data)
+        gh_client.add_comment_to_pr(pr_url_for_report, format_data)
 
 
 if __name__ == "__main__":

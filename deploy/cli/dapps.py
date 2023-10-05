@@ -41,7 +41,7 @@ TF_ENV.update(
 )
 
 WEB3_CLIENT = NeonWeb3Client(os.environ.get("PROXY_URL"), os.environ.get("CHAIN_ID", 111))
-
+REPORT_HEADERS = ["Action", "Fee", "Cost in $", "Accounts", "TRx", "Estimated Gas", "Used Gas", "Used % of EG"]
 
 def set_github_env(envs: tp.Dict, upper=True) -> None:
     """Set environment for github action"""
@@ -194,8 +194,7 @@ def get_solana_accounts_in_tx(eth_transaction):
         )
 
 
-def print_report(directory):
-    headers = ["Action", "Fee", "Cost in $", "Accounts", "TRx", "Estimated Gas", "Used Gas", "Used % of EG"]
+def prepare_report_data(directory):
     out = {}
     reports = {}
     for path in glob.glob(str(pathlib.Path(directory) / "*-report.json")):
@@ -222,11 +221,29 @@ def print_report(directory):
             row.append(used_gas)
             row.append(used_gas_percentage)
             out[app].append(row)
+    return out
+
+
+def print_report(data):
     report_content = ""
-    for app in out:
+    for app in data:
         report_content += f'Cost report for "{app.title()}" dApp\n'
         report_content += "----------------------------------------\n"
-        report_content += tabulate.tabulate(out[app], headers, tablefmt="simple_grid") + "\n"
+        report_content += tabulate.tabulate(data[app], REPORT_HEADERS, tablefmt="simple_grid") + "\n"
 
     print(report_content)
     return report_content
+
+
+def format_report_for_github_comment(data):
+    headers = "| " + " | ".join(REPORT_HEADERS) + " |\n"
+    headers += "| --- | --- | --- | --- | --- | --- | --- |--- |\n"
+    report_content = ""
+
+    for app in data:
+        report_content += f'\nCost report for "{app.title()}" dApp\n\n'
+        report_content+= headers
+        for action_data in data[app]:
+            report_content += "| "+ " | ".join([str(item) for item in action_data]) +" | "+ '\n'
+    return report_content
+

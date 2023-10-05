@@ -389,8 +389,8 @@ class TestRpcBaseCalls(BaseMixin):
     def test_eth_get_storage_at_eq_val(self):
         """Verify implemented rpc calls work eht_getStorageAt and equal values"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/Storage", "0.8.12",
-            contract_name="Storage", account=self.sender_account
+            "common/StorageSoliditySource", "0.8.12",
+            contract_name="StorageMultipleVars", account=self.sender_account
         )
         responses = [
             self.proxy_api.send_rpc("eth_getStorageAt", [contract.address, hex(0), Tag.LATEST.value]),

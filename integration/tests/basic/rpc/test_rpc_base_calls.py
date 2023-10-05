@@ -173,7 +173,7 @@ class TestRpcBaseCalls(BaseMixin):
         assert "result" in response
         result = response["result"]
         assert is_hex(result), f"Invalid compiled byte code in response {result} at a given contract address"
-        assert len(result) > 0, "The length of response result should be greater 0"
+        assert len(result) == 6678
         assert hex_str_consists_not_only_of_zeros(result), "Response result hex str should not consist only of zeros"
 
     def test_eth_get_code_sender_address(self):
@@ -388,7 +388,7 @@ class TestRpcBaseCalls(BaseMixin):
         assert "error" not in response
         result = response["result"]
         assert rpc_checks.is_hex(result), f"Invalid response: {result}"
-        assert int(result, 16) != 0, "expected that result is not 0, but got 0"
+        assert int(result, 16) == 52193458690378020725790142635571483517433973554952025871423338986830750023688
 
     def test_eth_get_storage_at_eq_val(self):
         """Verify implemented rpc calls work eht_getStorageAt and equal values"""

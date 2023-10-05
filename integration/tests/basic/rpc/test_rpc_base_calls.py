@@ -139,9 +139,10 @@ class TestRpcBaseCalls(BaseMixin):
         """Verify implemented rpc calls work eth_gasPrice"""
         response = self.proxy_api.send_rpc("eth_gasPrice")
         assert "error" not in response
-        assert rpc_checks.is_hex(
-            response["result"]
-        ), f"Invalid current gas price `{response['result']}` in wei"
+        assert "result" in response
+        result = response["result"]
+        assert rpc_checks.is_hex(result), f"Invalid current gas price `{result}` in wei"
+        assert int(result, 16) > 100000000, f"gas price should be greater 100000000, got {int(result, 16)}"
 
     @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, None])
     @pytest.mark.only_stands

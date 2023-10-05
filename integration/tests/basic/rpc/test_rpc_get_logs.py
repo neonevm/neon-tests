@@ -20,7 +20,7 @@ class TestRpcGetLogs(BaseMixin):
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
         bytes_array = text.encode().ljust(32, b"\0")
         bol = True
-        tx = self.make_tx_object()
+        tx = self.make_contract_tx_object()
         instruction_tx = event_caller_contract.functions.allTypes(
             self.sender_account.address, number, text, bytes_array, bol
         ).build_transaction(tx)
@@ -257,12 +257,12 @@ class TestRpcGetLogs(BaseMixin):
         )
 
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
-        tx = self.make_tx_object()
+        tx = self.make_contract_tx_object()
         # transaction for first contract
         instruction_tx = event_caller_contract.functions.callEvent1(text).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
-        tx2 = self.make_tx_object()
+        tx2 = self.make_contract_tx_object()
         # transaction for second contract
         instruction_tx2 = event_caller2.functions.callEvent1(text).build_transaction(tx2)
         self.web3_client.send_transaction(self.sender_account, instruction_tx2)
@@ -375,23 +375,23 @@ class TestRpcGetLogs(BaseMixin):
                 arg_topics.append(cryptohex(item))
             topics.append(arg_topics)
 
-        tx = self.make_tx_object(self.sender_account.address)
+        tx = self.make_contract_tx_object(self.sender_account.address)
         instruction_tx = event_caller.functions.callEvent1(arg1).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
-        tx = self.make_tx_object(self.sender_account.address)
+        tx = self.make_contract_tx_object(self.sender_account.address)
         instruction_tx = event_caller.functions.callEvent2(
             arg1, arg2
         ).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
-        tx = self.make_tx_object(self.sender_account.address)
+        tx = self.make_contract_tx_object(self.sender_account.address)
         instruction_tx = event_caller.functions.callEvent2(
             arg2, arg3
         ).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
-        tx = self.make_tx_object(self.sender_account.address)
+        tx = self.make_contract_tx_object(self.sender_account.address)
         instruction_tx = event_caller.functions.callEvent3(
             arg1, arg2, arg3
         ).build_transaction(tx)

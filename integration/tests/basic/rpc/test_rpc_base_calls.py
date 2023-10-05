@@ -407,7 +407,7 @@ class TestRpcBaseCalls(BaseMixin):
         assert int(responses[2]["result"], 16) == 0, "wrong storage value"
 
         new_data = "new"
-        instruction_tx = contract.functions.setData(new_data).build_transaction(self.make_tx_object())
+        instruction_tx = contract.functions.setData(new_data).build_transaction(self.make_contract_tx_object())
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         response = (

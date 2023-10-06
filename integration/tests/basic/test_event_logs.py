@@ -14,22 +14,8 @@ from integration.tests.basic.helpers.rpc_checks import (
 @allure.feature("JSON-RPC validation")
 @allure.story("Verify events and logs")
 class TestLogs(BaseMixin):
-    def make_tx_object(self, from_address, gas_price=None, gas=None, value=None):
-        tx = {
-            "from": from_address,
-            "nonce": self.web3_client.eth.get_transaction_count(from_address),
-            "gasPrice": gas_price
-            if gas_price is not None
-            else self.web3_client.gas_price(),
-        }
-        if gas is not None:
-            tx["gas"] = gas
-        if value is not None:
-            tx["value"] = web3.Web3.to_wei(value, "ether")
-        return tx
-
     def test_non_args_event(self, event_caller_contract):
-        tx = self.make_tx_object(self.sender_account.address)
+        tx = self.make_contract_tx_object(self.sender_account.address)
         instruction_tx = event_caller_contract.functions.nonArgs().build_transaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 1
@@ -39,7 +25,7 @@ class TestLogs(BaseMixin):
         assert event_logs[0].event == "NonArgs"
 
     def test_all_types_args_event(self, event_caller_contract):
-        tx = self.make_tx_object(self.sender_account.address)
+        tx = self.make_contract_tx_object(self.sender_account.address)
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
         bytes_array = text.encode().ljust(32, b'\0')
@@ -67,7 +53,7 @@ class TestLogs(BaseMixin):
 
     def test_indexed_args_event(self, event_caller_contract):
         amount = random.randint(1, 100)
-        tx = self.make_tx_object(self.sender_account.address, value=amount)
+        tx = self.make_contract_tx_object(self.sender_account.address, amount=amount)
         instruction_tx = event_caller_contract.functions.indexedArgs().build_transaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 3
@@ -85,7 +71,7 @@ class TestLogs(BaseMixin):
 
     def test_non_indexed_args_event(self, event_caller_contract):
         amount = random.randint(1, 100)
-        tx = self.make_tx_object(self.sender_account.address, value=amount)
+        tx = self.make_contract_tx_object(self.sender_account.address, amount=amount)
         instruction_tx = event_caller_contract.functions.nonIndexedArg("world").build_transaction(
             tx
         )
@@ -102,7 +88,7 @@ class TestLogs(BaseMixin):
         assert_log_field_in_neon_trx_receipt(response, 1)
 
     def test_unnamed_args_event(self, event_caller_contract):
-        tx = self.make_tx_object(self.sender_account.address)
+        tx = self.make_contract_tx_object(self.sender_account.address)
         instruction_tx = event_caller_contract.functions.unnamedArg("hello").build_transaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 1
@@ -116,7 +102,7 @@ class TestLogs(BaseMixin):
         assert_log_field_in_neon_trx_receipt(response, 1)
 
     def test_big_args_count(self, event_caller_contract):
-        tx = self.make_tx_object(self.sender_account.address)
+        tx = self.make_contract_tx_object(self.sender_account.address)
         instruction_tx = event_caller_contract.functions.bigArgsCount("hello").build_transaction(
             tx
         )
@@ -133,7 +119,7 @@ class TestLogs(BaseMixin):
         assert_log_field_in_neon_trx_receipt(response, 1)
 
     def test_several_events_in_one_trx(self, event_caller_contract):
-        tx = self.make_tx_object(self.sender_account.address)
+        tx = self.make_contract_tx_object(self.sender_account.address)
         instruction_tx = event_caller_contract.functions.emitThreeEvents().build_transaction(tx)
         resp = self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
@@ -149,7 +135,7 @@ class TestLogs(BaseMixin):
         assert_log_field_in_neon_trx_receipt(response, 3)
 
     def test_many_the_same_events_in_one_trx(self, event_caller_contract):
-        tx = self.make_tx_object(self.sender_account.address)
+        tx = self.make_contract_tx_object(self.sender_account.address, estimate_gas=False)
         changes_count = 20
         instruction_tx = event_caller_contract.functions.updateStorageMap(
             changes_count
@@ -166,7 +152,7 @@ class TestLogs(BaseMixin):
         assert_log_field_in_neon_trx_receipt(response, changes_count)
 
     def test_event_logs_deleted_if_trx_was_canceled(self, event_caller_contract):
-        tx = self.make_tx_object(self.sender_account.address)
+        tx = self.make_contract_tx_object(self.sender_account.address)
         instruction_tx = event_caller_contract.functions.causeOutOfMemory(
         ).build_transaction(tx)
         try:
@@ -187,7 +173,7 @@ class TestLogs(BaseMixin):
         contract_c, _ = self.web3_client.deploy_and_get_contract(
             "common/NestedCallsChecker", "0.8.12", self.sender_account, contract_name="C"
         )
-        tx = self.make_tx_object(self.sender_account.address)
+        tx = self.make_contract_tx_object(self.sender_account.address)
 
         instruction_tx = contract_a.functions.method1(
             contract_b.address, contract_c.address

@@ -23,3 +23,13 @@ contract Storage {
         return number;
     }
 }
+
+contract StorageMultipleVars {
+    string public data = "test";
+    uint256 constant public number = 1;
+    uint256 public notSet;
+
+    function setData(string memory _data) public  {
+        data = _data;
+    }
+}

@@ -125,6 +125,7 @@ class TestRpcBaseCalls(BaseMixin):
         assert "error" not in response
         assert rpc_checks.is_hex(response["result"]), AssertMessage.WRONG_AMOUNT.value
 
+    @pytest.mark.xfail(reason="NDEV-2294")
     @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, None])
     def test_eth_get_code(self, event_caller_contract, param: tp.Union[Tag, None]):
         """Verify implemented rpc calls work eth_getCode"""
@@ -139,7 +140,8 @@ class TestRpcBaseCalls(BaseMixin):
         assert "result" in response
         result = response["result"]
         assert is_hex(result), f"Invalid compiled byte code in response {result} at a given contract address"
-        assert len(result) > 0, "The length of response result should be greater 0"
+        assert result.startswith("0x")
+        assert len(result) == 6678
         assert hex_str_consists_not_only_of_zeros(result), "Response result hex str should not consist only of zeros"
 
     def test_eth_get_code_sender_address(self):

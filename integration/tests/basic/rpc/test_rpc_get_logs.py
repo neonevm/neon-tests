@@ -6,6 +6,7 @@ import pytest
 from web3.types import TxParams
 
 from integration.tests.basic.helpers.basic import BaseMixin
+from integration.tests.basic.helpers.errors import Error32602, Error32600
 from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex, assert_fields_are_boolean, \
     assert_equal_fields
 from integration.tests.basic.rpc.test_rpc_base_calls import Tag
@@ -102,18 +103,20 @@ class TestRpcGetLogs(BaseMixin):
 
         response = self.proxy_api.send_rpc("eth_getLogs", params=params)
         assert "error" in response
-        assert "message" in response
-        assert "invalid filter" in response["message"]
+        assert "code" in response["error"]
+        assert "message" in response["error"]
+        assert Error32600.CODE == response["error"]["code"]
+        assert Error32600.INVALID_FILTER in response["error"]["message"]
 
     @pytest.mark.parametrize(
-        ("p_name", "p_value", "p_error"),
+        ("p_name", "p_value", "p_error", "p_code"),
         [
-            ("address", "0xc0ffee254729296a45a3885639AC7E10F9d54979", None),
-            ("address", "12345", "bad address"),
-            ("topics", "Invalid(address,uint256,string,bytes32,bool)", "bad topic"),
+            ("address", "0xc0ffee254729296a45a3885639AC7E10F9d54979", None, None),
+            ("address", "12345", Error32602.BAD_ADDRESS, Error32602.CODE),
+            ("topics", "Invalid(address,uint256,string,bytes32,bool)", Error32602.BAD_TOPIC, Error32602.CODE),
         ],
     )
-    def test_eth_get_logs_negative_params(self, event_caller_contract, p_name, p_value, p_error):
+    def test_eth_get_logs_negative_params(self, event_caller_contract, p_name, p_value, p_error, p_code):
         instruction_tx = self.create_all_types_instruction(event_caller_contract)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
@@ -132,7 +135,9 @@ class TestRpcGetLogs(BaseMixin):
             ), "should not find any logs since the wrong address was provided"
         else:
             assert "error" in response
+            assert "code" in response["error"]
             assert "message" in response["error"]
+            assert p_code == response["error"]["code"]
             assert p_error in response["error"]["message"]
 
     @pytest.mark.parametrize(

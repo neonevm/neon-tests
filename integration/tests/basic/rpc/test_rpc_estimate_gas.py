@@ -104,17 +104,28 @@ class TestRpcEstimateGas(BaseMixin):
         ), "Estimated Gas < Used Gas"
 
     def test_rpc_estimate_gas_send_neon(self):
-        receipt = self.send_neon(
-            self.sender_account, self.recipient_account, amount=0.001
-        )
+        tx_receipt = self.send_neon(self.sender_account, self.recipient_account, amount=0.001)
+        transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
 
-        assert receipt.cumulativeGasUsed == 10000
+        assert "gas" in transaction
+        estimate_gas = transaction["gas"]
+        assert estimate_gas == 30_000
 
     def test_rpc_estimate_gas_erc20(self, erc20_simple):
         tx_receipt = erc20_simple.transfer(erc20_simple.owner, self.recipient_account, 1)
+        transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
 
-        assert "cumulativeGasUsed" in tx_receipt
-        assert tx_receipt["cumulativeGasUsed"] == 1527280
+        assert "gas" in transaction
+        estimate_gas = transaction["gas"]
+        assert estimate_gas == 1552280
+
+    def test_rpc_estimate_gas_spl(self, erc20_spl):
+        tx_receipt = erc20_spl.transfer(erc20_spl.account, self.recipient_account, 1)
+        transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
+
+        assert "gas" in transaction
+        estimate_gas = transaction["gas"]
+        assert estimate_gas == 2084280
 
     def test_rpc_estimate_gas_contract_get_value(self):
         contract, receipt = self.web3_client.deploy_and_get_contract(
@@ -124,8 +135,11 @@ class TestRpcEstimateGas(BaseMixin):
         tx = self.make_contract_tx_object()
         instruction_tx = contract.functions.getText().build_transaction(tx)
         tx_receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
 
-        assert tx_receipt["gasUsed"] == 10000
+        assert "gas" in transaction
+        estimate_gas = transaction["gas"]
+        assert estimate_gas == 30_000
 
     def test_rpc_estimate_gas_contract_set_value(self):
         contract, _ = self.web3_client.deploy_and_get_contract(
@@ -135,8 +149,11 @@ class TestRpcEstimateGas(BaseMixin):
         tx = self.make_contract_tx_object()
         instruction_tx = contract.functions.setNumber(100).build_transaction(tx)
         tx_receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
 
-        assert tx_receipt["gasUsed"] == 10000
+        assert "gas" in transaction
+        estimate_gas = transaction["gas"]
+        assert estimate_gas == 30_000
 
     def test_rpc_estimate_gas_contract_calls_another_contract(self):
         common_contract, _ = self.web3_client.deploy_and_get_contract(
@@ -152,9 +169,8 @@ class TestRpcEstimateGas(BaseMixin):
         instruction_tx = caller_contract.functions.getNumber().build_transaction(tx)
         tx_receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
-        assert tx_receipt["gasUsed"] == 10000
+        transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
 
-    def test_rpc_estimate_gas_spl(self, erc20_spl):
-        tx_receipt = erc20_spl.transfer(erc20_spl.account, self.recipient_account, 1)
-
-        assert tx_receipt["gasUsed"] == 10000
+        assert "gas" in transaction
+        estimate_gas = transaction["gas"]
+        assert estimate_gas == 30_000

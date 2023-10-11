@@ -16,6 +16,7 @@ class TestRpcEstimateGas(BaseMixin):
     @pytest.fixture(params=[(850000, 15000), (8500000, 150000), (8500000, 150000)])
     def constructor_args(self, request: tp.Any) -> tp.List[int]:
         return request.param
+
     @pytest.fixture(params=["BigGasFactory1", "BigGasFactory2"])
     def deploy_big_gas_requirements_contract(
             self, request: tp.Any, constructor_args: tp.List[int]
@@ -101,3 +102,54 @@ class TestRpcEstimateGas(BaseMixin):
         assert estimated_gas >= int(
             deploy_trx_big_gas["gasUsed"]
         ), "Estimated Gas < Used Gas"
+
+    def test_rpc_estimate_gas_send_neon(self):
+        receipt = self.send_neon(
+            self.sender_account, self.recipient_account, amount=0.001
+        )
+
+        assert receipt.cumulativeGasUsed == 10000
+
+    def test_rpc_estimate_gas_erc20(self, erc20_simple):
+        tx_receipt = erc20_simple.transfer(erc20_simple.owner, self.recipient_account, 1)
+
+        assert "cumulativeGasUsed" in tx_receipt
+        assert tx_receipt["cumulativeGasUsed"] == 1527280
+
+    def test_rpc_estimate_gas_contract_get_value(self):
+        contract, receipt = self.web3_client.deploy_and_get_contract(
+            "common/Common", "0.8.12",
+            contract_name="Common", account=self.sender_account
+        )
+        tx = self.make_contract_tx_object()
+        instruction_tx = contract.functions.getText().build_transaction(tx)
+        tx_receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        assert tx_receipt["gasUsed"] == 10000
+
+    def test_rpc_estimate_gas_contract_set_value(self):
+        contract, _ = self.web3_client.deploy_and_get_contract(
+            "common/Common", "0.8.12",
+            contract_name="Common", account=self.sender_account
+        )
+        tx = self.make_contract_tx_object()
+        instruction_tx = contract.functions.setNumber(100).build_transaction(tx)
+        tx_receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        assert tx_receipt["gasUsed"] == 10000
+
+    def test_rpc_estimate_gas_contract_calls_another_contract(self):
+        common_contract, _ = self.web3_client.deploy_and_get_contract(
+            "common/Common", "0.8.12",
+            contract_name="Common", account=self.sender_account
+        )
+        caller_contract, _ = self.web3_client.deploy_and_get_contract(
+            "common/Common", "0.8.12",
+            contract_name="CommonCaller", account=self.sender_account,
+            constructor_args=[common_contract.address]
+        )
+        tx = self.make_contract_tx_object()
+        instruction_tx = caller_contract.functions.getNumber().build_transaction(tx)
+        tx_receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+
+        assert tx_receipt["gasUsed"] == 10000

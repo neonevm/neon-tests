@@ -153,3 +153,8 @@ class TestRpcEstimateGas(BaseMixin):
         tx_receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         assert tx_receipt["gasUsed"] == 10000
+
+    def test_rpc_estimate_gas_spl(self, erc20_spl):
+        tx_receipt = erc20_spl.transfer(erc20_spl.account, self.recipient_account, 1)
+
+        assert tx_receipt["gasUsed"] == 10000

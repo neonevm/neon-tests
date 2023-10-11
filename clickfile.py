@@ -2,6 +2,7 @@
 import functools
 import glob
 import json
+import yaml
 import os
 import pathlib
 import re
@@ -15,6 +16,7 @@ from urllib.parse import urlparse
 from deploy.cli.github_api_client import GithubClient
 from deploy.cli.network_manager import NetworkManager
 from deploy.cli import dapps as dapps_cli
+
 try:
     import click
 except ImportError:
@@ -30,7 +32,6 @@ from utils.web3client import NeonWeb3Client
 from utils.prices import get_sol_price
 
 from deploy.cli import faucet as faucet_cli
-
 
 
 CMD_ERROR_LOG = "click_cmd_err.log"
@@ -62,14 +63,14 @@ EXTENSIONS_PATH = "ui/extensions/chrome/plugins"
 EXTENSIONS_USER_DATA_PATH = "ui/extensions/chrome"
 
 
-
-
 HOME_DIR = pathlib.Path(__file__).absolute().parent
 
 OZ_BALANCES = "./compatibility/results/oz_balance.json"
 NEON_EVM_GITHUB_URL = "https://api.github.com/repos/neonlabsorg/neon-evm"
 
 network_manager = NetworkManager()
+
+
 def green(s):
     return click.style(s, fg="green")
 
@@ -112,8 +113,6 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
         return result
 
     return wrap
-
-
 
 
 def check_profitability(func: tp.Callable) -> tp.Callable:
@@ -198,7 +197,9 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         keys = keys_env.pop(0)
         env = os.environ.copy()
         env["PRIVATE_KEYS"] = ",".join(keys)
-        env["NETWORK_ID"] = str(network_manager.get_network_param(network, "network_id"))
+        env["NETWORK_ID"] = str(
+            network_manager.get_network_param(network, "network_id")
+        )
         env["PROXY_URL"] = network_manager.get_network_param(network, "proxy_url")
 
         out = subprocess.run(
@@ -215,7 +216,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         print(stderr)
         keys_env.append(keys)
         log_dirs = (
-                cwd.parent / "results" / file_name.replace(".", "_").replace("/", "_")
+            cwd.parent / "results" / file_name.replace(".", "_").replace("/", "_")
         )
         log_dirs.mkdir(parents=True, exist_ok=True)
         with open(log_dirs / "stdout.log", "w") as f:
@@ -273,7 +274,7 @@ def parse_openzeppelin_results():
 
 
 def print_test_suite_results(
-        test_report: tp.Dict[str, int], skipped_files: tp.List[str]
+    test_report: tp.Dict[str, int], skipped_files: tp.List[str]
 ):
     print("Summarize result:\n")
     for state in test_report:
@@ -414,33 +415,56 @@ def is_neon_evm_branch_exist(branch):
         return False
 
 
+def get_evm_pinned_version(branch):
+    click.echo(f"Get pinned version for proxy branch {branch}")
+    resp = requests.get(
+        f"https://api.github.com/repos/neonlabsorg/proxy-model.py/contents/.github/workflows/pipeline.yml?ref={branch}"
+    )
+    if resp.status_code != 200:
+        click.echo(f"Can't get pipeline file for branch {branch}: {resp.text}")
+        raise click.ClickException(f"Can't get pipeline file for branch {branch}")
+    info = resp.json()
+    pipeline_file = yaml.safe_load(requests.get(info["download_url"]).text)
+    tag = pipeline_file["env"]["NEON_EVM_TAG"]
+    if tag == "latest":
+        return "develop"
+    return tag
+
+
 @cli.command(help="Download test contracts from neon-evm repo")
 @click.option(
     "--branch",
     default="develop",
     help="neon_evm branch name. "
-         "If branch doesn't exist, develop branch will be used",
+    "If branch doesn't exist, develop branch will be used",
 )
 def update_contracts(branch):
-    branch = branch if is_neon_evm_branch_exist(branch) else "develop"
-    click.echo(f"Contracts would be downloaded from {branch} branch")
+    neon_evm_branch = get_evm_pinned_version(branch)
+    click.echo(f"Contracts would be downloaded from {neon_evm_branch} neon-evm branch")
     contract_path = pathlib.Path.cwd() / "contracts" / "external"
     pathlib.Path(contract_path).mkdir(parents=True, exist_ok=True)
 
+    click.echo(f"Check contract availability in neon-evm repo")
     response = requests.get(
-        f"{NEON_EVM_GITHUB_URL}/contents/solidity?ref={branch}"
+        f"{NEON_EVM_GITHUB_URL}/contents/solidity?ref={neon_evm_branch}"
     )
     if response.status_code != 200:
-        raise click.ClickException(f"The code is not 200. Response: {response.json()}")
+        click.echo(f"Repository doesn't has solidity directory, check old structure")
+        response = requests.get(
+            f"{NEON_EVM_GITHUB_URL}/contents/evm_loader/solidity?ref={neon_evm_branch}"
+        )
+        if response.status_code != 200:
+            raise click.ClickException(
+                f"Can't get contracts from neon-evm repo: {response.text}"
+            )
 
     for item in response.json():
-        r = requests.get(
-            f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/{branch}/solidity/{item['name']}"
-        )
+        click.echo(f"Downloading {item['name']}")
+        r = requests.get(item["download_url"])
         if r.status_code == 200:
             with open(contract_path / item["name"], "wb") as f:
                 f.write(r.content)
-            click.echo(f"{item['name']} downloaded")
+            click.echo(f" {item['name']} downloaded")
         else:
             raise click.ClickException(
                 f"The contract {item['name']} is not downloaded. Error: {r.text}"
@@ -464,8 +488,11 @@ def update_contracts(branch):
     help="Which UI test run",
 )
 @click.argument(
-    "name", required=True, type=click.Choice(["economy", "basic", "tracer", "services", "oz", "ui",
-                                              "compiler_compatibility"])
+    "name",
+    required=True,
+    type=click.Choice(
+        ["economy", "basic", "tracer", "services", "oz", "ui", "compiler_compatibility"]
+    ),
 )
 @catch_traceback
 def run(name, jobs, numprocesses, ui_item, amount, users, network):
@@ -597,7 +624,7 @@ locust_run_time = click.option(
     "--run-time",
     type=int,
     help="Stop after the specified amount of time, e.g. (300s, 20m, 3h, 1h30m, etc.). "
-         "Only used together without Locust Web UI. [default: always run]",
+    "Only used together without Locust Web UI. [default: always run]",
 )
 
 locust_tags = click.option(
@@ -606,7 +633,7 @@ locust_tags = click.option(
     type=str,
     multiple=True,
     help="tag to include in the test, so only tasks "
-         "with any matching tags will be executed",
+    "with any matching tags will be executed",
 )
 
 locust_headless = click.option(
@@ -614,7 +641,7 @@ locust_headless = click.option(
     " /-w",
     default=True,
     help="Enable the web interface. "
-         "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
+    "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
 )
 
 
@@ -647,7 +674,7 @@ def locust(ctx):
     show_default=True,
 )
 def run(
-        credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile, neon_rpc
+    credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile, neon_rpc
 ):
     """Run `Neon` pipeline performance test
 
@@ -869,8 +896,6 @@ def prepare_accounts(count, amount, network):
     dapps_cli.prepare_accounts(network, count, amount)
 
 
-
-
 @infra.command("print-network-param")
 @click.option(
     "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
@@ -896,7 +921,9 @@ def dapps():
 
 @dapps.command("report", help="Print dapps report (from .json files)")
 @click.option("-d", "--directory", default="reports", help="Directory with reports")
-@click.option("--pr_url_for_report", default="", help="Url to send the report as comment for PR")
+@click.option(
+    "--pr_url_for_report", default="", help="Url to send the report as comment for PR"
+)
 @click.option("--token", default="", help="github token")
 def make_dapps_report(directory, pr_url_for_report, token):
     report_data = dapps_cli.prepare_report_data(directory)

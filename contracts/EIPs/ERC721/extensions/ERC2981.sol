@@ -3,7 +3,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../../external/erc721_for_metaplex.sol";
+import "../../../external/erc721_for_metaplex.sol";
 
 /**
  * @dev Interface for the NFT Royalty Standard.

@@ -1,9 +1,9 @@
 pragma solidity >=0.7.0 <0.9.0;
 
-import "./external/Metaplex.sol";
-import "./external/SPLToken.sol";
+import "../external/Metaplex.sol";
+import "../external/SPLToken.sol";
 
-contract metaplexCaller {
+contract MetaplexCaller {
 
     Metaplex constant _metaplex = Metaplex(0xff00000000000000000000000000000000000005);
     SPLToken constant _splToken = SPLToken(0xFf00000000000000000000000000000000000004);

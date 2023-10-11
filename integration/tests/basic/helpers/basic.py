@@ -105,10 +105,10 @@ class BaseMixin(BaseTests):
             self,
             sender_account: eth_account.signers.local.LocalAccount,
             recipient_account: tp.Union[eth_account.signers.local.LocalAccount, AccountData],
-            amount: tp.Union[int, float, Decimal],
+            amount: tp.Any,
             gas: tp.Optional[int] = 0,
             gas_price: tp.Optional[int] = None,
-            error_message: str = None,
+            error_message: tp.Any = None,
             exception: tp.Any = None,
     ) -> tp.Union[web3.types.TxReceipt, None]:
         """Processes transaction, expects a failure"""
@@ -175,6 +175,12 @@ class BaseMixin(BaseTests):
             time.sleep(1)
             response = self.proxy_api.send_rpc("neon_finalizedBlockNumber", [])
             fin_block_num = int(response["result"], 16)
+
+    def make_contract_tx_object(self, sender=None, amount=0, estimate_gas=False) -> tp.Dict:
+        """Can be used with build_transaction method"""
+        if sender is None:
+            sender = self.sender_account.address
+        return super().create_tx_object(sender, recipient=None, amount=amount, estimate_gas=estimate_gas)
 
     def create_tx_object(self, sender=None, recipient=None, amount=2, nonce=None, gas=None, gas_price=None, data=None,
                          estimate_gas=True):

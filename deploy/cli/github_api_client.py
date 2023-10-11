@@ -13,7 +13,7 @@ class GithubClient:
                         "Accept": "application/vnd.github+json"}
 
     def add_comment_to_pr(self, url, msg):
-        data = {"body": f"<details>{DAPPS_REPORT_COMMENT_TITLE}\n```\n{msg}\n```\n</details>"}
+        data = {"body": f"<details>{DAPPS_REPORT_COMMENT_TITLE}\n\n{msg}\n\n"}
         click.echo(f"Sent data: {data}")
         click.echo(f"Headers: {self.headers}")
         response = requests.post(url, json=data, headers=self.headers)

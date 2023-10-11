@@ -43,7 +43,7 @@ def prepare_one_contract_for_erc20(environment: "locust.env.Environment", **kwar
 
     environment.erc20_one = {
         "user": eth_account,
-        "contract": erc20_wrapper.get_wrapper_contract(),
+        "contract": erc20_wrapper,
     }
 
 
@@ -59,13 +59,7 @@ class ERC20SPLTasksSet(NeonProxyTasksSet):
         self.log = logging.getLogger(
             "neon-consumer[%s]" % self.account.address[-8:])
         contract = self.user.environment.erc20_one["contract"]
-        self.web3_client.send_erc20(
-            self.user.environment.erc20_one["user"],
-            self.account,
-            1000,
-            contract.address,
-            abi=contract.abi,
-        )
+        contract.transfer(self.user.environment.erc20_one["user"], self.account, 1000)
         self.recipient = self.get_account()
 
     def get_account(self):
@@ -85,13 +79,10 @@ class ERC20SPLTasksSet(NeonProxyTasksSet):
     def task_send_erc20_spl(self):
         """Send ERC20 tokens"""
         contract = self.user.environment.erc20_one["contract"]
-
-        receipt = self.web3_client.send_erc20(
-            self.account, self.recipient, 1, contract.address, abi=contract.abi
-        )
+        receipt = contract.transfer(self.account, self.recipient, 1)
 
         receipt = dict(receipt)
-        receipt["contract"] = {"address": contract.address}
+        receipt["contract"] = {"address": contract.contract.address}
 
         return receipt, self.web3_client.get_nonce(self.account)
 

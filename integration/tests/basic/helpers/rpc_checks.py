@@ -15,6 +15,17 @@ def is_hex(hex_data: str) -> bool:
         return False
 
 
+def hex_str_consists_not_only_of_zeros(hex_data: str) -> bool:
+    """Helps to verify that long response hex str data is not consists of just zeros"""
+    t = hex_data
+    if t.startswith("0x"):
+        t = hex_data.split("0x")[1]
+    for c in t:
+        if c != "0":
+            return True
+    return False
+
+
 def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[types.TxReceipt],
                         pending: bool = False):
     assert "error" not in block
@@ -110,10 +121,22 @@ def assert_fields_are_boolean(object, expected_boolean_fields):
         assert type(object[field]) == bool, f"field {field} is not boolean. Actual : {type(object[field])}"
 
 
-def assert_equal_fields(response, receipt, comparable_fields):
+def assert_equal_fields(result, comparable_object, comparable_fields, keys_mappings=None):
+    """
+    Assert that fields in the result object are equal to fields in comparable_object
+
+    :param result:
+    :param comparable_object:
+    :param comparable_fields: list of comparable fields
+    :param keys_mappings: map name of the field in the result object to the field in comparable_object
+    :return:
+    """
     for field in comparable_fields:
-        l = response["result"][0][field]
-        r = receipt["logs"][0][field]
+        l = result[field]
+        if keys_mappings and keys_mappings.get(field):
+            r = comparable_object[keys_mappings.get(field)]
+        else:
+            r = comparable_object[field]
         if isinstance(r, str):
             r = r.lower()
         if isinstance(r, int):

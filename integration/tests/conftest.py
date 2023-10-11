@@ -12,6 +12,7 @@ from solana.publickey import PublicKey
 
 from utils.consts import LAMPORT_PER_SOL
 from utils.erc20wrapper import ERC20Wrapper
+from utils.erc20 import ERC20
 from utils.faucet import Faucet
 from utils.operator import Operator
 from utils.web3client import NeonWeb3Client
@@ -183,6 +184,12 @@ def erc20_spl(
 
 
 @pytest.fixture(scope="session")
+def erc20_simple(web3_client, faucet):
+    erc20 = ERC20(web3_client,faucet)
+    return erc20
+
+
+@pytest.fixture(scope="session")
 def erc20_spl_mintable(web3_client: NeonWeb3Client, faucet, sol_client, solana_account):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
     erc20 = ERC20Wrapper(
@@ -223,7 +230,7 @@ def neon_mint(pytestconfig: Config):
 @pytest.fixture(scope="class")
 def withdraw_contract(web3_client, faucet, class_account):
     contract, _ = web3_client.deploy_and_get_contract(
-        "NeonToken", "0.8.10", account=class_account
+        "precompiled/NeonToken", "0.8.10", account=class_account
     )
     return contract
 
@@ -231,7 +238,7 @@ def withdraw_contract(web3_client, faucet, class_account):
 @pytest.fixture(scope="class")
 def meta_proxy_contract(web3_client, faucet, class_account):
     contract, _ = web3_client.deploy_and_get_contract(
-        "./EIPs/MetaProxy.sol", "0.8.10", account=class_account
+        "./EIPs/MetaProxy", "0.8.10", account=class_account
     )
     return contract
 
@@ -239,6 +246,6 @@ def meta_proxy_contract(web3_client, faucet, class_account):
 @pytest.fixture(scope="class")
 def event_caller_contract(web3_client, class_account) -> typing.Any:
     event_caller, _ = web3_client.deploy_and_get_contract(
-        "EventCaller", "0.8.12", class_account
+        "common/EventCaller", "0.8.12", class_account
     )
     yield event_caller

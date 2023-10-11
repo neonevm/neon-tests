@@ -22,7 +22,7 @@ class TestTracerHistoricalMethods(BaseMixin):
     def storage_contract(self) -> tp.Any:
         if not TestTracerHistoricalMethods._contract:
             contract, _ = self.web3_client.deploy_and_get_contract(
-                "StorageSoliditySource.sol",
+                "common/StorageSoliditySource",
                 "0.8.8",
                 self.sender_account,
                 contract_name="Storage",

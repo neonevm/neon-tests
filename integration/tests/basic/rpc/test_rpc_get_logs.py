@@ -5,11 +5,10 @@ import allure
 import pytest
 from web3.types import TxParams
 
-from integration.tests.basic.helpers.basic import BaseMixin
+from integration.tests.basic.helpers.basic import BaseMixin, Tag
 from integration.tests.basic.helpers.errors import Error32602, Error32600
 from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex, assert_fields_are_boolean, \
     assert_equal_fields
-from integration.tests.basic.rpc.test_rpc_base_calls import Tag
 from integration.tests.helpers.basic import cryptohex
 
 

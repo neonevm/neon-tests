@@ -2,8 +2,7 @@ import allure
 import pytest
 
 from integration.tests.basic.helpers import rpc_checks
-from integration.tests.basic.helpers.basic import BaseMixin
-from integration.tests.basic.rpc.test_rpc_base_calls import Tag
+from integration.tests.basic.helpers.basic import BaseMixin, Tag
 from utils.helpers import gen_hash_of_block
 
 

@@ -10,7 +10,7 @@ Tests for rpc endpoints (check availability and basic functionality)
 | TestRpcCalls::test_eth_call                                             | Call eth_call with with right but random data                  |           |
 | TestRpcCalls::test_eth_gas_price                                        | Get gas price                                                  |           |
 | TestRpcCalls::test_eth_get_balance                                      | Get sender balance with different state                        |           |
-| TestRpcCalls::test_eth_get_code                                         | Get code                                                       | NDEV-2294 |
+| TestRpcCalls::test_eth_get_code                                         | Get code                                                       |           |
 | TestRpcCalls::test_eth_get_code_sender_address                          | Get code with sender address                                   |           |
 | TestRpcCalls::test_eth_get_code_wrong_address                           | Get code with the wrong address                                |           |
 | TestRpcCalls::test_web3_client_version                                  | Get web3_client_version                                        |           |

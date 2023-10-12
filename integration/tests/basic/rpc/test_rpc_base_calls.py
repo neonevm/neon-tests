@@ -125,7 +125,6 @@ class TestRpcBaseCalls(BaseMixin):
         assert "error" not in response
         assert rpc_checks.is_hex(response["result"]), AssertMessage.WRONG_AMOUNT.value
 
-    @pytest.mark.xfail(reason="NDEV-2294")
     @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, None])
     def test_eth_get_code(self, event_caller_contract, param: tp.Union[Tag, None]):
         """Verify implemented rpc calls work eth_getCode"""

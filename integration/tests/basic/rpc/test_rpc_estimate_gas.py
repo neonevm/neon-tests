@@ -22,7 +22,7 @@ def common_contract(web3_client, class_account) -> tp.Any:
 class TestRpcEstimateGas(BaseMixin):
     account: "eth_account.signers.local.LocalAccount" = None
 
-    @pytest.fixture(params=[(850000, 15000), (8500000, 150000), (8500000, 150000)])
+    @pytest.fixture(params=[(850_000, 15_000), (8_500_000, 150_000)])
     def constructor_args(self, request: tp.Any) -> tp.List[int]:
         return request.param
 

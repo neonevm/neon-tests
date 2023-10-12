@@ -13,7 +13,7 @@ from integration.tests.basic.rpc.test_rpc_base_calls import Tag
 from integration.tests.helpers.basic import cryptohex
 
 
-@allure.feature("JSON-RPC-GET-LOGS validation")
+@allure.feature("JSON-RPC validation")
 @allure.story("Verify getLogs method")
 class TestRpcGetLogs(BaseMixin):
     def create_all_types_instruction(self, event_caller_contract) -> TxParams:

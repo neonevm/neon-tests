@@ -7,7 +7,7 @@ from integration.tests.basic.rpc.test_rpc_base_calls import Tag
 from utils.helpers import gen_hash_of_block
 
 
-@allure.feature("JSON-RPC-GET-BLOCK validation")
+@allure.feature("JSON-RPC validation")
 @allure.story("Verify getBlock methods")
 class TestRpcGetBlock(BaseMixin):
     @pytest.mark.parametrize("full_trx", [False, True])

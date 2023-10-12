@@ -14,7 +14,7 @@ from utils.consts import Unit
 from utils.helpers import gen_hash_of_block
 
 
-@allure.feature("JSON-RPC-GET-TRANSACTION validation")
+@allure.feature("JSON-RPC validation")
 @allure.story("Verify getTransaction methods")
 class TestRpcGetTransaction(BaseMixin):
 

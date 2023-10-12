@@ -17,7 +17,7 @@ def common_contract(web3_client, class_account) -> tp.Any:
     yield common_contract
 
 
-@allure.feature("JSON-RPC-ESTIMATE-GAS validation")
+@allure.feature("JSON-RPC validation")
 @allure.story("Verify eth_estimateGas RPC call")
 class TestRpcEstimateGas(BaseMixin):
     account: "eth_account.signers.local.LocalAccount" = None

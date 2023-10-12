@@ -10,7 +10,7 @@ from integration.tests.basic.rpc.test_rpc_base_calls import Tag
 from utils.helpers import gen_hash_of_block
 
 
-@allure.feature("JSON-RPC-GET-BLOCK-TRANSACTION validation")
+@allure.feature("JSON-RPC validation")
 @allure.story("Verify getBlockTransaction methods")
 class TestRpcGetBlockTransaction(BaseMixin):
     @pytest.mark.parametrize("param", [32, 16, None])

@@ -6,6 +6,7 @@ from hexbytes import HexBytes
 
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.basic import BaseMixin, Tag
+from integration.tests.basic.helpers.errors import Error32000
 
 
 @pytest.fixture(scope="class")
@@ -21,7 +22,7 @@ def common_contract(web3_client, class_account) -> tp.Any:
 @allure.story("Verify eth_estimateGas RPC call")
 class TestRpcEstimateGas(BaseMixin):
 
-    @pytest.mark.xfail(reason="NDEV-2314")
+    @pytest.mark.xfail(reason="NDEV-2310")
     @pytest.mark.parametrize("block_param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, Tag.FINALIZED, 1, None])
     def test_eth_estimate_gas(self, common_contract, class_account, block_param: tp.Union[int, Tag, None]):
         t_raw = self.web3_client.get_transaction_by_hash(common_contract[1]["transactionHash"])
@@ -40,10 +41,20 @@ class TestRpcEstimateGas(BaseMixin):
             f"the result for estimated gas should be in hex, but got'{response['result']}'"
         assert int(response["result"], 16) == 30_000
 
+    def test_eth_estimate_gas_negative(self):
+        response = self.proxy_api.send_rpc(method="eth_estimateGas", params=[])
+        assert "error" in response, "error field not in response"
+        assert "code" in response["error"]
+        assert "message" in response["error"], "message field not in response"
+        code = response["error"]["code"]
+        message = response["error"]["message"]
+        assert code == Error32000.CODE, "wrong code"
+        assert Error32000.MISSING_ARGUMENT in message, "wrong message"
+
     @pytest.mark.parametrize("contract_name", ["BigGasFactory1", "BigGasFactory2"])
     @pytest.mark.parametrize("process_gas, reserve_gas", [(850_000, 15_000), (8_500_000, 150_000)])
     def test_eth_estimate_gas_with_big_int(self, contract_name, process_gas, reserve_gas):
-        big_gas_contract, receipt = self.web3_client.deploy_and_get_contract(
+        big_gas_contract, _ = self.web3_client.deploy_and_get_contract(
             contract="issues/Ndev49", version="0.8.10",
             contract_name=contract_name, account=self.sender_account,
             constructor_args=[process_gas, reserve_gas]
@@ -55,9 +66,7 @@ class TestRpcEstimateGas(BaseMixin):
                 {
                     "chainId": self.web3_client._chain_id,
                     "from": self.sender_account.address,
-                    "nonce": self.web3_client.eth.get_transaction_count(
-                        self.sender_account.address
-                    ),
+                    "nonce": self.web3_client.eth.get_transaction_count(self.sender_account.address),
                     "gas": "0x0",
                     "gasPrice": hex(self.web3_client.gas_price()),
                     "value": "0x0",

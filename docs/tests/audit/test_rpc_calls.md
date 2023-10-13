@@ -66,7 +66,8 @@ Tests for rpc endpoints (check availability and basic functionality)
 | TestRpcGetTransaction::test_eth_get_transaction_receipt                             | Check response structure for getTransactionReceipt                 |           |
 | TestRpcGetTransaction::test_eth_get_transaction_receipt_when_hash_doesnt_exist      | Check getTransactionReceipt if tx hash not exist                   |           |
 |                                                                                     |                                                                    |           |
-| TestRpcEstimateGas::test_eth_estimate_gas                                           | Get estimate gas for a big contract                                | NDEV-2314 |
+| TestRpcEstimateGas::test_eth_estimate_gas                                           | Get estimate gas for contract                                      | NDEV-2310 |
+| TestRpcEstimateGas::test_eth_estimate_gas_negative                                  | Get estimate gas without params                                    | NDEV-2310 |
 | TestRpcEstimateGas::test_eth_estimate_gas_with_big_int                              | Get estimate gas for a big contract                                |           |
 | TestRpcEstimateGas::test_rpc_estimate_gas_send_neon                                 | Get estimate gas for send neon transfer operation                  |           |
 | TestRpcEstimateGas::test_rpc_estimate_gas_erc20                                     | Get estimate gas for erc20 transfer operation                      |           |

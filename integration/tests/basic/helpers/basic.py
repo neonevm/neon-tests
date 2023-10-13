@@ -1,25 +1,33 @@
 import time
 import typing as tp
 from dataclasses import dataclass
-from decimal import Decimal
+from enum import Enum
 
 import allure
+import eth_account.signers.local
 import pytest
 import web3
-import eth_account.signers.local
 from solders.rpc.responses import GetTransactionResp
 from solders.signature import Signature
 
+from integration.tests.base import BaseTests
+from utils.apiclient import JsonRPCSession
 from utils.consts import Unit, InputTestConstants
 from utils.helpers import gen_hash_of_block, wait_condition
-from utils.apiclient import JsonRPCSession
-from integration.tests.base import BaseTests
 
 
 @dataclass
 class AccountData:
     address: str
     key: str = ""
+
+
+class Tag(Enum):
+    EARLIEST = "earliest"
+    LATEST = "latest"
+    PENDING = "pending"
+    SAFE = "safe"
+    FINALIZED = "finalized"
 
 
 class BaseMixin(BaseTests):
@@ -84,7 +92,7 @@ class BaseMixin(BaseTests):
         return float(self.web3_client.from_wei(self.web3_client.eth.get_balance(address), Unit.ETHER))
 
     @staticmethod
-    def create_invalid_address(len = 20) -> str:
+    def create_invalid_address(len=20) -> str:
         """Create non existing account address"""
         address = gen_hash_of_block(len)
         while web3.Web3.is_checksum_address(address):

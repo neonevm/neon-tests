@@ -57,6 +57,8 @@ UNSUPPORTED_METHODS = [
     "shh_post",
     "shh_uninstallFilter",
     "shh_version",
+    "eth_getWork",
+    "eth_hashrate"
 ]
 
 
@@ -314,22 +316,6 @@ class TestRpcBaseCalls(BaseMixin):
             else:
                 assert code == Error32602.CODE, "wrong code"
                 assert Error32602.NOT_HEX in message, "wrong error message"
-
-    def test_eth_get_work(self):
-        """Verify implemented rpc calls work eth_getWork"""
-        response = self.proxy_api.send_rpc(method="eth_getWork")
-        assert "error" not in response
-        assert (
-                len(response["result"]) >= 3
-        ), f"Invalid response result: {response['result']}"
-
-    def test_eth_hash_rate(self):
-        """Verify implemented rpc calls work eth_hashrate"""
-        response = self.proxy_api.send_rpc(method="eth_hashrate")
-        assert "error" not in response
-        assert rpc_checks.is_hex(
-            response["result"]
-        ), f"Invalid response: {response['result']}"
 
     @pytest.mark.parametrize("method", UNSUPPORTED_METHODS)
     def test_check_unsupported_methods(self, method: str):

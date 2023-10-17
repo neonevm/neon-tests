@@ -28,7 +28,7 @@ jobs:
           token: ${{ secrets.GHTOKEN }}
           repo: graph-node
           owner: neonlabsorg
-          workflow: tests.yml
+          workflow: tests.yaml
           workflow_inputs: '{"accounts": "${{ env.ACCOUNTS }}"}'
 
       - name: Await Run ID ${{ steps.return_dispatch.outputs.run_id }}

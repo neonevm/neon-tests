@@ -24,7 +24,7 @@ jobs:
         uses: codex-/return-dispatch@v1
         id: return_dispatch
         with:
-          ref: NDEV-2272-graph-tests
+          ref: refs/heads/NDEV-2272-graph-tests
           token: ${{ secrets.GHTOKEN }}
           repo: graph-node
           owner: neonlabsorg

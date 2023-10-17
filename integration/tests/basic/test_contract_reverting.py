@@ -8,6 +8,15 @@ from integration.tests.basic.helpers.basic import BaseMixin
 from utils.helpers import get_contract_abi
 
 
+@pytest.fixture(scope="class")
+def revert_contract(web3_client, class_account):
+    contract, _ = web3_client.deploy_and_get_contract(
+        contract="common/Revert", version="0.7.0",
+        contract_name="TrivialRevert", account=class_account,
+    )
+    yield contract
+
+
 @allure.feature("Ethereum compatibility")
 @allure.story("Contract Reverting")
 class TestContractReverting(BaseMixin):
@@ -63,27 +72,27 @@ class TestContractReverting(BaseMixin):
         ):
             contract.constructor([]).build_transaction()
 
-    def test_method_raises_string_based_error(self):
-        contract, _ = self.web3_client.deploy_and_get_contract(
-            "common/TrivialRevert",
-            "0.7.0",
-            self.sender_account,
-            constructor_args=[],
-        )
+    def test_method_raises_string_based_error(self, revert_contract):
         with pytest.raises(
                 web3.exceptions.ContractLogicError,
                 match="execution reverted: Predefined revert happened",
         ):
-            contract.functions.do_string_based_revert().call()
+            revert_contract.functions.do_string_based_revert().call()
 
-    def test_method_raises_trivial_error(self):
-        contract, _ = self.web3_client.deploy_and_get_contract(
-            "common/TrivialRevert",
-            "0.7.0",
-            self.sender_account,
-            constructor_args=[],
-        )
+    def test_method_raises_trivial_error(self, revert_contract):
         with pytest.raises(
                 web3.exceptions.ContractLogicError, match="execution reverted"
         ):
-            contract.functions.do_trivial_revert().call()
+            revert_contract.functions.do_trivial_revert().call()
+
+    def test_nested_contract_revert(self, revert_contract):
+        contract, _ = self.web3_client.deploy_and_get_contract(
+            contract="common/Revert", version="0.7.0",
+            contract_name="Caller", account=self.sender_account,
+            constructor_args=[revert_contract.address]
+        )
+        with pytest.raises(
+                web3.exceptions.ContractLogicError,
+                match="execution reverted: Predefined revert happened"
+        ):
+            contract.functions.do_string_based_revert().call()

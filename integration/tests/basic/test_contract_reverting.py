@@ -4,7 +4,7 @@ import solcx
 import web3
 import web3.exceptions
 
-from integration.tests.basic.helpers.basic import BaseMixin
+from integration.tests.basic.helpers.basic import BaseMixin, Tag
 from utils.helpers import get_contract_abi
 
 
@@ -96,3 +96,15 @@ class TestContractReverting(BaseMixin):
                 match="execution reverted: Predefined revert happened"
         ):
             contract.functions.do_string_based_revert().call()
+
+    def test_eth_call_revert(self, revert_contract):
+        tx = {
+            "from": self.sender_account.address,
+            "to": revert_contract.address,
+            "data": revert_contract.encodeABI(fn_name="do_string_based_revert")
+        }
+        with pytest.raises(
+                web3.exceptions.ContractLogicError,
+                match="execution reverted: Predefined revert happened"
+        ):
+            self.web3_client._web3.eth.call(tx, Tag.LATEST.value)

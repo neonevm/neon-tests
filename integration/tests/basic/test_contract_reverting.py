@@ -1,9 +1,8 @@
+import allure
 import pytest
 import solcx
 import web3
 import web3.exceptions
-
-import allure
 
 from integration.tests.basic.helpers.basic import BaseMixin
 from utils.helpers import get_contract_abi
@@ -36,8 +35,8 @@ class TestContractReverting(BaseMixin):
             abi=contract_interface["abi"], bytecode=contract_interface["bin"]
         )
         with pytest.raises(
-            web3.exceptions.ContractLogicError,
-            match="execution reverted: ListConstructable: empty list",
+                web3.exceptions.ContractLogicError,
+                match="execution reverted: ListConstructable: empty list",
         ):
             contract.constructor([]).build_transaction()
 
@@ -60,7 +59,7 @@ class TestContractReverting(BaseMixin):
         )
 
         with pytest.raises(
-            web3.exceptions.ContractLogicError, match="execution reverted"
+                web3.exceptions.ContractLogicError, match="execution reverted"
         ):
             contract.constructor([]).build_transaction()
 
@@ -72,8 +71,8 @@ class TestContractReverting(BaseMixin):
             constructor_args=[],
         )
         with pytest.raises(
-            web3.exceptions.ContractLogicError,
-            match="execution reverted: Predefined revert happened",
+                web3.exceptions.ContractLogicError,
+                match="execution reverted: Predefined revert happened",
         ):
             contract.functions.do_string_based_revert().call()
 
@@ -85,6 +84,6 @@ class TestContractReverting(BaseMixin):
             constructor_args=[],
         )
         with pytest.raises(
-            web3.exceptions.ContractLogicError, match="execution reverted"
+                web3.exceptions.ContractLogicError, match="execution reverted"
         ):
             contract.functions.do_trivial_revert().call()

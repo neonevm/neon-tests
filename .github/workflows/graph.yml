@@ -21,16 +21,29 @@ jobs:
           python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n devnet
 
       - name: Trigger graph repo to run tests
-        uses: convictional/trigger-workflow-and-wait@v1.6.1
+        uses: peter-evans/repository-dispatch@v2
         with:
-          owner: neonlabsorg
+          token: ${{ secrets.GHTOKEN }}
+          repository: neonlabsorg/graph-node
+          event-type: integration-tests
+          client-payload: '{"accounts": "${{ env.ACCOUNTS }}"}'
+
+      - name: Get the run ID of the graph tests
+        uses: codex-/return-dispatch@v1
+        id: return_dispatch
+        with:
+          token: ${{ secrets.GHTOKEN }}
           repo: graph-node
-          github_token: ${{ secrets.GHTOKEN }}
-          workflow_file_name: tests.yml
-          ref: NDEV-2272-graph-tests
-          propagate_failure: true
-          trigger_workflow: true
-          wait_workflow: true
+          owner: neonlabsorg
+          workflow: tests.yml
+          
+      - name: Await Run ID ${{ steps.return_dispatch.outputs.run_id }}
+        uses: Codex-/await-remote-run@v1.0.0
+        with:
+          token: ${{ secrets.GHTOKEN }}
+          repo: graph-node
+          owner: neonlabsorg
+          run_id: ${{ steps.return_dispatch.outputs.run_id }}
 
   notify:
     runs-on: ubuntu-20.04

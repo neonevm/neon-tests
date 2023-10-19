@@ -1,11 +1,23 @@
-pragma solidity >=0.7.0 <0.9.0;
+pragma solidity >=0.8.10 <0.9.0;
+
+    error NumberTooHigh(uint256 from, uint256 number);
 
 contract TrivialRevert {
-    function do_string_based_revert() public view {
+
+    function doStringBasedRevert() public pure {
         require(false, "Predefined revert happened");
     }
-    function do_trivial_revert() public view {
+
+    function doTrivialRevert() public pure {
         require(false);
+    }
+
+    function customErrorRevert(uint256 from, uint256 number) public pure {
+        revert NumberTooHigh(from, number);
+    }
+
+    function doAssert() public pure {
+        assert(false);
     }
 }
 
@@ -16,7 +28,7 @@ contract Caller {
         myRevert = TrivialRevert(_address);
     }
 
-    function do_string_based_revert() public view {
-         return myRevert.do_string_based_revert();
+    function doStringBasedRevert() public view {
+        return myRevert.doStringBasedRevert();
     }
 }

@@ -12,3 +12,6 @@ Tests for check revert handling in different places
 | TestContractReverting::test_method_raises_trivial_error           | Get revert inside contract method without error                |         |
 | TestContractReverting::test_nested_contract_revert                | Get revert from the chain of contracts                         |         |
 | TestContractReverting::test_eth_call_revert                       | Get revert via eth_call                                        |         |
+| TestContractReverting::test_gas_limit_reached                     | Get gas limit reached revert                                   |         |
+| TestContractReverting::test_custom_error_revert                   | Get custom error revert                                        |         |
+| TestContractReverting::test_assert_revert                         | Get assert error revert                                        |         |

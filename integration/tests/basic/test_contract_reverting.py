@@ -23,7 +23,7 @@ def revert_contract(web3_client, class_account):
 class TestContractReverting(BaseMixin):
     @pytest.fixture(scope="class")
     def solc_version(self):
-        version = "0.8.10"
+        version = "0.7.0"
         if version not in [str(v) for v in solcx.get_installed_solc_versions()]:
             solcx.install_solc(version)
         return version

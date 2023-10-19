@@ -5,7 +5,7 @@ import web3
 import web3.exceptions
 
 from integration.tests.basic.helpers.assert_message import ErrorMessage
-from integration.tests.basic.helpers.basic import BaseMixin, Tag
+from integration.tests.basic.helpers.basic import BaseMixin
 from utils.helpers import get_contract_abi
 
 
@@ -74,6 +74,14 @@ class TestContractReverting(BaseMixin):
             contract.constructor([]).build_transaction()
 
     def test_method_raises_string_based_error(self, revert_contract):
+        tx = self.make_contract_tx_object()
+
+        with pytest.raises(
+                web3.exceptions.ContractLogicError,
+                match="execution reverted: Predefined revert happened"
+        ):
+            revert_contract.functions.doStringBasedRevert().build_transaction(tx)
+
         with pytest.raises(
                 web3.exceptions.ContractLogicError,
                 match="execution reverted: Predefined revert happened",
@@ -101,16 +109,11 @@ class TestContractReverting(BaseMixin):
             self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
     def test_eth_call_revert(self, revert_contract):
-        tx = {
-            "from": self.sender_account.address,
-            "to": revert_contract.address,
-            "data": revert_contract.encodeABI(fn_name="doStringBasedRevert")
-        }
         with pytest.raises(
                 web3.exceptions.ContractLogicError,
-                match="execution reverted: Predefined revert happened"
+                match="execution reverted: Predefined revert happened",
         ):
-            self.web3_client._web3.eth.call(tx, Tag.LATEST.value)
+            revert_contract.functions.doStringBasedRevert().call()
 
     def test_gas_limit_reached(self, revert_contract, class_account):
         tx = self.make_contract_tx_object(amount=1)

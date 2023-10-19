@@ -3,6 +3,7 @@ import pytest
 import solcx
 import web3
 import web3.exceptions
+from semantic_version import Version
 
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from integration.tests.basic.helpers.basic import BaseMixin
@@ -22,11 +23,11 @@ def revert_contract(web3_client, class_account):
 @allure.story("Contract Reverting")
 class TestContractReverting(BaseMixin):
     @pytest.fixture(scope="class")
-    def solc_version(self):
+    def solc_version(self) -> Version:
         version = "0.7.0"
         if version not in [str(v) for v in solcx.get_installed_solc_versions()]:
             solcx.install_solc(version)
-        return version
+        return Version(version)
 
     def test_constructor_raises_string_based_error(self, solc_version):
         contract = """

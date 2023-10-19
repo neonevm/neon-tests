@@ -105,8 +105,7 @@ class TestContractReverting(BaseMixin):
                 match="execution reverted: Predefined revert happened"
         ):
             tx = self.make_contract_tx_object()
-            instruction_tx = contract.functions.doStringBasedRevert().build_transaction(tx)
-            self.web3_client.send_transaction(self.sender_account, instruction_tx)
+            contract.functions.doStringBasedRevert().build_transaction(tx)
 
     def test_eth_call_revert(self, revert_contract):
         with pytest.raises(
@@ -130,7 +129,7 @@ class TestContractReverting(BaseMixin):
                 web3.exceptions.ContractLogicError,
                 match="execution reverted"
         ):
-            revert_contract.functions.customErrorRevert(1, 2).call()
+            revert_contract.functions.customErrorRevert(1, 2).build_transaction()
 
     def test_assert_revert(self, revert_contract):
         with pytest.raises(

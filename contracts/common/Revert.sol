@@ -19,6 +19,8 @@ contract TrivialRevert {
     function doAssert() public pure {
         assert(false);
     }
+
+    function deposit() payable external {}
 }
 
 contract Caller {

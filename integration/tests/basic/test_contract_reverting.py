@@ -4,6 +4,7 @@ import solcx
 import web3
 import web3.exceptions
 
+from integration.tests.basic.helpers.assert_message import ErrorMessage
 from integration.tests.basic.helpers.basic import BaseMixin, Tag
 from utils.helpers import get_contract_abi
 
@@ -108,6 +109,17 @@ class TestContractReverting(BaseMixin):
                 match="execution reverted: Predefined revert happened"
         ):
             self.web3_client._web3.eth.call(tx, Tag.LATEST.value)
+
+    def test_gas_limit_reached(self, revert_contract, class_account):
+        account = self.create_account_with_balance(2)
+        tx = self.make_contract_tx_object(sender=account.address, amount=1)
+        tx["gas"] = 1  # setting low level of gas limit to get the error
+        instruction_tx = revert_contract.functions.deposit().build_transaction(tx)
+        with pytest.raises(
+                ValueError,
+                match=ErrorMessage.GAS_LIMIT_REACHED.value
+        ):
+            self.web3_client.send_transaction(account, instruction_tx)
 
     def test_custom_error_revert(self, revert_contract):
         with pytest.raises(

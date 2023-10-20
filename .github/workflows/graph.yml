@@ -26,4 +26,14 @@ jobs:
           repository: neonlabsorg/graph-node
           event-type: intergation-tests
           client-payload: '{"accounts": "${{ env.ACCOUNTS }}"}'
+      - name: Trigger the Graph tests and get the run ID
+        uses: codex-/return-dispatch@v1
+        id: return_dispatch
+        with:
+          ref: refs/heads/NDEV-2272-graph-tests
+          token: ${{ secrets.GHTOKEN }}
+          repo: graph-node
+          owner: neonlabsorg
+          workflow: tests.yaml
+          workflow_inputs: '{"accounts": "${{ env.ACCOUNTS }}"}'
 

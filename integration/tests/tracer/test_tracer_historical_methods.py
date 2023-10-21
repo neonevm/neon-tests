@@ -65,7 +65,7 @@ class TestTracerHistoricalMethods(BaseMixin):
     def call_storage(self, storage_contract, storage_value, request_type):
         request_value = None
         self.store_value(storage_value, storage_contract)
-        tx, reciept = self.retrieve_value(storage_contract)
+        tx, receipt = self.retrieve_value(storage_contract)
 
         tx_obj = self.create_tx_object(sender=self.sender_account.address,
                                        recipient=storage_contract.address,
@@ -79,10 +79,10 @@ class TestTracerHistoricalMethods(BaseMixin):
         tx_obj["value"] = hex(tx_obj["value"])
 
         if request_type == "blockNumber":
-            request_value = hex(reciept[request_type])
+            request_value = hex(receipt[request_type])
         else:
-            request_value = reciept[request_type].hex()
-        return tx_obj, request_value, reciept
+            request_value = receipt[request_type].hex()
+        return tx_obj, request_value, receipt
 
     def compare_values(self, value, value_to_compare):
         return math.isclose(abs(round(int(value, 0) / 1e18, 9) - value_to_compare),
@@ -121,10 +121,10 @@ class TestTracerHistoricalMethods(BaseMixin):
 
     def test_eth_call_by_block_and_hash(self, storage_contract):
         store_value_1 = random.randint(0, 100)
-        tx_obj, _, reciept = self.call_storage(
+        tx_obj, _, receipt = self.call_storage(
             storage_contract, store_value_1, "blockNumber")
-        request_value_block = hex(reciept["blockNumber"])
-        request_value_hash = reciept["blockHash"].hex()
+        request_value_block = hex(receipt["blockNumber"])
+        request_value_hash = receipt["blockHash"].hex()
 
         wait_condition(lambda: int(self.tracer_api.send_rpc(method="eth_call",
                                                             req_type="blockNumber",
@@ -176,12 +176,12 @@ class TestTracerHistoricalMethods(BaseMixin):
                        timeout_sec=120)
 
         request_value_2 = None
-        _, reciept = self.retrieve_value(storage_contract)
+        _, receipt = self.retrieve_value(storage_contract)
 
         if request_type == "blockNumber":
-            request_value_2 = hex(reciept[request_type])
+            request_value_2 = hex(receipt[request_type])
         else:
-            request_value_2 = reciept[request_type].hex()
+            request_value_2 = receipt[request_type].hex()
 
         wait_condition(lambda: int(self.tracer_api.send_rpc(method="eth_getTransactionCount",
                                                             req_type=request_type,
@@ -193,9 +193,9 @@ class TestTracerHistoricalMethods(BaseMixin):
     def test_eth_get_balance(self, request_type):
         transfer_amount = 0.1
 
-        reciept_1 = self.send_neon(
+        receipt_1 = self.send_neon(
             self.sender_account, self.recipient_account, transfer_amount)
-        assert reciept_1["status"] == 1
+        assert receipt_1["status"] == 1
 
         sender_balance = round(self.get_balance_from_wei(
             self.sender_account.address), 9)
@@ -203,9 +203,9 @@ class TestTracerHistoricalMethods(BaseMixin):
             self.recipient_account.address), 9)
 
         if request_type == "blockNumber":
-            request_value = hex(reciept_1[request_type])
+            request_value = hex(receipt_1[request_type])
         else:
-            request_value = reciept_1[request_type].hex()
+            request_value = receipt_1[request_type].hex()
 
         wait_condition(lambda: self.compare_values(self.tracer_api.send_rpc(method="eth_getBalance",
                                                                             req_type=request_type,
@@ -221,9 +221,9 @@ class TestTracerHistoricalMethods(BaseMixin):
                                                    recipient_balance),
                        timeout_sec=120)
 
-        reciept_2 = self.send_neon(
+        receipt_2 = self.send_neon(
             self.sender_account, self.recipient_account, transfer_amount)
-        assert reciept_2["status"] == 1
+        assert receipt_2["status"] == 1
 
         sender_balance_after = round(self.get_balance_from_wei(
             self.sender_account.address), 9)
@@ -231,9 +231,9 @@ class TestTracerHistoricalMethods(BaseMixin):
             self.recipient_account.address), 9)
 
         if request_type == "blockNumber":
-            request_value = hex(reciept_2[request_type])
+            request_value = hex(receipt_2[request_type])
         else:
-            request_value = reciept_2[request_type].hex()
+            request_value = receipt_2[request_type].hex()
 
         wait_condition(lambda: self.compare_values(self.tracer_api.send_rpc(method="eth_getBalance",
                                                                             req_type=request_type,

@@ -20,7 +20,6 @@ class TestTracerDebugMethods(BaseMixin):
             d = json.load(f)
             return d
 
-    @pytest.mark.skip(reason="bug NDEV-2196")
     def test_debug_trace_call(self):
         receipt = self.send_neon(
             self.sender_account, self.recipient_account, 0.1)

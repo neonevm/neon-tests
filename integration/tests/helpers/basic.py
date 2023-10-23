@@ -1,9 +1,14 @@
 import typing
+
 from eth_utils import keccak
 
 
 def cryptohex(text: str):
     return "0x" + keccak(text=text).hex()
+
+
+def int_to_hex(number: int):
+    return int(number).to_bytes(32, 'big').hex()
 
 
 def hasattr_recursive(obj: typing.Any, attribute: str) -> bool:

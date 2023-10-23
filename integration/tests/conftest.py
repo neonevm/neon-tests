@@ -185,7 +185,7 @@ def erc20_spl(
 
 @pytest.fixture(scope="session")
 def erc20_simple(web3_client, faucet):
-    erc20 = ERC20(web3_client,faucet)
+    erc20 = ERC20(web3_client, faucet)
     return erc20
 
 
@@ -249,3 +249,15 @@ def event_caller_contract(web3_client, class_account) -> typing.Any:
         "common/EventCaller", "0.8.12", class_account
     )
     yield event_caller
+
+
+@pytest.fixture(scope="class")
+def storage_contract(web3_client, class_account) -> typing.Any:
+    contract, _ = web3_client.deploy_and_get_contract(
+        "common/StorageSoliditySource",
+        "0.8.8", 
+        class_account,
+        contract_name="Storage",
+        constructor_args=[]
+    )
+    yield contract

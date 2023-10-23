@@ -3,10 +3,12 @@ import pytest
 import solcx
 import web3
 import web3.exceptions
+from eth_utils import keccak
 from semantic_version import Version
 
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from integration.tests.basic.helpers.basic import BaseMixin
+from integration.tests.helpers.basic import cryptohex, int_to_hex
 from utils.helpers import get_contract_abi
 
 
@@ -126,15 +128,18 @@ class TestContractReverting(BaseMixin):
             self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
     def test_custom_error_revert(self, revert_contract):
+        params = [1, 2]
+
         with pytest.raises(
-                web3.exceptions.ContractLogicError,
-                match="execution reverted"
+                web3.exceptions.ContractCustomError,
+                match=cryptohex("NumberTooHigh(uint256,uint256)")[:10] + int_to_hex(params[0]) + int_to_hex(params[1])
         ):
-            revert_contract.functions.customErrorRevert(1, 2).build_transaction()
+            revert_contract.functions.customErrorRevert(params[0], params[1]).build_transaction()
 
     def test_assert_revert(self, revert_contract):
         with pytest.raises(
-                web3.exceptions.ContractLogicError,
-                match="execution reverted"
+                web3.exceptions.ContractPanicError,
+                match="Panic error 0x01: Assert evaluates to false"
         ):
+
             revert_contract.functions.doAssert().call()

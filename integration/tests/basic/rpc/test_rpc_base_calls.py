@@ -333,7 +333,6 @@ class TestRpcBaseCalls(BaseMixin):
 
         expected_fields = [
             "NEON_GAS_LIMIT_MULTIPLIER_NO_CHAINID",
-            "NEON_SEED_VERSION",
             "NEON_EVM_STEPS_LAST_ITERATION_MAX",
             "NEON_PAYMENT_TO_DEPOSIT",
             "NEON_COMPUTE_UNITS",

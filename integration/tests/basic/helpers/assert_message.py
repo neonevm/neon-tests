@@ -3,7 +3,8 @@ from enum import Enum
 
 class ErrorMessage(Enum):
     NEGATIVE_VALUE = "Resulting wei value must be between 1 and "
-    INSUFFICIENT_FUNDS = "insufficient balance for transfer"
+    INSUFFICIENT_FUNDS = "insufficient funds for transfer"
+    INSUFFICIENT_BALANCE = "insufficient balance for transfer"
     GAS_OVERFLOW = "gas uint64 overflow"
     GAS_LIMIT_REACHED = "gas limit reached"
     INVALID_FIELDS_GAS = "Transaction had invalid fields: {'gas'"

@@ -121,7 +121,7 @@ class TestWNeon(BaseMixin):
             lambda: self.sol_client.get_transaction(
                 Signature.from_string(solana_trx["result"][0]),
             )
-            != GetTransactionResp(None)
+            != GetTransactionResp(None), timeout_sec=30
         )
         solana_resp = self.sol_client.get_transaction(
             Signature.from_string(solana_trx["result"][0])

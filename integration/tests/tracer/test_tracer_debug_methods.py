@@ -5,6 +5,7 @@ import random
 from jsonschema import Draft4Validator
 
 import allure
+import pytest
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.tracer.test_tracer_historical_methods import call_storage
 from utils.helpers import wait_condition
@@ -43,12 +44,12 @@ class TestTracerDebugMethods(BaseMixin):
                        tx_hash])['result'] is not None, timeout_sec=120)
         tx_info = self.tracer_api.send_rpc(
             method="eth_getTransactionByHash", params=[tx_hash])
-    
+
         response = self.tracer_api.send_rpc(
             method="debug_traceCall", params=[{}, tx_info["result"]["blockNumber"]])
-        
+
         assert "error" not in response, "Error in response"
-        assert response["result"]["returnValue"] == "" 
+        assert response["result"]["returnValue"] == ""
         self.validate_response_result(response)
 
     def test_debug_trace_call_zero_eth_call(self):
@@ -79,7 +80,7 @@ class TestTracerDebugMethods(BaseMixin):
         response = self.tracer_api.send_rpc(
             method="debug_traceCall", params=params)
         assert "error" not in response, "Error in response"
-        assert response["result"]["returnValue"] == "" 
+        assert response["result"]["returnValue"] == ""
         self.validate_response_result(response)
 
     def test_debug_trace_call_non_zero_eth_call(self, storage_contract):
@@ -107,11 +108,11 @@ class TestTracerDebugMethods(BaseMixin):
         wait_condition(lambda: self.tracer_api.send_rpc(method="debug_traceCall",
                                                         params=params)["result"] is not None,
                        timeout_sec=120)
-        
+
         response = self.tracer_api.send_rpc(
             method="debug_traceCall", params=params)
         assert "error" not in response, "Error in response"
-        assert 1 <= int(response["result"]["returnValue"]) <= 100
+        assert 1 <= int(response["result"]["returnValue"], 16) <= 100
         self.validate_response_result(response)
 
     def test_debug_transaction_call(self):
@@ -127,6 +128,46 @@ class TestTracerDebugMethods(BaseMixin):
             method="debug_traceTransaction", params=[tx_hash])
         assert "error" not in response, "Error in response"
         self.validate_response_result(response)
+
+    def test_debug_transaction_call_non_zero_trace(self, storage_contract):
+        store_value = random.randint(1, 100)
+        _, _, receipt = call_storage(
+            self, storage_contract, store_value, "blockNumber")
+        tx_hash = receipt["transactionHash"].hex()
+
+        wait_condition(lambda: self.tracer_api.send_rpc(method="debug_traceTransaction",
+                                                        params=[tx_hash])["result"] is not None,
+                       timeout_sec=120)
+        response = self.tracer_api.send_rpc(
+            method="debug_traceTransaction", params=[tx_hash])
+        assert "error" not in response, "Error in response"
+        assert "error" not in response, "Error in response"
+        assert 1 <= int(response["result"]["returnValue"], 16) <= 100
+        self.validate_response_result(response)
+
+    def test_debug_transaction_call_hash_without_prefix(self, storage_contract):
+        store_value = random.randint(1, 100)
+        _, _, receipt = call_storage(
+            self, storage_contract, store_value, "blockNumber")
+        tx_hash = receipt["transactionHash"].hex()[2:]
+
+        wait_condition(lambda: self.tracer_api.send_rpc(method="debug_traceTransaction",
+                                                        params=[tx_hash])["result"] is not None,
+                       timeout_sec=120)
+        response = self.tracer_api.send_rpc(
+            method="debug_traceTransaction", params=[tx_hash])
+        assert "error" not in response, "Error in response"
+        assert "error" not in response, "Error in response"
+        assert 1 <= int(response["result"]["returnValue"], 16) <= 100
+        self.validate_response_result(response)
+
+    @pytest.mark.parametrize("hash", [6, '0x0', '', 'f23e554'])
+    def test_debug_transaction_call_invalid_hash(self, hash):
+        response = self.tracer_api.send_rpc(
+            method="debug_traceTransaction", params=[hash])
+        assert "error" in response, "No errors in response"
+        assert response["error"]["code"] == -32602, "Invalid error code"
+        assert response["error"]["message"] == "Invalid params"
 
     def test_debug_trace_block_by_number(self):
         receipt = self.send_neon(

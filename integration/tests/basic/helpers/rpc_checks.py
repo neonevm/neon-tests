@@ -143,4 +143,4 @@ def assert_equal_fields(result, comparable_object, comparable_fields, keys_mappi
             r = hex(r)
         if isinstance(r, HexBytes):
             r = r.hex()
-        assert l == r, f"{field} from response {l} is not equal to {field} from receipt {r}"
+        assert l == r, f"The field '{field}' from response {l} is not equal to {field} from receipt {r}"

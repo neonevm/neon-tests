@@ -24,5 +24,5 @@ jobs:
         with:
           token: ${{ secrets.GHTOKEN }}
           repository: neonlabsorg/graph-node
-          event-type: intergation-tests
+          event-type: integration-tests
           client-payload: '{"accounts": "${{ env.ACCOUNTS }}"}'

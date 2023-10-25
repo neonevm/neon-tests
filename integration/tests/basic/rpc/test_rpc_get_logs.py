@@ -212,9 +212,9 @@ class TestRpcGetLogs(BaseMixin):
             )
             assert_fields_are_boolean(response["result"][0], ["removed"])
             if "address" in param_fields:
-                assert response["result"][0]["address"] == receipt["to"].lower(), (
+                assert response["result"][0]["address"] == receipt["to"], (
                     f"address from response {response['result'][0]['address']} "
-                    f"is not equal to address from receipt {receipt['to'].lower()}"
+                    f"is not equal to address from receipt {receipt['to']}"
                 )
 
     def test_eth_get_logs_eq_val(self, event_caller_contract):

@@ -26,10 +26,10 @@ class SolanaClient(solana.rpc.api.Client):
         )
 
     def request_airdrop(
-        self,
-        pubkey: PublicKey,
-        lamports: int,
-        commitment: tp.Optional[Commitment] = None,
+            self,
+            pubkey: PublicKey,
+            lamports: int,
+            commitment: tp.Optional[Commitment] = None,
     ) -> RequestAirdropResp:
         airdrop_resp = None
         for _ in range(5):
@@ -65,17 +65,16 @@ class SolanaClient(solana.rpc.api.Client):
         else:
             raise AssertionError(f"Balance not changed in account {to}")
 
-    def get_neon_account_address(
-        self, neon_account_address: str, evm_loader_id: str
-    ) -> PublicKey:
-        neon_account_addressbytes = bytes.fromhex(neon_account_address[2:])
+    def ether2balance(self, address: tp.Union[str, bytes], chain_id: int, evm_loader_id: str) -> PublicKey:
+        address_bytes = bytes.fromhex(address[2:])
+        chain_id_bytes = chain_id.to_bytes(32, 'big')
         return PublicKey.find_program_address(
-            [self.account_seed_version, neon_account_addressbytes],
-            PublicKey(evm_loader_id),
+            [self.account_seed_version, address_bytes, chain_id_bytes],
+            PublicKey(evm_loader_id)
         )[0]
 
     def get_erc_auth_address(
-        self, neon_account_address: str, token_address: str, evm_loader_id: str
+            self, neon_account_address: str, token_address: str, evm_loader_id: str
     ):
         neon_account_addressbytes = bytes(12) + bytes.fromhex(neon_account_address[2:])
         if token_address.startswith("0x"):

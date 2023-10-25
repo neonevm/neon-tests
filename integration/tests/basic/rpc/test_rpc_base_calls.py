@@ -330,32 +330,19 @@ class TestRpcBaseCalls(BaseMixin):
 
     def test_get_evm_params(self):
         response = self.proxy_api.send_rpc(method="neon_getEvmParams", params=[])
-
         expected_fields = [
-            "NEON_GAS_LIMIT_MULTIPLIER_NO_CHAINID",
-            "NEON_EVM_STEPS_LAST_ITERATION_MAX",
-            "NEON_PAYMENT_TO_DEPOSIT",
-            "NEON_COMPUTE_UNITS",
-            "NEON_REQUEST_UNITS_ADDITIONAL_FEE",
-            "NEON_PKG_VERSION",
-            "NEON_HEAP_FRAME",
             "NEON_ACCOUNT_SEED_VERSION",
-            "NEON_TOKEN_MINT",
-            "NEON_TREASURY_POOL_SEED",
-            "NEON_STORAGE_ENTRIES_IN_CONTRACT_ACCOUNT",
+            "NEON_EVM_STEPS_LAST_ITERATION_MAX",
             "NEON_EVM_STEPS_MIN",
-            "NEON_PAYMENT_TO_TREASURE",
-            "NEON_OPERATOR_PRIORITY_SLOTS",
-            "NEON_STATUS_NAME",
-            "NEON_REVISION",
-            "NEON_ADDITIONAL_FEE",
-            "NEON_CHAIN_ID",
-            "NEON_COMPUTE_BUDGET_HEAP_FRAME",
-            "NEON_POOL_COUNT",
+            "NEON_GAS_LIMIT_MULTIPLIER_NO_CHAINID",
             "NEON_HOLDER_MSG_SIZE",
+            "NEON_OPERATOR_PRIORITY_SLOTS",
+            "NEON_PAYMENT_TO_DEPOSIT",
+            "NEON_PAYMENT_TO_TREASURE",
+            "NEON_STORAGE_ENTRIES_IN_CONTRACT_ACCOUNT",
             "NEON_TREASURY_POOL_COUNT",
-            "NEON_TOKEN_MINT_DECIMALS",
-            "NEON_EVM_ID",
+            "NEON_TREASURY_POOL_SEED",
+            "NEON_EVM_ID"
         ]
         for field in expected_fields:
             assert (

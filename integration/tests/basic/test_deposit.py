@@ -18,7 +18,8 @@ from web3 import exceptions as web3_exceptions
 
 from integration.tests.basic.helpers.basic import BaseMixin, BaseTests
 from utils.consts import LAMPORT_PER_SOL
-from utils.transfers_inter_networks import neon_transfer_tx, wSOL_tx, neon_from_solana_to_neon_tx
+from utils.transfers_inter_networks import neon_transfer_tx, wSOL_tx, neon_from_solana_to_neon_tx, \
+    wSOL_from_solana_to_neon_tx
 from utils.helpers import wait_condition
 
 wSOL = {
@@ -69,6 +70,7 @@ class TestDeposit(BaseMixin):
         opts = TxOpts(skip_preflight=True, skip_confirmation=False)
         sig = self.sol_client.send_transaction(tx, solana_account, opts=opts).value
         sig_status = json.loads((self.sol_client.confirm_transaction(sig)).to_json())
+        print(sig_status)
         assert sig_status["result"]["value"][0]["status"] == {"Ok": None}, f"error:{sig_status}"
 
     def test_transfer_neon_from_solana_to_neon(
@@ -124,8 +126,9 @@ class TestDeposit(BaseMixin):
 
         # wrap SOL
         wrap_sol_tx = wSOL_tx(self.sol_client,
-            wSOL, full_amount, solana_account.public_key, ata_address
-        )
+                              wSOL, full_amount,
+                              solana_account.public_key,
+                              ata_address)
         self.send_tx_and_check_status_ok(wrap_sol_tx, solana_account)
 
         # transfer wSOL
@@ -149,6 +152,50 @@ class TestDeposit(BaseMixin):
                 int(ata_balance_after.value.amount)
                 == int(ata_balance_before.value.amount) + full_amount
         )
+
+    def test_transfer_wrapped_sol_token_from_solana_to_neon(
+            self, solana_account, pytestconfig: Config, web3_client_sol, new_account
+    ):
+        evm_loader_id = pytestconfig.environment.evm_loader
+        amount = 0.1
+        full_amount = int(amount * LAMPORT_PER_SOL)
+
+        mint_pubkey = PublicKey(wSOL["address_spl"])
+        ata_address = get_associated_token_address(
+            solana_account.public_key, mint_pubkey
+        )
+
+        self.create_ata(solana_account, mint_pubkey)
+
+        # wrap SOL
+        wrap_sol_tx = wSOL_tx(self.sol_client,
+                              wSOL, full_amount, solana_account.public_key, ata_address
+                              )
+        self.send_tx_and_check_status_ok(wrap_sol_tx, solana_account)
+
+        chain_id_sol = 112
+        balance_pubkey = self.sol_client.ether2balance(new_account.address,
+                                                       chain_id_sol,
+                                                       evm_loader_id)
+
+        tx = wSOL_from_solana_to_neon_tx(
+            solana_account,
+            balance_pubkey,
+            PublicKey("So11111111111111111111111111111111111111112"),
+            new_account,
+            full_amount,
+            evm_loader_id,
+            chain_id_sol
+        )
+
+        self.send_tx_and_check_status_ok(tx, solana_account)
+
+        balance_before = web3_client_sol.get_balance(new_account.address)
+
+        contract, _ = web3_client_sol.deploy_and_get_contract(
+            "opcodes/ChainId", "0.8.10", new_account)
+
+        balance_after = web3_client_sol.get_balance(new_account.address)
 
 
 @allure.feature("Transfer NEON <-> Solana")

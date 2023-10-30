@@ -24,10 +24,13 @@ class NetworkManager():
                     environments[NETWORK_NAME].update({var.lower(): os.environ.get(var, "")})
                 self.networks.update(environments)
 
-    def get_network_param(self, network, param):
+    def get_network_param(self, network, params=None):
         value = ""
         if network in self.networks:
-            value = self.networks[network][param]
+            value = self.networks[network]
+            if params:
+                for item in params.split('.'):
+                    value = self.networks[network][item]
         if isinstance(value, str):
             if os.environ.get("SOLANA_IP"):
                 value = value.replace("<solana_ip>", os.environ.get("SOLANA_IP"))

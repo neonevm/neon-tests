@@ -1,9 +1,9 @@
 import random
 import requests
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 
 
-web_cli = NeonWeb3Client("http://142.132.165.47:9090/solana", 111)
+web_cli = NeonChainWeb3Client("http://142.132.165.47:9090/solana")
 
 users = [
     "0x0c19062861650faac0a7d290ca87e740de4abf0380096a3f3540530f89048e73",

@@ -29,7 +29,7 @@ class TestTrxRlpDecoding(BaseMixin):
             "from": acc.address,
             "to": acc.address,
             "value": web3_client.to_wei(2, Unit.ETHER),
-            "chainId": web3_client._chain_id,
+            "chainId": web3_client.eth.chain_id,
             "gasPrice": web3_client.gas_price(),
             "gas": 0,
             "nonce": web3_client.eth.get_transaction_count(acc.address),

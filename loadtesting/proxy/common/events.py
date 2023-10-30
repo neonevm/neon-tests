@@ -19,7 +19,7 @@ from locust import events
 from locust.runners import WorkerRunner
 
 from utils import operator
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 
 from . import env
 
@@ -55,14 +55,11 @@ def operator_economy_pre_balance(environment, **kwargs):
     op = operator.Operator(
         environment.credentials["proxy_url"],
         environment.credentials["solana_url"],
-        environment.credentials["network_id"],
         environment.credentials["operator_neon_rewards_address"],
         environment.credentials["spl_neon_mint"],
         environment.credentials["operator_keys"],
-        web3_client=NeonWeb3Client(
-            environment.credentials["proxy_url"],
-            environment.credentials["network_id"],
-            session=requests.Session(),
+        web3_client=NeonChainWeb3Client(
+            environment.credentials["proxy_url"]
         ),
     )
     environment.op = op

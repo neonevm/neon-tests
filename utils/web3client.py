@@ -18,11 +18,15 @@ from utils.helpers import decode_function_signature
 
 class Web3Client:
     def __init__(
-            self, proxy_url: str, tracer_url: tp.Optional[tp.Any] = None, session: tp.Optional[tp.Any] = None
+            self, 
+            proxy_url: str, 
+            tracer_url: tp.Optional[tp.Any] = None, 
+            session: tp.Optional[tp.Any] = None
     ):
         self._proxy_url = proxy_url
         self._tracer_url = tracer_url
-        self._web3 = web3.Web3(web3.HTTPProvider(proxy_url, session=session))
+        self._web3 = web3.Web3(web3.HTTPProvider(proxy_url, session=session, request_kwargs={"timeout": 30}))
+
 
     def __getattr__(self, item):
         return getattr(self._web3, item)

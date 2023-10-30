@@ -18,11 +18,19 @@ from utils.helpers import decode_function_signature
 
 class NeonWeb3Client:
     def __init__(
-        self, proxy_url: str, chain_id: int, tracer_url: tp.Optional[tp.Any] = None, session: tp.Optional[tp.Any] = None
+        self,
+        proxy_url: str,
+        chain_id: int,
+        tracer_url: tp.Optional[tp.Any] = None,
+        session: tp.Optional[tp.Any] = None,
     ):
         self._proxy_url = proxy_url
         self._tracer_url = tracer_url
-        self._web3 = web3.Web3(web3.HTTPProvider(proxy_url, session=session))
+        self._web3 = web3.Web3(
+            web3.HTTPProvider(
+                proxy_url, session=session, request_kwargs={"timeout": 30}
+            )
+        )
         self._chain_id = chain_id
         self._session = session
 
@@ -77,7 +85,6 @@ class NeonWeb3Client:
             return self._web3.eth.get_transaction(transaction_hash)
         except TransactionNotFound:
             return None
-
 
     def gas_price(self):
         gas = self._web3.eth.gas_price

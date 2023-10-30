@@ -285,7 +285,7 @@ class NeonChainWeb3Client(Web3Client):
 
 class SolChainWeb3Client(Web3Client):
     def __init__(self, proxy_url: str):
-        super().__init__(proxy_url)
+        super().__init__(f"{proxy_url}/sol")
 
     def create_account_with_balance(self):
         pass

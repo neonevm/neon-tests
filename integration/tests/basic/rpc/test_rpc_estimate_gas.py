@@ -37,7 +37,7 @@ class TestRpcEstimateGas(BaseMixin):
             "value": hex(1000),
             "gasPrice": hex(self.web3_client.gas_price()),
             "nonce": hex(self.web3_client.get_nonce(self.sender_account.address)),
-            "chainId": hex(self.web3_client._chain_id),
+            "chainId": hex(self.web3_client.eth.chain_id),
             "gas": hex(0),
         }
         params = [dict(transaction)]
@@ -83,7 +83,7 @@ class TestRpcEstimateGas(BaseMixin):
         trx_big_gas = (
             big_gas_contract.functions.checkBigGasRequirements().build_transaction(
                 {
-                    "chainId": self.web3_client._chain_id,
+                    "chainId": self.web3_client.eth.chain_id,
                     "from": self.sender_account.address,
                     "nonce": self.web3_client.eth.get_transaction_count(
                         self.sender_account.address

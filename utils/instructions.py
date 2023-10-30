@@ -121,7 +121,7 @@ class Instruction:
             "to": to,
             "nonce": web3_client.eth.get_transaction_count(emulate_signer.address),
             "gasPrice": gas_price if gas_price is not None else web3_client.gas_price(),
-            "chainId": web3_client._chain_id,
+            "chainId": web3_client.eth.chain_id,
             "data": json.dumps(data).encode('utf-8'),
             "gas": 100000000
         }

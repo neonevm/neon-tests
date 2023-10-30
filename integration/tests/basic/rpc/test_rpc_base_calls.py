@@ -165,7 +165,7 @@ class TestRpcBaseCalls(BaseMixin):
         """Verify implemented rpc calls work work net_version"""
         response = self.proxy_api.send_rpc("net_version")
         assert "error" not in response
-        assert int(response["result"]) == self.web3_client._chain_id, \
+        assert int(response["result"]) == self.web3_client.eth.chain_id, \
             f"Invalid response result {response['result']}"
 
     def test_eth_send_raw_transaction(self):

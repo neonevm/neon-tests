@@ -5,7 +5,7 @@ import random
 import pytest
 
 from integration.tests.basic.helpers.basic import BaseMixin
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 
 PRECOMPILED_FIXTURES = {
     "modexp": {
@@ -71,7 +71,7 @@ class TestPrecompiledContracts(BaseMixin):
 
     @pytest.mark.parametrize(**load_parametrized_data())
     def test_call_direct(
-            self, web3_client: NeonWeb3Client, address, input_data, expected
+            self, web3_client: NeonChainWeb3Client, address, input_data, expected
     ):
         result = web3_client._web3.eth.call(
             {
@@ -85,7 +85,7 @@ class TestPrecompiledContracts(BaseMixin):
     @pytest.mark.parametrize(**load_parametrized_data())
     def test_call_via_contract(
             self,
-            web3_client: NeonWeb3Client,
+            web3_client: NeonChainWeb3Client,
             precompiled_contract,
             address,
             input_data,
@@ -100,7 +100,7 @@ class TestPrecompiledContracts(BaseMixin):
     @pytest.mark.parametrize(**load_parametrized_data())
     def test_staticcall_via_contract(
             self,
-            web3_client: NeonWeb3Client,
+            web3_client: NeonChainWeb3Client,
             precompiled_contract,
             address,
             input_data,
@@ -115,7 +115,7 @@ class TestPrecompiledContracts(BaseMixin):
     @pytest.mark.parametrize(**load_parametrized_data())
     def test_delegatecall_via_contract(
             self,
-            web3_client: NeonWeb3Client,
+            web3_client: NeonChainWeb3Client,
             precompiled_contract,
             address,
             input_data,
@@ -129,7 +129,7 @@ class TestPrecompiledContracts(BaseMixin):
 
     @pytest.mark.xdist_group("precompiled_contract_balance")
     @pytest.mark.parametrize(**load_parametrized_data())
-    def test_call_via_send_trx(self, web3_client: NeonWeb3Client,
+    def test_call_via_send_trx(self, web3_client: NeonChainWeb3Client,
                                address,
                                input_data,
                                expected, request, pytestconfig):
@@ -141,7 +141,7 @@ class TestPrecompiledContracts(BaseMixin):
 
         instruction_tx = self.create_contract_call_tx_object(amount=amount)
         instruction_tx["data"] = input_data
-        instruction_tx["chainId"] = self.web3_client._chain_id
+        instruction_tx["chainId"] = self.web3_client.eth.chain_id
         instruction_tx["to"] = address
         instruction_tx["from"] = self.sender_account.address
         if request.node.callspec.id not in ["modexp-nagydani-5-square0", "modexp-nagydani-5-square1",

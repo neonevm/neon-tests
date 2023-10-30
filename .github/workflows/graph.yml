@@ -2,14 +2,12 @@ name: "The Graph tests"
 
 on:
   schedule:
-    - cron: "0 12 * * *"
+    - cron: "0 4 * * *"
   workflow_dispatch:
-     
-env:
-  ACCOUNTS: ${{ env.ACCOUNTS }}
 
 jobs:
   tests:
+    runs-on: ubuntu-20.04
     name: The Graph tests
     steps:
       - uses: actions/checkout@v3
@@ -21,30 +19,10 @@ jobs:
         id: accounts
         run: |
           python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n devnet
-
-      - name: Trigger graph repo to run tests
-        uses: convictional/trigger-workflow-and-wait@v1.6.1
+      - name: Trigger the Graph tests
+        uses: peter-evans/repository-dispatch@v2
         with:
-          owner: neonlabsorg
-          repo: graph-node
-          github_token: ${{ secrets.GHTOKEN }}
-          workflow_file_name: tests.yml
-          ref: master
-          client_payload: '{"accounts": ${{ env.ACCOUNTS }}}'
-          propagate_failure: true
-          trigger_workflow: true
-          wait_workflow: true
-
-  notify:
-    runs-on: ubuntu-20.04
-    needs: [tests]
-    if: failure()
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install python requirements
-        id: requirements
-        uses: ./.github/actions/python-requirements
-      - name: Notify on failure
-        id: notification
-        run: |
-          python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} -b ${{ env.BUILD_URL }} -t "The Graph tests failed, please check the logs."
+          token: ${{ secrets.GHTOKEN }}
+          repository: neonlabsorg/graph-node
+          event-type: integration-tests
+          client-payload: '{"accounts": "${{ env.ACCOUNTS }}"}'

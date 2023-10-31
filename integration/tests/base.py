@@ -6,14 +6,14 @@ from utils.consts import Unit
 from utils.faucet import Faucet
 from utils.operator import Operator
 from utils.solana_client import SolanaClient
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 
 
 class BaseTests:
     acc: eth_account.signers.local.LocalAccount
     operator: Operator
     faucet: Faucet
-    web3_client: NeonWeb3Client
+    web3_client: NeonChainWeb3Client
     sol_client: SolanaClient
     sol_price: float
 
@@ -37,7 +37,7 @@ class BaseTests:
             nonce = self.web3_client.eth.get_transaction_count(sender)
         transaction = {
             "from": sender,
-            "chainId": self.web3_client._chain_id,
+            "chainId": self.web3_client.eth.chain_id,
             "gasPrice": gas_price,
             "nonce": nonce,
         }

@@ -13,7 +13,7 @@ from deploy.cli.network_manager import NetworkManager
 
 from solana.transaction import Signature
 from deploy.cli import faucet as faucet_cli
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 from utils.solana_client import SolanaClient
 from utils.prices import get_neon_price
 
@@ -40,7 +40,7 @@ TF_ENV.update(
     }
 )
 
-WEB3_CLIENT = NeonWeb3Client(os.environ.get("PROXY_URL"), os.environ.get("CHAIN_ID", 111))
+WEB3_CLIENT = NeonChainWeb3Client(os.environ.get("PROXY_URL"))
 REPORT_HEADERS = ["Action", "Fee", "Cost in $", "Accounts", "TRx", "Estimated Gas", "Used Gas", "Used % of EG"]
 
 def set_github_env(envs: tp.Dict, upper=True) -> None:
@@ -163,14 +163,10 @@ def prepare_accounts(network_name, count, amount) -> tp.List:
             "proxy_url": os.environ.get("PROXY_URL"),
             "solana_url": os.environ.get("SOLANA_URL"),
             "faucet_url": os.environ.get("FAUCET_URL"),
+            "network_ids": network_manager.get_network_param(network_name, "network_ids")
         }
     else:
-        network = {
-            "proxy_url": network_manager.get_network_param(network_name, "proxy_url"),
-            "solana_url": network_manager.get_network_param(network_name, "solana_url"),
-            "faucet_url": network_manager.get_network_param(network_name, "faucet_url"),
-        }
-    network["network_id"] = (network_manager.get_network_param(network_name, "network_id"),)
+        network = network_manager.get_network_param(network_name)
     accounts = faucet_cli.prepare_wallets_with_balance(network, count, amount)
     if os.environ.get("CI"):
         set_github_env(dict(accounts=",".join(accounts)))

@@ -14,7 +14,7 @@ from locust import TaskSet, events
 
 from utils import helpers
 from utils.faucet import Faucet
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 
 from .events import statistics_collector, save_transaction
 
@@ -27,8 +27,7 @@ saved_transactions = []
 def save_transactions_list(environment: "locust.env.Environment", **kwargs):
     if "SAVE_TRANSACTIONS" in os.environ:
         web3_client = NeonWeb3ClientExt(
-            environment.credentials["proxy_url"], environment.credentials["network_id"]
-        )
+            environment.credentials["proxy_url"])
 
         def get_solana_trx(tr):
             return tr, web3_client.get_solana_trx_by_neon(tr)
@@ -62,7 +61,7 @@ def init_session(size: int = 1000) -> requests.Session:
     return session
 
 
-class NeonWeb3ClientExt(NeonWeb3Client):
+class NeonWeb3ClientExt(NeonChainWeb3Client):
     """Extends Neon Web3 client adds statistics metrics"""
 
     def __getattribute__(self, item):
@@ -109,7 +108,7 @@ class NeonProxyTasksSet(TaskSet):
         self.credentials = self.user.environment.credentials
         LOG.info(f"Create web3 client to: {self.credentials['proxy_url']}")
         self.web3_client = NeonWeb3ClientExt(
-            self.credentials["proxy_url"], self.credentials["network_id"], session=session
+            self.credentials["proxy_url"]
         )
         self.faucet = Faucet(
             self.credentials["faucet_url"], self.web3_client, session=session)

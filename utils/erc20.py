@@ -6,7 +6,7 @@ from utils import web3client
 class ERC20:
     def __init__(
             self,
-            web3_client: web3client.NeonWeb3Client,
+            web3_client: web3client.NeonChainWeb3Client,
             faucet,
             owner=None,
             name="Test Token",

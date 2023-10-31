@@ -27,7 +27,7 @@ class TestRejectingContractsStartingWith0xEF(BaseMixin):
     def test_sent_incorrect_calldata_via_trx(self, data):
         transaction = self.create_contract_call_tx_object()
         transaction["data"] = data
-        transaction["chainId"] = self.web3_client._chain_id
+        transaction["chainId"] = self.web3_client.eth.chain_id
 
         with pytest.raises(
             web3.exceptions.ContractLogicError, match=EIP_3541_ERROR_MESSAGE
@@ -37,7 +37,7 @@ class TestRejectingContractsStartingWith0xEF(BaseMixin):
     def test_sent_correct_calldata_via_trx(self):
         transaction = self.create_contract_call_tx_object()
         transaction["data"] = GOOD_CALLDATA[0]
-        transaction["chainId"] = self.web3_client._chain_id
+        transaction["chainId"] = self.web3_client.eth.chain_id
         transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
         signed_tx = self.web3_client.eth.account.sign_transaction(
             transaction, self.sender_account.key

@@ -10,7 +10,7 @@ from _pytest.config import Config
 from _pytest.runner import runtestprotocol
 
 from clickfile import create_allure_environment_opts
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client, SolChainWeb3Client
 
 pytest_plugins = ["ui.plugins.browser"]
 
@@ -22,7 +22,7 @@ class EnvironmentConfig:
     tracer_url: str
     solana_url: str
     faucet_url: str
-    network_id: int
+    network_ids: dict
     operator_neon_rewards_address: tp.List[str]
     spl_neon_mint: str
     neon_erc20wrapper_address: str
@@ -76,7 +76,7 @@ def pytest_configure(config: Config):
     with open(pathlib.Path().parent.parent / envs_file, "r+") as f:
         environments = json.load(f)
     assert (
-        network_name in environments
+            network_name in environments
     ), f"Environment {network_name} doesn't exist in envs.json"
     env = environments[network_name]
     if network_name == "devnet":
@@ -102,7 +102,7 @@ def pytest_configure(config: Config):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
+def allure_environment(pytestconfig: Config, web3_client: NeonChainWeb3Client):
     opts = {}
     if pytestconfig.getoption("--network") != "geth":
         opts = {
@@ -139,8 +139,16 @@ def allure_environment(pytestconfig: Config, web3_client: NeonWeb3Client):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def web3_client(pytestconfig: Config) -> NeonWeb3Client:
-    client = NeonWeb3Client(
-        pytestconfig.environment.proxy_url, pytestconfig.environment.network_id, tracer_url=pytestconfig.environment.tracer_url
+def web3_client(pytestconfig: Config) -> NeonChainWeb3Client:
+    client = NeonChainWeb3Client(
+        pytestconfig.environment.proxy_url, tracer_url=pytestconfig.environment.tracer_url
+    )
+    return client
+
+
+@pytest.fixture(scope="session", autouse=True)
+def web3_client_sol(pytestconfig: Config) -> SolChainWeb3Client:
+    client = SolChainWeb3Client(
+        pytestconfig.environment.proxy_url,
     )
     return client

@@ -6,7 +6,7 @@ from gevent import time
 from locust import tag, task, User, events
 
 from utils.erc20 import ERC20
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 from utils.faucet import Faucet
 
 from loadtesting.proxy.common.base import NeonProxyTasksSet
@@ -106,9 +106,8 @@ def prepare_one_contract_for_erc20(environment: "locust.env.Environment", **kwar
     ):
         return
 
-    neon_client = NeonWeb3Client(
-        environment.credentials["proxy_url"], environment.credentials["network_id"]
-    )
+    neon_client = NeonChainWeb3Client(
+        environment.credentials["proxy_url"])
     faucet = Faucet(environment.credentials["faucet_url"], neon_client)
 
     eth_account = neon_client.create_account()

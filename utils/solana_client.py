@@ -1,3 +1,4 @@
+import json
 import time
 import typing as tp
 
@@ -107,3 +108,9 @@ class SolanaClient(solana.rpc.api.Client):
         )
 
         return token_mint, assoc_addr
+
+    def send_tx_and_check_status_ok(self, tx, solana_account):
+        opts = TxOpts(skip_preflight=True, skip_confirmation=False)
+        sig = self.send_transaction(tx, solana_account, opts=opts).value
+        sig_status = json.loads((self.confirm_transaction(sig)).to_json())
+        assert sig_status["result"]["value"][0]["status"] == {"Ok": None}, f"error:{sig_status}"

@@ -18,15 +18,14 @@ from utils.helpers import decode_function_signature
 
 class Web3Client:
     def __init__(
-            self, 
-            proxy_url: str, 
-            tracer_url: tp.Optional[tp.Any] = None, 
+            self,
+            proxy_url: str,
+            tracer_url: tp.Optional[tp.Any] = None,
             session: tp.Optional[tp.Any] = None
     ):
         self._proxy_url = proxy_url
         self._tracer_url = tracer_url
         self._web3 = web3.Web3(web3.HTTPProvider(proxy_url, session=session, request_kwargs={"timeout": 30}))
-
 
     def __getattr__(self, item):
         return getattr(self._web3, item)
@@ -217,6 +216,12 @@ class Web3Client:
         result = self._web3.eth.call(tx)
         return abi.decode(result_types, result)[0]
 
+    def get_balance(
+            self, address: tp.Union[str, eth_account.signers.local.LocalAccount]
+    ):
+        if not isinstance(address, str):
+            address = address.address
+        return self._web3.eth.get_balance(address, "pending")
 
 class NeonChainWeb3Client(Web3Client):
     def __init__(self, proxy_url: str, tracer_url: tp.Optional[tp.Any] = None, session: tp.Optional[tp.Any] = None):
@@ -250,6 +255,8 @@ class NeonChainWeb3Client(Web3Client):
             )
         return account
 
+
+
     def send_neon(
             self,
             from_: eth_account.signers.local.LocalAccount,
@@ -280,11 +287,7 @@ class NeonChainWeb3Client(Web3Client):
     def get_balance(
             self, address: tp.Union[str, eth_account.signers.local.LocalAccount]
     ):
-        if not isinstance(address, str):
-            address = address.address
-        return web3.Web3.from_wei(
-            self._web3.eth.get_balance(address, "pending"), "ether"
-        )
+        return web3.Web3.from_wei(super().get_balance(address), "ether")
 
 
 class SolChainWeb3Client(Web3Client):
@@ -293,3 +296,4 @@ class SolChainWeb3Client(Web3Client):
 
     def create_account_with_balance(self):
         pass
+

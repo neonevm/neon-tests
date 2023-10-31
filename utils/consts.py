@@ -1,11 +1,13 @@
 from enum import Enum
 
+from solana.publickey import PublicKey
 
 LAMPORT_PER_SOL = 1_000_000_000
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 ZERO_HASH = "0000000000000000000000000000000000000000000000000000000000000000"
 INITIAL_ACCOUNT_AMOUNT = 100
 MAX_UINT_256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+
 
 class Unit(Enum):
     WEI = "wei"
@@ -32,3 +34,14 @@ class InputTestConstants(Enum):
 
     def get_default_initial_amount(self) -> int:
         return self.FAUCET_1ST_REQUEST_AMOUNT.value
+
+
+wSOL = {
+    "chain_id": 111,
+    "address_spl": PublicKey("So11111111111111111111111111111111111111112"),
+    "address": "0x16869acc45BA20abEFB2DdE2096F66373fDe364F",
+    "decimals": 9,
+    "name": "Wrapped SOL",
+    "symbol": "wSOL",
+    "logo_uri": "https://raw.githubusercontent.com/neonlabsorg/token-list/master/assets/solana-wsol-logo.svg",
+}

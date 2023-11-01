@@ -184,7 +184,7 @@ def erc20_spl(
 
 @pytest.fixture(scope="session")
 def erc20_simple(web3_client, faucet):
-    erc20 = ERC20(web3_client,faucet)
+    erc20 = ERC20(web3_client, faucet)
     return erc20
 
 
@@ -205,13 +205,28 @@ def erc20_spl_mintable(web3_client: NeonChainWeb3Client, faucet, sol_client, sol
 
 
 @pytest.fixture(scope="function")
-def new_account(web3_client, faucet, eth_bank_account):
-    yield web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
+def new_account(web3_client, sol_client, faucet, eth_bank_account,
+                web3_client_sol, pytestconfig, solana_account):
+    account = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
+    sol_client.deposit_wrapped_sol_from_solana_to_neon(solana_account,
+                                                       account,
+                                                       web3_client_sol.eth.chain_id,
+                                                       pytestconfig.environment.evm_loader)
+    yield account
 
 
 @pytest.fixture(scope="class")
-def class_account(web3_client, faucet, eth_bank_account):
-    yield web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
+def class_account(web3_client, faucet, eth_bank_account, solana_account, sol_client, web3_client_sol, pytestconfig):
+    account = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
+    sol_client.request_airdrop(solana_account.public_key, 5 * LAMPORT_PER_SOL)
+    sol_client.deposit_wrapped_sol_from_solana_to_neon(solana_account,
+                                                       account,
+                                                       web3_client_sol.eth.chain_id,
+                                                       pytestconfig.environment.evm_loader,
+                                                       5 * LAMPORT_PER_SOL)
+
+
+    yield account
 
 
 @pytest.fixture(scope="function")
@@ -248,3 +263,12 @@ def event_caller_contract(web3_client, class_account) -> typing.Any:
         "common/EventCaller", "0.8.12", class_account
     )
     yield event_caller
+
+
+@pytest.fixture(scope="class")
+def wsol_contract(web3_client_sol, class_account):
+    wsol, _ = web3_client_sol.deploy_and_get_contract(
+        contract="common/WNativeChainToken", version="0.8.12",
+        contract_name="WNativeChainToken", account=class_account,
+    )
+    return wsol

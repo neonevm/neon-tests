@@ -108,6 +108,7 @@ class Web3Client:
             gas: tp.Optional[int] = 0,
             gas_price: tp.Optional[int] = None,
             constructor_args: tp.Optional[tp.List] = None,
+            value = 0
     ) -> web3.types.TxReceipt:
         """Proxy doesn't support send_transaction"""
         gas_price = gas_price or self.gas_price()
@@ -120,6 +121,7 @@ class Web3Client:
                 "gas": gas,
                 "gasPrice": gas_price,
                 "nonce": self.get_nonce(from_),
+                "value": value
             }
         )
 
@@ -142,6 +144,8 @@ class Web3Client:
             transaction["gasPrice"] = self.gas_price()
         if "gas" not in transaction:
             transaction["gas"] = self._web3.eth.estimate_gas(transaction)
+        if "nonce" not in transaction:
+            transaction["nonce"] = self.get_nonce(account)
         if gas_multiplier is not None:
             transaction["gas"] = int(transaction["gas"] * gas_multiplier)
         instruction_tx = self._web3.eth.account.sign_transaction(
@@ -159,6 +163,7 @@ class Web3Client:
             constructor_args: tp.Optional[tp.Any] = None,
             import_remapping: tp.Optional[dict] = None,
             gas: tp.Optional[int] = 0,
+            value = 0
     ) -> tp.Tuple[tp.Any, web3.types.TxReceipt]:
         contract_interface = helpers.get_contract_interface(
             contract,
@@ -173,6 +178,7 @@ class Web3Client:
             bytecode=contract_interface["bin"],
             constructor_args=constructor_args,
             gas=gas,
+            value=value
         )
 
         contract = self.eth.contract(
@@ -223,6 +229,7 @@ class Web3Client:
             address = address.address
         return self._web3.eth.get_balance(address, "pending")
 
+
 class NeonChainWeb3Client(Web3Client):
     def __init__(self, proxy_url: str, tracer_url: tp.Optional[tp.Any] = None, session: tp.Optional[tp.Any] = None):
         super().__init__(proxy_url, tracer_url, session)
@@ -255,8 +262,6 @@ class NeonChainWeb3Client(Web3Client):
             )
         return account
 
-
-
     def send_neon(
             self,
             from_: eth_account.signers.local.LocalAccount,
@@ -288,12 +293,15 @@ class NeonChainWeb3Client(Web3Client):
             self, address: tp.Union[str, eth_account.signers.local.LocalAccount]
     ):
         return web3.Web3.from_wei(super().get_balance(address), "ether")
+    @staticmethod
+    def to_main_currency(amount):
+        return web3.Web3.to_wei(amount, "ether")
 
 
 class SolChainWeb3Client(Web3Client):
     def __init__(self, proxy_url: str):
         super().__init__(f"{proxy_url}/sol")
 
-    def create_account_with_balance(self):
-        pass
-
+    @staticmethod
+    def to_main_currency(amount):
+        return amount * 1_000_000_000

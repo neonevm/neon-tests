@@ -40,9 +40,8 @@ def token_from_solana_to_neon_tx(solana_account, neon_wallet, mint, neon_account
     return tx
 
 
-def wSOL_tx(sol_client, spl_token, amount, solana_wallet, ata_address):
+def wSOL_tx(wSOL_account, spl_token, amount, solana_wallet, ata_address):
     mint_pubkey = PublicKey(spl_token['address_spl'])
-    wSOL_account = sol_client.get_account_info(ata_address).value
 
     tx = Transaction(fee_payer=solana_wallet)
     if (wSOL_account is None):

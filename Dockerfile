@@ -20,6 +20,7 @@ RUN apt update && \
 # Prepare repo for node 18
     apt install -y software-properties-common python-dev ca-certificates curl gnupg git && \
     mkdir /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
     echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
 # Install py3.10 from deadsnakes repository and pip from standard ubuntu packages
     add-apt-repository ppa:deadsnakes/ppa && apt update && \

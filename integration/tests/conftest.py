@@ -135,7 +135,7 @@ def solana_account(bank_account, pytestconfig: Config, sol_client):
     account = Keypair.generate()
     if pytestconfig.environment.use_bank:
         sol_client.send_sol(
-            bank_account, account.public_key, int(0.3 * LAMPORT_PER_SOL)
+            bank_account, account.public_key, int(0.5 * LAMPORT_PER_SOL)
         )
     else:
         sol_client.request_airdrop(account.public_key, 1 * LAMPORT_PER_SOL)

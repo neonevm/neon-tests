@@ -90,21 +90,21 @@ def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
     with allure.step("Create account for tests"):
         acc = web3_client.eth.account.create()
     with allure.step(
-            f"Request {NEON_AIRDROP_AMOUNT} NEON from faucet for {acc.address}"
+        f"Request {NEON_AIRDROP_AMOUNT} NEON from faucet for {acc.address}"
     ):
         faucet.request_neon(acc.address, NEON_AIRDROP_AMOUNT)
         assert web3_client.get_balance(acc) == NEON_AIRDROP_AMOUNT
     start_neon_balance = operator.get_neon_balance()
     start_sol_balance = operator.get_solana_balance()
     with allure.step(
-            f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
+        f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
     ):
         pass
     yield acc
     end_neon_balance = operator.get_neon_balance()
     end_sol_balance = operator.get_solana_balance()
     with allure.step(
-            f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
+        f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
     ):
         pass
     with allure.step(f"Account end balance: {web3_client.get_balance(acc)} NEON"):
@@ -136,7 +136,7 @@ def solana_account(bank_account, pytestconfig: Config, sol_client):
     account = Keypair.generate()
     if pytestconfig.environment.use_bank:
         sol_client.send_sol(
-            bank_account, account.public_key, int(0.1 * LAMPORT_PER_SOL)
+            bank_account, account.public_key, int(0.3 * LAMPORT_PER_SOL)
         )
     else:
         sol_client.request_airdrop(account.public_key, 1 * LAMPORT_PER_SOL)
@@ -148,11 +148,11 @@ def solana_account(bank_account, pytestconfig: Config, sol_client):
 
 @pytest.fixture(scope="session")
 def erc20_spl(
-        web3_client: NeonWeb3Client,
-        faucet,
-        pytestconfig: Config,
-        sol_client,
-        solana_account,
+    web3_client: NeonWeb3Client,
+    faucet,
+    pytestconfig: Config,
+    sol_client,
+    solana_account,
 ):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
     erc20 = ERC20Wrapper(
@@ -185,7 +185,7 @@ def erc20_spl(
 
 @pytest.fixture(scope="session")
 def erc20_simple(web3_client, faucet):
-    erc20 = ERC20(web3_client,faucet)
+    erc20 = ERC20(web3_client, faucet)
     return erc20
 
 

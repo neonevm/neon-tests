@@ -15,7 +15,7 @@ from utils.erc20wrapper import ERC20Wrapper
 from utils.erc20 import ERC20
 from utils.faucet import Faucet
 from utils.operator import Operator
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 from utils.apiclient import JsonRPCSession
 from utils.solana_client import SolanaClient
 from solana.rpc.types import TxOpts
@@ -72,11 +72,10 @@ def sol_client(pytestconfig: Config):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def operator(pytestconfig: Config, web3_client: NeonWeb3Client) -> Operator:
+def operator(pytestconfig: Config, web3_client: NeonChainWeb3Client) -> Operator:
     return Operator(
         pytestconfig.environment.proxy_url,
         pytestconfig.environment.solana_url,
-        pytestconfig.environment.network_id,
         pytestconfig.environment.operator_neon_rewards_address,
         pytestconfig.environment.spl_neon_mint,
         pytestconfig.environment.operator_keys,
@@ -85,7 +84,7 @@ def operator(pytestconfig: Config, web3_client: NeonWeb3Client) -> Operator:
 
 
 @pytest.fixture(scope="class")
-def prepare_account(operator, faucet, web3_client: NeonWeb3Client):
+def prepare_account(operator, faucet, web3_client: NeonChainWeb3Client):
     """Create new account for tests and save operator pre and post balances"""
     with allure.step("Create account for tests"):
         acc = web3_client.eth.account.create()
@@ -148,7 +147,7 @@ def solana_account(bank_account, pytestconfig: Config, sol_client):
 
 @pytest.fixture(scope="session")
 def erc20_spl(
-    web3_client: NeonWeb3Client,
+    web3_client: NeonChainWeb3Client,
     faucet,
     pytestconfig: Config,
     sol_client,
@@ -190,7 +189,9 @@ def erc20_simple(web3_client, faucet):
 
 
 @pytest.fixture(scope="session")
-def erc20_spl_mintable(web3_client: NeonWeb3Client, faucet, sol_client, solana_account):
+def erc20_spl_mintable(
+    web3_client: NeonChainWeb3Client, faucet, sol_client, solana_account
+):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
     erc20 = ERC20Wrapper(
         web3_client,

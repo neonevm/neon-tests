@@ -2,12 +2,9 @@ import pathlib
 
 import solcx
 from eth_account.signers.local import LocalAccount
-from solana.keypair import Keypair
 from solana.rpc.commitment import Confirmed
-import spl.token.client
 from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
-from spl.token.constants import TOKEN_PROGRAM_ID
 
 from . import web3client
 from .metaplex import create_metadata_instruction_data, create_metadata_instruction
@@ -18,7 +15,7 @@ INIT_TOKEN_AMOUNT = 1000000000000000
 class ERC20Wrapper:
     def __init__(
             self,
-            web3_client: web3client.NeonWeb3Client,
+            web3_client: web3client.NeonChainWeb3Client,
             faucet,
             name,
             symbol,

@@ -3,11 +3,11 @@ import typing as tp
 import urllib.parse
 
 from utils.helpers import wait_condition
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 
 
 class Faucet:
-    def __init__(self, faucet_url: str, web3_client: NeonWeb3Client, session: tp.Optional[tp.Any] = None):
+    def __init__(self, faucet_url: str, web3_client: NeonChainWeb3Client, session: tp.Optional[tp.Any] = None):
         self._url = faucet_url
         self._session = session or requests.Session()
         self.web3_client = web3_client

@@ -12,7 +12,7 @@ from spl.token.instructions import (
 )
 
 from utils.erc721ForMetaplex import ERC721ForMetaplex
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 
 
 @pytest.fixture(scope="function")
@@ -62,7 +62,7 @@ def multiple_actions_erc20(web3_client, faucet, class_account):
 
 
 @pytest.fixture(scope="class")
-def erc721(web3_client: NeonWeb3Client, faucet, pytestconfig: Config):
+def erc721(web3_client: NeonChainWeb3Client, faucet, pytestconfig: Config):
     contract = ERC721ForMetaplex(web3_client, faucet)
     return contract
 

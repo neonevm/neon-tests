@@ -57,7 +57,7 @@ BIG_STRING = (
 
 
 # @pytest.fixture(scope="session", autouse=True)
-# def heat_stand(web3_client: web3client.NeonWeb3Client, faucet):
+# def heat_stand(web3_client: web3client.NeonChainWeb3Client, faucet):
 #     """After redeploy stand, first 10-20 requests spend more sols than expected."""
 #     if "CI" not in os.environ:
 #         return

@@ -9,6 +9,7 @@ import pytest
 from _pytest.config import Config
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
+from solana.rpc.api import Commitment
 
 from utils.consts import LAMPORT_PER_SOL
 from utils.erc20wrapper import ERC20Wrapper
@@ -19,7 +20,7 @@ from utils.web3client import NeonChainWeb3Client
 from utils.apiclient import JsonRPCSession
 from utils.solana_client import SolanaClient
 from solana.rpc.types import TxOpts
-from solana.rpc.commitment import Confirmed
+from solana.rpc import commitment
 
 NEON_AIRDROP_AMOUNT = 10_000
 
@@ -141,8 +142,13 @@ def solana_account(bank_account, pytestconfig: Config, sol_client):
         sol_client.request_airdrop(account.public_key, 1 * LAMPORT_PER_SOL)
     yield account
     if pytestconfig.environment.use_bank:
-        balance = sol_client.get_balance(account.public_key).value
-        sol_client.send_sol(account, bank_account.public_key, balance - 5000)
+        balance = sol_client.get_balance(
+            account.public_key, commitment=commitment.Confirmed
+        ).value
+        try:
+            sol_client.send_sol(account, bank_account.public_key, balance - 5000)
+        except:
+            pass
 
 
 @pytest.fixture(scope="session")

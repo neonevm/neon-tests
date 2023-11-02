@@ -30,7 +30,7 @@ class NetworkManager():
             value = self.networks[network]
             if params:
                 for item in params.split('.'):
-                    value = self.networks[network][item]
+                    value = value[item]
         if isinstance(value, str):
             if os.environ.get("SOLANA_IP"):
                 value = value.replace("<solana_ip>", os.environ.get("SOLANA_IP"))

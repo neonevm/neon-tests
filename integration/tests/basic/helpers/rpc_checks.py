@@ -103,16 +103,16 @@ def assert_log_field_in_neon_trx_receipt(response, events_count):
     assert event_types == expected_event_types, f"Actual: {event_types}; Expected: {expected_event_types}"
 
 
-def assert_fields_are_hex(object, expected_hex_fields):
-    if isinstance(object, SimpleNamespace):
+def assert_fields_are_hex(_object, expected_hex_fields):
+    if isinstance(_object, SimpleNamespace):
         for field in expected_hex_fields:
-            assert hasattr(object, field), f"no expected field {field} in the object"
-            assert is_hex(getattr(object, field)), f"field {field} is not correct. Actual : {getattr(object, field)}"
+            assert hasattr(_object, field), f"no expected field {field} in the object"
+            assert is_hex(getattr(_object, field)), f"field {field} is not correct. Actual : {getattr(_object, field)}"
         return
 
     for field in expected_hex_fields:
-        assert field in object, f"no expected field {field} in the object"
-        assert is_hex(object[field]), f"field {field} is not correct. Actual : {object[field]}"
+        assert field in _object, f"no expected field {field} in the object"
+        assert is_hex(_object[field]), f"field {field} is not correct. Actual : {_object[field]}"
 
 
 def assert_fields_are_boolean(object, expected_boolean_fields):

@@ -11,10 +11,10 @@ from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import BaseMixin, Tag
 from integration.tests.basic.helpers.errors import Error32000, Error32602
-from integration.tests.basic.helpers.rpc_checks import is_hex, hex_str_consists_not_only_of_zeros
+from integration.tests.basic.helpers.rpc_checks import is_hex, hex_str_consists_not_only_of_zeros, \
+    assert_fields_are_hex, assert_fields_are_boolean
 from integration.tests.helpers.basic import cryptohex
 from utils.helpers import gen_hash_of_block
-
 
 GET_LOGS_TEST_DATA = [
     (Tag.LATEST.value, Tag.LATEST.value),
@@ -102,6 +102,29 @@ class TestRpcBaseCalls(BaseMixin):
         result = response["result"]
         assert rpc_checks.is_hex(result), f"Invalid current gas price `{result}` in wei"
         assert int(result, 16) > 100000000, f"gas price should be greater 100000000, got {int(result, 16)}"
+
+    def test_neon_gas_price(self):
+        """Verify implemented rpc calls work neon_gasPrice"""
+        params = [{"from": self.sender_account.address, "nonce": "0x0"}]
+        response = self.proxy_api.send_rpc("neon_gasPrice", params=params)
+        assert "error" not in response
+        assert "result" in response
+        result = response["result"]
+        assert_fields_are_hex(result, [
+            "gas_price",
+            "suggested_gas_price",
+            "min_acceptable_gas_price",
+            "min_executable_gas_price",
+            "min_wo_chainid_acceptable_gas_price",
+            "sol_price_usd",
+            "neon_price_usd",
+            "operator_fee",
+            "gas_price_slippage"])
+        assert_fields_are_boolean(result, [
+            "is_const_gas_price",
+            "allow_underpriced_tx_wo_chainid"])
+        gas_price = result["gas_price"]
+        assert int(gas_price, 16) > 100000000, f"gas price should be greater 100000000, got {int(gas_price, 16)}"
 
     @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, None])
     @pytest.mark.only_stands

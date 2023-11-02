@@ -394,3 +394,9 @@ class TestRpcBaseCalls(BaseMixin):
         assert re.match(
             pattern, response["result"]
         ), f"Version format is not correct. Pattern: {pattern}; Response: {response}"
+
+    def test_neon_get_solana_transaction_by_neon_transaction(self, event_caller_contract):
+        tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 0.1)
+        params = [tx_receipt["transactionHash"].hex()]
+        response = self.proxy_api.send_rpc(method="neon_getSolanaTransactionByNeonTransaction", params=params)
+        assert len(response["result"][0]) == 88

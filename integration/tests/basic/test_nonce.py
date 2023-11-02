@@ -138,6 +138,7 @@ class TestNonce(BaseMixin):
         response = self.proxy_api.send_rpc(
             "eth_sendRawTransaction", [signed_tx.rawTransaction.hex()]
         )
+        assert "error" in response, f"Response doesn't has an error: {response}"
         assert (
             ErrorMessage.REPLACEMENT_UNDERPRICED.value in response["error"]["message"]
         )

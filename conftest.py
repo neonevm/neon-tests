@@ -71,17 +71,20 @@ def pytest_runtest_protocol(item, nextitem):
 
 
 def pytest_configure(config: Config):
+    solana_url_env_vars = ["SOLANA_URL", "DEVNET_INTERNAL_RPC", "MAINNET_INTERNAL_RPC"]
     network_name = config.getoption("--network")
     envs_file = config.getoption("--envs")
     with open(pathlib.Path().parent.parent / envs_file, "r+") as f:
         environments = json.load(f)
     assert (
-            network_name in environments
+        network_name in environments
     ), f"Environment {network_name} doesn't exist in envs.json"
     env = environments[network_name]
     if network_name == "devnet":
-        if "SOLANA_URL" in os.environ and os.environ["SOLANA_URL"]:
-            env["solana_url"] = os.environ.get("SOLANA_URL")
+        for solana_env_var in solana_url_env_vars:
+            if solana_env_var in os.environ and os.environ[solana_env_var]:
+                env["solana_url"] = os.environ.get(solana_env_var)
+                break
         if "PROXY_URL" in os.environ and os.environ["PROXY_URL"]:
             env["proxy_url"] = os.environ.get("PROXY_URL")
     if "use_bank" not in env:
@@ -141,7 +144,8 @@ def allure_environment(pytestconfig: Config, web3_client: NeonChainWeb3Client):
 @pytest.fixture(scope="session", autouse=True)
 def web3_client(pytestconfig: Config) -> NeonChainWeb3Client:
     client = NeonChainWeb3Client(
-        pytestconfig.environment.proxy_url, tracer_url=pytestconfig.environment.tracer_url
+        pytestconfig.environment.proxy_url,
+        tracer_url=pytestconfig.environment.tracer_url,
     )
     return client
 

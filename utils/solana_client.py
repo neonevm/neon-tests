@@ -23,7 +23,7 @@ from utils.transfers_inter_networks import wSOL_tx, token_from_solana_to_neon_tx
 
 class SolanaClient(solana.rpc.api.Client):
     def __init__(self, endpoint, account_seed_version="\3"):
-        super().__init__(endpoint=endpoint)
+        super().__init__(endpoint=endpoint, timeout=60)
         self.account_seed_version = (
             bytes(account_seed_version, encoding="utf-8")
             .decode("unicode-escape")

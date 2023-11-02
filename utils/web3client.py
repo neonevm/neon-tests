@@ -4,6 +4,7 @@ import time
 import typing as tp
 from decimal import Decimal
 
+import solcx
 import web3
 import web3.types
 import requests
@@ -229,6 +230,38 @@ class Web3Client:
             address = address.address
         return self._web3.eth.get_balance(address, "pending")
 
+    def get_deployed_contract(self, address, contract_file, contract_name=None, solc_version = "0.8.12"):
+        contract_interface = helpers.get_contract_interface(contract_file, solc_version, contract_name)
+        contract = self.eth.contract(address=address, abi=contract_interface["abi"])
+        return contract
+
+    def send_tokens(
+            self,
+            from_: eth_account.signers.local.LocalAccount,
+            to: tp.Union[str, eth_account.signers.local.LocalAccount],
+            value: int,
+            gas: tp.Optional[int] = 0,
+            gas_price: tp.Optional[int] = None,
+            nonce: int = None,
+    ) -> web3.types.TxReceipt:
+        to_addr = to if isinstance(to, str) else to.address
+        if nonce is None:
+            nonce = self.get_nonce(from_)
+        transaction = {
+            "from": from_.address,
+            "to": to_addr,
+            "value": value,
+            "gasPrice": gas_price or self.gas_price(),
+            "gas": gas,
+            "nonce": nonce,
+            "chainId": self.eth.chain_id
+        }
+        if transaction["gas"] == 0:
+            transaction["gas"] = self.eth.estimate_gas(transaction)
+        signed_tx = self.eth.account.sign_transaction(transaction, from_.key)
+        tx = self.eth.send_raw_transaction(signed_tx.rawTransaction)
+        return self.eth.wait_for_transaction_receipt(tx)
+
 
 class NeonChainWeb3Client(Web3Client):
     def __init__(self, proxy_url: str, tracer_url: tp.Optional[tp.Any] = None, session: tp.Optional[tp.Any] = None):
@@ -271,23 +304,8 @@ class NeonChainWeb3Client(Web3Client):
             gas_price: tp.Optional[int] = None,
             nonce: int = None,
     ) -> web3.types.TxReceipt:
-        to_addr = to if isinstance(to, str) else to.address
-        if nonce is None:
-            nonce = self.get_nonce(from_)
-        transaction = {
-            "from": from_.address,
-            "to": to_addr,
-            "value": web3.Web3.to_wei(amount, "ether"),
-            "gasPrice": gas_price or self.gas_price(),
-            "gas": gas,
-            "nonce": nonce,
-        }
-        if transaction["gas"] == 0:
-            transaction["gas"] = self._web3.eth.estimate_gas(transaction)
-
-        signed_tx = self._web3.eth.account.sign_transaction(transaction, from_.key)
-        tx = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-        return self._web3.eth.wait_for_transaction_receipt(tx)
+        value = web3.Web3.to_wei(amount, "ether")
+        return self.send_tokens(from_, to, value,gas, gas_price, nonce)
 
     def get_balance(
             self, address: tp.Union[str, eth_account.signers.local.LocalAccount]

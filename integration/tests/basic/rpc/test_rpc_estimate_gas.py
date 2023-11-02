@@ -9,17 +9,6 @@ from integration.tests.basic.helpers.basic import BaseMixin, Tag
 from integration.tests.basic.helpers.errors import Error32000
 
 
-@pytest.fixture(scope="class")
-def common_contract(web3_client, class_account) -> tp.Any:
-    contract, receipt = web3_client.deploy_and_get_contract(
-        contract="common/Common",
-        version="0.8.12",
-        contract_name="Common",
-        account=class_account,
-    )
-    yield contract, receipt
-
-
 @allure.feature("JSON-RPC validation")
 @allure.story("Verify eth_estimateGas RPC call")
 class TestRpcEstimateGas(BaseMixin):
@@ -154,7 +143,7 @@ class TestRpcEstimateGas(BaseMixin):
 
     def test_rpc_estimate_gas_contract_get_value(self, common_contract):
         tx = self.make_contract_tx_object()
-        instruction_tx = common_contract[0].functions.getText().build_transaction(tx)
+        instruction_tx = common_contract.functions.getText().build_transaction(tx)
         tx_receipt = self.web3_client.send_transaction(
             self.sender_account, instruction_tx
         )
@@ -169,7 +158,7 @@ class TestRpcEstimateGas(BaseMixin):
     def test_rpc_estimate_gas_contract_set_value(self, common_contract):
         tx = self.make_contract_tx_object()
         instruction_tx = (
-            common_contract[0].functions.setNumber(100).build_transaction(tx)
+            common_contract.functions.setNumber(100).build_transaction(tx)
         )
         tx_receipt = self.web3_client.send_transaction(
             self.sender_account, instruction_tx
@@ -188,7 +177,7 @@ class TestRpcEstimateGas(BaseMixin):
             "0.8.12",
             contract_name="CommonCaller",
             account=self.sender_account,
-            constructor_args=[common_contract[0].address],
+            constructor_args=[common_contract.address],
         )
         tx = self.make_contract_tx_object()
         instruction_tx = caller_contract.functions.getNumber().build_transaction(tx)

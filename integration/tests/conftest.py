@@ -9,7 +9,6 @@ import pytest
 from _pytest.config import Config
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
-from solana.rpc.api import Commitment
 
 from utils.consts import LAMPORT_PER_SOL
 from utils.erc20wrapper import ERC20Wrapper
@@ -179,7 +178,7 @@ def erc20_spl(
         ),
         owner=erc20.solana_acc.public_key,
         amount=1000000000000000,
-        opts=TxOpts(preflight_commitment=Confirmed, skip_confirmation=False),
+        opts=TxOpts(preflight_commitment=commitment.Confirmed, skip_confirmation=False),
     )
 
     erc20.claim(

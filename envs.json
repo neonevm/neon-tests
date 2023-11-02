@@ -97,7 +97,7 @@
     "network_ids": {
       "neon": 245022926
     },
-    "solana_url": "https://neonevm.devnet.rpcpool.com/e7efde89606821742be8ba4a7ced",
+    "solana_url": "https://api.devnet.solana.com",
     "faucet_url": "http://3.13.67.238/request_neon",
     "neonpass_url": "http://devnet.neonpass.live",
     "tracer_url": "https://ch2-graph.neontest.xyz/neon-rpc",

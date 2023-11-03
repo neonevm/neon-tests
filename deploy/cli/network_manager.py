@@ -6,7 +6,6 @@ from collections import defaultdict
 NETWORK_NAME = os.environ.get("NETWORK_NAME", "full_test_suite")
 EXPANDED_ENVS = [
     "PROXY_URL",
-    "NETWORK_ID",
     "FAUCET_URL",
     "SOLANA_URL",
 ]
@@ -22,6 +21,7 @@ class NetworkManager():
                 environments = defaultdict(dict)
                 for var in EXPANDED_ENVS:
                     environments[NETWORK_NAME].update({var.lower(): os.environ.get(var, "")})
+                environments[NETWORK_NAME]['network_ids'] = {'neon': os.environ.get('NETWORK_ID', "")}
                 self.networks.update(environments)
 
     def get_network_param(self, network, params=None):

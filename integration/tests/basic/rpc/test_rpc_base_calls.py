@@ -103,6 +103,20 @@ class TestRpcBaseCalls(BaseMixin):
         assert rpc_checks.is_hex(result), f"Invalid current gas price `{result}` in wei"
         assert int(result, 16) > 100000000, f"gas price should be greater 100000000, got {int(result, 16)}"
 
+    @pytest.mark.parametrize(
+        "params, error_code, error_message",
+        [
+            ([], Error32000.CODE, Error32000.MISSING_ARGUMENT),
+            ([{"from": "0x0"}], Error32602.CODE, Error32602.BAD_FROM_ADDRESS),
+        ],
+    )
+    def test_neon_gas_price_negative(self, params, error_code, error_message):
+        """Verify implemented rpc calls work with neon_gasPrice, negative cases"""
+        response = self.proxy_api.send_rpc("neon_gasPrice", params=params)
+        assert "error" in response, "error field not in response"
+        assert "code" in response["error"]
+        assert "message" in response["error"], "message field not in response"
+
     def test_neon_gas_price(self):
         """Verify implemented rpc calls work neon_gasPrice"""
         params = [{"from": self.sender_account.address, "nonce": "0x0"}]
@@ -399,7 +413,7 @@ class TestRpcBaseCalls(BaseMixin):
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 0.1)
         params = [tx_receipt["transactionHash"].hex()]
         response = self.proxy_api.send_rpc(method="neon_getSolanaTransactionByNeonTransaction", params=params)
-        assert len(response["result"][0]) == 88
+        assert len(response["result"][0]) == 88, f"received {response['result'][0]}, the length is wrong"
 
     @pytest.mark.parametrize(
         "params, error_code, error_message",

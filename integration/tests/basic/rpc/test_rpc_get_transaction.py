@@ -250,6 +250,7 @@ class TestRpcGetTransaction(BaseMixin):
         assert error_message in response["error"]["message"]
 
     def test_neon_get_transaction_by_sender_nonce_plus_one(self):
+        """Request nonce+1, which is not exist"""
         account = self.create_account_with_balance()
         tx_receipt = self.send_neon(account, self.recipient_account, amount=0.1)
         self.wait_transaction_accepted(tx_receipt.transactionHash.hex())

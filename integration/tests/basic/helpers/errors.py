@@ -16,5 +16,6 @@ class Error32602:
     NOT_HEX = "is not hex"
     BAD_BLOCK_HASH = "bad block hash"
     BAD_ADDRESS = "bad address"
+    BAD_FROM_ADDRESS = "bad from-address"
     BAD_TOPIC = "bad topic"
     BAD_TRANSACTION_ID_FORMAT = "bad transaction-id format"

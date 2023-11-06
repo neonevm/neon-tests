@@ -2,6 +2,8 @@ import os
 import random
 import typing
 import string
+import pathlib
+import json
 
 import allure
 import base58
@@ -27,13 +29,22 @@ NEON_AIRDROP_AMOUNT = 10_000
 def pytest_collection_modifyitems(config, items):
     deselected_items = []
     selected_items = []
-    if config.getoption("--network") == "devnet":
-        deselected_mark = "only_stands"
-    else:
-        deselected_mark = "only_devnet"
+    deselected_marks = []
+    network_name = config.getoption("--network")
 
+    if network_name == "devnet":
+        deselected_marks.append("only_stands")
+    else:
+        deselected_marks.append("only_devnet")
+
+    envs_file = config.getoption("--envs")
+    with open(pathlib.Path().parent.parent / envs_file, "r+") as f:
+        environments = json.load(f)
+
+    if len(environments[network_name]["network_ids"]) == 1:
+        deselected_marks.append("multipletokens")
     for item in items:
-        if item.get_closest_marker(deselected_mark):
+        if any([item.get_closest_marker(mark) for mark in deselected_marks]):
             deselected_items.append(item)
         else:
             selected_items.append(item)

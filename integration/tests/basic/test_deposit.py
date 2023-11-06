@@ -114,6 +114,7 @@ class TestDeposit(BaseMixin):
                 == int(ata_balance_before.value.amount) + full_amount
         )
 
+    @pytest.mark.multipletokens
     def test_transfer_wrapped_sol_token_from_solana_to_neon(
             self, solana_account, pytestconfig: Config, web3_client_sol
     ):

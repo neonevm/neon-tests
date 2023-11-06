@@ -41,6 +41,7 @@ class TestChainIdDependentOpcodes(BaseMixin):
         )
         return contract
 
+    @pytest.mark.multipletokens
     def test_chain_id_sol(self, contract_sol, pytestconfig):
         assert contract_sol.functions.getChainId().call() \
                == pytestconfig.environment.network_ids["sol"]
@@ -49,6 +50,7 @@ class TestChainIdDependentOpcodes(BaseMixin):
         assert contract_neon.functions.getChainId().call() \
                == pytestconfig.environment.network_ids["neon"]
 
+    @pytest.mark.multipletokens
     def test_balance_by_sol_contract(self, contract_sol, class_account_sol_chain, web3_client,
                                      web3_client_sol, contract_caller_sol):
         # user calls sol contract in sol chain == sol balance
@@ -79,6 +81,7 @@ class TestChainIdDependentOpcodes(BaseMixin):
                                                               class_account_sol_chain.address).call()
         assert balance == expected_balance_sol
 
+    @pytest.mark.multipletokens
     def test_balance_by_neon_contract(self, contract_neon, sol_client, class_account, web3_client,
                                       web3_client_sol, contract_caller_neon):
         # user call neon contract in neon chain == neon balance

@@ -71,6 +71,7 @@ class SolanaClient(solana.rpc.api.Client):
             raise AssertionError(f"Balance not changed in account {to}")
 
     def ether2balance(self, address: tp.Union[str, bytes], chain_id: int, evm_loader_id: str) -> PublicKey:
+        # get public key associated with chain_id for an address
         address_bytes = bytes.fromhex(address[2:])
         chain_id_bytes = chain_id.to_bytes(32, 'big')
         return PublicKey.find_program_address(

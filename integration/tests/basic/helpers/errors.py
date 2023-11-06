@@ -1,6 +1,8 @@
 class Error32000:
     CODE = -32000
     MISSING_ARGUMENT = "missing 1 required positional argument"
+    MISSING_2_ARGUMENTS = "missing 2 required positional arguments"
+    OBJECT_CANT_BE_INTERPRETED_AS_INT = "object cannot be interpreted as an integer"
 
 
 class Error32600:

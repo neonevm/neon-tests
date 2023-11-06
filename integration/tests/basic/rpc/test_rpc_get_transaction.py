@@ -118,12 +118,12 @@ class TestRpcGetTransaction(BaseMixin):
                         result[field]
                     ), f"Field {field} must be hex but '{result[field]}'"
 
-    def test_eth_get_transaction_receipt_with_incorrect_hash(self):
-        """Verify implemented rpc calls work eth_getTransactionReceipt when transaction hash is not correct"""
+    @pytest.mark.parametrize("method", ["neon_getTransactionReceipt", "eth_getTransactionReceipt"])
+    def test_get_transaction_receipt_with_incorrect_hash(self, method):
+        """Verify implemented rpc calls work with neon_getTransactionReceipt and eth_getTransactionReceipt
+        when transaction hash is not correct"""
 
-        response = self.proxy_api.send_rpc(
-            method="eth_getTransactionReceipt", params=gen_hash_of_block(31)
-        )
+        response = self.proxy_api.send_rpc(method=method, params=gen_hash_of_block(31))
         assert "error" in response
         assert response["error"]["message"] == "transaction-id is not hex"
 
@@ -197,13 +197,12 @@ class TestRpcGetTransaction(BaseMixin):
             "to"
         ], {"hash": "transactionHash"})
 
-    def test_eth_get_transaction_receipt(self):
-        """Verify implemented rpc calls work eth_getTransactionReceipt"""
+    @pytest.mark.parametrize("method", ["neon_getTransactionReceipt", "eth_getTransactionReceipt"])
+    def test_get_transaction_receipt(self, method):
+        """Verify implemented rpc calls work with neon_getTransactionReceipt and eth_getTransactionReceipt"""
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
         transaction_hash = tx_receipt.transactionHash.hex()
-        response = self.proxy_api.send_rpc(
-            method="eth_getTransactionReceipt", params=transaction_hash
-        )
+        response = self.proxy_api.send_rpc(method=method, params=transaction_hash)
         assert "error" not in response
         assert "result" in response, AssertMessage.DOES_NOT_CONTAIN_RESULT
         result = response["result"]
@@ -225,11 +224,10 @@ class TestRpcGetTransaction(BaseMixin):
         assert result["contractAddress"] is None
         assert result["logs"] == []
 
-    def test_eth_get_transaction_receipt_when_hash_doesnt_exist(self):
+    @pytest.mark.parametrize("method", ["neon_getTransactionReceipt", "eth_getTransactionReceipt"])
+    def test_eth_get_transaction_receipt_when_hash_doesnt_exist(self, method):
         """Verify implemented rpc calls work eth_getTransactionReceipt when transaction hash doesn't exist"""
-        response = self.proxy_api.send_rpc(
-            method="eth_getTransactionReceipt", params=gen_hash_of_block(32)
-        )
+        response = self.proxy_api.send_rpc(method=method, params=gen_hash_of_block(32))
         assert response["result"] is None, "Result should be None"
 
     @pytest.mark.parametrize(

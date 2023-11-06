@@ -5,6 +5,7 @@ class Error32000:
     OBJECT_CANT_BE_INTERPRETED_AS_INT = "object cannot be interpreted as an integer"
 
 
+
 class Error32600:
     CODE = -32600
     INVALID_FILTER = "invalid filter"
@@ -16,3 +17,4 @@ class Error32602:
     BAD_BLOCK_HASH = "bad block hash"
     BAD_ADDRESS = "bad address"
     BAD_TOPIC = "bad topic"
+    BAD_TRANSACTION_ID_FORMAT = "bad transaction-id format"

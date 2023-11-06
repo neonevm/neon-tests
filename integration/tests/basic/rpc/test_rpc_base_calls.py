@@ -400,3 +400,26 @@ class TestRpcBaseCalls(BaseMixin):
         params = [tx_receipt["transactionHash"].hex()]
         response = self.proxy_api.send_rpc(method="neon_getSolanaTransactionByNeonTransaction", params=params)
         assert len(response["result"][0]) == 88
+
+    @pytest.mark.parametrize(
+        "params, error_code, error_message",
+        [
+            ([0x0], Error32602.CODE, Error32602.BAD_TRANSACTION_ID_FORMAT),
+            ([None], Error32602.CODE, Error32602.BAD_TRANSACTION_ID_FORMAT),
+            (["0x0"], Error32602.CODE, Error32602.NOT_HEX),
+            ([], Error32000.CODE, Error32000.MISSING_ARGUMENT),
+        ],
+    )
+    def test_neon_get_solana_transaction_by_neon_transaction_negative(self, params, error_code, error_message):
+        response = self.proxy_api.send_rpc(method="neon_getSolanaTransactionByNeonTransaction", params=params)
+        assert "error" in response, "error field not in response"
+        assert "code" in response["error"]
+        assert "message" in response["error"], "message field not in response"
+        assert error_code == response["error"]["code"]
+        assert error_message in response["error"]["message"]
+
+    def test_neon_get_solana_transaction_by_neon_transaction_non_existent_tx(self):
+        response = self.proxy_api.send_rpc(method="neon_getSolanaTransactionByNeonTransaction",
+                                           params="0x044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d")
+        assert "error" not in response
+        assert len(response["result"]) == 0, "expected empty result for non existent transaction request"

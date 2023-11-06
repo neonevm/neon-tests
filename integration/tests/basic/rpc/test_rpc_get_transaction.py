@@ -260,11 +260,12 @@ class TestRpcGetTransaction(BaseMixin):
         assert "error" not in response
         assert response["result"] is None
 
-    def test_neon_get_transaction_by_sender_nonce(self):
+    @pytest.mark.parametrize("nonce", [0, "0x0"])
+    def test_neon_get_transaction_by_sender_nonce(self, nonce):
         receipt = self.send_neon(self.sender_account, self.recipient_account, amount=0.1)
         self.wait_transaction_accepted(receipt.transactionHash.hex())
         response = self.proxy_api.send_rpc(method="neon_getTransactionBySenderNonce",
-                                           params=[self.sender_account.address, 0])
+                                           params=[self.sender_account.address, nonce])
         assert "error" not in response
         result = response["result"]
         assert_fields_are_hex(result, [

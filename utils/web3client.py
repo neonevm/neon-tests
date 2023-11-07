@@ -18,15 +18,18 @@ from utils.helpers import decode_function_signature
 
 class Web3Client:
     def __init__(
-            self, 
-            proxy_url: str, 
-            tracer_url: tp.Optional[tp.Any] = None, 
-            session: tp.Optional[tp.Any] = None
+        self,
+        proxy_url: str,
+        tracer_url: tp.Optional[tp.Any] = None,
+        session: tp.Optional[tp.Any] = None,
     ):
         self._proxy_url = proxy_url
         self._tracer_url = tracer_url
-        self._web3 = web3.Web3(web3.HTTPProvider(proxy_url, session=session, request_kwargs={"timeout": 30}))
-
+        self._web3 = web3.Web3(
+            web3.HTTPProvider(
+                proxy_url, session=session, request_kwargs={"timeout": 30}
+            )
+        )
 
     def __getattr__(self, item):
         return getattr(self._web3, item)
@@ -94,21 +97,21 @@ class Web3Client:
         return self._web3.eth.get_block(block_identifier)
 
     def get_nonce(
-            self,
-            address: tp.Union[eth_account.signers.local.LocalAccount, str],
-            block: str = "pending",
+        self,
+        address: tp.Union[eth_account.signers.local.LocalAccount, str],
+        block: str = "pending",
     ):
         address = address if isinstance(address, str) else address.address
         return self._web3.eth.get_transaction_count(address, block)
 
     def deploy_contract(
-            self,
-            from_: eth_account.signers.local.LocalAccount,
-            abi,
-            bytecode: str,
-            gas: tp.Optional[int] = 0,
-            gas_price: tp.Optional[int] = None,
-            constructor_args: tp.Optional[tp.List] = None,
+        self,
+        from_: eth_account.signers.local.LocalAccount,
+        abi,
+        bytecode: str,
+        gas: tp.Optional[int] = 0,
+        gas_price: tp.Optional[int] = None,
+        constructor_args: tp.Optional[tp.List] = None,
     ) -> web3.types.TxReceipt:
         """Proxy doesn't support send_transaction"""
         gas_price = gas_price or self.gas_price()
@@ -132,12 +135,12 @@ class Web3Client:
         return self._web3.eth.wait_for_transaction_receipt(tx)
 
     def send_transaction(
-            self,
-            account: eth_account.signers.local.LocalAccount,
-            transaction: tp.Dict,
-            gas_multiplier: tp.Optional[
-                float
-            ] = None,  # fix for some event depends transactions
+        self,
+        account: eth_account.signers.local.LocalAccount,
+        transaction: tp.Dict,
+        gas_multiplier: tp.Optional[
+            float
+        ] = None,  # fix for some event depends transactions
     ) -> web3.types.TxReceipt:
         if "gasPrice" not in transaction:
             transaction["gasPrice"] = self.gas_price()
@@ -152,14 +155,14 @@ class Web3Client:
         return self._web3.eth.wait_for_transaction_receipt(signature)
 
     def deploy_and_get_contract(
-            self,
-            contract: str,
-            version: str,
-            account: eth_account.signers.local.LocalAccount,
-            contract_name: tp.Optional[str] = None,
-            constructor_args: tp.Optional[tp.Any] = None,
-            import_remapping: tp.Optional[dict] = None,
-            gas: tp.Optional[int] = 0,
+        self,
+        contract: str,
+        version: str,
+        account: eth_account.signers.local.LocalAccount,
+        contract_name: tp.Optional[str] = None,
+        constructor_args: tp.Optional[tp.Any] = None,
+        import_remapping: tp.Optional[dict] = None,
+        gas: tp.Optional[int] = 0,
     ) -> tp.Tuple[tp.Any, web3.types.TxReceipt]:
         contract_interface = helpers.get_contract_interface(
             contract,
@@ -183,7 +186,7 @@ class Web3Client:
         return contract, contract_deploy_tx
 
     def compile_by_vyper_and_deploy(
-            self, account, contract_name, constructor_args=None
+        self, account, contract_name, constructor_args=None
     ):
         import vyper  # Import here because vyper prevent override decimal precision (uses in economy tests)
 
@@ -219,14 +222,19 @@ class Web3Client:
 
 
 class NeonChainWeb3Client(Web3Client):
-    def __init__(self, proxy_url: str, tracer_url: tp.Optional[tp.Any] = None, session: tp.Optional[tp.Any] = None):
+    def __init__(
+        self,
+        proxy_url: str,
+        tracer_url: tp.Optional[tp.Any] = None,
+        session: tp.Optional[tp.Any] = None,
+    ):
         super().__init__(proxy_url, tracer_url, session)
 
     def create_account_with_balance(
-            self,
-            faucet,
-            amount: int = InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value,
-            bank_account=None,
+        self,
+        faucet,
+        amount: int = InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value,
+        bank_account=None,
     ):
         """Creates a new account with balance"""
         account = self.create_account()
@@ -240,7 +248,7 @@ class NeonChainWeb3Client(Web3Client):
             faucet.request_neon(account.address, amount=amount)
         for _ in range(20):
             if float(
-                    self.from_wei(self.eth.get_balance(account.address), Unit.ETHER)
+                self.from_wei(self.eth.get_balance(account.address), Unit.ETHER)
             ) >= (balance_before + amount):
                 break
             time.sleep(1)
@@ -251,13 +259,13 @@ class NeonChainWeb3Client(Web3Client):
         return account
 
     def send_neon(
-            self,
-            from_: eth_account.signers.local.LocalAccount,
-            to: tp.Union[str, eth_account.signers.local.LocalAccount],
-            amount: tp.Union[int, float, Decimal],
-            gas: tp.Optional[int] = 0,
-            gas_price: tp.Optional[int] = None,
-            nonce: int = None,
+        self,
+        from_: eth_account.signers.local.LocalAccount,
+        to: tp.Union[str, eth_account.signers.local.LocalAccount],
+        amount: tp.Union[int, float, Decimal],
+        gas: tp.Optional[int] = 0,
+        gas_price: tp.Optional[int] = None,
+        nonce: int = None,
     ) -> web3.types.TxReceipt:
         to_addr = to if isinstance(to, str) else to.address
         if nonce is None:
@@ -278,7 +286,7 @@ class NeonChainWeb3Client(Web3Client):
         return self._web3.eth.wait_for_transaction_receipt(tx)
 
     def get_balance(
-            self, address: tp.Union[str, eth_account.signers.local.LocalAccount]
+        self, address: tp.Union[str, eth_account.signers.local.LocalAccount]
     ):
         if not isinstance(address, str):
             address = address.address

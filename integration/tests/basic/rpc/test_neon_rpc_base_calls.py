@@ -1,10 +1,14 @@
 import re
+
 import allure
 import pytest
+from solders.rpc.responses import GetTransactionResp
+from solders.signature import Signature
 
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.errors import Error32000, Error32602
 from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex, assert_fields_are_boolean
+from utils.helpers import wait_condition
 
 
 @allure.feature("JSON-RPC validation")
@@ -58,7 +62,20 @@ class TestNeonRPCBaseCalls(BaseMixin):
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 0.1)
         params = [tx_receipt["transactionHash"].hex()]
         response = self.proxy_api.send_rpc(method="neon_getSolanaTransactionByNeonTransaction", params=params)
-        assert len(response["result"][0]) == 88, f"received {response['result'][0]}, the length is wrong"
+        assert "result" in response
+        sol_tx = response["result"][0]
+        assert len(sol_tx) == 88, f"received {sol_tx}, the length is wrong"
+        assert self.get_solana_resp_by_solana_tx(sol_tx) is not None
+
+    def test_neon_get_solana_transaction_by_neon_transaction_list_of_tx(self, event_caller_with_receipt):
+        _, tx_receipt = event_caller_with_receipt
+        params = [tx_receipt["transactionHash"].hex()]
+        response = self.proxy_api.send_rpc(method="neon_getSolanaTransactionByNeonTransaction", params=params)
+        assert "result" in response
+        result = response["result"]
+        assert len(result) == 5
+        for tx in result:
+            assert self.get_solana_resp_by_solana_tx(tx) is not None
 
     @pytest.mark.parametrize(
         "params, error_code, error_message",

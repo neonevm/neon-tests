@@ -34,6 +34,7 @@ Tests for rpc endpoints (check availability and basic functionality)
 | TestRpcCalls::test_get_evm_params                                                   | Get neon evm parameters                                                         |           |
 | TestRpcCalls::test_neon_cli_version                                                 | Get neon cli version                                                            |           |
 | TestRpcCalls::test_neon_get_solana_transaction_by_neon_transaction                  | Positive cases                                                                  |           |
+| TestRpcCalls::test_neon_get_solana_transaction_by_neon_transaction_list_of_tx       | List of sol tx                                                                  |           |
 | TestRpcCalls::test_neon_get_solana_transaction_by_neon_transaction_negative         | Negative cases                                                                  |           |
 | TestRpcCalls::test_neon_get_solana_transaction_by_neon_transaction_non_existent_tx  | Non existent transaction, empty response                                        |           |
 |                                                                                     |                                                                                 |           |

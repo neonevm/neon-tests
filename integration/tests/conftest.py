@@ -1,7 +1,7 @@
 import os
 import random
-import typing
 import string
+import typing
 
 import allure
 import base58
@@ -9,17 +9,17 @@ import pytest
 from _pytest.config import Config
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
+from solana.rpc.commitment import Confirmed
+from solana.rpc.types import TxOpts
 
+from utils.apiclient import JsonRPCSession
 from utils.consts import LAMPORT_PER_SOL
-from utils.erc20wrapper import ERC20Wrapper
 from utils.erc20 import ERC20
+from utils.erc20wrapper import ERC20Wrapper
 from utils.faucet import Faucet
 from utils.operator import Operator
-from utils.web3client import NeonChainWeb3Client
-from utils.apiclient import JsonRPCSession
 from utils.solana_client import SolanaClient
-from solana.rpc.types import TxOpts
-from solana.rpc.commitment import Confirmed
+from utils.web3client import NeonChainWeb3Client
 
 NEON_AIRDROP_AMOUNT = 10_000
 
@@ -89,21 +89,21 @@ def prepare_account(operator, faucet, web3_client: NeonChainWeb3Client):
     with allure.step("Create account for tests"):
         acc = web3_client.eth.account.create()
     with allure.step(
-        f"Request {NEON_AIRDROP_AMOUNT} NEON from faucet for {acc.address}"
+            f"Request {NEON_AIRDROP_AMOUNT} NEON from faucet for {acc.address}"
     ):
         faucet.request_neon(acc.address, NEON_AIRDROP_AMOUNT)
         assert web3_client.get_balance(acc) == NEON_AIRDROP_AMOUNT
     start_neon_balance = operator.get_neon_balance()
     start_sol_balance = operator.get_solana_balance()
     with allure.step(
-        f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
+            f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
     ):
         pass
     yield acc
     end_neon_balance = operator.get_neon_balance()
     end_sol_balance = operator.get_solana_balance()
     with allure.step(
-        f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
+            f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
     ):
         pass
     with allure.step(f"Account end balance: {web3_client.get_balance(acc)} NEON"):
@@ -147,11 +147,11 @@ def solana_account(bank_account, pytestconfig: Config, sol_client):
 
 @pytest.fixture(scope="session")
 def erc20_spl(
-    web3_client: NeonChainWeb3Client,
-    faucet,
-    pytestconfig: Config,
-    sol_client,
-    solana_account,
+        web3_client: NeonChainWeb3Client,
+        faucet,
+        pytestconfig: Config,
+        sol_client,
+        solana_account,
 ):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
     erc20 = ERC20Wrapper(
@@ -190,7 +190,7 @@ def erc20_simple(web3_client, faucet):
 
 @pytest.fixture(scope="session")
 def erc20_spl_mintable(
-    web3_client: NeonChainWeb3Client, faucet, sol_client, solana_account
+        web3_client: NeonChainWeb3Client, faucet, sol_client, solana_account
 ):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
     erc20 = ERC20Wrapper(
@@ -250,3 +250,11 @@ def event_caller_contract(web3_client, class_account) -> typing.Any:
         "common/EventCaller", "0.8.12", class_account
     )
     yield event_caller
+
+
+@pytest.fixture(scope="class")
+def event_caller_with_receipt(web3_client, class_account) -> typing.Any:
+    contract, receipt = web3_client.deploy_and_get_contract(
+        "common/EventCaller", "0.8.12", class_account
+    )
+    yield contract, receipt

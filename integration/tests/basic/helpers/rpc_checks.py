@@ -1,5 +1,5 @@
 import typing as tp
-from types import SimpleNamespace
+from types import SimpleNamespace, NoneType
 
 from hexbytes import HexBytes
 from web3 import types
@@ -8,6 +8,8 @@ from integration.tests.basic.helpers.assert_message import AssertMessage
 
 
 def is_hex(hex_data: str) -> bool:
+    if hex_data == "0x":
+        return True
     try:
         int(hex_data, 16)
         return True
@@ -107,18 +109,19 @@ def assert_fields_are_hex(obj, expected_hex_fields):
     if isinstance(obj, SimpleNamespace):
         for field in expected_hex_fields:
             assert hasattr(obj, field), f"no expected field {field} in the object"
-            assert is_hex(getattr(obj, field)), f"field {field} is not correct. Actual : {getattr(obj, field)}"
+            assert is_hex(getattr(obj, field)), f"field {field} is not correct. Actual: {getattr(obj, field)}"
         return
 
     for field in expected_hex_fields:
         assert field in obj, f"no expected field {field} in the object"
-        assert is_hex(obj[field]), f"field {field} is not correct. Actual : {obj[field]}"
+        assert is_hex(obj[field]), f"field {field} is not correct. Actual: {obj[field]}"
 
 
-def assert_fields_are_boolean(object, expected_boolean_fields):
-    for field in expected_boolean_fields:
-        assert field in object, f"no expected field {field} in the object"
-        assert type(object[field]) == bool, f"field {field} is not boolean. Actual : {type(object[field])}"
+def assert_fields_are_specified_type(_type: type, obj, expected_type_fields):
+    for field in expected_type_fields:
+        assert field in obj, f"no expected field {field} in the object"
+        t = type(obj[field])
+        assert t is _type or NoneType, f"field {field} is not {_type.__name__}. Actual: {t}"
 
 
 def assert_equal_fields(result, comparable_object, comparable_fields, keys_mappings=None):

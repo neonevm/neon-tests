@@ -2,13 +2,10 @@ import re
 
 import allure
 import pytest
-from solders.rpc.responses import GetTransactionResp
-from solders.signature import Signature
 
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.errors import Error32000, Error32602
-from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex, assert_fields_are_boolean
-from utils.helpers import wait_condition
+from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex, assert_fields_are_specified_type
 
 
 @allure.feature("JSON-RPC validation")
@@ -45,7 +42,7 @@ class TestNeonRPCBaseCalls(BaseMixin):
             "neon_price_usd",
             "operator_fee",
             "gas_price_slippage"])
-        assert_fields_are_boolean(result, [
+        assert_fields_are_specified_type(bool, result, [
             "is_const_gas_price",
             "allow_underpriced_tx_wo_chainid"])
         gas_price = result["gas_price"]

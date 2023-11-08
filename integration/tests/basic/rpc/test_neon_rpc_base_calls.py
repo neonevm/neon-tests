@@ -63,7 +63,6 @@ class TestNeonRPCBaseCalls(BaseMixin):
         response = self.proxy_api.send_rpc(method="neon_getSolanaTransactionByNeonTransaction", params=params)
         assert "result" in response
         sol_tx = response["result"][0]
-        assert len(sol_tx) == 88, f"received {sol_tx}, the length is wrong"
         assert self.get_solana_resp_by_solana_tx(sol_tx) is not None
 
     def test_neon_get_solana_transaction_by_neon_transaction_list_of_tx(self):

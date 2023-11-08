@@ -32,19 +32,21 @@ class TestNeonRPCBaseCalls(BaseMixin):
         assert "error" not in response
         assert "result" in response
         result = response["result"]
-        assert_fields_are_hex(result, [
-            "gas_price",
-            "suggested_gas_price",
-            "min_acceptable_gas_price",
-            "min_executable_gas_price",
-            "min_wo_chainid_acceptable_gas_price",
-            "sol_price_usd",
-            "neon_price_usd",
-            "operator_fee",
-            "gas_price_slippage"])
-        assert_fields_are_specified_type(bool, result, [
-            "is_const_gas_price",
-            "allow_underpriced_tx_wo_chainid"])
+        assert_fields_are_hex(
+            result,
+            [
+                "gas_price",
+                "suggested_gas_price",
+                "min_acceptable_gas_price",
+                "min_executable_gas_price",
+                "min_wo_chainid_acceptable_gas_price",
+                "sol_price_usd",
+                "neon_price_usd",
+                "operator_fee",
+                "gas_price_slippage",
+            ],
+        )
+        assert_fields_are_specified_type(bool, result, ["is_const_gas_price", "allow_underpriced_tx_wo_chainid"])
         gas_price = result["gas_price"]
         assert int(gas_price, 16) > 100000000, f"gas price should be greater 100000000, got {int(gas_price, 16)}"
 
@@ -64,8 +66,8 @@ class TestNeonRPCBaseCalls(BaseMixin):
         assert len(sol_tx) == 88, f"received {sol_tx}, the length is wrong"
         assert self.get_solana_resp_by_solana_tx(sol_tx) is not None
 
-    def test_neon_get_solana_transaction_by_neon_transaction_list_of_tx(self, event_caller_with_receipt):
-        _, tx_receipt = event_caller_with_receipt
+    def test_neon_get_solana_transaction_by_neon_transaction_list_of_tx(self):
+        _, tx_receipt = self.web3_client.deploy_and_get_contract("common/EventCaller", "0.8.12", self.sender_account)
         params = [tx_receipt["transactionHash"].hex()]
         response = self.proxy_api.send_rpc(method="neon_getSolanaTransactionByNeonTransaction", params=params)
         assert "result" in response
@@ -92,7 +94,9 @@ class TestNeonRPCBaseCalls(BaseMixin):
         assert error_message in response["error"]["message"]
 
     def test_neon_get_solana_transaction_by_neon_transaction_non_existent_tx(self):
-        response = self.proxy_api.send_rpc(method="neon_getSolanaTransactionByNeonTransaction",
-                                           params="0x044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d")
+        response = self.proxy_api.send_rpc(
+            method="neon_getSolanaTransactionByNeonTransaction",
+            params="0x044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d",
+        )
         assert "error" not in response
         assert len(response["result"]) == 0, "expected empty result for non existent transaction request"

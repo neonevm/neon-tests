@@ -8,8 +8,11 @@ from web3.types import TxParams
 
 from integration.tests.basic.helpers.basic import BaseMixin, Tag
 from integration.tests.basic.helpers.errors import Error32602, Error32600
-from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex, assert_fields_are_specified_type, \
-    assert_equal_fields
+from integration.tests.basic.helpers.rpc_checks import (
+    assert_fields_are_hex,
+    assert_fields_are_specified_type,
+    assert_equal_fields,
+)
 from integration.tests.helpers.basic import cryptohex
 
 
@@ -53,9 +56,7 @@ class TestRpcGetLogs(BaseMixin):
         return instruction_tx
 
     @pytest.mark.parametrize("method", [Method.NEON_GET_LOGS, Method.ETH_GET_LOGS])
-    @pytest.mark.parametrize(
-        "param_fields", [("address", "topics"), ("address",), ("topics",)]
-    )
+    @pytest.mark.parametrize("param_fields", [("address", "topics"), ("address",), ("topics",)])
     def test_get_logs_blockhash(self, method, event_caller_contract, param_fields):
         instruction_tx = self.create_all_types_instruction(event_caller_contract)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
@@ -145,9 +146,7 @@ class TestRpcGetLogs(BaseMixin):
         if not p_error and p_name == "address":
             assert "error" not in response
             assert "result" in response
-            assert (
-                    len(response["result"]) == 0
-            ), "should not find any logs since the wrong address was provided"
+            assert len(response["result"]) == 0, "should not find any logs since the wrong address was provided"
         else:
             assert "error" in response
             assert "code" in response["error"]
@@ -180,9 +179,7 @@ class TestRpcGetLogs(BaseMixin):
             (Tag.EARLIEST, None),
         ],
     )
-    @pytest.mark.parametrize(
-        "param_fields", [("address", "topics"), ("address",), ("topics",)]
-    )
+    @pytest.mark.parametrize("param_fields", [("address", "topics"), ("address",), ("topics",)])
     def test_get_logs(self, method, event_caller_contract, param_fields, tag1, tag2):
         params = {}
         block_number = False
@@ -191,13 +188,9 @@ class TestRpcGetLogs(BaseMixin):
             assert "result" in response
             block_number = int(response["result"], 16)
         if tag1 or isinstance(tag1, int):
-            params["fromBlock"] = (
-                hex(block_number + tag1) if isinstance(tag1, int) else tag1.value
-            )
+            params["fromBlock"] = hex(block_number + tag1) if isinstance(tag1, int) else tag1.value
         if tag2 or isinstance(tag2, int):
-            params["toBlock"] = (
-                hex(block_number + tag2) if isinstance(tag2, int) else tag2.value
-            )
+            params["toBlock"] = hex(block_number + tag2) if isinstance(tag2, int) else tag2.value
 
         instruction_tx = self.create_all_types_instruction(event_caller_contract)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
@@ -256,7 +249,9 @@ class TestRpcGetLogs(BaseMixin):
     def test_get_logs_list_of_addresses(self, method, event_caller_contract):
         event_caller2, _ = self.web3_client.deploy_and_get_contract(
             # we need 2nd contract to check list of addresses
-            "common/EventCaller", "0.8.12", self.sender_account
+            "common/EventCaller",
+            "0.8.12",
+            self.sender_account,
         )
 
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
@@ -278,8 +273,7 @@ class TestRpcGetLogs(BaseMixin):
         assert "error" not in response
         assert "result" in response
         result = response["result"]
-        assert len(result) == 2, \
-            f"there should be 2 logs events from 2 contract, but got {len(result)}"
+        assert len(result) == 2, f"there should be 2 logs events from 2 contract, but got {len(result)}"
         for event in result:
             assert topic in event["topics"]
             assert_fields_are_hex(event, self.ETH_HEX_FIELDS)
@@ -296,17 +290,15 @@ class TestRpcGetLogs(BaseMixin):
             ([], ["text1"], 3),
             (["Event2(string,string)"], ["text2"], 1),
             (
-                    ["Event2(string,string)", "Event3(string,string,string)"],
-                    ["text2", "text3", "text1", "text5"],
-                    3,
+                ["Event2(string,string)", "Event3(string,string,string)"],
+                ["text2", "text3", "text1", "text5"],
+                3,
             ),
             ([], None, 4),
         ],
     )
     def test_filter_log_by_topics(self, event_filter, arg_filter, log_count, method):
-        event_caller, _ = self.web3_client.deploy_and_get_contract(
-            "common/EventCaller", "0.8.12", self.sender_account
-        )
+        event_caller, _ = self.web3_client.deploy_and_get_contract("common/EventCaller", "0.8.12", self.sender_account)
 
         arg1, arg2, arg3 = ("text1", "text2", "text3")
         topics = []
@@ -326,28 +318,23 @@ class TestRpcGetLogs(BaseMixin):
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         tx = self.make_contract_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.callEvent2(
-            arg1, arg2
-        ).build_transaction(tx)
+        instruction_tx = event_caller.functions.callEvent2(arg1, arg2).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         tx = self.make_contract_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.callEvent2(
-            arg2, arg3
-        ).build_transaction(tx)
+        instruction_tx = event_caller.functions.callEvent2(arg2, arg3).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         tx = self.make_contract_tx_object(self.sender_account.address)
-        instruction_tx = event_caller.functions.callEvent3(
-            arg1, arg2, arg3
-        ).build_transaction(tx)
+        instruction_tx = event_caller.functions.callEvent3(arg1, arg2, arg3).build_transaction(tx)
         self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
         params = {"address": event_caller.address, "topics": topics}
         response = self.proxy_api.send_rpc(method.value, params=params)
 
-        assert len(response["result"]) == log_count, \
-            f"Expected {log_count} event logs, but found {len(response['result'])}"
+        assert (
+            len(response["result"]) == log_count
+        ), f"Expected {log_count} event logs, but found {len(response['result'])}"
 
         is_event_topic_in_list = False
         is_arg_topic_in_list = False

@@ -9,7 +9,7 @@ import pytest
 from _pytest.config import Config
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
-from solana.rpc.commitment import Confirmed
+from solana.rpc import commitment
 from solana.rpc.types import TxOpts
 
 from utils.apiclient import JsonRPCSession
@@ -141,8 +141,13 @@ def solana_account(bank_account, pytestconfig: Config, sol_client):
         sol_client.request_airdrop(account.public_key, 1 * LAMPORT_PER_SOL)
     yield account
     if pytestconfig.environment.use_bank:
-        balance = sol_client.get_balance(account.public_key).value
-        sol_client.send_sol(account, bank_account.public_key, balance - 5000)
+        balance = sol_client.get_balance(
+            account.public_key, commitment=commitment.Confirmed
+        ).value
+        try:
+            sol_client.send_sol(account, bank_account.public_key, balance - 5000)
+        except:
+            pass
 
 
 @pytest.fixture(scope="session")
@@ -173,7 +178,7 @@ def erc20_spl(
         ),
         owner=erc20.solana_acc.public_key,
         amount=1000000000000000,
-        opts=TxOpts(preflight_commitment=Confirmed, skip_confirmation=False),
+        opts=TxOpts(preflight_commitment=commitment.Confirmed, skip_confirmation=False),
     )
 
     erc20.claim(

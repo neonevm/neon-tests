@@ -12,7 +12,7 @@ from solana.system_program import TransferParams, transfer
 from solana.transaction import Transaction
 from solders.rpc.errors import InternalErrorMessage
 from solders.rpc.responses import RequestAirdropResp
-from spl.token.instructions import get_associated_token_address, create_associated_token_account
+from spl.token.instructions import get_associated_token_address, create_associated_token_account, mint_to, MintToParams
 
 from utils.consts import LAMPORT_PER_SOL, wSOL
 from utils.helpers import wait_condition
@@ -25,22 +25,18 @@ class SolanaClient(solana.rpc.api.Client):
     def __init__(self, endpoint, account_seed_version="\3"):
         super().__init__(endpoint=endpoint, timeout=60)
         self.account_seed_version = (
-            bytes(account_seed_version, encoding="utf-8")
-            .decode("unicode-escape")
-            .encode("utf-8")
+            bytes(account_seed_version, encoding="utf-8").decode("unicode-escape").encode("utf-8")
         )
 
     def request_airdrop(
-            self,
-            pubkey: PublicKey,
-            lamports: int,
-            commitment: tp.Optional[Commitment] = None,
+        self,
+        pubkey: PublicKey,
+        lamports: int,
+        commitment: tp.Optional[Commitment] = None,
     ) -> RequestAirdropResp:
         airdrop_resp = None
         for _ in range(5):
-            airdrop_resp = super().request_airdrop(
-                pubkey, lamports, commitment=Finalized
-            )
+            airdrop_resp = super().request_airdrop(pubkey, lamports, commitment=Finalized)
             if isinstance(airdrop_resp, InternalErrorMessage):
                 time.sleep(10)
                 print(f"Get error from solana airdrop: {airdrop_resp}")
@@ -48,18 +44,12 @@ class SolanaClient(solana.rpc.api.Client):
                 break
         else:
             raise AssertionError(f"Can't get airdrop from solana: {airdrop_resp}")
-        wait_condition(
-            lambda: self.get_balance(pubkey).value >= lamports, timeout_sec=30
-        )
+        wait_condition(lambda: self.get_balance(pubkey).value >= lamports, timeout_sec=30)
         return airdrop_resp
 
     def send_sol(self, from_: Keypair, to: PublicKey, amount_lamports: int):
         tx = Transaction().add(
-            transfer(
-                TransferParams(
-                    from_pubkey=from_.public_key, to_pubkey=to, lamports=amount_lamports
-                )
-            )
+            transfer(TransferParams(from_pubkey=from_.public_key, to_pubkey=to, lamports=amount_lamports))
         )
         balance_before = self.get_balance(to).value
         self.send_transaction(tx, from_)
@@ -73,15 +63,12 @@ class SolanaClient(solana.rpc.api.Client):
     def ether2balance(self, address: tp.Union[str, bytes], chain_id: int, evm_loader_id: str) -> PublicKey:
         # get public key associated with chain_id for an address
         address_bytes = bytes.fromhex(address[2:])
-        chain_id_bytes = chain_id.to_bytes(32, 'big')
+        chain_id_bytes = chain_id.to_bytes(32, "big")
         return PublicKey.find_program_address(
-            [self.account_seed_version, address_bytes, chain_id_bytes],
-            PublicKey(evm_loader_id)
+            [self.account_seed_version, address_bytes, chain_id_bytes], PublicKey(evm_loader_id)
         )[0]
 
-    def get_erc_auth_address(
-            self, neon_account_address: str, token_address: str, evm_loader_id: str
-    ):
+    def get_erc_auth_address(self, neon_account_address: str, token_address: str, evm_loader_id: str):
         neon_account_addressbytes = bytes(12) + bytes.fromhex(neon_account_address[2:])
         if token_address.startswith("0x"):
             token_address = token_address[2:]
@@ -114,51 +101,37 @@ class SolanaClient(solana.rpc.api.Client):
 
         return token_mint, assoc_addr
 
-    def send_tx_and_check_status_ok(self, tx, solana_account):
+    def send_tx_and_check_status_ok(self, tx, *signers):
         opts = TxOpts(skip_preflight=True, skip_confirmation=False)
-        sig = self.send_transaction(tx, solana_account, opts=opts).value
+        sig = self.send_transaction(tx, *signers, opts=opts).value
         sig_status = json.loads((self.confirm_transaction(sig)).to_json())
         assert sig_status["result"]["value"][0]["status"] == {"Ok": None}, f"error:{sig_status}"
 
     def create_ata(self, solana_account, neon_mint):
         trx = Transaction()
-        trx.add(
-            create_associated_token_account(
-                solana_account.public_key, solana_account.public_key, neon_mint
-            )
-        )
+        trx.add(create_associated_token_account(solana_account.public_key, solana_account.public_key, neon_mint))
         opts = TxOpts(skip_preflight=True, skip_confirmation=False)
         self.send_transaction(trx, solana_account, opts=opts)
 
-    def deposit_wrapped_sol_from_solana_to_neon(self, solana_account, neon_account, chain_id, evm_loader_id, full_amount=None):
+
+    def deposit_wrapped_sol_from_solana_to_neon(
+        self, solana_account, neon_account, chain_id, evm_loader_id, full_amount=None
+    ):
         if not full_amount:
             full_amount = int(0.1 * LAMPORT_PER_SOL)
         mint_pubkey = wSOL["address_spl"]
-        ata_address = get_associated_token_address(
-            solana_account.public_key, mint_pubkey
-        )
+        ata_address = get_associated_token_address(solana_account.public_key, mint_pubkey)
 
         self.create_ata(solana_account, mint_pubkey)
 
         # wrap SOL
         wSOL_account = self.get_account_info(ata_address).value
-        wrap_sol_tx = wSOL_tx(wSOL_account,
-                              wSOL, full_amount, solana_account.public_key, ata_address
-                              )
+        wrap_sol_tx = wSOL_tx(wSOL_account, wSOL, full_amount, solana_account.public_key, ata_address)
         self.send_tx_and_check_status_ok(wrap_sol_tx, solana_account)
 
-        balance_pubkey = self.ether2balance(neon_account.address,
-                                                  chain_id,
-                                                  evm_loader_id)
+        balance_pubkey = self.ether2balance(neon_account.address, chain_id, evm_loader_id)
         tx = token_from_solana_to_neon_tx(
-            solana_account,
-            balance_pubkey,
-            wSOL["address_spl"],
-            neon_account,
-            full_amount,
-            evm_loader_id,
-            chain_id
+            solana_account, balance_pubkey, wSOL["address_spl"], neon_account, full_amount, evm_loader_id, chain_id
         )
 
         self.send_tx_and_check_status_ok(tx, solana_account)
-

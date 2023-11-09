@@ -3,18 +3,17 @@ from solana.system_program import TransferParams, transfer
 from solana.transaction import Transaction
 from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import (ApproveParams, approve,
-                                    get_associated_token_address)
+                                    get_associated_token_address, MintToParams, mint_to)
 
 from utils.instructions import Instruction, get_solana_wallet_signer
 
 
 def token_from_solana_to_neon_tx(solana_account, neon_wallet, mint, neon_account,
-                                amount, evm_loader_id, chain_id):
+                                 amount, evm_loader_id, chain_id):
     '''Transfer any token from solana to neon transaction'''
     tx = Transaction(fee_payer=solana_account.public_key)
     associated_token_address = get_associated_token_address(
         solana_account.public_key, mint)
-
     tx.add(approve(
         ApproveParams(
             program_id=TOKEN_PROGRAM_ID,
@@ -27,7 +26,6 @@ def token_from_solana_to_neon_tx(solana_account, neon_wallet, mint, neon_account
         evm_loader_id)
 
     pool = get_associated_token_address(authority_pool, mint)
-
     tx.add(Instruction.deposit(
         bytes.fromhex(neon_account.address[2:]),
         chain_id,
@@ -51,6 +49,15 @@ def wSOL_tx(wSOL_account, spl_token, amount, solana_wallet, ata_address):
     tx.add(Instruction.sync_native(ata_address))
 
     return tx
+
+
+def mint_tx(amount, dest, neon_mint, mint_authority):
+    trx = Transaction()
+    params = MintToParams(
+        amount=amount, dest=dest, mint=neon_mint, mint_authority=mint_authority, program_id=TOKEN_PROGRAM_ID
+    )
+    trx.add(mint_to(params))
+    return trx
 
 
 def neon_transfer_tx(web3_client, sol_client, amount, spl_token, solana_account,

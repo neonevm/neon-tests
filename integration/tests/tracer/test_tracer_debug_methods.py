@@ -183,19 +183,75 @@ class TestTracerDebugMethods(BaseMixin):
         assert "error" not in response, "Error in response"
         assert tx_hash == response["result"][0]["txHash"]
         self.validate_response_result(response["result"][0])
+    
+    @pytest.mark.parametrize("number", [190, '', '3f08', 'num', '0x'])
+    def test_debug_trace_block_by_invalid_number(self, number):
+        receipt = self.send_neon(
+            self.sender_account, self.recipient_account, 0.1)
+        assert receipt["status"] == 1
+
+        response = self.tracer_api.send_rpc(
+            method="debug_traceBlockByNumber", params=[number])
+        assert "error" in response, "No errors in response"
+        assert response["error"]["code"] == -32602, "Invalid error code"
+        assert response["error"]["message"] == "Invalid params"
+
+    def test_debug_trace_block_by_zero_number(self):
+        receipt = self.send_neon(
+            self.sender_account, self.recipient_account, 0.1)
+        assert receipt["status"] == 1
+
+        response = self.tracer_api.send_rpc(
+            method="debug_traceBlockByNumber", params=['0x0'])
+        assert "error" in response, "No errors in response"
+        assert response["error"]["code"] == -32603, "Invalid error code"
+        assert response["error"]["message"] == "Genesis block is not traceable"
+
+    def test_debug_trace_block_by_non_zero_early_number(self):
+        receipt = self.send_neon(
+            self.sender_account, self.recipient_account, 0.1)
+        assert receipt["status"] == 1
+
+        response = self.tracer_api.send_rpc(
+            method="debug_traceBlockByNumber", params=['0x2ee1'])
+        assert "error" not in response, "Error in response"
+        assert response["result"] == [], "Result is not empty"
 
     def test_debug_trace_block_by_hash(self):
         receipt = self.send_neon(
             self.sender_account, self.recipient_account, 0.1)
         assert receipt["status"] == 1
-        tx_block = hex(receipt["blockNumber"])
+        tx_hash = receipt["transactionHash"].hex()
 
         wait_condition(lambda: self.tracer_api.send_rpc(method="debug_traceBlockByHash",
-                                                        params=[receipt["transactionHash"].hex()])["result"] is not None,
-                       timeout_sec=120)
+                                                        params=[receipt["blockHash"].hex()])["result"] is not None,
+                       timeout_sec=180)
         response = self.tracer_api.send_rpc(
-            method="debug_traceBlockByHash", params=[receipt["transactionHash"].hex()])
+            method="debug_traceBlockByHash", params=[receipt["blockHash"].hex()])
         assert "error" not in response, "Error in response"
-        assert tx_block == response["result"][0]["txNumber"]
+        assert tx_hash == response["result"][0]["txHash"]
 
         self.validate_response_result(response["result"][0])
+
+    @pytest.mark.parametrize("hash", [190, '0x0', '', '0x2ee1', 'num', 'f0918e'])
+    def test_debug_trace_block_by_invalid_hash(self, hash):
+        receipt = self.send_neon(
+            self.sender_account, self.recipient_account, 0.1)
+        assert receipt["status"] == 1
+
+        response = self.tracer_api.send_rpc(
+            method="debug_traceBlockByHash", params=[hash])
+        assert "error" in response, "No errors in response"
+        assert response["error"]["code"] == -32602, "Invalid error code"
+        assert response["error"]["message"] == "Invalid params"
+
+    def test_debug_trace_block_by_non_existent_hash(self):
+        receipt = self.send_neon(
+            self.sender_account, self.recipient_account, 0.1)
+        assert receipt["status"] == 1
+
+        response = self.tracer_api.send_rpc(
+            method="debug_traceBlockByHash", params=['0xd97ff4869d52c4add6f5bcb1ba96020dd7877244b4cbf49044f49f002015ea85'])
+        assert "error" in response, "No errors in response"
+        assert response["error"]["code"] == -32603, "Invalid error code"
+        assert response["error"]["message"] == "eth_getBlockByHash returns None for '\"0xd97ff4869d52c4add6f5bcb1ba96020dd7877244b4cbf49044f49f002015ea85\"' block"

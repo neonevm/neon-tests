@@ -1,3 +1,5 @@
+"""Tests to check old accounts continue work after structure changes
+Environment variables ACCOUNTS, ERC20_ADDRESS, ERC721_ADDRESS should be set"""
 import os
 
 import pytest
@@ -48,7 +50,7 @@ def trx_list():
 
 
 @pytest.fixture(scope="session")
-def erc20(erc20_spl_mintable, web3_client, faucet, sol_client, solana_account, bob):
+def erc20(web3_client, faucet, sol_client, solana_account, bob):
     contract_address = os.environ.get("ERC20_ADDRESS")
 
     if contract_address:
@@ -82,7 +84,7 @@ def erc20(erc20_spl_mintable, web3_client, faucet, sol_client, solana_account, b
 
 
 @pytest.fixture(scope="session")
-def erc721(web3_client, erc20_spl_mintable, faucet, bob):
+def erc721(web3_client, faucet, bob):
     contract_address = os.environ.get("ERC721_ADDRESS")
     if contract_address:
         erc721 = ERC721ForMetaplex(web3_client, faucet, account=bob, contract_address=contract_address)
@@ -105,28 +107,30 @@ def test_transfers(alice, bob, accounts, web3_client, trx_list):
         assert receipt["status"] == 1
 
 
-def test_contract_deploy_and_interact(web3_client, alice, bob, trx_list):
+def test_contract_deploy_and_interact(web3_client, accounts, trx_list):
+    acc1 = accounts[7]
+    acc2 = accounts[8]
     contract_a, receipt = web3_client.deploy_and_get_contract(
-        "common/NestedCallsChecker", "0.8.12", bob, contract_name="A"
+        "common/NestedCallsChecker", "0.8.12", acc2, contract_name="A"
     )
     trx_list.append(receipt["transactionHash"])
     contract_b, receipt = web3_client.deploy_and_get_contract(
-        "common/NestedCallsChecker", "0.8.12", alice, contract_name="B"
+        "common/NestedCallsChecker", "0.8.12", acc2, contract_name="B"
     )
     trx_list.append(receipt["transactionHash"])
     contract_c, receipt = web3_client.deploy_and_get_contract(
-        "common/NestedCallsChecker", "0.8.12", alice, contract_name="C"
+        "common/NestedCallsChecker", "0.8.12", acc1, contract_name="C"
     )
     trx_list.append(receipt["transactionHash"])
 
     tx = {
-        "from": alice.address,
-        "nonce": web3_client.eth.get_transaction_count(alice.address),
+        "from": acc1.address,
+        "nonce": web3_client.eth.get_transaction_count(acc1.address),
         "gasPrice": web3_client.gas_price(),
     }
 
     instruction_tx = contract_a.functions.method1(contract_b.address, contract_c.address).build_transaction(tx)
-    resp = web3_client.send_transaction(alice, instruction_tx)
+    resp = web3_client.send_transaction(acc1, instruction_tx)
     trx_list.append(resp["transactionHash"])
 
     event_a1_logs = contract_a.events.EventA1().process_receipt(resp, errors=DISCARD)

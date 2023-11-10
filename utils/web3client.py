@@ -16,15 +16,20 @@ from utils.consts import InputTestConstants, Unit
 from utils.helpers import decode_function_signature
 
 
-class NeonWeb3Client:
+class Web3Client:
     def __init__(
-        self, proxy_url: str, chain_id: int, tracer_url: tp.Optional[tp.Any] = None, session: tp.Optional[tp.Any] = None
+        self,
+        proxy_url: str,
+        tracer_url: tp.Optional[tp.Any] = None,
+        session: tp.Optional[tp.Any] = None,
     ):
         self._proxy_url = proxy_url
         self._tracer_url = tracer_url
-        self._web3 = web3.Web3(web3.HTTPProvider(proxy_url, session=session))
-        self._chain_id = chain_id
-        self._session = session
+        self._web3 = web3.Web3(
+            web3.HTTPProvider(
+                proxy_url, session=session, request_kwargs={"timeout": 30}
+            )
+        )
 
     def __getattr__(self, item):
         return getattr(self._web3, item)
@@ -78,50 +83,12 @@ class NeonWeb3Client:
         except TransactionNotFound:
             return None
 
-
     def gas_price(self):
         gas = self._web3.eth.gas_price
         return gas
 
     def create_account(self):
         return self._web3.eth.account.create()
-
-    def create_account_with_balance(
-        self,
-        faucet,
-        amount: int = InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value,
-        bank_account=None,
-    ):
-        """Creates a new account with balance"""
-        account = self.create_account()
-        balance_before = float(
-            self.from_wei(self.eth.get_balance(account.address), Unit.ETHER)
-        )
-
-        if bank_account is not None:
-            self.send_neon(bank_account, account, amount)
-        else:
-            faucet.request_neon(account.address, amount=amount)
-        for _ in range(20):
-            if float(
-                self.from_wei(self.eth.get_balance(account.address), Unit.ETHER)
-            ) >= (balance_before + amount):
-                break
-            time.sleep(1)
-        else:
-            raise AssertionError(
-                f"Balance didn't changed after 20 seconds ({account.address})"
-            )
-        return account
-
-    def get_balance(
-        self, address: tp.Union[str, eth_account.signers.local.LocalAccount]
-    ):
-        if not isinstance(address, str):
-            address = address.address
-        return web3.Web3.from_wei(
-            self._web3.eth.get_balance(address, "pending"), "ether"
-        )
 
     def get_block_number(self):
         return self._web3.eth.get_block_number()
@@ -136,34 +103,6 @@ class NeonWeb3Client:
     ):
         address = address if isinstance(address, str) else address.address
         return self._web3.eth.get_transaction_count(address, block)
-
-    def send_neon(
-        self,
-        from_: eth_account.signers.local.LocalAccount,
-        to: tp.Union[str, eth_account.signers.local.LocalAccount],
-        amount: tp.Union[int, float, Decimal],
-        gas: tp.Optional[int] = 0,
-        gas_price: tp.Optional[int] = None,
-        nonce: int = None,
-    ) -> web3.types.TxReceipt:
-        to_addr = to if isinstance(to, str) else to.address
-        if nonce is None:
-            nonce = self.get_nonce(from_)
-        transaction = {
-            "from": from_.address,
-            "to": to_addr,
-            "value": web3.Web3.to_wei(amount, "ether"),
-            "chainId": self._chain_id,
-            "gasPrice": gas_price or self.gas_price(),
-            "gas": gas,
-            "nonce": nonce,
-        }
-        if transaction["gas"] == 0:
-            transaction["gas"] = self._web3.eth.estimate_gas(transaction)
-
-        signed_tx = self._web3.eth.account.sign_transaction(transaction, from_.key)
-        tx = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-        return self._web3.eth.wait_for_transaction_receipt(tx)
 
     def deploy_contract(
         self,
@@ -181,7 +120,6 @@ class NeonWeb3Client:
         contract = self._web3.eth.contract(abi=abi, bytecode=bytecode)
         transaction = contract.constructor(*constructor_args).build_transaction(
             {
-                "chainId": self._chain_id,
                 "from": from_.address,
                 "gas": gas,
                 "gasPrice": gas_price,
@@ -281,3 +219,85 @@ class NeonWeb3Client:
         }
         result = self._web3.eth.call(tx)
         return abi.decode(result_types, result)[0]
+
+
+class NeonChainWeb3Client(Web3Client):
+    def __init__(
+        self,
+        proxy_url: str,
+        tracer_url: tp.Optional[tp.Any] = None,
+        session: tp.Optional[tp.Any] = None,
+    ):
+        super().__init__(proxy_url, tracer_url, session)
+
+    def create_account_with_balance(
+        self,
+        faucet,
+        amount: int = InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value,
+        bank_account=None,
+    ):
+        """Creates a new account with balance"""
+        account = self.create_account()
+        balance_before = float(
+            self.from_wei(self.eth.get_balance(account.address), Unit.ETHER)
+        )
+
+        if bank_account is not None:
+            self.send_neon(bank_account, account, amount)
+        else:
+            faucet.request_neon(account.address, amount=amount)
+        for _ in range(20):
+            if float(
+                self.from_wei(self.eth.get_balance(account.address), Unit.ETHER)
+            ) >= (balance_before + amount):
+                break
+            time.sleep(1)
+        else:
+            raise AssertionError(
+                f"Balance didn't changed after 20 seconds ({account.address})"
+            )
+        return account
+
+    def send_neon(
+        self,
+        from_: eth_account.signers.local.LocalAccount,
+        to: tp.Union[str, eth_account.signers.local.LocalAccount],
+        amount: tp.Union[int, float, Decimal],
+        gas: tp.Optional[int] = 0,
+        gas_price: tp.Optional[int] = None,
+        nonce: int = None,
+    ) -> web3.types.TxReceipt:
+        to_addr = to if isinstance(to, str) else to.address
+        if nonce is None:
+            nonce = self.get_nonce(from_)
+        transaction = {
+            "from": from_.address,
+            "to": to_addr,
+            "value": web3.Web3.to_wei(amount, "ether"),
+            "gasPrice": gas_price or self.gas_price(),
+            "gas": gas,
+            "nonce": nonce,
+        }
+        if transaction["gas"] == 0:
+            transaction["gas"] = self._web3.eth.estimate_gas(transaction)
+
+        signed_tx = self._web3.eth.account.sign_transaction(transaction, from_.key)
+        tx = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        return self._web3.eth.wait_for_transaction_receipt(tx)
+
+    def get_balance(
+        self, address: tp.Union[str, eth_account.signers.local.LocalAccount]
+    ):
+        if not isinstance(address, str):
+            address = address.address
+        return web3.Web3.from_wei(
+            self._web3.eth.get_balance(address, "pending"), "ether"
+        )
+
+
+class SolChainWeb3Client(Web3Client):
+    def __init__(self, proxy_url: str):
+        super().__init__(f"{proxy_url}/sol")
+
+    def create_account_with_balance(self):
+        pass

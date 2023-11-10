@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from solana.transaction import Signature
 
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 from utils.solana_client import SolanaClient
 
 NETWORK_NAME = "testnet"
@@ -21,7 +21,7 @@ def load_creds(network_name):
 
 def get_web3_clients():
     creds = load_creds(NETWORK_NAME)
-    w = NeonWeb3Client(creds["proxy_url"], creds["network_id"])
+    w = NeonChainWeb3Client(creds["proxy_url"])
     s = SolanaClient(creds["solana_url"])
     return w, s
 
@@ -34,7 +34,7 @@ def load_transactions_list():
     return txs
 
 
-def check_neon_tx(tx, web3_client: NeonWeb3Client):
+def check_neon_tx(tx, web3_client: NeonChainWeb3Client):
     try:
         web3_client._web3.eth.get_transaction_receipt(tx)
         return True

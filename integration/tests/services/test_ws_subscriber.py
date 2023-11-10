@@ -51,7 +51,7 @@ class TestSubscriber(BaseMixin):
 
     def make_tx_object(self) -> typing.Dict:
         return {
-            "chainId": self.web3_client._chain_id,
+            "chainId": self.web3_client.eth.chain_id,
             "gasPrice": self.web3_client.gas_price(),
             "nonce": self.web3_client.eth.get_transaction_count(self.sender_account.address),
             "value": 0,

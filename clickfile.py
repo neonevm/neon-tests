@@ -28,7 +28,7 @@ import tabulate
 from utils import web3client
 from utils import cloud
 from utils.operator import Operator
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 from utils.prices import get_sol_price
 
 from deploy.cli import faucet as faucet_cli
@@ -135,14 +135,11 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
             op = Operator(
                 network["proxy_url"],
                 network["solana_url"],
-                network["network_id"],
                 network["operator_neon_rewards_address"],
                 network["spl_neon_mint"],
                 network["operator_keys"],
-                web3_client=NeonWeb3Client(
-                    network["proxy_url"],
-                    network["network_id"],
-                    session=requests.Session(),
+                web3_client=NeonChainWeb3Client(
+                    network["proxy_url"]
                 ),
             )
             pre = get_tokens_balances(op)
@@ -198,7 +195,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         env = os.environ.copy()
         env["PRIVATE_KEYS"] = ",".join(keys)
         env["NETWORK_ID"] = str(
-            network_manager.get_network_param(network, "network_id")
+            network_manager.get_network_param(network, "network_ids.neon")
         )
         env["PROXY_URL"] = network_manager.get_network_param(network, "proxy_url")
 
@@ -230,9 +227,8 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     pool.join()
     # Add allure environment
     settings = network_manager.networks[network]
-    web3_client = web3client.NeonWeb3Client(
-        settings["proxy_url"], settings["network_id"]
-    )
+    web3_client = web3client.NeonChainWeb3Client(
+        settings["proxy_url"])
     opts = {
         "Proxy.Version": web3_client.get_proxy_version()["result"],
         "EVM.Version": web3_client.get_evm_version()["result"],
@@ -337,7 +333,8 @@ def create_allure_environment_opts(opts: dict):
 def generate_allure_environment(network_name: str):
     network = network_manager.networks[network_name]
     env = os.environ.copy()
-    env["NETWORK_ID"] = str(network["network_id"])
+
+    env["NETWORK_ID"] = str(network["network_ids"]["neon"])
     env["PROXY_URL"] = network["proxy_url"]
     return env
 
@@ -852,7 +849,6 @@ def get_operator_balances(network: str):
     operator = Operator(
         net["proxy_url"],
         net["solana_url"],
-        net["network_id"],
         net["operator_neon_rewards_address"],
         net["spl_neon_mint"],
         net["operator_keys"],

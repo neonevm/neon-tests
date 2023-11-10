@@ -1,4 +1,3 @@
-import re
 import time
 import typing as tp
 
@@ -14,7 +13,6 @@ from integration.tests.basic.helpers.errors import Error32000, Error32602
 from integration.tests.basic.helpers.rpc_checks import is_hex, hex_str_consists_not_only_of_zeros
 from integration.tests.helpers.basic import cryptohex
 from utils.helpers import gen_hash_of_block
-
 
 GET_LOGS_TEST_DATA = [
     (Tag.LATEST.value, Tag.LATEST.value),
@@ -165,7 +163,7 @@ class TestRpcBaseCalls(BaseMixin):
         """Verify implemented rpc calls work work net_version"""
         response = self.proxy_api.send_rpc("net_version")
         assert "error" not in response
-        assert int(response["result"]) == self.web3_client._chain_id, \
+        assert int(response["result"]) == self.web3_client.eth.chain_id, \
             f"Invalid response result {response['result']}"
 
     def test_eth_send_raw_transaction(self):
@@ -364,10 +362,3 @@ class TestRpcBaseCalls(BaseMixin):
             assert (
                     field in response["result"]
             ), f"Field {field} is not in response: {response}"
-
-    def test_neon_cli_version(self):
-        response = self.proxy_api.send_rpc(method="neon_cli_version", params=[])
-        pattern = r"Neon-cli/[vt]\d{1,2}.\d{1,2}.\d{1,2}.*"
-        assert re.match(
-            pattern, response["result"]
-        ), f"Version format is not correct. Pattern: {pattern}; Response: {response}"

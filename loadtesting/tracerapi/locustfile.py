@@ -19,7 +19,7 @@ from locust import User, TaskSet, task, events, tag
 
 from loadtesting.proxy.common import env
 from utils import apiclient
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 
 LOG = logging.getLogger("neon_client")
 
@@ -215,9 +215,8 @@ class BaseEthRPCATasksSet(TaskSet):
             )
         self.credentials = self.user.environment.credentials
         LOG.info(f"Create web3 client to: {self.credentials['proxy_url']}")
-        self.web3_client = NeonWeb3Client(
+        self.web3_client = NeonChainWeb3Client(
             self.credentials["proxy_url"],
-            self.credentials["network_id"],
             session=self._rpc_client,
         )
         self.log = logging.getLogger("rpc-consumer[%s]" % self.rpc_consumer_id)

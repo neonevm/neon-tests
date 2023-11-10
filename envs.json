@@ -305,7 +305,9 @@
   "tracer_ci": {
     "evm_loader": "eeLSJgWzzxrqKv1UxtRVVH8FX3qCQWUs9QuAjJpETGU",
     "proxy_url": "https://ch2-graph.neontest.xyz/solana",
-    "network_id": 245022926,
+    "network_ids": {
+      "neon": 245022926
+    },
     "solana_url": "https://api.devnet.solana.com",
     "faucet_url": "http://3.13.67.238/request_neon",
     "neonpass_url": "http://devnet.neonpass.live",

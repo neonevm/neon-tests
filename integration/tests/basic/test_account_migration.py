@@ -14,14 +14,18 @@ def accounts(web3_client):
     accounts = []
     for key in account_keys:
         accounts.append(web3_client.eth.account.from_key(key))
-    print("Balances before testing:")
+    print("Before testing:")
     for acc in accounts:
-        print(f"Balance for {acc.address}: {web3_client.to_main_currency(web3_client.get_balance(acc.address))}")
+        print(
+            f"Balance for {acc.address}: {web3_client.to_main_currency(web3_client.get_balance(acc.address))}, nonce: {web3_client.eth.get_transaction_count(acc.address)}"
+        )
 
     yield accounts
-    print("Balances after testing:")
+    print("After testing:")
     for acc in accounts:
-        print(f"Balance for {acc.address}: {web3_client.to_main_currency(web3_client.get_balance(acc.address))}")
+        print(
+            f"Balance for {acc.address}: {web3_client.to_main_currency(web3_client.get_balance(acc.address))}, nonce: {web3_client.eth.get_transaction_count(acc.address)}"
+        )
 
 
 @pytest.fixture(scope="session")
@@ -32,6 +36,15 @@ def bob(accounts):
 @pytest.fixture(scope="session")
 def alice(accounts):
     return accounts[1]
+
+
+@pytest.fixture(scope="session")
+def trx_list():
+    list = []
+    yield list
+    print("Trx list:")
+    for trx in list:
+        print(trx.hex())
 
 
 @pytest.fixture(scope="session")
@@ -81,19 +94,31 @@ def erc721(web3_client, erc20_spl_mintable, faucet, bob):
     return erc721
 
 
-def test_transfers(alice, bob, accounts, web3_client):
+def test_transfers(alice, bob, accounts, web3_client, trx_list):
     web3_client.send_neon(alice, bob, 5)
     for i in range(5):
         receipt = web3_client.send_neon(alice, accounts[i + 1], 5)
+        trx_list.append(receipt["transactionHash"])
         assert receipt["status"] == 1
         receipt = web3_client.send_neon(bob, accounts[i + 2], 1)
+        trx_list.append(receipt["transactionHash"])
         assert receipt["status"] == 1
 
 
-def test_contract_deploy_and_interact(web3_client, alice, bob):
-    contract_a, _ = web3_client.deploy_and_get_contract("common/NestedCallsChecker", "0.8.12", bob, contract_name="A")
-    contract_b, _ = web3_client.deploy_and_get_contract("common/NestedCallsChecker", "0.8.12", alice, contract_name="B")
-    contract_c, _ = web3_client.deploy_and_get_contract("common/NestedCallsChecker", "0.8.12", alice, contract_name="C")
+def test_contract_deploy_and_interact(web3_client, alice, bob, trx_list):
+    contract_a, receipt = web3_client.deploy_and_get_contract(
+        "common/NestedCallsChecker", "0.8.12", bob, contract_name="A"
+    )
+    trx_list.append(receipt["transactionHash"])
+    contract_b, receipt = web3_client.deploy_and_get_contract(
+        "common/NestedCallsChecker", "0.8.12", alice, contract_name="B"
+    )
+    trx_list.append(receipt["transactionHash"])
+    contract_c, receipt = web3_client.deploy_and_get_contract(
+        "common/NestedCallsChecker", "0.8.12", alice, contract_name="C"
+    )
+    trx_list.append(receipt["transactionHash"])
+
     tx = {
         "from": alice.address,
         "nonce": web3_client.eth.get_transaction_count(alice.address),
@@ -102,6 +127,8 @@ def test_contract_deploy_and_interact(web3_client, alice, bob):
 
     instruction_tx = contract_a.functions.method1(contract_b.address, contract_c.address).build_transaction(tx)
     resp = web3_client.send_transaction(alice, instruction_tx)
+    trx_list.append(resp["transactionHash"])
+
     event_a1_logs = contract_a.events.EventA1().process_receipt(resp, errors=DISCARD)
     assert len(event_a1_logs) == 1
     event_b1_logs = contract_b.events.EventB1().process_receipt(resp, errors=DISCARD)
@@ -113,15 +140,18 @@ def test_contract_deploy_and_interact(web3_client, alice, bob):
         assert log == (), f"Trx shouldn't contain logs for the events: eventB2, eventC1, eventC2_log0. Log: {log}"
 
 
-def test_erc721_interaction(erc721, web3_client, bob, alice, accounts):
+def test_erc721_interaction(erc721, web3_client, bob, alice, accounts, trx_list):
     seed = web3_client.text_to_bytes32(gen_hash_of_block(8))
     token_id = erc721.mint(seed, erc721.account.address, "uri")
 
     balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
     balance_usr2_before = erc721.contract.functions.balanceOf(alice.address).call()
 
-    erc721.approve(alice.address, token_id, erc721.account)
-    erc721.transfer_from(erc721.account.address, alice.address, token_id, alice)
+    resp = erc721.approve(alice.address, token_id, erc721.account)
+    trx_list.append(resp["transactionHash"])
+
+    resp = erc721.transfer_from(erc721.account.address, alice.address, token_id, alice)
+    trx_list.append(resp["transactionHash"])
 
     balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
     balance_usr2_after = erc721.contract.functions.balanceOf(alice.address).call()
@@ -140,7 +170,8 @@ def test_erc721_interaction(erc721, web3_client, bob, alice, accounts):
         balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
         balance_usr2_before = erc721.contract.functions.balanceOf(recipient.address).call()
 
-        erc721.transfer_from(erc721.account.address, recipient.address, token_ids[i], erc721.account)
+        resp = erc721.transfer_from(erc721.account.address, recipient.address, token_ids[i], erc721.account)
+        trx_list.append(resp["transactionHash"])
 
         balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
         balance_usr2_after = erc721.contract.functions.balanceOf(recipient.address).call()
@@ -149,22 +180,28 @@ def test_erc721_interaction(erc721, web3_client, bob, alice, accounts):
         assert balance_usr2_after - balance_usr2_before == 1
 
 
-def test_erc20_interaction(erc20, web3_client, bob, alice, accounts):
+def test_erc20_interaction(erc20, web3_client, bob, alice, accounts, trx_list):
     balance_before = erc20.contract.functions.balanceOf(erc20.account.address).call()
     amount = 500
-    erc20.mint_tokens(erc20.account, erc20.account.address, amount)
+    resp = erc20.mint_tokens(erc20.account, erc20.account.address, amount)
+    trx_list.append(resp["transactionHash"])
+
     balance_after = erc20.contract.functions.balanceOf(erc20.account.address).call()
     assert balance_after == balance_before + amount
 
     tom = accounts[9]
     balance_before = erc20.contract.functions.balanceOf(tom.address).call()
-    erc20.mint_tokens(erc20.account, tom.address, amount)
+    resp = erc20.mint_tokens(erc20.account, tom.address, amount)
+    trx_list.append(resp["transactionHash"])
+
     balance_after = erc20.contract.functions.balanceOf(tom.address).call()
     assert balance_after == amount + balance_before
 
     balance_before = erc20.contract.functions.balanceOf(tom.address).call()
     total_before = erc20.contract.functions.totalSupply().call()
-    erc20.burn(tom, tom.address, amount)
+    resp = erc20.burn(tom, tom.address, amount)
+    trx_list.append(resp["transactionHash"])
+
     balance_after = erc20.contract.functions.balanceOf(tom.address).call()
     total_after = erc20.contract.functions.totalSupply().call()
 
@@ -172,7 +209,8 @@ def test_erc20_interaction(erc20, web3_client, bob, alice, accounts):
     assert total_after == total_before - amount
 
     amount = 1000000000000000
-    erc20.mint_tokens(erc20.account, accounts[9].address, amount)
+    resp = erc20.mint_tokens(erc20.account, accounts[9].address, amount)
+    trx_list.append(resp["transactionHash"])
 
     amount = 500
     for i in range(8):
@@ -181,7 +219,9 @@ def test_erc20_interaction(erc20, web3_client, bob, alice, accounts):
         balance_acc1_before = erc20.contract.functions.balanceOf(sender.address).call()
         balance_acc2_before = erc20.contract.functions.balanceOf(recipient.address).call()
         total_before = erc20.contract.functions.totalSupply().call()
-        erc20.transfer(sender, recipient.address, amount)
+        resp = erc20.transfer(sender, recipient.address, amount)
+        trx_list.append(resp["transactionHash"])
+
         balance_acc1_after = erc20.contract.functions.balanceOf(sender.address).call()
         balance_acc2_after = erc20.contract.functions.balanceOf(recipient.address).call()
         total_after = erc20.contract.functions.totalSupply().call()
@@ -195,7 +235,8 @@ def test_erc20_interaction(erc20, web3_client, bob, alice, accounts):
         balance_acc1_before = erc20.contract.functions.balanceOf(sender.address).call()
         balance_acc2_before = erc20.contract.functions.balanceOf(recipient.address).call()
         total_before = erc20.contract.functions.totalSupply().call()
-        erc20.transfer(sender, recipient.address, amount)
+        resp = erc20.transfer(sender, recipient.address, amount)
+        trx_list.append(resp["transactionHash"])
         balance_acc1_after = erc20.contract.functions.balanceOf(sender.address).call()
         balance_acc2_after = erc20.contract.functions.balanceOf(recipient.address).call()
         total_after = erc20.contract.functions.totalSupply().call()

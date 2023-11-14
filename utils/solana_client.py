@@ -30,10 +30,10 @@ class SolanaClient(solana.rpc.api.Client):
         )
 
     def request_airdrop(
-            self,
-            pubkey: PublicKey,
-            lamports: int,
-            commitment: tp.Optional[Commitment] = None,
+        self,
+        pubkey: PublicKey,
+        lamports: int,
+        commitment: tp.Optional[Commitment] = None,
     ) -> RequestAirdropResp:
         airdrop_resp = None
         for _ in range(5):
@@ -68,6 +68,20 @@ class SolanaClient(solana.rpc.api.Client):
         return PublicKey.find_program_address(
             [self.account_seed_version, address_bytes, chain_id_bytes], PublicKey(evm_loader_id)
         )[0]
+
+    @staticmethod
+    def ether2bytes(ether: tp.Union[str, bytes]):
+        if isinstance(ether, str):
+            if ether.startswith("0x"):
+                return bytes.fromhex(ether[2:])
+            return bytes.fromhex(ether)
+        return ether
+
+    def ether2program(self, ether: tp.Union[str, bytes], evm_loader_id: str) -> tp.Tuple[str, int]:
+        items = PublicKey.find_program_address(
+            [self.account_seed_version, self.ether2bytes(ether)], PublicKey(evm_loader_id)
+        )
+        return str(items[0]), items[1]
 
     def get_erc_auth_address(self, neon_account_address: str, token_address: str, evm_loader_id: str):
         neon_account_addressbytes = bytes(12) + bytes.fromhex(neon_account_address[2:])
@@ -115,7 +129,7 @@ class SolanaClient(solana.rpc.api.Client):
         self.send_transaction(trx, solana_account, opts=opts)
 
     def deposit_wrapped_sol_from_solana_to_neon(
-            self, solana_account, neon_account, chain_id, evm_loader_id, full_amount=None
+        self, solana_account, neon_account, chain_id, evm_loader_id, full_amount=None
     ):
         if not full_amount:
             full_amount = int(0.1 * LAMPORT_PER_SOL)
@@ -129,17 +143,23 @@ class SolanaClient(solana.rpc.api.Client):
         wrap_sol_tx = wSOL_tx(wSOL_account, wSOL, full_amount, solana_account.public_key, ata_address)
         self.send_tx_and_check_status_ok(wrap_sol_tx, solana_account)
 
-        balance_pubkey = self.ether2balance(neon_account.address, chain_id, evm_loader_id)
         tx = token_from_solana_to_neon_tx(
-            solana_account, balance_pubkey, wSOL["address_spl"], neon_account, full_amount, evm_loader_id, chain_id
+            self, solana_account, wSOL["address_spl"], neon_account, full_amount, evm_loader_id, chain_id
         )
 
         self.send_tx_and_check_status_ok(tx, solana_account)
 
-
-    def deposit_neon_like_tokens_from_solana_to_neon(self, neon_mint, solana_account, neon_account, chain_id,
-                                                     operator_keypair, evm_loader_keypair, evm_loader_id, amount):
-        balance_pubkey = self.ether2balance(neon_account.address, chain_id, evm_loader_id)
+    def deposit_neon_like_tokens_from_solana_to_neon(
+        self,
+        neon_mint,
+        solana_account,
+        neon_account,
+        chain_id,
+        operator_keypair,
+        evm_loader_keypair,
+        evm_loader_id,
+        amount,
+    ):
 
         spl_neon_token = SplToken(self, neon_mint, TOKEN_PROGRAM_ID, payer=operator_keypair)
         associated_token_address = spl_neon_token.create_associated_token_account(solana_account.public_key)
@@ -155,8 +175,8 @@ class SolanaClient(solana.rpc.api.Client):
         self.send_tx_and_check_status_ok(tx, operator_keypair, evm_loader_keypair)
 
         tx = token_from_solana_to_neon_tx(
+            self,
             solana_account,
-            balance_pubkey,
             neon_mint,
             neon_account,
             amount,

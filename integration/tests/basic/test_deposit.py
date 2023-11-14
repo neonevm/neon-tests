@@ -42,18 +42,14 @@ class TestDeposit(BaseMixin):
         full_amount = self.web3_client.to_main_currency(amount)
         evm_loader_id = pytestconfig.environment.evm_loader
 
-        balance_pubkey = self.sol_client.ether2balance(
-            new_account.address, self.web3_client.eth.chain_id, evm_loader_id
-        )
-
         neon_balance_before = self.get_balance_from_wei(new_account.address)
 
         self.sol_client.create_ata(solana_account, neon_mint)
         self.withdraw_neon(solana_account, amount)  # insufficient funds
 
         tx = token_from_solana_to_neon_tx(
+            self.sol_client,
             solana_account,
-            balance_pubkey,
             neon_mint,
             new_account,
             full_amount,
@@ -76,8 +72,11 @@ class TestDeposit(BaseMixin):
             operator_keypair,
             evm_loader_keypair,
     ):
-        amount = 100000000
+        amount = 5000000
         evm_loader_id = pytestconfig.environment.evm_loader
+        new_sol_account = Keypair.generate()
+        self.sol_client.send_sol(solana_account, new_sol_account.public_key, amount)
+
         self.sol_client.deposit_neon_like_tokens_from_solana_to_neon(neon_mint, solana_account, new_account,
                                                                      web3_client_abc.eth.chain_id, operator_keypair,
                                                                      evm_loader_keypair, evm_loader_id, amount)
@@ -133,11 +132,9 @@ class TestDeposit(BaseMixin):
         wrap_sol_tx = wSOL_tx(wSOL_account, wSOL, full_amount, solana_account.public_key, ata_address)
         self.sol_client.send_tx_and_check_status_ok(wrap_sol_tx, solana_account)
 
-        balance_pubkey = self.sol_client.ether2balance(new_account.address, web3_client_sol.eth.chain_id, evm_loader_id)
-
         tx = token_from_solana_to_neon_tx(
+            self.sol_client,
             solana_account,
-            balance_pubkey,
             wSOL["address_spl"],
             new_account,
             full_amount,

@@ -337,7 +337,6 @@ class TestRpcBaseCalls(BaseMixin):
             "NEON_GAS_LIMIT_MULTIPLIER_NO_CHAINID",
             "NEON_HOLDER_MSG_SIZE",
             "NEON_OPERATOR_PRIORITY_SLOTS",
-            "NEON_PAYMENT_TO_DEPOSIT",
             "NEON_PAYMENT_TO_TREASURE",
             "NEON_STORAGE_ENTRIES_IN_CONTRACT_ACCOUNT",
             "NEON_TREASURY_POOL_COUNT",

@@ -15,7 +15,7 @@ DEFAULT_HEAP_FRAME = 256 * 1024
 
 class Instruction:
     @staticmethod
-    def balance_account(solana_wallet, account_pubkey,
+    def balance_account(solana_wallet, account_pubkey, contract_pubkey,
                    neon_wallet, evm_loader_id, chain_id) -> TransactionInstruction:
 
         keys = [
@@ -24,6 +24,8 @@ class Instruction:
             AccountMeta(pubkey=SYS_PROGRAM_ID,
                         is_signer=False, is_writable=False),
             AccountMeta(pubkey=account_pubkey,
+                        is_signer=False, is_writable=True),
+            AccountMeta(pubkey=contract_pubkey,
                         is_signer=False, is_writable=True),
         ]
 
@@ -44,6 +46,7 @@ class Instruction:
             ether_address: bytes,
             chain_id: int,
             balance_account: PublicKey,
+            contract_account: PublicKey,
             mint: PublicKey,
             source: PublicKey,
             pool: PublicKey,
@@ -56,6 +59,7 @@ class Instruction:
             AccountMeta(pubkey=source, is_signer=False, is_writable=True),
             AccountMeta(pubkey=pool, is_signer=False, is_writable=True),
             AccountMeta(pubkey=balance_account, is_signer=False, is_writable=True),
+            AccountMeta(pubkey=contract_account, is_signer=False, is_writable=True),
             AccountMeta(pubkey=TOKEN_PROGRAM_ID, is_signer=False, is_writable=False),
             AccountMeta(pubkey=operator_pubkey, is_signer=True, is_writable=True),
             AccountMeta(pubkey=SYS_PROGRAM_ID, is_signer=False, is_writable=False),

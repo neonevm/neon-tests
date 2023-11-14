@@ -8,9 +8,10 @@ from dataclasses import dataclass
 import pytest
 from _pytest.config import Config
 from _pytest.runner import runtestprotocol
+from solana.keypair import Keypair
 
 from clickfile import create_allure_environment_opts
-from utils.web3client import NeonChainWeb3Client, SolChainWeb3Client
+from utils.web3client import NeonChainWeb3Client, SolChainWeb3Client, Web3Client, NeonLikeChainWeb3Client
 
 pytest_plugins = ["ui.plugins.browser"]
 
@@ -35,18 +36,14 @@ class EnvironmentConfig:
 
 
 def pytest_addoption(parser):
-    parser.addoption(
-        "--network", action="store", default="night-stand", help="Which stand use"
-    )
+    parser.addoption("--network", action="store", default="local", help="Which stand use")
     parser.addoption(
         "--make-report",
         action="store_true",
         default=False,
         help="Store tests result to file",
     )
-    parser.addoption(
-        "--envs", action="store", default="envs.json", help="Filename with environments"
-    )
+    parser.addoption("--envs", action="store", default="envs.json", help="Filename with environments")
 
 
 def pytest_sessionstart(session):
@@ -76,9 +73,7 @@ def pytest_configure(config: Config):
     envs_file = config.getoption("--envs")
     with open(pathlib.Path().parent.parent / envs_file, "r+") as f:
         environments = json.load(f)
-    assert (
-        network_name in environments
-    ), f"Environment {network_name} doesn't exist in envs.json"
+    assert network_name in environments, f"Environment {network_name} doesn't exist in envs.json"
     env = environments[network_name]
     if network_name == "devnet":
         for solana_env_var in solana_url_env_vars:
@@ -92,16 +87,24 @@ def pytest_configure(config: Config):
     if "eth_bank_account" not in env:
         env["eth_bank_account"] = ""
     if network_name == "aws":
-        env["solana_url"] = env["solana_url"].replace(
-            "<solana_ip>", os.environ.get("SOLANA_IP")
-        )
-        env["proxy_url"] = env["proxy_url"].replace(
-            "<proxy_ip>", os.environ.get("PROXY_IP")
-        )
-        env["faucet_url"] = env["faucet_url"].replace(
-            "<proxy_ip>", os.environ.get("PROXY_IP")
-        )
+        env["solana_url"] = env["solana_url"].replace("<solana_ip>", os.environ.get("SOLANA_IP"))
+        env["proxy_url"] = env["proxy_url"].replace("<proxy_ip>", os.environ.get("PROXY_IP"))
+        env["faucet_url"] = env["faucet_url"].replace("<proxy_ip>", os.environ.get("PROXY_IP"))
     config.environment = EnvironmentConfig(**env)
+
+
+@pytest.fixture(scope="session")
+def operator_keypair():
+    with open("operator-keypair.json", "r") as key:
+        secret_key = json.load(key)[:32]
+        return Keypair.from_secret_key(secret_key)
+
+
+@pytest.fixture(scope="session")
+def evm_loader_keypair():
+    with open("evm_loader-keypair.json", "r") as key:
+        secret_key = json.load(key)[:32]
+        return Keypair.from_secret_key(secret_key)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -155,4 +158,19 @@ def web3_client_sol(pytestconfig: Config) -> SolChainWeb3Client:
     client = SolChainWeb3Client(
         pytestconfig.environment.proxy_url,
     )
+    return client
+
+
+@pytest.fixture(scope="session", autouse=True)
+def web3_client_abc(pytestconfig: Config) -> Web3Client:
+    client = NeonLikeChainWeb3Client(
+        pytestconfig.environment.proxy_url,
+        "abc",
+    )
+    return client
+
+
+@pytest.fixture(scope="session", autouse=True)
+def web3_client_def(pytestconfig: Config) -> Web3Client:
+    client = NeonLikeChainWeb3Client(pytestconfig.environment.proxy_url, "def")
     return client

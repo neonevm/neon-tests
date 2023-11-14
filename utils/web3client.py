@@ -25,6 +25,7 @@ class Web3Client:
     ):
         self._proxy_url = proxy_url
         self._tracer_url = tracer_url
+        self._chain_id = None
         self._web3 = web3.Web3(
             web3.HTTPProvider(
                 proxy_url, session=session, request_kwargs={"timeout": 30}
@@ -33,6 +34,12 @@ class Web3Client:
 
     def __getattr__(self, item):
         return getattr(self._web3, item)
+
+    @property
+    def chain_id(self):
+        if self._chain_id is None:
+            self._chain_id = self._web3.eth.chain_id
+        return self._chain_id
 
     def _get_evm_info(self, method):
         resp = requests.post(
@@ -124,6 +131,7 @@ class Web3Client:
                 "gas": gas,
                 "gasPrice": gas_price,
                 "nonce": self.get_nonce(from_),
+                "chainId": self.chain_id,
             }
         )
 
@@ -273,6 +281,7 @@ class NeonChainWeb3Client(Web3Client):
         transaction = {
             "from": from_.address,
             "to": to_addr,
+            "chainId": self.chain_id,
             "value": web3.Web3.to_wei(amount, "ether"),
             "gasPrice": gas_price or self.gas_price(),
             "gas": gas,

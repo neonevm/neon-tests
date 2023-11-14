@@ -312,7 +312,6 @@
     "faucet_url": "http://3.13.67.238/request_neon",
     "neonpass_url": "http://devnet.neonpass.live",
     "tracer_url": "http://neon-rpc:9090",
-    "ws_subscriber_url": "ws://159.69.194.181:8282",
     "spl_neon_mint": "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g",
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
     "use_bank": true,

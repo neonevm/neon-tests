@@ -65,45 +65,25 @@ class TestDeposit(BaseMixin):
         neon_balance_after = self.get_balance_from_wei(new_account.address)
         assert neon_balance_after == neon_balance_before + amount
 
+    @pytest.mark.multipletokens
     def test_create_and_transfer_new_token_from_solana_to_neon(
-            self, new_account, solana_account, pytestconfig: Config, neon_mint, web3_client_abc, operator
+            self,
+            new_account,
+            solana_account,
+            pytestconfig: Config,
+            neon_mint,
+            web3_client_abc,
+            operator_keypair,
+            evm_loader_keypair,
     ):
         amount = 100000000
         evm_loader_id = pytestconfig.environment.evm_loader
-
-        balance_pubkey = self.sol_client.ether2balance(new_account.address, web3_client_abc.eth.chain_id, evm_loader_id)
-
-
-        with open("operator-keypair.json", "r") as key:
-            secret_key = json.load(key)[:32]
-            operator = Keypair.from_secret_key(secret_key)
-
-        with open("evm_loader-keypair.json", "r") as key:
-            secret_key = json.load(key)[:32]
-            evm_loader_keypair = Keypair.from_secret_key(secret_key)
-
-        spl_neon_token = SplToken(self.sol_client, neon_mint, TOKEN_PROGRAM_ID, payer=operator)
-        associated_token_address = spl_neon_token.create_associated_token_account(solana_account.public_key)
-
-        tx = mint_tx(amount=amount, dest=associated_token_address, neon_mint=neon_mint,
-                     mint_authority=evm_loader_keypair.public_key)
-        tx.fee_payer = operator.public_key
-
-        self.sol_client.send_tx_and_check_status_ok(tx, operator, evm_loader_keypair)
-
-        tx = token_from_solana_to_neon_tx(
-            solana_account,
-            balance_pubkey,
-            neon_mint,
-            new_account,
-            amount,
-            evm_loader_id,
-            web3_client_abc.eth.chain_id,
-        )
-        self.sol_client.send_tx_and_check_status_ok(tx, solana_account)
+        self.sol_client.deposit_neon_like_tokens_from_solana_to_neon(neon_mint, solana_account, new_account,
+                                                                     web3_client_abc.eth.chain_id, operator_keypair,
+                                                                     evm_loader_keypair, evm_loader_id, amount)
 
         abc_balance_after = web3_client_abc.get_balance(new_account)
-        assert abc_balance_after == amount * 100000000
+        assert abc_balance_after == amount * 1000000000
 
     def test_transfer_spl_token_from_solana_to_neon(self, solana_account, new_account, pytestconfig: Config, erc20_spl):
         evm_loader_id = pytestconfig.environment.evm_loader

@@ -13,12 +13,13 @@ from solana.transaction import Transaction
 from solders.rpc.errors import InternalErrorMessage
 from solders.rpc.responses import RequestAirdropResp
 from spl.token.instructions import get_associated_token_address, create_associated_token_account, mint_to, MintToParams
+from spl.token.client import Token as SplToken
 
 from utils.consts import LAMPORT_PER_SOL, wSOL
 from utils.helpers import wait_condition
 from spl.token.constants import TOKEN_PROGRAM_ID
 
-from utils.transfers_inter_networks import wSOL_tx, token_from_solana_to_neon_tx
+from utils.transfers_inter_networks import wSOL_tx, token_from_solana_to_neon_tx, mint_tx
 
 
 class SolanaClient(solana.rpc.api.Client):
@@ -29,10 +30,10 @@ class SolanaClient(solana.rpc.api.Client):
         )
 
     def request_airdrop(
-        self,
-        pubkey: PublicKey,
-        lamports: int,
-        commitment: tp.Optional[Commitment] = None,
+            self,
+            pubkey: PublicKey,
+            lamports: int,
+            commitment: tp.Optional[Commitment] = None,
     ) -> RequestAirdropResp:
         airdrop_resp = None
         for _ in range(5):
@@ -113,9 +114,8 @@ class SolanaClient(solana.rpc.api.Client):
         opts = TxOpts(skip_preflight=True, skip_confirmation=False)
         self.send_transaction(trx, solana_account, opts=opts)
 
-
     def deposit_wrapped_sol_from_solana_to_neon(
-        self, solana_account, neon_account, chain_id, evm_loader_id, full_amount=None
+            self, solana_account, neon_account, chain_id, evm_loader_id, full_amount=None
     ):
         if not full_amount:
             full_amount = int(0.1 * LAMPORT_PER_SOL)
@@ -134,4 +134,33 @@ class SolanaClient(solana.rpc.api.Client):
             solana_account, balance_pubkey, wSOL["address_spl"], neon_account, full_amount, evm_loader_id, chain_id
         )
 
+        self.send_tx_and_check_status_ok(tx, solana_account)
+
+
+    def deposit_neon_like_tokens_from_solana_to_neon(self, neon_mint, solana_account, neon_account, chain_id,
+                                                     operator_keypair, evm_loader_keypair, evm_loader_id, amount):
+        balance_pubkey = self.ether2balance(neon_account.address, chain_id, evm_loader_id)
+
+        spl_neon_token = SplToken(self, neon_mint, TOKEN_PROGRAM_ID, payer=operator_keypair)
+        associated_token_address = spl_neon_token.create_associated_token_account(solana_account.public_key)
+
+        tx = mint_tx(
+            amount=amount,
+            dest=associated_token_address,
+            neon_mint=neon_mint,
+            mint_authority=evm_loader_keypair.public_key,
+        )
+        tx.fee_payer = operator_keypair.public_key
+
+        self.send_tx_and_check_status_ok(tx, operator_keypair, evm_loader_keypair)
+
+        tx = token_from_solana_to_neon_tx(
+            solana_account,
+            balance_pubkey,
+            neon_mint,
+            neon_account,
+            amount,
+            evm_loader_id,
+            chain_id,
+        )
         self.send_tx_and_check_status_ok(tx, solana_account)

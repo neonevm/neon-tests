@@ -333,3 +333,11 @@ class SolChainWeb3Client(Web3Client):
     @staticmethod
     def to_main_currency(amount):
         return amount * 1_000_000_000
+
+class NeonLikeChainWeb3Client(Web3Client):
+    def __init__(self, proxy_url: str, prefix: str):
+        super().__init__(f"{proxy_url}/{prefix}")
+
+    @staticmethod
+    def to_main_currency(amount):
+        return web3.Web3.to_wei(amount, "ether")

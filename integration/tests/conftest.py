@@ -1,9 +1,9 @@
 import os
 import random
-import typing
 import string
 import pathlib
-import json
+
+import typing
 
 import allure
 import base58
@@ -11,17 +11,17 @@ import pytest
 from _pytest.config import Config
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
+from solana.rpc import commitment
+from solana.rpc.types import TxOpts
 
+from utils.apiclient import JsonRPCSession
 from utils.consts import LAMPORT_PER_SOL
-from utils.erc20wrapper import ERC20Wrapper
 from utils.erc20 import ERC20
+from utils.erc20wrapper import ERC20Wrapper
 from utils.faucet import Faucet
 from utils.operator import Operator
-from utils.web3client import NeonChainWeb3Client
-from utils.apiclient import JsonRPCSession
 from utils.solana_client import SolanaClient
-from solana.rpc.types import TxOpts
-from solana.rpc import commitment
+from utils.web3client import NeonChainWeb3Client
 
 NEON_AIRDROP_AMOUNT = 10_000
 
@@ -285,7 +285,7 @@ def common_contract(web3_client, class_account):
 
 
 @pytest.fixture(scope="class")
-def meta_proxy_contract(web3_client, faucet, class_account):
+def meta_proxy_contract(web3_client, class_account):
     contract, _ = web3_client.deploy_and_get_contract("./EIPs/MetaProxy", "0.8.10", account=class_account)
     return contract
 

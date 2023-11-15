@@ -214,14 +214,20 @@ class BaseMixin(BaseTests):
             tx["value"] = self.web3_client.to_wei(amount, Unit.ETHER)
         return tx
 
-    def get_solana_resps_by_neon_resp(self, resp):
-        solana_resps = []
-        solana_trx = self.web3_client.get_solana_trx_by_neon(resp["transactionHash"].hex())
-        for trx in solana_trx['result']:
+    def get_solana_resp_by_solana_tx(self, tx):
+        try:
             wait_condition(
-                lambda: self.sol_client.get_transaction(Signature.from_string(trx),
-                                                        max_supported_transaction_version=0) != GetTransactionResp(
-                    None))
-            trx_sol = self.sol_client.get_transaction(Signature.from_string(trx), max_supported_transaction_version=0)
-            solana_resps.append(trx_sol)
-        return solana_resps
+                lambda: self.sol_client.get_transaction(
+                    Signature.from_string(tx),
+                    max_supported_transaction_version=0) != GetTransactionResp(None))
+        except TimeoutError:
+            return None
+        return self.sol_client.get_transaction(Signature.from_string(tx), max_supported_transaction_version=0)
+
+    def get_solana_resps_by_neon_resp(self, resp):
+        solana_resp = []
+        solana_trx = self.web3_client.get_solana_trx_by_neon(resp["transactionHash"].hex())
+        for tx in solana_trx['result']:
+            tx_sol = self.get_solana_resp_by_solana_tx(tx)
+            solana_resp.append(tx_sol)
+        return solana_resp

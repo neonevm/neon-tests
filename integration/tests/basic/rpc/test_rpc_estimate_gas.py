@@ -2,7 +2,6 @@ import typing as tp
 
 import allure
 import pytest
-from hexbytes import HexBytes
 
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.basic import BaseMixin, Tag
@@ -12,14 +11,8 @@ from integration.tests.basic.helpers.errors import Error32000
 @allure.feature("JSON-RPC validation")
 @allure.story("Verify eth_estimateGas RPC call")
 class TestRpcEstimateGas(BaseMixin):
-
-    # @pytest.mark.xfail(reason="NDEV-2310")
-    @pytest.mark.parametrize(
-        "block_param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, Tag.FINALIZED, 1, None]
-    )
-    def test_eth_estimate_gas_different_block_param(
-        self, block_param: tp.Union[int, Tag, None]
-    ):
+    @pytest.mark.parametrize("block_param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, Tag.FINALIZED, 1, None])
+    def test_eth_estimate_gas_different_block_param(self, block_param: tp.Union[int, Tag, None]):
         transaction = {
             "from": self.sender_account.address,
             "to": self.recipient_account.address,
@@ -54,12 +47,8 @@ class TestRpcEstimateGas(BaseMixin):
         assert Error32000.MISSING_ARGUMENT in message, "wrong message"
 
     @pytest.mark.parametrize("contract_name", ["BigGasFactory1", "BigGasFactory2"])
-    @pytest.mark.parametrize(
-        "process_gas, reserve_gas", [(850_000, 15_000), (8_500_000, 150_000)]
-    )
-    def test_eth_estimate_gas_with_big_int(
-        self, contract_name, process_gas, reserve_gas
-    ):
+    @pytest.mark.parametrize("process_gas, reserve_gas", [(850_000, 15_000), (8_500_000, 150_000)])
+    def test_eth_estimate_gas_with_big_int(self, contract_name, process_gas, reserve_gas):
         big_gas_contract, _ = self.web3_client.deploy_and_get_contract(
             contract="issues/Ndev49",
             version="0.8.10",
@@ -69,63 +58,39 @@ class TestRpcEstimateGas(BaseMixin):
         )
 
         """Check eth_estimateGas request on contracts with big int"""
-        trx_big_gas = (
-            big_gas_contract.functions.checkBigGasRequirements().build_transaction(
-                {
-                    "chainId": self.web3_client.eth.chain_id,
-                    "from": self.sender_account.address,
-                    "nonce": self.web3_client.eth.get_transaction_count(
-                        self.sender_account.address
-                    ),
-                    "gas": "0x0",
-                    "gasPrice": hex(self.web3_client.gas_price()),
-                    "value": "0x0",
-                }
-            )
+        trx_big_gas = big_gas_contract.functions.checkBigGasRequirements().build_transaction(
+            {
+                "chainId": self.web3_client.eth.chain_id,
+                "from": self.sender_account.address,
+                "nonce": self.web3_client.eth.get_transaction_count(self.sender_account.address),
+                "gas": "0x0",
+                "gasPrice": hex(self.web3_client.gas_price()),
+                "value": "0x0",
+            }
         )
         # Check Base contract eth_estimateGas
         response = self.proxy_api.send_rpc(method="eth_estimateGas", params=trx_big_gas)
         assert "error" not in response
-        assert rpc_checks.is_hex(
-            response["result"]
-        ), f"Invalid response result, '{response['result']}'"
+        assert rpc_checks.is_hex(response["result"]), f"Invalid response result, '{response['result']}'"
         estimated_gas = int(response["result"], 16)
         trx_big_gas["gas"] = estimated_gas
-        signed_trx_big_gas = self.web3_client.eth.account.sign_transaction(
-            trx_big_gas, self.sender_account.key
-        )
-        raw_trx_big_gas = self.web3_client.eth.send_raw_transaction(
-            signed_trx_big_gas.rawTransaction
-        )
-        deploy_trx_big_gas = self.web3_client.eth.wait_for_transaction_receipt(
-            raw_trx_big_gas
-        )
-        assert deploy_trx_big_gas.get(
-            "status"
-        ), f"Transaction is incomplete: {deploy_trx_big_gas}"
-        assert estimated_gas >= int(
-            deploy_trx_big_gas["gasUsed"]
-        ), "Estimated Gas < Used Gas"
+        signed_trx_big_gas = self.web3_client.eth.account.sign_transaction(trx_big_gas, self.sender_account.key)
+        raw_trx_big_gas = self.web3_client.eth.send_raw_transaction(signed_trx_big_gas.rawTransaction)
+        deploy_trx_big_gas = self.web3_client.eth.wait_for_transaction_receipt(raw_trx_big_gas)
+        assert deploy_trx_big_gas.get("status"), f"Transaction is incomplete: {deploy_trx_big_gas}"
+        assert estimated_gas >= int(deploy_trx_big_gas["gasUsed"]), "Estimated Gas < Used Gas"
 
     def test_rpc_estimate_gas_send_neon(self):
-        tx_receipt = self.send_neon(
-            self.sender_account, self.recipient_account, amount=0.001
-        )
-        transaction = self.web3_client.get_transaction_by_hash(
-            tx_receipt["transactionHash"]
-        )
+        tx_receipt = self.send_neon(self.sender_account, self.recipient_account, amount=0.001)
+        transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
 
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
         assert estimated_gas == 25_000
 
     def test_rpc_estimate_gas_erc20(self, erc20_simple):
-        tx_receipt = erc20_simple.transfer(
-            erc20_simple.owner, self.recipient_account, 1
-        )
-        transaction = self.web3_client.get_transaction_by_hash(
-            tx_receipt["transactionHash"]
-        )
+        tx_receipt = erc20_simple.transfer(erc20_simple.owner, self.recipient_account, 1)
+        transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
 
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
@@ -133,9 +98,7 @@ class TestRpcEstimateGas(BaseMixin):
 
     def test_rpc_estimate_gas_spl(self, erc20_spl):
         tx_receipt = erc20_spl.transfer(erc20_spl.account, self.recipient_account, 1)
-        transaction = self.web3_client.get_transaction_by_hash(
-            tx_receipt["transactionHash"]
-        )
+        transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
 
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
@@ -166,7 +129,6 @@ class TestRpcEstimateGas(BaseMixin):
         transaction = self.web3_client.get_transaction_by_hash(
             tx_receipt["transactionHash"]
         )
-
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
         assert estimated_gas == 25_000
@@ -181,13 +143,9 @@ class TestRpcEstimateGas(BaseMixin):
         )
         tx = self.make_contract_tx_object()
         instruction_tx = caller_contract.functions.getNumber().build_transaction(tx)
-        tx_receipt = self.web3_client.send_transaction(
-            self.sender_account, instruction_tx
-        )
+        tx_receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
 
-        transaction = self.web3_client.get_transaction_by_hash(
-            tx_receipt["transactionHash"]
-        )
+        transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
 
         assert "gas" in transaction
         estimated_gas = transaction["gas"]

@@ -31,22 +31,20 @@ class TestDeposit(BaseMixin):
             "precompiled/NeonToken", "0.8.10", account=self.sender_account
         )
         tx = self.create_contract_call_tx_object(amount=move_amount)
-
         instruction_tx = contract.functions.withdraw(bytes(dest_acc.public_key)).build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         assert receipt["status"] == 1
 
     def test_transfer_neon_from_solana_to_neon(self, new_account, solana_account, pytestconfig: Config, neon_mint):
         """Transfer Neon from Solana -> Neon"""
-        amount = 1
-        full_amount = self.web3_client.to_main_currency(amount)
+        amount = 0.1
+        full_amount = int(amount * LAMPORT_PER_SOL)
         evm_loader_id = pytestconfig.environment.evm_loader
 
         neon_balance_before = self.get_balance_from_wei(new_account.address)
 
         self.sol_client.create_ata(solana_account, neon_mint)
-        self.withdraw_neon(solana_account, amount)  # insufficient funds
-
+        self.withdraw_neon(solana_account, amount)
         tx = token_from_solana_to_neon_tx(
             self.sol_client,
             solana_account,
@@ -63,23 +61,30 @@ class TestDeposit(BaseMixin):
 
     @pytest.mark.multipletokens
     def test_create_and_transfer_new_token_from_solana_to_neon(
-            self,
-            new_account,
-            solana_account,
-            pytestconfig: Config,
-            neon_mint,
-            web3_client_abc,
-            operator_keypair,
-            evm_loader_keypair,
+        self,
+        new_account,
+        solana_account,
+        pytestconfig: Config,
+        neon_mint,
+        web3_client_abc,
+        operator_keypair,
+        evm_loader_keypair,
     ):
         amount = 5000000
         evm_loader_id = pytestconfig.environment.evm_loader
         new_sol_account = Keypair.generate()
         self.sol_client.send_sol(solana_account, new_sol_account.public_key, amount)
 
-        self.sol_client.deposit_neon_like_tokens_from_solana_to_neon(neon_mint, solana_account, new_account,
-                                                                     web3_client_abc.eth.chain_id, operator_keypair,
-                                                                     evm_loader_keypair, evm_loader_id, amount)
+        self.sol_client.deposit_neon_like_tokens_from_solana_to_neon(
+            neon_mint,
+            new_sol_account,
+            new_account,
+            web3_client_abc.eth.chain_id,
+            operator_keypair,
+            evm_loader_keypair,
+            evm_loader_id,
+            amount,
+        )
 
         abc_balance_after = web3_client_abc.get_balance(new_account)
         assert abc_balance_after == amount * 1000000000
@@ -114,7 +119,7 @@ class TestDeposit(BaseMixin):
 
     @pytest.mark.multipletokens
     def test_transfer_wrapped_sol_token_from_solana_to_neon(
-            self, solana_account, pytestconfig: Config, web3_client_sol
+        self, solana_account, pytestconfig: Config, web3_client_sol
     ):
         new_account = self.web3_client.create_account()
 
@@ -164,7 +169,7 @@ class TestWithdraw(BaseTests):
 
     @pytest.mark.only_stands
     def test_success_withdraw_to_non_existing_account(
-            self, pytestconfig: Config, withdraw_contract, neon_mint, solana_account
+        self, pytestconfig: Config, withdraw_contract, neon_mint, solana_account
     ):
         """Should successfully withdraw NEON tokens to previously non-existing Associated Token Account"""
         dest_acc = Keypair.generate()
@@ -187,7 +192,7 @@ class TestWithdraw(BaseTests):
         assert int(destination_balance_after.value.amount) == int(move_amount / 1_000_000_000)
 
     def test_success_withdraw_to_existing_account(
-            self, pytestconfig: Config, withdraw_contract, neon_mint, solana_account
+        self, pytestconfig: Config, withdraw_contract, neon_mint, solana_account
     ):
         """Should successfully withdraw NEON tokens to existing Associated Token Account"""
         dest_acc = solana_account
@@ -207,15 +212,16 @@ class TestWithdraw(BaseTests):
         spl_neon_token = SplToken(self.sol_client, neon_mint, TOKEN_PROGRAM_ID, dest_acc)
 
         destination_balance_before = spl_neon_token.get_balance(dest_token_acc, commitment=Commitment("confirmed"))
-        assert int(destination_balance_before.value.amount) == 0
 
         self.withdraw(dest_acc, move_amount_alan, withdraw_contract)
 
         destination_balance_after = spl_neon_token.get_balance(dest_token_acc, commitment=Commitment("confirmed"))
-        assert int(destination_balance_after.value.amount) == move_amount_galan
+        assert int(destination_balance_after.value.amount) == move_amount_galan + int(
+            destination_balance_before.value.amount
+        )
 
     def test_failed_withdraw_non_divisible_amount(
-            self, pytestconfig: Config, withdraw_contract, neon_mint, solana_account
+        self, pytestconfig: Config, withdraw_contract, neon_mint, solana_account
     ):
         dest_acc = solana_account
 
@@ -236,12 +242,12 @@ class TestWithdraw(BaseTests):
 
     @pytest.mark.parametrize("move_amount", [11000, 10000])
     def test_failed_withdraw_insufficient_balance(
-            self,
-            pytestconfig: Config,
-            move_amount,
-            withdraw_contract,
-            neon_mint,
-            solana_account,
+        self,
+        pytestconfig: Config,
+        move_amount,
+        withdraw_contract,
+        neon_mint,
+        solana_account,
     ):
         dest_acc = solana_account
 

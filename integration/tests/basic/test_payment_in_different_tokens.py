@@ -133,26 +133,21 @@ class TestMultiplyChain(BaseMixin):
 
     @pytest.mark.multipletokens
     def test_deploy_contract_by_one_user_to_different_chain(
-        self, web3_client_sol, new_account, solana_account, alice, web3_client, pytestconfig
+        self, web3_client_sol, solana_account, web3_client, pytestconfig, alice
     ):
         def deploy_contract(w3_client):
             _, rcpt = w3_client.deploy_and_get_contract(
-                contract="common/Common", version="0.8.12", contract_name="Common", account=new_account
+                contract="common/Common", version="0.8.12", contract_name="Common", account=alice
             )
             return rcpt
-
-        self.sol_client.deposit_wrapped_sol_from_solana_to_neon(
-            solana_account, new_account, web3_client_sol.eth.chain_id, pytestconfig.environment.evm_loader
-        )
-
+        
+        make_nonce_the_biggest_for_chain(alice, web3_client_sol, [web3_client])
         deploy_contract(web3_client_sol)
 
         with pytest.raises(ValueError, match="EVM Error. Attempt to deploy to existing account"):
             deploy_contract(web3_client)
 
-        # any transaction to raise the nonce
-        web3_client.send_neon(new_account, alice, amount=1)
-
+        make_nonce_the_biggest_for_chain(alice, web3_client, [web3_client_sol])
         receipt = deploy_contract(web3_client)
         assert receipt["status"] == 1
 
@@ -230,15 +225,18 @@ class TestMultiplyChain(BaseMixin):
         web3_client_def,
         class_account_sol_chain,
     ):
-        bunch_contract_neon, _ = web3_client.deploy_and_get_contract(
-            contract="common/Common", version="0.8.12", contract_name="BunchActions", account=alice
-        )
         chains = {
             "neon": {"client": web3_client},
             "sol": {"client": web3_client_sol},
             "abc": {"client": web3_client_abc},
             "def": {"client": web3_client_def},
         }
+
+        make_nonce_the_biggest_for_chain(alice, web3_client, [item["client"] for item in chains.values()])
+
+        bunch_contract_neon, _ = web3_client.deploy_and_get_contract(
+            contract="common/Common", version="0.8.12", contract_name="BunchActions", account=alice
+        )
 
         for chain in chains:
             bunch_contract = chains[chain]["client"].get_deployed_contract(

@@ -115,7 +115,7 @@ class TestTracerDebugMethods(BaseMixin):
         assert 1 <= int(response["result"]["returnValue"], 16) <= 100
         self.validate_response_result(response)
 
-    def test_debug_transaction_call(self):
+    def test_debug_trace_transaction(self):
         receipt = self.send_neon(
             self.sender_account, self.recipient_account, 0.1)
         assert receipt["status"] == 1
@@ -129,7 +129,7 @@ class TestTracerDebugMethods(BaseMixin):
         assert "error" not in response, "Error in response"
         self.validate_response_result(response)
 
-    def test_debug_transaction_call_non_zero_trace(self, storage_contract):
+    def test_debug_trace_transaction_non_zero_trace(self, storage_contract):
         store_value = random.randint(1, 100)
         _, _, receipt = call_storage(
             self, storage_contract, store_value, "blockNumber")
@@ -145,7 +145,7 @@ class TestTracerDebugMethods(BaseMixin):
         assert 1 <= int(response["result"]["returnValue"], 16) <= 100
         self.validate_response_result(response)
 
-    def test_debug_transaction_call_hash_without_prefix(self, storage_contract):
+    def test_debug_trace_transaction_hash_without_prefix(self, storage_contract):
         store_value = random.randint(1, 100)
         _, _, receipt = call_storage(
             self, storage_contract, store_value, "blockNumber")
@@ -162,7 +162,7 @@ class TestTracerDebugMethods(BaseMixin):
         self.validate_response_result(response)
 
     @pytest.mark.parametrize("hash", [6, '0x0', '', 'f23e554'])
-    def test_debug_transaction_call_invalid_hash(self, hash):
+    def test_debug_trace_transaction_invalid_hash(self, hash):
         response = self.tracer_api.send_rpc(
             method="debug_traceTransaction", params=[hash])
         assert "error" in response, "No errors in response"

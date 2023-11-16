@@ -237,3 +237,15 @@ def meta_proxy_contract(web3_client, faucet, class_account):
 def event_caller_contract(web3_client, class_account) -> typing.Any:
     event_caller, _ = web3_client.deploy_and_get_contract("common/EventCaller", "0.8.12", class_account)
     yield event_caller
+
+
+@pytest.fixture(scope="class")
+def storage_contract(web3_client, class_account) -> typing.Any:
+    contract, _ = web3_client.deploy_and_get_contract(
+        "common/StorageSoliditySource",
+        "0.8.8", 
+        class_account,
+        contract_name="Storage",
+        constructor_args=[]
+    )
+    yield contract

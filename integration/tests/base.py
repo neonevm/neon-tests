@@ -6,7 +6,7 @@ from utils.consts import Unit
 from utils.faucet import Faucet
 from utils.operator import Operator
 from utils.solana_client import SolanaClient
-from utils.web3client import NeonChainWeb3Client, SolChainWeb3Client
+from utils.web3client import NeonChainWeb3Client, Web3Client
 
 
 class BaseTests:
@@ -14,7 +14,7 @@ class BaseTests:
     operator: Operator
     faucet: Faucet
     web3_client: NeonChainWeb3Client
-    web3_client_sol: SolChainWeb3Client
+    web3_client_sol: Web3Client
     sol_client: SolanaClient
     sol_price: float
 
@@ -49,7 +49,7 @@ class BaseTests:
             transaction["gas"] = gas
 
         if amount is not None:
-           transaction["value"] = web3_client.to_main_currency(amount)
+           transaction["value"] = web3_client.to_atomic_currency(amount)
 
         if recipient is not None:
             transaction["to"] = recipient

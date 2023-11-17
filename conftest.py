@@ -11,7 +11,7 @@ from _pytest.runner import runtestprotocol
 from solana.keypair import Keypair
 
 from clickfile import create_allure_environment_opts
-from utils.web3client import NeonChainWeb3Client, SolChainWeb3Client, Web3Client, NeonLikeChainWeb3Client
+from utils.web3client import NeonChainWeb3Client, Web3Client
 
 pytest_plugins = ["ui.plugins.browser"]
 
@@ -154,23 +154,26 @@ def web3_client(pytestconfig: Config) -> NeonChainWeb3Client:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def web3_client_sol(pytestconfig: Config) -> SolChainWeb3Client:
-    client = SolChainWeb3Client(
-        pytestconfig.environment.proxy_url,
-    )
-    return client
+def web3_client_sol(pytestconfig: Config) -> tp.Union[Web3Client, None]:
+    if "sol" in pytestconfig.environment.network_ids:
+        client = Web3Client(
+            f"{pytestconfig.environment.proxy_url}/sol"
+        )
+        return client
+    else:
+        return None
 
 
 @pytest.fixture(scope="session", autouse=True)
-def web3_client_abc(pytestconfig: Config) -> Web3Client:
-    client = NeonLikeChainWeb3Client(
-        pytestconfig.environment.proxy_url,
-        "abc",
-    )
-    return client
-
+def web3_client_abc(pytestconfig: Config) -> tp.Union[Web3Client, None]:
+    if "abc" in pytestconfig.environment.network_ids:
+        return Web3Client(f"{pytestconfig.environment.proxy_url}/abc")
+    else:
+        return None
 
 @pytest.fixture(scope="session", autouse=True)
-def web3_client_def(pytestconfig: Config) -> Web3Client:
-    client = NeonLikeChainWeb3Client(pytestconfig.environment.proxy_url, "def")
-    return client
+def web3_client_def(pytestconfig: Config) -> tp.Union[Web3Client, None]:
+    if "def" in pytestconfig.environment.network_ids:
+        return Web3Client(f"{pytestconfig.environment.proxy_url}/def")
+    else:
+        return None

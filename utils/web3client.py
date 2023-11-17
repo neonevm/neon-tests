@@ -4,7 +4,6 @@ import time
 import typing as tp
 from decimal import Decimal
 
-import solcx
 import web3
 import web3.types
 import requests
@@ -27,15 +26,17 @@ class Web3Client:
         self._proxy_url = proxy_url
         self._tracer_url = tracer_url
         self._chain_id = None
-        self._web3 = web3.Web3(
-            web3.HTTPProvider(
-                proxy_url, session=session, request_kwargs={"timeout": 30}
-            )
-        )
-
+        self._web3 = web3.Web3(web3.HTTPProvider(proxy_url, session=session, request_kwargs={"timeout": 30}))
 
     def __getattr__(self, item):
         return getattr(self._web3, item)
+
+    @property
+    def native_token_name(self):
+        if self._proxy_url.split("/")[-1] != "solana":
+            return self._proxy_url.split("/")[-1].upper()
+        else:
+            return "NEON"
 
     @property
     def chain_id(self):
@@ -121,7 +122,7 @@ class Web3Client:
         gas: tp.Optional[int] = 0,
         gas_price: tp.Optional[int] = None,
         constructor_args: tp.Optional[tp.List] = None,
-        value = 0
+        value=0,
     ) -> web3.types.TxReceipt:
         """Proxy doesn't support send_transaction"""
         gas_price = gas_price or self.gas_price()
@@ -150,9 +151,7 @@ class Web3Client:
         self,
         account: eth_account.signers.local.LocalAccount,
         transaction: tp.Dict,
-        gas_multiplier: tp.Optional[
-            float
-        ] = None,  # fix for some event depends transactions
+        gas_multiplier: tp.Optional[float] = None,  # fix for some event depends transactions
     ) -> web3.types.TxReceipt:
         if "gasPrice" not in transaction:
             transaction["gasPrice"] = self.gas_price()
@@ -162,9 +161,7 @@ class Web3Client:
             transaction["nonce"] = self.get_nonce(account)
         if gas_multiplier is not None:
             transaction["gas"] = int(transaction["gas"] * gas_multiplier)
-        instruction_tx = self._web3.eth.account.sign_transaction(
-            transaction, account.key
-        )
+        instruction_tx = self._web3.eth.account.sign_transaction(transaction, account.key)
         signature = self._web3.eth.send_raw_transaction(instruction_tx.rawTransaction)
         return self._web3.eth.wait_for_transaction_receipt(signature)
 
@@ -177,7 +174,7 @@ class Web3Client:
         constructor_args: tp.Optional[tp.Any] = None,
         import_remapping: tp.Optional[dict] = None,
         gas: tp.Optional[int] = 0,
-        value = 0
+        value=0,
     ) -> tp.Tuple[tp.Any, web3.types.TxReceipt]:
         contract_interface = helpers.get_contract_interface(
             contract,
@@ -192,26 +189,20 @@ class Web3Client:
             bytecode=contract_interface["bin"],
             constructor_args=constructor_args,
             gas=gas,
-            value=value
+            value=value,
         )
 
-        contract = self.eth.contract(
-            address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
-        )
+        contract = self.eth.contract(address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"])
 
         return contract, contract_deploy_tx
 
-    def compile_by_vyper_and_deploy(
-        self, account, contract_name, constructor_args=None
-    ):
+    def compile_by_vyper_and_deploy(self, account, contract_name, constructor_args=None):
         import vyper  # Import here because vyper prevent override decimal precision (uses in economy tests)
 
         contract_path = pathlib.Path.cwd() / "contracts" / "vyper"
         with open(contract_path / f"{contract_name}.vy") as f:
             contract_code = f.read()
-            contract_interface = vyper.compile_code(
-                contract_code, output_formats=["abi", "bytecode"]
-            )
+            contract_interface = vyper.compile_code(contract_code, output_formats=["abi", "bytecode"])
 
         contract_deploy_tx = self.deploy_contract(
             account,
@@ -219,9 +210,7 @@ class Web3Client:
             bytecode=contract_interface["bytecode"],
             constructor_args=constructor_args,
         )
-        return self.eth.contract(
-            address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"]
-        )
+        return self.eth.contract(address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"])
 
     @staticmethod
     def text_to_bytes32(text: str) -> bytes:
@@ -236,26 +225,24 @@ class Web3Client:
         result = self._web3.eth.call(tx)
         return abi.decode(result_types, result)[0]
 
-    def get_balance(
-            self, address: tp.Union[str, eth_account.signers.local.LocalAccount]
-    ):
+    def get_balance(self, address: tp.Union[str, eth_account.signers.local.LocalAccount]):
         if not isinstance(address, str):
             address = address.address
         return self._web3.eth.get_balance(address, "pending")
 
-    def get_deployed_contract(self, address, contract_file, contract_name=None, solc_version = "0.8.12"):
+    def get_deployed_contract(self, address, contract_file, contract_name=None, solc_version="0.8.12"):
         contract_interface = helpers.get_contract_interface(contract_file, solc_version, contract_name)
         contract = self.eth.contract(address=address, abi=contract_interface["abi"])
         return contract
 
     def send_tokens(
-            self,
-            from_: eth_account.signers.local.LocalAccount,
-            to: tp.Union[str, eth_account.signers.local.LocalAccount],
-            value: int,
-            gas: tp.Optional[int] = 0,
-            gas_price: tp.Optional[int] = None,
-            nonce: int = None,
+        self,
+        from_: eth_account.signers.local.LocalAccount,
+        to: tp.Union[str, eth_account.signers.local.LocalAccount],
+        value: int,
+        gas: tp.Optional[int] = 0,
+        gas_price: tp.Optional[int] = None,
+        nonce: int = None,
     ) -> web3.types.TxReceipt:
         to_addr = to if isinstance(to, str) else to.address
         if nonce is None:
@@ -267,13 +254,20 @@ class Web3Client:
             "gasPrice": gas_price or self.gas_price(),
             "gas": gas,
             "nonce": nonce,
-            "chainId": self.eth.chain_id
+            "chainId": self.eth.chain_id,
         }
         if transaction["gas"] == 0:
             transaction["gas"] = self.eth.estimate_gas(transaction)
         signed_tx = self.eth.account.sign_transaction(transaction, from_.key)
         tx = self.eth.send_raw_transaction(signed_tx.rawTransaction)
         return self.eth.wait_for_transaction_receipt(tx)
+
+    @staticmethod
+    def to_atomic_currency(amount):
+        return web3.Web3.to_wei(amount, "ether")
+
+    def to_main_currency(self, value):
+        return web3.Web3.from_wei(value, "ether")
 
 
 class NeonChainWeb3Client(Web3Client):
@@ -293,24 +287,18 @@ class NeonChainWeb3Client(Web3Client):
     ):
         """Creates a new account with balance"""
         account = self.create_account()
-        balance_before = float(
-            self.from_wei(self.eth.get_balance(account.address), Unit.ETHER)
-        )
+        balance_before = float(self.from_wei(self.eth.get_balance(account.address), Unit.ETHER))
 
         if bank_account is not None:
             self.send_neon(bank_account, account, amount)
         else:
             faucet.request_neon(account.address, amount=amount)
         for _ in range(20):
-            if float(
-                self.from_wei(self.eth.get_balance(account.address), Unit.ETHER)
-            ) >= (balance_before + amount):
+            if float(self.from_wei(self.eth.get_balance(account.address), Unit.ETHER)) >= (balance_before + amount):
                 break
             time.sleep(1)
         else:
-            raise AssertionError(
-                f"Balance didn't changed after 20 seconds ({account.address})"
-            )
+            raise AssertionError(f"Balance didn't changed after 20 seconds ({account.address})")
         return account
 
     def send_neon(
@@ -322,31 +310,8 @@ class NeonChainWeb3Client(Web3Client):
         gas_price: tp.Optional[int] = None,
         nonce: int = None,
     ) -> web3.types.TxReceipt:
-
         value = web3.Web3.to_wei(amount, "ether")
-        return self.send_tokens(from_, to, value,gas, gas_price, nonce)
+        return self.send_tokens(from_, to, value, gas, gas_price, nonce)
 
-    def get_balance(
-        self, address: tp.Union[str, eth_account.signers.local.LocalAccount]
-    ):
+    def get_ether_balance(self, address: tp.Union[str, eth_account.signers.local.LocalAccount]):
         return web3.Web3.from_wei(super().get_balance(address), "ether")
-    @staticmethod
-    def to_main_currency(amount):
-        return web3.Web3.to_wei(amount, "ether")
-
-
-class SolChainWeb3Client(Web3Client):
-    def __init__(self, proxy_url: str):
-        super().__init__(f"{proxy_url}/sol")
-
-    @staticmethod
-    def to_main_currency(amount):
-        return amount * 1_000_000_000
-
-class NeonLikeChainWeb3Client(Web3Client):
-    def __init__(self, proxy_url: str, prefix: str):
-        super().__init__(f"{proxy_url}/{prefix}")
-
-    @staticmethod
-    def to_main_currency(amount):
-        return web3.Web3.to_wei(amount, "ether")

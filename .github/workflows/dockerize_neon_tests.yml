@@ -35,7 +35,7 @@ jobs:
             echo "oz_branch=${oz_branch}"
             echo "tag=${tag}" >> $GITHUB_OUTPUT
             echo "oz_branch=${oz_branch}" >> $GITHUB_OUTPUT
-      - name: Define feature of version branch
+      - name: Define feature or version branch
         id: feature_branch
         if: github.ref_name !='develop' || github.ref_name !='master'
         run: |

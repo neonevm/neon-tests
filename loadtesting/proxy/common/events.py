@@ -28,7 +28,7 @@ LOG = logging.getLogger(__name__)
 
 def get_token_balance(op: operator.Operator) -> tp.Dict:
     """Return tokens balance"""
-    return dict(neon=op.get_neon_balance(), sol=op.get_solana_balance())
+    return dict(neon=op.get_token_balance(), sol=op.get_solana_balance())
 
 
 def execute_before(*attrs) -> tp.Callable:

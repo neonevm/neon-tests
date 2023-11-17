@@ -98,6 +98,7 @@ class TestTransactionsValidation(BaseMixin):
         response = self.proxy_api.send_rpc(
             "eth_sendRawTransaction", [signed_tx.rawTransaction.hex()]
         )
+        print(response)
         assert is_hex(response['result'])
         time.sleep(5)
         receipt = self.proxy_api.send_rpc(method="eth_getTransactionReceipt", params=[response["result"]])

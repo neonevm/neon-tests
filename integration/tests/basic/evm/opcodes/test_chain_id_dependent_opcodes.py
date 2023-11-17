@@ -59,8 +59,7 @@ class TestChainIdDependentOpcodes(BaseMixin):
         # sol contract calls sol contract in neon chain == sol balance
 
         expected_balance_sol = web3_client_sol.get_balance(class_account_sol_chain.address)
-        expected_balance_neon = self.web3_client.to_main_currency(
-            web3_client.get_balance(class_account_sol_chain.address))
+        expected_balance_neon = web3_client.get_balance(class_account_sol_chain.address)
         balance = contract_sol.functions.getBalance(class_account_sol_chain.address).call()
 
         assert balance == expected_balance_sol
@@ -90,8 +89,7 @@ class TestChainIdDependentOpcodes(BaseMixin):
         # neon contract calls neon contract in sol chain == neon balance
 
         expected_balance_sol = web3_client_sol.get_balance(class_account.address)
-        expected_balance_neon = self.web3_client.to_main_currency(
-            web3_client.get_balance(class_account.address))
+        expected_balance_neon = web3_client.get_balance(class_account.address)
 
         balance = contract_neon.functions.getBalance(class_account.address).call()
         assert balance == expected_balance_neon

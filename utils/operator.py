@@ -1,10 +1,8 @@
-import time
 import typing as tp
 
 import solana.rpc.api
 from solana.publickey import PublicKey
 from solana.rpc.commitment import Confirmed
-from solana.rpc.types import TokenAccountOpts
 
 from utils.web3client import NeonChainWeb3Client
 
@@ -40,45 +38,11 @@ class Operator:
             balances.append(balance)
         return sum(balances)
 
-    def get_neon_balance(self):
+    def get_token_balance(self, w3_client=None):
+        if w3_client is None:
+            w3_client = self.web3
         balances = []
         if len(self._operator_neon_rewards_address) > 0:
             for addr in self._operator_neon_rewards_address:
-                balances.append(self.web3.get_balance(self.web3.to_checksum_address(addr.lower())))
-        else:
-            for key in self._operator_keys:
-                if self._operator_keys[key] is None:
-                    accounts = self.sol.get_token_accounts_by_owner_json_parsed(
-                        PublicKey(key), TokenAccountOpts(mint=PublicKey(self._neon_token_mint))
-                    )
-                    self._operator_keys[key] = accounts.value[0]["pubkey"]
-                balances.append(
-                    int(
-                        self.sol.get_token_account_balance(PublicKey(self._operator_keys[key]), commitment=Confirmed).to_json()[
-                            "result"
-                        ]["value"]["amount"]
-                    )
-                )
+                balances.append(w3_client.get_balance(w3_client.to_checksum_address(addr.lower())))
         return sum(balances)
-
-    def wait_solana_balance_changed(self, current_balance, timeout=90):
-        """solana change balance only when blocks confirmed"""
-        started = time.time()
-
-        while (time.time() - started) < timeout:
-            balance = self.get_solana_balance()
-            if balance != current_balance:
-                return balance
-            time.sleep(5)
-        raise TimeoutError(f"Operator solana balance didn't change for {timeout} seconds")
-
-    def wait_neon_balance_changed(self, current_balance, timeout=90):
-        """solana change balance only when blocks confirmed"""
-        started = time.time()
-
-        while (time.time() - started) < timeout:
-            balance = self.get_neon_balance()
-            if balance != current_balance:
-                return balance
-            time.sleep(5)
-        raise TimeoutError(f"Operator neon balance didn't change for {timeout} seconds")

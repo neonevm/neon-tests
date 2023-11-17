@@ -19,14 +19,14 @@ def accounts(web3_client):
     print("Before testing:")
     for acc in accounts:
         print(
-            f"Balance for {acc.address}: {web3_client.to_main_currency(web3_client.get_balance(acc.address))}, nonce: {web3_client.eth.get_transaction_count(acc.address)}"
+            f"Balance for {acc.address}: {web3_client.to_atomic_currency(web3_client.get_balance(acc.address))}, nonce: {web3_client.eth.get_transaction_count(acc.address)}"
         )
 
     yield accounts
     print("After testing:")
     for acc in accounts:
         print(
-            f"Balance for {acc.address}: {web3_client.to_main_currency(web3_client.get_balance(acc.address))}, nonce: {web3_client.eth.get_transaction_count(acc.address)}"
+            f"Balance for {acc.address}: {web3_client.to_atomic_currency(web3_client.get_balance(acc.address))}, nonce: {web3_client.eth.get_transaction_count(acc.address)}"
         )
 
 

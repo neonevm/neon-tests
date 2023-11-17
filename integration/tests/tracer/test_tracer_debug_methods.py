@@ -409,8 +409,10 @@ class TestTracerDebugMethods(BaseMixin):
         assert response["error"]["code"] == -32602, "Invalid error code"
         assert response["error"]["message"] == "Invalid params"
 
+    @pytest.mark.skip(reason="NDEV-2367")
     def test_get_raw_transaction(self):
         pass
-
+    
+    @pytest.mark.skip(reason="NDEV-2367")
     def test_get_raw_transaction_invalid_tx_hash(self):
         pass

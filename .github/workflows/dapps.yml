@@ -124,7 +124,7 @@ jobs:
             proxy_url=`python ./clickfile.py infra print-network-param -n '${{steps.stand.outputs.network}}' -p 'proxy_url'`
             solana_url=`python ./clickfile.py infra print-network-param -n '${{steps.stand.outputs.network}}' -p 'solana_url'`
             faucet_url=`python ./clickfile.py infra print-network-param -n '${{steps.stand.outputs.network}}' -p 'faucet_url'`
-            network_id=`python ./clickfile.py infra print-network-param -n '${{steps.stand.outputs.network}}' -p 'network_id'`
+            network_id=`python ./clickfile.py infra print-network-param -n '${{steps.stand.outputs.network}}' -p 'network_ids.neon'`
           fi;
           
           if [[ "${{steps.stand.outputs.network}}" == "devnet" ]]; then

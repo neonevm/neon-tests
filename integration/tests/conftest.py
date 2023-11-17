@@ -313,3 +313,14 @@ def wneon(web3_client, faucet, class_account):
         "common/WNeon", "0.4.26", account=class_account, contract_name="WNEON"
     )
     return contract
+
+def storage_contract(web3_client, class_account) -> typing.Any:
+    contract, _ = web3_client.deploy_and_get_contract(
+        "common/StorageSoliditySource",
+        "0.8.8", 
+        class_account,
+        contract_name="Storage",
+        constructor_args=[]
+    )
+    yield contract
+

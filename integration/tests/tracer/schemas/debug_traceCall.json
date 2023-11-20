@@ -46,7 +46,8 @@
                             "type": [
                                 "string",
                                 "null"
-                            ]
+                            ],
+                            "items": {}
                         },
                         "stack": {
                             "type": [

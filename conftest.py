@@ -164,7 +164,7 @@ def web3_client_sol(pytestconfig: Config) -> tp.Union[Web3Client, None]:
         return None
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def web3_client_abc(pytestconfig: Config) -> tp.Union[Web3Client, None]:
     if "abc" in pytestconfig.environment.network_ids:
         return Web3Client(f"{pytestconfig.environment.proxy_url}/abc")

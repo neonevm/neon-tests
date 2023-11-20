@@ -133,7 +133,7 @@ class TestMultiplyChains(BaseMixin):
         assert sol_alice_balance_after < sol_alice_balance_before - value
 
     @pytest.mark.multipletokens
-    def test_deploy_contract_by_one_user_to_different_chain(
+    def test_deploy_contract_by_one_user_to_different_chains(
             self, web3_client_sol, solana_account, web3_client, pytestconfig, alice
     ):
         def deploy_contract(w3_client):

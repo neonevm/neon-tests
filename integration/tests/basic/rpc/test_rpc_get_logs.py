@@ -212,6 +212,7 @@ class TestRpcGetLogs(BaseMixin):
                 assert response["result"][0]["address"] == receipt["to"], (
                     f"address from response {response['result'][0]['address']} "
                     f"is not equal to address from receipt {receipt['to']}"
+                )
 
             assert_fields_are_hex(result, self.ETH_HEX_FIELDS)
             assert_fields_are_specified_type(bool, result, self.ETH_BOOL_FIELDS)

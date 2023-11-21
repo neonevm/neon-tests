@@ -29,7 +29,7 @@ class Instruction:
                         is_signer=False, is_writable=True),
         ]
 
-        data = bytes.fromhex('2D') + bytes.fromhex(str(neon_wallet)[2:])  + chain_id.to_bytes(8, 'little')
+        data = bytes.fromhex('30') + bytes.fromhex(str(neon_wallet)[2:])  + chain_id.to_bytes(8, 'little')
         return TransactionInstruction(
             program_id=PublicKey(evm_loader_id),
             keys=keys,
@@ -53,7 +53,7 @@ class Instruction:
             operator_pubkey: PublicKey,
             evm_loader_id
     ) -> TransactionInstruction:
-        data = bytes.fromhex('27') + ether_address + chain_id.to_bytes(8, 'little')
+        data = bytes.fromhex('31') + ether_address + chain_id.to_bytes(8, 'little')
         accounts = [
             AccountMeta(pubkey=mint, is_signer=False, is_writable=True),
             AccountMeta(pubkey=source, is_signer=False, is_writable=True),
@@ -160,7 +160,7 @@ class Instruction:
         treasure_pool_address = get_collateral_pool_address(
             treasure_pool_index, evm_loader_id)
 
-        data = bytes.fromhex('1f') + treasure_pool_index.to_bytes(4, 'little') + \
+        data = bytes.fromhex('32') + treasure_pool_index.to_bytes(4, 'little') + \
                bytes.fromhex(str(neon_raw_transaction.hex())[2:])
         keys = [AccountMeta(pubkey=solana_wallet, is_signer=True, is_writable=True),
                 AccountMeta(pubkey=treasure_pool_address,

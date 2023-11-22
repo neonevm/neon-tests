@@ -8,17 +8,6 @@ from integration.tests.basic.helpers.basic import BaseMixin, Tag
 from integration.tests.basic.helpers.errors import Error32000
 
 
-@pytest.fixture(scope="class")
-def common_contract(web3_client, class_account) -> tp.Any:
-    contract, receipt = web3_client.deploy_and_get_contract(
-        contract="common/Common",
-        version="0.8.12",
-        contract_name="Common",
-        account=class_account,
-    )
-    yield contract, receipt
-
-
 @allure.feature("JSON-RPC validation")
 @allure.story("Verify eth_estimateGas RPC call")
 class TestRpcEstimateGas(BaseMixin):
@@ -45,7 +34,7 @@ class TestRpcEstimateGas(BaseMixin):
         assert rpc_checks.is_hex(
             response["result"]
         ), f"the result for estimated gas should be in hex, but got'{response['result']}'"
-        assert int(response["result"], 16) == 30_000
+        assert int(response["result"], 16) == 25_000
 
     def test_eth_estimate_gas_negative(self):
         response = self.proxy_api.send_rpc(method="eth_estimateGas", params=[])
@@ -97,7 +86,7 @@ class TestRpcEstimateGas(BaseMixin):
 
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
-        assert estimated_gas == 30_000
+        assert estimated_gas == 25_000
 
     def test_rpc_estimate_gas_erc20(self, erc20_simple):
         tx_receipt = erc20_simple.transfer(erc20_simple.owner, self.recipient_account, 1)
@@ -105,7 +94,7 @@ class TestRpcEstimateGas(BaseMixin):
 
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
-        assert estimated_gas == 1_552_280
+        assert estimated_gas == 1_394_160
 
     def test_rpc_estimate_gas_spl(self, erc20_spl):
         tx_receipt = erc20_spl.transfer(erc20_spl.account, self.recipient_account, 1)
@@ -113,27 +102,36 @@ class TestRpcEstimateGas(BaseMixin):
 
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
-        assert estimated_gas == 2_084_280
+        assert estimated_gas == 2_079_280
 
     def test_rpc_estimate_gas_contract_get_value(self, common_contract):
         tx = self.make_contract_tx_object()
-        instruction_tx = common_contract[0].functions.getText().build_transaction(tx)
-        tx_receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-        transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
+        instruction_tx = common_contract.functions.getText().build_transaction(tx)
+        tx_receipt = self.web3_client.send_transaction(
+            self.sender_account, instruction_tx
+        )
+        transaction = self.web3_client.get_transaction_by_hash(
+            tx_receipt["transactionHash"]
+        )
 
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
-        assert estimated_gas == 30_000
+        assert estimated_gas == 25_000
 
     def test_rpc_estimate_gas_contract_set_value(self, common_contract):
         tx = self.make_contract_tx_object()
-        instruction_tx = common_contract[0].functions.setNumber(100).build_transaction(tx)
-        tx_receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
-        transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
-
+        instruction_tx = (
+            common_contract.functions.setNumber(100).build_transaction(tx)
+        )
+        tx_receipt = self.web3_client.send_transaction(
+            self.sender_account, instruction_tx
+        )
+        transaction = self.web3_client.get_transaction_by_hash(
+            tx_receipt["transactionHash"]
+        )
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
-        assert estimated_gas == 30_000
+        assert estimated_gas == 25_000
 
     def test_rpc_estimate_gas_contract_calls_another_contract(self, common_contract):
         caller_contract, _ = self.web3_client.deploy_and_get_contract(
@@ -141,7 +139,7 @@ class TestRpcEstimateGas(BaseMixin):
             "0.8.12",
             contract_name="CommonCaller",
             account=self.sender_account,
-            constructor_args=[common_contract[0].address],
+            constructor_args=[common_contract.address],
         )
         tx = self.make_contract_tx_object()
         instruction_tx = caller_contract.functions.getNumber().build_transaction(tx)
@@ -151,4 +149,4 @@ class TestRpcEstimateGas(BaseMixin):
 
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
-        assert estimated_gas == 30_000
+        assert estimated_gas == 25_000

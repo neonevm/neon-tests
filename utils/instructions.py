@@ -1,14 +1,11 @@
 import hashlib
 import json
-import math
-import random
 
 import base58
 from solana.publickey import PublicKey
 from solana.system_program import SYS_PROGRAM_ID
 from solana.transaction import AccountMeta, TransactionInstruction
 from spl.token.constants import ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID
-from spl.token.instructions import get_associated_token_address
 
 COMPUTE_BUDGET_ID: PublicKey = PublicKey(
     "ComputeBudget111111111111111111111111111111")
@@ -18,18 +15,21 @@ DEFAULT_HEAP_FRAME = 256 * 1024
 
 class Instruction:
     @staticmethod
-    def account_v3(solana_wallet, neon_wallet_pda,
-                   neon_wallet, evm_loader_id) -> TransactionInstruction:
+    def balance_account(solana_wallet, account_pubkey, contract_pubkey,
+                   neon_wallet, evm_loader_id, chain_id) -> TransactionInstruction:
+
         keys = [
             AccountMeta(pubkey=solana_wallet,
                         is_signer=True, is_writable=True),
             AccountMeta(pubkey=SYS_PROGRAM_ID,
                         is_signer=False, is_writable=False),
-            AccountMeta(pubkey=neon_wallet_pda,
+            AccountMeta(pubkey=account_pubkey,
+                        is_signer=False, is_writable=True),
+            AccountMeta(pubkey=contract_pubkey,
                         is_signer=False, is_writable=True),
         ]
 
-        data = bytes.fromhex('28') + bytes.fromhex(str(neon_wallet)[2:])
+        data = bytes.fromhex('30') + bytes.fromhex(str(neon_wallet)[2:])  + chain_id.to_bytes(8, 'little')
         return TransactionInstruction(
             program_id=PublicKey(evm_loader_id),
             keys=keys,
@@ -41,31 +41,30 @@ class Instruction:
         data = bytes.fromhex('11')
         return TransactionInstruction(keys=keys, program_id=TOKEN_PROGRAM_ID, data=data)
 
-
     @staticmethod
-    def deposit(solana_pubkey, neon_pubkey, deposit_pubkey,
-                neon_wallet_address, neon_mint, evm_loader_id) -> TransactionInstruction:
-        associated_token_address = get_associated_token_address(
-            solana_pubkey, neon_mint)
-        pool_key = get_associated_token_address(deposit_pubkey, neon_mint)
-        keys = [
-            AccountMeta(pubkey=associated_token_address,
-                        is_signer=False, is_writable=True),
-            AccountMeta(pubkey=pool_key, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=neon_pubkey, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=TOKEN_PROGRAM_ID,
-                        is_signer=False, is_writable=False),
-            AccountMeta(pubkey=solana_pubkey,
-                        is_signer=True, is_writable=True),
-            AccountMeta(pubkey=SYS_PROGRAM_ID,
-                        is_signer=False, is_writable=False),
+    def deposit(
+            ether_address: bytes,
+            chain_id: int,
+            balance_account: PublicKey,
+            contract_account: PublicKey,
+            mint: PublicKey,
+            source: PublicKey,
+            pool: PublicKey,
+            operator_pubkey: PublicKey,
+            evm_loader_id
+    ) -> TransactionInstruction:
+        data = bytes.fromhex('31') + ether_address + chain_id.to_bytes(8, 'little')
+        accounts = [
+            AccountMeta(pubkey=mint, is_signer=False, is_writable=True),
+            AccountMeta(pubkey=source, is_signer=False, is_writable=True),
+            AccountMeta(pubkey=pool, is_signer=False, is_writable=True),
+            AccountMeta(pubkey=balance_account, is_signer=False, is_writable=True),
+            AccountMeta(pubkey=contract_account, is_signer=False, is_writable=True),
+            AccountMeta(pubkey=TOKEN_PROGRAM_ID, is_signer=False, is_writable=False),
+            AccountMeta(pubkey=operator_pubkey, is_signer=True, is_writable=True),
+            AccountMeta(pubkey=SYS_PROGRAM_ID, is_signer=False, is_writable=False),
         ]
-
-        data = bytes.fromhex('27') + bytes.fromhex(neon_wallet_address[2:])
-        return TransactionInstruction(
-            program_id=PublicKey(evm_loader_id),
-            keys=keys,
-            data=data)
+        return TransactionInstruction(program_id=PublicKey(evm_loader_id), data=data, keys=accounts)
 
     @staticmethod
     def compute_budget_utils(operator, units=DEFAULT_UNITS) -> TransactionInstruction:
@@ -133,14 +132,12 @@ class Instruction:
 
         signed_tx = web3_client._web3.eth.account.sign_transaction(
             tx, _from.key)
-
         if signed_tx.rawTransaction is not None:
             emulated_tx = web3_client.get_neon_emulate(
                 str(signed_tx.rawTransaction.hex())[2:])
-
         if emulated_tx is not None:
-            for account in emulated_tx['result']['accounts']:
-                key = account['account']
+            for account in emulated_tx['result']['solana_accounts']:
+                key = account['pubkey']
                 result[key] = AccountMeta(pubkey=PublicKey(
                     key), is_signer=False, is_writable=True)
                 if 'contract' in account:
@@ -156,16 +153,15 @@ class Instruction:
         return signed_tx, result
 
     @staticmethod
-    def buld_tx_instruction(solana_wallet, neon_wallet, neon_raw_transaction,
-                            neon_keys, evm_loader_id, neon_pool_count):
+    def build_tx_instruction(solana_wallet, neon_wallet, neon_raw_transaction,
+                            neon_keys, evm_loader_id):
         program_id = PublicKey(evm_loader_id)
-        treasure_pool_index = math.floor(random.randint(
-            0, 1) * int(neon_pool_count)) % int(neon_pool_count)
+        treasure_pool_index = 2
         treasure_pool_address = get_collateral_pool_address(
             treasure_pool_index, evm_loader_id)
 
-        data = bytes.fromhex('1f') + treasure_pool_index.to_bytes(4, 'little') + \
-            bytes.fromhex(str(neon_raw_transaction.hex())[2:])
+        data = bytes.fromhex('32') + treasure_pool_index.to_bytes(4, 'little') + \
+               bytes.fromhex(str(neon_raw_transaction.hex())[2:])
         keys = [AccountMeta(pubkey=solana_wallet, is_signer=True, is_writable=True),
                 AccountMeta(pubkey=treasure_pool_address,
                             is_signer=False, is_writable=True),
@@ -199,4 +195,4 @@ def get_solana_wallet_signer(solana_account, neon_account, web3_client):
     neon_wallet = bytes(neon_account.address, 'utf-8')
     new_wallet = hashlib.sha256(solana_wallet + neon_wallet).hexdigest()
     emulate_signer_private_key = f'0x{new_wallet}'
-    return web3_client._web3.eth.account.from_key(emulate_signer_private_key)
+    return web3_client.eth.account.from_key(emulate_signer_private_key)

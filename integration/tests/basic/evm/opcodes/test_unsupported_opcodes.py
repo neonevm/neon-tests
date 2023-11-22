@@ -12,7 +12,7 @@ class TestUnsupportedOpcodes(BaseMixin):
     @pytest.fixture(scope="class")
     def contract(self, web3_client, class_account):
         contract, _ = web3_client.deploy_and_get_contract(
-            "EIPs/UnsupportedOpcodes", "0.8.10", class_account)
+            "opcodes/UnsupportedOpcodes", "0.8.10", class_account)
         return contract
 
     def test_basefee(self, contract):

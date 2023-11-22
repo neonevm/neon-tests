@@ -18,3 +18,4 @@ class Error32602:
     BAD_FROM_ADDRESS = "bad from-address"
     BAD_TOPIC = "bad topic"
     BAD_TRANSACTION_ID_FORMAT = "bad transaction-id format"
+    INVALID_NONCE = "invalid nonce: value"

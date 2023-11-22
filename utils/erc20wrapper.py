@@ -25,6 +25,7 @@ class ERC20Wrapper:
             evm_loader_id=None,
             account=None,
             mintable=True,
+            contract_address=None
     ):
         self.solana_associated_token_acc = None
         self.token_mint = None
@@ -39,8 +40,14 @@ class ERC20Wrapper:
         self.symbol = symbol
         self.decimals = decimals
         self.sol_client = sol_client
-        self.contract_address = self.deploy_wrapper(mintable)
-        self.contract = self.get_wrapper_contract()
+
+        if contract_address:
+            self.contract = web3_client.get_deployed_contract(contract_address,
+                                                              contract_file = "EIPs/ERC20/IERC20ForSpl")
+        else:
+            self.contract_address = self.deploy_wrapper(mintable)
+            self.contract = self.web3_client.get_deployed_contract(self.contract_address,
+                                                                   "EIPs/ERC20/IERC20ForSpl")
 
     def make_tx_object(self, from_address, gas_price=None, gas=None):
         tx = {
@@ -89,18 +96,6 @@ class ERC20Wrapper:
             logs = contract.events.ERC20ForSplCreated().process_receipt(instruction_receipt)
             return logs[0]["args"]["pair"]
         return instruction_receipt
-
-    def get_wrapper_contract(self):
-        contract_path = (pathlib.Path.cwd() / "contracts" / "EIPs" / "ERC20" / "IERC20ForSpl.sol").absolute()
-
-        with open(contract_path, "r") as s:
-            source = s.read()
-
-        compiled = solcx.compile_source(source, output_values=["abi", "bin"], solc_version="0.8.10")
-        contract_interface = compiled[list(compiled.keys())[0]]
-
-        contract = self.web3_client.eth.contract(address=self.contract_address, abi=contract_interface["abi"])
-        return contract
 
     # TODO: In all this methods verify if exist self.account
     def mint_tokens(self, signer, to_address, amount: int = INIT_TOKEN_AMOUNT, gas_price=None, gas=None):

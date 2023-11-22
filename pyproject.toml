@@ -10,7 +10,8 @@ profile="black"
 timeout = 300
 markers = [
     "only_stands: this tests works only on test stands",
-    "only_devnet: this tests works only on devnet env"
+    "only_devnet: this tests works only on devnet env",
+    "multipletokens : this tests works only on stands with several chains"
 ]
 asyncio_mode = "auto"
 addopts = "--alluredir=allure-results"

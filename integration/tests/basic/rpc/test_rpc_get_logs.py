@@ -209,9 +209,9 @@ class TestRpcGetLogs(BaseMixin):
             if topic:
                 assert topic in result["topics"]
             if "address" in param_fields:
-                assert result["address"] == receipt["to"].lower(), (
-                    f"address from response {result['address']} "
-                    f"is not equal to address from receipt {receipt['to'].lower()}"
+                assert response["result"][0]["address"] == receipt["to"], (
+                    f"address from response {response['result'][0]['address']} "
+                    f"is not equal to address from receipt {receipt['to']}"
                 )
 
             assert_fields_are_hex(result, self.ETH_HEX_FIELDS)

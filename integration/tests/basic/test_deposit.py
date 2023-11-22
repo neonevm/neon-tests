@@ -1,9 +1,8 @@
 import json
-import time
 
 import pytest
 import allure
-import solana
+import web3
 from _pytest.config import Config
 from solana.keypair import Keypair
 from solana.rpc.commitment import Commitment
@@ -167,6 +166,32 @@ class TestWithdraw(BaseTests):
         receipt = self.web3_client.send_transaction(self.acc, instruction_tx)
         assert receipt["status"] == 1
 
+    @pytest.mark.parametrize("move_amount, error", [(11000, web3.exceptions.ContractLogicError), (10000, ValueError)])
+    def test_failed_withdraw_insufficient_balance(
+        self,
+        pytestconfig: Config,
+        move_amount,
+        error,
+        withdraw_contract,
+        neon_mint,
+        solana_account,
+    ):
+        dest_acc = solana_account
+
+        spl_neon_token = SplToken(self.sol_client, neon_mint, TOKEN_PROGRAM_ID, dest_acc.public_key)
+
+        amount = move_amount * pow(10, 18)
+        dest_token_acc = get_associated_token_address(dest_acc.public_key, neon_mint)
+
+        response = spl_neon_token.get_balance(dest_token_acc, commitment=Commitment("confirmed"))
+        assert json.loads(response.to_json())["message"] == "Invalid param: could not find account"
+
+        with pytest.raises(error):
+            self.withdraw(dest_acc, amount, withdraw_contract)
+
+        response = spl_neon_token.get_balance(dest_token_acc, commitment=Commitment("confirmed"))
+        assert json.loads(response.to_json())["message"] == "Invalid param: could not find account"
+
     @pytest.mark.only_stands
     def test_success_withdraw_to_non_existing_account(
         self, pytestconfig: Config, withdraw_contract, neon_mint, solana_account
@@ -235,32 +260,6 @@ class TestWithdraw(BaseTests):
 
         with pytest.raises(web3_exceptions.ContractLogicError):
             self.withdraw(dest_acc, move_amount, withdraw_contract)
-
-        destination_balance_after = spl_neon_token.get_balance(dest_acc.public_key, commitment=Commitment("confirmed"))
-        with pytest.raises(AttributeError):
-            _ = destination_balance_after.value
-
-    @pytest.mark.parametrize("move_amount", [11000, 10000])
-    def test_failed_withdraw_insufficient_balance(
-        self,
-        pytestconfig: Config,
-        move_amount,
-        withdraw_contract,
-        neon_mint,
-        solana_account,
-    ):
-        dest_acc = solana_account
-
-        spl_neon_token = SplToken(self.sol_client, neon_mint, TOKEN_PROGRAM_ID, dest_acc.public_key)
-
-        amount = move_amount * pow(10, 18)
-
-        destination_balance_before = spl_neon_token.get_balance(dest_acc.public_key, commitment=Commitment("confirmed"))
-        with pytest.raises(AttributeError):
-            _ = destination_balance_before.value
-
-        with pytest.raises(ValueError):
-            self.withdraw(dest_acc, amount, withdraw_contract)
 
         destination_balance_after = spl_neon_token.get_balance(dest_acc.public_key, commitment=Commitment("confirmed"))
         with pytest.raises(AttributeError):

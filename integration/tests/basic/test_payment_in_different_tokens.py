@@ -2,6 +2,7 @@ import random
 
 import allure
 import pytest
+import web3
 
 from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.chains import make_nonce_the_biggest_for_chain
@@ -145,7 +146,7 @@ class TestMultiplyChains(BaseMixin):
         make_nonce_the_biggest_for_chain(alice, web3_client_sol, [web3_client])
         deploy_contract(web3_client_sol)
 
-        with pytest.raises(ValueError, match="EVM Error. Attempt to deploy to existing account"):
+        with pytest.raises(web3.exceptions.ContractLogicError, match="Attempt to deploy to existing account"):
             deploy_contract(web3_client)
 
         make_nonce_the_biggest_for_chain(alice, web3_client, [web3_client_sol])

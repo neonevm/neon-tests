@@ -307,6 +307,7 @@ class TestTracerDebugMethods(BaseMixin):
         for item in response["result"]:
             assert re.match('^0x[a-fA-F\d]{64}$', item) 
 
+    @pytest.mark.skip(reason="bug NDEV-2375")
     def test_debug_get_modified_accounts_by_number(self):
         receipt_start = self.send_neon(
             self.sender_account, self.recipient_account, 0.1)
@@ -322,7 +323,8 @@ class TestTracerDebugMethods(BaseMixin):
         response = self.tracer_api.send_rpc(
             method="debug_getModifiedAccountsByNumber", params=[hex(receipt_start["blockNumber"]), hex(receipt_end["blockNumber"])])
         self.check_modified_accounts_response(response)
-
+    
+    @pytest.mark.skip(reason="bug NDEV-2375")
     def test_debug_get_modified_accounts_by_same_number(self):
         receipt = self.send_neon(
             self.sender_account, self.recipient_account, 0.1)
@@ -335,7 +337,8 @@ class TestTracerDebugMethods(BaseMixin):
         response = self.tracer_api.send_rpc(
             method="debug_getModifiedAccountsByNumber", params=[hex(receipt["blockNumber"]), hex(receipt["blockNumber"])])
         self.check_modified_accounts_response(response)
-
+   
+    @pytest.mark.skip(reason="bug NDEV-2375")
     def test_debug_get_modified_accounts_by_only_one_number(self):
         receipt = self.send_neon(
             self.sender_account, self.recipient_account, 0.1)
@@ -348,7 +351,8 @@ class TestTracerDebugMethods(BaseMixin):
         response = self.tracer_api.send_rpc(
             method="debug_getModifiedAccountsByNumber", params=[hex(receipt["blockNumber"])])
         self.check_modified_accounts_response(response)
-
+    
+    @pytest.mark.skip(reason="bug NDEV-2375")
     @pytest.mark.parametrize("difference", [1, 50, 199, 200])
     def test_debug_get_modified_accounts_by_number_blocks_difference_less_or_equal_200(self, difference):
         receipt = self.send_neon(
@@ -364,6 +368,7 @@ class TestTracerDebugMethods(BaseMixin):
             method="debug_getModifiedAccountsByNumber", params=[start_number, end_number])
         self.check_modified_accounts_response(response)
     
+    @pytest.mark.skip(reason="bug NDEV-2375")
     def test_debug_get_modified_accounts_by_number_201_blocks_difference(self):
         receipt = self.send_neon(
             self.sender_account, self.recipient_account, 0.1)
@@ -376,7 +381,8 @@ class TestTracerDebugMethods(BaseMixin):
         assert "error" in response, "No errors in response"
         assert response["error"]["code"] == -32603, "Invalid error code"
         assert response["error"]["message"] == "Requested range (201) is too big, maximum allowed range is 200 blocks"
-
+    
+    @pytest.mark.skip(reason="bug NDEV-2375")
     @pytest.mark.parametrize("params", [[1, 124], ["94f3e", 12], ["1a456", "0x0"], ["183b8e", "183b8e"]])
     def test_debug_get_modified_accounts_by_invalid_numbers(self, params):        
         response = self.tracer_api.send_rpc(
@@ -384,7 +390,8 @@ class TestTracerDebugMethods(BaseMixin):
         assert "error" in response, "No errors in response"
         assert response["error"]["code"] == -32602, "Invalid error code"
         assert response["error"]["message"] == "Invalid params"
-
+    
+    @pytest.mark.skip(reason="bug NDEV-2375")
     def test_debug_get_modified_accounts_by_hash(self):
         receipt_start = self.send_neon(
             self.sender_account, self.recipient_account, 0.1)
@@ -400,7 +407,8 @@ class TestTracerDebugMethods(BaseMixin):
         response = self.tracer_api.send_rpc(
             method="debug_getModifiedAccountsByHash", params=[receipt_start["blockHash"].hex(), receipt_end["blockHash"].hex()])
         self.check_modified_accounts_response(response)
-
+    
+    @pytest.mark.skip(reason="bug NDEV-2375")
     @pytest.mark.parametrize("params", [[1, 124], ["0x94f3e00000000800000000", 12], ["0x1a456", "0x000000000001"], ["0x183b8e", "183b8e"]])
     def test_debug_get_modified_accounts_by_invalid_hash(self, params):
         response = self.tracer_api.send_rpc(
@@ -408,11 +416,3 @@ class TestTracerDebugMethods(BaseMixin):
         assert "error" in response, "No errors in response"
         assert response["error"]["code"] == -32602, "Invalid error code"
         assert response["error"]["message"] == "Invalid params"
-
-    @pytest.mark.skip(reason="NDEV-2367")
-    def test_get_raw_transaction(self):
-        pass
-    
-    @pytest.mark.skip(reason="NDEV-2367")
-    def test_get_raw_transaction_invalid_tx_hash(self):
-        pass

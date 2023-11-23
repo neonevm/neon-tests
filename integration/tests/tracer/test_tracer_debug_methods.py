@@ -4,6 +4,8 @@ import random
 import re
 
 from jsonschema import Draft4Validator
+from rlp import decode
+from rlp.sedes import List, big_endian_int, binary
 
 import allure
 import pytest
@@ -257,6 +259,10 @@ class TestTracerDebugMethods(BaseMixin):
         assert response["error"]["code"] == -32603, "Invalid error code"
         assert response["error"]["message"] == "eth_getBlockByHash returns None for '\"0xd97ff4869d52c4add6f5bcb1ba96020dd7877244b4cbf49044f49f002015ea85\"' block"
 
+    def decode_raw_header(self, header: bytes):
+        sedes = List([big_endian_int, binary, binary, binary, binary])
+        return decode(header, sedes)
+
     def test_getRawHeader_by_block_number(self):
         receipt = self.send_neon(
             self.sender_account, self.recipient_account, 0.1)
@@ -268,8 +274,16 @@ class TestTracerDebugMethods(BaseMixin):
         response = self.tracer_api.send_rpc(
             method="debug_getRawHeader", params=[hex(receipt["blockNumber"])])
         assert "error" not in response, "Error in response"
-        assert response["result"] is not None and response["result"] != ""
-        assert isinstance(response["result"], str)
+        assert response["result"] is not None
+
+        header = self.decode_raw_header(bytes.fromhex(response["result"]))
+        block_info = self.web3_client.eth.get_block(receipt["blockNumber"])
+        assert header[0] == block_info["number"]
+        assert header[1].hex() == '' 
+        assert header[2].hex() == block_info["parentHash"].hex()[2:]
+        assert header[3].hex() == block_info["stateRoot"].hex()[2:]
+        assert header[4].hex() == block_info["receiptsRoot"].hex()[2:]
+
 
     def test_getRawHeader_by_invalid_block_number(self):
         response = self.tracer_api.send_rpc(
@@ -289,8 +303,15 @@ class TestTracerDebugMethods(BaseMixin):
         response = self.tracer_api.send_rpc(
             method="debug_getRawHeader", params=[receipt["blockHash"].hex()])
         assert "error" not in response, "Error in response"
-        assert response["result"] is not None and response["result"] != ""
-        assert isinstance(response["result"], str)
+        assert response["result"] is not None
+
+        header = self.decode_raw_header(bytes.fromhex(response["result"]))
+        block_info = self.web3_client.eth.get_block(receipt["blockNumber"])
+        assert header[0] == block_info["number"]
+        assert header[1].hex() == '' 
+        assert header[2].hex() == block_info["parentHash"].hex()[2:]
+        assert header[3].hex() == block_info["stateRoot"].hex()[2:]
+        assert header[4].hex() == block_info["receiptsRoot"].hex()[2:]
 
     def test_getRawHeader_by_invalid_block_hash(self):
         response = self.tracer_api.send_rpc(

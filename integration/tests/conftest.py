@@ -316,6 +316,8 @@ def wneon(web3_client, faucet, class_account):
     )
     return contract
 
+
+@pytest.fixture(scope="class")
 def storage_contract(web3_client, class_account) -> typing.Any:
     contract, _ = web3_client.deploy_and_get_contract(
         "common/StorageSoliditySource",
@@ -325,4 +327,3 @@ def storage_contract(web3_client, class_account) -> typing.Any:
         constructor_args=[]
     )
     yield contract
-

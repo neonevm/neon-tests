@@ -22,6 +22,7 @@ from utils.faucet import Faucet
 from utils.operator import Operator
 from utils.solana_client import SolanaClient
 from utils.web3client import NeonChainWeb3Client
+from utils.prices import get_sol_price, get_neon_price
 
 NEON_AIRDROP_AMOUNT = 10_000
 
@@ -327,3 +328,20 @@ def storage_contract(web3_client, class_account) -> typing.Any:
         constructor_args=[]
     )
     yield contract
+
+
+@pytest.fixture(scope="session")
+def sol_price() -> float:
+    """Get SOL price from Solana mainnet"""
+    price = get_sol_price()
+    with allure.step(f"SOL price {price}$"):
+        return price
+
+
+@pytest.fixture(scope="session")
+def neon_price() -> float:
+    """Get SOL price from Solana mainnet"""
+    price = get_neon_price()
+    with allure.step(f"NEON price {price}$"):
+        return price
+

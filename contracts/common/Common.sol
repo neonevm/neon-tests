@@ -44,3 +44,17 @@ contract BunchActions {
         }
     }
 }
+
+
+contract MappingActions {
+    mapping(uint256 => string) public stringMapping;
+
+    // Function to replace n values in the mapping
+    function replaceValues(uint256 n) external {
+
+        for (uint256 i = 0; i < n; i++) {
+            stringMapping[i] = "UpdatedString";
+        }
+
+    }
+}

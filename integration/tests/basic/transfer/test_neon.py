@@ -42,7 +42,7 @@ class TestNeonTransfer(BaseMixin):
             self.sender_account,
             self.recipient_account,
             amount,
-            error_message=ErrorMessage.INSUFFICIENT_FUNDS.value,
+            error_message=ErrorMessage.INSUFFICIENT_BALANCE.value,
         )
 
         self.assert_balance(self.sender_account.address, sender_balance, rnd_dig=1)

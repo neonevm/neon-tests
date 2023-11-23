@@ -7,11 +7,15 @@ LOGGER = logging.getLogger(__name__)
 
 class ERC721ForMetaplex:
     def __init__(self, web3_client: web3client.NeonChainWeb3Client, faucet, account=None, contract="erc721_for_metaplex.sol",
-                 contract_name="ERC721ForMetaplex"):
+                 contract_name="ERC721ForMetaplex", contract_address=None):
         self.web3_client = web3_client
         self.account = account or web3_client.create_account()
-        faucet.request_neon(self.account.address, 300)
-        self.contract = self.deploy(contract, contract_name)
+        faucet.request_neon(self.account.address, 600)
+        if contract_address:
+            self.contract = web3_client.get_deployed_contract(contract_address,
+                                                              contract_file = contract, contract_name=contract_name)
+        else:
+            self.contract = self.deploy(contract, contract_name)
 
     def make_tx_object(self, from_address, gasPrice=None, gas=None):
         tx = {"from": from_address, "nonce": self.web3_client.eth.get_transaction_count(from_address),

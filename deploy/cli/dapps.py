@@ -1,9 +1,12 @@
 import os
 import glob
 import json
+import re
 import subprocess
+import sys
 import typing as tp
 import pathlib
+import logging
 
 import tabulate
 from paramiko.client import SSHClient
@@ -16,29 +19,25 @@ from deploy.cli import faucet as faucet_cli
 from utils.web3client import NeonChainWeb3Client
 from utils.solana_client import SolanaClient
 from utils.prices import get_neon_price
+from python_terraform import Terraform
 
 
-TF_CWD = "deploy/aws"
+TFSTATE_BUCKET = os.environ.get("TFSTATE_BUCKET")
+TFSTATE_KEY_PREFIX = os.environ.get("TFSTATE_KEY_PREFIX")
+TFSTATE_REGION = os.environ.get("TFSTATE_REGION")
+TF_STATE_KEY = f"{TFSTATE_KEY_PREFIX}neon-tests-{os.environ.get('GITHUB_RUN_ID', '0')}"
+TF_BACKEND_CONFIG = {"bucket": TFSTATE_BUCKET,
+                  "key": TF_STATE_KEY, "region": TFSTATE_REGION}
 
-TF_ENV = {
-    "AWS_SECRET_ACCESS_KEY": os.environ.get("AWS_SECRET_ACCESS_KEY"),
-    "AWS_ACCESS_KEY_ID": os.environ.get("AWS_ACCESS_KEY_ID"),
-    "AWS_S3_BUCKET": os.environ.get("AWS_S3_BUCKET", "neon-tests-dapps"),
-    "AWS_REGION": os.environ.get("AWS_REGION", "us-east-2"),
-    "TF_VAR_branch": "develop",
-    "TF_VAR_proxy_container_tag": os.environ.get("NEON_PROXY_TAG", "latest"),
-    "TF_VAR_neon_evm_container_tag": os.environ.get("NEON_EVM_TAG", "latest"),
-    "TF_VAR_faucet_container_tag": os.environ.get("NEON_FAUCET_TAG", "latest"),
-    "TF_STATE_KEY": f"neon-tests/{os.environ.get('GITHUB_RUN_ID', '0')}",
-}
-
-TF_ENV.update(
-    {
-        "TF_BACKEND_CONFIG": f"-backend-config=\"bucket={TF_ENV['AWS_S3_BUCKET']}\" "
-        f"-backend-config=\"key={TF_ENV['TF_STATE_KEY']}\" "
-        f"-backend-config=\"region={TF_ENV['AWS_REGION']}\" ",
-    }
-)
+os.environ["TF_VAR_branch"] = 'develop'
+os.environ["TF_VAR_proxy_image_tag"] =  os.environ.get("NEON_PROXY_TAG", "latest")
+os.environ["TF_VAR_proxy_model_commit"] =  os.environ.get("PROXY_MODEL_COMMIT", "develop")
+os.environ["TF_VAR_run_number"] =  os.environ.get("GITHUB_RUN_ID", "0")
+os.environ["TF_VAR_neon_evm_commit"] = os.environ.get("NEON_EVM_TAG", "latest")
+os.environ["TF_VAR_faucet_model_commit"] = os.environ.get("NEON_FAUCET_TAG", "latest")
+os.environ["TF_VAR_dockerhub_org_name"] = os.environ.get("DOCKERHUB_ORG_NAME", "neonlabsorg")
+terraform = Terraform(working_dir=pathlib.Path(
+    __file__).parent.parent / "hetzner")
 
 WEB3_CLIENT = NeonChainWeb3Client(os.environ.get("PROXY_URL"))
 REPORT_HEADERS = ["Action", "Fee", "Cost in $", "Accounts", "TRx", "Estimated Gas", "Used Gas", "Used % of EG"]
@@ -52,76 +51,57 @@ def set_github_env(envs: tp.Dict, upper=True) -> None:
                 env_file.write(f"\n{key.upper() if upper else key}={str(value)}")
 
 
-def get_solana_ip() -> str:
-    solana_ip = subprocess.run(
-        "terraform output --json | jq -r '.solana_ip.value'",
-        shell=True,
-        env=TF_ENV,
-        cwd="deploy/aws",
-        stdout=subprocess.PIPE,
-        text=True,
-    ).stdout.strip()
-    if isinstance(solana_ip, bytes):
-        solana_ip = solana_ip.decode()
-    return solana_ip
-
-
-def get_proxy_ip() -> str:
-    proxy_ip = subprocess.run(
-        "terraform output --json | jq -r '.proxy_ip.value'",
-        shell=True,
-        env=TF_ENV,
-        cwd="deploy/aws",
-        stdout=subprocess.PIPE,
-        text=True,
-    ).stdout.strip()
-    if isinstance(proxy_ip, bytes):
-        proxy_ip = proxy_ip.decode()
-    return proxy_ip
-
-
 def deploy_infrastructure() -> dict:
-    subprocess.check_call(
-        f"terraform init {TF_ENV['TF_BACKEND_CONFIG']}",
-        shell=True,
-        env=TF_ENV,
-        cwd=TF_CWD,
-    )
-    subprocess.check_call(
-        "terraform apply --auto-approve=true", shell=True, env=TF_ENV, cwd=TF_CWD
-    )
-    proxy_ip = get_proxy_ip()
-    solana_ip = get_solana_ip()
+
+    terraform.init(backend_config=TF_BACKEND_CONFIG)
+    return_code, stdout, stderr = terraform.apply(skip_plan=True)
+    print(f"code: {return_code}")
+    print(f"stdout: {stdout}")
+    print(f"stderr: {stderr}")
+    with open(f"terraform.log", "w") as file:
+        file.write(stdout)
+        file.write(stderr)
+    if return_code != 0:
+        print("Terraform infrastructure is not built correctly")
+        sys.exit(1)
+    output = terraform.output(json=True)
+    print(f"output: {output}")
+    proxy_ip = output["proxy_ip"]["value"]
+    solana_ip = output["solana_ip"]["value"]
+
     infra = dict(solana_ip=solana_ip, proxy_ip=proxy_ip)
     set_github_env(infra)
     return infra
 
 
 def destroy_infrastructure():
-    subprocess.run(
-        f"terraform init {TF_ENV['TF_BACKEND_CONFIG']}",
-        shell=True,
-        env=TF_ENV,
-        cwd=TF_CWD,
-    )
-    subprocess.run(
-        "terraform destroy --auto-approve=true", shell=True, env=TF_ENV, cwd=TF_CWD
-    )
+    log = logging.getLogger()
+    log.handlers = []
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter(
+        '%(asctime)4s %(name)4s [%(filename)s:%(lineno)s - %(funcName)s()] %(levelname)4s %(message)4s')
+    handler.setFormatter(formatter)
+    log.addHandler(handler)
+    log.setLevel(logging.INFO)
+
+    def format_tf_output(output):
+        return re.sub(r'(?m)^', ' ' * TF_OUTPUT_OFFSET, str(output))
+
+    TF_OUTPUT_OFFSET = 16
+    terraform.init(backend_config=TF_BACKEND_CONFIG)
+    tf_destroy = terraform.apply('-destroy', skip_plan=True)
+    log.info(format_tf_output(tf_destroy))
+
+
 
 
 def download_remote_docker_logs():
-    subprocess.run(
-        f"terraform init {TF_ENV['TF_BACKEND_CONFIG']}",
-        shell=True,
-        env=TF_ENV,
-        cwd=TF_CWD,
-    )
-    proxy_ip = get_proxy_ip()
-    solana_ip = get_solana_ip()
+    proxy_ip = os.environ.get("PROXY_IP")
+    solana_ip = os.environ.get("SOLANA_IP")
 
     home_path = os.environ.get("HOME")
     artifact_logs = "./logs"
-    ssh_key = "/tmp/dapps-stand"
+    ssh_key = "/tmp/ci-stands"
     os.mkdir(artifact_logs)
     if not os.path.exists(f"{home_path}/.ssh"):
         os.mkdir(f"{home_path}/.ssh")
@@ -132,13 +112,14 @@ def download_remote_docker_logs():
     subprocess.run(
         f"ssh-keyscan -H {proxy_ip} >> {home_path}/.ssh/known_hosts", shell=True
     )
+
     ssh_client = SSHClient()
     ssh_client.load_system_host_keys()
-    ssh_client.connect(solana_ip, username="ubuntu", key_filename=ssh_key, timeout=120)
+    ssh_client.connect(solana_ip, username="root", key_filename=ssh_key, timeout=120)
 
     upload_service_logs(ssh_client, "solana", artifact_logs)
 
-    ssh_client.connect(proxy_ip, username="ubuntu", key_filename=ssh_key, timeout=120)
+    ssh_client.connect(proxy_ip, username="root", key_filename=ssh_key, timeout=120)
     services = ["postgres", "dbcreation", "indexer", "proxy", "faucet"]
     for service in services:
         upload_service_logs(ssh_client, service, artifact_logs)
@@ -158,15 +139,7 @@ def upload_service_logs(ssh_client, service, artifact_logs):
 
 def prepare_accounts(network_name, count, amount) -> tp.List:
     network_manager = NetworkManager()
-    if network_name == "aws":
-        network = {
-            "proxy_url": os.environ.get("PROXY_URL"),
-            "solana_url": os.environ.get("SOLANA_URL"),
-            "faucet_url": os.environ.get("FAUCET_URL"),
-            "network_ids": network_manager.get_network_param(network_name, "network_ids")
-        }
-    else:
-        network = network_manager.get_network_param(network_name)
+    network = network_manager.get_network_object(network_name)
     accounts = faucet_cli.prepare_wallets_with_balance(network, count, amount)
     if os.environ.get("CI"):
         set_github_env(dict(accounts=",".join(accounts)))

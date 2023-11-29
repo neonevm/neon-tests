@@ -425,6 +425,8 @@ def get_evm_pinned_version(branch):
     tag = pipeline_file["env"]["NEON_EVM_TAG"]
     if tag == "latest":
         return "develop"
+    if re.match(r"[vt]{1}\d{1,2}\.\d{1,2}.*", tag) is not None:
+        tag = re.sub(r"\.\d+$", ".x", tag)
     return tag
 
 

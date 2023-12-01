@@ -17,8 +17,8 @@ sudo chmod +x /usr/local/bin/docker-compose
 
 # Get docker-compose file
 cd /opt
-echo "Downloading docker-compose file from path: https://raw.githubusercontent.com/neonlabsorg/proxy-model.py/${proxy_model_commit}/docker-compose/docker-compose-test.yml"
-curl -O https://raw.githubusercontent.com/neonlabsorg/proxy-model.py/${branch}/docker-compose/docker-compose-test.yml
+echo "Downloading docker-compose file from path: https://raw.githubusercontent.com/neonevm/proxy-model.py/${proxy_model_commit}/docker-compose/docker-compose-test.yml"
+curl -O https://raw.githubusercontent.com/neonevm/proxy-model.py/${branch}/docker-compose/docker-compose-test.yml
 
 # Set required environment variables
 export REVISION=${proxy_model_commit}

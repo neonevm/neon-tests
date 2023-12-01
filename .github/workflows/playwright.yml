@@ -6,7 +6,7 @@ on:
     - cron: "0 1 * * 5"
   workflow_dispatch:
 env:
-  IMAGE:  neonlabsorg/neon_tests
+  IMAGE:  ${{ vars.DOCKERHUB_ORG_NAME }}/neon_tests
   CONTAINER:  services-${{ github.run_id }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 

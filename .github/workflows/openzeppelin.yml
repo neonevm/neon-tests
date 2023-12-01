@@ -31,7 +31,7 @@ env:
   JOBS_NUMBER: "8"
   NETWORK: night-stand
   RUNNER: neon-hosted
-  IMAGE:  neonlabsorg/neon_tests
+  IMAGE:  ${{ vars.DOCKERHUB_ORG_NAME }}/neon_tests
   CONTAINER:  oz-${{ github.run_id }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 

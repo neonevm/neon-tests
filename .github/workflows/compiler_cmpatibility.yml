@@ -22,7 +22,7 @@ env:
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   SOLANA_URL: "${{ secrets.SOLANA_URL }}"
   NUMPROCESSES: 2
-  IMAGE:  neonlabsorg/neon_tests
+  IMAGE:  ${{ vars.DOCKERHUB_ORG_NAME }}/neon_tests
   CONTAINER:  compilers-${{ github.run_id }}
 jobs:
   dockerize:

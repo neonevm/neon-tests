@@ -27,7 +27,7 @@ env:
   NETWORK: night-stand
   RUNNER: neon-hosted
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-  IMAGE:  neonlabsorg/neon_tests
+  IMAGE:  ${{ vars.DOCKERHUB_ORG_NAME }}/neon_tests
   CONTAINER:  economy-${{ github.run_id }}
 jobs:
   dockerize:

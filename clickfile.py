@@ -66,7 +66,7 @@ EXTENSIONS_USER_DATA_PATH = "ui/extensions/chrome"
 HOME_DIR = pathlib.Path(__file__).absolute().parent
 
 OZ_BALANCES = "./compatibility/results/oz_balance.json"
-NEON_EVM_GITHUB_URL = "https://api.github.com/repos/neonlabsorg/neon-evm"
+NEON_EVM_GITHUB_URL = f"https://api.github.com/repos/neonevm/neon-evm"
 
 network_manager = NetworkManager()
 
@@ -415,7 +415,7 @@ def is_neon_evm_branch_exist(branch):
 def get_evm_pinned_version(branch):
     click.echo(f"Get pinned version for proxy branch {branch}")
     resp = requests.get(
-        f"https://api.github.com/repos/neonlabsorg/proxy-model.py/contents/.github/workflows/pipeline.yml?ref={branch}"
+        f"https://api.github.com/repos/neonevm/proxy-model.py/contents/.github/workflows/pipeline.yml?ref={branch}"
     )
     if resp.status_code != 200:
         click.echo(f"Can't get pipeline file for branch {branch}: {resp.text}")

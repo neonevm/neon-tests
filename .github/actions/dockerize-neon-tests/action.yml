@@ -26,7 +26,7 @@ runs:
       id: docker_pipeline
       shell: bash
       run: |
-        image_id="neonlabsorg/neon_tests"
+        image_id="${{ vars.DOCKERHUB_ORG_NAME }}/neon_tests"
         delimeter=$(printf "%0.s-" {1..30})
         echo " ${delimeter} Build new docker image ${image_id} ${delimeter}"
         docker build . --no-cache --tag ${image_id}:${{ inputs.image_tag }} --build-arg OZ_BRANCH='${{ inputs.oz_branch }}'

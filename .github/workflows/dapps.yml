@@ -183,7 +183,7 @@ jobs:
         id: uniswap-v2
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
-          IMAGE: neonlabsorg/uniswap-v2:latest
+          IMAGE: ${{ vars.DOCKERHUB_ORG_NAME }}/uniswap-v2:latest
         run: |
           test -t 1 && USE_TTY="-t"
           docker pull ${{ env.IMAGE }}
@@ -231,7 +231,7 @@ jobs:
         timeout-minutes: 30
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
-          IMAGE: neonlabsorg/uniswap-v3:latest
+          IMAGE: ${{ vars.DOCKERHUB_ORG_NAME }}/uniswap-v3:latest
         run: |
           test -t 1 && USE_TTY="-t"
           docker pull ${{ env.IMAGE }}
@@ -278,7 +278,7 @@ jobs:
         timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
-          IMAGE: neonlabsorg/saddle_tests:latest
+          IMAGE: ${{ vars.DOCKERHUB_ORG_NAME }}/saddle_tests:latest
         run: |
           docker pull ${{ env.IMAGE }}
           docker run -i -d --name=saddle-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash
@@ -326,7 +326,7 @@ jobs:
         timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
-          IMAGE: neonlabsorg/aave_tests:latest
+          IMAGE: ${{ vars.DOCKERHUB_ORG_NAME }}/aave_tests:latest
         run: |
           docker pull ${{ env.IMAGE }} 
           docker run -i -d --name=aave-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash
@@ -366,7 +366,7 @@ jobs:
         timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
-          IMAGE: neonlabsorg/curve_tests:latest
+          IMAGE: ${{ vars.DOCKERHUB_ORG_NAME }}/curve_tests:latest
         run: |
           docker pull ${{ env.IMAGE }}
           docker run -i -d --name curve-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash
@@ -440,7 +440,7 @@ jobs:
         timeout-minutes: 30
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
-          IMAGE: neonlabsorg/compound_tests:latest
+          IMAGE: ${{ vars.DOCKERHUB_ORG_NAME }}/compound_tests:latest
         run: |
           docker pull ${{ env.IMAGE }}
           docker run -i -d --name compound-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash
@@ -488,7 +488,7 @@ jobs:
         timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
-          IMAGE: neonlabsorg/robonomics_tests:latest
+          IMAGE: ${{ vars.DOCKERHUB_ORG_NAME }}/robonomics_tests:latest
         run: |
           docker pull ${{ env.IMAGE }}
           docker run -i -d --entrypoint "sleep" --name=robonomics-${{ github.run_id }} ${{ env.IMAGE }} infinity
@@ -531,7 +531,7 @@ jobs:
         timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
-          IMAGE: neonlabsorg/yearn_tests:latest
+          IMAGE: ${{ vars.DOCKERHUB_ORG_NAME }}/yearn_tests:latest
         run: |
           docker pull ${{ env.IMAGE }}
           docker run -i -d --name yearn-${{ github.run_id }} ${{ env.IMAGE }} /bin/bash

@@ -130,7 +130,7 @@ def allure_environment(pytestconfig: Config, web3_client: NeonChainWeb3Client):
                 {
                     "name": "Github Action",
                     "type": "github",
-                    "url": "https://github.com/neonlabsorg/neon-tests/actions",
+                    "url": "https://github.com/neonevm/neon-tests/actions",
                     "buildOrder": os.environ.get("GITHUB_RUN_ID", "0"),
                     "buildName": os.environ.get("GITHUB_WORKFLOW", "neon-tests"),
                     "buildUrl": f'{os.environ.get("GITHUB_SERVER_URL", "https://github.com")}/{os.environ.get("GITHUB_REPOSITORY", "neon-tests")}/actions/runs/{os.environ.get("GITHUB_RUN_ID", "0")}',

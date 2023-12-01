@@ -1,17 +1,17 @@
 # Quick reference
 
 * **Maintained by:**: The [Neon Labs company](https://neon-labs.org/)
-* **Where to get help**: [Dicscord channel](https://discord.com/channels/839825320639332362), [Twitter](https://twitter.com/neonlabsorg), [GitHub](https://github.com/neonlabsorg)
+* **Where to get help**: [Dicscord channel](https://discord.com/channels/839825320639332362), [Twitter](https://twitter.com/neonevm), [GitHub](https://github.com/neonevm)
 
 # Supported tags and respective `Dockerfile` links
 
-* [develop](https://github.com/neonlabsorg/neon-tests/blob/develop/deploy/oz/DOCKERHUB.md)
+* [develop](https://github.com/neonevm/neon-tests/blob/develop/deploy/oz/DOCKERHUB.md)
 
 # Quick reference
-* **Where to file issues**: https://github.com/neonlabsorg/neon-compatibility/issues
+* **Where to file issues**: https://github.com/neonevm/neon-compatibility/issues
 * **Supported architectures**: ([more info](https://github.com/docker-library/official-images#architectures-other-than-amd64)) [`amd64`](https://hub.docker.com/r/amd64/node/), [`arm32v6`](https://hub.docker.com/r/arm32v6/node/), [`arm32v7`](https://hub.docker.com/r/arm32v7/node/), [`arm64v8`](https://hub.docker.com/r/arm64v8/node/), [`ppc64le`](https://hub.docker.com/r/ppc64le/node/), [`s390x`](https://hub.docker.com/r/s390x/node/)
 * **Published image artifact details**: 
-* **Image updates**: [official image repo's `full_test_suite` label](https://github.com/neonlabsorg/neon-tests/labels/full_test_suite)
+* **Image updates**: [official image repo's `full_test_suite` label](https://github.com/neonevm/neon-tests/labels/full_test_suite)
 ## What is Neon Full Test Suite?
 
 Neon Full Test Suite contains and run a big variety of different tests to check if all the tests are passed successfully. Currently it checks if the actual count is greater than predefined threshold.
@@ -60,7 +60,7 @@ version: "3"
 services:
   full_test_suite:
     container_name: full_test_suite
-    image: neonlabsorg/full_test_suite:583-full-test-suite
+    image: neonevm/full_test_suite:583-full-test-suite
     entrypoint: ./run-full-test-suite.sh 2>&1
     environment:
       - NETWORK_NAME=${NETWORK_NAME}
@@ -85,11 +85,11 @@ networks:
 
 # Image Variants
 
-* [develop](https://hub.docker.com/r/neonlabsorg/full_test_suite/tags?page=1&name=develop)
+* [develop](https://hub.docker.com/r/neonevm/full_test_suite/tags?page=1&name=develop)
 
 License
 
-View license information for [Full Test Suite](https://github.com/neonlabsorg/neon-tests/blob/develop/LICENSE) in [neonlabsorg/neon-tests](https://github.com/neonlabsorg/neon-tests) project.
+View license information for [Full Test Suite](https://github.com/neonevm/neon-tests/blob/develop/LICENSE) in [neonevm/neon-tests](https://github.com/neonevm/neon-tests) project.
 
 As with all Docker images, these likely also contain other software which may be under other licenses (such as Bash, etc from the base distribution, along with any direct or indirect dependencies of the primary software being contained).
 

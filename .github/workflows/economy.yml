@@ -39,6 +39,7 @@ jobs:
         id: requirements
         uses: ./.github/actions/dockerize-neon-tests
         with:
+          org_name: ${{ vars.DOCKERHUB_ORG_NAME }}
           image_tag: ${{ github.sha }}
           docker_username: ${{ secrets.DOCKER_USERNAME }}
           docker_password: ${{ secrets.DOCKER_PASSWORD }}

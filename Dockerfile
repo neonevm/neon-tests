@@ -77,6 +77,7 @@ RUN mkdir -p ${DOWNLOAD_PATH} && \
     chmod -R 755 ${DOWNLOAD_PATH}
 
 COPY deploy/infra/compile_contracts.sh compatibility/openzeppelin-contracts
+RUN chmod +x compatibility/openzeppelin-contracts/compile_contracts.sh
 RUN cd compatibility/openzeppelin-contracts npm set audit false
 RUN cd compatibility/openzeppelin-contracts && npm ci
 RUN cd compatibility/openzeppelin-contracts && ./compile_contracts.sh

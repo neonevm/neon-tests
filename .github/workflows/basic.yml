@@ -59,6 +59,7 @@ jobs:
         uses: ./.github/actions/dockerize-neon-tests
         with:
           image_tag: ${{ github.sha }}
+          org_name: ${{ vars.DOCKERHUB_ORG_NAME }}
           docker_username: ${{ secrets.DOCKER_USERNAME }}
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
   prepare-env:

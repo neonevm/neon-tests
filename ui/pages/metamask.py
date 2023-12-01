@@ -3,14 +3,16 @@
 Created on 2022-05-19
 @author: Eugeny Kurkovich
 """
+import allure
 import pyperclip3 as clipboard
 from playwright._impl._api_types import TimeoutError
 
 from ui import components
 from ui import libs
-from ui.conftest import EVM_NETWORKS
+from ui.conftest import PLATFORM_NETWORKS
 from ui.pages import phantom
 from . import BasePage
+from ..libs import Token
 
 
 class MetaMaskWelcomePage(BasePage):
@@ -35,6 +37,20 @@ class MetaMaskLoginPage(BasePage):
         components.Input(self.page, element_id="password").fill(password)
         components.Button(self.page, selector="//input[@id='password']/following::button").click()
         return MetaMaskAccountsPage(self.page)
+
+
+class MetaMaskConnectPage(BasePage):
+    def __init__(self, *args, **kwargs) -> None:
+        super(MetaMaskConnectPage, self).__init__(*args, **kwargs)
+
+    def page_loaded(self) -> None:
+        self.page.wait_for_selector("//div[text()='Connect With MetaMask']")
+
+    def next(self):
+        components.Button(self.page, text="Next").click()
+
+    def connect(self):
+        components.Button(self.page, text="Connect").click()
 
 
 class MetaMaskAccountsPage(BasePage):
@@ -90,9 +106,30 @@ class MetaMaskAccountsPage(BasePage):
         return self._get_balance(self.active_account, libs.Tokens.neon.name)
 
     @property
+    def sol_balance(self) -> float:
+        self.switch_assets()
+        return self._get_balance(self.active_account, libs.Tokens.sol.name)
+
+    @property
+    def wsol_balance(self) -> float:
+        self.switch_assets()
+        return self._get_balance(self.active_account, libs.Tokens.sol.name)
+
+    @property
     def usdt_balance(self) -> float:
         self.switch_assets()
         return self._get_balance(self.active_account, libs.Tokens.usdt.name)
+
+    @property
+    def usdc_balance(self) -> float:
+        self.switch_assets()
+        return self._get_balance(self.active_account, libs.Tokens.usdc.name)
+
+    @allure.step("Get balance in the wallet")
+    def get_balance(self, token: Token) -> float:
+        balance = float(getattr(self, f"{token.name.lower()}_balance"))
+        allure.attach(f"{token.name.lower()} balance: {balance}", "balance", allure.attachment_type.TEXT)
+        return balance
 
     def change_network(self, network: str) -> None:
         """Select EVM network"""
@@ -132,8 +169,8 @@ class MetaMaskAccountsPage(BasePage):
 class MetaMaskWithdrawConfirmPage(BasePage):
     def page_loaded(self):
         self.page.wait_for_selector(
-            selector=f"//div[@class='confirm-page-container-header']/descendant::span[text()='{EVM_NETWORKS['devnet']}']",
-            timeout=10000,
+            selector=f"//div[@class='confirm-page-container-header']/descendant::span[text()='{PLATFORM_NETWORKS['devnet']}']",
+            timeout=30000,
         )
 
     def _close_withdraw_notice_box(self):
@@ -149,7 +186,7 @@ class MetaMaskWithdrawConfirmPage(BasePage):
         except TimeoutError:
             pass
 
-    def withdraw_confirm(self, timeout: float = 10000) -> None:
+    def withdraw_confirm(self, timeout: float = 60000) -> None:
         """Confirm token transfer via neonpass"""
         self._close_withdraw_notice_box()
         try:

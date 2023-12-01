@@ -1,40 +1,21 @@
+import logging
 import random
 import string
-import logging
-import time
 
-import web3
-from locust import tag, task, User, events
+from locust import User, events, tag, task
 from solana.keypair import Keypair
 
-from utils.web3client import NeonWeb3Client
-from utils.faucet import Faucet
-from utils.erc20wrapper import ERC20Wrapper
-
 from loadtesting.proxy.common.base import NeonProxyTasksSet
+from utils.erc20wrapper import ERC20Wrapper
+from utils.faucet import Faucet
+from utils.web3client import NeonChainWeb3Client
 
 LOG = logging.getLogger(__name__)
-
-ERC20SPL_CONTRACT_NAME = "erc20_for_spl_factory.sol"
-ERC20SPL_CONTRACT_VERSION = "0.8.10"
 
 
 @events.test_start.add_listener
 def prepare_one_contract_for_erc20(environment: "locust.env.Environment", **kwargs):
-    if (
-        environment.parsed_options.exclude_tags
-        and "erc20spl" in environment.parsed_options.exclude_tags
-    ):
-        return
-    if (
-        environment.parsed_options.tags
-        and "erc20spl" not in environment.parsed_options.tags
-    ):
-        return
-
-    neon_client = NeonWeb3Client(
-        environment.credentials["proxy_url"], environment.credentials["network_id"]
-    )
+    neon_client = NeonChainWeb3Client(environment.credentials["proxy_url"])
     faucet = Faucet(environment.credentials["faucet_url"], neon_client)
 
     eth_account = neon_client.create_account()
@@ -59,7 +40,7 @@ def prepare_one_contract_for_erc20(environment: "locust.env.Environment", **kwar
 
     environment.erc20_one = {
         "user": eth_account,
-        "contract": erc20_wrapper.get_wrapper_contract(),
+        "contract": erc20_wrapper,
     }
 
 
@@ -69,26 +50,29 @@ class ERC20SPLTasksSet(NeonProxyTasksSet):
 
     def on_start(self) -> None:
         super().on_start()
+        super().setup()
+        self.log = logging.getLogger("neon-consumer[%s]" % self.account.address[-8:])
         contract = self.user.environment.erc20_one["contract"]
-        self.web3_client.send_erc20(
-            self.user.environment.erc20_one["user"],
-            self.account,
-            1000,
-            contract.address,
-            abi=contract.abi,
-        )
+        contract.web3_client = self.web3_client
+        contract.transfer(self.user.environment.erc20_one["user"], self.account, 1000)
+
+    def get_account(self):
+        return random.choice(self.user.environment.shared.accounts)
 
     @task
     def task_send_erc20_spl(self):
         """Send ERC20 tokens"""
         contract = self.user.environment.erc20_one["contract"]
-        recipient = random.choice(self.user.environment.shared.accounts)
-        receipt = self.web3_client.send_erc20(
-            self.account, recipient, 1, contract.address, abi=contract.abi
+        recipient = self.get_account()
+        LOG.info(
+            f"Send erc20spl token from {self.account.address[:8]} to {recipient.address[:8]}"
         )
+        receipt = contract.transfer(self.account, recipient, 1)
+
         receipt = dict(receipt)
-        receipt["contract"] = {"address": contract.address}
-        return receipt
+        receipt["contract"] = {"address": contract.contract.address}
+
+        return receipt, self.web3_client.get_nonce(self.account)
 
 
 class ERC20User(User):

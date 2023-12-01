@@ -1,9 +1,12 @@
 name: "Basic tests"
-
+run-name: Basic tests / ${{ github.event.pull_request.title || github.event_name }}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 on:
   schedule:
     - cron: "0 23,2 * * 0,1,2,3,4"
-#    - cron: "0 0,4,8,12,16,20 * * *"
+    - cron: "0 4 * * 0,1,2,3,4"
   pull_request:
     types: [ opened, reopened, synchronize ]
   workflow_dispatch:
@@ -32,6 +35,7 @@ on:
         required: true
         description: "Number of parallel jobs"
         options:
+          - 2
           - 4
           - 8
           - 12
@@ -68,7 +72,7 @@ jobs:
           echo "NETWORK=night-stand" >> $GITHUB_ENV
       - name: Setup `devnet` by cron schedule
         id: setup_devnet
-        if: github.event.schedule=='0 0,4,8,12,16,20 * * *'
+        if: github.event.schedule=='0 4 * * 0,1,2,3,4'
         run: |
           echo "NETWORK=devnet" >> $GITHUB_ENV
       - name: Setup env
@@ -88,7 +92,7 @@ jobs:
 
           NETWORK=$( setVar "${{ github.event.inputs.network }}" "${{ env.NETWORK }}" )
           RUNNER=$( setVar "${{ github.event.inputs.runner }}" "${{ env.RUNNER }}" )
-          NUMPROCESSES=$( setVar "${{ github.event.inputs.numprocesses }}" "${{ env.NUMPROCESSES }}" )
+          NUMPROCESSES=$( setVar "${{ github.event.inputs.numprocesses }}" "2" )
 
           echo "Network: ${NETWORK}"
           echo "Runner: ${RUNNER}"
@@ -126,17 +130,18 @@ jobs:
       - name: Run docker container
         run: |
           docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
-          docker run -i -d -e CI -e GITHUB_RUN_ID -e GITHUB_WORKFLOW -e BANK_PRIVATE_KEY -e PROXY_URL -e SOLANA_URL --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
+          docker run -i -d -e CI -e GITHUB_RUN_ID -e GITHUB_WORKFLOW -e BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }} -e PROXY_URL -e SOLANA_URL --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
       - name: "Run basic tests"
+        timeout-minutes: 60
         id: basic
         run: |
           docker exec -i ${{ env.CONTAINER }} \
-            ./clickfile.py run basic -n ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}
+            python3 ./clickfile.py run basic -n ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}
       - name: "Notify on failure."
         if: failure()
         run: |
           docker exec -i ${{ env.CONTAINER }} \
-            ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
           -b ${{ env.BUILD_URL }} -n ${{ needs.prepare-env.outputs.network }}
       - name: "Generate allure report"
         if: always()

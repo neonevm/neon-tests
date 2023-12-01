@@ -5,7 +5,7 @@ from playwright.sync_api import Page
 
 class Button:
     def __init__(
-        self, page: Page, text: tp.Optional[str] = None, selector: tp.Optional[str] = None, timeout: int = 3000
+        self, page: Page, text: tp.Optional[str] = None, selector: tp.Optional[str] = None, timeout: int = 15000
     ):
         self.page = page
         self._timeout = timeout

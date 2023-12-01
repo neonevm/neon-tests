@@ -19,7 +19,7 @@ from locust import events
 from locust.runners import WorkerRunner
 
 from utils import operator
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 
 from . import env
 
@@ -47,23 +47,31 @@ def execute_before(*attrs) -> tp.Callable:
     return ext_runner
 
 
+@events.init_command_line_parser.add_listener
+def parse_argument_for_operator_balance(parser):
+    parser.add_argument(
+        "--operator-balance",
+        default=False,
+        action="store_true",
+        include_in_web_ui=False,
+        help="Get operator balances before and after test",
+    )
+
+
 @events.test_start.add_listener
 def operator_economy_pre_balance(environment, **kwargs):
+    if not environment.parsed_options.operator_balance:
+        return
     if isinstance(environment.runner, WorkerRunner):
         return
     LOG.info("Get operator balances")
     op = operator.Operator(
         environment.credentials["proxy_url"],
         environment.credentials["solana_url"],
-        environment.credentials["network_id"],
         environment.credentials["operator_neon_rewards_address"],
         environment.credentials["spl_neon_mint"],
         environment.credentials["operator_keys"],
-        web3_client=NeonWeb3Client(
-            environment.credentials["proxy_url"],
-            environment.credentials["network_id"],
-            session=requests.Session(),
-        ),
+        web3_client=NeonChainWeb3Client(environment.credentials["proxy_url"]),
     )
     environment.op = op
     environment.pre_balance = get_token_balance(op)
@@ -71,6 +79,8 @@ def operator_economy_pre_balance(environment, **kwargs):
 
 @events.test_stop.add_listener
 def operator_economy_balance(environment, **kwargs):
+    if not environment.parsed_options.operator_balance:
+        return
     if isinstance(environment.runner, WorkerRunner):
         return
     LOG.info("Get operator balances")

@@ -6,11 +6,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ERC721ForMetaplex:
-    def __init__(self, web3_client: web3client.NeonWeb3Client, faucet, account=None, contract="erc721_for_metaplex.sol",
+    def __init__(self, web3_client: web3client.NeonChainWeb3Client, faucet, account=None, contract="erc721_for_metaplex.sol",
                  contract_name="ERC721ForMetaplex"):
         self.web3_client = web3_client
         self.account = account or web3_client.create_account()
-        faucet.request_neon(self.account.address, 100)
+        faucet.request_neon(self.account.address, 300)
         self.contract = self.deploy(contract, contract_name)
 
     def make_tx_object(self, from_address, gasPrice=None, gas=None):

@@ -13,33 +13,26 @@ CLASS_ID = 0
 class TestAbstractStorageBonds(BaseMixin):
 
     @pytest.fixture(scope="class")
-    def sender(self, faucet, web3_client):
-        acc = web3_client.create_account()
-        faucet.request_neon(acc.address, 100)
+    def sender(self, faucet, web3_client, eth_bank_account):
+        acc = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
         return acc
 
     @pytest.fixture(scope="class")
-    def lender(self, faucet, web3_client):
-        acc = web3_client.create_account()
-        faucet.request_neon(acc.address, 100)
-        return acc
+    def lender(self, faucet, web3_client, eth_bank_account):
+        return web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
 
     @pytest.fixture(scope="class")
-    def secondary_buyer(self, faucet, web3_client):
-        acc = web3_client.create_account()
-        faucet.request_neon(acc.address, 100)
-        return acc
+    def secondary_buyer(self, faucet, web3_client, eth_bank_account):
+        return web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
 
     @pytest.fixture(scope="class")
-    def operator(self, faucet, web3_client):
-        acc = web3_client.create_account()
-        faucet.request_neon(acc.address, 100)
-        return acc
+    def operator(self, faucet, web3_client, eth_bank_account):
+        return web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
 
     @pytest.fixture(scope="class")
     def bond_contract(self, web3_client, sender):
         contract, _ = web3_client.deploy_and_get_contract(
-            "ERC3475", "0.8.10", sender)
+            "EIPs/ERC3475", "0.8.10", sender)
         return contract
 
     def issue(self, bond_contract, lender, sender, amount, class_id=CLASS_ID, nonce_id=NONCE_ID):

@@ -3,11 +3,13 @@ import logging
 import pathlib
 import shutil
 import sys
+import tarfile
 import time
 import uuid
 from dataclasses import dataclass
 
 import six
+from playwright.sync_api import BrowserContext, Page
 
 from ui.libs import exc
 
@@ -19,11 +21,30 @@ class Token:
     name: str
     address: str = None
 
+    def __str__(self):
+        return self.name
+
+
+@dataclass
+class Platform:
+    solana: str = "Solana"
+    neon: str = "Neon"
+
+
+@dataclass
+class FeeType:
+    neon: str = "NEON"
+    sol: str = "SOL"
+    none: str = "none"
 
 @dataclass
 class Tokens:
     neon = Token("NEON", "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g")
-    usdt = Token("USDT", "3vxj94fSd3jrhaGAwaEKGDPEwn5Yqs81Ay5j1BcdMqSZ")
+    wneon = Token("wNEON", "0x11adC2d986E334137b9ad0a0F290771F31e9517F")
+    sol = Token("SOL", "0xc7Fc9b46e479c5Cb42f6C458D1881e55E6B7986c")
+    wsol = Token("wSOL", "0xc7Fc9b46e479c5Cb42f6C458D1881e55E6B7986c")
+    usdt = Token("USDT", "0x6eEf939FC6e2B3F440dCbB72Ea81Cd63B5a519A5")
+    usdc = Token("USDC", "0x512E48836Cd42F3eB6f50CEd9ffD81E0a7F15103")
 
 
 BASE_USER_DATA_DIR = "user_data"
@@ -33,6 +54,19 @@ BASE_USER_DATA_DIR = "user_data"
 TMP_USER_DATA_DIR = f"/tmp/{BASE_USER_DATA_DIR}"
 """Temporary path to a MetaMask extensions User Data Directory, which stores browser session data like cookies and local storage.
 """
+
+
+def open_safe(context: BrowserContext, url: str, retry_count: int = 3) -> Page:
+    while retry_count > 0:
+        try:
+            page = context.new_page()
+            page.goto(url)
+            return page
+        except:
+            retry_count -= 1
+            if retry_count == 0:
+                raise TimeoutError
+            page.close()
 
 
 def insert_cookies_to_context(resp_cookies, context):
@@ -67,6 +101,13 @@ def clone_user_data(extensions_dir: pathlib.Path) -> pathlib.Path:
         extensions_dir,
         pathlib.Path(TMP_USER_DATA_DIR) / uuid.uuid4().hex,
     )
+
+
+def extract_tar_gz(source: pathlib.Path, dest: pathlib.Path) -> pathlib.Path:
+    """Extract source into destination"""
+    with tarfile.open(source) as file:
+        file.extractall(dest)
+    return dest
 
 
 def try_until(func, try_msg=None, error_msg=None, log=None, interval=1, timeout=360, times=None, raise_on_timeout=True):

@@ -25,7 +25,7 @@ def deploy_uniswap(environment: "locust.env.Environment", **kwargs):
         subprocess.call("npm install", shell=True)
     os.chdir(uniswap_path)
 
-    neon_client = NeonWeb3Client(environment.credentials["proxy_url"], environment.credentials["network_id"])
+    neon_client = NeonChainWeb3Client(environment.credentials["proxy_url"])
     faucet = Faucet(environment.credentials["faucet_url"])
 
     eth_account = neon_client.create_account()

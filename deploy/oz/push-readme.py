@@ -42,15 +42,15 @@ try:
     logger.debug(f"Open {README}")
     with open(pathlib.Path(__file__).parent / README) as readme_file:
         readme_data = readme_file.read()
-        url = "https://hub.docker.com/v2/repositories/neonlabsorg/full_test_suite/"
+        url = "https://hub.docker.com/v2/repositories/neonevm/full_test_suite/"
         logger.debug("Request (patch) to update full_description at " + url)
         response = requests.patch(url, json={"full_description": readme_data}, headers=headers)
         if response.status_code != 200:
-            logger.error("Failed to patch README at neonlabsorg/full_test_suite: {}".format(response.status_code))
+            logger.error("Failed to patch README at neonevm/full_test_suite: {}".format(response.status_code))
             exit(1)
 
-    logger.debug("Dockerhub readme at neonlabsorg/full_test_suite updated")
+    logger.debug("Dockerhub readme at neonevm/full_test_suite updated")
 
 except Exception as e:
-    logger.error("Failed to update README at neonlabsorg/full_test_suite. Exception: {}".format(e))
+    logger.error("Failed to update README at neonevm/full_test_suite. Exception: {}".format(e))
     exit(1)

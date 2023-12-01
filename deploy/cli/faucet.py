@@ -4,7 +4,7 @@ from utils import faucet
 
 def prepare_wallets_with_balance(settings, count=8, airdrop_amount=20000):
     print(f"Preparing {count} wallets with balances")
-    web3_client = web3client.NeonWeb3Client(settings["proxy_url"], settings["network_id"])
+    web3_client = web3client.NeonChainWeb3Client(settings["proxy_url"])
     faucet_client = faucet.Faucet(settings["faucet_url"], web3_client)
     private_keys = []
 

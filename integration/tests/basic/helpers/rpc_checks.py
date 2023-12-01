@@ -1,54 +1,101 @@
 import typing as tp
+from types import SimpleNamespace, NoneType
 
+from hexbytes import HexBytes
 from web3 import types
 
 from integration.tests.basic.helpers.assert_message import AssertMessage
 
 
 def is_hex(hex_data: str) -> bool:
+    if hex_data == "0x":
+        return True
     try:
         int(hex_data, 16)
         return True
     except (ValueError, TypeError):
         return False
 
-def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[types.TxReceipt],
-                        pending: bool = False):
+
+def hex_str_consists_not_only_of_zeros(hex_data: str) -> bool:
+    """Helps to verify that long response hex str data is not consists of just zeros"""
+    t = hex_data
+    if t.startswith("0x"):
+        t = hex_data.split("0x")[1]
+    for c in t:
+        if c != "0":
+            return True
+    return False
+
+
+def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[types.TxReceipt], pending: bool = False):
     assert "error" not in block
     assert "result" in block, AssertMessage.DOES_NOT_CONTAIN_RESULT
     result = block["result"]
-    expected_hex_fields = ["difficulty", "extraData", "gasLimit", "gasUsed", "hash", "logsBloom", "miner",
-                           "mixHash", "nonce", "number", "parentHash", "receiptsRoot", "sha3Uncles", "size",
-                           "stateRoot", "timestamp", "totalDifficulty", "transactionsRoot"]
+    expected_hex_fields = [
+        "difficulty",
+        "gasLimit",
+        "gasUsed",
+        "hash",
+        "logsBloom",
+        "miner",
+        "mixHash",
+        "nonce",
+        "number",
+        "parentHash",
+        "receiptsRoot",
+        "sha3Uncles",
+        "size",
+        "stateRoot",
+        "timestamp",
+        "transactionsRoot",
+    ]
     if pending:
         for i in ["hash", "nonce", "miner"]:
             expected_hex_fields.remove(i)
     for field in expected_hex_fields:
         assert is_hex(result[field]), f"Field {field} must be hex but '{result[field]}'"
     if tx_receipt is not None:
-        assert result["hash"] == tx_receipt.blockHash.hex(), \
-            f"Actual:{result['hash']}; Expected: {tx_receipt.blockHash.hex()}"
-        assert result["number"] == hex(tx_receipt.blockNumber), \
-            f"Actual:{result['number']}; Expected: {hex(tx_receipt.blockNumber)}"
-        assert int(result["gasUsed"], 16) >= int(hex(tx_receipt.gasUsed), 16), \
-            f"Actual:{result['gasUsed']} or more; Expected: {hex(tx_receipt.gasUsed)}"
+        assert (
+            result["hash"] == tx_receipt.blockHash.hex()
+        ), f"Actual:{result['hash']}; Expected: {tx_receipt.blockHash.hex()}"
+        assert result["number"] == hex(
+            tx_receipt.blockNumber
+        ), f"Actual:{result['number']}; Expected: {hex(tx_receipt.blockNumber)}"
+        assert int(result["gasUsed"], 16) >= int(
+            hex(tx_receipt.gasUsed), 16
+        ), f"Actual:{result['gasUsed']} or more; Expected: {hex(tx_receipt.gasUsed)}"
+        assert result["extraData"] == "0x"
+        assert result["totalDifficulty"] == "0x0"
     assert result["uncles"] == []
     transactions = result["transactions"]
     if full_trx:
         if tx_receipt is not None:
-            assert tx_receipt.transactionHash.hex() in [transaction["hash"] for transaction in
-                                                        transactions], "Created transaction should be in block"
+            assert tx_receipt.transactionHash.hex() in [
+                transaction["hash"] for transaction in transactions
+            ], "Created transaction should be in block"
         for transaction in transactions:
-            expected_hex_fields = ["hash", "nonce", "blockHash", "blockNumber", "transactionIndex", "from",
-                                   "value", "gas", "gasPrice", "v", "r", "s"]
+            expected_hex_fields = [
+                "hash",
+                "nonce",
+                "blockHash",
+                "blockNumber",
+                "transactionIndex",
+                "from",
+                "value",
+                "gas",
+                "gasPrice",
+                "v",
+                "r",
+                "s",
+            ]
             for field in expected_hex_fields:
                 assert is_hex(transaction[field]), f"field '{field}' is not correct. Actual : {transaction[field]}"
             if tx_receipt is not None:
                 if tx_receipt.transactionHash.hex() == transaction["hash"]:
-                    assert transaction["from"].upper() == tx_receipt['from'].upper()
-                    assert transaction["to"].upper() == tx_receipt['to'].upper()
-                    # FIXME: fix next assert if input field should have hex value
-                    assert transaction["input"] == '0x'
+                    assert transaction["from"].upper() == tx_receipt["from"].upper()
+                    assert transaction["to"].upper() == tx_receipt["to"].upper()
+                    assert transaction["input"] == "0x"
     else:
         for transaction in transactions:
             assert is_hex(transaction)
@@ -56,24 +103,85 @@ def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[typ
             assert tx_receipt.transactionHash.hex() in transactions, "Created transaction should be in block"
 
 
-def assert_log_field_in_neon_trx_receipt(responce, events_count):
-    logs = responce["result"]["logs"]
-    assert_neon_logs(logs)
+def assert_log_field_in_neon_trx_receipt(response, events_count):
     expected_event_types = ["ENTER CALL"]
     for i in range(events_count):
         expected_event_types.append("LOG")
     expected_event_types.append("EXIT STOP")
     expected_event_types.append("RETURN")
+    all_logs = []
 
-    event_types = [log["neonEventType"] for log in sorted(logs, key=lambda x: int(x["neonEventOrder"], 0))]
+    for trx in response["result"]["solanaTransactions"]:
+        expected_hex_fields = ["solanaBlockNumber", "solanaLamportSpent"]
+        assert_fields_are_hex(trx, expected_hex_fields)
+
+        assert trx["solanaTransactionIsSuccess"] == True
+        instructions = trx["solanaInstructions"]
+        assert instructions != []
+        for instruction in instructions:
+            expected_hex_fields = [
+                "solanaInstructionIndex",
+                "svmHeapSizeLimit",
+                "svmHeapSizeUsed",
+                "svmCyclesLimit",
+                "svmCyclesUsed",
+                "neonInstructionCode",
+                "neonAlanIncome",
+                "neonGasUsed",
+                "neonTotalGasUsed",
+            ]
+            assert_fields_are_hex(instruction, expected_hex_fields)
+            assert instruction["solanaProgram"] == "NeonEVM"
+            assert instruction["solanaInnerInstructionIndex"] is None
+            assert instruction["neonStepLimit"] is None
+            neon_logs = instruction["neonLogs"]
+            assert neon_logs != []
+            for log in neon_logs:
+                all_logs.append(log)
+    event_types = [log["neonEventType"] for log in sorted(all_logs, key=lambda x: x["neonEventOrder"])]
 
     assert event_types == expected_event_types, f"Actual: {event_types}; Expected: {expected_event_types}"
 
 
-def assert_neon_logs(logs):
-    expected_hex_fields = ["neonIxIdx", "neonEventLevel", "neonEventOrder", "transactionHash", "blockHash",
-                           "blockNumber", "transactionIndex"]
-
-    for item in logs:
+def assert_fields_are_hex(obj, expected_hex_fields):
+    if isinstance(obj, SimpleNamespace):
         for field in expected_hex_fields:
-            assert is_hex(item[field]), f"field {field} is not correct. Actual : {item[field]}"
+            assert hasattr(obj, field), f"no expected field {field} in the object"
+            assert is_hex(getattr(obj, field)), f"field {field} is not correct. Actual: {getattr(obj, field)}"
+        return
+
+    for field in expected_hex_fields:
+        assert field in obj, f"no expected field {field} in the object"
+        assert is_hex(obj[field]), f"field {field} is not correct. Actual: {obj[field]}"
+
+
+def assert_fields_are_specified_type(_type: type, obj, expected_type_fields):
+    for field in expected_type_fields:
+        assert field in obj, f"no expected field {field} in the object"
+        t = type(obj[field])
+        assert t is _type or NoneType, f"field {field} is not {_type.__name__}. Actual: {t}"
+
+
+def assert_equal_fields(result, comparable_object, comparable_fields, keys_mappings=None):
+    """
+    Assert that fields in the result object are equal to fields in comparable_object
+
+    :param result:
+    :param comparable_object:
+    :param comparable_fields: list of comparable fields
+    :param keys_mappings: map name of the field in the result object to the field in comparable_object
+    :return:
+    """
+    for field in comparable_fields:
+        l = result[field]
+        if keys_mappings and keys_mappings.get(field):
+            r = comparable_object[keys_mappings.get(field)]
+        else:
+            r = comparable_object[field]
+        if isinstance(r, str):
+            r = r.lower()
+        if isinstance(r, int):
+            r = hex(r)
+        if isinstance(r, HexBytes):
+            r = r.hex()
+        assert l == r, f"{field} from response {l} is not equal to {field} from receipt {r}"

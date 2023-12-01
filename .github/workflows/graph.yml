@@ -1,0 +1,28 @@
+name: "The Graph tests"
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-20.04
+    name: The Graph tests
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        run: |
+          python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n devnet
+      - name: Trigger the Graph tests
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.GHTOKEN }}
+          repository: ${{ vars.DOCKERHUB_ORG_NAME }}/graph-node
+          event-type: integration-tests
+          client-payload: '{"accounts": "${{ env.ACCOUNTS }}"}'

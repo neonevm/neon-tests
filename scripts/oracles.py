@@ -1,8 +1,8 @@
 import time
 
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 
-web3_client = NeonWeb3Client("https://devnet.neonevm.org/solana", 245022926)
+web3_client = NeonChainWeb3Client("https://devnet.neonevm.org/solana")
 
 account = web3_client._web3.eth.account.from_key(
     "0x3ca872d3ab8bf75ad97a0c066e05252e775e6f1422d14d819ed13233fe6593e7"

@@ -228,17 +228,20 @@ allure-report/
 allure-reports/
 allure-results/
 
-# chrome extensions
-ui/extensions/chrome/plugins/
-ui/extensions/chrome/user_data/
-.idea
+# chrome data & plugins
+chrome-data
 
-.terraform
-.terraform.lock.hcl
+# IDE
+.idea
+.vscode
 
 # tfenv Terraform versions
+.terraform
+.terraform.lock.hcl
 .terraform-version
-.vscode
 
 # downloaded files
 contracts/external/
+
+.DS_Store
+reports

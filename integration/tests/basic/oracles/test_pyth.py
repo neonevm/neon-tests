@@ -7,7 +7,7 @@ from integration.tests.base import BaseTests
 
 
 BTC_USD_ID = "0xf9c0172ba10dfa4d19088d94f5bf61d3b54d5bd7483a322a982e1373ee8ea31b"
-PYTH_DEVNET_URI = "https://xc-devnet.pyth.network"
+PYTH_DEVNET_URI = "https://xc-testnet.pyth.network"
 
 
 @allure.feature("Oracles")

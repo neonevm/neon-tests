@@ -17,7 +17,10 @@ class PhantomUnlockPage(BasePage):
 
     def unlock(self, password: str) -> "PhantomWalletsPage":
         components.Input(self.page, placeholder="Password").fill(password)
-        components.Button(self.page, selector="//button[text()='Unlock']").click()
+        components.Button(self.page, text="Unlock").click()
+
+    def connect(self):
+        components.Button(self.page, text="Connect").click()
 
 
 class PhantomWalletsPage(BasePage):
@@ -36,7 +39,7 @@ class PhantomWalletsPage(BasePage):
 
 class PhantomWithdrawConfirmPage(BasePage):
     def page_loaded(self):
-        self.page.wait_for_selector(selector="//p[text()='Approve Transaction']", timeout=10000)
+        self.page.wait_for_selector(selector="//p[text()='Approve Transaction']", timeout=60000)
 
     def withdraw_confirm(self) -> None:
         """Confirm tokens transfer"""

@@ -1,0 +1,84 @@
+name: "Compilers compatibility tests"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+on:
+  schedule:
+    - cron: "0 22 * * 2"
+  workflow_dispatch:
+    inputs:
+      network:
+        type: choice
+        default: devnet
+        required: true
+        description: "Stand name"
+        options:
+          - night-stand
+          - devnet
+          - private-devnet
+
+env:
+  BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+  SOLANA_URL: "${{ secrets.SOLANA_URL }}"
+  NUMPROCESSES: 2
+  IMAGE:  ${{ vars.DOCKERHUB_ORG_NAME }}/neon_tests
+  CONTAINER:  compilers-${{ github.run_id }}
+jobs:
+  dockerize:
+    if: ${{ github.ref_name != 'develop'}}
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Dockerize neon tests"
+        id: requirements
+        uses: ./.github/actions/dockerize-neon-tests
+        with:
+          image_tag: ${{ github.sha }}
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
+
+  tests:
+    name: "Compiler compatibility tests"
+    needs:
+      - dockerize
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
+    runs-on: ubuntu-20.04
+    env:
+      NETWORK: ${{ github.event.inputs.network || 'devnet'}}
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Define image tag"
+        id: image_tag
+        uses: ./.github/actions/define-image-tag
+      - name: Run docker container
+        run: |
+          docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
+          docker run -i -d -e CI -e GITHUB_RUN_ID -e GITHUB_WORKFLOW -e BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }} -e PROXY_URL -e SOLANA_URL --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
+      - name: "Run tests"
+        timeout-minutes: 20
+        run: |
+          docker exec -i ${{ env.CONTAINER }} \
+            python3 ./clickfile.py run compiler_compatibility -n ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}
+      - name: "Notify on failure"
+        if: failure()
+        run: |
+          docker exec -i ${{ env.CONTAINER }} \
+            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+          -b ${{ env.BUILD_URL }} -n ${{ env.NETWORK }}
+      - name: "Generate allure report"
+        if: always()
+        id: requirements
+        uses: ./.github/actions/generate-allure-report
+        with:
+          container: ${{ env.CONTAINER }}
+          network: ${{ env.NETWORK }}
+          aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          tests_name: compiler_compatibility
+      - name: Remove docker container
+        if: always()
+        run: docker rm -f ${{ env.CONTAINER }}

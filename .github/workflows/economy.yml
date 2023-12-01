@@ -27,7 +27,7 @@ env:
   NETWORK: night-stand
   RUNNER: neon-hosted
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-  IMAGE:  neonlabsorg/neon_tests
+  IMAGE:  ${{ vars.DOCKERHUB_ORG_NAME }}/neon_tests
   CONTAINER:  economy-${{ github.run_id }}
 jobs:
   dockerize:
@@ -106,11 +106,11 @@ jobs:
       - name: "Run economy tests"
         id: economy
         run: |
-          docker exec -i ${{ env.CONTAINER }} ./clickfile.py run economy -n ${{ env.NETWORK }}
+          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py run economy -n ${{ env.NETWORK }}
       - name: "Notify on failure."
         if: failure()
         run: |
-          docker exec -i ${{ env.CONTAINER }} ./clickfile.py send-notification \
+          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py send-notification \
             -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
             -b ${{ env.BUILD_URL }}
       - name: "Generate allure report"

@@ -12,7 +12,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-2"
+  region = "eu-central-1"
 }
 
 resource "aws_default_vpc" "default" {
@@ -20,7 +20,7 @@ resource "aws_default_vpc" "default" {
 }
 
 resource "aws_default_subnet" "default" {
-  availability_zone = "us-east-2c"
+  availability_zone = "eu-central-1a"
 }
 
 data "aws_key_pair" "dapps-stand" {

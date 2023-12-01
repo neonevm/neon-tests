@@ -2,42 +2,36 @@
 import functools
 import glob
 import json
+import yaml
 import os
 import pathlib
-import platform
 import re
 import shutil
 import subprocess
 import sys
 import typing as tp
-from collections import defaultdict
 from multiprocessing.dummy import Pool
 from urllib.parse import urlparse
 
+from deploy.cli.github_api_client import GithubClient
+from deploy.cli.network_manager import NetworkManager
+from deploy.cli import dapps as dapps_cli
 
 try:
     import click
 except ImportError:
     print("Please install click library: pip install click==8.0.3")
     sys.exit(1)
+import requests
+import tabulate
 
-try:
-    import requests
-    import tabulate
+from utils import web3client
+from utils import cloud
+from utils.operator import Operator
+from utils.web3client import NeonChainWeb3Client
+from utils.prices import get_sol_price
 
-    from utils import web3client
-    from utils import faucet
-    from utils import cloud
-    from utils.operator import Operator
-    from utils.web3client import NeonWeb3Client
-    from utils.helpers import get_sol_price
-
-    from deploy.cli import dapps as dapps_cli
-    from deploy.cli import faucet as faucet_cli
-    from deploy.infra.utils import docker as docker_utils
-    from deploy.infra.utils import env
-except ImportError as e:
-    print(f"Can't load {e}")
+from deploy.cli import faucet as faucet_cli
 
 
 CMD_ERROR_LOG = "click_cmd_err.log"
@@ -61,23 +55,20 @@ SRC_ALLURE_CATEGORIES = pathlib.Path("./allure/categories.json")
 
 DST_ALLURE_CATEGORIES = pathlib.Path("./allure-results/categories.json")
 
+DST_ALLURE_ENVIRONMENT = pathlib.Path("./allure-results/environment.properties")
+
 BASE_EXTENSIONS_TPL_DATA = "ui/extensions/data"
 
 EXTENSIONS_PATH = "ui/extensions/chrome/plugins"
 EXTENSIONS_USER_DATA_PATH = "ui/extensions/chrome"
 
-EXPANDED_ENVS = [
-    "PROXY_URL",
-    "NETWORK_ID",
-    "FAUCET_URL",
-    "SOLANA_URL",
-]
-
-NETWORK_NAME = os.environ.get("NETWORK_NAME", "full_test_suite")
 
 HOME_DIR = pathlib.Path(__file__).absolute().parent
 
 OZ_BALANCES = "./compatibility/results/oz_balance.json"
+NEON_EVM_GITHUB_URL = f"https://api.github.com/repos/neonevm/neon-evm"
+
+network_manager = NetworkManager()
 
 
 def green(s):
@@ -124,16 +115,6 @@ def catch_traceback(func: tp.Callable) -> tp.Callable:
     return wrap
 
 
-networks = {}
-with open("./envs.json", "r") as f:
-    networks = json.load(f)
-    if NETWORK_NAME not in networks.keys() and os.environ.get("DUMP_ENVS"):
-        environments = defaultdict(dict)
-        for var in EXPANDED_ENVS:
-            environments[NETWORK_NAME].update({var.lower(): os.environ.get(var, "")})
-        networks.update(environments)
-
-
 def check_profitability(func: tp.Callable) -> tp.Callable:
     """Calculate profitability of OZ cases"""
 
@@ -150,18 +131,15 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
             return dict(map(lambda i: (i[0], str(i[1])), d.items()))
 
         if os.environ.get("OZ_BALANCES_REPORT_FLAG") is not None:
-            network = networks[args[0]]
+            network = network_manager.networks[args[0]]
             op = Operator(
                 network["proxy_url"],
                 network["solana_url"],
-                network["network_id"],
                 network["operator_neon_rewards_address"],
                 network["spl_neon_mint"],
                 network["operator_keys"],
-                web3_client=NeonWeb3Client(
-                    network["proxy_url"],
-                    network["network_id"],
-                    session=requests.Session(),
+                web3_client=NeonChainWeb3Client(
+                    network["proxy_url"]
                 ),
             )
             pre = get_tokens_balances(op)
@@ -200,7 +178,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
     keys_env = [
         faucet_cli.prepare_wallets_with_balance(
-            networks[network], count=users, airdrop_amount=amount
+            network_manager.networks[network], count=users, airdrop_amount=amount
         )
         for i in range(jobs)
     ]
@@ -216,8 +194,10 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         keys = keys_env.pop(0)
         env = os.environ.copy()
         env["PRIVATE_KEYS"] = ",".join(keys)
-        env["NETWORK_ID"] = str(networks[network]["network_id"])
-        env["PROXY_URL"] = networks[network]["proxy_url"]
+        env["NETWORK_ID"] = str(
+            network_manager.get_network_param(network, "network_ids.neon")
+        )
+        env["PROXY_URL"] = network_manager.get_network_param(network, "proxy_url")
 
         out = subprocess.run(
             f"npx hardhat test {file_name}",
@@ -246,18 +226,15 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     pool.close()
     pool.join()
     # Add allure environment
-    settings = networks[network]
-    web3_client = web3client.NeonWeb3Client(
-        settings["proxy_url"], settings["network_id"]
-    )
+    settings = network_manager.networks[network]
+    web3_client = web3client.NeonChainWeb3Client(
+        settings["proxy_url"])
     opts = {
         "Proxy.Version": web3_client.get_proxy_version()["result"],
         "EVM.Version": web3_client.get_evm_version()["result"],
         "CLI.Version": web3_client.get_cli_version()["result"],
     }
-    with open("./allure-results/environment.properties", "w+") as f:
-        f.write("\n".join(map(lambda x: f"{x[0]}={x[1]}", opts.items())))
-        f.write("\n")
+    create_allure_environment_opts(opts)
     # Add epic name for allure result files
     openzeppelin_reports = pathlib.Path("./allure-results")
     res_file_list = [
@@ -340,16 +317,30 @@ def print_oz_balances():
     print(yellow(report))
 
 
+def create_allure_environment_opts(opts: dict):
+    with open(DST_ALLURE_ENVIRONMENT, "a+") as file:
+        file.write(
+            "\n".join(
+                map(
+                    lambda x: f"{x[0]}={x[1] if x[1] and len(x[1]) > 0 else 'empty value'}",
+                    opts.items(),
+                )
+            )
+        )
+        file.write("\n")
+
+
 def generate_allure_environment(network_name: str):
-    network = networks[network_name]
+    network = network_manager.networks[network_name]
     env = os.environ.copy()
-    env["NETWORK_ID"] = str(network["network_id"])
+
+    env["NETWORK_ID"] = str(network["network_ids"]["neon"])
     env["PROXY_URL"] = network["proxy_url"]
     return env
 
 
 def install_python_requirements():
-    command = "pip3 install --upgrade -r deploy/requirements/prod.txt  -r deploy/requirements/devel.txt -r deploy/requirements/ui.txt"
+    command = "pip3 install --upgrade -r deploy/requirements/click.txt -r deploy/requirements/prod.txt  -r deploy/requirements/devel.txt -r deploy/requirements/ui.txt"
     subprocess.check_call(command, shell=True)
 
 
@@ -365,26 +356,16 @@ def install_ui_requirements():
         except Exception:
             click.echo(
                 red(
-                    f"{10*'!'} Warning: Linux requires `xclip` to work. "
-                    f"Install with your package manager, e.g. `sudo apt install xclip` {10*'!'}"
+                    f"{10 * '!'} Warning: Linux requires `xclip` to work. "
+                    f"Install with your package manager, e.g. `sudo apt install xclip` {10 * '!'}"
                 ),
                 color=True,
             )
     # install ui test deps,
     # download the Playwright package and install browser binaries for Chromium, Firefox and WebKit.
-    click.echo(green("Install browser binaries for Chromium, Firefox and WebKit."))
-    subprocess.check_call("playwright install", shell=True)
-    click.echo(green("prepare ui tests extensions and extensions user_data"))
-    # prepare ui tests extensions and extensions user_data
-    base_path = pathlib.Path(__file__).absolute().parent
-    for item in (base_path / BASE_EXTENSIONS_TPL_DATA).iterdir():
-        if "extension" in item.name:
-            cmd = f"tar -xf {item.as_posix()} -C {base_path / EXTENSIONS_PATH}"
-        elif "user_data" in item.name:
-            cmd = (
-                f"tar -xf {item.as_posix()} -C {base_path / EXTENSIONS_USER_DATA_PATH}"
-            )
-        subprocess.check_call(cmd, shell=True)
+    click.echo(green("Install browser binaries for Chromium."))
+    subprocess.check_call("playwright install chromium", shell=True)
+
 
 def install_oz_requirements():
     cwd = pathlib.Path().absolute() / "compatibility/openzeppelin-contracts"
@@ -417,21 +398,70 @@ def requirements(dep):
         install_ui_requirements()
 
 
+def is_neon_evm_branch_exist(branch):
+    if branch:
+        neon_evm_branches_obj = requests.get(
+            f"{NEON_EVM_GITHUB_URL}/branches?per_page=100"
+        ).json()
+        neon_evm_branches = [item["name"] for item in neon_evm_branches_obj]
+
+        if branch in neon_evm_branches:
+            click.echo(f"The branch {branch} exist in the neon_evm repository")
+            return True
+    else:
+        return False
+
+
+def get_evm_pinned_version(branch):
+    click.echo(f"Get pinned version for proxy branch {branch}")
+    resp = requests.get(
+        f"https://api.github.com/repos/neonevm/proxy-model.py/contents/.github/workflows/pipeline.yml?ref={branch}"
+    )
+    if resp.status_code != 200:
+        click.echo(f"Can't get pipeline file for branch {branch}: {resp.text}")
+        raise click.ClickException(f"Can't get pipeline file for branch {branch}")
+    info = resp.json()
+    pipeline_file = yaml.safe_load(requests.get(info["download_url"]).text)
+    tag = pipeline_file["env"]["NEON_EVM_TAG"]
+    if tag == "latest":
+        return "develop"
+    return tag
+
+
 @cli.command(help="Download test contracts from neon-evm repo")
-def contracts():
+@click.option(
+    "--branch",
+    default="develop",
+    help="neon_evm branch name. "
+    "If branch doesn't exist, develop branch will be used",
+)
+def update_contracts(branch):
+    neon_evm_branch = get_evm_pinned_version(branch)
+    click.echo(f"Contracts would be downloaded from {neon_evm_branch} neon-evm branch")
     contract_path = pathlib.Path.cwd() / "contracts" / "external"
     pathlib.Path(contract_path).mkdir(parents=True, exist_ok=True)
 
+    click.echo(f"Check contract availability in neon-evm repo")
     response = requests.get(
-        "https://api.github.com/repos/neonlabsorg/neon-evm/contents/evm_loader/solidity?ref=develop"
-    ).json()
-    for item in response:
-        r = requests.get(
-            f"https://raw.githubusercontent.com/neonlabsorg/neon-evm/develop/evm_loader/solidity/{item['name']}"
+        f"{NEON_EVM_GITHUB_URL}/contents/solidity?ref={neon_evm_branch}"
+    )
+    if response.status_code != 200:
+        click.echo(f"Repository doesn't has solidity directory, check old structure")
+        response = requests.get(
+            f"{NEON_EVM_GITHUB_URL}/contents/evm_loader/solidity?ref={neon_evm_branch}"
         )
+        if response.status_code != 200:
+            raise click.ClickException(
+                f"Can't get contracts from neon-evm repo: {response.text}"
+            )
+
+    for item in response.json():
+        click.echo(f"Downloading {item['name']}")
+        r = requests.get(item["download_url"])
         if r.status_code == 200:
             with open(contract_path / item["name"], "wb") as f:
                 f.write(r.content)
+            click.echo(f" {item['name']} downloaded")
         else:
             raise click.ClickException(
                 f"The contract {item['name']} is not downloaded. Error: {r.text}"
@@ -455,7 +485,11 @@ def contracts():
     help="Which UI test run",
 )
 @click.argument(
-    "name", required=True, type=click.Choice(["economy", "basic", "oz", "ui"])
+    "name",
+    required=True,
+    type=click.Choice(
+        ["economy", "basic", "tracer", "services", "oz", "ui", "compiler_compatibility"]
+    ),
 )
 @catch_traceback
 def run(name, jobs, numprocesses, ui_item, amount, users, network):
@@ -469,7 +503,17 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
     elif name == "basic":
         command = "py.test integration/tests/basic"
         if numprocesses:
+            command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
+    elif name == "tracer":
+        command = "py.test integration/tests/tracer"
+    elif name == "services":
+        command = "py.test integration/tests/services"
+        if numprocesses:
             command = f"{command} --numprocesses {numprocesses}"
+    elif name == "compiler_compatibility":
+        command = "py.test integration/tests/compiler_compatibility"
+        if numprocesses:
+            command = f"{command} --numprocesses {numprocesses} --dist loadscope"
     elif name == "oz":
         run_openzeppelin_tests(
             network, jobs=int(jobs), amount=int(amount), users=int(users)
@@ -491,7 +535,8 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
 
     command += f" -s --network={network} --make-report"
     cmd = subprocess.run(command, shell=True)
-    shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
+    if name != "ui":
+        shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
 
     if cmd.returncode != 0:
         sys.exit(cmd.returncode)
@@ -515,18 +560,22 @@ def analyze_openzeppelin_results():
     if version.startswith("3") or version.startswith("2"):
         if version.startswith("3"):
             threshold = 1350
-        elif version.startswith("2"):
-            threshold = 2295
+        else:
+            threshold = 2293
         print(f"Threshold: {threshold}")
         if test_report["passing"] < threshold:
-            raise click.ClickException(f"OpenZeppelin {version} tests failed. \n"
-                                       f"Passed: {test_report['passing']}, expected: {threshold}")
+            raise click.ClickException(
+                f"OpenZeppelin {version} tests failed. \n"
+                f"Passed: {test_report['passing']}, expected: {threshold}"
+            )
         else:
             print("OpenZeppelin tests passed")
     else:
         if test_report["failing"] > 0 or test_report["passing"] == 0:
-            raise click.ClickException(f"OpenZeppelin {version} tests failed. \n"
-                                       f"Failed: {test_report['failing']}, passed: {test_report['passing']}")
+            raise click.ClickException(
+                f"OpenZeppelin {version} tests failed. \n"
+                f"Failed: {test_report['failing']}, passed: {test_report['passing']}"
+            )
         else:
             print("OpenZeppelin tests passed")
 
@@ -548,7 +597,6 @@ locust_host = click.option(
     help="In which stand run tests.",
     show_default=True,
 )
-
 
 locust_users = click.option(
     "-u",
@@ -752,6 +800,9 @@ def upload_allure_report(name: str, network: str, source: str = "./allure-report
     cloud.upload("/tmp/index.html", path)
     print(f"Allure report link: {report_url}")
 
+    with open("allure_report_info", "w") as f:
+        f.write(f"🔗Allure report: [link]({report_url})\n")
+
 
 @allure_cli.command("generate", help="Generate allure history")
 def generate_allure_report():
@@ -794,11 +845,10 @@ def send_notification(url, build_url, traceback, network):
     "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
 )
 def get_operator_balances(network: str):
-    net = networks[network]
+    net = network_manager.networks[network]
     operator = Operator(
         net["proxy_url"],
         net["solana_url"],
-        net["network_id"],
         net["operator_neon_rewards_address"],
         net["spl_neon_mint"],
         net["operator_keys"],
@@ -835,14 +885,29 @@ def download_logs():
 @infra.command(name="gen-accounts", help="Setup accounts with balance")
 @click.option("-c", "--count", default=2, help="How many users prepare")
 @click.option("-a", "--amount", default=10000, help="How many airdrop")
-def prepare_accounts(count, amount):
-    dapps_cli.prepare_accounts(count, amount)
+@click.option(
+    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
+)
+def prepare_accounts(count, amount, network):
+    dapps_cli.prepare_accounts(network, count, amount)
+
+
+@infra.command("print-network-param")
+@click.option(
+    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
+)
+@click.option(
+    "-p", "--param", type=str, help="any network param like proxy_url, network_id e.t.c"
+)
+def print_network_param(network, param):
+    print(network_manager.get_network_param(network, param))
 
 
 infra.add_command(deploy, "deploy")
 infra.add_command(destroy, "destroy")
 infra.add_command(download_logs, "download-logs")
 infra.add_command(prepare_accounts, "gen-accounts")
+infra.add_command(print_network_param, "print-network-param")
 
 
 @cli.group("dapps", help="Manage dapps")
@@ -852,8 +917,18 @@ def dapps():
 
 @dapps.command("report", help="Print dapps report (from .json files)")
 @click.option("-d", "--directory", default="reports", help="Directory with reports")
-def make_dapps_report(directory):
-    dapps_cli.print_report(directory)
+@click.option(
+    "--pr_url_for_report", default="", help="Url to send the report as comment for PR"
+)
+@click.option("--token", default="", help="github token")
+def make_dapps_report(directory, pr_url_for_report, token):
+    report_data = dapps_cli.prepare_report_data(directory)
+    dapps_cli.print_report(report_data)
+    if pr_url_for_report:
+        gh_client = GithubClient(token)
+        gh_client.delete_last_comment(pr_url_for_report)
+        format_data = dapps_cli.format_report_for_github_comment(report_data)
+        gh_client.add_comment_to_pr(pr_url_for_report, format_data)
 
 
 if __name__ == "__main__":

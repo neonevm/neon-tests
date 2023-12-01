@@ -8,7 +8,7 @@ import typing as tp
 import clickfile
 from deploy.infra.utils import env
 
-IMAGE_PREFIX = "neonlabsorg"
+IMAGE_PREFIX = "neonevm"
 
 
 class Dockerfile:

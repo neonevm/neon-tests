@@ -1,17 +1,19 @@
 import pytest
 
 import eth_account.signers.local
+
+from utils.consts import Unit
 from utils.faucet import Faucet
 from utils.operator import Operator
 from utils.solana_client import SolanaClient
-from utils.web3client import NeonWeb3Client
+from utils.web3client import NeonChainWeb3Client
 
 
 class BaseTests:
     acc: eth_account.signers.local.LocalAccount
     operator: Operator
     faucet: Faucet
-    web3_client: NeonWeb3Client
+    web3_client: NeonChainWeb3Client
     sol_client: SolanaClient
     sol_price: float
 
@@ -25,3 +27,32 @@ class BaseTests:
     @pytest.fixture(autouse=True)
     def prepare_account(self, prepare_account):
         self.acc = prepare_account
+
+    def create_tx_object(self, sender, recipient=None, amount=0, nonce=None, gas=None, gas_price=None, data=None,
+                             estimate_gas=True):
+        if gas_price is None:
+            gas_price = self.web3_client.gas_price()
+
+        if nonce is None:
+            nonce = self.web3_client.eth.get_transaction_count(sender)
+        transaction = {
+            "from": sender,
+            "chainId": self.web3_client.eth.chain_id,
+            "gasPrice": gas_price,
+            "nonce": nonce,
+        }
+        if gas is not None:
+            transaction["gas"] = gas
+
+        if amount is not None:
+            transaction["value"] = self.web3_client.to_wei(amount, Unit.ETHER)
+
+        if recipient is not None:
+            transaction["to"] = recipient
+
+        if data is not None:
+            transaction["data"] = data
+
+        if estimate_gas:
+            transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
+        return transaction

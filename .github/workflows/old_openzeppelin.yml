@@ -30,7 +30,7 @@ env:
   JOBS_NUMBER: "8"
   NETWORK: night-stand
   RUNNER: neon-hosted
-  IMAGE:  neonlabsorg/neon_tests
+  IMAGE:  ${{ vars.DOCKERHUB_ORG_NAME }}/neon_tests
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
 jobs:
@@ -86,14 +86,15 @@ jobs:
         run: |
           docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ env.IMAGE_TAG }} /bin/bash
       - name: Run OpenZeppelin tests
+        timeout-minutes: 120
         run: |
-          docker exec -i ${{ env.CONTAINER }} ./clickfile.py run oz \
+          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py run oz \
             --network ${{ needs.prepare-env.outputs.network }} \
             --jobs ${{ needs.prepare-env.outputs.jobs }} \
             --users 12
       - name: Print OpenZeppelin report
         run: |
-          docker exec -i ${{ env.CONTAINER }} ./clickfile.py ozreport
+          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py ozreport
       - name: "Generate allure report"
         id: requirements
         uses: ./.github/actions/generate-allure-report
@@ -102,15 +103,15 @@ jobs:
           network: ${{ env.NETWORK }}
           aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          tests_name: oz
+          tests_name: oz-v3_4
       - name: Analyze tests results
         run: |
-          docker exec -i ${{ env.CONTAINER }} ./clickfile.py analyze-openzeppelin-results
+          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py analyze-openzeppelin-results
       - name: "Notify on failure."
         if: failure()
         run: |
           docker exec -i ${{ env.CONTAINER }} \
-            ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
           -b ${{ env.BUILD_URL }} -n ${{ needs.prepare-env.outputs.network }}
       - name: Remove docker container
         if: always()
@@ -134,14 +135,15 @@ jobs:
         run: |
           docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ env.IMAGE_TAG }} /bin/bash
       - name: Run OpenZeppelin tests
+        timeout-minutes: 240
         run: |
-          docker exec -i ${{ env.CONTAINER }} ./clickfile.py run oz \
+          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py run oz \
             --network ${{ needs.prepare-env.outputs.network }} \
             --jobs ${{ needs.prepare-env.outputs.jobs }} \
             --users 13
       - name: Print OpenZeppelin report
         run: |
-          docker exec -i ${{ env.CONTAINER }} ./clickfile.py ozreport
+          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py ozreport
       - name: "Generate allure report"
         id: requirements
         uses: ./.github/actions/generate-allure-report
@@ -150,15 +152,15 @@ jobs:
           network: ${{ env.NETWORK }}
           aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          tests_name: oz
+          tests_name: oz-v2_5
       - name: Analyze tests results
         run: |
-          docker exec -i ${{ env.CONTAINER }} ./clickfile.py analyze-openzeppelin-results
+          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py analyze-openzeppelin-results
       - name: "Notify on failure."
         if: failure()
         run: |
           docker exec -i ${{ env.CONTAINER }} \
-            ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
           -b ${{ env.BUILD_URL }} -n ${{ needs.prepare-env.outputs.network }}
       - name: Remove docker container
         if: always()

@@ -1,12 +1,10 @@
 import pathlib
 
 import solcx
-from solana.keypair import Keypair
+from eth_account.signers.local import LocalAccount
 from solana.rpc.commitment import Confirmed
-import spl.token.client
 from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
-from spl.token.constants import TOKEN_PROGRAM_ID
 
 from . import web3client
 from .metaplex import create_metadata_instruction_data, create_metadata_instruction
@@ -16,17 +14,17 @@ INIT_TOKEN_AMOUNT = 1000000000000000
 
 class ERC20Wrapper:
     def __init__(
-        self,
-        web3_client: web3client.NeonWeb3Client,
-        faucet,
-        name,
-        symbol,
-        sol_client,
-        solana_account,
-        decimals=18,
-        evm_loader_id=None,
-        account=None,
-        mintable=True,
+            self,
+            web3_client: web3client.NeonChainWeb3Client,
+            faucet,
+            name,
+            symbol,
+            sol_client,
+            solana_account,
+            decimals=18,
+            evm_loader_id=None,
+            account=None,
+            mintable=True,
     ):
         self.solana_associated_token_acc = None
         self.token_mint = None
@@ -36,7 +34,7 @@ class ERC20Wrapper:
         self.account = account
         if self.account is None:
             self.account = web3_client.create_account()
-            faucet.request_neon(self.account.address, 100)
+            faucet.request_neon(self.account.address, 300)
         self.name = name
         self.symbol = symbol
         self.decimals = decimals
@@ -66,7 +64,8 @@ class ERC20Wrapper:
                 self.name, self.symbol, self.decimals, self.account.address
             ).build_transaction(tx_object)
         else:
-            self.token_mint = self.create_spl(self.solana_acc, self.decimals)
+            self.token_mint, self.solana_associated_token_acc = self.sol_client.create_spl(self.solana_acc,
+                                                                                           self.decimals)
             metadata = create_metadata_instruction_data(self.name, self.symbol)
             txn = Transaction()
             txn.add(
@@ -91,27 +90,8 @@ class ERC20Wrapper:
             return logs[0]["args"]["pair"]
         return instruction_receipt
 
-    def create_spl(self, owner: Keypair, decimals: int = 9):
-        token_mint = spl.token.client.Token.create_mint(
-            conn=self.sol_client,
-            payer=owner,
-            mint_authority=owner.public_key,
-            decimals=decimals,
-            program_id=TOKEN_PROGRAM_ID,
-        )
-        assoc_addr = token_mint.create_associated_token_account(owner.public_key)
-        self.solana_associated_token_acc = assoc_addr
-        token_mint.mint_to(
-            dest=assoc_addr,
-            mint_authority=owner,
-            amount=INIT_TOKEN_AMOUNT,
-            opts=TxOpts(skip_confirmation=False),
-        )
-
-        return token_mint
-
     def get_wrapper_contract(self):
-        contract_path = (pathlib.Path.cwd() / "contracts" / "erc20interface.sol").absolute()
+        contract_path = (pathlib.Path.cwd() / "contracts" / "EIPs" / "ERC20" / "IERC20ForSpl.sol").absolute()
 
         with open(contract_path, "r") as s:
             source = s.read()
@@ -161,6 +141,8 @@ class ERC20Wrapper:
 
     def transfer(self, signer, address_to, amount, gas_price=None, gas=None):
         tx = self.make_tx_object(signer.address, gas_price, gas)
+        if isinstance(address_to, LocalAccount):
+            address_to = address_to.address
         instruction_tx = self.contract.functions.transfer(address_to, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
@@ -182,3 +164,8 @@ class ERC20Wrapper:
         instruction_tx = self.contract.functions.approveSolana(spender, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
+
+    def get_balance(self, address):
+        if isinstance(address, LocalAccount):
+            address = address.address
+        return self.contract.functions.balanceOf(address).call()

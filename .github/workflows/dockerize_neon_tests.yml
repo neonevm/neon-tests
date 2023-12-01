@@ -53,3 +53,4 @@ jobs:
           docker_username: ${{ secrets.DOCKER_USERNAME }}
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
           oz_branch: ${{ steps.define-env.outputs.oz_branch }}
+          org_name: ${{ vars.DOCKERHUB_ORG_NAME }}

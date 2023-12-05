@@ -88,6 +88,7 @@ class TestTransactionsValidation(BaseMixin):
         assert ErrorMessage.TOO_BIG_TRANSACTION.value in response["error"]["message"]
         assert response["error"]["code"] == -32000
 
+    @pytest.mark.skip(reason="Test doesn't work with MINIMAL_GAS_PRICE in config. NDEV-2386")
     def test_send_transaction_with_small_gas_price(self, new_account):
         """Check that transaction can't be accepted if gas value is too small"""
         gas_price = self.web3_client.gas_price()

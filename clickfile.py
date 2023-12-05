@@ -123,7 +123,7 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
         def get_tokens_balances(operator: Operator) -> tp.Dict:
             """Return tokens balances"""
             return dict(
-                neon=operator.get_neon_balance(),
+                neon=operator.get_token_balance(),
                 sol=operator.get_solana_balance() / 1_000_000_000,
             )
 
@@ -425,6 +425,8 @@ def get_evm_pinned_version(branch):
     tag = pipeline_file["env"]["NEON_EVM_TAG"]
     if tag == "latest":
         return "develop"
+    if re.match(r"[vt]{1}\d{1,2}\.\d{1,2}.*", tag) is not None:
+        tag = re.sub(r"\.\d+$", ".x", tag)
     return tag
 
 
@@ -853,7 +855,7 @@ def get_operator_balances(network: str):
         net["spl_neon_mint"],
         net["operator_keys"],
     )
-    neon_balance = operator.get_neon_balance()
+    neon_balance = operator.get_token_balance()
     sol_balance = operator.get_solana_balance()
     print(
         f'Operator balances ({len(net["operator_keys"])}):\n'

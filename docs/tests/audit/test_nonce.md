@@ -16,3 +16,4 @@ Verify mempool work and how proxy handles it
 | TestNonce::test_send_the_same_transactions_if_accepted              | Send one transaction twice                                                        |         |
 | TestNonce::test_send_the_same_transactions_if_not_accepted          | Send one transaction twice but first not accepted                                 |         |
 | TestNonce::test_send_transaction_with_old_nonce                     | Send transaction with old nonce                                                   |         |
+| TestNonce::test_nonce_with_several_chains                           | Check that nonces on different chains are independent                             |         |

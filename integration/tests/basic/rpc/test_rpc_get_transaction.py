@@ -237,8 +237,8 @@ class TestRpcGetTransaction(BaseMixin):
             (["0x874E87B5ccb467f07Ca42cF82e11aD44c7be159F"], Error32000.CODE, Error32000.MISSING_ARGUMENT),
             ([None, 10], Error32602.CODE, Error32602.BAD_ADDRESS),
             (["123345", 10], Error32602.CODE, Error32602.BAD_ADDRESS),
-            (["0x874E87B5ccb467f07Ca42cF82e11aD44c7be159F", None], Error32000.CODE,
-             Error32000.OBJECT_CANT_BE_INTERPRETED_AS_INT)
+            (["0x874E87B5ccb467f07Ca42cF82e11aD44c7be159F", None], Error32602.CODE,
+             Error32602.INVALID_NONCE)
         ],
     )
     def test_neon_get_transaction_by_sender_nonce_negative(self, params, error_code, error_message):

@@ -178,10 +178,8 @@ def assert_equal_fields(result, comparable_object, comparable_fields, keys_mappi
             r = comparable_object[keys_mappings.get(field)]
         else:
             r = comparable_object[field]
-        if isinstance(r, str):
-            r = r.lower()
         if isinstance(r, int):
             r = hex(r)
         if isinstance(r, HexBytes):
             r = r.hex()
-        assert l == r, f"{field} from response {l} is not equal to {field} from receipt {r}"
+        assert l == r, f"The field '{field}' {l} from response  is not equal to {field} from receipt {r}"

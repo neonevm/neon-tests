@@ -35,3 +35,26 @@ contract CommonCaller {
          return myCommon.getNumber();
     }
 }
+
+contract BunchActions {
+
+    function setNumber(address[] memory addresses, uint256[] memory _numbers) public {
+        for (uint256 i = 0; i < addresses.length; ++i) {
+             Common(addresses[i]).setNumber(_numbers[i]);
+        }
+    }
+}
+
+
+contract MappingActions {
+    mapping(uint256 => string) public stringMapping;
+
+    // Function to replace n values in the mapping
+    function replaceValues(uint256 n) external {
+
+        for (uint256 i = 0; i < n; i++) {
+            stringMapping[i] = "UpdatedString";
+        }
+
+    }
+}

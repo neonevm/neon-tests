@@ -33,29 +33,47 @@
                             "type": "integer"
                         },
                         "memory": {
-                            "type": "array",
+                            "type": [
+                                "array",
+                                "null"
+                            ],
                             "items": {}
                         },
                         "memSize": {
                             "type": "integer"
                         },
                         "returnData": {
-                            "type": "array",
+                            "type": [
+                                "string",
+                                "null"
+                            ],
                             "items": {}
                         },
                         "stack": {
-                            "type": "array",
+                            "type": [
+                                "array",
+                                "null"
+                            ],
                             "items": {}
                         },
                         "storage": {
-                            "type": "object",
+                            "type": [
+                                "object",
+                                "null"
+                            ],
                             "properties": {}
                         },
                         "refund": {
-                            "type": "integer"
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
                         },
                         "error": {
-                            "type": "string"
+                            "type": [
+                                "string",
+                                "null"
+                            ]
                         }
                     },
                     "required": [

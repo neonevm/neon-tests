@@ -507,7 +507,7 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
         if numprocesses:
             command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
     elif name == "tracer":
-        command = "py.test integration/tests/tracer"
+        command = "py.test -n 50 integration/tests/tracer"
     elif name == "services":
         command = "py.test integration/tests/services"
         if numprocesses:

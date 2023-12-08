@@ -1,10 +1,12 @@
 import typing as tp
-from types import SimpleNamespace, NoneType
+from types import SimpleNamespace
 
 from hexbytes import HexBytes
 from web3 import types
 
 from integration.tests.basic.helpers.assert_message import AssertMessage
+
+NoneType = type(None)
 
 
 def is_hex(hex_data: str) -> bool:

@@ -8,6 +8,8 @@ from solana.keypair import Keypair
 from solana.publickey import PublicKey
 from solana.rpc.commitment import Commitment, Finalized
 from solana.rpc.types import TxOpts
+from solders.rpc.responses import GetTransactionResp
+from solders.signature import Signature
 from solana.system_program import TransferParams, transfer
 from solana.transaction import Transaction
 from solders.rpc.errors import InternalErrorMessage
@@ -160,7 +162,6 @@ class SolanaClient(solana.rpc.api.Client):
         evm_loader_id,
         amount,
     ):
-
         spl_neon_token = SplToken(self, neon_mint, TOKEN_PROGRAM_ID, payer=operator_keypair)
         associated_token_address = spl_neon_token.create_associated_token_account(solana_account.public_key)
 
@@ -184,3 +185,13 @@ class SolanaClient(solana.rpc.api.Client):
             chain_id,
         )
         self.send_tx_and_check_status_ok(tx, solana_account)
+
+    def wait_transaction(self, tx):
+        try:
+            wait_condition(
+                lambda: self.get_transaction(Signature.from_string(tx), max_supported_transaction_version=0)
+                != GetTransactionResp(None)
+            )
+        except TimeoutError:
+            return None
+        return self.get_transaction(Signature.from_string(tx), max_supported_transaction_version=0)

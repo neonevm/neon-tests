@@ -23,17 +23,10 @@ class Unit(Enum):
 
 
 class InputTestConstants(Enum):
-    FAUCET_1ST_REQUEST_AMOUNT = 2_000
-    FAUCET_2ND_REQUEST_AMOUNT = 3
+    NEW_USER_REQUEST_AMOUNT = 1_000
     DEFAULT_TRANSFER_AMOUNT = 0.1
     SAMPLE_AMOUNT = 0.5
     ROUND_DIGITS = 3
-
-    def get_transfer_amount(self) -> float:
-        return self.DEFAULT_TRANSFER_AMOUNT.value
-
-    def get_default_initial_amount(self) -> int:
-        return self.FAUCET_1ST_REQUEST_AMOUNT.value
 
 
 wSOL = {

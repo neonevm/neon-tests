@@ -83,8 +83,10 @@ class BaseMixin(BaseTests):
         """Creates a new account"""
         return self.web3_client.create_account()
 
-    def create_account_with_balance(self, amount: int = InputTestConstants.FAUCET_1ST_REQUEST_AMOUNT.value,
-                                    ):
+    def create_account_with_balance(
+        self,
+        amount: int = InputTestConstants.NEW_USER_REQUEST_AMOUNT.value,
+    ):
         return self.web3_client.create_account_with_balance(self.faucet, amount, self.bank_account)
 
     def get_balance_from_wei(self, address: str) -> float:
@@ -100,24 +102,24 @@ class BaseMixin(BaseTests):
         return address
 
     def send_neon(
-            self,
-            sender_account: eth_account.signers.local.LocalAccount,
-            recipient_account: eth_account.signers.local.LocalAccount,
-            amount: float = 0.0,
+        self,
+        sender_account: eth_account.signers.local.LocalAccount,
+        recipient_account: eth_account.signers.local.LocalAccount,
+        amount: float = 0.0,
     ) -> tp.Union[web3.types.TxReceipt, None]:
         """Processes transaction"""
         with allure.step(f"Sending {amount} from {sender_account.address} to {recipient_account.address}"):
             return self.web3_client.send_neon(sender_account, recipient_account, amount)
 
     def send_neon_with_failure(
-            self,
-            sender_account: eth_account.signers.local.LocalAccount,
-            recipient_account: tp.Union[eth_account.signers.local.LocalAccount, AccountData],
-            amount: tp.Any,
-            gas: tp.Optional[int] = 0,
-            gas_price: tp.Optional[int] = None,
-            error_message: tp.Any = None,
-            exception: tp.Any = None,
+        self,
+        sender_account: eth_account.signers.local.LocalAccount,
+        recipient_account: tp.Union[eth_account.signers.local.LocalAccount, AccountData],
+        amount: tp.Any,
+        gas: tp.Optional[int] = 0,
+        gas_price: tp.Optional[int] = None,
+        error_message: tp.Any = None,
+        exception: tp.Any = None,
     ) -> tp.Union[web3.types.TxReceipt, None]:
         """Processes transaction, expects a failure"""
         exception = exception or Exception
@@ -131,9 +133,9 @@ class BaseMixin(BaseTests):
         self.check_balance(expected_amount, balance, rnd_dig=rnd_dig)
 
     def assert_balance_less(
-            self,
-            address: str,
-            calculated_balance: float,
+        self,
+        address: str,
+        calculated_balance: float,
     ):
         """Compares balance of an account, balance must be less than init balance"""
         balance = self.get_balance_from_wei(address)
@@ -143,16 +145,7 @@ class BaseMixin(BaseTests):
 
     @allure.step("calculating gas")
     def calculate_trx_gas(self, tx_receipt: web3.types.TxReceipt) -> float:
-        gas_used_in_tx = tx_receipt.gasUsed * self.web3_client.from_wei(
-            self.web3_client.gas_price(), Unit.ETHER
-        )
-        return float(round(gas_used_in_tx, InputTestConstants.ROUND_DIGITS.value))
-
-    @allure.step("calculating gas")
-    def calculate_trx_gas(self, tx_receipt: web3.types.TxReceipt) -> float:
-        gas_used_in_tx = tx_receipt.gasUsed * self.web3_client.from_wei(
-            self.web3_client.gas_price(), Unit.ETHER
-        )
+        gas_used_in_tx = tx_receipt.gasUsed * self.web3_client.from_wei(self.web3_client.gas_price(), Unit.ETHER)
         return float(round(gas_used_in_tx, InputTestConstants.ROUND_DIGITS.value))
 
     @staticmethod
@@ -161,7 +154,11 @@ class BaseMixin(BaseTests):
         return not hasattr(data, "error")
 
     @staticmethod
-    def check_balance(expected: float, actual: float, rnd_dig: int = InputTestConstants.ROUND_DIGITS.value):
+    def check_balance(
+        expected: float,
+        actual: float,
+        rnd_dig: int = InputTestConstants.ROUND_DIGITS.value,
+    ):
         """Compares the balance with expectation"""
         expected_dec = round(expected, rnd_dig)
         actual_dec = round(actual, rnd_dig)
@@ -172,7 +169,7 @@ class BaseMixin(BaseTests):
         started = time.time()
         while (time.time() - started) < timeout:
             receipt = self.proxy_api.send_rpc(method="eth_getTransactionReceipt", params=[transaction])
-            if receipt['result'] is not None:
+            if receipt["result"] is not None:
                 return receipt
             time.sleep(1)
         raise TimeoutError(f"Transaction is not accepted for {timeout} seconds")
@@ -188,26 +185,48 @@ class BaseMixin(BaseTests):
         """Can be used with build_transaction method"""
         if sender is None:
             sender = self.sender_account.address
-        return super().create_tx_object(sender, recipient=None, amount=amount, estimate_gas=estimate_gas,
-                                        web3_client=web3_client)
+        return super().create_tx_object(
+            sender,
+            recipient=None,
+            amount=amount,
+            estimate_gas=estimate_gas,
+            web3_client=web3_client,
+        )
 
-    def create_tx_object(self, sender=None, recipient=None, amount=2, nonce=None, gas=None, gas_price=None, data=None,
-                         estimate_gas=True, web3_client=None):
+    def create_tx_object(
+        self,
+        sender=None,
+        recipient=None,
+        amount=2,
+        nonce=None,
+        gas=None,
+        gas_price=None,
+        data=None,
+        estimate_gas=True,
+        web3_client=None,
+    ):
         if sender is None:
             sender = self.sender_account.address
         if recipient is None:
             recipient = self.recipient_account.address
-        return super().create_tx_object(sender, recipient, amount, nonce, gas, gas_price,
-                                        data, estimate_gas, web3_client)
+        return super().create_tx_object(
+            sender,
+            recipient,
+            amount,
+            nonce,
+            gas,
+            gas_price,
+            data,
+            estimate_gas,
+            web3_client,
+        )
 
     def create_contract_call_tx_object(self, sender=None, amount=None):
         if sender is None:
             sender = self.sender_account
         tx = {
             "from": sender.address,
-            "nonce": self.web3_client.eth.get_transaction_count(
-                sender.address
-            ),
+            "nonce": self.web3_client.eth.get_transaction_count(sender.address),
             "gasPrice": self.web3_client.gas_price(),
         }
         if amount is not None:
@@ -217,9 +236,9 @@ class BaseMixin(BaseTests):
     def get_solana_resp_by_solana_tx(self, tx):
         try:
             wait_condition(
-                lambda: self.sol_client.get_transaction(
-                    Signature.from_string(tx),
-                    max_supported_transaction_version=0) != GetTransactionResp(None))
+                lambda: self.sol_client.get_transaction(Signature.from_string(tx), max_supported_transaction_version=0)
+                != GetTransactionResp(None)
+            )
         except TimeoutError:
             return None
         return self.sol_client.get_transaction(Signature.from_string(tx), max_supported_transaction_version=0)
@@ -227,7 +246,7 @@ class BaseMixin(BaseTests):
     def get_solana_resps_by_neon_resp(self, resp):
         solana_resp = []
         solana_trx = self.web3_client.get_solana_trx_by_neon(resp["transactionHash"].hex())
-        for tx in solana_trx['result']:
+        for tx in solana_trx["result"]:
             tx_sol = self.get_solana_resp_by_solana_tx(tx)
             solana_resp.append(tx_sol)
         return solana_resp

@@ -1,0 +1,38 @@
+name: "Destroy stand"
+description: "Destroy stand created by terraform"
+inputs:
+  ci_stands_key_hcloud:
+    description: 'Private key for hcloud'
+    required: true
+  devnet_solana_url:
+    description: 'Solana url for devnet'
+    required: true
+runs:
+  using: composite
+  steps:
+      - name: Install python requirements
+        if: always()
+        id: requirements
+        uses: ./.github/actions/python-requirements
+      - name: Prepare server for destroy terraform stand
+        if: always()
+        shell: bash
+        run: |
+          ssh_key=/tmp/ci-stands
+          echo "${{ inputs.ci_stands_key_hcloud  }}" >> ${ssh_key} && chmod 400 ${ssh_key}
+      - name: Download docker logs
+        shell: bash
+        run: python3 ./clickfile.py infra download-logs
+      - name: Destroy stand with terraform
+        shell: bash
+        id: destroy
+        env:
+          TF_VAR_ci_pp_solana_url: ${{inputs.devnet_solana_url}}
+        if: always()
+        run: |
+          python3 ./clickfile.py infra destroy
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: AWS docker logs
+          path: ./logs/*

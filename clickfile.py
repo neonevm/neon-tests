@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import typing as tp
+from pathlib import Path
 from multiprocessing.dummy import Pool
 from urllib.parse import urlparse
 
@@ -131,7 +132,7 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
             return dict(map(lambda i: (i[0], str(i[1])), d.items()))
 
         if os.environ.get("OZ_BALANCES_REPORT_FLAG") is not None:
-            network = network_manager.networks[args[0]]
+            network = network_manager.get_network_object(args[0])
             op = Operator(
                 network["proxy_url"],
                 network["solana_url"],
@@ -177,17 +178,12 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         )
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
     keys_env = [
-        faucet_cli.prepare_wallets_with_balance(
-            network_manager.networks[network], count=users, airdrop_amount=amount
-        )
+        dapps_cli.prepare_accounts(network, users, amount)
         for i in range(jobs)
     ]
 
-    tests = (
-        subprocess.check_output("find \"test\" -name '*.test.js'", shell=True, cwd=cwd)
-        .decode()
-        .splitlines()
-    )
+    tests = list(Path(f"{cwd}/test").rglob('*.test.js'))
+    tests = [str(test) for test in tests if 'test' in test.read_text()]
 
     def run_oz_file(file_name):
         print(f"Run {file_name}")

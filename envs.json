@@ -210,7 +210,7 @@
       "5dyQQATyk4yga4f4m8BCrUF1jdfGQ1mShV4ezFLxyCqW"
     ]
   },
-  "aws": {
+  "terraform": {
     "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
     "proxy_url": "http://<proxy_ip>:9090/solana",
     "network_ids": {

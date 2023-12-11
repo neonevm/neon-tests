@@ -1,0 +1,120 @@
+name: "Prepare stand"
+description: "Prepare environments for running tests and create terraform stand if it needed"
+outputs:
+  solana_url:
+    description: "solana url"
+    value: ${{ steps.share.outputs.solana_url }}
+  proxy_url:
+    description: "proxy url"
+    value: ${{ steps.share.outputs.proxy_url }}
+  faucet_url:
+    description: "faucet url"
+    value: ${{ steps.share.outputs.faucet_url }}
+  network_id:
+    description: "network id"
+    value: ${{ steps.share.outputs.network_id }}
+  proxy_ip:
+    description: "proxy ip"
+    value: ${{ steps.share.outputs.proxy_ip }}
+  solana_ip:
+    description: "solana ip"
+    value: ${{ steps.share.outputs.solana_ip }}
+inputs:
+  network:
+    description: 'Stand name'
+    required: true
+  ci_stands_key_hcloud:
+    description: 'Private key for hcloud'
+    required: false
+  devnet_solana_url:
+    description: 'Solana url for devnet'
+    required: false
+  tfstate_bucket:
+    description: 'Terraform state bucket'
+    required: false
+  tfstate_key_prefix:
+    description: 'Terraform state key prefix'
+    required: false
+  tfstate_region:
+    description: 'Terraform state region'
+    required: false
+  proxy_url:
+    description: 'Proxy url if network is custom'
+    required: false
+  faucet_url:
+    description: 'Faucet url if network is custom'
+    required: false
+  solana_url:
+    description: 'Solana url if network is custom'
+    required: false
+  network_id:
+    description: 'Network id if network is custom'
+    required: false
+runs:
+  using: composite
+
+  steps:
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+      - name: Deploy stand with terraform
+        id: deploy
+        env:
+          TF_VAR_ci_pp_solana_url: ${{inputs.devnet_solana_url}}
+        shell: bash
+        if: inputs.network == 'terraform'
+        run: |
+          ssh_key='/tmp/ci-stands'
+          echo "${{ inputs.ci_stands_key_hcloud  }}" >> ${ssh_key} && chmod 400 ${ssh_key}
+          python3 ./clickfile.py infra deploy
+      - uses: actions/upload-artifact@v3
+        if: inputs.network == 'terraform'
+        with:
+          name: tf-state
+          path: deploy/hetzner/
+
+      - name: Set outputs
+        id: share
+        env:
+          SOLANA_IP: ${{ env.SOLANA_IP }}
+          PROXY_IP: ${{ env.PROXY_IP }}
+          TFSTATE_BUCKET: ${{ inputs.tfstate_bucket }}
+          TFSTATE_KEY_PREFIX: ${{ inputs.tfstate_key_prefix }}
+          TFSTATE_REGION: ${{ inputs.tfstate_region }}
+        shell: bash
+        run: |
+          if [[ "${{inputs.network}}" == "custom" ]]; then
+            proxy_url=${{ inputs.proxy_url }}
+            faucet_url=${{ inputs.faucet_url }}
+            solana_url=${{ inputs.solana_url }}
+            network_id=${{ inputs.network_id }}
+          else
+            proxy_url=`python ./clickfile.py infra print-network-param -n '${{inputs.network}}' -p 'proxy_url'`
+            solana_url=`python ./clickfile.py infra print-network-param -n '${{inputs.network}}' -p 'solana_url'`
+            faucet_url=`python ./clickfile.py infra print-network-param -n '${{inputs.network}}' -p 'faucet_url'`
+            network_id=`python ./clickfile.py infra print-network-param -n '${{inputs.network}}' -p 'network_ids.neon'`
+          fi;
+          
+          if [[ "${{ inputs.network }}" == "devnet" ]]; then
+            solana_url="${{ inputs.devnet_solana_url }}"
+          fi;
+          echo "proxy_url=$proxy_url"
+          echo "solana_url=$solana_url"
+          echo "faucet_url=$faucet_url"
+          echo "network_id=$network_id"
+          echo "solana_ip=${{ env.SOLANA_IP }}"
+          echo "proxy_ip=${{ env.PROXY_IP }}"
+          echo "proxy_url=$proxy_url" >> $GITHUB_OUTPUT
+          echo "solana_url=$solana_url" >> $GITHUB_OUTPUT
+          echo "faucet_url=$faucet_url" >> $GITHUB_OUTPUT
+          echo "network_id=$network_id" >> $GITHUB_OUTPUT
+          echo "proxy_ip=${{ env.PROXY_IP }}" >> $GITHUB_OUTPUT
+          echo "solana_ip=${{ env.SOLANA_IP }}" >> $GITHUB_OUTPUT
+
+      - name: Wait until proxy is ready
+        shell: bash
+        run: |
+            while [[ "$(curl -s -X POST -o /dev/null -w ''%{http_code}'' ${{ steps.share.outputs.proxy_url }})" != "200" ]];
+              do echo  "Proxy is not ready yet. Waiting 5 seconds...";
+              sleep 5;
+            done

@@ -37,3 +37,11 @@ class NetworkManager():
             if os.environ.get("PROXY_IP"):
                 value = value.replace("<proxy_ip>", os.environ.get("PROXY_IP"))
         return value
+
+    def get_network_object(self, network_name):
+        network = self.get_network_param(network_name)
+        if network_name == "terraform":
+            network["proxy_url"] = self.get_network_param(network_name, "proxy_url")
+            network["solana_url"] = self.get_network_param(network_name, "solana_url")
+            network["faucet_url"] = self.get_network_param(network_name, "faucet_url")
+        return network

@@ -1,4 +1,4 @@
-from sha3 import keccak_256
+from Crypto.Hash import keccak
 import json
 from web3.auto import w3
 from eth_keys import keys
@@ -150,7 +150,7 @@ class Trx:
             self.value,
             self.callData,
             chain_id or self.chain_id(), None, None))
-        return keccak_256(trx).digest()
+        return keccak.new(digest_bits=256).update(trx).digest()
 
     def sender(self):
         msg_hash = self.hash()

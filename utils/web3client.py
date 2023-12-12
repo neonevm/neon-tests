@@ -260,7 +260,9 @@ class Web3Client:
     ):
         if not isinstance(address, str):
             address = address.address
+        print("Get balance for ", address)
         balance = self._web3.eth.get_balance(address, "pending")
+        print("End balance ", balance)
         if unit != Unit.WEI:
             balance = self._web3.from_wei(balance, unit.value)
         return balance

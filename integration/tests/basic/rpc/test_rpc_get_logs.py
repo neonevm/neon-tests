@@ -6,7 +6,7 @@ import allure
 import pytest
 from web3.types import TxParams
 
-from integration.tests.basic.helpers.basic import BaseMixin, Tag
+from integration.tests.basic.helpers.basic import Tag
 from integration.tests.basic.helpers.errors import Error32602, Error32600
 from integration.tests.basic.helpers.rpc_checks import (
     assert_fields_are_hex,
@@ -14,6 +14,8 @@ from integration.tests.basic.helpers.rpc_checks import (
     assert_equal_fields,
 )
 from integration.tests.helpers.basic import cryptohex
+from utils.accounts import EthAccounts
+from utils.web3client import NeonChainWeb3Client
 
 
 class Method(Enum):
@@ -23,7 +25,10 @@ class Method(Enum):
 
 @allure.feature("JSON-RPC validation")
 @allure.story("Verify getLogs method")
-class TestRpcGetLogs(BaseMixin):
+class TestRpcGetLogs:
+    accounts: EthAccounts
+    web3_client: NeonChainWeb3Client
+
     ETH_HEX_FIELDS = [
         "transactionHash",
         "blockHash",

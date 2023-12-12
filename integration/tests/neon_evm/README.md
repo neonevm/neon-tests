@@ -16,7 +16,7 @@ py.test ./ -s -v
 Also we can configure some variables from environment variables:
 
 1. SOLANA_URL - by default http://solana:8899
-2. NEON_CORE_API_URL - by default http://neon_api:8085
+2. NEON_CORE_API_URL - by default http://neon_api:8085/api
 3. EVM_LOADER - set evm loader address
 4. NEON_TOKEN_MINT - ethereum token mint address
 

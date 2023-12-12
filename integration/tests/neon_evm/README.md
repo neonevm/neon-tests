@@ -13,15 +13,12 @@ pip install -r requirements.txt
 py.test ./ -s -v
 ```
 
-Moreover, we can use additional command line keys:
-
-1. --neon-api-uri - neon_core_api url (by default 'http://neon_api:8085/api')
-
 Also we can configure some variables from environment variables:
 
 1. SOLANA_URL - by default http://solana:8899
-2. EVM_LOADER - set evm loader address
-3. NEON_TOKEN_MINT - ethereum token mint address
+2. NEON_CORE_API_URL - by default http://neon_api:8085
+3. EVM_LOADER - set evm loader address
+4. NEON_TOKEN_MINT - ethereum token mint address
 
 
 How to write tests

@@ -11,19 +11,13 @@ from solana.rpc.commitment import Confirmed
 
 from .solana_utils import EvmLoader, create_treasury_pool_address, make_new_user, \
     deposit_neon, solana_client, wait_for_account_to_exists
+from .utils.constants import NEON_CORE_API_URL
 from .utils.contract import deploy_contract
 from .utils.storage import create_holder
 from .types.types import TreasuryPool, Caller, Contract
 from .utils.neon_api_client import NeonApiClient
 
 KEY_PATH = pathlib.Path(__file__).parent / "operator-keypairs"
-
-
-def pytest_addoption(parser):
-    parser.addoption(
-        "--neon-api-uri", action="store", default="http://localhost:8085/api",
-        help=""
-    )
 
 
 @pytest.fixture(scope="session")
@@ -53,6 +47,7 @@ def prepare_operator(key_file):
 
     return account
 
+
 @pytest.fixture(scope="session")
 def default_operator_keypair() -> Keypair:
     """
@@ -60,6 +55,7 @@ def default_operator_keypair() -> Keypair:
     """
     key_file = KEY_PATH / "id.json"
     return prepare_operator(key_file)
+
 
 @pytest.fixture(scope="session")
 def operator_keypair(worker_id) -> Keypair:
@@ -164,6 +160,6 @@ def calculator_caller_contract(evm_loader: EvmLoader, operator_keypair: Keypair,
 
 
 @pytest.fixture(scope="session")
-def neon_api_client(request):
-    client = NeonApiClient(url=request.config.getoption("--neon-api-uri"))
+def neon_api_client():
+    client = NeonApiClient(url=NEON_CORE_API_URL)
     return client

@@ -3,7 +3,7 @@ import os
 import pathlib
 from collections import defaultdict
 
-NETWORK_NAME = os.environ.get("NETWORK_NAME", "full_test_suite")
+NETWORK_NAME = os.environ.get("NETWORK", "full_test_suite")
 EXPANDED_ENVS = [
     "PROXY_URL",
     "FAUCET_URL",

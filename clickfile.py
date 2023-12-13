@@ -183,7 +183,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     ]
 
     tests = list(Path(f"{cwd}/test").rglob('*.test.js'))
-    tests = [str(test) for test in tests if 'test' in test.read_text()]
+    tests = [str(test) for test in tests]
 
     def run_oz_file(file_name):
         print(f"Run {file_name}")
@@ -222,7 +222,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     pool.close()
     pool.join()
     # Add allure environment
-    settings = network_manager.networks[network]
+    settings = network_manager.get_network_object(network)
     web3_client = web3client.NeonChainWeb3Client(
         settings["proxy_url"])
     opts = {
@@ -327,7 +327,7 @@ def create_allure_environment_opts(opts: dict):
 
 
 def generate_allure_environment(network_name: str):
-    network = network_manager.networks[network_name]
+    network = network_manager.get_network_object(network_name)
     env = os.environ.copy()
 
     env["NETWORK_ID"] = str(network["network_ids"]["neon"])
@@ -847,7 +847,7 @@ def send_notification(url, build_url, traceback, network):
     "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
 )
 def get_operator_balances(network: str):
-    net = network_manager.networks[network]
+    net = network_manager.get_network_object(network)
     operator = Operator(
         net["proxy_url"],
         net["solana_url"],

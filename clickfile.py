@@ -183,7 +183,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     ]
 
     tests = list(Path(f"{cwd}/test").rglob('*.test.js'))
-    tests = [str(test) for test in tests if 'test' in test.read_text()]
+    tests = [str(test) for test in tests]
 
     def run_oz_file(file_name):
         print(f"Run {file_name}")

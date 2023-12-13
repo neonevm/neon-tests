@@ -106,6 +106,7 @@ jobs:
             tag=${{ github.sha }}
           else
             tag='latest'
+          fi
           echo "tag=${tag}"
           echo "tag=${tag}" >> $GITHUB_OUTPUT
       - name: Pull docker image

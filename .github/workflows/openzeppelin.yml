@@ -93,6 +93,7 @@ jobs:
       - prepare-env
       - dockerize
     runs-on: ${{ needs.prepare-env.outputs.runner }}
+    if: always() && contains(fromJSON('["success", "skipped"]'), needs.dockerize.result)
     env:
       AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
       AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"

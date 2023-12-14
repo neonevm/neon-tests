@@ -80,3 +80,7 @@ COPY deploy/infra/compile_contracts.sh compatibility/openzeppelin-contracts
 RUN cd compatibility/openzeppelin-contracts npm set audit false
 RUN cd compatibility/openzeppelin-contracts && npm ci
 RUN cd compatibility/openzeppelin-contracts && ./compile_contracts.sh
+
+
+COPY compatibility/openzeppelin-contracts/neon-web3-hardhat.patch /tmp/
+RUN cd compatibility/openzeppelin-contracts/node_modules && patch -p0 < /tmp/neon-web3-hardhat.patch

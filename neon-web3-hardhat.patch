@@ -1,0 +1,19 @@
+--- web3-core-method.orig/lib/index.js	2023-12-14 19:47:57.802000000 +0400
++++ web3-core-method/lib/index.js	2023-12-14 19:53:55.993043900 +0400
+@@ -44,11 +44,11 @@
+     this.accounts = options.accounts;
+     this.defaultBlock = options.defaultBlock || 'latest';
+     this.defaultAccount = options.defaultAccount || null;
+-    this.transactionBlockTimeout = options.transactionBlockTimeout || 50;
+-    this.transactionConfirmationBlocks = options.transactionConfirmationBlocks || 24;
+-    this.transactionPollingTimeout = options.transactionPollingTimeout || 750;
+-    this.transactionPollingInterval = options.transactionPollingInterval || 1000;
+-    this.blockHeaderTimeout = options.blockHeaderTimeout || 10; // 10 seconds
++    this.transactionBlockTimeout = 1;
++    this.transactionConfirmationBlocks = 1;
++    this.transactionPollingTimeout = 1;
++    this.transactionPollingInterval = 1;
++    this.blockHeaderTimeout = 1;
+     this.defaultCommon = options.defaultCommon;
+     this.defaultChain = options.decd faultChain;
+     this.defaultHardfork = options.defaultHardfork;

@@ -32,7 +32,6 @@ class NeonApiClient:
         else:
             return resp.json()
 
-
     def get_storage_at(self, contract_id, index="0x0"):
         body = {
             "contract": contract_id,
@@ -40,7 +39,7 @@ class NeonApiClient:
         }
         return requests.post(url=f"{self.url}/storage", json=body, headers=self.headers).json()
 
-    def get_ether_account_data(self, ether, chain_id = CHAIN_ID):
+    def get_balance(self, ether, chain_id = CHAIN_ID):
         body = {
             "account": [
                 { "address": ether, "chain_id": chain_id }

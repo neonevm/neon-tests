@@ -8,7 +8,7 @@ from eth_utils import keccak
 
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
-from integration.tests.basic.helpers.basic import BaseMixin, Tag
+from integration.tests.basic.helpers.basic import Tag
 from integration.tests.basic.helpers.errors import Error32000, Error32602
 from integration.tests.basic.helpers.rpc_checks import is_hex, hex_str_consists_not_only_of_zeros
 from integration.tests.helpers.basic import cryptohex

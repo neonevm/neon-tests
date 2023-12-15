@@ -6,7 +6,7 @@ import web3
 
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
-from integration.tests.basic.helpers.basic import BaseMixin, Tag
+from integration.tests.basic.helpers.basic import Tag
 from integration.tests.basic.helpers.errors import Error32000, Error32602
 from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex, assert_equal_fields
 from utils.consts import Unit

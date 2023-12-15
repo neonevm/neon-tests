@@ -4,7 +4,6 @@ import pytest
 import rlp
 
 from hexbytes import HexBytes
-from integration.tests.basic.helpers.basic import BaseMixin
 from utils.consts import Unit
 
 

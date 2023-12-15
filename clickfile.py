@@ -486,7 +486,7 @@ def update_contracts(branch):
     "name",
     required=True,
     type=click.Choice(
-        ["economy", "basic", "tracer", "services", "oz", "ui", "compiler_compatibility"]
+        ["economy", "basic", "tracer", "services", "oz", "ui", "evm", "compiler_compatibility"]
     ),
 )
 @catch_traceback
@@ -512,6 +512,10 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
         command = "py.test integration/tests/compiler_compatibility"
         if numprocesses:
             command = f"{command} --numprocesses {numprocesses} --dist loadscope"
+    elif name == "evm":
+        command = "py.test integration/tests/neon_evm"
+        if numprocesses:
+            command = f"{command} --numprocesses {numprocesses}"
     elif name == "oz":
         run_openzeppelin_tests(
             network, jobs=int(jobs), amount=int(amount), users=int(users)

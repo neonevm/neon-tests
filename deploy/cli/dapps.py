@@ -93,8 +93,6 @@ def destroy_infrastructure():
     log.info(format_tf_output(tf_destroy))
 
 
-
-
 def download_remote_docker_logs():
     proxy_ip = os.environ.get("PROXY_IP")
     solana_ip = os.environ.get("SOLANA_IP")

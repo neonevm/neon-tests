@@ -10,7 +10,7 @@ from utils.consts import Unit
 
 @allure.feature("Ethereum compatibility")
 @allure.story("Verify RLP decoding with invalid values")
-class TestTrxRlpDecoding(BaseMixin):
+class TestTrxRlpDecoding:
     def modify_raw_trx(self, signed_tx, new_v=None, new_r=None, new_s=None):
         decoded_tx = rlp.decode(signed_tx.rawTransaction)
         if new_s is not None:
@@ -35,60 +35,59 @@ class TestTrxRlpDecoding(BaseMixin):
             "nonce": web3_client.eth.get_transaction_count(acc.address),
         }
 
-        signed_tx = web3_client.eth.account.sign_transaction(
-            transaction, acc.key
-        )
+        signed_tx = web3_client.eth.account.sign_transaction(transaction, acc.key)
         return signed_tx
 
-    @pytest.mark.parametrize("new_v, expected_error", [(999, "wrong chain id"),
-                                                       (0, "insufficient funds for transfer"),
-                                                       (1, "Invalid V value 1")])
-    def test_modify_v(self, signed_tx, new_v, expected_error):
-
+    @pytest.mark.parametrize(
+        "new_v, expected_error",
+        [(999, "wrong chain id"), (0, "insufficient funds for transfer"), (1, "Invalid V value 1")],
+    )
+    def test_modify_v(self, signed_tx, new_v, expected_error, json_rpc_client):
         new_raw_tx = self.modify_raw_trx(signed_tx, new_v=new_v)
-        response = self.proxy_api.send_rpc(
-            "eth_sendRawTransaction", [new_raw_tx.hex()]
-        )
+        response = json_rpc_client.send_rpc("eth_sendRawTransaction", [new_raw_tx.hex()])
         assert expected_error in response["error"]["message"]
 
-    @pytest.mark.parametrize("new_s, expected_error", [
-        (13237258775825350966557245051891674271982401474769237400875435660443279001850,
-         "insufficient funds for transfer"),
-        (123, "insufficient funds for transfer"),
-        ('', "Invalid signature values")])
-    def test_modify_s(self, signed_tx, new_s, expected_error):
-        new_raw_tx = self.modify_raw_trx(signed_tx,
-                                         new_s=new_s)
-        response = self.proxy_api.send_rpc(
-            "eth_sendRawTransaction", [new_raw_tx.hex()]
-        )
+    @pytest.mark.parametrize(
+        "new_s, expected_error",
+        [
+            (
+                13237258775825350966557245051891674271982401474769237400875435660443279001850,
+                "insufficient funds for transfer",
+            ),
+            (123, "insufficient funds for transfer"),
+            ("", "Invalid signature values"),
+        ],
+    )
+    def test_modify_s(self, signed_tx, new_s, expected_error, json_rpc_client):
+        new_raw_tx = self.modify_raw_trx(signed_tx, new_s=new_s)
+        response = json_rpc_client.send_rpc("eth_sendRawTransaction", [new_raw_tx.hex()])
         assert expected_error in response["error"]["message"]
 
-    @pytest.mark.parametrize("new_r, expected_error", [
-        (13237258775825350966557245051891674271982401474769237400875435660443279001850,
-         "failed to recover ECDSA public key"),
-        (123, "insufficient funds for transfer"),
-        ('', "Invalid signature values")])
-    def test_modify_r(self, signed_tx, new_r, expected_error):
+    @pytest.mark.parametrize(
+        "new_r, expected_error",
+        [
+            (
+                13237258775825350966557245051891674271982401474769237400875435660443279001850,
+                "failed to recover ECDSA public key",
+            ),
+            (123, "insufficient funds for transfer"),
+            ("", "Invalid signature values"),
+        ],
+    )
+    def test_modify_r(self, signed_tx, new_r, expected_error, json_rpc_client):
         new_raw_tx = self.modify_raw_trx(signed_tx, new_r=new_r)
-        response = self.proxy_api.send_rpc(
-            "eth_sendRawTransaction", [new_raw_tx.hex()]
-        )
+        response = json_rpc_client.send_rpc("eth_sendRawTransaction", [new_raw_tx.hex()])
         assert expected_error in response["error"]["message"]
 
     @pytest.mark.parametrize("index", [6, 10])
-    def test_add_waste_to_trx(self, signed_tx, index):
+    def test_add_waste_to_trx(self, signed_tx, index, json_rpc_client):
         decoded_tx = rlp.decode(signed_tx.rawTransaction)
-        decoded_tx.insert(index, HexBytes(b'\x19p\x16l\xc0'))
+        decoded_tx.insert(index, HexBytes(b"\x19p\x16l\xc0"))
         new_trx = HexBytes(rlp.encode(decoded_tx))
-        response = self.proxy_api.send_rpc(
-            "eth_sendRawTransaction", [new_trx.hex()]
-        )
+        response = json_rpc_client.send_rpc("eth_sendRawTransaction", [new_trx.hex()])
         assert "wrong transaction format" in response["error"]["message"]
 
-    def test_add_waste_to_trx_without_decoding(self, signed_tx):
-        new_trx = signed_tx.rawTransaction + HexBytes(b'\x19p\x16l\xc0')
-        response = self.proxy_api.send_rpc(
-            "eth_sendRawTransaction", [new_trx.hex()]
-        )
+    def test_add_waste_to_trx_without_decoding(self, signed_tx, json_rpc_client):
+        new_trx = signed_tx.rawTransaction + HexBytes(b"\x19p\x16l\xc0")
+        response = json_rpc_client.send_rpc("eth_sendRawTransaction", [new_trx.hex()])
         assert "wrong transaction format" in response["error"]["message"]

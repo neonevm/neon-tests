@@ -114,8 +114,8 @@ class Web3Client:
         address = address if isinstance(address, str) else address.address
         return self._web3.eth.get_transaction_count(address, block)
 
-    def wait_for_transaction_receipt(self, tx_hash):
-        return self._web3.eth.wait_for_transaction_receipt(tx_hash)
+    def wait_for_transaction_receipt(self, tx_hash, timeout=120):
+        return self._web3.eth.wait_for_transaction_receipt(tx_hash, timeout=timeout)
 
     def deploy_contract(
         self,

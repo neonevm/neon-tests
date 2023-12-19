@@ -551,9 +551,50 @@ jobs:
           name: yearn-report
           path: yearn-report.json
 
+  pancake:
+    runs-on: ubuntu-20.04
+    if: contains( needs.prepare.outputs.dapps, 'pancake')
+    needs:
+      - prepare
+    env:
+      SOLANA_URL: ${{ needs.prepare.outputs.solana_url }}
+      PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
+      FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
+      NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
+      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
+      DUMP_ENVS: True
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        run: |
+          python3 ./clickfile.py infra gen-accounts -c 8 -a 10000 -n ${{env.NETWORK_NAME}}
+
+      - name: Launch Pancake tests
+        if: ${{ steps.accounts.outcome == 'success'}}
+        id: pancake
+        timeout-minutes: 30
+        env:
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+          IMAGE: neonlabsorg/pancake:latest
+        run: |
+          test -t 1 && USE_TTY="-t"
+          docker pull ${{ env.IMAGE }}
+          docker run -i ${USE_TTY} --name=pancake-${{ github.run_id }} \
+            -e NEON_PROXY_URL=${{ env.PROXY_URL }} \
+            -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} \
+            -e NEON_CHAIN_ID=${{ env.NETWORK_ID }} \
+            ${{ env.IMAGE }}
+          docker cp pancake-${{ github.run_id }}:/usr/src/app/report.json pancake-report.json
+          docker rm -f pancake-${{ github.run_id }}
+
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory, pancake]
     if: always()
     env:
       SOLANA_URL: ${{ needs.prepare.outputs.solana_url || secrets.SOLANA_URL }}
@@ -610,6 +651,11 @@ jobs:
         with:
           name: robonomics-report
           path: reports/
+      - uses: actions/download-artifact@v3
+        continue-on-error: true
+        with:
+          name: pancake-report
+          path: reports/
       - name: "Swap report"
         run: |
           python3 ./clickfile.py dapps report --directory=reports \
@@ -618,7 +664,7 @@ jobs:
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, robonomics, swap-report, compound, curve-factory]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, robonomics, swap-report, compound, curve-factory, pancake]
     if: always() && needs.prepare.outputs.network == 'aws'
     steps:
       - uses: actions/checkout@v3
@@ -661,7 +707,7 @@ jobs:
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory, pancake]
     if: failure() && github.ref_name == 'develop'
     steps:
       - uses: actions/checkout@v3

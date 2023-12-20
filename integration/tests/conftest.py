@@ -177,7 +177,7 @@ def solana_account(bank_account, pytestconfig: Config, sol_client_session):
 def accounts(request, accounts_session):
     if inspect.isclass(request.cls):
         request.cls.accounts = accounts_session
-    yield accounts
+    yield accounts_session
 
 
 @pytest.fixture(scope="session")

@@ -580,7 +580,7 @@ jobs:
         timeout-minutes: 30
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
-          IMAGE: neonlabsorg/pancake:latest
+          IMAGE: neonlabsorg/pancake:b63a00cb69a5655ea2ee2002c3e242f001745f1e
         run: |
           test -t 1 && USE_TTY="-t"
           docker pull ${{ env.IMAGE }}

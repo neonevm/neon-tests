@@ -1,12 +1,12 @@
 {
   "night-stand": {
     "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
-    "proxy_url": "http://3.120.196.11:9090/solana",
+    "proxy_url": "http://proxy.night.stand.neontest.xyz/solana",
     "network_ids": {
       "neon": 111
     },
-    "solana_url": "http://3.120.196.11:8899",
-    "faucet_url": "http://3.120.196.11:3333",
+    "solana_url": "http://proxy.night.stand.neontest.xyz/node-solana",
+    "faucet_url": "http://proxy.night.stand.neontest.xyz",
     "tracer_url": "",
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",

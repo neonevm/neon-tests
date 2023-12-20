@@ -202,7 +202,11 @@ class TestRpcGetTransaction(BaseMixin):
         """Verify implemented rpc calls work with neon_getTransactionReceipt and eth_getTransactionReceipt"""
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
         transaction_hash = tx_receipt.transactionHash.hex()
-        response = self.proxy_api.send_rpc(method=method, params=transaction_hash)
+        params = [transaction_hash]
+        if method.startswith('neon_'):
+            params.append('ethereum')
+        response = self.proxy_api.send_rpc(method=method, params=params)
+#        response = self.proxy_api.send_rpc(method=method, params=transaction_hash)
         assert "error" not in response
         assert "result" in response, AssertMessage.DOES_NOT_CONTAIN_RESULT
         result = response["result"]
@@ -237,8 +241,8 @@ class TestRpcGetTransaction(BaseMixin):
             (["0x874E87B5ccb467f07Ca42cF82e11aD44c7be159F"], Error32000.CODE, Error32000.MISSING_ARGUMENT),
             ([None, 10], Error32602.CODE, Error32602.BAD_ADDRESS),
             (["123345", 10], Error32602.CODE, Error32602.BAD_ADDRESS),
-            (["0x874E87B5ccb467f07Ca42cF82e11aD44c7be159F", None], Error32000.CODE,
-             Error32000.OBJECT_CANT_BE_INTERPRETED_AS_INT)
+            (["0x874E87B5ccb467f07Ca42cF82e11aD44c7be159F", None], Error32602.CODE,
+             Error32602.INVALID_NONCE)
         ],
     )
     def test_neon_get_transaction_by_sender_nonce_negative(self, params, error_code, error_message):

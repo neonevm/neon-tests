@@ -1,8 +1,6 @@
 import json
-import logging
 import random
-import time
-from decimal import Decimal, getcontext
+from decimal import Decimal
 
 import allure
 import pytest
@@ -11,10 +9,8 @@ import solcx
 from _pytest.config import Config
 from solana.keypair import Keypair as SolanaAccount
 from solana.publickey import PublicKey
-from solana.rpc.core import RPCException
 from solana.rpc.types import Commitment, TxOpts
 from solana.transaction import Transaction
-from solders.rpc.responses import GetTransactionResp
 from solders.signature import Signature
 from spl.token.instructions import (
     create_associated_token_account,
@@ -23,37 +19,12 @@ from spl.token.instructions import (
 
 from utils.consts import LAMPORT_PER_SOL
 from utils.erc20 import ERC20
-from utils.helpers import wait_condition
+from utils.helpers import wait_condition, gen_hash_of_block
+from .const import SOLCX_VERSIONS, INSUFFICIENT_FUNDS_ERROR, GAS_LIMIT_ERROR, BIG_STRING, TX_COST
+from .steps import wait_for_block, assert_profit, get_gas_used_percent, check_alt_on, check_alt_off
 
 from ..base import BaseTests
-
-TX_COST = 5000
-
-DECIMAL_CONTEXT = getcontext()
-DECIMAL_CONTEXT.prec = 9
-
-SOLCX_VERSIONS = ["0.6.6", "0.8.6", "0.8.10"]
-
-INSUFFICIENT_FUNDS_ERROR = "insufficient funds for"
-GAS_LIMIT_ERROR = "gas limit reached"
-LOGGER = logging.getLogger(__name__)
-BIG_STRING = (
-    "But I must explain to you how all this mistaken idea of denouncing pleasure and "
-    "praising pain was born and I will give you a complete account of the system, and "
-    "expound the actual teachings of the great explorer of the truth, the master-builder "
-    "of human happiness. No one rejects, dislikes, or avoids pleasure itself, because it"
-    " is pleasure, but because those who do not know how to pursue pleasure rationally"
-    " encounter consequences that are extremely painful. Nor again is there anyone who"
-    " loves or pursues or desires to obtain pain of itself, because it is pain, but"
-    " because occasionally circumstances occur in which toil and pain can procure him"
-    " some great pleasure. To take a trivial example, which of us ever undertakes laborious"
-    " physical exercise, except to obtain some advantage from it? But who has any right to"
-    " find fault with a man who chooses to enjoy a pleasure that has no annoying consequences,"
-    " or one who avoids a pain that produces no resultant pleasure? On the other hand,"
-    " we denounce with righteous indigna"
-    " some great pleasure. To take a trivial example, which of us ever undertakes laborious"
-    " physical exercise, except to obtain some advantage from it? But who has any right to"
-)
+from ..basic.helpers.chains import make_nonce_the_biggest_for_chain
 
 
 # @pytest.fixture(scope="session", autouse=True)
@@ -77,189 +48,154 @@ def install_solcx_versions():
 class TestEconomics(BaseTests):
     acc = None
 
-    @pytest.fixture(autouse=True)
-    def save_token_costs(self, sol_price, neon_price):
-        self.sol_price = sol_price
-        self.neon_price = neon_price
-
-    @allure.step("Verify operator profit")
-    def assert_profit(self, sol_diff, neon_diff):
-        sol_amount = sol_diff / LAMPORT_PER_SOL
-        if neon_diff < 0:
-            raise AssertionError(f"NEON has negative difference {neon_diff}")
-        neon_amount = neon_diff
-        sol_cost = Decimal(sol_amount, DECIMAL_CONTEXT) * Decimal(
-            self.sol_price, DECIMAL_CONTEXT
-        )
-        neon_cost = Decimal(neon_amount, DECIMAL_CONTEXT) * Decimal(
-            self.neon_price, DECIMAL_CONTEXT
-        )
-
-        msg = "Operator receive {:.9f} NEON ({:.2f} $) and spend {:.9f} SOL ({:.2f} $), profit - {:.9f}% ".format(
-            neon_amount,
-            neon_cost,
-            sol_amount,
-            sol_cost,
-            ((neon_cost - sol_cost) / sol_cost * 100),
-        )
-        with allure.step(msg):
-            assert neon_cost > sol_cost, msg
-
-    @allure.step("Get single transaction gas")
-    def get_single_transaction_gas(self):
-        """One TX_COST to verify Solana signature plus another one TX_COST to pay to Governance"""
-        return TX_COST * 2
-
-    @allure.step("Check transaction used ALT")
-    def check_alt_on(self, sol_client, receipt, accounts_quantity):
-        solana_trx = self.web3_client.get_solana_trx_by_neon(
-            receipt["transactionHash"].hex()
-        )
-        wait_condition(
-            lambda: sol_client.get_transaction(
-                Signature.from_string(solana_trx["result"][0]),
-                max_supported_transaction_version=0,
-            )
-            != GetTransactionResp(None)
-        )
-        trx = sol_client.get_transaction(
-            Signature.from_string(solana_trx["result"][0]),
-            max_supported_transaction_version=0,
-        )
-        alt = trx.value.transaction.transaction.message.address_table_lookups
-        accounts = alt[0].writable_indexes + alt[0].readonly_indexes
-        assert len(accounts) == accounts_quantity - 2
-
-    @allure.step("Check block for not using ALT")
-    def check_alt_off(self, block):
-        txs = block.value.transactions
-        for tx in txs:
-            if tx.version == 0 and tx.transaction.message.address_table_lookups:
-                raise AssertionError("ALT should not be used")
-
-    @allure.step("Get gas used percent")
-    def get_gas_used_percent(self, receipt):
-        trx = self.web3_client.eth.get_transaction(receipt["transactionHash"])
-        estimated_gas = trx["gas"]
-        percent = round(receipt["gasUsed"] / estimated_gas * 100, 2)
-        with allure.step(f"Gas used percent: {percent}%"):
-            pass
-
     @pytest.mark.only_stands
-    def test_account_creation(self):
+    def test_account_creation(self, client_and_price):
         """Verify account creation spend SOL"""
+        w3_client, token_price = client_and_price
         sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
-        acc = self.web3_client.eth.account.create()
-        assert self.web3_client.eth.get_balance(acc.address) == Decimal(0)
+        neon_balance_before = self.operator.get_token_balance(w3_client)
+        acc = w3_client.eth.account.create()
+        assert w3_client.get_balance(acc.address) == Decimal(0)
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        neon_balance_after = self.operator.get_token_balance(w3_client)
         assert neon_balance_after == neon_balance_before
         assert sol_balance_after == sol_balance_before
 
-    def test_send_neon_to_unexist_account(self):
-        """Verify how many cost neon send to new user"""
+    def test_send_neon_to_unexist_account(self, account_with_all_tokens, client_and_price, sol_price):
+        """Verify how many cost transfer of native chain token to new user"""
+        w3_client, token_price = client_and_price
         sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
-        acc2 = self.web3_client.create_account()
-        receipt = self.web3_client.send_neon(self.acc, acc2, 5)
-
-        assert self.web3_client.get_balance(acc2) == 5
+        token_balance_before = self.operator.get_token_balance(w3_client)
+        transfer_value = 50000000
+        acc2 = w3_client.create_account()
+        receipt = w3_client.send_tokens(account_with_all_tokens, acc2, transfer_value)
+        assert w3_client.get_balance(acc2) == transfer_value
 
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
         sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after, "Operator SOL balance incorrect"
-        self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
-        self.get_gas_used_percent(receipt)
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(sol_diff, sol_price, token_diff, token_price, w3_client.native_token_name)
+        get_gas_used_percent(w3_client, receipt)
 
-    def test_send_neon_to_exist_account(self):
-        """Verify how many cost neon send to use who was already initialized"""
-        acc2 = self.web3_client.create_account()
-        self.web3_client.send_neon(self.acc, acc2, 1)
+    def test_send_tokens_to_exist_account(self, account_with_all_tokens, client_and_price, sol_price):
+        """Verify how many cost token send to use who was already initialized"""
+        w3_client, token_price = client_and_price
+        acc2 = w3_client.create_account()
+        transfer_value = 5000
+        w3_client.send_tokens(account_with_all_tokens, acc2, transfer_value // 2)
 
-        assert self.web3_client.get_balance(acc2) == 1
+        assert w3_client.get_balance(acc2) == transfer_value // 2
 
         sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
-        receipt = self.web3_client.send_neon(self.acc, acc2, 5)
+        token_balance_before = self.operator.get_token_balance(w3_client)
+        receipt = w3_client.send_tokens(account_with_all_tokens, acc2, transfer_value // 2)
 
-        assert self.web3_client.get_balance(acc2) == 6
+        assert w3_client.get_balance(acc2) == transfer_value
 
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
         sol_diff = sol_balance_before - sol_balance_after
-        self.get_gas_used_percent(receipt)
+        get_gas_used_percent(w3_client, receipt)
 
-        assert (
-            sol_balance_before > sol_balance_after
-        ), "Operator balance after send tx doesn't changed"
-        self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
+        assert sol_balance_before > sol_balance_after, "Operator balance after send tx doesn't changed"
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(sol_diff, sol_price, token_diff, token_price, w3_client.native_token_name)
 
-    def test_send_when_not_enough_neon_to_gas(self):
-        acc2 = self.web3_client.create_account()
-
-        assert self.web3_client.get_balance(acc2) == 0
-
-        self.web3_client.send_neon(self.acc, acc2, 1)
-
+    def test_send_tokens_without_chain_id(self, account_with_all_tokens, client_and_price, web3_client, sol_price):
+        # for transactions without chain_id NEONs would be sent (even for sol chain)
+        w3_client, token_price = client_and_price
+        acc2 = w3_client.create_account()
         sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
+        token_balance_before = self.operator.get_token_balance(web3_client)
 
-        acc3 = self.web3_client.create_account()
+        instruction_tx = self.create_tx_object(
+            account_with_all_tokens.address, acc2.address, 0.1, web3_client=w3_client
+        )
+        instruction_tx.pop("chainId")
+
+        w3_client.send_transaction(account_with_all_tokens, instruction_tx)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        token_balance_after = self.operator.get_token_balance(web3_client)
+        sol_diff = sol_balance_before - sol_balance_after
+
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(sol_diff, sol_price, token_diff, token_price, w3_client.native_token_name)
+
+    def test_send_when_not_enough_tokens_to_gas(self, client_and_price, account_with_all_tokens):
+        w3_client, token_price = client_and_price
+        acc2 = w3_client.create_account()
+
+        assert w3_client.get_balance(acc2) == 0
+        transfer_amount = 5000
+        w3_client.send_tokens(account_with_all_tokens, acc2, transfer_amount)
+        sol_balance_before = self.operator.get_solana_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
+
+        acc3 = w3_client.create_account()
 
         with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR) as e:
-            self.web3_client.send_neon(acc2, acc3, 1)
+            w3_client.send_tokens(acc2, acc3, transfer_amount)
 
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
 
         assert sol_balance_before == sol_balance_after
-        assert neon_balance_before == neon_balance_after
+        assert token_balance_before == token_balance_after
 
-    def test_erc20wrapper_transfer(self, erc20_spl_mintable):
+    def test_erc20wrapper_transfer(self, erc20_wrapper, client_and_price, sol_price):
+        w3_client, token_price = client_and_price
         sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
+        assert erc20_wrapper.contract.functions.balanceOf(self.acc.address).call() == 0
+        transfer_tx = erc20_wrapper.transfer(erc20_wrapper.account, self.acc, 25)
 
-        assert (
-            erc20_spl_mintable.contract.functions.balanceOf(self.acc.address).call()
-            == 0
-        )
-        transfer_tx = erc20_spl_mintable.transfer(erc20_spl_mintable.account, self.acc, 25)
-
-        assert (
-            erc20_spl_mintable.contract.functions.balanceOf(self.acc.address).call()
-            == 25
-        )
-
+        assert erc20_wrapper.contract.functions.balanceOf(self.acc.address).call() == 25
+        wait_condition(lambda: sol_balance_before > self.operator.get_solana_balance())
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
         sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
 
-        self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
+        assert_profit(sol_diff, sol_price, token_diff, token_price, w3_client.native_token_name)
 
-        self.get_gas_used_percent(transfer_tx)
+        get_gas_used_percent(w3_client, transfer_tx)
 
-    def test_withdraw_neon_unexisting_ata(self, pytestconfig: Config):
+    def test_erc721_mint(self, erc721, client_and_price, account_with_all_tokens, sol_price):
+        w3_client, token_price = client_and_price
+        sol_balance_before = self.operator.get_solana_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
+        seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
+
+        erc721.mint(seed, account_with_all_tokens.address, "uri")
+
+        wait_condition(lambda: sol_balance_before > self.operator.get_solana_balance())
+        sol_balance_after = self.operator.get_solana_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
+        sol_diff = sol_balance_before - sol_balance_after
+
+        assert sol_balance_before > sol_balance_after
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(sol_diff, sol_price, token_diff, token_price, w3_client.native_token_name)
+
+    def test_withdraw_neon_unexisting_ata(self, pytestconfig: Config, neon_price, sol_price):
         sol_user = SolanaAccount()
         self.sol_client.request_airdrop(sol_user.public_key, 5 * LAMPORT_PER_SOL)
 
         sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
+        neon_balance_before = self.operator.get_token_balance(self.web3_client)
 
         user_neon_balance_before = self.web3_client.get_balance(self.acc)
         move_amount = self.web3_client._web3.to_wei(5, "ether")
 
-        contract, _ = self.web3_client.deploy_and_get_contract(
-            "precompiled/NeonToken", "0.8.10", account=self.acc
-        )
+        contract, _ = self.web3_client.deploy_and_get_contract("precompiled/NeonToken", "0.8.10", account=self.acc)
 
-        instruction_tx = contract.functions.withdraw(
-            bytes(sol_user.public_key)
-        ).build_transaction(
+        instruction_tx = contract.functions.withdraw(bytes(sol_user.public_key)).build_transaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
@@ -272,36 +208,34 @@ class TestEconomics(BaseTests):
 
         assert (user_neon_balance_before - self.web3_client.get_balance(self.acc)) > 5
 
-        balance = self.sol_client.get_account_info_json_parsed(
-            sol_user.public_key, commitment=Commitment("confirmed")
-        )
+        balance = self.sol_client.get_account_info_json_parsed(sol_user.public_key, commitment=Commitment("confirmed"))
         assert int(balance.value.lamports) == int(move_amount / 1_000_000_000)
 
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        neon_balance_after = self.operator.get_token_balance(self.web3_client)
 
         assert sol_balance_before > sol_balance_after
         assert neon_balance_after > neon_balance_before
 
-        self.assert_profit(
+        neon_diff = self.web3_client.to_main_currency(neon_balance_after - neon_balance_before)
+        assert_profit(
             sol_balance_before - sol_balance_after,
-            neon_balance_after - neon_balance_before,
+            sol_price,
+            neon_diff,
+            neon_price,
+            self.web3_client.native_token_name,
         )
 
-        self.get_gas_used_percent(receipt)
+        get_gas_used_percent(self.web3_client, receipt)
 
-    def test_withdraw_neon_existing_ata(self, pytestconfig, neon_mint):
+    def test_withdraw_neon_existing_ata(self, pytestconfig, neon_mint, neon_price, sol_price):
         sol_user = SolanaAccount()
         self.sol_client.request_airdrop(sol_user.public_key, 5 * LAMPORT_PER_SOL)
 
         wait_condition(lambda: self.sol_client.get_balance(sol_user.public_key) != 0)
 
         trx = Transaction()
-        trx.add(
-            create_associated_token_account(
-                sol_user.public_key, sol_user.public_key, neon_mint
-            )
-        )
+        trx.add(create_associated_token_account(sol_user.public_key, sol_user.public_key, neon_mint))
 
         opts = TxOpts(skip_preflight=True, skip_confirmation=False)
         self.sol_client.send_transaction(trx, sol_user, opts=opts)
@@ -309,18 +243,14 @@ class TestEconomics(BaseTests):
         dest_token_acc = get_associated_token_address(sol_user.public_key, neon_mint)
 
         sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
+        neon_balance_before = self.operator.get_token_balance(self.web3_client)
 
         user_neon_balance_before = self.web3_client.get_balance(self.acc)
         move_amount = self.web3_client._web3.to_wei(5, "ether")
 
-        contract, _ = self.web3_client.deploy_and_get_contract(
-            "precompiled/NeonToken", "0.8.10", account=self.acc
-        )
+        contract, _ = self.web3_client.deploy_and_get_contract("precompiled/NeonToken", "0.8.10", account=self.acc)
 
-        instruction_tx = contract.functions.withdraw(
-            bytes(sol_user.public_key)
-        ).build_transaction(
+        instruction_tx = contract.functions.withdraw(bytes(sol_user.public_key)).build_transaction(
             {
                 "from": self.acc.address,
                 "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
@@ -334,194 +264,134 @@ class TestEconomics(BaseTests):
         assert (user_neon_balance_before - self.web3_client.get_balance(self.acc)) > 5
 
         balances = json.loads(
-            self.sol_client.get_token_account_balance(
-                dest_token_acc, Commitment("confirmed")
-            ).to_json()
+            self.sol_client.get_token_account_balance(dest_token_acc, Commitment("confirmed")).to_json()
         )
-        assert int(balances["result"]["value"]["amount"]) == int(
-            move_amount / 1_000_000_000
-        )
+        assert int(balances["result"]["value"]["amount"]) == int(move_amount / 1_000_000_000)
 
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        neon_balance_after = self.operator.get_token_balance(self.web3_client)
 
         assert sol_balance_before > sol_balance_after
         assert neon_balance_after > neon_balance_before
 
-        self.assert_profit(
+        neon_diff = self.web3_client.to_main_currency(neon_balance_after - neon_balance_before)
+        assert_profit(
             sol_balance_before - sol_balance_after,
-            neon_balance_after - neon_balance_before,
+            sol_price,
+            neon_diff,
+            neon_price,
+            self.web3_client.native_token_name,
         )
-        self.get_gas_used_percent(receipt)
+        get_gas_used_percent(self.web3_client, receipt)
 
-    def test_erc20_contract(self):
+    def test_erc20_transfer(self, client_and_price, account_with_all_tokens, web3_client_sol, web3_client, sol_price):
         """Verify ERC20 token send"""
-        sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
+        w3_client, token_price = client_and_price
+        make_nonce_the_biggest_for_chain(account_with_all_tokens, w3_client, [web3_client, web3_client_sol])
+        contract = ERC20(w3_client, self.faucet, owner=account_with_all_tokens)
 
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "EIPs/ERC20/ERC20.sol",
-            "0.8.8",
-            self.acc,
-            constructor_args=["Test Token", "TT", 1000],
-        )
-        assert contract.functions.balanceOf(self.acc.address).call() == 1000
+        sol_balance_before = self.operator.get_solana_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
+
+        acc2 = w3_client.create_account()
+
+        transfer_tx = contract.transfer(account_with_all_tokens, acc2, 25)
 
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
         sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after
+        assert token_balance_after > token_balance_before
 
-        self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
-        self.get_gas_used_percent(contract_deploy_tx)
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(sol_diff, sol_price, token_diff, token_price, w3_client.native_token_name)
+        get_gas_used_percent(w3_client, transfer_tx)
 
-    def test_erc20_transfer(self):
-        """Verify ERC20 token send"""
-
-        contract = ERC20(self.web3_client, self.faucet, owner=self.acc)
-
-        sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
-
-        acc2 = self.web3_client.create_account()
-
-        transfer_tx = contract.transfer( self.acc, acc2, 25)
-
-        sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
-        sol_diff = sol_balance_before - sol_balance_after
-
-        assert sol_balance_before > sol_balance_after
-        assert neon_balance_after > neon_balance_before
-
-        self.assert_profit(sol_diff, neon_balance_after - neon_balance_before)
-        self.get_gas_used_percent(transfer_tx)
-
-    def test_deploy_small_contract_less_100tx(self, sol_price):
+    def test_deploy_small_contract_less_100tx(
+        self, account_with_all_tokens, client_and_price, web3_client_sol, web3_client, sol_price
+    ):
         """Verify we are bill minimum for 100 instruction"""
+        w3_client, token_price = client_and_price
         sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
 
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/Counter", "0.8.10", account=self.acc
-        )
+        make_nonce_the_biggest_for_chain(account_with_all_tokens, w3_client, [web3_client, web3_client_sol])
+        contract, _ = w3_client.deploy_and_get_contract("common/Counter", "0.8.10", account=account_with_all_tokens)
 
         sol_balance_after_deploy = self.operator.get_solana_balance()
-        neon_balance_after_deploy = self.operator.get_neon_balance()
-
-        inc_tx = contract.functions.inc().build_transaction(
-            {
-                "from": self.acc.address,
-                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
-                "gasPrice": self.web3_client.gas_price(),
-            }
-        )
+        token_balance_after_deploy = self.operator.get_token_balance(w3_client)
+        tx = self.create_tx_object(account_with_all_tokens.address, estimate_gas=False, web3_client=w3_client)
+        inc_tx = contract.functions.inc().build_transaction(tx)
 
         assert contract.functions.get().call() == 0
-        receipt = self.web3_client.send_transaction(self.acc, inc_tx)
+        receipt = w3_client.send_transaction(account_with_all_tokens, inc_tx)
         assert contract.functions.get().call() == 1
 
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
 
         assert sol_balance_before > sol_balance_after_deploy > sol_balance_after
-        assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
-        self.assert_profit(
-            sol_balance_before - sol_balance_after,
-            neon_balance_after - neon_balance_before,
+        assert token_balance_after > token_balance_after_deploy > token_balance_before
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(
+            sol_balance_before - sol_balance_after, sol_price, token_diff, token_price, w3_client.native_token_name
         )
-        self.get_gas_used_percent(receipt)
+        get_gas_used_percent(w3_client, receipt)
 
-    def test_deploy_small_contract_less_gas(self):
+    def test_deploy_to_losted_contract_account(self, account_with_all_tokens, client_and_price, sol_price):
+        w3_client, token_price = client_and_price
         sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
 
-        with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
-            self.web3_client.deploy_and_get_contract(
-                "common/Counter", "0.8.10", gas=1000, account=self.acc
-            )
-
-        sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
-
-        assert sol_balance_before == sol_balance_after
-        assert neon_balance_after == neon_balance_before
-
-    def test_deploy_small_contract_less_neon(self):
-        acc2 = self.web3_client.create_account()
-        self.web3_client.send_neon(self.acc, acc2, 0.001)
-
-        sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
+        acc2 = w3_client.create_account()
+        w3_client.send_tokens(account_with_all_tokens, acc2, 1)
 
         with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
-            self.web3_client.deploy_and_get_contract("common/Counter", "0.8.10", account=acc2)
-
-        sol_balance_after_deploy = self.operator.get_solana_balance()
-        neon_balance_after_deploy = self.operator.get_neon_balance()
-
-        assert sol_balance_before == sol_balance_after_deploy
-        assert neon_balance_before == neon_balance_after_deploy
-
-    def test_deploy_to_losted_contract_account(self):
-        sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
-
-        acc2 = self.web3_client.create_account()
-        self.web3_client.send_neon(self.acc, acc2, 0.001)
-
-        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
-            self.web3_client.deploy_and_get_contract("common/Counter", "0.8.10", account=acc2)
-
-        self.web3_client.send_neon(self.acc, acc2, 50)
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/Counter", "0.8.10", account=acc2
-        )
+            w3_client.deploy_and_get_contract("common/Counter", "0.8.10", account=acc2)
+        w3_client.send_tokens(account_with_all_tokens, acc2, int(w3_client.get_balance(account_with_all_tokens) // 10))
+        contract, contract_deploy_tx = w3_client.deploy_and_get_contract("common/Counter", "0.8.10", account=acc2)
 
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
 
         assert sol_balance_before > sol_balance_after
-        assert neon_balance_after > neon_balance_before
+        assert token_balance_after > token_balance_before
 
-        self.assert_profit(
-            sol_balance_before - sol_balance_after,
-            neon_balance_after - neon_balance_before,
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(
+            sol_balance_before - sol_balance_after, sol_price, token_diff, token_price, w3_client.native_token_name
         )
-        self.get_gas_used_percent(contract_deploy_tx)
+        get_gas_used_percent(w3_client, contract_deploy_tx)
 
-    def test_contract_get_is_free(self):
+    def test_contract_get_is_free(self, counter_contract, client_and_price, account_with_all_tokens):
         """Verify that get contract calls is free"""
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/Counter", "0.8.10", account=self.acc
-        )
-
+        w3_client, token_price = client_and_price
         sol_balance_after_deploy = self.operator.get_solana_balance()
-        neon_balance_after_deploy = self.operator.get_neon_balance()
+        token_balance_after_deploy = self.operator.get_token_balance(w3_client)
 
-        user_balance_before = self.web3_client.get_balance(self.acc)
-        assert contract.functions.get().call() == 0
+        user_balance_before = w3_client.get_balance(account_with_all_tokens)
+        assert counter_contract.functions.get().call() == 0
 
-        assert self.web3_client.get_balance(self.acc) == user_balance_before
+        assert w3_client.get_balance(account_with_all_tokens) == user_balance_before
 
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
         assert sol_balance_after_deploy == sol_balance_after
-        assert neon_balance_after_deploy == neon_balance_after
+        assert token_balance_after_deploy == token_balance_after
 
     @pytest.mark.xfail(reason="https://neonlabs.atlassian.net/browse/NDEV-699")
-    def test_cost_resize_account(self):
+    def test_cost_resize_account(self, neon_price, sol_price):
         """Verify how much cost account resize"""
         sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
+        neon_balance_before = self.operator.get_token_balance(self.web3_client)
 
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
             "common/IncreaseStorage", "0.8.10", account=self.acc
         )
 
         sol_balance_before_increase = self.operator.get_solana_balance()
-        neon_balance_before_increase = self.operator.get_neon_balance()
+        neon_balance_before_increase = self.operator.get_token_balance(self.web3_client)
 
         inc_tx = contract.functions.inc().build_transaction(
             {
@@ -534,470 +404,225 @@ class TestEconomics(BaseTests):
         instruction_receipt = self.web3_client.send_transaction(self.acc, inc_tx)
 
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        neon_balance_after = self.operator.get_token_balance(self.web3_client)
 
-        assert (
-            sol_balance_before > sol_balance_before_increase > sol_balance_after
-        ), "SOL Balance not changed"
-        assert (
-            neon_balance_after > neon_balance_before_increase > neon_balance_before
-        ), "NEON Balance incorrect"
-        self.assert_profit(
+        assert sol_balance_before > sol_balance_before_increase > sol_balance_after, "SOL Balance not changed"
+        assert neon_balance_after > neon_balance_before_increase > neon_balance_before, "NEON Balance incorrect"
+        neon_diff = self.web3_client.to_main_currency(neon_balance_after - neon_balance_before)
+        assert_profit(
             sol_balance_before - sol_balance_after,
-            neon_balance_after - neon_balance_before,
+            sol_price,
+            neon_diff,
+            neon_price,
+            self.web3_client.native_token_name,
         )
-        self.get_gas_used_percent(instruction_receipt)
+        get_gas_used_percent(self.web3_client, instruction_receipt)
 
-    def test_cost_resize_account_less_neon(self):
-        """Verify how much cost account resize"""
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/IncreaseStorage", "0.8.10", account=self.acc
-        )
-
-        acc2 = self.web3_client.create_account()
-        self.web3_client.send_neon(self.acc, acc2, 0.001)
-
-        sol_balance_before_increase = self.operator.get_solana_balance()
-        neon_balance_before_increase = self.operator.get_neon_balance()
-
-        inc_tx = contract.functions.inc().build_transaction(
-            {
-                "from": acc2.address,
-                "nonce": self.web3_client.eth.get_transaction_count(acc2.address),
-                "gasPrice": self.web3_client.gas_price(),
-            }
-        )
-
-        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
-            self.web3_client.send_transaction(acc2, inc_tx)
-
-        sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
-
-        assert (
-            sol_balance_before_increase == sol_balance_after
-        ), "SOL Balance not changed"
-        assert (
-            neon_balance_after == neon_balance_before_increase
-        ), "NEON Balance incorrect"
-
-    def test_failed_tx_when_less_gas(self):
-        """Don't get money from user if tx failed"""
-        sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
-
-        acc2 = self.web3_client.create_account()
-
-        user_balance_before = self.web3_client.get_balance(self.acc)
-        with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
-            receipt = self.web3_client.send_neon(self.acc, acc2, 5, gas=100)
-
-        assert user_balance_before == self.web3_client.get_balance(self.acc)
-
-        sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
-
-        assert sol_balance_before == sol_balance_after
-        assert neon_balance_after == neon_balance_before
-        # self.assert_profit(sol_balance_before - sol_balance_after, neon_balance_after - neon_balance_before)
-
-    def test_contract_interact_more_500_steps(self):
+    def test_contract_interact_1000_steps(self, counter_contract, client_and_price, account_with_all_tokens, sol_price):
         """Deploy a contract with more 500 instructions"""
-        sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
-
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/Counter", "0.8.10", account=self.acc
-        )
-
-        sol_balance_before_instruction = self.operator.get_solana_balance()
-        neon_balance_before_instruction = self.operator.get_neon_balance()
-
-        instruction_tx = contract.functions.moreInstruction(
-            0, 100
-        ).build_transaction(  # 1086 steps in evm
-            {
-                "from": self.acc.address,
-                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
-                "gasPrice": self.web3_client.gas_price(),
-            }
-        )
-        instruction_receipt = self.web3_client.send_transaction(
-            self.acc, instruction_tx
-        )
-
-        sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
-
-        assert (
-            sol_balance_before > sol_balance_before_instruction > sol_balance_after
-        ), "SOL Balance not changed"
-        assert (
-            neon_balance_after > neon_balance_before_instruction > neon_balance_before
-        ), "NEON Balance incorrect"
-        self.assert_profit(
-            sol_balance_before_instruction - sol_balance_after,
-            neon_balance_after - neon_balance_before_instruction,
-        )
-        self.get_gas_used_percent(instruction_receipt)
-
-    def test_contract_interact_more_steps(self):
-        """Deploy a contract with more 500000 bpf"""
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/Counter", "0.8.10", account=self.acc
-        )
-
-        sol_balance_before_instruction = self.operator.get_solana_balance()
-        neon_balance_before_instruction = self.operator.get_neon_balance()
-
-        instruction_tx = contract.functions.moreInstruction(0, 1500).build_transaction(
-            {
-                "from": self.acc.address,
-                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
-                "gasPrice": self.web3_client.gas_price(),
-            }
-        )
-
-        instruction_receipt = self.web3_client.send_transaction(
-            self.acc, instruction_tx
-        )
-
-        sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
-
-        assert (
-            sol_balance_before_instruction > sol_balance_after
-        ), "SOL Balance not changed"
-        assert (
-            neon_balance_after > neon_balance_before_instruction
-        ), "NEON Balance incorrect"
-
-        self.assert_profit(
-            sol_balance_before_instruction - sol_balance_after,
-            neon_balance_after - neon_balance_before_instruction,
-        )
-        self.get_gas_used_percent(instruction_receipt)
-
-    def test_contract_interact_more_steps_less_gas(self):
-        """Deploy a contract with more 500000 bpf"""
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/Counter", "0.8.10", account=self.acc
-        )
-
-        sol_balance_before_instruction = self.operator.get_solana_balance()
-        neon_balance_before_instruction = self.operator.get_neon_balance()
-
-        instruction_tx = contract.functions.moreInstruction(0, 1500).build_transaction(
-            {
-                "from": self.acc.address,
-                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
-                "gasPrice": self.web3_client.gas_price(),
-                "gas": 1000,
-            }
-        )
-        with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
-            self.web3_client.send_transaction(self.acc, instruction_tx)
-
-        sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
-
-        assert (
-            sol_balance_after == sol_balance_before_instruction
-        ), "SOL Balance changes"
-        assert (
-            neon_balance_after == neon_balance_before_instruction
-        ), "NEON Balance incorrect"
-
-    def test_contract_interact_more_steps_less_neon(self):
-        """Deploy a contract with more 500000 bpf"""
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/Counter", "0.8.10", account=self.acc
-        )
-
-        acc2 = self.web3_client.create_account()
-        self.web3_client.send_neon(self.acc, acc2, 0.001)
-
-        sol_balance_before_instruction = self.operator.get_solana_balance()
-        neon_balance_before_instruction = self.operator.get_neon_balance()
-
-        instruction_tx = contract.functions.moreInstruction(0, 1500).build_transaction(
-            {
-                "from": acc2.address,
-                "nonce": self.web3_client.eth.get_transaction_count(acc2.address),
-                "gasPrice": self.web3_client.gas_price(),
-            }
-        )
-        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
-            self.web3_client.send_transaction(acc2, instruction_tx)
-
-        sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
-
-        assert (
-            sol_balance_before_instruction == sol_balance_after
-        ), "SOL Balance changed"
-        assert (
-            neon_balance_after == neon_balance_before_instruction
-        ), "NEON Balance incorrect"
-
-    # @pytest.mark.xfail(reason="Unprofitable transaction, because we create account not in evm (will be fixed)")
-    def test_tx_interact_more_1kb(self):
-        """Send to contract a big text (tx more than 1 kb)"""
-        sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
-
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/Counter", "0.8.10", account=self.acc
-        )
-
-        sol_balance_before_instruction = self.operator.get_solana_balance()
-        neon_balance_before_instruction = self.operator.get_neon_balance()
-
-        instruction_tx = contract.functions.bigString(BIG_STRING).build_transaction(
-            {
-                "from": self.acc.address,
-                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
-                "gasPrice": self.web3_client.gas_price(),
-            }
-        )
-
-        instruction_receipt = self.web3_client.send_transaction(
-            self.acc, instruction_tx
-        )
-
-        sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
-
-        assert (
-            sol_balance_before > sol_balance_before_instruction > sol_balance_after
-        ), "SOL Balance not changed"
-        assert (
-            neon_balance_after > neon_balance_before_instruction > neon_balance_before
-        ), "NEON Balance incorrect"
-
-        self.assert_profit(
-            sol_balance_before_instruction - sol_balance_after,
-            neon_balance_after - neon_balance_before_instruction,
-        )
-        self.get_gas_used_percent(instruction_receipt)
-
-    def test_tx_interact_more_1kb_less_neon(self):
-        """Send to contract a big text (tx more than 1 kb) when less neon"""
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/Counter", "0.8.10", account=self.acc
-        )
-
-        acc2 = self.web3_client.create_account()
-        self.web3_client.send_neon(self.acc, acc2, 0.001)
-
-        sol_balance_before_instruction = self.operator.get_solana_balance()
-        neon_balance_before_instruction = self.operator.get_neon_balance()
-
-        instruction_tx = contract.functions.bigString(BIG_STRING).build_transaction(
-            {
-                "from": acc2.address,
-                "nonce": self.web3_client.eth.get_transaction_count(acc2.address),
-                "gasPrice": self.web3_client.gas_price(),
-            }
-        )
-        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
-            instruction_receipt = self.web3_client.send_transaction(
-                acc2, instruction_tx
-            )
-
-        sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
-
-        assert (
-            sol_balance_before_instruction == sol_balance_after
-        ), "SOL Balance changed"
-        assert (
-            neon_balance_after == neon_balance_before_instruction
-        ), "NEON Balance incorrect"
-
-    def test_tx_interact_more_1kb_less_gas(self):
-        """Send to contract a big text (tx more than 1 kb)"""
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/Counter", "0.8.10", account=self.acc
-        )
+        w3_client, token_price = client_and_price
 
         sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
-
-        instruction_tx = contract.functions.bigString(BIG_STRING).build_transaction(
-            {
-                "from": self.acc.address,
-                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
-                "gasPrice": self.web3_client.gas_price(),
-                "gas": 100,
-            }
-        )
-        with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
-            receipt = self.web3_client.send_transaction(self.acc, instruction_tx)
+        token_balance_before = self.operator.get_token_balance(w3_client)
+        tx = self.create_tx_object(account_with_all_tokens.address, estimate_gas=False, web3_client=w3_client)
+        instruction_tx = counter_contract.functions.moreInstruction(0, 100).build_transaction(tx)  # 1086 steps in evm
+        instruction_receipt = w3_client.send_transaction(account_with_all_tokens, instruction_tx)
 
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
-
-        assert sol_balance_before == sol_balance_after, "SOL Balance changed"
-        assert neon_balance_after == neon_balance_before, "NEON Balance incorrect"
-
-    def test_deploy_contract_more_1kb(self):
-        sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
-
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/Fat", "0.8.10", account=self.acc
-        )
-
-        sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
-
-        assert sol_balance_before > sol_balance_after
-        assert neon_balance_after > neon_balance_before
-
-        self.assert_profit(
-            sol_balance_before - sol_balance_after,
-            neon_balance_after - neon_balance_before,
-        )
-        self.get_gas_used_percent(contract_deploy_tx)
-
-    def test_deploy_contract_more_1kb_less_neon(self):
-        acc2 = self.web3_client.create_account()
-        self.web3_client.send_neon(self.acc, acc2, 0.001)
-
-        sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
-
-        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
-            _, _ = self.web3_client.deploy_and_get_contract(
-                "common/Fat", "0.8.10", account=acc2
-            )
-
-        sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
-
-        assert sol_balance_before == sol_balance_after
-        assert neon_balance_after == neon_balance_before
-
-    def test_deploy_contract_more_1kb_less_gas(self):
-        sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
-
-        with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
-            self.web3_client.deploy_and_get_contract(
-                "common/Fat", "0.8.10", account=self.acc, gas=1000
-            )
-
-        sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
-
-        assert sol_balance_before == sol_balance_after
-        assert neon_balance_after == neon_balance_before
-
-    def test_deploy_contract_to_payed(self):
-        acc2 = self.web3_client.create_account()
-        self.web3_client.send_neon(self.acc, acc2, 10)
-
-        nonce = self.web3_client.eth.get_transaction_count(self.acc.address)
-        contract_address = self.web3_client.keccak(
-            rlp.encode((bytes.fromhex(self.acc.address[2:]), nonce))
-        )[-20:]
-
-        self.web3_client.send_neon(
-            acc2, self.web3_client.to_checksum_address(contract_address.hex()), 0.5
-        )
-
-        sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
-
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/Counter", "0.8.10", account=self.acc
-        )
-
-        sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
 
         assert sol_balance_before > sol_balance_after, "SOL Balance not changed"
-        assert neon_balance_after > neon_balance_before, "NEON Balance incorrect"
-        self.assert_profit(
-            sol_balance_before - sol_balance_after,
-            neon_balance_after - neon_balance_before,
+        assert token_balance_after > token_balance_before, "TOKEN Balance incorrect"
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(
+            sol_balance_before - sol_balance_after, sol_price, token_diff, token_price, w3_client.native_token_name
         )
-        self.get_gas_used_percent(contract_deploy_tx)
+        get_gas_used_percent(w3_client, instruction_receipt)
 
-    def test_deploy_contract_to_exist_unpayed(self):
-        acc2 = self.web3_client.create_account()
-        self.web3_client.send_neon(self.acc, acc2, 50)
+    def test_contract_interact_500000_steps(
+        self, counter_contract, client_and_price, account_with_all_tokens, sol_price
+    ):
+        """Deploy a contract with more 500000 bpf"""
+        w3_client, token_price = client_and_price
 
         sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
+        tx = self.create_tx_object(account_with_all_tokens.address, estimate_gas=False, web3_client=w3_client)
+        instruction_tx = counter_contract.functions.moreInstruction(0, 1500).build_transaction(tx)
 
-        nonce = self.web3_client.eth.get_transaction_count(acc2.address)
-        contract_address = self.web3_client.to_checksum_address(
-            self.web3_client.keccak(
-                rlp.encode((bytes.fromhex(acc2.address[2:]), nonce))
-            )[-20:].hex()
-        )
-        with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
-            self.web3_client.send_neon(acc2, contract_address, 1, gas=1)
-
-        _, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/Counter", "0.8.10", account=acc2
-        )
-
-        sol_balance_after_deploy = self.operator.get_solana_balance()
-        neon_balance_after_deploy = self.operator.get_neon_balance()
-
-        assert sol_balance_before > sol_balance_after_deploy
-        assert neon_balance_after_deploy > neon_balance_before
-        self.assert_profit(
-            sol_balance_before - sol_balance_after_deploy,
-            neon_balance_after_deploy - neon_balance_before,
-        )
-        self.get_gas_used_percent(contract_deploy_tx)
-
-    def test_interact_with_contract_from_non_payed_user(self):
-        acc2 = self.web3_client.create_account()
-        self.faucet.request_neon(acc2.address, 10)
-
-        sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
-
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/Counter", "0.8.10", account=self.acc
-        )
-
-        sol_balance_after_deploy = self.operator.get_solana_balance()
-        neon_balance_after_deploy = self.operator.get_neon_balance()
-
-        inc_tx = contract.functions.inc().build_transaction(
-            {
-                "from": acc2.address,
-                "nonce": self.web3_client.eth.get_transaction_count(acc2.address),
-                "gasPrice": self.web3_client.gas_price(),
-            }
-        )
-
-        self.web3_client.send_transaction(acc2, inc_tx)
-
-        assert contract.functions.get().call() == 1
+        instruction_receipt = w3_client.send_transaction(account_with_all_tokens, instruction_tx)
+        wait_condition(lambda: sol_balance_before > self.operator.get_solana_balance())
 
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
 
-        assert sol_balance_before > sol_balance_after_deploy > sol_balance_after
-        assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
-        self.assert_profit(
-            sol_balance_before - sol_balance_after,
-            neon_balance_after - neon_balance_before,
+        assert sol_balance_before > sol_balance_after, "SOL Balance not changed"
+        assert token_balance_after > token_balance_before, "TOKEN Balance incorrect"
+
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(
+            sol_balance_before - sol_balance_after, sol_price, token_diff, token_price, w3_client.native_token_name
+        )
+        get_gas_used_percent(w3_client, instruction_receipt)
+
+    def test_send_transaction_with_gas_limit_reached(self, counter_contract, client_and_price, account_with_all_tokens):
+        """Transaction with small amount of gas"""
+        w3_client, token_price = client_and_price
+
+        sol_balance_before = self.operator.get_solana_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
+
+        tx = self.create_tx_object(account_with_all_tokens.address, estimate_gas=False, web3_client=w3_client, gas=1000)
+        instruction_tx = counter_contract.functions.moreInstruction(0, 100).build_transaction(tx)
+
+        with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
+            w3_client.send_transaction(account_with_all_tokens, instruction_tx)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
+
+        assert sol_balance_after == sol_balance_before, "SOL Balance changes"
+        assert token_balance_after == token_balance_before, "TOKEN Balance incorrect"
+
+    def test_send_transaction_with_insufficient_funds(
+        self, counter_contract, client_and_price, account_with_all_tokens
+    ):
+        """Transaction with insufficient funds on balance"""
+        w3_client, token_price = client_and_price
+        acc2 = w3_client.create_account()
+        w3_client.send_tokens(account_with_all_tokens, acc2, 100)
+
+        sol_balance_before = self.operator.get_solana_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
+
+        tx = self.create_tx_object(acc2.address, estimate_gas=False, web3_client=w3_client)
+        instruction_tx = counter_contract.functions.moreInstruction(0, 1500).build_transaction(tx)
+        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
+            w3_client.send_transaction(acc2, instruction_tx)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
+
+        assert sol_balance_before == sol_balance_after, "SOL Balance changed"
+        assert token_balance_after == token_balance_before, "TOKEN Balance incorrect"
+
+    def test_tx_interact_more_1kb(self, counter_contract, client_and_price, account_with_all_tokens, sol_price):
+        """Send to contract a big text (tx more than 1 kb)"""
+        w3_client, token_price = client_and_price
+        sol_balance_before = self.operator.get_solana_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
+
+        tx = self.create_tx_object(account_with_all_tokens.address, estimate_gas=False, web3_client=w3_client)
+        instruction_tx = counter_contract.functions.bigString(BIG_STRING).build_transaction(tx)
+
+        instruction_receipt = w3_client.send_transaction(account_with_all_tokens, instruction_tx)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
+
+        assert sol_balance_before > sol_balance_after, "SOL Balance not changed"
+        assert token_balance_after > token_balance_before, "TOKEN Balance incorrect"
+
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(
+            sol_balance_before - sol_balance_after, sol_price, token_diff, token_price, w3_client.native_token_name
+        )
+        get_gas_used_percent(w3_client, instruction_receipt)
+
+    def test_deploy_contract_more_1kb(
+        self, client_and_price, account_with_all_tokens, web3_client, web3_client_sol, sol_price
+    ):
+        w3_client, token_price = client_and_price
+
+        make_nonce_the_biggest_for_chain(account_with_all_tokens, w3_client, [web3_client, web3_client_sol])
+        sol_balance_before = self.operator.get_solana_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
+
+        contract, contract_deploy_tx = w3_client.deploy_and_get_contract(
+            "common/Fat", "0.8.10", account=account_with_all_tokens
         )
 
+        sol_balance_after = self.operator.get_solana_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
+
+        assert sol_balance_before > sol_balance_after
+        assert token_balance_after > token_balance_before
+
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(
+            sol_balance_before - sol_balance_after, sol_price, token_diff, token_price, w3_client.native_token_name
+        )
+        get_gas_used_percent(w3_client, contract_deploy_tx)
+
+    def test_deploy_contract_to_payed(
+        self, client_and_price, account_with_all_tokens, web3_client, web3_client_sol, sol_price
+    ):
+        w3_client, token_price = client_and_price
+        make_nonce_the_biggest_for_chain(account_with_all_tokens, w3_client, [web3_client, web3_client_sol])
+        nonce = w3_client.eth.get_transaction_count(account_with_all_tokens.address)
+        contract_address = w3_client.keccak(rlp.encode((bytes.fromhex(self.acc.address[2:]), nonce)))[-20:]
+
+        w3_client.send_tokens(account_with_all_tokens, w3_client.to_checksum_address(contract_address.hex()), 5000)
+
+        sol_balance_before = self.operator.get_solana_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
+
+        contract, contract_deploy_tx = w3_client.deploy_and_get_contract(
+            "common/Counter", "0.8.10", account=account_with_all_tokens
+        )
+
+        sol_balance_after = self.operator.get_solana_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
+
+        assert sol_balance_before > sol_balance_after, "SOL Balance not changed"
+        assert token_balance_after > token_balance_before, "TOKEN Balance incorrect"
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(
+            sol_balance_before - sol_balance_after, sol_price, token_diff, token_price, w3_client.native_token_name
+        )
+        get_gas_used_percent(w3_client, contract_deploy_tx)
+
+    def test_deploy_contract_to_exist_unpayed(
+        self, client_and_price, account_with_all_tokens, web3_client, web3_client_sol, sol_price
+    ):
+        w3_client, token_price = client_and_price
+
+        sol_balance_before = self.operator.get_solana_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
+
+        make_nonce_the_biggest_for_chain(account_with_all_tokens, w3_client, [web3_client, web3_client_sol])
+        nonce = w3_client.eth.get_transaction_count(account_with_all_tokens.address)
+        contract_address = w3_client.to_checksum_address(
+            w3_client.keccak(rlp.encode((bytes.fromhex(account_with_all_tokens.address[2:]), nonce)))[-20:].hex()
+        )
+        with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
+            w3_client.send_tokens(account_with_all_tokens, contract_address, 100, gas=1)
+
+        _, contract_deploy_tx = w3_client.deploy_and_get_contract(
+            "common/Counter", "0.8.10", account=account_with_all_tokens
+        )
+
+        sol_balance_after_deploy = self.operator.get_solana_balance()
+        token_balance_after_deploy = self.operator.get_token_balance(w3_client)
+
+        assert sol_balance_before > sol_balance_after_deploy
+        assert token_balance_after_deploy > token_balance_before
+        token_diff = w3_client.to_main_currency(token_balance_after_deploy - token_balance_before)
+        assert_profit(
+            sol_balance_before - sol_balance_after_deploy,
+            sol_price,
+            token_diff,
+            token_price,
+            w3_client.native_token_name,
+        )
+        get_gas_used_percent(w3_client, contract_deploy_tx)
+
     @pytest.mark.timeout(960)
-    def test_deploy_contract_alt_on(self, sol_client):
+    def test_deploy_contract_alt_on(self, sol_client, neon_price, sol_price):
         """Trigger transaction than requires more than 30 accounts"""
         accounts_quantity = random.randint(31, 45)
         sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
+        neon_balance_before = self.operator.get_token_balance(self.web3_client)
 
         contract, _ = self.web3_client.deploy_and_get_contract(
             "common/ALT", "0.8.10", account=self.acc, constructor_args=[8]
@@ -1011,10 +636,8 @@ class TestEconomics(BaseTests):
             }
         )
         receipt = self.web3_client.send_transaction(self.acc, tx)
-        self.check_alt_on(sol_client, receipt, accounts_quantity)
-        solana_trx = self.web3_client.get_solana_trx_by_neon(
-            receipt["transactionHash"].hex()
-        )
+        check_alt_on(self.web3_client, sol_client, receipt, accounts_quantity)
+        solana_trx = self.web3_client.get_solana_trx_by_neon(receipt["transactionHash"].hex())
         sol_trx_with_alt = None
 
         for trx in solana_trx["result"]:
@@ -1028,15 +651,9 @@ class TestEconomics(BaseTests):
         if not sol_trx_with_alt:
             raise ValueError(f"There are no lookup table for {solana_trx}")
 
-        operator = PublicKey(
-            sol_trx_with_alt.value.transaction.transaction.message.account_keys[0]
-        )
+        operator = PublicKey(sol_trx_with_alt.value.transaction.transaction.message.account_keys[0])
 
-        alt_address = (
-            sol_trx_with_alt.value.transaction.transaction.message.address_table_lookups[
-                0
-            ].account_key
-        )
+        alt_address = sol_trx_with_alt.value.transaction.transaction.message.address_table_lookups[0].account_key
         alt_balance = sol_client.get_balance(PublicKey(alt_address)).value
         operator_balance = sol_client.get_balance(operator).value
 
@@ -1045,13 +662,17 @@ class TestEconomics(BaseTests):
             timeout_sec=120,
         )
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        neon_balance_after = self.operator.get_token_balance(self.web3_client)
 
         assert sol_balance_before > sol_balance_after
         assert neon_balance_after > neon_balance_before
-        self.assert_profit(
+        neon_diff = self.web3_client.to_main_currency(neon_balance_after - neon_balance_before)
+        assert_profit(
             sol_balance_before - sol_balance_after - alt_balance,
-            neon_balance_after - neon_balance_before,
+            sol_price,
+            neon_diff,
+            neon_price,
+            self.web3_client.native_token_name,
         )
         # the charge for alt creating should be returned
         wait_condition(
@@ -1061,55 +682,89 @@ class TestEconomics(BaseTests):
         )
 
         assert (
-            operator_balance + alt_balance - TX_COST * 2
-            == sol_client.get_balance(operator).value
+            operator_balance + alt_balance - TX_COST * 2 == sol_client.get_balance(operator).value
         ), "Operator balance after the return of the alt creation fee is not correct"
-        self.get_gas_used_percent(receipt)
+        get_gas_used_percent(self.web3_client, receipt)
 
-    @pytest.mark.parametrize("accounts_quantity", [10])
-    def test_deploy_contract_alt_off(self, sol_client, accounts_quantity):
+    def test_deploy_contract_alt_off(
+        self, sol_client, client_and_price, account_with_all_tokens, web3_client, web3_client_sol, sol_price
+    ):
         """Trigger transaction than requires less than 30 accounts"""
+        accounts_quantity = 10
+        w3_client, token_price = client_and_price
+        make_nonce_the_biggest_for_chain(account_with_all_tokens, w3_client, [web3_client, web3_client_sol])
         sol_balance_before = self.operator.get_solana_balance()
-        neon_balance_before = self.operator.get_neon_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
 
-        contract, _ = self.web3_client.deploy_and_get_contract(
-            "common/ALT", "0.8.10", account=self.acc, constructor_args=[8]
+        contract, _ = w3_client.deploy_and_get_contract(
+            "common/ALT", "0.8.10", account=account_with_all_tokens, constructor_args=[8]
         )
 
         sol_balance_after_deploy = self.operator.get_solana_balance()
-        neon_balance_after_deploy = self.operator.get_neon_balance()
+        token_balance_after_deploy = self.operator.get_token_balance(w3_client)
 
-        tx = contract.functions.fill(accounts_quantity).build_transaction(
-            {
-                "from": self.acc.address,
-                "nonce": self.web3_client.eth.get_transaction_count(self.acc.address),
-                "gasPrice": self.web3_client.gas_price(),
-            }
-        )
-        receipt = self.web3_client.send_transaction(self.acc, tx)
+        tx = self.create_tx_object(account_with_all_tokens.address, estimate_gas=False, web3_client=w3_client)
+        instr = contract.functions.fill(accounts_quantity).build_transaction(tx)
+        receipt = w3_client.send_transaction(account_with_all_tokens, instr)
         block = int(receipt["blockNumber"])
 
         response = wait_for_block(sol_client, block)
-        self.check_alt_off(response)
+        check_alt_off(response)
 
         sol_balance_after = self.operator.get_solana_balance()
-        neon_balance_after = self.operator.get_neon_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
 
         assert sol_balance_before > sol_balance_after_deploy > sol_balance_after
-        assert neon_balance_after > neon_balance_after_deploy > neon_balance_before
-        self.assert_profit(
-            sol_balance_before - sol_balance_after,
-            neon_balance_after - neon_balance_before,
+        assert token_balance_after > token_balance_after_deploy > token_balance_before
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_after_deploy)
+        assert_profit(
+            sol_balance_after_deploy - sol_balance_after,
+            sol_price,
+            token_diff,
+            token_price,
+            w3_client.native_token_name,
         )
-        self.get_gas_used_percent(receipt)
+        get_gas_used_percent(w3_client, receipt)
 
+    def test_deploy_big_contract_with_structures(self, client_and_price, account_with_all_tokens, sol_price):
+        w3_client, token_price = client_and_price
 
-def wait_for_block(client, block, timeout=60):
-    started = time.time()
-    while (time.time() - started) < timeout:
-        try:
-            return client.get_block(block, max_supported_transaction_version=2)
-        except RPCException:
-            time.sleep(3)
-        time.sleep(3)
-    raise TimeoutError("Block not available for slot")
+        sol_balance_before = self.operator.get_solana_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
+
+        contract, receipt = w3_client.deploy_and_get_contract("EIPs/ERC3475", "0.8.10", account_with_all_tokens)
+
+        sol_balance_after = self.operator.get_solana_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(
+            sol_balance_before - sol_balance_after, sol_price, token_diff, token_price, w3_client.native_token_name
+        )
+        get_gas_used_percent(w3_client, receipt)
+
+    @pytest.mark.parametrize("value", [20, 25, 55])
+    def test_call_contract_with_mapping_updating(
+        self, client_and_price, account_with_all_tokens, sol_price, web3_client, web3_client_sol, value
+    ):
+        w3_client, token_price = client_and_price
+        make_nonce_the_biggest_for_chain(account_with_all_tokens, w3_client, [web3_client, web3_client_sol])
+        contract, _ = w3_client.deploy_and_get_contract(
+            contract="common/Common", version="0.8.12", contract_name="MappingActions", account=account_with_all_tokens
+        )
+
+        sol_balance_before = self.operator.get_solana_balance()
+        token_balance_before = self.operator.get_token_balance(w3_client)
+
+        tx = self.create_tx_object(account_with_all_tokens.address, estimate_gas=False, web3_client=w3_client)
+
+        instruction_tx = contract.functions.replaceValues(value).build_transaction(tx)
+        receipt = w3_client.send_transaction(account_with_all_tokens, instruction_tx)
+        assert receipt["status"] == 1
+        wait_condition(lambda: sol_balance_before != self.operator.get_solana_balance())
+
+        sol_balance_after = self.operator.get_solana_balance()
+        token_balance_after = self.operator.get_token_balance(w3_client)
+        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(
+            sol_balance_before - sol_balance_after, sol_price, token_diff, token_price, w3_client.native_token_name
+        )

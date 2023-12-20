@@ -104,11 +104,11 @@ def assert_block_fields(block: dict, full_trx: bool, tx_receipt: tp.Optional[typ
 
 
 def assert_log_field_in_neon_trx_receipt(response, events_count):
-    expected_event_types = ["ENTER CALL"]
+    expected_event_types = ["EnterCall"]
     for i in range(events_count):
-        expected_event_types.append("LOG")
-    expected_event_types.append("EXIT STOP")
-    expected_event_types.append("RETURN")
+        expected_event_types.append("Log")
+    expected_event_types.append("ExitStop")
+    expected_event_types.append("Return")
     all_logs = []
 
     for trx in response["result"]["solanaTransactions"]:
@@ -138,7 +138,7 @@ def assert_log_field_in_neon_trx_receipt(response, events_count):
             assert neon_logs != []
             for log in neon_logs:
                 all_logs.append(log)
-    event_types = [log["neonEventType"] for log in sorted(all_logs, key=lambda x: x["neonEventOrder"])]
+    event_types = [log["neonEventType"] for log in sorted(all_logs, key=lambda x: int(x["neonEventOrder"], 16))]
 
     assert event_types == expected_event_types, f"Actual: {event_types}; Expected: {expected_event_types}"
 
@@ -178,10 +178,8 @@ def assert_equal_fields(result, comparable_object, comparable_fields, keys_mappi
             r = comparable_object[keys_mappings.get(field)]
         else:
             r = comparable_object[field]
-        if isinstance(r, str):
-            r = r.lower()
         if isinstance(r, int):
             r = hex(r)
         if isinstance(r, HexBytes):
             r = r.hex()
-        assert l == r, f"{field} from response {l} is not equal to {field} from receipt {r}"
+        assert l == r, f"The field '{field}' {l} from response  is not equal to {field} from receipt {r}"

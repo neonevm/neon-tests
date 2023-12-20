@@ -14,7 +14,7 @@ on:
         options:
           - night-stand
           - devnet
-          - aws
+          - terraform
           - custom
       dapps:
         type: string
@@ -41,6 +41,7 @@ on:
         required: false
         description: "Url to send the report as comment for PR"
 env:
+  NETWORK: ${{ github.event.inputs.network || 'night-stand' }}
   AWS_ACCESS_KEY_ID: ${{ secrets.DAPPS_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.DAPPS_AWS_SECRET_ACCESS_KEY }}
   AWS_REGION: us-east-2
@@ -63,95 +64,39 @@ jobs:
           echo "list=${list}"
           echo "list=${list}" >> $GITHUB_OUTPUT
 
-      - name: Define network
-        id: stand
-        run: |
-          if [[ "${{ github.event.inputs.network }}" != "" ]]; then
-            network=${{ github.event.inputs.network }}
-          else
-            network=aws
-          fi;
-          echo "network=${network}"
-          echo "network=${network}" >> $GITHUB_OUTPUT
-
-      - name: Install terraform
-        id: terraform
-        if: steps.stand.outputs.network == 'aws'
-        run: |
-          sudo apt-get update && sudo apt-get install -y python-dev gnupg software-properties-common wget jq
-          wget -O- https://apt.releases.hashicorp.com/gpg | \
-              gpg --dearmor | \
-              sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
-          gpg --no-default-keyring \
-              --keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg \
-              --fingerprint
-          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
-              https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
-              sudo tee /etc/apt/sources.list.d/hashicorp.list
-          sudo apt update
-          sudo apt-get install terraform
-
-
-      - name: Install python requirements
-        id: requirements
-        uses: ./.github/actions/python-requirements
-
-      - name: Deploy stand with terraform
-        id: deploy
-        if: steps.stand.outputs.network == 'aws'
-        run: |
-          ssh_key=/tmp/dapps-stand
-          echo "${{ secrets.SSH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
-          python3 ./clickfile.py infra deploy
-      - uses: actions/upload-artifact@v3
-        if: steps.stand.outputs.network == 'aws'
-        with:
-          name: tf-state
-          path: deploy/aws/
-
-      - name: Set outputs
-        id: share
+      - name: "Prepare stand"
+        id: prepare_stand
         env:
-          SOLANA_IP: ${{ env.SOLANA_IP }}
-          PROXY_IP: ${{ env.PROXY_IP }}
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
+          TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
+          TFSTATE_KEY_PREFIX: ${{vars.TFSTATE_KEY_PREFIX}}
+          TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
+        uses: ./.github/actions/prepare-stand
+        with:
+          network: ${{ env.NETWORK }}
+          ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
+          devnet_solana_url: ${{ secrets.SOLANA_URL }}
+          proxy_url: ${{ github.event.inputs.proxy_url }}
+          solana_url: ${{ github.event.inputs.solana_url }}
+          faucet_url: ${{ github.event.inputs.faucet_url }}
+          network_id: ${{ github.event.inputs.network_id }}
+      - name: Set outputs
+        id: vars
         run: |
-          if [[ "${{steps.stand.outputs.network}}" == "custom" ]]; then
-            proxy_url=${{ github.event.inputs.proxy_url }}
-            faucet_url=${{ github.event.inputs.faucet_url }}
-            solana_url=${{ github.event.inputs.solana_url }}
-            network_id=${{ github.event.inputs.network_id }}
-          else
-            proxy_url=`python ./clickfile.py infra print-network-param -n '${{steps.stand.outputs.network}}' -p 'proxy_url'`
-            solana_url=`python ./clickfile.py infra print-network-param -n '${{steps.stand.outputs.network}}' -p 'solana_url'`
-            faucet_url=`python ./clickfile.py infra print-network-param -n '${{steps.stand.outputs.network}}' -p 'faucet_url'`
-            network_id=`python ./clickfile.py infra print-network-param -n '${{steps.stand.outputs.network}}' -p 'network_id'`
-          fi;
-          
-          if [[ "${{steps.stand.outputs.network}}" == "devnet" ]]; then
-            solana_url="${{ secrets.SOLANA_URL }}"
-          fi;
-          echo "proxy_url=$proxy_url"
-          echo "solana_url=$solana_url"
-          echo "faucet_url=$faucet_url"
-          echo "network_id=$network_id"
-          echo "proxy_url=$proxy_url" >> $GITHUB_OUTPUT
-          echo "solana_url=$solana_url" >> $GITHUB_OUTPUT
-          echo "faucet_url=$faucet_url" >> $GITHUB_OUTPUT
-          echo "network_id=$network_id" >> $GITHUB_OUTPUT
-
-      - name: Wait until proxy is ready
-        timeout-minutes: 5
-        run: |
-            while [[ "$(curl -s -X POST -o /dev/null -w ''%{http_code}'' ${{ steps.share.outputs.proxy_url }})" != "200" ]];
-              do echo  "Proxy is not ready yet. Waiting 5 seconds...";
-              sleep 5;
-            done
+            echo "runner=${{ env.RUNNER }}" >> $GITHUB_OUTPUT
+        #    echo "network=${{ env.NETWORK }}" >> $GITHUB_OUTPUT
     outputs:
-      solana_url: ${{ steps.share.outputs.solana_url }}
-      proxy_url: ${{ steps.share.outputs.proxy_url }}
-      faucet_url: ${{ steps.share.outputs.faucet_url }}
-      network_id: ${{ steps.share.outputs.network_id }}
-      network: ${{ steps.stand.outputs.network }}
+      runner: ${{ steps.vars.outputs.runner }}
+     # network: ${{ steps.vars.outputs.network }}
+      solana_url: ${{ steps.prepare_stand.outputs.solana_url }}
+      proxy_url: ${{ steps.prepare_stand.outputs.proxy_url }}
+      faucet_url:  ${{ steps.prepare_stand.outputs.faucet_url }}
+      network_id: ${{ steps.prepare_stand.outputs.network_id }}
+      proxy_ip: ${{ steps.prepare_stand.outputs.proxy_ip }}
+      solana_ip: ${{ steps.prepare_stand.outputs.solana_ip }}
       dapps: ${{ steps.dapps.outputs.list }}
 
   uniswap-v2:
@@ -164,7 +109,8 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
+      SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
@@ -175,7 +121,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch uniswap v2 tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -208,11 +154,12 @@ jobs:
     needs:
       - prepare
     env:
+      SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       SOLANA_URL: ${{ needs.prepare.outputs.solana_url }}
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
       DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
@@ -223,7 +170,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch uniswap v3 tests
         if: ${{ steps.accounts.outcome == 'success'}}
@@ -259,7 +206,8 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
+      SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
@@ -270,7 +218,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch saddle tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -307,7 +255,8 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
+      SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
@@ -318,7 +267,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 5 -a 20000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 5 -a 20000 -n ${{env.NETWORK}}
 
       - name: Launch aave tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -348,7 +297,8 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
+      SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
@@ -359,7 +309,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 8 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 8 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch curve tests
         id: curve
@@ -394,7 +344,8 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
+      SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
@@ -423,7 +374,8 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
+      SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
@@ -434,7 +386,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 2 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 2 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch compound tests
         timeout-minutes: 30
@@ -469,7 +421,8 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
+      SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
@@ -480,7 +433,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch robonomics tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -513,7 +466,8 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
+      SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3
@@ -524,7 +478,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 10 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 10 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch yearn tests
         id: yearn
@@ -572,7 +526,7 @@ jobs:
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 8 -a 10000 -n ${{env.NETWORK_NAME}}
+          python3 ./clickfile.py infra gen-accounts -c 8 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch Pancake tests
         if: ${{ steps.accounts.outcome == 'success'}}
@@ -580,7 +534,7 @@ jobs:
         timeout-minutes: 30
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
-          IMAGE: neonlabsorg/pancake:b63a00cb69a5655ea2ee2002c3e242f001745f1e
+          IMAGE: neonlabsorg/pancake:83ae92f6a2a489be0d148aadbe887099178eef52
         run: |
           test -t 1 && USE_TTY="-t"
           docker pull ${{ env.IMAGE }}
@@ -601,6 +555,7 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       NETWORK: ${{ needs.prepare.outputs.network }}
+
     steps:
       - uses: actions/checkout@v3
       - name: Install python requirements
@@ -664,46 +619,26 @@ jobs:
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, robonomics, swap-report, compound, curve-factory, pancake]
-    if: always() && needs.prepare.outputs.network == 'aws'
+    needs: [ prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, robonomics, swap-report, compound, curve-factory, pancake ]
+    if: always() && needs.prepare.outputs.network == 'terraform'
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+      - name: "Destroy stand"
+        env:
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
+          TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
+          TFSTATE_KEY_PREFIX: ${{vars.TFSTATE_KEY_PREFIX}}
+          TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
+          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+        uses: ./.github/actions/destroy-tf-stand
         with:
-          name: tf-state
-      - name: Install python requirements
-        if: always()
-        id: requirements
-        uses: ./.github/actions/python-requirements
-      - name: Prepare server for destroy terraform stand
-        if: always()
-        run: |
-          sudo apt-get update && sudo apt-get install -y python-dev gnupg software-properties-common wget
-          wget -O- https://apt.releases.hashicorp.com/gpg | \
-              gpg --dearmor | \
-              sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
-          gpg --no-default-keyring \
-              --keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg \
-              --fingerprint
-          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
-              https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
-              sudo tee /etc/apt/sources.list.d/hashicorp.list
-          sudo apt update
-          sudo apt-get install terraform
-          ssh_key=/tmp/dapps-stand
-          echo "${{ secrets.SSH_DAPPS_PRIVATE_KEY }}" >> ${ssh_key} && chmod 400 ${ssh_key}
-      - name: Download docker logs
-        run: python3 ./clickfile.py infra download-logs
-      - name: Destroy stand with terraform
-        id: destroy
-        if: always()
-        run: |
-          python3 ./clickfile.py infra destroy
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: AWS docker logs
-          path: ./logs/*
+          ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
+          devnet_solana_url: ${{ secrets.SOLANA_URL }}
+
 
   notify:
     runs-on: ubuntu-20.04

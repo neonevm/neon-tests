@@ -1,8 +1,11 @@
 import json
 import pathlib
 import random
+import re
 
 from jsonschema import Draft4Validator
+from rlp import decode
+from rlp.sedes import List, big_endian_int, binary
 
 import allure
 import pytest
@@ -255,3 +258,182 @@ class TestTracerDebugMethods(BaseMixin):
         assert "error" in response, "No errors in response"
         assert response["error"]["code"] == -32603, "Invalid error code"
         assert response["error"]["message"] == "eth_getBlockByHash returns None for '\"0xd97ff4869d52c4add6f5bcb1ba96020dd7877244b4cbf49044f49f002015ea85\"' block"
+
+    def decode_raw_header(self, header: bytes):
+        sedes = List([big_endian_int, binary, binary, binary, binary])
+        return decode(header, sedes)
+
+    def test_getRawHeader_by_block_number(self):
+        receipt = self.send_neon(
+            self.sender_account, self.recipient_account, 0.1)
+        assert receipt["status"] == 1
+        wait_condition(lambda: self.tracer_api.send_rpc(method="debug_getRawHeader",
+                                                        params=[hex(receipt["blockNumber"])])["result"] is not None,
+                       timeout_sec=120)
+        
+        response = self.tracer_api.send_rpc(
+            method="debug_getRawHeader", params=[hex(receipt["blockNumber"])])
+        assert "error" not in response, "Error in response"
+        assert response["result"] is not None
+
+        header = self.decode_raw_header(bytes.fromhex(response["result"]))
+        block_info = self.web3_client.eth.get_block(receipt["blockNumber"])
+        assert header[0] == block_info["number"]
+        assert header[1].hex() == '' 
+        assert header[2].hex() == block_info["parentHash"].hex()[2:]
+        assert header[3].hex() == block_info["stateRoot"].hex()[2:]
+        assert header[4].hex() == block_info["receiptsRoot"].hex()[2:]
+
+
+    def test_getRawHeader_by_invalid_block_number(self):
+        response = self.tracer_api.send_rpc(
+            method="debug_getRawHeader", params=["0f98e"])
+        assert "error" in response, "No errors in response"
+        assert response["error"]["code"] == -32602, "Invalid error code"
+        assert response["error"]["message"] == "Invalid params"
+    
+    def test_getRawHeader_by_block_hash(self):
+        receipt = self.send_neon(
+            self.sender_account, self.recipient_account, 0.1)
+        assert receipt["status"] == 1
+        wait_condition(lambda: self.tracer_api.send_rpc(method="debug_getRawHeader",
+                                                        params=[receipt["blockHash"].hex()])["result"] is not None,
+                       timeout_sec=120)
+        
+        response = self.tracer_api.send_rpc(
+            method="debug_getRawHeader", params=[receipt["blockHash"].hex()])
+        assert "error" not in response, "Error in response"
+        assert response["result"] is not None
+
+        header = self.decode_raw_header(bytes.fromhex(response["result"]))
+        block_info = self.web3_client.eth.get_block(receipt["blockNumber"])
+        assert header[0] == block_info["number"]
+        assert header[1].hex() == '' 
+        assert header[2].hex() == block_info["parentHash"].hex()[2:]
+        assert header[3].hex() == block_info["stateRoot"].hex()[2:]
+        assert header[4].hex() == block_info["receiptsRoot"].hex()[2:]
+
+    def test_getRawHeader_by_invalid_block_hash(self):
+        response = self.tracer_api.send_rpc(
+            method="debug_getRawHeader", params=["0f98e"])
+        assert "error" in response, "No errors in response"
+        assert response["error"]["code"] == -32602, "Invalid error code"
+        assert response["error"]["message"] == "Invalid params"
+
+    def check_modified_accounts_response(self, response):
+        assert "error" not in response, "Error in response"
+        assert response["result"] is not None and response["result"] != []
+        assert isinstance(response["result"], list)
+        assert self.sender_account.address in response["result"]
+        for item in response["result"]:
+            assert re.match('^0x[a-fA-F\d]{64}$', item) 
+
+    @pytest.mark.skip(reason="bug NDEV-2375")
+    def test_debug_get_modified_accounts_by_number(self):
+        receipt_start = self.send_neon(
+            self.sender_account, self.recipient_account, 0.1)
+        receipt_end = self.send_neon(
+            self.sender_account, self.recipient_account, 0.1)
+        assert receipt_start["status"] == 1
+        assert receipt_end["status"] == 1
+
+        wait_condition(lambda: self.tracer_api.send_rpc(method="debug_getModifiedAccountsByNumber",
+                                                        params=[hex(receipt_start["blockNumber"]), hex(receipt_end["blockNumber"])])["result"] is not None,
+                       timeout_sec=120)
+        
+        response = self.tracer_api.send_rpc(
+            method="debug_getModifiedAccountsByNumber", params=[hex(receipt_start["blockNumber"]), hex(receipt_end["blockNumber"])])
+        self.check_modified_accounts_response(response)
+    
+    @pytest.mark.skip(reason="bug NDEV-2375")
+    def test_debug_get_modified_accounts_by_same_number(self):
+        receipt = self.send_neon(
+            self.sender_account, self.recipient_account, 0.1)
+        assert receipt["status"] == 1
+
+        wait_condition(lambda: self.tracer_api.send_rpc(method="debug_getModifiedAccountsByNumber",
+                                                        params=[hex(receipt["blockNumber"]), hex(receipt["blockNumber"])])["result"] is not None,
+                       timeout_sec=120)
+        
+        response = self.tracer_api.send_rpc(
+            method="debug_getModifiedAccountsByNumber", params=[hex(receipt["blockNumber"]), hex(receipt["blockNumber"])])
+        self.check_modified_accounts_response(response)
+   
+    @pytest.mark.skip(reason="bug NDEV-2375")
+    def test_debug_get_modified_accounts_by_only_one_number(self):
+        receipt = self.send_neon(
+            self.sender_account, self.recipient_account, 0.1)
+        assert receipt["status"] == 1
+
+        wait_condition(lambda: self.tracer_api.send_rpc(method="debug_getModifiedAccountsByNumber",
+                                                        params=[hex(receipt["blockNumber"])])["result"] is not None,
+                       timeout_sec=120)
+        
+        response = self.tracer_api.send_rpc(
+            method="debug_getModifiedAccountsByNumber", params=[hex(receipt["blockNumber"])])
+        self.check_modified_accounts_response(response)
+    
+    @pytest.mark.skip(reason="bug NDEV-2375")
+    @pytest.mark.parametrize("difference", [1, 50, 199, 200])
+    def test_debug_get_modified_accounts_by_number_blocks_difference_less_or_equal_200(self, difference):
+        receipt = self.send_neon(
+            self.sender_account, self.recipient_account, 0.1)
+        assert receipt["status"] == 1
+        start_number = hex(receipt["blockNumber"] - difference)
+        end_number= hex(receipt["blockNumber"])
+        wait_condition(lambda: self.tracer_api.send_rpc(method="debug_getModifiedAccountsByNumber",
+                                                        params=[start_number, end_number])["result"] is not None,
+                       timeout_sec=120)
+        
+        response = self.tracer_api.send_rpc(
+            method="debug_getModifiedAccountsByNumber", params=[start_number, end_number])
+        self.check_modified_accounts_response(response)
+    
+    @pytest.mark.skip(reason="bug NDEV-2375")
+    def test_debug_get_modified_accounts_by_number_201_blocks_difference(self):
+        receipt = self.send_neon(
+            self.sender_account, self.recipient_account, 0.1)
+        assert receipt["status"] == 1
+        start_number = hex(receipt["blockNumber"] - 201)
+        end_number= hex(receipt["blockNumber"])
+        
+        response = self.tracer_api.send_rpc(
+            method="debug_getModifiedAccountsByNumber", params=[start_number, end_number])
+        assert "error" in response, "No errors in response"
+        assert response["error"]["code"] == -32603, "Invalid error code"
+        assert response["error"]["message"] == "Requested range (201) is too big, maximum allowed range is 200 blocks"
+    
+    @pytest.mark.skip(reason="bug NDEV-2375")
+    @pytest.mark.parametrize("params", [[1, 124], ["94f3e", 12], ["1a456", "0x0"], ["183b8e", "183b8e"]])
+    def test_debug_get_modified_accounts_by_invalid_numbers(self, params):        
+        response = self.tracer_api.send_rpc(
+            method="debug_getModifiedAccountsByNumber", params=params)
+        assert "error" in response, "No errors in response"
+        assert response["error"]["code"] == -32602, "Invalid error code"
+        assert response["error"]["message"] == "Invalid params"
+    
+    @pytest.mark.skip(reason="bug NDEV-2375")
+    def test_debug_get_modified_accounts_by_hash(self):
+        receipt_start = self.send_neon(
+            self.sender_account, self.recipient_account, 0.1)
+        receipt_end = self.send_neon(
+            self.sender_account, self.recipient_account, 0.1)
+        assert receipt_start["status"] == 1
+        assert receipt_end["status"] == 1
+
+        wait_condition(lambda: self.tracer_api.send_rpc(method="debug_getModifiedAccountsByHash",
+                                                        params=[receipt_start["blockHash"].hex(), receipt_end["blockHash"].hex()])["result"] is not None,
+                       timeout_sec=120)
+        
+        response = self.tracer_api.send_rpc(
+            method="debug_getModifiedAccountsByHash", params=[receipt_start["blockHash"].hex(), receipt_end["blockHash"].hex()])
+        self.check_modified_accounts_response(response)
+    
+    @pytest.mark.skip(reason="bug NDEV-2375")
+    @pytest.mark.parametrize("params", [[1, 124], ["0x94f3e00000000800000000", 12], ["0x1a456", "0x000000000001"], ["0x183b8e", "183b8e"]])
+    def test_debug_get_modified_accounts_by_invalid_hash(self, params):
+        response = self.tracer_api.send_rpc(
+            method="debug_getModifiedAccountsByHash", params=params)
+        assert "error" in response, "No errors in response"
+        assert response["error"]["code"] == -32602, "Invalid error code"
+        assert response["error"]["message"] == "Invalid params"

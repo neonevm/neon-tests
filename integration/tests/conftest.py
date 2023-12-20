@@ -1,6 +1,8 @@
 import os
 import random
 import string
+import pathlib
+import json
 import typing
 
 import allure
@@ -20,6 +22,7 @@ from utils.faucet import Faucet
 from utils.operator import Operator
 from utils.solana_client import SolanaClient
 from utils.web3client import NeonChainWeb3Client
+from utils.prices import get_sol_price, get_neon_price
 
 NEON_AIRDROP_AMOUNT = 10_000
 
@@ -27,13 +30,22 @@ NEON_AIRDROP_AMOUNT = 10_000
 def pytest_collection_modifyitems(config, items):
     deselected_items = []
     selected_items = []
-    if config.getoption("--network") == "devnet":
-        deselected_mark = "only_stands"
-    else:
-        deselected_mark = "only_devnet"
+    deselected_marks = []
+    network_name = config.getoption("--network")
 
+    if network_name == "devnet":
+        deselected_marks.append("only_stands")
+    else:
+        deselected_marks.append("only_devnet")
+
+    envs_file = config.getoption("--envs")
+    with open(pathlib.Path().parent.parent / envs_file, "r+") as f:
+        environments = json.load(f)
+
+    if len(environments[network_name]["network_ids"]) == 1:
+        deselected_marks.append("multipletokens")
     for item in items:
-        if item.get_closest_marker(deselected_mark):
+        if any([item.get_closest_marker(mark) for mark in deselected_marks]):
             deselected_items.append(item)
         else:
             selected_items.append(item)
@@ -90,21 +102,21 @@ def prepare_account(operator, faucet, web3_client: NeonChainWeb3Client):
         acc = web3_client.eth.account.create()
     with allure.step(f"Request {NEON_AIRDROP_AMOUNT} NEON from faucet for {acc.address}"):
         faucet.request_neon(acc.address, NEON_AIRDROP_AMOUNT)
-        assert web3_client.get_balance(acc) == NEON_AIRDROP_AMOUNT
-    start_neon_balance = operator.get_neon_balance()
+        assert web3_client.get_ether_balance(acc) == NEON_AIRDROP_AMOUNT
+    start_neon_balance = operator.get_token_balance()
     start_sol_balance = operator.get_solana_balance()
     with allure.step(
-        f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
+            f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
     ):
         pass
     yield acc
-    end_neon_balance = operator.get_neon_balance()
+    end_neon_balance = operator.get_token_balance()
     end_sol_balance = operator.get_solana_balance()
     with allure.step(
-        f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
+            f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
     ):
         pass
-    with allure.step(f"Account end balance: {web3_client.get_balance(acc)} NEON"):
+    with allure.step(f"Account end balance: {web3_client.get_ether_balance(acc)} NEON"):
         pass
 
 
@@ -144,11 +156,11 @@ def solana_account(bank_account, pytestconfig: Config, sol_client):
 
 @pytest.fixture(scope="session")
 def erc20_spl(
-    web3_client: NeonChainWeb3Client,
-    faucet,
-    pytestconfig: Config,
-    sol_client,
-    solana_account,
+        web3_client: NeonChainWeb3Client,
+        faucet,
+        pytestconfig: Config,
+        sol_client,
+        solana_account,
 ):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
     erc20 = ERC20Wrapper(
@@ -200,13 +212,50 @@ def erc20_spl_mintable(web3_client: NeonChainWeb3Client, faucet, sol_client, sol
 
 
 @pytest.fixture(scope="function")
-def new_account(web3_client, faucet, eth_bank_account):
-    yield web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
+def new_account(web3_client, sol_client, faucet, eth_bank_account, web3_client_sol, pytestconfig, solana_account):
+    account = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
+    yield account
 
 
 @pytest.fixture(scope="class")
-def class_account(web3_client, faucet, eth_bank_account):
-    yield web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
+def class_account(web3_client, faucet, eth_bank_account, solana_account, sol_client, web3_client_sol, pytestconfig):
+    account = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
+    yield account
+
+
+@pytest.fixture(scope="class")
+def class_account_sol_chain(
+        sol_client, solana_account, web3_client, web3_client_sol, pytestconfig, faucet, eth_bank_account
+):
+    account = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
+    sol_client.request_airdrop(solana_account.public_key, 1 * LAMPORT_PER_SOL)
+    sol_client.deposit_wrapped_sol_from_solana_to_neon(
+        solana_account, account, web3_client_sol.eth.chain_id, pytestconfig.environment.evm_loader, 1 * LAMPORT_PER_SOL
+    )
+    return account
+
+
+@pytest.fixture(scope="class")
+def account_with_all_tokens(
+        sol_client, solana_account, web3_client, web3_client_abc, web3_client_def, web3_client_sol, pytestconfig, faucet,
+        eth_bank_account, neon_mint, operator_keypair, evm_loader_keypair
+):
+    account = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
+    if web3_client_sol:
+        sol_client.request_airdrop(solana_account.public_key, 1 * LAMPORT_PER_SOL)
+        sol_client.deposit_wrapped_sol_from_solana_to_neon(
+            solana_account, account, web3_client_sol.eth.chain_id, pytestconfig.environment.evm_loader, 1 * LAMPORT_PER_SOL
+            )
+    for client in [web3_client_abc, web3_client_def]:
+        if client:
+            new_sol_account = Keypair.generate()
+            sol_client.send_sol(solana_account, new_sol_account.public_key, 5000000)
+            sol_client.deposit_neon_like_tokens_from_solana_to_neon(neon_mint, new_sol_account, account,
+                                                                    client.eth.chain_id,
+                                                                    operator_keypair,
+                                                                    evm_loader_keypair,
+                                                                    pytestconfig.environment.evm_loader, 1000000000000000000)
+    return account
 
 
 @pytest.fixture(scope="function")
@@ -228,7 +277,18 @@ def withdraw_contract(web3_client, faucet, class_account):
 
 
 @pytest.fixture(scope="class")
-def meta_proxy_contract(web3_client, faucet, class_account):
+def common_contract(web3_client, class_account):
+    contract, _ = web3_client.deploy_and_get_contract(
+        contract="common/Common",
+        version="0.8.12",
+        contract_name="Common",
+        account=class_account,
+    )
+    yield contract
+
+
+@pytest.fixture(scope="class")
+def meta_proxy_contract(web3_client, class_account):
     contract, _ = web3_client.deploy_and_get_contract("./EIPs/MetaProxy", "0.8.10", account=class_account)
     return contract
 
@@ -237,6 +297,25 @@ def meta_proxy_contract(web3_client, faucet, class_account):
 def event_caller_contract(web3_client, class_account) -> typing.Any:
     event_caller, _ = web3_client.deploy_and_get_contract("common/EventCaller", "0.8.12", class_account)
     yield event_caller
+
+
+@pytest.fixture(scope="class")
+def wsol(web3_client_sol, class_account_sol_chain):
+    contract, _ = web3_client_sol.deploy_and_get_contract(
+        contract="common/WNativeChainToken",
+        version="0.8.12",
+        contract_name="WNativeChainToken",
+        account=class_account_sol_chain,
+    )
+    return contract
+
+
+@pytest.fixture(scope="class")
+def wneon(web3_client, faucet, class_account):
+    contract, _ = web3_client.deploy_and_get_contract(
+        "common/WNeon", "0.4.26", account=class_account, contract_name="WNEON"
+    )
+    return contract
 
 
 @pytest.fixture(scope="class")
@@ -249,3 +328,20 @@ def storage_contract(web3_client, class_account) -> typing.Any:
         constructor_args=[]
     )
     yield contract
+
+
+@pytest.fixture(scope="session")
+def sol_price() -> float:
+    """Get SOL price from Solana mainnet"""
+    price = get_sol_price()
+    with allure.step(f"SOL price {price}$"):
+        return price
+
+
+@pytest.fixture(scope="session")
+def neon_price() -> float:
+    """Get SOL price from Solana mainnet"""
+    price = get_neon_price()
+    with allure.step(f"NEON price {price}$"):
+        return price
+

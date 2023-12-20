@@ -135,7 +135,10 @@
     "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
     "proxy_url": "http://127.0.0.1:9090/solana",
     "network_ids": {
-      "neon": 111
+      "neon": 111,
+      "sol": 112,
+      "abc": 113,
+      "def": 114
     },
     "solana_url": "http://127.0.0.1:8899/",
     "faucet_url": "http://127.0.0.1:3333/",
@@ -207,11 +210,14 @@
       "5dyQQATyk4yga4f4m8BCrUF1jdfGQ1mShV4ezFLxyCqW"
     ]
   },
-  "aws": {
+  "terraform": {
     "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
     "proxy_url": "http://<proxy_ip>:9090/solana",
     "network_ids": {
-      "neon": 111
+      "neon": 111,
+      "sol": 112,
+      "abc": 113,
+      "def": 114
     },
     "solana_url": "http://<solana_ip>:8899/",
     "faucet_url": "http://<proxy_ip>:3333/",

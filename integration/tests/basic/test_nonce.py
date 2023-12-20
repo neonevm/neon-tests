@@ -2,10 +2,12 @@ import random
 import time
 
 import allure
+import pytest
 
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from integration.tests.basic.helpers.basic import BaseMixin
+from utils.consts import LAMPORT_PER_SOL
 
 
 @allure.feature("Ethereum compatibility")
@@ -89,7 +91,7 @@ class TestNonce(BaseMixin):
     def test_send_transaction_with_low_nonce_after_high(self):
         """Check that transaction with a higher nonce is waiting for its turn in the mempool"""
         nonce = (
-            self.web3_client.eth.get_transaction_count(self.sender_account.address) + 1
+                self.web3_client.eth.get_transaction_count(self.sender_account.address) + 1
         )
         transaction = self.create_tx_object(nonce=nonce)
         signed_tx = self.web3_client.eth.account.sign_transaction(
@@ -121,7 +123,7 @@ class TestNonce(BaseMixin):
     def test_send_transaction_with_the_same_nonce_and_lower_gas(self):
         """Check that transaction with a low gas and the same nonce can't be sent"""
         nonce = (
-            self.web3_client.eth.get_transaction_count(self.sender_account.address) + 1
+                self.web3_client.eth.get_transaction_count(self.sender_account.address) + 1
         )
         gas = self.web3_client.gas_price()
         transaction = self.create_tx_object(nonce=nonce, gas_price=gas)
@@ -140,14 +142,14 @@ class TestNonce(BaseMixin):
         )
         assert "error" in response, f"Response doesn't has an error: {response}"
         assert (
-            ErrorMessage.REPLACEMENT_UNDERPRICED.value in response["error"]["message"]
+                ErrorMessage.REPLACEMENT_UNDERPRICED.value in response["error"]["message"]
         )
         assert response["error"]["code"] == -32000
 
     def test_send_transaction_with_the_same_nonce_and_higher_gas(self):
         """Check that transaction with higher gas and the same nonce can be sent"""
         nonce = (
-            self.web3_client.eth.get_transaction_count(self.sender_account.address) + 1
+                self.web3_client.eth.get_transaction_count(self.sender_account.address) + 1
         )
         gas = self.web3_client.gas_price()
         transaction = self.create_tx_object(nonce=nonce, gas_price=gas)
@@ -218,3 +220,18 @@ class TestNonce(BaseMixin):
         )
         assert ErrorMessage.NONCE_TOO_LOW.value in response["error"]["message"]
         assert response["error"]["code"] == -32002
+
+    @pytest.mark.multipletokens
+    def test_nonce_with_several_chains(self, class_account_sol_chain,
+                                       web3_client_sol, web3_client, faucet):
+        sender = class_account_sol_chain
+        self.faucet.request_neon(sender.address, 100)
+        neon_chain_nonce = self.web3_client.get_nonce(sender.address)
+        sol_chain_nonce = self.web3_client_sol.get_nonce(sender.address)
+        transaction_order_list = ['sol', 'neon', 'sol', 'sol', 'sol', 'neon']
+
+        for item in transaction_order_list:
+            client = web3_client_sol if item == 'sol' else web3_client
+            client.send_tokens(sender, self.recipient_account, 1000)
+        assert self.web3_client.get_nonce(sender.address) == neon_chain_nonce + 2
+        assert self.web3_client_sol.get_nonce(sender.address) == sol_chain_nonce + 4

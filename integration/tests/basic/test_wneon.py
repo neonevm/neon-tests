@@ -18,14 +18,6 @@ from integration.tests.basic.helpers.basic import BaseMixin
 from utils.helpers import wait_condition
 
 
-@pytest.fixture(scope="class")
-def wneon(web3_client, faucet, class_account):
-    contract, _ = web3_client.deploy_and_get_contract(
-        "common/WNeon", "0.4.26", account=class_account, contract_name="WNEON"
-    )
-    return contract
-
-
 @allure.feature("Ethereum compatibility")
 @allure.story("Wrapped NEON tests")
 class TestWNeon(BaseMixin):
@@ -121,7 +113,7 @@ class TestWNeon(BaseMixin):
             lambda: self.sol_client.get_transaction(
                 Signature.from_string(solana_trx["result"][0]),
             )
-            != GetTransactionResp(None)
+            != GetTransactionResp(None), timeout_sec=30
         )
         solana_resp = self.sol_client.get_transaction(
             Signature.from_string(solana_trx["result"][0])

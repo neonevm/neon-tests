@@ -46,7 +46,8 @@
                             "type": [
                                 "string",
                                 "null"
-                            ]
+                            ],
+                            "items": {}
                         },
                         "stack": {
                             "type": [
@@ -80,9 +81,7 @@
                         "gas",
                         "gasCost",
                         "op",
-                        "pc",
-                        "returnData",
-                        "stack"
+                        "pc"
                     ]
                 }
             ]

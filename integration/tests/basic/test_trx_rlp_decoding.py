@@ -66,7 +66,7 @@ class TestTrxRlpDecoding(BaseMixin):
 
     @pytest.mark.parametrize("new_r, expected_error", [
         (13237258775825350966557245051891674271982401474769237400875435660443279001850,
-         "failed to recover ECDSA public key"),
+         "Invalid signature"),
         (123, "insufficient funds for transfer"),
         ('', "Invalid signature values")])
     def test_modify_r(self, signed_tx, new_r, expected_error):

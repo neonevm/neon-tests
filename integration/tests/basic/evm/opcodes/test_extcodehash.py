@@ -166,9 +166,9 @@ class TestExtCodeHashOpcode(BaseMixin):
         receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
         neon_logs = self.proxy_api.send_rpc(
             method="neon_getTransactionReceipt",
-            params=[receipt["transactionHash"].hex()],
+            params=[receipt["transactionHash"].hex(), "neon"],
         )["result"]["logs"]
-        data = [log["data"] for log in neon_logs if log["topics"] != []]
+        data = [log["data"] for log in neon_logs if log["neonEventType"] == "Log"]
         # TODO fix checking
         # assert data[0] != ZERO_HASH
         # assert len(data) == 3

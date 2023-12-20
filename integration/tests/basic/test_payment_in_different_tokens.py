@@ -4,13 +4,20 @@ import allure
 import pytest
 import web3
 
-from integration.tests.basic.helpers.basic import BaseMixin
 from integration.tests.basic.helpers.chains import make_nonce_the_biggest_for_chain
+from utils.web3client import NeonChainWeb3Client
+from utils.accounts import EthAccounts
+from utils.solana_client import SolanaClient
 
 
 @allure.feature("Multiply token")
 @allure.story("Payments in different tokens")
-class TestMultiplyChains(BaseMixin):
+@pytest.mark.usefixtures("accounts", "web3_client", "sol_client")
+class TestMultiplyChains:
+    web3_client: NeonChainWeb3Client
+    accounts: EthAccounts
+    sol_client: SolanaClient
+
     @pytest.fixture(scope="class")
     def bob(self, class_account_sol_chain):
         return class_account_sol_chain
@@ -43,15 +50,15 @@ class TestMultiplyChains(BaseMixin):
 
     @pytest.mark.multipletokens
     def test_user_to_contract_and_contract_to_user_trx(
-            self, web3_client_sol, bob, check_neon_balance_does_not_changed, wsol
+        self, web3_client_sol, bob, check_neon_balance_does_not_changed, wsol
     ):
         bob_sol_balance_before = web3_client_sol.get_balance(bob)
         contract_sol_balance_initial = web3_client_sol.get_balance(wsol.address)
         amount = 0.001
         value = web3_client_sol.to_atomic_currency(amount)
-        tx = self.make_contract_tx_object(bob.address, amount=amount, web3_client=web3_client_sol)
+        tx = web3_client_sol._make_tx_object(bob.address, amount=amount)
         instruction_tx = wsol.functions.deposit().build_transaction(tx)
-        receipt = self.web3_client_sol.send_transaction(bob, instruction_tx)
+        receipt = web3_client_sol.send_transaction(bob, instruction_tx)
         assert receipt["status"] == 1
         bob_sol_balance_after_deposit = web3_client_sol.get_balance(bob)
         contract_sol_balance_after_deposit = web3_client_sol.get_balance(wsol.address)
@@ -60,9 +67,9 @@ class TestMultiplyChains(BaseMixin):
         )
         assert bob_sol_balance_after_deposit < bob_sol_balance_before - value
 
-        tx = self.make_contract_tx_object(bob.address, web3_client=web3_client_sol)
+        tx = web3_client_sol._make_tx_object(bob.address)
         instruction_tx = wsol.functions.withdraw(value).build_transaction(tx)
-        receipt = self.web3_client_sol.send_transaction(bob, instruction_tx)
+        receipt = web3_client_sol.send_transaction(bob, instruction_tx)
         assert receipt["status"] == 1
         bob_sol_balance_after_withdraw = web3_client_sol.get_balance(bob)
         contract_sol_balance_after_withdraw = web3_client_sol.get_balance(wsol.address)
@@ -86,9 +93,9 @@ class TestMultiplyChains(BaseMixin):
         assert web3_client_sol.get_balance(wrapper_address) == value
 
         # contract to existing contract
-        tx = self.make_contract_tx_object(bob.address, amount=amount, web3_client=web3_client_sol)
+        tx = web3_client_sol._make_tx_object(bob.address, amount=amount)
         instruction_tx = wsol_contract_caller.functions.deposit().build_transaction(tx)
-        receipt = self.web3_client_sol.send_transaction(bob, instruction_tx)
+        receipt = web3_client_sol.send_transaction(bob, instruction_tx)
         assert receipt["status"] == 1
         bob_sol_balance_after = web3_client_sol.get_balance(bob)
 
@@ -97,12 +104,12 @@ class TestMultiplyChains(BaseMixin):
 
     @pytest.mark.multipletokens
     def test_user_to_contract_wrong_chain_id_trx(
-            self, web3_client_sol, bob, check_neon_balance_does_not_changed, event_caller_contract
+        self, web3_client_sol, bob, check_neon_balance_does_not_changed, event_caller_contract
     ):
-        tx = self.make_contract_tx_object(bob.address, amount=1)
+        tx = web3_client_sol._make_tx_object(bob.address, amount=1)
         instruction_tx = event_caller_contract.functions.unnamedArg("hello").build_transaction(tx)
         with pytest.raises(ValueError, match="wrong chain id"):
-            self.web3_client_sol.send_transaction(bob, instruction_tx)
+            web3_client_sol.send_transaction(bob, instruction_tx)
 
     @pytest.mark.multipletokens
     def test_deploy_contract(self, web3_client_sol, alice, check_neon_balance_does_not_changed):
@@ -135,7 +142,7 @@ class TestMultiplyChains(BaseMixin):
 
     @pytest.mark.multipletokens
     def test_deploy_contract_by_one_user_to_different_chains(
-            self, web3_client_sol, solana_account, web3_client, pytestconfig, alice
+        self, web3_client_sol, solana_account, web3_client, pytestconfig, alice
     ):
         def deploy_contract(w3_client):
             _, rcpt = w3_client.deploy_and_get_contract(
@@ -155,14 +162,14 @@ class TestMultiplyChains(BaseMixin):
 
     @pytest.mark.multipletokens
     def test_interact_with_contract_from_another_chain(
-            self, web3_client_sol, bob, check_neon_balance_does_not_changed, common_contract
+        self, web3_client_sol, bob, check_neon_balance_does_not_changed, common_contract
     ):
-        tx = self.make_contract_tx_object(bob.address, web3_client=web3_client_sol)
+        tx = web3_client_sol._make_tx_object(bob.address)
         common_contract_sol_chain = web3_client_sol.get_deployed_contract(common_contract.address, "common/Common")
         number = random.randint(0, 1000000)
         instruction_tx = common_contract_sol_chain.functions.setNumber(number).build_transaction(tx)
 
-        self.web3_client_sol.send_transaction(bob, instruction_tx)
+        web3_client_sol.send_transaction(bob, instruction_tx)
         assert common_contract_sol_chain.functions.getNumber().call() == number
         assert common_contract.functions.getNumber().call() == number
 
@@ -171,22 +178,22 @@ class TestMultiplyChains(BaseMixin):
         amount = 1
         value = self.web3_client._web3.to_wei(amount, "ether")
 
-        tx = self.make_contract_tx_object(bob.address, amount=amount)
+        tx = web3_client_sol._make_tx_object(bob.address, amount=amount)
 
         instruction_tx = wneon.functions.deposit().build_transaction(tx)
         self.web3_client.send_transaction(bob, instruction_tx)
 
         wneon_sol_chain = web3_client_sol.get_deployed_contract(wneon.address, "common/WNeon", "WNEON", "0.4.26")
 
-        tx = self.make_contract_tx_object(bob.address, web3_client=web3_client_sol)
+        tx = web3_client_sol._make_tx_object(bob.address)
         neon_balance_before = web3_client.get_balance(alice.address)
         instruction_tx = wneon_sol_chain.functions.transfer(alice.address, value).build_transaction(tx)
-        receipt = self.web3_client_sol.send_transaction(bob, instruction_tx)
+        receipt = web3_client_sol.send_transaction(bob, instruction_tx)
         assert receipt["status"] == 1
 
-        tx = self.make_contract_tx_object(alice.address, web3_client=web3_client_sol)
+        tx = web3_client_sol._make_tx_object(alice.address)
         instruction_tx = wneon_sol_chain.functions.withdraw(value).build_transaction(tx)
-        receipt = self.web3_client_sol.send_transaction(alice, instruction_tx)
+        receipt = web3_client_sol.send_transaction(alice, instruction_tx)
         assert receipt["status"] == 1
 
         assert web3_client.get_balance(alice.address) == neon_balance_before + web3_client.to_atomic_currency(amount)
@@ -196,20 +203,20 @@ class TestMultiplyChains(BaseMixin):
         amount = 0.001
         value = web3_client_sol.to_atomic_currency(amount)
 
-        tx = self.make_contract_tx_object(bob.address, amount=amount, web3_client=web3_client_sol)
+        tx = web3_client_sol._make_tx_object(bob.address, amount=amount)
 
         instruction_tx = wsol.functions.deposit().build_transaction(tx)
-        self.web3_client_sol.send_transaction(bob, instruction_tx)
+        web3_client_sol.send_transaction(bob, instruction_tx)
 
         wsol_neon_chain = web3_client.get_deployed_contract(wsol.address, "common/WNativeChainToken")
 
-        tx = self.make_contract_tx_object(bob.address, web3_client=web3_client)
+        tx = web3_client_sol._make_tx_object(bob.address)
         sol_balance_before = web3_client_sol.get_balance(alice.address)
         instruction_tx = wsol_neon_chain.functions.transfer(alice.address, value).build_transaction(tx)
         receipt = self.web3_client.send_transaction(bob, instruction_tx)
         assert receipt["status"] == 1
 
-        tx = self.make_contract_tx_object(alice.address, web3_client=web3_client)
+        tx = web3_client_sol._make_tx_object(alice.address)
         instruction_tx = wsol_neon_chain.functions.withdraw(value).build_transaction(tx)
         receipt = self.web3_client.send_transaction(alice, instruction_tx)
         assert receipt["status"] == 1
@@ -218,14 +225,14 @@ class TestMultiplyChains(BaseMixin):
 
     @pytest.mark.multipletokens
     def test_call_different_chains_contracts_in_one_transaction(
-            self,
-            alice,
-            common_contract,
-            web3_client,
-            web3_client_sol,
-            web3_client_abc,
-            web3_client_def,
-            class_account_sol_chain,
+        self,
+        alice,
+        common_contract,
+        web3_client,
+        web3_client_sol,
+        web3_client_abc,
+        web3_client_def,
+        class_account_sol_chain,
     ):
         chains = {
             "neon": {"client": web3_client},
@@ -257,7 +264,7 @@ class TestMultiplyChains(BaseMixin):
             chains[chain]["common_contract"] = common_contract
 
         for chain in chains:
-            tx = self.make_contract_tx_object(alice.address, web3_client=chains[chain]["client"])
+            tx = chains[chain]["client"]._make_tx_object(alice.address)
             numbers = [random.randint(0, 1000000) for _ in range(len(chains))]
             instruction_tx = (
                 chains[chain]["bunch_contract"]

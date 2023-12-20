@@ -159,7 +159,7 @@ class Web3Client:
         gas_price: tp.Optional[int] = None,
         nonce: tp.Optional[int] = None,
         chain_id: tp.Optional[int] = None,
-        data: tp.Optional[str] = None,
+        data: tp.Optional[str, bytes] = None,
     ) -> dict:
         transaction = {"from": from_.address}
         if to and isinstance(to, eth_account.signers.local.LocalAccount):

@@ -63,11 +63,6 @@ def json_rpc_client(pytestconfig: Config) -> JsonRPCSession:
     return JsonRPCSession(pytestconfig.environment.proxy_url)
 
 
-@pytest.fixture(scope="session")
-def tracer_json_rpc_client(pytestconfig: Config) -> JsonRPCSession:
-    return JsonRPCSession(pytestconfig.environment.tracer_url)
-
-
 @pytest.fixture(scope="class")
 def web3_client(request, web3_client_session):
     if inspect.isclass(request.cls):

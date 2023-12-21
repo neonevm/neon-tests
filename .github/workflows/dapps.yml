@@ -8,7 +8,7 @@ on:
     inputs:
       network:
         type: choice
-        default: aws
+        default: terraform
         required: true
         description: "Stand name"
         options:
@@ -41,7 +41,7 @@ on:
         required: false
         description: "Url to send the report as comment for PR"
 env:
-  NETWORK: ${{ github.event.inputs.network || 'night-stand' }}
+  NETWORK: ${{ github.event.inputs.network || 'terraform' }}
   AWS_ACCESS_KEY_ID: ${{ secrets.DAPPS_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.DAPPS_AWS_SECRET_ACCESS_KEY }}
   AWS_REGION: us-east-2

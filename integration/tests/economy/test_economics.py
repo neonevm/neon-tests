@@ -6,6 +6,7 @@ import allure
 import pytest
 import rlp
 import solcx
+import web3
 from _pytest.config import Config
 from solana.keypair import Keypair as SolanaAccount
 from solana.publickey import PublicKey
@@ -108,9 +109,11 @@ class TestEconomics:
         w3_client, token_price = client_and_price
         acc2 = w3_client.create_account()
         sol_balance_before = operator.get_solana_balance()
-        token_balance_before = operator.get_token_balance(web3_client)
+        token_balance_before = operator.get_token_balance(w3_client)
 
-        instruction_tx = w3_client._make_tx_object(account_with_all_tokens.address, acc2.address, 0.1)
+        instruction_tx = w3_client._make_tx_object(
+            account_with_all_tokens.address, acc2.address, web3.Web3.to_wei(0.1, "ether")
+        )
         instruction_tx.pop("chainId")
 
         w3_client.send_transaction(account_with_all_tokens, instruction_tx)
@@ -700,7 +703,7 @@ class TestEconomics:
         )
 
         assert (
-            operator_balance + alt_balance - TX_COST * 2 == sol_client.get_balance(operator).value
+            operator_balance + alt_balance - TX_COST * 2 == sol_client.get_balance(operator_key).value
         ), "Operator balance after the return of the alt creation fee is not correct"
         get_gas_used_percent(web3_client, receipt)
 

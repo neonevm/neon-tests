@@ -152,7 +152,7 @@ class Web3Client:
 
     def _make_tx_object(
         self,
-        from_: eth_account.signers.local.LocalAccount,
+        from_: tp.Union[str, eth_account.signers.local.LocalAccount],
         to: tp.Optional[tp.Union[str, eth_account.signers.local.LocalAccount]] = None,
         amount: tp.Optional[tp.Union[int, float, Decimal]] = None,
         gas: tp.Optional[int] = None,
@@ -160,12 +160,18 @@ class Web3Client:
         nonce: tp.Optional[int] = None,
         chain_id: tp.Optional[int] = None,
         data: tp.Optional[tp.Union[str, bytes]] = None,
+        estimate_gas=False,
     ) -> dict:
-        transaction = {"from": from_.address}
-        if to and isinstance(to, eth_account.signers.local.LocalAccount):
-            transaction["to"] = to.address
-        if to and isinstance(to, str):
-            transaction["to"] = to
+        if isinstance(from_, eth_account.signers.local.LocalAccount):
+            transaction = {"from": from_.address}
+        else:
+            transaction = {"from": from_}
+
+        if to:
+            if isinstance(to, eth_account.signers.local.LocalAccount):
+                transaction["to"] = to.address
+            if isinstance(to, str):
+                transaction["to"] = to
         if amount:
             transaction["value"] = amount
         if data:
@@ -178,9 +184,10 @@ class Web3Client:
         if gas_price is None:
             gas_price = self.gas_price()
         transaction["gasPrice"] = gas_price
-        if gas is None:
+        if estimate_gas:
             gas = self._web3.eth.estimate_gas(transaction)
-        transaction["gas"] = gas
+        if gas:
+            transaction["gas"] = gas
         return transaction
 
     def send_transaction(
@@ -275,11 +282,13 @@ class Web3Client:
         from_: eth_account.signers.local.LocalAccount,
         to: tp.Union[str, eth_account.signers.local.LocalAccount],
         value: int,
-        gas: tp.Optional[int] = 0,
+        gas: tp.Optional[int] = None,
         gas_price: tp.Optional[int] = None,
         nonce: int = None,
     ) -> web3.types.TxReceipt:
-        transaction = self._make_tx_object(from_, to, amount=value, gas=gas, gas_price=gas_price, nonce=nonce)
+        transaction = self._make_tx_object(
+            from_, to, amount=value, gas=gas, gas_price=gas_price, nonce=nonce, estimate_gas=True
+        )
 
         signed_tx = self.eth.account.sign_transaction(transaction, from_.key)
         tx = self.eth.send_raw_transaction(signed_tx.rawTransaction)

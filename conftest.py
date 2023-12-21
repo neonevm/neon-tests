@@ -90,7 +90,7 @@ def pytest_configure(config: Config):
         env["use_bank"] = False
     if "eth_bank_account" not in env:
         env["eth_bank_account"] = ""
-    if network_name == "aws":
+    if network_name == "terraform":
         env["solana_url"] = env["solana_url"].replace("<solana_ip>", os.environ.get("SOLANA_IP"))
         env["proxy_url"] = env["proxy_url"].replace("<proxy_ip>", os.environ.get("PROXY_IP"))
         env["faucet_url"] = env["faucet_url"].replace("<proxy_ip>", os.environ.get("PROXY_IP"))
@@ -114,7 +114,8 @@ def evm_loader_keypair():
 @pytest.fixture(scope="session", autouse=True)
 def allure_environment(pytestconfig: Config, web3_client_session: NeonChainWeb3Client):
     opts = {}
-    if pytestconfig.getoption("--network") != "geth":
+
+    if pytestconfig.getoption("--network") != "geth" and "neon_evm" not in os.getenv("PYTEST_CURRENT_TEST"):
         opts = {
             "Network": pytestconfig.environment.proxy_url,
             "Proxy.Version": web3_client_session.get_proxy_version()["result"],

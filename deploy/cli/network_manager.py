@@ -3,7 +3,7 @@ import os
 import pathlib
 from collections import defaultdict
 
-NETWORK_NAME = os.environ.get("NETWORK_NAME", "full_test_suite")
+NETWORK_NAME = os.environ.get("NETWORK", "full_test_suite")
 EXPANDED_ENVS = [
     "PROXY_URL",
     "FAUCET_URL",
@@ -13,21 +13,21 @@ EXPANDED_ENVS = [
 
 class NetworkManager():
     def __init__(self):
-        self.networks = {}
+        self._networks = {}
 
         with open(pathlib.Path.cwd() / "envs.json", "r") as f:
-            self.networks = json.load(f)
-            if NETWORK_NAME not in self.networks.keys() and os.environ.get("DUMP_ENVS"):
+            self._networks = json.load(f)
+            if NETWORK_NAME not in self._networks.keys() and os.environ.get("DUMP_ENVS"):
                 environments = defaultdict(dict)
                 for var in EXPANDED_ENVS:
                     environments[NETWORK_NAME].update({var.lower(): os.environ.get(var, "")})
                 environments[NETWORK_NAME]['network_ids'] = {'neon': os.environ.get('NETWORK_ID', "")}
-                self.networks.update(environments)
+                self._networks.update(environments)
 
     def get_network_param(self, network, params=None):
         value = ""
-        if network in self.networks:
-            value = self.networks[network]
+        if network in self._networks:
+            value = self._networks[network]
             if params:
                 for item in params.split('.'):
                     value = value[item]
@@ -37,3 +37,11 @@ class NetworkManager():
             if os.environ.get("PROXY_IP"):
                 value = value.replace("<proxy_ip>", os.environ.get("PROXY_IP"))
         return value
+
+    def get_network_object(self, network_name):
+        network = self.get_network_param(network_name)
+        if network_name == "terraform":
+            network["proxy_url"] = self.get_network_param(network_name, "proxy_url")
+            network["solana_url"] = self.get_network_param(network_name, "solana_url")
+            network["faucet_url"] = self.get_network_param(network_name, "faucet_url")
+        return network

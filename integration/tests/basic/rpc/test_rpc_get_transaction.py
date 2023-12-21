@@ -195,7 +195,11 @@ class TestRpcGetTransaction:
         recipient_account = self.accounts[1]
         tx_receipt = self.web3_client.send_neon(sender_account, recipient_account, 10)
         transaction_hash = tx_receipt.transactionHash.hex()
-        response = json_rpc_client.send_rpc(method=method, params=transaction_hash)
+        params = [transaction_hash]
+        if method.startswith("neon_"):
+            params.append("ethereum")
+        response = json_rpc_client.send_rpc(method=method, params=params)
+        #        response = self.proxy_api.send_rpc(method=method, params=transaction_hash)
         assert "error" not in response
         assert "result" in response, AssertMessage.DOES_NOT_CONTAIN_RESULT
         result = response["result"]

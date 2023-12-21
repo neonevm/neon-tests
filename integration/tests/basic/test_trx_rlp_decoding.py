@@ -65,10 +65,7 @@ class TestTrxRlpDecoding:
     @pytest.mark.parametrize(
         "new_r, expected_error",
         [
-            (
-                13237258775825350966557245051891674271982401474769237400875435660443279001850,
-                "failed to recover ECDSA public key",
-            ),
+            (13237258775825350966557245051891674271982401474769237400875435660443279001850, "Invalid signature"),
             (123, "insufficient funds for transfer"),
             ("", "Invalid signature values"),
         ],

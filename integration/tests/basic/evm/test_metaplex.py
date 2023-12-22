@@ -12,6 +12,7 @@ URI = "uri"
 
 @allure.feature("EVM tests")
 @allure.story("Verify precompiled metaplex contract")
+@pytest.mark.usefixtures("accounts", "web3_client")
 class TestPrecompiledMetaplex:
     web3_client: NeonChainWeb3Client
     accounts: EthAccounts
@@ -36,7 +37,6 @@ class TestPrecompiledMetaplex:
         sender_account = self.accounts[0]
         mint = Keypair.generate()
         tx = self.web3_client._make_tx_object(sender_account)
-        del tx["to"]
         instruction_tx = metaplex.functions.createMetadata(bytes(mint.public_key), NAME, SYMBOL, URI).build_transaction(
             tx
         )
@@ -48,7 +48,6 @@ class TestPrecompiledMetaplex:
         sender_account = self.accounts[0]
         mint = Keypair.generate()
         tx = self.web3_client._make_tx_object(sender_account)
-        del tx["to"]
         instruction_tx = metaplex.functions.createMasterEdition(bytes(mint.public_key), 0).build_transaction(tx)
 
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)

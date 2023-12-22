@@ -144,7 +144,7 @@ class TestPrecompiledContracts:
         amount = random.choice([0, 10])
         balance_before = self.web3_client.get_balance(address)
 
-        instruction_tx = self.web3_client._make_tx_object(sender_account, amount=amount)
+        instruction_tx = self.web3_client._make_tx_object(sender_account, amount=amount, estimate_gas=True)
         instruction_tx["data"] = input_data
         instruction_tx["chainId"] = self.web3_client.eth.chain_id
         instruction_tx["to"] = address

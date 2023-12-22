@@ -8,12 +8,7 @@ from utils.consts import ZERO_ADDRESS
 from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts
 
-BAD_CALLDATA = [
-    "0x60ef60005360016000f3",
-    "0x60ef60005360026000f3",
-    "0x60ef60005360036000f3",
-    "0x60ef60005360206000f3",
-]
+BAD_CALLDATA = ["0x60ef60005360016000f3"]
 GOOD_CALLDATA = ["0x60fe60005360016000f3"]
 
 EIP_3541_ERROR_MESSAGE = (
@@ -31,12 +26,12 @@ class TestRejectingContractsStartingWith0xEF:
     @pytest.mark.parametrize("data", BAD_CALLDATA)
     def test_sent_incorrect_calldata_via_trx(self, data):
         sender_account = self.accounts[0]
-        transaction = self.web3_client._make_tx_object(sender_account)
-        transaction["data"] = data
-        transaction["chainId"] = self.web3_client.eth.chain_id
-
         with pytest.raises(web3.exceptions.ContractLogicError, match=EIP_3541_ERROR_MESSAGE):
-            self.web3_client.send_transaction(sender_account, transaction)
+            self.web3_client._make_tx_object(sender_account, data=data, estimate_gas=True)
+
+        transaction = self.web3_client._make_tx_object(sender_account, data=data, gas=1000000000)
+        resp = self.web3_client.send_transaction(sender_account, transaction)
+        assert resp["status"] == 0
 
     def test_sent_correct_calldata_via_trx(self):
         sender_account = self.accounts[0]

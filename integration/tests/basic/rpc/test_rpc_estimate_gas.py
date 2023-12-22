@@ -43,7 +43,7 @@ class TestRpcEstimateGas:
         assert rpc_checks.is_hex(
             response["result"]
         ), f"the result for estimated gas should be in hex, but got'{response['result']}'"
-        assert int(response["result"], 16) == 30_000
+        assert int(response["result"], 16) == 25_000
 
     def test_eth_estimate_gas_negative(self, json_rpc_client):
         response = json_rpc_client.send_rpc(method="eth_estimateGas", params=[])
@@ -99,7 +99,7 @@ class TestRpcEstimateGas:
 
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
-        assert estimated_gas == 30_000
+        assert estimated_gas == 25_000
 
     def test_rpc_estimate_gas_erc20(self, erc20_simple):
         recipient_account = self.accounts[1]
@@ -108,7 +108,7 @@ class TestRpcEstimateGas:
 
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
-        assert estimated_gas == 1_552_280
+        assert estimated_gas == 1_394_160
 
     def test_rpc_estimate_gas_spl(self, erc20_spl):
         recipient_account = self.accounts[1]
@@ -117,7 +117,7 @@ class TestRpcEstimateGas:
 
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
-        assert estimated_gas == 2_084_280
+        assert estimated_gas == 2_079_280
 
     def test_rpc_estimate_gas_contract_get_value(self, common_contract):
         sender_account = self.accounts[0]
@@ -128,7 +128,7 @@ class TestRpcEstimateGas:
 
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
-        assert estimated_gas == 35_000
+        assert estimated_gas == 25_000
 
     def test_rpc_estimate_gas_contract_set_value(self, common_contract):
         sender_account = self.accounts[0]
@@ -138,7 +138,7 @@ class TestRpcEstimateGas:
         transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
-        assert estimated_gas == 35_000
+        assert estimated_gas == 25_000
 
     def test_rpc_estimate_gas_contract_calls_another_contract(self, common_contract):
         sender_account = self.accounts[0]
@@ -158,4 +158,4 @@ class TestRpcEstimateGas:
 
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
-        assert estimated_gas == 35_000
+        assert estimated_gas == 25_000

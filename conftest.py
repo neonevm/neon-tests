@@ -10,7 +10,7 @@ from _pytest.config import Config
 from _pytest.runner import runtestprotocol
 from solana.keypair import Keypair
 
-from clickfile import create_allure_environment_opts
+from utils import create_allure_environment_opts
 from utils.faucet import Faucet
 from utils.accounts import EthAccounts
 from utils.web3client import NeonChainWeb3Client

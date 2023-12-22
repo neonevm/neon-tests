@@ -178,6 +178,8 @@ class Web3Client:
             transaction["data"] = data
         if nonce is None:
             transaction["nonce"] = self.get_nonce(from_)
+        else:
+            transaction["nonce"] = nonce
         if chain_id is None:
             chain_id = self.chain_id
         transaction["chainId"] = chain_id

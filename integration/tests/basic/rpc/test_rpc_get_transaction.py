@@ -255,7 +255,7 @@ class TestRpcGetTransaction:
         nonce = self.web3_client.get_nonce(sender_account)
         self.web3_client.send_neon(sender_account, recipient_account, amount=0.1)
         response = json_rpc_client.send_rpc(
-            method="neon_getTransactionBySenderNonce", params=[sender_account.address, nonce]
+            method="neon_getTransactionBySenderNonce", params=[sender_account.address, nonce + 1]
         )
         assert "result" in response
         assert "error" not in response

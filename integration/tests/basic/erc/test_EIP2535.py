@@ -111,7 +111,7 @@ class TestDiamond:
             [facet_cuts, ZERO_ADDRESS, b"0x"],
         )
 
-        tx = self.web3_client._make_tx_object(class_account, diamond.address, 0, data=calldata)
+        tx = self.web3_client._make_tx_object(class_account, diamond.address, 0, data=calldata, estimate_gas=True)
         self.web3_client.send_transaction(class_account, tx)
         result = self.web3_client.call_function_at_address(
             diamond.address,

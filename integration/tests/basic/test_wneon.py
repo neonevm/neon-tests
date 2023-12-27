@@ -132,7 +132,7 @@ class TestWNeon:
 
         with pytest.raises(web3.exceptions.ContractLogicError):
             wneon.functions.transferFrom(
-                self.sender_account.address, new_account.address, transfer_amount_wei
+                sender_account.address, new_account.address, transfer_amount_wei
             ).build_transaction(self.make_tx_object(new_account))
 
         instruction_tx = wneon.functions.approve(new_account.address, transfer_amount_wei).build_transaction(

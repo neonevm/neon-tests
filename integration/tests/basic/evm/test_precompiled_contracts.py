@@ -176,7 +176,9 @@ class TestPrecompiledContracts:
         sender_account = self.accounts[0]
         balance_before = self.web3_client.get_balance(address)
         amount = random.randint(1, 10)
-        instruction_tx = self.web3_client._make_tx_object(sender_account.address, address, amount=amount)
+        instruction_tx = self.web3_client._make_tx_object(
+            sender_account.address, address, amount=amount, estimate_gas=True
+        )
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
 
         assert receipt["status"] == 1

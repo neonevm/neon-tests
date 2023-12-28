@@ -75,9 +75,8 @@ class TestNeonTransfer:
         transfer_amount = self.web3_client._web3.to_wei(2, Unit.ETHER.value)
 
         transaction = self.web3_client._make_tx_object(
-            from_=sender_account, to=recipient_account, amount=transfer_amount
+            from_=sender_account, to=recipient_account, amount=transfer_amount, chain_id=False, estimate_gas=True
         )
-        del transaction["chainId"]
 
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
 

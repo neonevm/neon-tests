@@ -180,9 +180,12 @@ class Web3Client:
             transaction["nonce"] = self.get_nonce(from_)
         else:
             transaction["nonce"] = nonce
+
         if chain_id is None:
-            chain_id = self.chain_id
-        transaction["chainId"] = chain_id
+            transaction["chainId"] = self.chain_id
+        elif chain_id:
+            transaction["chainId"] = chain_id
+
         if gas_price is None:
             gas_price = self.gas_price()
         transaction["gasPrice"] = gas_price

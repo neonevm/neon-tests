@@ -47,7 +47,7 @@ env:
   AWS_REGION: us-east-2
   AWS_S3_BUCKET: neon-tests-dapps
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn,robonomics,compound,curve-factory"
+  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn,robonomics,compound,curve-factory,pancake"
 jobs:
   prepare:
     runs-on: ubuntu-20.04
@@ -534,7 +534,7 @@ jobs:
         timeout-minutes: 30
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
-          IMAGE: neonlabsorg/pancake:83ae92f6a2a489be0d148aadbe887099178eef52
+          IMAGE: neonlabsorg/pancake:5b19f28eb17b3e7c83f0173358809cd6c5ca4ffd
         run: |
           test -t 1 && USE_TTY="-t"
           docker pull ${{ env.IMAGE }}

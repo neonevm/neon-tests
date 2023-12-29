@@ -547,6 +547,12 @@ jobs:
           docker cp pancake-${{ github.run_id }}:/usr/src/app/report.json pancake-report.json
           docker rm -f pancake-${{ github.run_id }}
 
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: pancake-report
+          path: pancake-report.json
+
   swap-report:
     runs-on: ubuntu-20.04
     needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory, pancake]

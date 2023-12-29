@@ -511,11 +511,12 @@ jobs:
     needs:
       - prepare
     env:
+      SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       SOLANA_URL: ${{ needs.prepare.outputs.solana_url }}
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      NETWORK_NAME: ${{ needs.prepare.outputs.network }}
       DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v3

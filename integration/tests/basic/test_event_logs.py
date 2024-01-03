@@ -68,7 +68,7 @@ class TestLogs:
         assert len(event_logs) == 1
         assert len(event_logs[0].args) == 2
         assert event_logs[0].args.who == sender_account.address
-        assert event_logs[0].args.value == 2
+        assert event_logs[0].args.value == amount
         assert event_logs[0].event == "IndexedArgs"
 
         response = json_rpc_client.send_rpc(method="neon_getTransactionReceipt", params=[resp["transactionHash"].hex()])

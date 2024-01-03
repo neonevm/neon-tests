@@ -87,7 +87,7 @@ class TestSelfDestructOpcode:
 
         amount = random.randint(1, 5)
         instruction_tx = self.web3_client._make_tx_object(
-            sender_account, to=destroyable_contract, amount=amount, estimate_gas=True
+            sender_account, to=destroyable_contract.address, amount=amount, estimate_gas=True
         )
         self.web3_client.send_transaction(sender_account, instruction_tx)
 

@@ -189,7 +189,7 @@ class Web3Client:
         if gas_price is None:
             gas_price = self.gas_price()
         transaction["gasPrice"] = gas_price
-        if estimate_gas:
+        if estimate_gas and not gas:
             gas = self._web3.eth.estimate_gas(transaction)
         if gas:
             transaction["gas"] = gas

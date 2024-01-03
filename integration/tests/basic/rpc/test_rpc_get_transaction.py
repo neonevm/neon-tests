@@ -261,16 +261,18 @@ class TestRpcGetTransaction:
         assert "error" not in response
         assert response["result"] is None
 
-    @pytest.mark.parametrize("nonce", [0, "0x0"])
-    def test_neon_get_transaction_by_sender_nonce(self, nonce, json_rpc_client):
+    def test_neon_get_transaction_by_sender_nonce(self, json_rpc_client):
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
+
+        nonce = self.web3_client.get_nonce(sender_account)
         receipt = self.web3_client.send_neon(sender_account, recipient_account, amount=0.1)
         response = json_rpc_client.send_rpc(
             method="neon_getTransactionBySenderNonce", params=[sender_account.address, nonce]
         )
         assert "error" not in response
         result = response["result"]
+
         assert_fields_are_hex(
             result,
             ["blockHash", "blockNumber", "hash", "transactionIndex", "type", "from", "nonce", "gasPrice", "gas", "to"],

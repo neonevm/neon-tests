@@ -6,13 +6,15 @@ import pytest
 from integration.tests.basic.helpers.errors import Error32000, Error32602
 from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex, assert_fields_are_specified_type
 from utils.accounts import EthAccounts
+from utils.web3client import NeonChainWeb3Client
 
 
 @allure.feature("JSON-RPC validation")
 @allure.story("Verify JSON-RPC proxy calls work")
-@pytest.mark.usefixtures("accounts")
+@pytest.mark.usefixtures("accounts", "web3_client")
 class TestNeonRPCBaseCalls:
     accounts: EthAccounts
+    web3_client: NeonChainWeb3Client
 
     @pytest.mark.parametrize(
         "params, error_code, error_message",

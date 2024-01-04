@@ -35,7 +35,7 @@ try:
     from utils.web3client import NeonChainWeb3Client
     from utils.prices import get_sol_price
 except ImportError:
-    print("Please run ./clickfile.py requirements")
+    print("Please run ./clickfile.py requirements to install all requirements")
 
 
 CMD_ERROR_LOG = "click_cmd_err.log"

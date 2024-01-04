@@ -86,6 +86,11 @@ class TestTracerHistoricalMethods(BaseMixin):
         return math.isclose(abs(round(int(value, 0) / 1e18, 9) - value_to_compare),
                             0.0,
                             rel_tol=1e-9)
+    
+    def assert_invalid_params(self, response):
+        assert "error" in response, "No errors in response"
+        assert response["error"]["code"] == -32602, "Invalid error code"
+        assert response["error"]["message"] == "Invalid params"
 
     def test_eth_call_without_params(self):
         response = self.tracer_api.send_rpc(method="eth_call", params=[None])
@@ -116,6 +121,15 @@ class TestTracerHistoricalMethods(BaseMixin):
                                                             req_type=request_type,
                                                             params=[tx_obj_3, {request_type: request_value_3}])["result"], 0) == store_value_3,
                        timeout_sec=120)
+    
+    @pytest.mark.parametrize("request_type", ["blockNumber", "blockHash"])
+    def test_eth_call_invalid_params(self, storage_contract, request_type):
+        store_value_1 = random.randint(0, 100)
+        tx_obj, _, _ = call_storage(self, storage_contract, store_value_1, request_type)
+        response = self.tracer_api.send_rpc(method="eth_call", 
+                                 req_type=request_type, 
+                                 params=[tx_obj, {request_type: "0x0000"}])
+        self.assert_invalid_params(response)
 
     def test_eth_call_by_block_and_hash(self, storage_contract):
         store_value_1 = random.randint(0, 100)
@@ -158,6 +172,12 @@ class TestTracerHistoricalMethods(BaseMixin):
                                                                     {request_type: request_value_2}])["result"], 0) == store_value_2,
                        timeout_sec=120)
 
+    def test_eth_get_storage_at_invalid_params(self):
+        response = self.tracer_api.send_rpc(method="eth_getTransactionCount", 
+                                            req_type="blockNumber", 
+                                            params=["0x0", {"blockNumber": "0x001"}])
+        self.assert_invalid_params(response)
+
     @pytest.mark.parametrize("request_type", ["blockNumber", "blockHash"])
     def test_eth_get_transaction_count(self, storage_contract, request_type):
         nonce = self.web3_client.eth.get_transaction_count(
@@ -186,6 +206,12 @@ class TestTracerHistoricalMethods(BaseMixin):
                                                             params=[self.sender_account.address,
                                                                     {request_type: request_value_2}])["result"], 0) == nonce + 3,
                        timeout_sec=120)
+
+    def test_eth_get_transaction_count_invalid_params(self):
+        response = self.tracer_api.send_rpc(method="eth_getTransactionCount", 
+                                            req_type="blockNumber", 
+                                            params=["0x0", {"blockNumber": "0x001"}])
+        self.assert_invalid_params(response)
 
     @pytest.mark.parametrize("request_type", ["blockNumber", "blockHash"])
     def test_eth_get_balance(self, request_type):
@@ -247,6 +273,12 @@ class TestTracerHistoricalMethods(BaseMixin):
                                                    recipient_balance_after),
                        timeout_sec=120)
 
+    def test_eth_get_balance_invalid_params(self):
+        response = self.tracer_api.send_rpc(method="eth_getBalance", 
+                                            req_type="blockHash", 
+                                            params=[self.sender_account.address, {"blockHash": "0x0"}])
+        self.assert_invalid_params(response)
+
     def test_eth_get_code(self):
         request_type = "blockNumber"
 
@@ -286,6 +318,24 @@ class TestTracerHistoricalMethods(BaseMixin):
                                                                  {request_type: hex(receipt[request_type] + 1)}]))["result"] == CONTRACT_CODE,
                        timeout_sec=120)
 
+    def test_eth_get_code_invalid_params(self):
+        tx = self.create_tx_object(sender=self.sender_account.address,
+                                   amount=0,
+                                   nonce=self.web3_client.eth.get_transaction_count(
+                                       self.sender_account.address),
+                                   data=bytes.fromhex(DEPLOY_CODE))
+        del tx["to"]
+        del tx["gas"]
+
+        receipt = self.web3_client.send_transaction(
+            account=self.sender_account, transaction=tx)
+        assert receipt["status"] == 1
+
+        response = self.tracer_api.send_rpc(method="eth_getCode",
+                                            req_type="blockHash",
+                                            params=[receipt["contractAddress"], {"blockHash": "0x0002"}])
+        
+        self.assert_invalid_params(response)
 
     def test_neon_revision(self):
         block = self.web3_client.get_block_number()

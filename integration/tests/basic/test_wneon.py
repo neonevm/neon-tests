@@ -58,7 +58,12 @@ class TestWNeon:
         assert receipt["status"] == 1
         neon_balance_after, wneon_balance_after = self.get_balances(wneon, recipient_account.address)
         assert wneon_balance_after == deposit_amount
-        assert neon_balance_before - deposit_amount - neon_balance_after < 1
+        assert (
+            web3.Web3.from_wei(neon_balance_before, "ether")
+            - deposit_amount
+            - web3.Web3.from_wei(neon_balance_after, "ether")
+            < 1
+        )
 
         deposit_amount2 = random.randint(1, 100)
         self.deposit(wneon, deposit_amount2, sender_account)
@@ -82,7 +87,12 @@ class TestWNeon:
 
         neon_balance_after, wneon_balance_after = self.get_balances(wneon, recipient_account.address)
 
-        assert neon_balance_after - neon_balance_before - withdraw_amount < 0.2
+        assert (
+            web3.Web3.from_wei(neon_balance_after, "ether")
+            - web3.Web3.from_wei(neon_balance_before, "ether")
+            - withdraw_amount
+            < 0.2
+        )
         assert wneon_balance_after == wneon_balance_before - withdraw_amount
 
     def test_transfer_and_check_token_does_not_use_spl(self, wneon, new_account):
@@ -171,7 +181,10 @@ class TestWNeon:
         neon_balance_after, wneon_balance_after = self.get_balances(wneon, recipient_account.address)
 
         assert wneon_balance_after == wneon_balance_before - withdraw_amount
-        assert neon_balance_after - neon_balance_before < withdraw_amount
+        assert (
+            web3.Web3.from_wei(neon_balance_after, "ether") - web3.Web3.from_wei(neon_balance_before, "ether")
+            < withdraw_amount
+        )
 
         wait_condition(lambda: self.sol_client.get_balance(solana_account.public_key) != 0)
 

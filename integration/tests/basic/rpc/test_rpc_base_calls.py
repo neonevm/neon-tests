@@ -198,11 +198,10 @@ class TestRpcBaseCalls:
         assert "error" not in response
         assert rpc_checks.is_hex(response["result"]), f"Invalid response result {response['result']}"
 
-    def test_eth_sendRawTransaction_max_contract_size(self, json_rpc_client):
+    def test_eth_sendRawTransaction_max_contract_size(self, json_rpc_client, new_account):
         """Validate max size for contract, 24 KB"""
-        sender_account = self.accounts[0]
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/BigMemoryValue", "0.8.12", contract_name="ValueOf24K", account=sender_account
+            "common/BigMemoryValue", "0.8.12", contract_name="ValueOf24K", account=new_account
         )
         assert rpc_checks.is_hex(contract.address)
 
@@ -237,13 +236,10 @@ class TestRpcBaseCalls:
         assert rpc_checks.is_hex(result), f"Invalid response: {result}"
         assert int(result, 16) == 52193458690378020725790142635571483517433973554952025871423338986830750023688
 
-    def test_eth_get_storage_at_eq_val(self, json_rpc_client):
+    def test_eth_get_storage_at_eq_val(self, json_rpc_client, new_account):
         """Verify implemented rpc calls work eht_getStorageAt and equal values"""
-        sender_account = self.accounts[0]
-        recipient_account = self.accounts[1]
-
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "common/StorageSoliditySource", "0.8.12", contract_name="StorageMultipleVars", account=sender_account
+            "common/StorageSoliditySource", "0.8.12", contract_name="StorageMultipleVars", account=new_account
         )
         responses = [
             json_rpc_client.send_rpc("eth_getStorageAt", [contract.address, hex(0), Tag.LATEST.value]),
@@ -261,9 +257,9 @@ class TestRpcBaseCalls:
 
         new_data = "new"
 
-        transaction = self.web3_client._make_tx_object(from_=sender_account)
+        transaction = self.web3_client._make_tx_object(from_=new_account)
         instruction_tx = contract.functions.setData(new_data).build_transaction(transaction)
-        self.web3_client.send_transaction(sender_account, instruction_tx)
+        self.web3_client.send_transaction(new_account, instruction_tx)
 
         response = json_rpc_client.send_rpc("eth_getStorageAt", [contract.address, hex(0), Tag.LATEST.value])
         assert "error" not in response

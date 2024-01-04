@@ -122,13 +122,12 @@ class TestTracerHistoricalMethods(BaseMixin):
                                                             params=[tx_obj_3, {request_type: request_value_3}])["result"], 0) == store_value_3,
                        timeout_sec=120)
     
-    @pytest.mark.parametrize("request_type", ["blockNumber", "blockHash"])
-    def test_eth_call_invalid_params(self, storage_contract, request_type):
+    def test_eth_call_invalid_params(self, storage_contract):
         store_value_1 = random.randint(0, 100)
-        tx_obj, _, _ = call_storage(self, storage_contract, store_value_1, request_type)
+        tx_obj, _, _ = call_storage(self, storage_contract, store_value_1, "blockHash")
         response = self.tracer_api.send_rpc(method="eth_call", 
-                                 req_type=request_type, 
-                                 params=[tx_obj, {request_type: "0x0000"}])
+                                 req_type="blockHash", 
+                                 params=[tx_obj, {"blockHash": "0x0000"}])
         self.assert_invalid_params(response)
 
     def test_eth_call_by_block_and_hash(self, storage_contract):

@@ -33,7 +33,7 @@ class TestNeonRPCBaseCalls:
     def test_neon_gas_price(self, json_rpc_client):
         """Verify implemented rpc calls work neon_gasPrice"""
         sender_account = self.accounts[0]
-        params = [{"from": sender_account.address, "nonce": "0x0"}]
+        params = [{"from": sender_account.address, "nonce": self.web3_client.get_nonce(sender_account)}]
         response = json_rpc_client.send_rpc("neon_gasPrice", params=params)
         assert "error" not in response
         assert "result" in response

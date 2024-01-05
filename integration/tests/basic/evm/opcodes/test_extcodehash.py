@@ -34,7 +34,7 @@ class TestExtCodeHashOpcode:
 
     def test_extcodehash_with_send_tx_for_contract_address(self, eip1052_checker):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = eip1052_checker.functions.getContractHashWithLog(eip1052_checker.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt)
@@ -55,7 +55,7 @@ class TestExtCodeHashOpcode:
         # what is the keccack256 hash of empty data.
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = eip1052_checker.functions.getContractHashWithLog(recipient_account.address).build_transaction(
             tx
         )
@@ -72,7 +72,7 @@ class TestExtCodeHashOpcode:
     def test_extcodehash_with_send_tx_for_non_existing_account(self, eip1052_checker):
         non_existing_account = self.web3_client.to_checksum_address(create_invalid_address())
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = eip1052_checker.functions.getContractHashWithLog(non_existing_account).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt)
@@ -82,7 +82,7 @@ class TestExtCodeHashOpcode:
     def test_extcodehash_for_destroyed_contract(self, eip1052_checker):
         # Check the EXTCODEHASH of an account that selfdestructed in the current transaction.
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = eip1052_checker.functions.getHashForDestroyedContract().build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt, errors=DISCARD)
@@ -95,12 +95,12 @@ class TestExtCodeHashOpcode:
     def test_extcodehash_with_send_tx_for_destroyed_contract(self, eip1052_checker):
         # Check the EXTCODEHASH of an account that selfdestructed in the current transaction with send_tx.
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = eip1052_checker.functions.getHashForDestroyedContract().build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         event_logs = eip1052_checker.events.DestroyedContract().process_receipt(receipt, errors=DISCARD)
         destroyed_contract_address = event_logs[0]["args"]["addr"]
-        tx2 = self.web3_client._make_tx_object(sender_account)
+        tx2 = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = eip1052_checker.functions.getContractHashWithLog(destroyed_contract_address).build_transaction(
             tx2
         )
@@ -121,7 +121,7 @@ class TestExtCodeHashOpcode:
             contract_name="DestroyCaller",
         )
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = eip1052_checker.functions.getHashForDestroyedContractAfterRevert(
             selfDestroyableContract.address, destroyCaller.address
         ).build_transaction(tx)
@@ -147,7 +147,7 @@ class TestExtCodeHashOpcode:
     def test_extcodehash_with_send_tx_for_precompiled_contract(self, eip1052_checker):
         # Check the EXTCODEHASH of a precompiled contract with send_tx.
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         precompiled_acc = AccountData(address="0xFf00000000000000000000000000000000000004")
         instruction_tx = eip1052_checker.functions.getContractHashWithLog(precompiled_acc.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)

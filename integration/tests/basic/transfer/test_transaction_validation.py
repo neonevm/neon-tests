@@ -59,7 +59,7 @@ class TestTransactionsValidation:
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
 
-        transaction = self.web3_client._make_tx_object(
+        transaction = self.web3_client.make_raw_tx(
             from_=sender_account, to=recipient_account, amount=1, gas_price=gas_price, estimate_gas=True
         )
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
@@ -72,7 +72,7 @@ class TestTransactionsValidation:
         """Transaction size is too big"""
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
-        transaction = self.web3_client._make_tx_object(
+        transaction = self.web3_client.make_raw_tx(
             from_=sender_account, to=recipient_account, amount=1, estimate_gas=True
         )
         transaction["data"] = gen_hash_of_block(256 * 1024)
@@ -88,7 +88,7 @@ class TestTransactionsValidation:
         gas_price = self.web3_client.gas_price()
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
-        transaction = self.web3_client._make_tx_object(
+        transaction = self.web3_client.make_raw_tx(
             from_=sender_account, to=recipient_account, amount=1, gas_price=(int(gas_price * 0.01))
         )
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, new_account.key)

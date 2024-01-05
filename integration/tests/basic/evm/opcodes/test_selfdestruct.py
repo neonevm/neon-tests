@@ -33,12 +33,12 @@ class TestSelfDestructOpcode:
         return contract
 
     def deposit(self, destroyable_contract, sender, amount):
-        tx = self.web3_client._make_tx_object(sender, amount=amount)
+        tx = self.web3_client.make_raw_tx(sender, amount=amount)
         instruction_tx = destroyable_contract.functions.deposit().build_transaction(tx)
         self.web3_client.send_transaction(sender, instruction_tx)
 
     def destroy(self, destroyable_contract, sender, funds_recipient, amount=None):
-        tx = self.web3_client._make_tx_object(sender, amount=amount)
+        tx = self.web3_client.make_raw_tx(sender, amount=amount)
         instruction_tx = destroyable_contract.functions.destroy(funds_recipient.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender, instruction_tx)
         assert receipt["status"] == 1
@@ -62,7 +62,7 @@ class TestSelfDestructOpcode:
 
         assert 2 - balance_after_user1 - balance_before_user1 < 0.001
         assert balance_after_user2 == balance_before_user2
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = destroyable_contract.functions.anyFunction().build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
@@ -86,7 +86,7 @@ class TestSelfDestructOpcode:
         self.destroy(destroyable_contract, sender_account, sender_account)
 
         amount = random.randint(1, 5)
-        instruction_tx = self.web3_client._make_tx_object(
+        instruction_tx = self.web3_client.make_raw_tx(
             sender_account, to=destroyable_contract.address, amount=amount, estimate_gas=True
         )
         self.web3_client.send_transaction(sender_account, instruction_tx)
@@ -102,7 +102,7 @@ class TestSelfDestructOpcode:
         recipient_account = self.accounts[1]
         self.deposit(destroyable_contract, sender_account, 2)
         recipient_balance_before = self.web3_client.get_balance(recipient_account.address)
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract_caller.functions.callDestroy(recipient_account.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         recipient_balance_after = self.web3_client.get_balance(recipient_account.address)
@@ -117,7 +117,7 @@ class TestSelfDestructOpcode:
         recipient_account = self.accounts[1]
         self.deposit(destroyable_contract, sender_account, 2)
         recipient_balance_before = self.web3_client.get_balance(recipient_account.address)
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract_caller.functions.callDestroyAndSendMoneyFromContract(
             recipient_account.address
         ).build_transaction(tx)
@@ -136,7 +136,7 @@ class TestSelfDestructOpcode:
 
         recipient_balance_before = self.web3_client.get_balance(recipient_account.address)
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract_caller.functions.sendMoneyFromContractAndCallDestroy(
             recipient_account.address
         ).build_transaction(tx)
@@ -164,7 +164,7 @@ class TestSelfDestructOpcode:
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
         self.deposit(destroyable_contract, recipient_account, 1)
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract_caller.functions.callDestroyTwice(sender_account.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
@@ -174,7 +174,7 @@ class TestSelfDestructOpcode:
         # contract_caller should be destroyed instead of destroyable_contract
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instr = contract_caller.functions.callDestroyViaDelegateCall(sender_account.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instr)
 
@@ -187,7 +187,7 @@ class TestSelfDestructOpcode:
     ):
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instr = contract_caller.functions.callDestroyViaDelegateCallAndCreateNewContract(
             sender_account.address
         ).build_transaction(tx)

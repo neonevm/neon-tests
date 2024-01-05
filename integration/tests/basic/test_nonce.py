@@ -41,7 +41,7 @@ class TestNonce:
 
         tx_hash_list = []
         for nonce in nonce_list:
-            transaction = self.web3_client._make_tx_object(sender_account, nonce=nonce, estimate_gas=True)
+            transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce, estimate_gas=True)
             signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
             tx = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)
             tx_hash_list.append(tx.hex())
@@ -55,7 +55,7 @@ class TestNonce:
         random.shuffle(nonce_list)
         tx_hash_list = []
         for nonce in nonce_list:
-            transaction = self.web3_client._make_tx_object(sender_account, nonce=nonce, estimate_gas=True)
+            transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce, estimate_gas=True)
             signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
             tx = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)
             tx_hash_list.append(tx.hex())
@@ -68,7 +68,7 @@ class TestNonce:
         nonce = self.web3_client.eth.get_transaction_count(sender_account.address)
         trx = {}
         for n in [nonce + 3, nonce + 1, nonce]:
-            transaction = self.web3_client._make_tx_object(sender_account, nonce=n, estimate_gas=True)
+            transaction = self.web3_client.make_raw_tx(sender_account, nonce=n, estimate_gas=True)
             signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
             response_trx = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
             trx[n] = response_trx
@@ -76,7 +76,7 @@ class TestNonce:
         receipt_trx1 = json_rpc_client.send_rpc(method="eth_getTransactionReceipt", params=[trx[n + 3]["result"]])
         assert receipt_trx1["result"] is None, "Transaction shouldn't be accepted"
 
-        transaction = self.web3_client._make_tx_object(sender_account, nonce=n + 2, estimate_gas=True)
+        transaction = self.web3_client.make_raw_tx(sender_account, nonce=n + 2, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
 
@@ -87,7 +87,7 @@ class TestNonce:
         """Check that transaction with a higher nonce is waiting for its turn in the mempool"""
         sender_account = self.accounts[0]
         nonce = self.web3_client.eth.get_transaction_count(sender_account.address) + 1
-        transaction = self.web3_client._make_tx_object(sender_account, nonce=nonce, estimate_gas=True)
+        transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         response_trx1 = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
 
@@ -95,7 +95,7 @@ class TestNonce:
         receipt_trx1 = json_rpc_client.send_rpc(method="eth_getTransactionReceipt", params=[response_trx1["result"]])
         assert receipt_trx1["result"] is None, "Transaction shouldn't be accepted"
 
-        transaction = self.web3_client._make_tx_object(sender_account, nonce=nonce - 1, estimate_gas=True)
+        transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce - 1, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         response_trx2 = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
         for result in (response_trx2["result"], response_trx1["result"]):
@@ -107,12 +107,10 @@ class TestNonce:
         sender_account = self.accounts[0]
         nonce = self.web3_client.eth.get_transaction_count(sender_account.address) + 1
         gas = self.web3_client.gas_price()
-        transaction = self.web3_client._make_tx_object(sender_account, nonce=nonce, gas_price=gas, estimate_gas=True)
+        transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce, gas_price=gas, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
-        transaction = self.web3_client._make_tx_object(
-            sender_account, nonce=nonce, gas_price=gas - 1, estimate_gas=True
-        )
+        transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce, gas_price=gas - 1, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         response = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
         assert "error" in response, f"Response doesn't has an error: {response}"
@@ -124,12 +122,10 @@ class TestNonce:
         sender_account = self.accounts[0]
         nonce = self.web3_client.eth.get_transaction_count(sender_account.address) + 1
         gas = self.web3_client.gas_price()
-        transaction = self.web3_client._make_tx_object(sender_account, nonce=nonce, gas_price=gas, estimate_gas=True)
+        transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce, gas_price=gas, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
-        transaction = self.web3_client._make_tx_object(
-            sender_account, nonce=nonce, gas_price=gas * 10, estimate_gas=True
-        )
+        transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce, gas_price=gas * 10, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         response = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
         assert "error" not in response
@@ -138,7 +134,7 @@ class TestNonce:
     def test_send_the_same_transactions_if_accepted(self, json_rpc_client):
         """Transaction cannot be sent again if it was accepted"""
         sender_account = self.accounts[0]
-        transaction = self.web3_client._make_tx_object(sender_account, estimate_gas=True)
+        transaction = self.web3_client.make_raw_tx(sender_account, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         params = [signed_tx.rawTransaction.hex()]
         response = json_rpc_client.send_rpc("eth_sendRawTransaction", params)
@@ -153,7 +149,7 @@ class TestNonce:
     def test_send_the_same_transactions_if_not_accepted(self, json_rpc_client):
         """Transaction can be sent again if it was not accepted"""
         sender_account = self.accounts[0]
-        transaction = self.web3_client._make_tx_object(sender_account, estimate_gas=True)
+        transaction = self.web3_client.make_raw_tx(sender_account, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         params = [signed_tx.rawTransaction.hex()]
         json_rpc_client.send_rpc("eth_sendRawTransaction", params)
@@ -165,14 +161,14 @@ class TestNonce:
         """Check that transaction with old nonce can't be sent"""
         sender_account = self.accounts[0]
         nonce = self.web3_client.eth.get_transaction_count(sender_account.address)
-        transaction = self.web3_client._make_tx_object(sender_account, amount=1, nonce=nonce, estimate_gas=True)
+        transaction = self.web3_client.make_raw_tx(sender_account, amount=1, nonce=nonce, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         response = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
         receipt = self.web3_client.wait_for_transaction_receipt(response["result"])
         block_num = receipt["blockNumber"]
         wait_finalized_block(json_rpc_client, block_num)
 
-        transaction = self.web3_client._make_tx_object(sender_account, amount=2, nonce=nonce, estimate_gas=True)
+        transaction = self.web3_client.make_raw_tx(sender_account, amount=2, nonce=nonce, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         response = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
         assert ErrorMessage.NONCE_TOO_LOW.value in response["error"]["message"]

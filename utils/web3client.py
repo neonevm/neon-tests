@@ -150,7 +150,7 @@ class Web3Client:
         tx = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
         return self._web3.eth.wait_for_transaction_receipt(tx)
 
-    def _make_tx_object(
+    def make_raw_tx(
         self,
         from_: tp.Union[str, eth_account.signers.local.LocalAccount],
         to: tp.Optional[tp.Union[str, eth_account.signers.local.LocalAccount]] = None,
@@ -291,7 +291,7 @@ class Web3Client:
         gas_price: tp.Optional[int] = None,
         nonce: int = None,
     ) -> web3.types.TxReceipt:
-        transaction = self._make_tx_object(
+        transaction = self.make_raw_tx(
             from_, to, amount=value, gas=gas, gas_price=gas_price, nonce=nonce, estimate_gas=True
         )
 

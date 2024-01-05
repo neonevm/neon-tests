@@ -174,7 +174,7 @@ class TestRpcBaseCalls:
         """Verify implemented rpc calls work eth_sendRawTransaction"""
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
-        transaction = self.web3_client._make_tx_object(
+        transaction = self.web3_client.make_raw_tx(
             from_=sender_account, to=recipient_account, amount=1, estimate_gas=True
         )
 
@@ -188,7 +188,7 @@ class TestRpcBaseCalls:
         size = 127 * 1024
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
-        transaction = self.web3_client._make_tx_object(
+        transaction = self.web3_client.make_raw_tx(
             from_=sender_account, to=recipient_account, amount=1, estimate_gas=True
         )
 
@@ -257,7 +257,7 @@ class TestRpcBaseCalls:
 
         new_data = "new"
 
-        transaction = self.web3_client._make_tx_object(from_=new_account)
+        transaction = self.web3_client.make_raw_tx(from_=new_account)
         instruction_tx = contract.functions.setData(new_data).build_transaction(transaction)
         self.web3_client.send_transaction(new_account, instruction_tx)
 

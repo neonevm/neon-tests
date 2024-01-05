@@ -121,7 +121,7 @@ class TestRpcEstimateGas:
 
     def test_rpc_estimate_gas_contract_get_value(self, common_contract):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(from_=sender_account)
+        tx = self.web3_client.make_raw_tx(from_=sender_account)
         instruction_tx = common_contract.functions.getText().build_transaction(tx)
         tx_receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
@@ -132,7 +132,7 @@ class TestRpcEstimateGas:
 
     def test_rpc_estimate_gas_contract_set_value(self, common_contract):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(from_=sender_account)
+        tx = self.web3_client.make_raw_tx(from_=sender_account)
         instruction_tx = common_contract.functions.setNumber(100).build_transaction(tx)
         tx_receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
@@ -150,7 +150,7 @@ class TestRpcEstimateGas:
             constructor_args=[common_contract.address],
         )
 
-        tx = self.web3_client._make_tx_object(from_=sender_account)
+        tx = self.web3_client.make_raw_tx(from_=sender_account)
         instruction_tx = caller_contract.functions.getNumber().build_transaction(tx)
         tx_receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
 

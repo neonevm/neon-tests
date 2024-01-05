@@ -22,7 +22,7 @@ class TestLogs:
 
     def test_non_args_event(self, event_caller_contract):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = event_caller_contract.functions.nonArgs().build_transaction(tx)
         resp = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 1
@@ -33,7 +33,7 @@ class TestLogs:
 
     def test_all_types_args_event(self, event_caller_contract, json_rpc_client):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
         bytes_array = text.encode().ljust(32, b"\0")
@@ -60,7 +60,7 @@ class TestLogs:
     def test_indexed_args_event(self, event_caller_contract, json_rpc_client):
         amount = random.randint(1, 100)
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account, amount=amount)
+        tx = self.web3_client.make_raw_tx(sender_account, amount=amount)
         instruction_tx = event_caller_contract.functions.indexedArgs().build_transaction(tx)
         resp = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 3
@@ -77,7 +77,7 @@ class TestLogs:
     def test_non_indexed_args_event(self, event_caller_contract, json_rpc_client):
         amount = random.randint(1, 100)
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account, amount=amount)
+        tx = self.web3_client.make_raw_tx(sender_account, amount=amount)
         instruction_tx = event_caller_contract.functions.nonIndexedArg("world").build_transaction(tx)
         resp = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 1
@@ -91,7 +91,7 @@ class TestLogs:
 
     def test_unnamed_args_event(self, event_caller_contract, json_rpc_client):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = event_caller_contract.functions.unnamedArg("hello").build_transaction(tx)
         resp = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 1
@@ -104,7 +104,7 @@ class TestLogs:
 
     def test_big_args_count(self, event_caller_contract, json_rpc_client):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = event_caller_contract.functions.bigArgsCount("hello").build_transaction(tx)
         resp = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert len(resp.logs[0].topics) == 4
@@ -118,7 +118,7 @@ class TestLogs:
 
     def test_several_events_in_one_trx(self, event_caller_contract, json_rpc_client):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = event_caller_contract.functions.emitThreeEvents().build_transaction(tx)
         resp = self.web3_client.send_transaction(sender_account, instruction_tx)
 
@@ -133,7 +133,7 @@ class TestLogs:
 
     def test_many_the_same_events_in_one_trx(self, event_caller_contract, json_rpc_client):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account, gas=0)
+        tx = self.web3_client.make_raw_tx(sender_account, gas=0)
         changes_count = 20
         instruction_tx = event_caller_contract.functions.updateStorageMap(changes_count).build_transaction(tx)
         resp = self.web3_client.send_transaction(sender_account, instruction_tx)
@@ -147,7 +147,7 @@ class TestLogs:
 
     def test_event_logs_deleted_if_trx_was_canceled(self, event_caller_contract):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = event_caller_contract.functions.causeOutOfMemory().build_transaction(tx)
         try:
             resp = self.web3_client.send_transaction(sender_account, instruction_tx)
@@ -168,7 +168,7 @@ class TestLogs:
         contract_c, _ = self.web3_client.deploy_and_get_contract(
             "common/NestedCallsChecker", "0.8.12", sender_account, contract_name="C"
         )
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
 
         instruction_tx = contract_a.functions.method1(contract_b.address, contract_c.address).build_transaction(tx)
         resp = self.web3_client.send_transaction(sender_account, instruction_tx)

@@ -36,7 +36,7 @@ class TestPrecompiledMetaplex:
     def test_create_metadata(self, metaplex):
         sender_account = self.accounts[0]
         mint = Keypair.generate()
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = metaplex.functions.createMetadata(bytes(mint.public_key), NAME, SYMBOL, URI).build_transaction(
             tx
         )
@@ -47,7 +47,7 @@ class TestPrecompiledMetaplex:
     def test_create_master_edition(self, metaplex):
         sender_account = self.accounts[0]
         mint = Keypair.generate()
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = metaplex.functions.createMasterEdition(bytes(mint.public_key), 0).build_transaction(tx)
 
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)

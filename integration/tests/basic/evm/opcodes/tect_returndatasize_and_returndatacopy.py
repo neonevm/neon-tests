@@ -45,7 +45,7 @@ class TestReturnDataSizeAndCopyOpcodes:
 
     def test_returndatasize(self, eip211_checker):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instr = eip211_checker.functions.getReturnDataSize().build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instr)
         assert receipt["status"] == 1
@@ -54,7 +54,7 @@ class TestReturnDataSizeAndCopyOpcodes:
     @pytest.mark.parametrize("function, result", EXPECTED_RESULTS)
     def test_returndatacopy_for_call(self, eip211_checker, function, result):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instr = eip211_checker.functions.getReturnDataForCall(function).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instr)
         assert receipt["status"] == 1
@@ -63,7 +63,7 @@ class TestReturnDataSizeAndCopyOpcodes:
     @pytest.mark.parametrize("function, result", EXPECTED_RESULTS_STATIC)
     def test_returndatacopy_for_delegatecall(self, eip211_checker, function, result):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = eip211_checker.functions.getReturnDataForDelegateCall(function).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
@@ -72,7 +72,7 @@ class TestReturnDataSizeAndCopyOpcodes:
     @pytest.mark.parametrize("function, result", EXPECTED_RESULTS_STATIC)
     def test_returndatacopy_for_staticcall(self, eip211_checker, function, result):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = eip211_checker.functions.getReturnDataForStaticCall(function).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
@@ -80,7 +80,7 @@ class TestReturnDataSizeAndCopyOpcodes:
 
     def test_returndatasize_for_create(self, eip211_checker):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = eip211_checker.functions.getReturnDataSizeForCreate().build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
@@ -88,7 +88,7 @@ class TestReturnDataSizeAndCopyOpcodes:
 
     def test_returndatasize_for_create2(self, eip211_checker):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         salt = generate_text(min_len=10, max_len=200)
         instruction_tx = eip211_checker.functions.getReturnDataSizeForCreate2(salt).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
@@ -97,7 +97,7 @@ class TestReturnDataSizeAndCopyOpcodes:
 
     def test_returndatacopy_for_create_with_revert(self, eip211_checker):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = eip211_checker.functions.getReturnDataForCreateWithRevert().build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
@@ -105,7 +105,7 @@ class TestReturnDataSizeAndCopyOpcodes:
 
     def test_returndatacopy_for_create2_with_revert(self, eip211_checker):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         salt = generate_text(min_len=10, max_len=200)
         instruction_tx = eip211_checker.functions.getReturnDataForCreate2WithRevert(salt).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
@@ -117,7 +117,7 @@ class TestReturnDataSizeAndCopyOpcodes:
     )
     def test_returndatacopy_with_different_params(self, eip211_checker, position, size, expected_result):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = eip211_checker.functions.getReturnDataWithParams(position, size).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
@@ -127,6 +127,6 @@ class TestReturnDataSizeAndCopyOpcodes:
 
     def test_returndatacopy_with_invalid_params(self, eip211_checker):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         with pytest.raises(web3.exceptions.ContractLogicError, match="exceeds data size"):
             eip211_checker.functions.getReturnDataWithParams(32, 96).build_transaction(tx)

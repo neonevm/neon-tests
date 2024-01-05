@@ -49,7 +49,7 @@ def call_storage(sender_account, storage_contract, storage_value, request_type, 
     store_value(sender_account, storage_value, storage_contract, web3_client)
     tx, receipt = retrieve_value(sender_account, storage_contract, web3_client)
 
-    tx_obj = web3_client._make_tx_object(
+    tx_obj = web3_client.make_raw_tx(
         sender=sender_account.address,
         recipient=storage_contract.address,
         amount=tx["value"],
@@ -335,7 +335,7 @@ class TestTracerHistoricalMethods:
         request_type = "blockNumber"
         sender_account = self.accounts[0]
 
-        tx = self.web3_client._make_tx_object(
+        tx = self.web3_client.make_raw_tx(
             from_=sender_account.address,
             amount=0,
             data=bytes.fromhex(DEPLOY_CODE),

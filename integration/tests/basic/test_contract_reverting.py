@@ -79,7 +79,7 @@ class TestContractReverting:
 
     def test_method_raises_string_based_error(self, revert_contract):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
 
         with pytest.raises(web3.exceptions.ContractLogicError, match="execution reverted: Predefined revert happened"):
             revert_contract.functions.doStringBasedRevert().build_transaction(tx)
@@ -103,7 +103,7 @@ class TestContractReverting:
             account=sender_account,
             constructor_args=[revert_contract.address],
         )
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         with pytest.raises(web3.exceptions.ContractLogicError, match="execution reverted: Predefined revert happened"):
             contract.functions.doStringBasedRevert().build_transaction(tx)
 
@@ -116,7 +116,7 @@ class TestContractReverting:
 
     def test_gas_limit_reached(self, revert_contract, class_account):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account, amount=1)
+        tx = self.web3_client.make_raw_tx(sender_account, amount=1)
         tx["gas"] = 1  # setting low level of gas limit to get the error
         instruction_tx = revert_contract.functions.deposit().build_transaction(tx)
         with pytest.raises(ValueError, match=ErrorMessage.GAS_LIMIT_REACHED.value):

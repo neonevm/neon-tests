@@ -662,7 +662,7 @@ class TestMultipleActionsForERC20:
         transfer_amount = random.randint(1, mint_amount - 1)
         burn_amount = random.randint(1, mint_amount - transfer_amount)
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.mintTransferBurn(
             mint_amount, acc.address, transfer_amount, burn_amount
         ).build_transaction(tx)
@@ -685,7 +685,7 @@ class TestMultipleActionsForERC20:
         transfer_amount_1 = random.randint(1, mint_amount - 1)
         transfer_amount_2 = random.randint(1, mint_amount - transfer_amount_1)
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.mintTransferTransfer(
             mint_amount, acc.address, transfer_amount_1, acc.address, transfer_amount_2
         ).build_transaction(tx)
@@ -712,7 +712,7 @@ class TestMultipleActionsForERC20:
         transfer_amount_1 = random.randint(1, mint_amount - 1)
         transfer_amount_2 = random.randint(1, mint_amount - transfer_amount_1)
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.mintTransferTransfer(
             mint_amount,
             acc_1.address,
@@ -742,11 +742,11 @@ class TestMultipleActionsForERC20:
         transfer_amount = random.randint(1, mint_amount_1)
         burn_amount = random.randint(1, mint_amount_1 + mint_amount_2 - transfer_amount)
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.mint(mint_amount_1).build_transaction(tx)
         self.web3_client.send_transaction(sender_account, instruction_tx)
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.transferMintBurn(
             acc.address, transfer_amount, mint_amount_2, burn_amount
         ).build_transaction(tx)
@@ -771,11 +771,11 @@ class TestMultipleActionsForERC20:
         transfer_amount_2 = random.randint(1, mint_amount_1 + mint_amount_2 - transfer_amount_1)
         burn_amount = random.randint(1, mint_amount_1 + mint_amount_2 - transfer_amount_1 - transfer_amount_2)
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.mint(mint_amount_1).build_transaction(tx)
         self.web3_client.send_transaction(sender_account, instruction_tx)
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.transferMintTransferBurn(
             acc.address,
             transfer_amount_1,
@@ -810,7 +810,7 @@ class TestMultipleActionsForERC20:
         burn_amount = random.randint(1, mint_amount - 1)
         transfer_amount = mint_amount - burn_amount
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.mintBurnTransfer(
             mint_amount,
             burn_amount,
@@ -831,7 +831,7 @@ class TestMultipleActionsForERC20:
         mint_amount2 = random.randint(10, 100000000)
         contract_balance_before = contract.functions.contractBalance().call()
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.mintMint(
             mint_amount1,
             mint_amount2,
@@ -851,7 +851,7 @@ class TestMultipleActionsForERC20:
         contract_balance_before = contract.functions.contractBalance().call()
         user_balance_before = contract.functions.balance(acc.address).call()
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.mintMintTransferTransfer(
             mint_amount1, mint_amount2, acc.address
         ).build_transaction(tx)
@@ -874,11 +874,11 @@ class TestMultipleActionsForERC20:
         burn_amount_2 = random.randint(1, mint_amount - burn_amount_1 - transfer_amount_1 - 1)
         transfer_amount_2 = random.randint(1, mint_amount - burn_amount_1 - transfer_amount_1 - burn_amount_2)
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.mint(mint_amount).build_transaction(tx)
         self.web3_client.send_transaction(sender_account, instruction_tx)
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.burnTransferBurnTransfer(
             burn_amount_1,
             acc.address,
@@ -915,11 +915,11 @@ class TestMultipleActionsForERC20:
         mint_amount_2 = random.randint(10, 100000000)
         transfer_amount = random.randint(mint_amount_1 - burn_amount, mint_amount_1 - burn_amount + mint_amount_2)
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.mint(mint_amount_1).build_transaction(tx)
         self.web3_client.send_transaction(sender_account, instruction_tx)
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.burnMintTransfer(
             burn_amount, mint_amount_2, acc.address, transfer_amount
         ).build_transaction(tx)

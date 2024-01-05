@@ -28,7 +28,7 @@ class TestContractRecursion:
 
     def test_deploy_with_recursion(self, recursion_factory):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = recursion_factory.functions.deployFirstContract().build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
@@ -40,7 +40,7 @@ class TestContractRecursion:
 
     def test_deploy_with_recursion_via_create2(self, recursion_factory):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         salt = generate_text(min_len=5, max_len=7)
         instruction_tx = recursion_factory.functions.deploySecondContractViaCreate2(salt).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
@@ -53,7 +53,7 @@ class TestContractRecursion:
 
     def test_deploy_with_recursion_via_create(self, recursion_factory):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = recursion_factory.functions.deployFirstContractViaCreate().build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
@@ -65,7 +65,7 @@ class TestContractRecursion:
 
     def test_deploy_to_the_same_address_via_create2_one_trx(self, recursion_factory):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         salt = generate_text(min_len=5, max_len=7)
         instruction_tx = recursion_factory.functions.deployViaCreate2Twice(salt).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
@@ -90,7 +90,7 @@ class TestContractRecursion:
             contract_name="RecursionCaller1",
             constructor_args=[depth, contract_caller2.address, False],
         )
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract_caller1.functions.callContract2().build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1

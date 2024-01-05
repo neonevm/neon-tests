@@ -22,26 +22,26 @@ class TestOpCodes:
 
     def test_base_opcodes(self, opcodes_checker):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = opcodes_checker.functions.test().build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
 
     def test_stop(self, opcodes_checker):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = opcodes_checker.functions.test_stop().build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
 
     def test_invalid_opcode(self, opcodes_checker):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         with pytest.raises(web3.exceptions.ContractLogicError, match="EVM encountered invalid opcode"):
             opcodes_checker.functions.test_invalid().build_transaction(tx)
 
     def test_revert(self, opcodes_checker):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         with pytest.raises(web3.exceptions.ContractLogicError, match="execution reverted"):
             opcodes_checker.functions.test_revert().build_transaction(tx)

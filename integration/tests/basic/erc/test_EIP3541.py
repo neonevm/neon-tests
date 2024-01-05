@@ -27,15 +27,15 @@ class TestRejectingContractsStartingWith0xEF:
     def test_sent_incorrect_calldata_via_trx(self, data):
         sender_account = self.accounts[0]
         with pytest.raises(web3.exceptions.ContractLogicError, match=EIP_3541_ERROR_MESSAGE):
-            self.web3_client._make_tx_object(sender_account, data=data, estimate_gas=True)
+            self.web3_client.make_raw_tx(sender_account, data=data, estimate_gas=True)
 
-        transaction = self.web3_client._make_tx_object(sender_account, data=data, gas=1000000000)
+        transaction = self.web3_client.make_raw_tx(sender_account, data=data, gas=1000000000)
         resp = self.web3_client.send_transaction(sender_account, transaction)
         assert resp["status"] == 0
 
     def test_sent_correct_calldata_via_trx(self):
         sender_account = self.accounts[0]
-        transaction = self.web3_client._make_tx_object(sender_account)
+        transaction = self.web3_client.make_raw_tx(sender_account)
         transaction["data"] = GOOD_CALLDATA[0]
         transaction["chainId"] = self.web3_client.eth.chain_id
         transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
@@ -58,7 +58,7 @@ class TestRejectingContractsStartingWith0xEF:
 
     def test_sent_correct_calldata_via_create2(self, eip3541_checker):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         seed = random.randint(1, 1000000)
         instruction_tx = eip3541_checker.functions.deploy(GOOD_CALLDATA[0], seed).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
@@ -69,7 +69,7 @@ class TestRejectingContractsStartingWith0xEF:
     @pytest.mark.parametrize("data", BAD_CALLDATA)
     def test_sent_incorrect_calldata_via_create2(self, eip3541_checker, data):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         seed = random.randint(1, 1000000)
         instruction_tx = eip3541_checker.functions.deploy(data, seed).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)

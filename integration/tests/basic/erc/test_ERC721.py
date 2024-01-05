@@ -463,7 +463,7 @@ class TestMultipleActionsForERC721:
         contract_balance_before = contract.functions.contractBalance().call()
         user_balance_before = contract.functions.balance(acc.address).call()
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.mintTransfer(seed, uri, acc.address).build_transaction(tx)
         self.web3_client.send_transaction(sender_account, instruction_tx)
 
@@ -480,14 +480,14 @@ class TestMultipleActionsForERC721:
         contract_balance_before = contract.functions.contractBalance().call()
         user_balance_before = contract.functions.balance(acc.address).call()
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200)
         instruction_tx = contract.functions.mint(seed, uri).build_transaction(tx)
         self.web3_client.send_transaction(sender_account, instruction_tx)
         token_id = contract.functions.lastTokenId().call()
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200)
         instruction_tx = contract.functions.transferMint(acc.address, seed, token_id, uri).build_transaction(tx)
@@ -506,7 +506,7 @@ class TestMultipleActionsForERC721:
         contract_balance_before = contract.functions.contractBalance().call()
         user_balance_before = contract.functions.balance(acc.address).call()
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         seed_1 = self.web3_client.text_to_bytes32(gen_hash_of_block(10))
         seed_2 = self.web3_client.text_to_bytes32(gen_hash_of_block(10))
         uri_1 = generate_text(min_len=10, max_len=200)
@@ -530,7 +530,7 @@ class TestMultipleActionsForERC721:
         user_1_balance_before = contract.functions.balance(acc.address).call()
         user_2_balance_before = contract.functions.balance(new_account.address).call()
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         seed_1 = self.web3_client.text_to_bytes32(gen_hash_of_block(10))
         seed_2 = self.web3_client.text_to_bytes32(gen_hash_of_block(10))
         uri_1 = generate_text(min_len=10, max_len=200)
@@ -569,7 +569,7 @@ class TestERC721Extensions:
         seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200)
         token_id = erc4907.mint(seed, erc4907.account.address, uri)
-        tx = self.web3_client._make_tx_object(erc4907.account)
+        tx = self.web3_client.make_raw_tx(erc4907.account)
 
         expires = datetime.datetime.now() + datetime.timedelta(seconds=25)
         expires = int(expires.timestamp())
@@ -593,7 +593,7 @@ class TestERC721Extensions:
         seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200)
         token_id = erc2981.mint(seed, erc2981.account.address, uri)
-        tx = self.web3_client._make_tx_object(erc2981.account)
+        tx = self.web3_client.make_raw_tx(erc2981.account)
         default_royalty = 15
         sale_price = 10000
 
@@ -618,7 +618,7 @@ class TestERC721Extensions:
         seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200)
         token_id = erc2981.mint(seed, erc2981.account.address, uri)
-        tx = self.web3_client._make_tx_object(erc2981.account)
+        tx = self.web3_client.make_raw_tx(erc2981.account)
         default_royalty = 15
         sale_price = 10000
 
@@ -627,7 +627,7 @@ class TestERC721Extensions:
             token_id, recipient_account.address, royalty
         ).build_transaction(tx)
         self.web3_client.send_transaction(erc2981.account, instr)
-        tx = self.web3_client._make_tx_object(erc2981.account)
+        tx = self.web3_client.make_raw_tx(erc2981.account)
         instr = erc2981.contract.functions.setDefaultRoyalty(
             recipient_account.address, default_royalty
         ).build_transaction(tx)

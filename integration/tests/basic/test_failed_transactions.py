@@ -17,7 +17,7 @@ class TestExpectedErrors:
             "common/ExpectedErrorsChecker", "0.8.12", sender_account, contract_name="A"
         )
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.method1().build_transaction(tx)
         try:
             resp = self.web3_client.send_transaction(sender_account, instruction_tx)

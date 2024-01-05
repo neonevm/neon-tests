@@ -39,7 +39,7 @@ class TestAbstractStorageBonds:
 
     def issue(self, bond_contract, lender, sender, amount, class_id=CLASS_ID, nonce_id=NONCE_ID):
         trx_issuer = self.make_bond_single_trx(class_id, nonce_id, amount)
-        tx = self.web3_client._make_tx_object(sender)
+        tx = self.web3_client.make_raw_tx(sender)
         instr = bond_contract.functions.issue(lender.address, trx_issuer).build_transaction(tx)
         self.web3_client.send_transaction(sender, instr)
 
@@ -68,7 +68,7 @@ class TestAbstractStorageBonds:
         buyer_balance_before = bond_contract.functions.balanceOf(secondary_buyer.address, CLASS_ID, NONCE_ID).call()
         active_supply_before = bond_contract.functions.activeSupply(CLASS_ID, NONCE_ID).call()
 
-        tx = self.web3_client._make_tx_object(lender)
+        tx = self.web3_client.make_raw_tx(lender)
         instr = bond_contract.functions.transferFrom(
             lender.address, secondary_buyer.address, transfer_bonds
         ).build_transaction(tx)
@@ -89,13 +89,13 @@ class TestAbstractStorageBonds:
         operator_balance_before = bond_contract.functions.balanceOf(operator.address, CLASS_ID, NONCE_ID).call()
         active_supply_before = bond_contract.functions.activeSupply(CLASS_ID, NONCE_ID).call()
 
-        tx = self.web3_client._make_tx_object(lender)
+        tx = self.web3_client.make_raw_tx(lender)
         instr = bond_contract.functions.setApprovalFor(operator.address, True).build_transaction(tx)
         self.web3_client.send_transaction(lender, instr)
 
         assert bond_contract.functions.isApprovedFor(lender.address, operator.address).call() == True
 
-        tx = self.web3_client._make_tx_object(operator)
+        tx = self.web3_client.make_raw_tx(operator)
         instr = bond_contract.functions.transferFrom(
             lender.address, secondary_buyer.address, trx_approval
         ).build_transaction(tx)
@@ -114,7 +114,7 @@ class TestAbstractStorageBonds:
         self.issue(bond_contract, lender, sender, 7000, 1, 1)
         lender_balance = bond_contract.functions.balanceOf(lender.address, 1, 1).call()
         redeem_trx = self.make_bond_single_trx(1, 1, lender_balance)
-        tx = self.web3_client._make_tx_object(lender)
+        tx = self.web3_client.make_raw_tx(lender)
         instr = bond_contract.functions.redeem(lender.address, redeem_trx).build_transaction(tx)
         self.web3_client.send_transaction(lender, instr)
         lender_balance = bond_contract.functions.balanceOf(lender.address, 1, 1).call()
@@ -126,7 +126,7 @@ class TestAbstractStorageBonds:
         self.issue(bond_contract, lender, sender, 7000, class_id, nonce_id)
         lender_balance = bond_contract.functions.balanceOf(lender.address, class_id, nonce_id).call()
         redeem_trx = self.make_bond_single_trx(class_id, nonce_id, lender_balance + 1000)
-        tx = self.web3_client._make_tx_object(lender)
+        tx = self.web3_client.make_raw_tx(lender)
         with pytest.raises(web3.exceptions.ContractLogicError, match="ERC3475: not enough bond to transfer"):
             bond_contract.functions.redeem(lender.address, redeem_trx).build_transaction(tx)
 
@@ -134,7 +134,7 @@ class TestAbstractStorageBonds:
         self.issue(bond_contract, lender, sender, 7000)
         lender_balance = bond_contract.functions.balanceOf(lender.address, CLASS_ID, NONCE_ID).call()
         burn_trx = self.make_bond_single_trx(amount=lender_balance)
-        tx = self.web3_client._make_tx_object(lender)
+        tx = self.web3_client.make_raw_tx(lender)
         instr = bond_contract.functions.burn(lender.address, burn_trx).build_transaction(tx)
         self.web3_client.send_transaction(lender, instr)
         lender_balance = bond_contract.functions.balanceOf(lender.address, CLASS_ID, NONCE_ID).call()
@@ -145,18 +145,18 @@ class TestAbstractStorageBonds:
             {"classId": CLASS_ID, "nonceId": NONCE_ID, "_amount": 500},
             {"classId": 1, "nonceId": NONCE_ID, "_amount": 900},
         ]
-        tx = self.web3_client._make_tx_object(sender)
+        tx = self.web3_client.make_raw_tx(sender)
         instr = bond_contract.functions.issue(lender.address, trx_approve).build_transaction(tx)
         self.web3_client.send_transaction(sender, instr)
 
-        tx = self.web3_client._make_tx_object(lender)
+        tx = self.web3_client.make_raw_tx(lender)
         instr = bond_contract.functions.approve(operator.address, trx_approve).build_transaction(tx)
         self.web3_client.send_transaction(lender, instr)
 
         assert bond_contract.functions.allowance(lender.address, operator.address, CLASS_ID, NONCE_ID).call() == 500
         assert bond_contract.functions.allowance(lender.address, operator.address, 1, NONCE_ID).call() == 900
 
-        tx = self.web3_client._make_tx_object(operator)
+        tx = self.web3_client.make_raw_tx(operator)
         instr = bond_contract.functions.transferAllowanceFrom(
             lender.address, operator.address, trx_approve
         ).build_transaction(tx)
@@ -172,7 +172,7 @@ class TestAbstractStorageBonds:
 
         self.issue(bond_contract, lender, sender, 7000)
         redeem_trx = self.make_bond_single_trx(amount=5000)
-        tx = self.web3_client._make_tx_object(lender)
+        tx = self.web3_client.make_raw_tx(lender)
         instr = bond_contract.functions.redeem(lender.address, redeem_trx).build_transaction(tx)
         self.web3_client.send_transaction(lender, instr)
         redeemed_supply = bond_contract.functions.redeemedSupply(CLASS_ID, NONCE_ID).call()
@@ -183,7 +183,7 @@ class TestAbstractStorageBonds:
 
         self.issue(bond_contract, lender, sender, 7000)
         burn_trx = self.make_bond_single_trx(amount=5000)
-        tx = self.web3_client._make_tx_object(lender)
+        tx = self.web3_client.make_raw_tx(lender)
         instr = bond_contract.functions.burn(lender.address, burn_trx).build_transaction(tx)
         self.web3_client.send_transaction(lender, instr)
         burned_supply = bond_contract.functions.burnedSupply(CLASS_ID, NONCE_ID).call()

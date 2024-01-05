@@ -50,7 +50,7 @@ class TestSubscriber:
         }
         for i in instructions:
             for args in instructions[i]:
-                tx = self.web3_client._make_tx_object(sender_account)
+                tx = self.web3_client.make_raw_tx(sender_account)
                 instruction_tx = getattr(event_caller_contract.functions, i)(*args).build_transaction(tx)
                 self.web3_client.send_transaction(sender_account, instruction_tx)
 
@@ -176,7 +176,7 @@ class TestSubscriber:
             text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
             bytes_array = text.encode().ljust(32, b"\0")
             bol = True
-            tx = self.web3_client._make_tx_object(sender_account)
+            tx = self.web3_client.make_raw_tx(sender_account)
             instruction_tx = event_caller_contract.functions.allTypes(
                 sender_account.address, number, text, bytes_array, bol
             ).build_transaction(tx)

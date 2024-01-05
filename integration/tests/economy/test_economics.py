@@ -111,7 +111,7 @@ class TestEconomics:
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(w3_client)
 
-        instruction_tx = w3_client._make_tx_object(
+        instruction_tx = w3_client.make_raw_tx(
             account_with_all_tokens.address, acc2.address, web3.Web3.to_wei(0.1, "ether")
         )
         instruction_tx.pop("chainId")
@@ -328,7 +328,7 @@ class TestEconomics:
 
         sol_balance_after_deploy = operator.get_solana_balance()
         token_balance_after_deploy = operator.get_token_balance(w3_client)
-        tx = w3_client._make_tx_object(account_with_all_tokens.address, gas=0)
+        tx = w3_client.make_raw_tx(account_with_all_tokens.address, gas=0)
         del tx["gas"]
         inc_tx = contract.functions.inc().build_transaction(tx)
 
@@ -435,7 +435,7 @@ class TestEconomics:
 
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(w3_client)
-        tx = w3_client._make_tx_object(account_with_all_tokens.address, gas=0)
+        tx = w3_client.make_raw_tx(account_with_all_tokens.address, gas=0)
         del tx["gas"]
         instruction_tx = counter_contract.functions.moreInstruction(0, 100).build_transaction(tx)  # 1086 steps in evm
         instruction_receipt = w3_client.send_transaction(account_with_all_tokens, instruction_tx)
@@ -459,7 +459,7 @@ class TestEconomics:
 
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(w3_client)
-        tx = w3_client._make_tx_object(account_with_all_tokens.address, gas=0)
+        tx = w3_client.make_raw_tx(account_with_all_tokens.address, gas=0)
         del tx["gas"]
         instruction_tx = counter_contract.functions.moreInstruction(0, 1500).build_transaction(tx)
 
@@ -487,7 +487,7 @@ class TestEconomics:
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(w3_client)
 
-        tx = w3_client._make_tx_object(account_with_all_tokens.address, gas=1000)
+        tx = w3_client.make_raw_tx(account_with_all_tokens.address, gas=1000)
         instruction_tx = counter_contract.functions.moreInstruction(0, 100).build_transaction(tx)
 
         with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
@@ -510,7 +510,7 @@ class TestEconomics:
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(w3_client)
 
-        tx = w3_client._make_tx_object(acc2.address, gas=0)
+        tx = w3_client.make_raw_tx(acc2.address, gas=0)
         del tx["gas"]
         instruction_tx = counter_contract.functions.moreInstruction(0, 1500).build_transaction(tx)
         with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
@@ -530,7 +530,7 @@ class TestEconomics:
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(w3_client)
 
-        tx = w3_client._make_tx_object(account_with_all_tokens.address, gas=0)
+        tx = w3_client.make_raw_tx(account_with_all_tokens.address, gas=0)
         del tx["gas"]
         instruction_tx = counter_contract.functions.bigString(BIG_STRING).build_transaction(tx)
 
@@ -724,7 +724,7 @@ class TestEconomics:
         sol_balance_after_deploy = operator.get_solana_balance()
         token_balance_after_deploy = operator.get_token_balance(w3_client)
 
-        tx = w3_client._make_tx_object(account_with_all_tokens.address, gas=0)
+        tx = w3_client.make_raw_tx(account_with_all_tokens.address, gas=0)
         del tx["gas"]
         instr = contract.functions.fill(accounts_quantity).build_transaction(tx)
         receipt = w3_client.send_transaction(account_with_all_tokens, instr)
@@ -777,7 +777,7 @@ class TestEconomics:
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(w3_client)
 
-        tx = w3_client._make_tx_object(account_with_all_tokens.address, gas=0)
+        tx = w3_client.make_raw_tx(account_with_all_tokens.address, gas=0)
         del tx["gas"]
 
         instruction_tx = contract.functions.replaceValues(value).build_transaction(tx)

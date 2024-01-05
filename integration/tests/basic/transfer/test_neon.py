@@ -74,7 +74,7 @@ class TestNeonTransfer:
 
         transfer_amount = self.web3_client._web3.to_wei(2, Unit.ETHER.value)
 
-        transaction = self.web3_client._make_tx_object(
+        transaction = self.web3_client.make_raw_tx(
             from_=sender_account, to=recipient_account, amount=transfer_amount, chain_id=False, estimate_gas=True
         )
 

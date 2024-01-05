@@ -23,7 +23,7 @@ class TestERC173ContractOwnershipStandard:
     def test_ownership_transfer(self, erc173, new_account):
         new_owner = new_account
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = erc173.functions.transferOwnership(new_owner.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
@@ -36,7 +36,7 @@ class TestERC173ContractOwnershipStandard:
         assert event_logs[0].event == "OwnershipTransferred"
 
     def test_only_owner_can_transfer_ownership(self, erc173, new_account):
-        tx = self.web3_client._make_tx_object(new_account)
+        tx = self.web3_client.make_raw_tx(new_account)
 
         with pytest.raises(
             web3.exceptions.ContractLogicError,
@@ -46,7 +46,7 @@ class TestERC173ContractOwnershipStandard:
 
     def test_renounce_ownership(self, erc173):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = erc173.functions.transferOwnership(ZERO_ADDRESS).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
 
@@ -63,13 +63,13 @@ class TestERC173ContractOwnershipStandard:
             constructor_args=[erc173.address],
         )
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = erc173.functions.transferOwnership(erc173_caller_contract.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
 
         new_owner = new_account
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = erc173_caller_contract.functions.transferOwnership(new_owner.address).build_transaction(tx)
 
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)

@@ -1,6 +1,7 @@
 import allure
 import pytest
 import web3
+import web3.exceptions
 from eth_utils import is_hex
 from solana.keypair import Keypair
 from solana.rpc.commitment import Confirmed
@@ -153,7 +154,7 @@ class TestPrecompiledSplToken:
 
     def test_get_account(self, spl_token_caller, token_mint, solana_account):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
 
         instruction_tx = spl_token_caller.functions.initializeAccount(
             sender_account.address, token_mint
@@ -185,7 +186,7 @@ class TestPrecompiledSplToken:
 
     def test_initialize_mint(self, spl_token_caller):
         sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
 
         instruction_tx = spl_token_caller.functions.initializeMint(
             self.web3_client.text_to_bytes32(gen_hash_of_block(8)), DECIMALS
@@ -196,9 +197,9 @@ class TestPrecompiledSplToken:
         mint = log["args"]["value"]
         assert Mint(spl_token_caller.functions.getMint(mint).call()).is_initialized is True
 
-    def test_initialize_acc_incorrect_mint(self, spl_token_caller):
-        sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+    def test_initialize_acc_incorrect_mint(self, spl_token_caller, class_account):
+        sender_account = class_account
+        tx = self.web3_client.make_raw_tx(sender_account)
 
         acc = Keypair.generate()
 
@@ -211,9 +212,8 @@ class TestPrecompiledSplToken:
         except ValueError as e:
             assert "incorrect program id for instruction" in str(e)
 
-    def test_is_system_account(self, spl_token_caller, token_mint):
-        sender_account = self.accounts[0]
-        assert spl_token_caller.functions.isSystemAccount(sender_account.address).call() is True
+    def test_is_system_account(self, spl_token_caller, token_mint, class_account):
+        assert spl_token_caller.functions.isSystemAccount(class_account.address).call() is True
         assert spl_token_caller.functions.isSystemAccount(token_mint).call() is False
 
     def test_find_account(self, spl_token_caller, token_mint):
@@ -221,16 +221,16 @@ class TestPrecompiledSplToken:
         assert spl_token_caller.functions.findAccount(sender_account.address).call() != ZERO_HASH
         assert spl_token_caller.functions.findAccount(token_mint).call() != ZERO_HASH
 
-    def test_close_account(self, spl_token_caller, token_mint):
-        sender_account = self.accounts[0]
-        tx = self.web3_client._make_tx_object(sender_account)
+    def test_close_account(self, spl_token_caller, token_mint, class_account):
+        sender_account = class_account
+        tx = self.web3_client.make_raw_tx(sender_account)
 
         instruction_tx = spl_token_caller.functions.initializeAccount(
             sender_account.address, token_mint
         ).build_transaction(tx)
         self.web3_client.send_transaction(sender_account, instruction_tx)
 
-        tx = self.web3_client._make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
 
         instruction_tx = spl_token_caller.functions.closeAccount(sender_account.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
@@ -243,7 +243,7 @@ class TestPrecompiledSplToken:
         assert account_info.state == 0
 
     def test_close_non_initialized_acc(self, non_initialized_acc, spl_token_caller):
-        tx = self.web3_client._make_tx_object(non_initialized_acc)
+        tx = self.web3_client.make_raw_tx(non_initialized_acc)
 
         instruction_tx = spl_token_caller.functions.closeAccount(non_initialized_acc.address).build_transaction(tx)
         try:
@@ -253,13 +253,13 @@ class TestPrecompiledSplToken:
             assert "invalid account data for instruction" in str(e)
 
     def test_freeze_and_thaw(self, spl_token_caller, token_mint, bob):
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
 
         instruction_tx = spl_token_caller.functions.freeze(token_mint, bob.address).build_transaction(tx)
         self.web3_client.send_transaction(bob, instruction_tx)
         assert self.get_account(spl_token_caller, bob).state == 2
 
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
 
         instruction_tx = spl_token_caller.functions.thaw(token_mint, bob.address).build_transaction(tx)
         self.web3_client.send_transaction(bob, instruction_tx)
@@ -267,7 +267,7 @@ class TestPrecompiledSplToken:
         assert self.get_account(spl_token_caller, bob).state == 1
 
     def test_freeze_non_initialized_account(self, spl_token_caller, non_initialized_acc, token_mint):
-        tx = self.web3_client._make_tx_object(non_initialized_acc)
+        tx = self.web3_client.make_raw_tx(non_initialized_acc)
 
         instruction_tx = spl_token_caller.functions.freeze(token_mint, non_initialized_acc.address).build_transaction(
             tx
@@ -279,14 +279,14 @@ class TestPrecompiledSplToken:
             assert "invalid account data for instruction" in str(e)
 
     def test_freeze_non_initialized_token(self, spl_token_caller, new_account, non_initialized_token_mint):
-        tx = self.web3_client._make_tx_object(new_account)
+        tx = self.web3_client.make_raw_tx(new_account)
 
         instruction_tx = spl_token_caller.functions.initializeAccount(
             new_account.address, non_initialized_token_mint
         ).build_transaction(tx)
         self.web3_client.send_transaction(new_account, instruction_tx)
 
-        tx = self.web3_client._make_tx_object(new_account)
+        tx = self.web3_client.make_raw_tx(new_account)
         instruction_tx = spl_token_caller.functions.freeze(
             non_initialized_token_mint, new_account.address
         ).build_transaction(tx)
@@ -297,7 +297,7 @@ class TestPrecompiledSplToken:
             assert "This token mint cannot freeze accounts" in str(e)
 
     def test_freeze_with_not_associated_mint(self, spl_token_caller, bob, non_initialized_token_mint):
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.freeze(non_initialized_token_mint, bob.address).build_transaction(
             tx
         )
@@ -308,7 +308,7 @@ class TestPrecompiledSplToken:
             assert "Error: Account not associated with this Mint" in str(e)
 
     def test_thaw_non_initialized_account(self, spl_token_caller, non_initialized_acc, token_mint):
-        tx = self.web3_client._make_tx_object(non_initialized_acc)
+        tx = self.web3_client.make_raw_tx(non_initialized_acc)
         instruction_tx = spl_token_caller.functions.thaw(token_mint, non_initialized_acc.address).build_transaction(tx)
         try:
             receipt = self.web3_client.send_transaction(non_initialized_acc, instruction_tx)
@@ -317,7 +317,7 @@ class TestPrecompiledSplToken:
             assert "invalid account data for instruction" in str(e)
 
     def test_thaw_non_freezed_account(self, spl_token_caller, bob, token_mint):
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.thaw(token_mint, bob.address).build_transaction(tx)
         try:
             receipt = self.web3_client.send_transaction(bob, instruction_tx)
@@ -327,14 +327,14 @@ class TestPrecompiledSplToken:
 
     def test_mint_to(self, spl_token_caller, token_mint, bob):
         amount = 100
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.mintTo(bob.address, amount, token_mint).build_transaction(tx)
         receipt = self.web3_client.send_transaction(bob, instruction_tx)
         assert receipt["status"] == 1
         assert self.get_account(spl_token_caller, bob).amount == amount
 
     def test_mint_to_non_initialized_acc(self, spl_token_caller, token_mint, non_initialized_acc):
-        tx = self.web3_client._make_tx_object(non_initialized_acc)
+        tx = self.web3_client.make_raw_tx(non_initialized_acc)
         instruction_tx = spl_token_caller.functions.mintTo(
             non_initialized_acc.address, 100, token_mint
         ).build_transaction(tx)
@@ -345,13 +345,13 @@ class TestPrecompiledSplToken:
             assert "invalid account data for instruction" in str(e)
 
     def test_mint_to_non_initialized_token(self, spl_token_caller, non_initialized_token_mint, new_account):
-        tx = self.web3_client._make_tx_object(new_account)
+        tx = self.web3_client.make_raw_tx(new_account)
         instruction_tx = spl_token_caller.functions.initializeAccount(
             new_account.address, non_initialized_token_mint
         ).build_transaction(tx)
         self.web3_client.send_transaction(new_account, instruction_tx)
 
-        tx = self.web3_client._make_tx_object(new_account)
+        tx = self.web3_client.make_raw_tx(new_account)
         instruction_tx = spl_token_caller.functions.mintTo(
             new_account.address, 100, non_initialized_token_mint
         ).build_transaction(tx)
@@ -364,7 +364,7 @@ class TestPrecompiledSplToken:
     def test_transfer(self, spl_token_caller, token_mint, bob, alice):
         amount = 100
 
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.mintTo(bob.address, amount, token_mint).build_transaction(tx)
 
         self.web3_client.send_transaction(bob, instruction_tx)
@@ -372,7 +372,7 @@ class TestPrecompiledSplToken:
         b1_before = self.get_account(spl_token_caller, bob).amount
         b2_before = self.get_account(spl_token_caller, alice).amount
 
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.transfer(bob.address, alice.address, amount).build_transaction(tx)
         self.web3_client.send_transaction(bob, instruction_tx)
 
@@ -383,11 +383,11 @@ class TestPrecompiledSplToken:
 
     def test_transfer_to_non_initialized_acc(self, spl_token_caller, token_mint, bob, non_initialized_acc):
         amount = 100
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.mintTo(bob.address, amount, token_mint).build_transaction(tx)
         self.web3_client.send_transaction(bob, instruction_tx)
 
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.transfer(
             bob.address, non_initialized_acc.address, amount
         ).build_transaction(tx)
@@ -400,12 +400,12 @@ class TestPrecompiledSplToken:
     def test_transfer_with_incorrect_signer(self, spl_token_caller, token_mint, bob, alice):
         amount = 100
 
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.mintTo(bob.address, amount, token_mint).build_transaction(tx)
 
         self.web3_client.send_transaction(bob, instruction_tx)
 
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.transfer(bob.address, alice.address, amount).build_transaction(tx)
         with pytest.raises(TypeError, match=r"from field must match key's .*, but it was "):
             self.web3_client.send_transaction(alice, instruction_tx)
@@ -413,7 +413,7 @@ class TestPrecompiledSplToken:
     def test_transfer_more_than_balance(self, spl_token_caller, token_mint, bob, alice):
         transfer_amount = self.get_account(spl_token_caller, bob).amount + 1
 
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.transfer(
             bob.address, alice.address, transfer_amount
         ).build_transaction(tx)
@@ -426,13 +426,13 @@ class TestPrecompiledSplToken:
     def test_burn(self, spl_token_caller, token_mint, bob):
         amount = 100
 
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.mintTo(bob.address, amount, token_mint).build_transaction(tx)
 
         self.web3_client.send_transaction(bob, instruction_tx)
 
         balance_before = self.get_account(spl_token_caller, bob).amount
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.burn(token_mint, bob.address, amount).build_transaction(tx)
         self.web3_client.send_transaction(bob, instruction_tx)
 
@@ -440,7 +440,7 @@ class TestPrecompiledSplToken:
         assert balance_before - balance_after == amount
 
     def test_burn_non_initialized_acc(self, spl_token_caller, token_mint, non_initialized_acc):
-        tx = self.web3_client._make_tx_object(non_initialized_acc)
+        tx = self.web3_client.make_raw_tx(non_initialized_acc)
         instruction_tx = spl_token_caller.functions.burn(token_mint, non_initialized_acc.address, 10).build_transaction(
             tx
         )
@@ -453,7 +453,7 @@ class TestPrecompiledSplToken:
     def test_burn_more_then_balance(self, spl_token_caller, token_mint, bob):
         amount = self.get_account(spl_token_caller, bob).amount + 1
 
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.burn(token_mint, bob.address, amount).build_transaction(tx)
         try:
             receipt = self.web3_client.send_transaction(bob, instruction_tx)
@@ -464,17 +464,17 @@ class TestPrecompiledSplToken:
     def test_approve_and_revoke(self, spl_token_caller, token_mint, bob, alice):
         amount = 100
 
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.mintTo(bob.address, amount, token_mint).build_transaction(tx)
         self.web3_client.send_transaction(bob, instruction_tx)
 
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.approve(bob.address, alice.address, amount).build_transaction(tx)
         self.web3_client.send_transaction(bob, instruction_tx)
 
         assert self.get_account(spl_token_caller, bob).delegated_amount == amount
 
-        tx = self.web3_client._make_tx_object(bob)
+        tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.revoke(bob.address).build_transaction(tx)
         self.web3_client.send_transaction(bob, instruction_tx)
 

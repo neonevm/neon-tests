@@ -36,7 +36,7 @@ class TestDeposit:
         contract, _ = self.web3_client.deploy_and_get_contract(
             "precompiled/NeonToken", "0.8.10", account=sender_account
         )
-        tx = self.web3_client._make_tx_object(sender_account, amount=web3.Web3.to_wei(move_amount, "ether"))
+        tx = self.web3_client.make_raw_tx(sender_account, amount=web3.Web3.to_wei(move_amount, "ether"))
         instruction_tx = contract.functions.withdraw(bytes(dest_acc.public_key)).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1

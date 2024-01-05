@@ -1,9 +1,9 @@
 from eth_utils import abi, to_text
 
-from utils.consts import ZERO_HASH
+from utils.consts import ZERO_HASH, LAMPORT_PER_SOL
 from .utils.constants import CHAIN_ID
 from .utils.contract import deploy_contract, get_contract_bin
-from .solana_utils import solana_client, write_transaction_to_holder_account
+from .solana_utils import solana_client, write_transaction_to_holder_account, deposit_neon
 from .utils.ethereum import make_eth_transaction
 from .utils.storage import create_holder
 
@@ -17,11 +17,16 @@ def test_get_storage_at(neon_rpc_client, operator_keypair, user_account, evm_loa
     assert storage == zero_array + [0]
 
 
-def test_get_balance(neon_rpc_client, user_account):
+def test_get_balance(neon_rpc_client, user_account, sol_client, evm_loader, operator_keypair):
     result = neon_rpc_client.get_balance(user_account.eth_address.hex())
-    print(result)
     assert str(user_account.balance_account_address) == result[0]["solana_address"]
     assert solana_client.get_account_info(user_account.solana_account.public_key).value is not None
+    assert result[0]["status"] == 'Ok'
+    assert result[0]["balance"] == '0x0'
+    amount = 100000
+    deposit_neon(evm_loader, operator_keypair, user_account.eth_address, amount)
+    result = neon_rpc_client.get_balance(user_account.eth_address.hex())
+    assert result[0]["balance"] == hex(amount * LAMPORT_PER_SOL)
 
 
 def test_emulate_transfer(neon_rpc_client, user_account, session_user):
@@ -82,3 +87,26 @@ def test_get_holder(neon_rpc_client, operator_keypair, session_user, sender_with
     assert result["owner"] == str(operator_keypair.public_key)
     assert result["status"] == 'Holder'
     assert result["tx"] != ZERO_HASH
+
+
+def test_collect_treasury(neon_rpc_client):
+    result = neon_rpc_client.collect_treasury()
+    assert result["pool_address"] != ""
+    assert result["balance"] > 0
+
+
+def test_get_config(neon_rpc_client):
+    result = neon_rpc_client.get_config()
+    assert CHAIN_ID in [item['id'] for item in result["chains"]]
+    expected_fields = ["NEON_ACCOUNT_SEED_VERSION",
+                       "NEON_EVM_STEPS_LAST_ITERATION_MAX",
+                       "NEON_EVM_STEPS_MIN",
+                       "NEON_GAS_LIMIT_MULTIPLIER_NO_CHAINID",
+                       "NEON_HOLDER_MSG_SIZE",
+                       "NEON_OPERATOR_PRIORITY_SLOTS",
+                       "NEON_PAYMENT_TO_TREASURE",
+                       "NEON_STORAGE_ENTRIES_IN_CONTRACT_ACCOUNT",
+                       "NEON_TREASURY_POOL_COUNT",
+                       "NEON_TREASURY_POOL_SEED"]
+    for field in expected_fields:
+        assert field in result["config"]

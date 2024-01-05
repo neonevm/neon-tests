@@ -178,6 +178,7 @@ def accounts(request, accounts_session):
     if inspect.isclass(request.cls):
         request.cls.accounts = accounts_session
     yield accounts_session
+    accounts_session._accounts = []
 
 
 @pytest.fixture(scope="session")

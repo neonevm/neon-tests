@@ -353,7 +353,7 @@ class TestTracerDebugMethods:
         assert isinstance(response["result"], list)
         assert sender_account.address in response["result"]
         for item in response["result"]:
-            assert re.match("^0x[a-fA-F\d]{64}$", item)
+            assert re.match(r"^0x[a-fA-F\d]{64}$", item)
 
     @pytest.mark.skip(reason="bug NDEV-2375")
     def test_debug_get_modified_accounts_by_number(self):
@@ -500,3 +500,46 @@ class TestTracerDebugMethods:
         assert "error" in response, "No errors in response"
         assert response["error"]["code"] == -32602, "Invalid error code"
         assert response["error"]["message"] == "Invalid params"
+
+    def test_debug_get_raw_transaction(self):
+        sender_account = self.accounts[0]
+        nonce = self.web3_client.get_nonce(sender_account.address)
+        transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce, amount=0.1)
+        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
+        tx = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)
+        receipt = self.web3_client.eth.wait_for_transaction_receipt(tx)
+        assert receipt["status"] == 1
+        wait_condition(
+            lambda: self.tracer_api.send_rpc(
+                method="debug_getRawTransaction", params=[receipt["transactionHash"].hex()]
+            )["result"]
+            is not None,
+            timeout_sec=120,
+        )
+
+        response = self.tracer_api.send_rpc(method="debug_getRawTransaction", params=[receipt["transactionHash"].hex()])
+        assert "error" not in response, "Error in response"
+        assert response["result"] == signed_tx.rawTransaction.hex()
+
+    def test_debug_get_raw_transaction_invalid_tx_hash(self):
+        sender_account = self.accounts[0]
+        recipient_account = self.accounts[1]
+        receipt = self.web3_client.send_neon(sender_account, recipient_account, 0.1)
+        assert receipt["status"] == 1
+        response = self.tracer_api.send_rpc(method="debug_getRawTransaction", params=[receipt["blockHash"].hex()])
+        assert "error" in response, "No errors in response"
+        assert response["error"]["code"] == -32603, "Invalid error code"
+        assert response["error"]["message"] == f'Empty Neon transaction receipt for {receipt["blockHash"].hex()}'
+
+    def test_debug_get_raw_transaction_non_existent_tx_hash(self):
+        response = self.tracer_api.send_rpc(
+            method="debug_getRawTransaction",
+            params=["0xd9765b77e470204ae5edb1a796ab92ecb0e20fea50aeb09275aea740af7bbc69"],
+        )
+        assert "error" in response, "No errors in response"
+        assert response["error"]["code"] == -32603, "Invalid error code"
+        assert (
+            response["error"]["message"]
+            == """Empty Neon transaction receipt for 
+            0xd9765b77e470204ae5edb1a796ab92ecb0e20fea50aeb09275aea740af7bbc69"""
+        )

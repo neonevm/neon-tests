@@ -77,7 +77,7 @@ def sol_client(request, sol_client_session):
     yield sol_client_session
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def web3_client_sol(pytestconfig: Config) -> tp.Union[Web3Client, None]:
     if "sol" in pytestconfig.environment.network_ids:
         client = Web3Client(f"{pytestconfig.environment.proxy_url}/sol")

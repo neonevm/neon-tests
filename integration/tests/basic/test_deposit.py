@@ -183,7 +183,7 @@ class TestWithdraw:
     def test_failed_withdraw_insufficient_balance(
         self, pytestconfig: Config, move_amount, error, withdraw_contract, neon_mint, solana_account, prepare_account
     ):
-        # FIXME: Don't work if run all tests (because dest_acc already exist)
+        # FIXME: NDEV-2496 Don't work if run all tests (because dest_acc already exist)
         dest_acc = solana_account
 
         spl_neon_token = SplToken(self.sol_client, neon_mint, TOKEN_PROGRAM_ID, dest_acc.public_key)

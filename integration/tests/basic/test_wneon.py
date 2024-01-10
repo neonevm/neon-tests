@@ -53,7 +53,7 @@ class TestWNeon:
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
         neon_balance_before, wneon_balance_before = self.get_balances(wneon, recipient_account.address)
-        deposit_amount = random.randint(1, 100)
+        deposit_amount = random.randint(1, 10)
         receipt = self.deposit(wneon, deposit_amount, recipient_account)
         assert receipt["status"] == 1
         neon_balance_after, wneon_balance_after = self.get_balances(wneon, recipient_account.address)
@@ -65,7 +65,7 @@ class TestWNeon:
             < 1
         )
 
-        deposit_amount2 = random.randint(1, 100)
+        deposit_amount2 = random.randint(1, 10)
         self.deposit(wneon, deposit_amount2, sender_account)
         assert (
             self.web3_client._web3.from_wei(wneon.functions.totalSupply().call(), "ether")
@@ -73,7 +73,7 @@ class TestWNeon:
         )
 
     def test_withdraw(self, wneon):
-        deposit_amount = 100
+        deposit_amount = 10
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
         self.deposit(wneon, deposit_amount, recipient_account)
@@ -96,7 +96,7 @@ class TestWNeon:
         assert wneon_balance_after == wneon_balance_before - withdraw_amount
 
     def test_transfer_and_check_token_does_not_use_spl(self, wneon, new_account):
-        deposit_amount = 100
+        deposit_amount = 10
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
         self.deposit(wneon, deposit_amount, sender_account)
@@ -129,7 +129,7 @@ class TestWNeon:
         assert neon_balance_sender_after - neon_balance_sender_before < 0.2
 
     def test_transfer_from(self, wneon, new_account):
-        deposit_amount = 100
+        deposit_amount = 10
         sender_account = self.accounts[0]
         self.deposit(wneon, deposit_amount, sender_account)
         neon_balance_sender_before, wneon_balance_sender_before = self.get_balances(wneon, sender_account.address)
@@ -163,8 +163,7 @@ class TestWNeon:
         assert neon_balance_recipient_after - neon_balance_recipient_before < 0.2
 
     def test_withdraw_wneon_from_neon_to_solana(self, wneon, neon_mint, solana_account, withdraw_contract):
-        deposit_amount = 100
-        sender_account = self.accounts[0]
+        deposit_amount = 10
         recipient_account = self.accounts[1]
         self.deposit(wneon, deposit_amount, recipient_account)
 

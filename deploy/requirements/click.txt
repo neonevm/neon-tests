@@ -10,3 +10,4 @@ py-solc-x==1.1.1
 pythclient==0.0.2
 boto3==1.28.54
 rlp==3.0.0
+python-terraform==0.10.1

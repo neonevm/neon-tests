@@ -37,9 +37,7 @@ def get_contract_interface(
     else:
         contract_path = (pathlib.Path.cwd() / "contracts" / f"{contract}").absolute()
         if not contract_path.exists():
-            contract_path = (
-                pathlib.Path.cwd() / "contracts" / "external" / f"{contract}"
-            ).absolute()
+            contract_path = (pathlib.Path.cwd() / "contracts" / "external" / f"{contract}").absolute()
 
     assert contract_path.exists(), f"Can't found contract: {contract_path}"
 
@@ -85,6 +83,7 @@ def wait_condition(func_cond, timeout_sec=15, delay=0.5):
         try:
             if func_cond():
                 break
+
         except Exception as e:
             print(f"Error during waiting: {e}")
         time.sleep(delay)
@@ -107,9 +106,7 @@ def get_selectors(abi):
         for input in function["inputs"]:
             if "struct" in input["internalType"]:
                 struct_name = input["name"]
-                struct_types = ",".join(
-                    i["type"] for i in input["components"] if i["name"] != struct_name
-                )
+                struct_types = ",".join(i["type"] for i in input["components"] if i["name"] != struct_name)
                 input_types += "," + f"({struct_types})[]"
             else:
                 input_types += "," + input["type"]

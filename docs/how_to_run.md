@@ -38,11 +38,21 @@ To download test contracts from the Neon EVM repo, you need to use:
 
 ## Run OpenZeppelin tests
 
-To run OpenZeppelin tests, just use the next command:
+To run OpenZeppelin tests just use the next command:
 ```bash
 ./clickfile.py run oz --network <your-stand> --jobs 8
 ```
 
+## Run neon evm tests
+
+To run neon evm tests:
+1. set environment variables: 
+   SOLANA_URL: by default http://solana:8899
+   NEON_CORE_API_URL: by default http://neon_api:8085/api
+2. run the next command:
+```bash
+./clickfile.py run evm --numprocesses 6
+```
 
 ## Run tests manual
 

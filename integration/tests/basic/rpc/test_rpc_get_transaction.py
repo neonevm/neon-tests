@@ -202,7 +202,11 @@ class TestRpcGetTransaction(BaseMixin):
         """Verify implemented rpc calls work with neon_getTransactionReceipt and eth_getTransactionReceipt"""
         tx_receipt = self.send_neon(self.sender_account, self.recipient_account, 10)
         transaction_hash = tx_receipt.transactionHash.hex()
-        response = self.proxy_api.send_rpc(method=method, params=transaction_hash)
+        params = [transaction_hash]
+        if method.startswith('neon_'):
+            params.append('ethereum')
+        response = self.proxy_api.send_rpc(method=method, params=params)
+#        response = self.proxy_api.send_rpc(method=method, params=transaction_hash)
         assert "error" not in response
         assert "result" in response, AssertMessage.DOES_NOT_CONTAIN_RESULT
         result = response["result"]

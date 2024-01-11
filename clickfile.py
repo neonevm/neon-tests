@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import typing as tp
+from pathlib import Path
 from multiprocessing.dummy import Pool
 from urllib.parse import urlparse
 
@@ -131,7 +132,7 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
             return dict(map(lambda i: (i[0], str(i[1])), d.items()))
 
         if os.environ.get("OZ_BALANCES_REPORT_FLAG") is not None:
-            network = network_manager.networks[args[0]]
+            network = network_manager.get_network_object(args[0])
             op = Operator(
                 network["proxy_url"],
                 network["solana_url"],
@@ -177,17 +178,12 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         )
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
     keys_env = [
-        faucet_cli.prepare_wallets_with_balance(
-            network_manager.networks[network], count=users, airdrop_amount=amount
-        )
+        dapps_cli.prepare_accounts(network, users, amount)
         for i in range(jobs)
     ]
 
-    tests = (
-        subprocess.check_output("find \"test\" -name '*.test.js'", shell=True, cwd=cwd)
-        .decode()
-        .splitlines()
-    )
+    tests = list(Path(f"{cwd}/test").rglob('*.test.js'))
+    tests = [str(test) for test in tests]
 
     def run_oz_file(file_name):
         print(f"Run {file_name}")
@@ -226,7 +222,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     pool.close()
     pool.join()
     # Add allure environment
-    settings = network_manager.networks[network]
+    settings = network_manager.get_network_object(network)
     web3_client = web3client.NeonChainWeb3Client(
         settings["proxy_url"])
     opts = {
@@ -331,7 +327,7 @@ def create_allure_environment_opts(opts: dict):
 
 
 def generate_allure_environment(network_name: str):
-    network = network_manager.networks[network_name]
+    network = network_manager.get_network_object(network_name)
     env = os.environ.copy()
 
     env["NETWORK_ID"] = str(network["network_ids"]["neon"])
@@ -490,7 +486,7 @@ def update_contracts(branch):
     "name",
     required=True,
     type=click.Choice(
-        ["economy", "basic", "tracer", "services", "oz", "ui", "compiler_compatibility"]
+        ["economy", "basic", "tracer", "services", "oz", "ui", "evm", "compiler_compatibility"]
     ),
 )
 @catch_traceback
@@ -507,7 +503,7 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
         if numprocesses:
             command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
     elif name == "tracer":
-        command = "py.test integration/tests/tracer"
+        command = "py.test -n 50 integration/tests/tracer"
     elif name == "services":
         command = "py.test integration/tests/services"
         if numprocesses:
@@ -516,6 +512,10 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
         command = "py.test integration/tests/compiler_compatibility"
         if numprocesses:
             command = f"{command} --numprocesses {numprocesses} --dist loadscope"
+    elif name == "evm":
+        command = "py.test integration/tests/neon_evm"
+        if numprocesses:
+            command = f"{command} --numprocesses {numprocesses}"
     elif name == "oz":
         run_openzeppelin_tests(
             network, jobs=int(jobs), amount=int(amount), users=int(users)
@@ -847,7 +847,7 @@ def send_notification(url, build_url, traceback, network):
     "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
 )
 def get_operator_balances(network: str):
-    net = network_manager.networks[network]
+    net = network_manager.get_network_object(network)
     operator = Operator(
         net["proxy_url"],
         net["solana_url"],

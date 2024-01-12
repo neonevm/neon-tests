@@ -257,7 +257,7 @@ class TestTracerDebugMethods(BaseMixin):
             method="debug_traceBlockByHash", params=['0xd97ff4869d52c4add6f5bcb1ba96020dd7877244b4cbf49044f49f002015ea85'])
         assert "error" in response, "No errors in response"
         assert response["error"]["code"] == -32603, "Invalid error code"
-        assert response["error"]["message"] == "eth_getBlockByHash returns None for '\"0xd97ff4869d52c4add6f5bcb1ba96020dd7877244b4cbf49044f49f002015ea85\"' block"
+        assert response["error"]["message"] == "eth_getBlockByHash failed for '\"0xd97ff4869d52c4add6f5bcb1ba96020dd7877244b4cbf49044f49f002015ea85\"' block"
 
     def decode_raw_header(self, header: bytes):
         sedes = List([big_endian_int, binary, binary, binary, binary])
@@ -470,5 +470,4 @@ class TestTracerDebugMethods(BaseMixin):
                                             params=["0xd9765b77e470204ae5edb1a796ab92ecb0e20fea50aeb09275aea740af7bbc69"])
         assert "error" in response, "No errors in response"
         assert response["error"]["code"] == -32603, "Invalid error code"
-        assert response["error"]["message"] == '''Empty Neon transaction receipt for 
-            0xd9765b77e470204ae5edb1a796ab92ecb0e20fea50aeb09275aea740af7bbc69'''
+        assert response["error"]["message"] == "Empty Neon transaction receipt for 0xd9765b77e470204ae5edb1a796ab92ecb0e20fea50aeb09275aea740af7bbc69"

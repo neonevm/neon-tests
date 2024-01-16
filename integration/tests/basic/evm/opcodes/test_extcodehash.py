@@ -49,10 +49,10 @@ class TestExtCodeHashOpcode(BaseMixin):
             self.recipient_account.address
         ).call()
         assert (
-            contract_hash.hex()
-            == keccak(
-                self.web3_client.eth.get_code(self.recipient_account.address, "latest")
-            ).hex()
+                contract_hash.hex()
+                == keccak(
+            self.web3_client.eth.get_code(self.recipient_account.address, "latest")
+        ).hex()
         )
 
     def test_extcodehash_with_send_tx_for_empty_account(self, eip1052_checker):
@@ -67,10 +67,10 @@ class TestExtCodeHashOpcode(BaseMixin):
         event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt)
         contract_hash = event_logs[0]["args"]["hash"]
         assert (
-            contract_hash.hex()
-            == keccak(
-                self.web3_client.eth.get_code(self.recipient_account.address, "latest")
-            ).hex()
+                contract_hash.hex()
+                == keccak(
+            self.web3_client.eth.get_code(self.recipient_account.address, "latest")
+        ).hex()
         )
 
     def test_extcodehash_for_non_existing_account(self, eip1052_checker):
@@ -109,17 +109,17 @@ class TestExtCodeHashOpcode(BaseMixin):
         )
         assert event_logs[1]["args"]["hash"].hex() != ZERO_HASH
         assert (
-            event_logs[0]["args"]["hash"].hex() == event_logs[1]["args"]["hash"].hex()
+                event_logs[0]["args"]["hash"].hex() == event_logs[1]["args"]["hash"].hex()
         )
         event_logs = eip1052_checker.events.DestroyedContract().process_receipt(
             receipt, errors=DISCARD
         )
         destroyed_contract_address = event_logs[0]["args"]["addr"]
         assert (
-            eip1052_checker.functions.getContractHash(destroyed_contract_address)
-            .call()
-            .hex()
-            == ZERO_HASH
+                eip1052_checker.functions.getContractHash(destroyed_contract_address)
+                .call()
+                .hex()
+                == ZERO_HASH
         )
 
     def test_extcodehash_with_send_tx_for_destroyed_contract(self, eip1052_checker):
@@ -199,3 +199,36 @@ class TestExtCodeHashOpcode(BaseMixin):
         event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt)
         contract_hash = event_logs[0]["args"]["hash"]
         assert contract_hash.hex() == ZERO_HASH
+
+    def test_extcodehash_for_new_account_with_changed_balance(self, eip1052_checker, common_contract):
+        # Check the EXTCODEHASH of a new account after sent some funds to it in one transaction
+        tx = self.create_contract_call_tx_object(self.sender_account, amount=1)
+        new_acc = self.web3_client.create_account()
+        instruction_tx = (
+            eip1052_checker.functions.TransferAndGetHash(new_acc.address).build_transaction(
+                tx
+            )
+        )
+        receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        event_logs = eip1052_checker.events.ReceivedHash().process_receipt(
+            receipt, errors=DISCARD
+        )
+
+        assert event_logs[0]["args"]["hash"].hex() == ZERO_HASH
+        assert event_logs[1]["args"]["hash"].hex() != ZERO_HASH
+
+    def test_extcodehash_for_contract_with_changed_balance(self, eip1052_checker, common_contract):
+        # Check the EXTCODEHASH of a new account after sent some funds to it in one transaction
+        tx = self.create_contract_call_tx_object(self.sender_account, amount=1)
+        instruction_tx = (
+            eip1052_checker.functions.TransferAndGetHash(common_contract.address).build_transaction(
+                tx
+            )
+        )
+        receipt = self.web3_client.send_transaction(self.sender_account, instruction_tx)
+        event_logs = eip1052_checker.events.ReceivedHash().process_receipt(
+            receipt, errors=DISCARD
+        )
+        assert event_logs[0]["args"]["hash"].hex() != ZERO_HASH
+        assert event_logs[1]["args"]["hash"].hex() != ZERO_HASH
+        assert event_logs[0]["args"]["hash"].hex() != event_logs[1]["args"]["hash"].hex()

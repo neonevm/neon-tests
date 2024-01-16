@@ -36,6 +36,14 @@ contract EIP1052Checker {
         bytes32 hash3 = getContractHash(selfDestroyableContract);
         emit ReceivedHash(hash3);
     }
+
+    function TransferAndGetHash(address addr) public payable returns (bytes32 hash1, bytes32 hash2) {
+        hash1 = getContractHash(address(addr));
+        emit ReceivedHash(hash1);
+        payable(addr).send(msg.value);
+        hash2 = getContractHash(address(addr));
+        emit ReceivedHash(hash2);
+    }
 }
 
 contract DestroyCaller {

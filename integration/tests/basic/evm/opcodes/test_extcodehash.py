@@ -173,4 +173,4 @@ class TestExtCodeHashOpcode(BaseMixin):
         ]
 
         response = self.proxy_api.send_rpc("eth_call", params=params)
-        assert response['result'] == keccak(self.web3_client.eth.get_code(new_account.address, "latest")).hex()
+        assert response['result'][2:] == keccak(self.web3_client.eth.get_code(new_account.address, "latest")).hex()

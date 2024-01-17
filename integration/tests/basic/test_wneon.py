@@ -137,7 +137,7 @@ class TestWNeon:
             neon_balance_recipient_before,
             wneon_balance_recipient_before,
         ) = self.get_balances(wneon, new_account.address)
-        transfer_amount = random.randint(1, 100)
+        transfer_amount = random.randint(1, 10)
         transfer_amount_wei = self.web3_client._web3.to_wei(transfer_amount, "ether")
 
         with pytest.raises(web3.exceptions.ContractLogicError):

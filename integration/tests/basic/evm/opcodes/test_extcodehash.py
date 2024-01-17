@@ -1,5 +1,6 @@
 import allure
 import pytest
+from eth_abi import abi
 from web3.logs import DISCARD
 
 from eth_utils import keccak
@@ -154,3 +155,30 @@ class TestExtCodeHashOpcode:
         event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt)
         contract_hash = event_logs[0]["args"]["hash"]
         assert contract_hash.hex() == ZERO_HASH
+
+    def test_extcodehash_for_new_account_with_changed_balance(self, eip1052_checker, common_contract):
+        # Check the EXTCODEHASH of a new account after sent some funds to it in one transaction
+        sender_account = self.accounts[0]
+        tx = self.web3_client.make_raw_tx(sender_account, amount=1)
+        new_acc = self.web3_client.create_account()
+        instruction_tx = eip1052_checker.functions.TransferAndGetHash(new_acc.address).build_transaction(tx)
+        receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
+        event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt, errors=DISCARD)
+
+        assert event_logs[0]["args"]["hash"].hex() == ZERO_HASH
+        assert event_logs[1]["args"]["hash"] == keccak(self.web3_client.eth.get_code(new_acc.address, "latest"))
+
+    def test_extcodehash_for_new_account_with_changed_nonce(self, eip1052_checker, proxy_api):
+        new_account = self.web3_client.create_account()
+
+        calldata = keccak(text="getContractHashWithLog(address)")[:4] + abi.encode(
+            ["address"],
+            [new_account.address],
+        )
+        params = [
+            {"from": new_account.address, "nonce": 1, "to": eip1052_checker.address, "data": calldata.hex()},
+            "latest",
+        ]
+
+        response = proxy_api.send_rpc("eth_call", params=params)
+        assert response["result"][2:] == keccak(self.web3_client.eth.get_code(new_account.address, "latest")).hex()

@@ -10,8 +10,12 @@ from _pytest.config import Config
 from _pytest.runner import runtestprotocol
 from solana.keypair import Keypair
 
-from clickfile import create_allure_environment_opts
-from utils.web3client import NeonChainWeb3Client, Web3Client
+from utils import create_allure_environment_opts
+from utils.faucet import Faucet
+from utils.accounts import EthAccounts
+from utils.web3client import NeonChainWeb3Client
+from utils.solana_client import SolanaClient
+
 
 pytest_plugins = ["ui.plugins.browser"]
 
@@ -108,15 +112,15 @@ def evm_loader_keypair():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def allure_environment(pytestconfig: Config, web3_client: NeonChainWeb3Client, request):
+def allure_environment(pytestconfig: Config, web3_client_session: NeonChainWeb3Client):
     opts = {}
 
-    if pytestconfig.getoption("--network") != "geth" and "neon_evm" not in os.getenv('PYTEST_CURRENT_TEST'):
+    if pytestconfig.getoption("--network") != "geth" and "neon_evm" not in os.getenv("PYTEST_CURRENT_TEST"):
         opts = {
             "Network": pytestconfig.environment.proxy_url,
-            "Proxy.Version": web3_client.get_proxy_version()["result"],
-            "EVM.Version": web3_client.get_evm_version()["result"],
-            "CLI.Version": web3_client.get_cli_version()["result"],
+            "Proxy.Version": web3_client_session.get_proxy_version()["result"],
+            "EVM.Version": web3_client_session.get_evm_version()["result"],
+            "CLI.Version": web3_client_session.get_cli_version()["result"],
         }
 
     yield opts
@@ -145,8 +149,8 @@ def allure_environment(pytestconfig: Config, web3_client: NeonChainWeb3Client, r
             )
 
 
-@pytest.fixture(scope="session", autouse=True)
-def web3_client(pytestconfig: Config) -> NeonChainWeb3Client:
+@pytest.fixture(scope="session")
+def web3_client_session(pytestconfig: Config) -> NeonChainWeb3Client:
     client = NeonChainWeb3Client(
         pytestconfig.environment.proxy_url,
         tracer_url=pytestconfig.environment.tracer_url,
@@ -154,27 +158,21 @@ def web3_client(pytestconfig: Config) -> NeonChainWeb3Client:
     return client
 
 
+@pytest.fixture(scope="session")
+def sol_client_session(pytestconfig: Config):
+    client = SolanaClient(
+        pytestconfig.environment.solana_url,
+        pytestconfig.environment.account_seed_version,
+    )
+    return client
+
+
 @pytest.fixture(scope="session", autouse=True)
-def web3_client_sol(pytestconfig: Config) -> tp.Union[Web3Client, None]:
-    if "sol" in pytestconfig.environment.network_ids:
-        client = Web3Client(
-            f"{pytestconfig.environment.proxy_url}/sol"
-        )
-        return client
-    else:
-        return None
+def faucet(pytestconfig: Config, web3_client_session) -> Faucet:
+    return Faucet(pytestconfig.environment.faucet_url, web3_client_session)
 
 
 @pytest.fixture(scope="session")
-def web3_client_abc(pytestconfig: Config) -> tp.Union[Web3Client, None]:
-    if "abc" in pytestconfig.environment.network_ids:
-        return Web3Client(f"{pytestconfig.environment.proxy_url}/abc")
-    else:
-        return None
-
-@pytest.fixture(scope="session", autouse=True)
-def web3_client_def(pytestconfig: Config) -> tp.Union[Web3Client, None]:
-    if "def" in pytestconfig.environment.network_ids:
-        return Web3Client(f"{pytestconfig.environment.proxy_url}/def")
-    else:
-        return None
+def accounts_session(web3_client_session, faucet, eth_bank_account):
+    accounts = EthAccounts(web3_client_session, faucet, eth_bank_account)
+    yield accounts

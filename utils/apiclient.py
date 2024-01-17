@@ -1,3 +1,4 @@
+import time
 import typing as tp
 import random
 
@@ -9,13 +10,14 @@ class JsonRPCSession(Session):
         super(JsonRPCSession, self).__init__()
         self.url = url
 
-    def send_rpc(self, method: str, params: tp.Optional[tp.Any] = None, req_type: tp.Optional[str] = None,) -> tp.Dict:
+    def send_rpc(
+        self,
+        method: str,
+        params: tp.Optional[tp.Any] = None,
+        req_type: tp.Optional[str] = None,
+    ) -> tp.Dict:
         req_id = random.randint(0, 100)
-        body = {
-            "jsonrpc": "2.0",
-            "method": method,
-            "id": req_id
-        }
+        body = {"jsonrpc": "2.0", "method": method, "id": req_id}
 
         if req_type is not None:
             body["req_type"] = req_type
@@ -28,8 +30,7 @@ class JsonRPCSession(Session):
         resp = self.post(self.url, json=body, timeout=60)
         response_body = resp.json()
         if "result" not in response_body and "error" not in response_body:
-            raise AssertionError(
-                "Request must contains 'result' or 'error' field")
+            raise AssertionError("Request must contains 'result' or 'error' field")
 
         if "error" in response_body:
             assert "result" not in response_body, "Response can't contains error and result"
@@ -37,3 +38,11 @@ class JsonRPCSession(Session):
             assert response_body["id"] == req_id
 
         return response_body
+
+
+def wait_finalized_block(rpc_client: JsonRPCSession, block_num: int):
+    fin_block_num = block_num - 32
+    while block_num > fin_block_num:
+        time.sleep(1)
+        response = rpc_client.send_rpc("neon_finalizedBlockNumber", [])
+        fin_block_num = int(response["result"], 16)

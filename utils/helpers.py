@@ -84,6 +84,7 @@ def wait_condition(func_cond, timeout_sec=15, delay=0.5):
         try:
             if func_cond():
                 break
+
         except Exception as e:
             print(f"Error during waiting: {e}")
         time.sleep(delay)

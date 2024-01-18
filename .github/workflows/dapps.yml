@@ -8,7 +8,7 @@ on:
     inputs:
       network:
         type: choice
-        default: aws
+        default: terraform
         required: true
         description: "Stand name"
         options:
@@ -41,13 +41,13 @@ on:
         required: false
         description: "Url to send the report as comment for PR"
 env:
-  NETWORK: ${{ github.event.inputs.network || 'night-stand' }}
+  NETWORK: ${{ github.event.inputs.network || 'terraform' }}
   AWS_ACCESS_KEY_ID: ${{ secrets.DAPPS_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.DAPPS_AWS_SECRET_ACCESS_KEY }}
   AWS_REGION: us-east-2
   AWS_S3_BUCKET: neon-tests-dapps
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn,robonomics,compound,curve-factory"
+  ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn,robonomics,compound,curve-factory,pancake"
 jobs:
   prepare:
     runs-on: ubuntu-20.04
@@ -505,9 +505,57 @@ jobs:
           name: yearn-report
           path: yearn-report.json
 
+  pancake:
+    runs-on: ubuntu-20.04
+    if: contains( needs.prepare.outputs.dapps, 'pancake')
+    needs:
+      - prepare
+    env:
+      SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
+      SOLANA_URL: ${{ needs.prepare.outputs.solana_url }}
+      PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
+      FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
+      NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
+      DUMP_ENVS: True
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+
+      - name: Prepare accounts
+        id: accounts
+        run: |
+          python3 ./clickfile.py infra gen-accounts -c 8 -a 10000 -n ${{env.NETWORK}}
+
+      - name: Launch Pancake tests
+        if: ${{ steps.accounts.outcome == 'success'}}
+        id: pancake
+        timeout-minutes: 30
+        env:
+          ACCOUNTS: ${{ env.ACCOUNTS }}
+          IMAGE: neonlabsorg/pancake:latest
+        run: |
+          test -t 1 && USE_TTY="-t"
+          docker pull ${{ env.IMAGE }}
+          docker run -i ${USE_TTY} --name=pancake-${{ github.run_id }} \
+            -e NEON_PROXY_URL=${{ env.PROXY_URL }} \
+            -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} \
+            -e NEON_CHAIN_ID=${{ env.NETWORK_ID }} \
+            ${{ env.IMAGE }}
+          docker cp pancake-${{ github.run_id }}:/usr/src/app/report.json pancake-report.json
+          docker rm -f pancake-${{ github.run_id }}
+
+      - name: Save report
+        uses: actions/upload-artifact@v3
+        with:
+          name: pancake-report
+          path: pancake-report.json
+
   swap-report:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory, pancake]
     if: always()
     env:
       SOLANA_URL: ${{ needs.prepare.outputs.solana_url || secrets.SOLANA_URL }}
@@ -565,6 +613,11 @@ jobs:
         with:
           name: robonomics-report
           path: reports/
+      - uses: actions/download-artifact@v3
+        continue-on-error: true
+        with:
+          name: pancake-report
+          path: reports/
       - name: "Swap report"
         run: |
           python3 ./clickfile.py dapps report --directory=reports \
@@ -573,7 +626,7 @@ jobs:
 
   destroy:
     runs-on: ubuntu-20.04
-    needs: [ prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, robonomics, swap-report, compound, curve-factory ]
+    needs: [ prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, robonomics, swap-report, compound, curve-factory, pancake ]
     if: always() && needs.prepare.outputs.network == 'terraform'
     steps:
       - uses: actions/checkout@v3
@@ -596,7 +649,7 @@ jobs:
 
   notify:
     runs-on: ubuntu-20.04
-    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory]
+    needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory, pancake]
     if: failure() && github.ref_name == 'develop'
     steps:
       - uses: actions/checkout@v3

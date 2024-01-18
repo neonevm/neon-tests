@@ -13,64 +13,64 @@ def unpack(data):
         return None, data[1:]
     elif ch <= 0xB7:
         l = ch - 0x80
-        return data[1:1 + l].tobytes(), data[1 + l:]
+        return data[1 : 1 + l].tobytes(), data[1 + l :]
     elif ch <= 0xBF:
         lLen = ch - 0xB7
-        l = int.from_bytes(data[1:1 + lLen], byteorder='big')
-        return data[1 + lLen:1 + lLen + l].tobytes(), data[1 + lLen + l:]
+        l = int.from_bytes(data[1 : 1 + lLen], byteorder="big")
+        return data[1 + lLen : 1 + lLen + l].tobytes(), data[1 + lLen + l :]
     elif ch == 0xC0:
         return (), data[1:]
     elif ch <= 0xF7:
         l = ch - 0xC0
         lst = list()
-        sub = data[1:1 + l]
+        sub = data[1 : 1 + l]
         while len(sub):
             (item, sub) = unpack(sub)
             lst.append(item)
-        return lst, data[1 + l:]
+        return lst, data[1 + l :]
     else:
         lLen = ch - 0xF7
-        l = int.from_bytes(data[1:1 + lLen], byteorder='big')
+        l = int.from_bytes(data[1 : 1 + lLen], byteorder="big")
         lst = list()
-        sub = data[1 + lLen:1 + lLen + l]
+        sub = data[1 + lLen : 1 + lLen + l]
         while len(sub):
             (item, sub) = unpack(sub)
             lst.append(item)
-        return lst, data[1 + lLen + l:]
+        return lst, data[1 + lLen + l :]
 
 
 def pack(data):
     if data is None:
-        return (0x80).to_bytes(1, 'big')
+        return (0x80).to_bytes(1, "big")
     if isinstance(data, str):
-        return pack(data.encode('utf8'))
+        return pack(data.encode("utf8"))
     elif isinstance(data, bytes):
         if len(data) <= 55:
-            return (len(data) + 0x80).to_bytes(1, 'big') + data
+            return (len(data) + 0x80).to_bytes(1, "big") + data
         else:
             l = len(data)
             lLen = (l.bit_length() + 7) // 8
-            return (0xB7 + lLen).to_bytes(1, 'big') + l.to_bytes(lLen, 'big') + data
+            return (0xB7 + lLen).to_bytes(1, "big") + l.to_bytes(lLen, "big") + data
     elif isinstance(data, int):
         if data < 0x80:
-            return data.to_bytes(1, 'big')
+            return data.to_bytes(1, "big")
         else:
             l = (data.bit_length() + 7) // 8
-            return (l + 0x80).to_bytes(1, 'big') + data.to_bytes(l, 'big')
+            return (l + 0x80).to_bytes(1, "big") + data.to_bytes(l, "big")
         pass
     elif isinstance(data, list) or isinstance(data, tuple):
         if len(data) == 0:
-            return (0xC0).to_bytes(1, 'big')
+            return (0xC0).to_bytes(1, "big")
         else:
             res = bytearray()
             for d in data:
                 res += pack(d)
             l = len(res)
             if l <= 55:
-                return (l + 0xC0).to_bytes(1, 'big') + res
+                return (l + 0xC0).to_bytes(1, "big") + res
             else:
                 lLen = (l.bit_length() + 7) // 8
-                return (lLen + 0xF7).to_bytes(1, 'big') + l.to_bytes(lLen, 'big') + res
+                return (lLen + 0xF7).to_bytes(1, "big") + l.to_bytes(lLen, "big") + res
     else:
         raise Exception("Unknown type {} of data".format(str(type(data))))
 
@@ -79,7 +79,7 @@ def get_int(a):
     if isinstance(a, int):
         return a
     if isinstance(a, bytes):
-        return int.from_bytes(a, 'big')
+        return int.from_bytes(a, "big")
     if a is None:
         return a
     raise Exception("Invalid convertion from {} to int".format(a))
@@ -119,37 +119,49 @@ class Trx:
         return (self.v - 1) // 2 - 17
 
     def __str__(self):
-        return pack((
-            self.nonce,
-            self.gasPrice,
-            self.gasLimit,
-            self.toAddress,
-            self.value,
-            self.callData,
-            self.v,
-            self.r.to_bytes(32, 'big') if self.r else None,
-            self.s.to_bytes(32, 'big') if self.s else None)
+        return pack(
+            (
+                self.nonce,
+                self.gasPrice,
+                self.gasLimit,
+                self.toAddress,
+                self.value,
+                self.callData,
+                self.v,
+                self.r.to_bytes(32, "big") if self.r else None,
+                self.s.to_bytes(32, "big") if self.s else None,
+            )
         ).hex()
 
     def get_msg(self, chain_id=None):
-        return pack((
-            self.nonce,
-            self.gasPrice,
-            self.gasLimit,
-            self.toAddress,
-            self.value,
-            self.callData,
-            chain_id or self.chain_id(), None, None))
+        return pack(
+            (
+                self.nonce,
+                self.gasPrice,
+                self.gasLimit,
+                self.toAddress,
+                self.value,
+                self.callData,
+                chain_id or self.chain_id(),
+                None,
+                None,
+            )
+        )
 
     def hash(self, chain_id=None):
-        trx = pack((
-            self.nonce,
-            self.gasPrice,
-            self.gasLimit,
-            self.toAddress,
-            self.value,
-            self.callData,
-            chain_id or self.chain_id(), None, None))
+        trx = pack(
+            (
+                self.nonce,
+                self.gasPrice,
+                self.gasLimit,
+                self.toAddress,
+                self.value,
+                self.callData,
+                chain_id or self.chain_id(),
+                None,
+                None,
+            )
+        )
         return keccak.new(digest_bits=256).update(trx).digest()
 
     def sender(self):
@@ -163,12 +175,12 @@ class JsonEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, bytes):
             return obj.hex()
-        return json.JSONEncoder.default(obj)
+        return json.JSONEncoder.default(self, obj)
 
 
 def make_instruction_data_from_tx(instruction, private_key=None):
     if isinstance(instruction, dict):
-        if instruction['chainId'] is None:
+        if instruction["chainId"] is None:
             raise Exception("chainId value is needed in input dict")
         if private_key is None:
             raise Exception("Needed private key for transaction creation from fields")
@@ -176,10 +188,9 @@ def make_instruction_data_from_tx(instruction, private_key=None):
         signed_tx = w3.eth.account.sign_transaction(instruction, private_key)
         _trx = Trx.from_string(signed_tx.rawTransaction)
 
-        raw_msg = _trx.get_msg(instruction['chainId'])
+        raw_msg = _trx.get_msg(instruction["chainId"])
         sig = keys.Signature(vrs=[1 if _trx.v % 2 == 0 else 0, _trx.r, _trx.s])
         pub = sig.recover_public_key_from_msg_hash(_trx.hash())
-
 
         return pub.to_canonical_address(), sig.to_bytes(), raw_msg
     elif isinstance(instruction, str):

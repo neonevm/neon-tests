@@ -89,12 +89,6 @@ def test_get_holder(neon_rpc_client, operator_keypair, session_user, sender_with
     assert result["tx"] != ZERO_HASH
 
 
-def test_collect_treasury(neon_rpc_client):
-    result = neon_rpc_client.collect_treasury()
-    assert result["pool_address"] != ""
-    assert result["balance"] > 0
-
-
 def test_get_config(neon_rpc_client):
     result = neon_rpc_client.get_config()
     assert CHAIN_ID in [item['id'] for item in result["chains"]]
@@ -103,7 +97,6 @@ def test_get_config(neon_rpc_client):
                        "NEON_EVM_STEPS_MIN",
                        "NEON_GAS_LIMIT_MULTIPLIER_NO_CHAINID",
                        "NEON_HOLDER_MSG_SIZE",
-                       "NEON_OPERATOR_PRIORITY_SLOTS",
                        "NEON_PAYMENT_TO_TREASURE",
                        "NEON_STORAGE_ENTRIES_IN_CONTRACT_ACCOUNT",
                        "NEON_TREASURY_POOL_COUNT",

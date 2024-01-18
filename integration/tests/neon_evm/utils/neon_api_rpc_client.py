@@ -54,10 +54,6 @@ class NeonApiRpcClient:
         params = {"pubkey": str(pubkey)}
         return self.post("holder", params)
 
-    def collect_treasury(self):
-        params = {}
-        return self.post("collect_treasury", params)
-
     def get_config(self):
         params = {}
         return self.post("config", params)

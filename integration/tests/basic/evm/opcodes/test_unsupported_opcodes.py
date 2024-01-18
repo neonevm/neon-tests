@@ -1,18 +1,15 @@
 import allure
 import pytest
 
-from integration.tests.basic.helpers.basic import BaseMixin
 from utils.consts import ZERO_ADDRESS, MAX_UINT_256
 
 
 @allure.feature("Opcodes verifications")
 @allure.story("Unsupported opcode")
-class TestUnsupportedOpcodes(BaseMixin):
-
+class TestUnsupportedOpcodes:
     @pytest.fixture(scope="class")
     def contract(self, web3_client, class_account):
-        contract, _ = web3_client.deploy_and_get_contract(
-            "opcodes/UnsupportedOpcodes", "0.8.10", class_account)
+        contract, _ = web3_client.deploy_and_get_contract("opcodes/UnsupportedOpcodes", "0.8.10", class_account)
         return contract
 
     def test_basefee(self, contract):

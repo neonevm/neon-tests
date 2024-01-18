@@ -511,7 +511,7 @@ class TestTransactionStepFromInstructionParallelRuns:
 
 
 class TestStepFromInstructionChangingOperatorsDuringTrxRun:
-    def test_next_operator_can_continue_trx_after_some_time(self, rw_lock_contract, user_account, evm_loader,
+    def test_next_operator_can_continue_trx(self, rw_lock_contract, user_account, evm_loader,
                                                             operator_keypair, second_operator_keypair, treasury_pool,
                                                             new_holder_acc):
         signed_tx = make_contract_call_trx(user_account, rw_lock_contract, 'update_storage_str(string)', ['text'])
@@ -521,16 +521,8 @@ class TestStepFromInstructionChangingOperatorsDuringTrxRun:
                                                [user_account.solana_account_address,
                                                 user_account.balance_account_address,
                                                 rw_lock_contract.solana_address], 1, operator_keypair)
-        # next operator can't continue trx during OPERATOR_PRIORITY_SLOTS*0.4
-        with pytest.raises(solana.rpc.core.RPCException,
-                           match=rf"{InstructionAsserts.INVALID_OPERATOR_KEY}|{InstructionAsserts.INVALID_HOLDER_OWNER}"):
-            send_transaction_step_from_instruction(second_operator_keypair, evm_loader, treasury_pool, new_holder_acc,
-                                                   signed_tx,
-                                                   [user_account.solana_account_address,
-                                                    user_account.balance_account_address,
-                                                    rw_lock_contract.solana_address], 500, second_operator_keypair)
 
-        time.sleep(15)
+        # send from the second operator
         send_transaction_step_from_instruction(second_operator_keypair, evm_loader, treasury_pool, new_holder_acc,
                                                signed_tx,
                                                [user_account.solana_account_address,

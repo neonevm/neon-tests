@@ -5,7 +5,6 @@ import os
 import pytest
 from web3.logs import DISCARD
 
-from integration.tests.base import BaseTests
 from integration.tests.economy.steps import assert_profit
 from utils.erc20wrapper import ERC20Wrapper
 from utils.erc721ForMetaplex import ERC721ForMetaplex
@@ -98,18 +97,18 @@ def erc721(web3_client, faucet, bob):
     return erc721
 
 
-class TestAccountMigration(BaseTests):
+class TestAccountMigration:
     @pytest.fixture(scope="function")
     def check_operator_balance(
-        self, web3_client, sol_client, operator_keypair, solana_account, neon_price, sol_price, request
+        self, web3_client, sol_client, operator_keypair, solana_account, neon_price, sol_price, request, operator
     ):
         print("test case name:", request.node.name)
-        sol_balance_before = self.operator.get_solana_balance()
-        token_balance_before = self.operator.get_token_balance(web3_client)
+        sol_balance_before = operator.get_solana_balance()
+        token_balance_before = operator.get_token_balance(web3_client)
 
         yield
-        sol_balance_after = self.operator.get_solana_balance()
-        token_balance_after = self.operator.get_token_balance(web3_client)
+        sol_balance_after = operator.get_solana_balance()
+        token_balance_after = operator.get_token_balance(web3_client)
         sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after

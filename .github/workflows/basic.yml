@@ -19,7 +19,6 @@ on:
         options:
           - night-stand
           - devnet
-          - private-devnet
       runner:
         type: choice
         default: ubuntu-20.04
@@ -27,7 +26,6 @@ on:
         description: "Where to run tests (our runner or github)"
         options:
           - neon-hosted
-          - aws-hosted
           - ubuntu-20.04
       numprocesses:
         type: choice

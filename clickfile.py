@@ -14,25 +14,28 @@ from pathlib import Path
 from multiprocessing.dummy import Pool
 from urllib.parse import urlparse
 
-from deploy.cli.github_api_client import GithubClient
-from deploy.cli.network_manager import NetworkManager
-from deploy.cli import dapps as dapps_cli
-
 try:
     import click
 except ImportError:
     print("Please install click library: pip install click==8.0.3")
     sys.exit(1)
-import requests
-import tabulate
 
-from utils import web3client
-from utils import cloud
-from utils.operator import Operator
-from utils.web3client import NeonChainWeb3Client
-from utils.prices import get_sol_price
+try:
+    import requests
+    import tabulate
 
-from deploy.cli import faucet as faucet_cli
+    from deploy.cli.github_api_client import GithubClient
+    from deploy.cli.network_manager import NetworkManager
+    from deploy.cli import dapps as dapps_cli
+
+    from utils import create_allure_environment_opts
+    from utils import web3client
+    from utils import cloud
+    from utils.operator import Operator
+    from utils.web3client import NeonChainWeb3Client
+    from utils.prices import get_sol_price
+except ImportError:
+    print("Please run ./clickfile.py requirements to install all requirements")
 
 
 CMD_ERROR_LOG = "click_cmd_err.log"
@@ -139,9 +142,7 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
                 network["operator_neon_rewards_address"],
                 network["spl_neon_mint"],
                 network["operator_keys"],
-                web3_client=NeonChainWeb3Client(
-                    network["proxy_url"]
-                ),
+                web3_client=NeonChainWeb3Client(network["proxy_url"]),
             )
             pre = get_tokens_balances(op)
             try:
@@ -173,16 +174,11 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     print(f"Running OpenZeppelin tests in {jobs} jobs on {network}")
     cwd = (pathlib.Path().parent / "compatibility/openzeppelin-contracts").absolute()
     if not list(cwd.glob("*")):
-        subprocess.check_call(
-            "git submodule init && git submodule update", shell=True, cwd=cwd
-        )
+        subprocess.check_call("git submodule init && git submodule update", shell=True, cwd=cwd)
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
-    keys_env = [
-        dapps_cli.prepare_accounts(network, users, amount)
-        for i in range(jobs)
-    ]
+    keys_env = [dapps_cli.prepare_accounts(network, users, amount) for i in range(jobs)]
 
-    tests = list(Path(f"{cwd}/test").rglob('*.test.js'))
+    tests = list(Path(f"{cwd}/test").rglob("*.test.js"))
     tests = [str(test) for test in tests]
 
     def run_oz_file(file_name):
@@ -190,9 +186,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         keys = keys_env.pop(0)
         env = os.environ.copy()
         env["PRIVATE_KEYS"] = ",".join(keys)
-        env["NETWORK_ID"] = str(
-            network_manager.get_network_param(network, "network_ids.neon")
-        )
+        env["NETWORK_ID"] = str(network_manager.get_network_param(network, "network_ids.neon"))
         env["PROXY_URL"] = network_manager.get_network_param(network, "proxy_url")
 
         out = subprocess.run(
@@ -208,9 +202,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
         print(stdout)
         print(stderr)
         keys_env.append(keys)
-        log_dirs = (
-            cwd.parent / "results" / file_name.replace(".", "_").replace("/", "_")
-        )
+        log_dirs = cwd.parent / "results" / file_name.replace(".", "_").replace("/", "_")
         log_dirs.mkdir(parents=True, exist_ok=True)
         with open(log_dirs / "stdout.log", "w") as f:
             f.write(stdout)
@@ -223,19 +215,16 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     pool.join()
     # Add allure environment
     settings = network_manager.get_network_object(network)
-    web3_client = web3client.NeonChainWeb3Client(
-        settings["proxy_url"])
+    web3_client = web3client.NeonChainWeb3Client(settings["proxy_url"])
     opts = {
         "Proxy.Version": web3_client.get_proxy_version()["result"],
         "EVM.Version": web3_client.get_evm_version()["result"],
         "CLI.Version": web3_client.get_cli_version()["result"],
     }
-    create_allure_environment_opts(opts)
+    create_allure_environment_opts(opts, DST_ALLURE_ENVIRONMENT)
     # Add epic name for allure result files
     openzeppelin_reports = pathlib.Path("./allure-results")
-    res_file_list = [
-        str(res_file) for res_file in openzeppelin_reports.glob("*-result.json")
-    ]
+    res_file_list = [str(res_file) for res_file in openzeppelin_reports.glob("*-result.json")]
     print("Fix allure results: {}".format(len(res_file_list)))
 
     for res_file in res_file_list:
@@ -265,9 +254,7 @@ def parse_openzeppelin_results():
     return test_report, skipped_files
 
 
-def print_test_suite_results(
-    test_report: tp.Dict[str, int], skipped_files: tp.List[str]
-):
+def print_test_suite_results(test_report: tp.Dict[str, int], skipped_files: tp.List[str]):
     print("Summarize result:\n")
     for state in test_report:
         print("    {} - {}".format(state.capitalize(), test_report[state]))
@@ -311,19 +298,6 @@ def print_oz_balances():
     )
     print(green("\nOZ tests suite profitability:"))
     print(yellow(report))
-
-
-def create_allure_environment_opts(opts: dict):
-    with open(DST_ALLURE_ENVIRONMENT, "a+") as file:
-        file.write(
-            "\n".join(
-                map(
-                    lambda x: f"{x[0]}={x[1] if x[1] and len(x[1]) > 0 else 'empty value'}",
-                    opts.items(),
-                )
-            )
-        )
-        file.write("\n")
 
 
 def generate_allure_environment(network_name: str):
@@ -396,9 +370,7 @@ def requirements(dep):
 
 def is_neon_evm_branch_exist(branch):
     if branch:
-        neon_evm_branches_obj = requests.get(
-            f"{NEON_EVM_GITHUB_URL}/branches?per_page=100"
-        ).json()
+        neon_evm_branches_obj = requests.get(f"{NEON_EVM_GITHUB_URL}/branches?per_page=100").json()
         neon_evm_branches = [item["name"] for item in neon_evm_branches_obj]
 
         if branch in neon_evm_branches:
@@ -430,8 +402,7 @@ def get_evm_pinned_version(branch):
 @click.option(
     "--branch",
     default="develop",
-    help="neon_evm branch name. "
-    "If branch doesn't exist, develop branch will be used",
+    help="neon_evm branch name. " "If branch doesn't exist, develop branch will be used",
 )
 def update_contracts(branch):
     neon_evm_branch = get_evm_pinned_version(branch)
@@ -440,18 +411,12 @@ def update_contracts(branch):
     pathlib.Path(contract_path).mkdir(parents=True, exist_ok=True)
 
     click.echo(f"Check contract availability in neon-evm repo")
-    response = requests.get(
-        f"{NEON_EVM_GITHUB_URL}/contents/solidity?ref={neon_evm_branch}"
-    )
+    response = requests.get(f"{NEON_EVM_GITHUB_URL}/contents/solidity?ref={neon_evm_branch}")
     if response.status_code != 200:
         click.echo(f"Repository doesn't has solidity directory, check old structure")
-        response = requests.get(
-            f"{NEON_EVM_GITHUB_URL}/contents/evm_loader/solidity?ref={neon_evm_branch}"
-        )
+        response = requests.get(f"{NEON_EVM_GITHUB_URL}/contents/evm_loader/solidity?ref={neon_evm_branch}")
         if response.status_code != 200:
-            raise click.ClickException(
-                f"Can't get contracts from neon-evm repo: {response.text}"
-            )
+            raise click.ClickException(f"Can't get contracts from neon-evm repo: {response.text}")
 
     for item in response.json():
         click.echo(f"Downloading {item['name']}")
@@ -461,18 +426,12 @@ def update_contracts(branch):
                 f.write(r.content)
             click.echo(f" {item['name']} downloaded")
         else:
-            raise click.ClickException(
-                f"The contract {item['name']} is not downloaded. Error: {r.text}"
-            )
+            raise click.ClickException(f"The contract {item['name']} is not downloaded. Error: {r.text}")
 
 
 @cli.command(help="Run any type of tests")
-@click.option(
-    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
-)
-@click.option(
-    "-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)"
-)
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+@click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
 @click.option("-p", "--numprocesses", help="Number of parallel jobs for basic tests")
 @click.option("-a", "--amount", default=20000, help="Requested amount from faucet")
 @click.option("-u", "--users", default=8, help="Accounts numbers used in OZ tests")
@@ -485,9 +444,7 @@ def update_contracts(branch):
 @click.argument(
     "name",
     required=True,
-    type=click.Choice(
-        ["economy", "basic", "tracer", "services", "oz", "ui", "evm", "compiler_compatibility"]
-    ),
+    type=click.Choice(["economy", "basic", "tracer", "services", "oz", "ui", "evm", "compiler_compatibility"]),
 )
 @catch_traceback
 def run(name, jobs, numprocesses, ui_item, amount, users, network):
@@ -517,17 +474,13 @@ def run(name, jobs, numprocesses, ui_item, amount, users, network):
         if numprocesses:
             command = f"{command} --numprocesses {numprocesses}"
     elif name == "oz":
-        run_openzeppelin_tests(
-            network, jobs=int(jobs), amount=int(amount), users=int(users)
-        )
+        run_openzeppelin_tests(network, jobs=int(jobs), amount=int(amount), users=int(users))
         shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
         return
     elif name == "ui":
         if not os.environ.get("CHROME_EXT_PASSWORD"):
             raise click.ClickException(
-                red(
-                    "Please set the `CHROME_EXT_PASSWORD` environment variable (password for wallets)."
-                )
+                red("Please set the `CHROME_EXT_PASSWORD` environment variable (password for wallets).")
             )
         command = "py.test ui/tests"
         if ui_item != "all":
@@ -567,8 +520,7 @@ def analyze_openzeppelin_results():
         print(f"Threshold: {threshold}")
         if test_report["passing"] < threshold:
             raise click.ClickException(
-                f"OpenZeppelin {version} tests failed. \n"
-                f"Passed: {test_report['passing']}, expected: {threshold}"
+                f"OpenZeppelin {version} tests failed. \n" f"Passed: {test_report['passing']}, expected: {threshold}"
             )
         else:
             print("OpenZeppelin tests passed")
@@ -631,16 +583,14 @@ locust_tags = click.option(
     "--tag",
     type=str,
     multiple=True,
-    help="tag to include in the test, so only tasks "
-    "with any matching tags will be executed",
+    help="tag to include in the test, so only tasks " "with any matching tags will be executed",
 )
 
 locust_headless = click.option(
     "--web-ui/--headless",
     " /-w",
     default=True,
-    help="Enable the web interface. "
-    "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
+    help="Enable the web interface. " "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
 )
 
 
@@ -672,9 +622,7 @@ def locust(ctx):
     help="NEON RPC entry point.",
     show_default=True,
 )
-def run(
-    credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile, neon_rpc
-):
+def run(credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile, neon_rpc):
     """Run `Neon` pipeline performance test
 
     path it's sub-folder and file name  `loadtesting/locustfile.py`.
@@ -687,9 +635,7 @@ def run(
     if credentials:
         command += f" --credentials={credentials}"
     elif locustfile == "tracerapi":
-        command += (
-            f" --credentials={base_path.absolute()}/loadtesting/tracerapi/envs.json"
-        )
+        command += f" --credentials={base_path.absolute()}/loadtesting/tracerapi/envs.json"
     if run_time:
         command += f" --run-time={run_time}"
     if neon_rpc and locustfile == "tracerapi":
@@ -705,9 +651,7 @@ def run(
         sys.exit(cmd.returncode)
 
 
-@locust.command(
-    "prepare", help="Run preparation stage for `tracer api` performance test"
-)
+@locust.command("prepare", help="Run preparation stage for `tracer api` performance test")
 @locust_credentials
 @locust_host
 @locust_users
@@ -748,9 +692,7 @@ def allure_cli(ctx):
 
 @allure_cli.command("get-history", help="Download allure history")
 @click.argument("name", type=click.STRING)
-@click.option(
-    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
-)
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 @click.option(
     "-d",
     "--destination",
@@ -771,16 +713,12 @@ def get_allure_history(name: str, network: str, destination: str = "./allure-res
             runs.append(int(run_id[0]))
     if len(runs) > 0:
         print(f"Downloading allure history from build: {max(runs)}")
-        cloud.download(
-            path / str(max(runs)) / "history", pathlib.Path(destination) / "history"
-        )
+        cloud.download(path / str(max(runs)) / "history", pathlib.Path(destination) / "history")
 
 
 @allure_cli.command("upload-report", help="Upload allure history")
 @click.argument("name", type=click.STRING)
-@click.option(
-    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
-)
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 @click.option(
     "-s",
     "--source",
@@ -817,9 +755,7 @@ def generate_allure_report():
 @click.option("-u", "--url", help="slack app endpoint url.")
 @click.option("-b", "--build_url", help="github action test build url.")
 @click.option("-t", "--traceback", default="", help="custom traceback message.")
-@click.option(
-    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
-)
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 def send_notification(url, build_url, traceback, network):
     p = pathlib.Path(f"./{CMD_ERROR_LOG}")
     trace_back = traceback or (p.read_text() if p.exists() else "")
@@ -843,9 +779,7 @@ def send_notification(url, build_url, traceback, network):
 
 
 @cli.command(name="get-balances", help="Get operator balances in NEON and SOL")
-@click.option(
-    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
-)
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 def get_operator_balances(network: str):
     net = network_manager.get_network_object(network)
     operator = Operator(
@@ -887,20 +821,14 @@ def download_logs():
 @infra.command(name="gen-accounts", help="Setup accounts with balance")
 @click.option("-c", "--count", default=2, help="How many users prepare")
 @click.option("-a", "--amount", default=10000, help="How many airdrop")
-@click.option(
-    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
-)
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 def prepare_accounts(count, amount, network):
     dapps_cli.prepare_accounts(network, count, amount)
 
 
 @infra.command("print-network-param")
-@click.option(
-    "-n", "--network", default="night-stand", type=str, help="In which stand run tests"
-)
-@click.option(
-    "-p", "--param", type=str, help="any network param like proxy_url, network_id e.t.c"
-)
+@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+@click.option("-p", "--param", type=str, help="any network param like proxy_url, network_id e.t.c")
 def print_network_param(network, param):
     print(network_manager.get_network_param(network, param))
 
@@ -919,9 +847,7 @@ def dapps():
 
 @dapps.command("report", help="Print dapps report (from .json files)")
 @click.option("-d", "--directory", default="reports", help="Directory with reports")
-@click.option(
-    "--pr_url_for_report", default="", help="Url to send the report as comment for PR"
-)
+@click.option("--pr_url_for_report", default="", help="Url to send the report as comment for PR")
 @click.option("--token", default="", help="github token")
 def make_dapps_report(directory, pr_url_for_report, token):
     report_data = dapps_cli.prepare_report_data(directory)

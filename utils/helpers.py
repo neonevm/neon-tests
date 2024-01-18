@@ -5,6 +5,7 @@ import string
 import time
 import typing as tp
 
+import web3
 import solcx
 from eth_abi import abi
 from eth_utils import keccak
@@ -115,3 +116,11 @@ def get_selectors(abi):
         encoded_selector = f"{function['name']}({input_types})"
         selectors.append(keccak(text=encoded_selector)[:4])
     return selectors
+
+
+def create_invalid_address(length=20) -> str:
+    """Create non-existing account address"""
+    address = gen_hash_of_block(length)
+    while web3.Web3.is_checksum_address(address):
+        address = gen_hash_of_block(length)
+    return address

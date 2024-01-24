@@ -23,7 +23,7 @@ class Unit(Enum):
 
 
 class InputTestConstants(Enum):
-    NEW_USER_REQUEST_AMOUNT = 100
+    NEW_USER_REQUEST_AMOUNT = 150
     DEFAULT_TRANSFER_AMOUNT = 0.1
     SAMPLE_AMOUNT = 0.5
     ROUND_DIGITS = 3

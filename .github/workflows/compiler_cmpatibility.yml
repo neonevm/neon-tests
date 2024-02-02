@@ -4,8 +4,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 on:
-  schedule:
-    - cron: "0 22 * * 2"
   workflow_dispatch:
     inputs:
       network:

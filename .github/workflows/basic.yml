@@ -3,10 +3,6 @@ run-name: Basic tests / ${{ github.event.pull_request.title || github.event_name
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-on:
-  schedule:
-    - cron: "0 23,2 * * 0,1,2,3,4"
-    - cron: "0 4 * * 0,1,2,3,4"
   pull_request:
     types: [ opened, reopened, synchronize ]
   workflow_dispatch:

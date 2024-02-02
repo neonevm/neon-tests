@@ -2,8 +2,6 @@ name: "Playwright Tests"
 run-name: Playwright tests / ${{ github.event.pull_request.title || github.event_name }}
 
 on:
-  schedule:
-    - cron: "0 1 * * 5"
   workflow_dispatch:
 env:
   IMAGE:  ${{ vars.DOCKERHUB_ORG_NAME }}/neon_tests

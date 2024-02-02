@@ -3,9 +3,9 @@ run-name: Basic tests / ${{ github.event.pull_request.title || github.event_name
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+on:
   pull_request:
     types: [ opened, reopened, synchronize ]
-on:
   workflow_dispatch:
     inputs:
       network:

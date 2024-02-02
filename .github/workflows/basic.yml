@@ -5,6 +5,7 @@ concurrency:
   cancel-in-progress: true
   pull_request:
     types: [ opened, reopened, synchronize ]
+on:
   workflow_dispatch:
     inputs:
       network:

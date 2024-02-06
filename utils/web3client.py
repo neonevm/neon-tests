@@ -230,8 +230,17 @@ class Web3Client:
             address = address.address
         return self._web3.eth.get_balance(address, "pending")
 
-    def get_deployed_contract(self, address, contract_file, contract_name=None, solc_version="0.8.12"):
-        contract_interface = helpers.get_contract_interface(contract_file, solc_version, contract_name)
+    def get_deployed_contract(
+        self,
+        address,
+        contract_file,
+        contract_name=None,
+        solc_version="0.8.12",
+        import_remapping: tp.Optional[dict] = None,
+    ):
+        contract_interface = helpers.get_contract_interface(
+            contract_file, solc_version, contract_name, import_remapping=import_remapping
+        )
         contract = self.eth.contract(address=address, abi=contract_interface["abi"])
         return contract
 

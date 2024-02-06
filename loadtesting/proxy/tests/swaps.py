@@ -51,7 +51,10 @@ def deploy_uniswap_contracts(environment: "locust.env.Environment", **kwargs):
     if pathlib.Path("uniswap_contracts.json").is_file():
         LOG.info("File with old contracts exist, load it")
         with open("uniswap_contracts.json", "r") as f:
-            data = json.load(f)
+            try:
+                data = json.load(f)
+            except:
+                data = {}
 
     LOG.info("Start deploy Uniswap")
     base_cwd = os.getcwd()
@@ -80,6 +83,7 @@ def deploy_uniswap_contracts(environment: "locust.env.Environment", **kwargs):
         "wNEON/USDC": "",
         "wNEON/USDT": "",
         "USDC/USDT": "",
+        "USDT/tokenA": "",
         "tokenA/tokenB": "",
         "USDC_SPL/USDT_SPL": "",
         "wNEON/USDC_SPL": "",
@@ -100,6 +104,7 @@ def deploy_uniswap_contracts(environment: "locust.env.Environment", **kwargs):
             token_contracts[token] = erc_contract
 
         for token in ("USDC_SPL", "USDT_SPL"):
+            LOG.info(f"Load SPL token {token} address: {data['token_contracts'][token]}")
             name = f"Test {token}"
 
             erc20_wrapper = ERC20Wrapper(
@@ -111,6 +116,7 @@ def deploy_uniswap_contracts(environment: "locust.env.Environment", **kwargs):
                 solana_account=data["solana_account"],
                 account=eth_account,
                 mintable=True,
+                contract_address=data["token_contracts"][token],
             )
             token_contracts[token] = erc20_wrapper
     else:
@@ -327,6 +333,7 @@ def deploy_uniswap_contracts(environment: "locust.env.Environment", **kwargs):
         }
         json.dump(saved_data, f, indent=4)
     LOG.info(f"Signer user: {eth_account.address}")
+    LOG.info(f"Solana account: {solana_account.public_key}")
     environment.uniswap = data
 
     users = {i: neon_client.eth.account.from_key(key) for i, key in data.get("users", {}).items()}
@@ -341,7 +348,7 @@ def save_users(environment: "locust.env.Environment", **kwargs):
     if environment.parsed_options.tags and "uniswap" not in environment.parsed_options.tags:
         return
 
-    with open("uniswap_contracts.json", "w") as f:
+    with open("uniswap_contracts.json", "r") as f:
         data = json.load(f)
 
     data["users"] = {i: user.key.hex() for i, user in environment.users.items()}
@@ -362,15 +369,22 @@ class SwapUser(User):
         faucet = Faucet(self.environment.credentials["faucet_url"], self.neon_client)
 
         user_count = self.environment.runner.user_count
-
-        if user_count in self.environment.users:
-            self.user = self.neon_client.eth.account.from_key(self.environment.users[user_count])
+        LOG.info(f"Create new user with index: {user_count}")
+        if str(user_count) in self.environment.users:
+            try:
+                self.user = self.neon_client.eth.account.from_key(self.environment.users[str(user_count)])
+            except:
+                LOG.info(f"Can't load private key for user {user_count}, create new user")
+                self.user = self.neon_client.create_account()
+                self.environment.users[str(user_count)] = self.user
         else:
+            LOG.info("Index doesn't exist, create new user")
             self.user = self.neon_client.create_account()
-            self.environment.users[user_count] = self.user
-        faucet.request_neon(self.user.address, 2000)
+            self.environment.users[str(user_count)] = self.user
+        faucet.request_neon(self.user.address, 200)
 
-        for token in self.environment.uniswap["token_contracts"]:
+        # for token in self.environment.uniswap["token_contracts"]:
+        for token in ["wNEON"]:
             LOG.info(f"Approve and get token {token} for user {self.user.address}")
             c = self.environment.uniswap["token_contracts"][token]
             amount = web3.Web3.to_wei(100, "ether")
@@ -415,28 +429,188 @@ class SwapUser(User):
             "exception": None,
         }
         start_perf_counter = time.perf_counter()
+        tx["gas"] = 2_000_000
         try:
-            self.neon_client.send_transaction(self.user, tx)
+            self.neon_client.send_transaction(self.user, tx, timeout=600)
         except Exception as e:
             request_meta["exception"] = e
         request_meta["response_time"] = (time.perf_counter() - start_perf_counter) * 1000
         self.environment.events.request.fire(**request_meta)
 
+    # @task
+    # def swap_wneon_usdc(self):
+    #     token1 = self.environment.uniswap["token_contracts"]["wNEON"]
+    #     token2 = self.environment.uniswap["token_contracts"]["USDC"]
+    #
+    #     router = self.environment.uniswap["router"]
+    #
+    #     token1_balance = token1.functions.balanceOf(self.user.address).call()
+    #     token2_balance = token2.functions.balanceOf(self.user.address).call()
+    #     LOG.info(f"User {self.user.address} balances: wNEON: {token1_balance}, USDC: {token2_balance}")
+    #
+    #     swap_trx = router.functions.swapExactTokensForTokens(
+    #         web3.Web3.to_wei(1, "ether"),
+    #         0,
+    #         random.sample([token1.address, token2.address], 2),
+    #         self.user.address,
+    #         MAX_UINT_256,
+    #     ).build_transaction(
+    #         {
+    #             "from": self.user.address,
+    #             "nonce": self.neon_client.get_nonce(self.user.address),
+    #             "gasPrice": self.neon_client.gas_price(),
+    #         }
+    #     )
+    #     self.send_swap_transaction(swap_trx, "Swap wNEON <-> USDC")
+    #
+    # @task
+    # def swap_wneon_usdt(self):
+    #     token1 = self.environment.uniswap["token_contracts"]["wNEON"]
+    #     token2 = self.environment.uniswap["token_contracts"]["USDT"]
+    #
+    #     router = self.environment.uniswap["router"]
+    #
+    #     token1_balance = token1.functions.balanceOf(self.user.address).call()
+    #     token2_balance = token2.functions.balanceOf(self.user.address).call()
+    #     LOG.info(f"User {self.user.address} balances: wNEON: {token1_balance}, USDT: {token2_balance}")
+    #
+    #     swap_trx = router.functions.swapExactTokensForTokens(
+    #         web3.Web3.to_wei(1, "ether"),
+    #         0,
+    #         random.sample([token1.address, token2.address], 2),
+    #         self.user.address,
+    #         MAX_UINT_256,
+    #     ).build_transaction(
+    #         {
+    #             "from": self.user.address,
+    #             "nonce": self.neon_client.get_nonce(self.user.address),
+    #             "gasPrice": self.neon_client.gas_price(),
+    #         }
+    #     )
+    #     self.send_swap_transaction(swap_trx, "Swap wNEON <-> USDT")
+    #
+    # @task
+    # def swap_usdc_usdt(self):
+    #     token1 = self.environment.uniswap["token_contracts"]["USDC"]
+    #     token2 = self.environment.uniswap["token_contracts"]["USDT"]
+    #
+    #     router = self.environment.uniswap["router"]
+    #
+    #     token1_balance = token1.functions.balanceOf(self.user.address).call()
+    #     token2_balance = token2.functions.balanceOf(self.user.address).call()
+    #     LOG.info(f"User {self.user.address} balances: USDC: {token1_balance}, USDT: {token2_balance}")
+    #
+    #     swap_trx = router.functions.swapExactTokensForTokens(
+    #         web3.Web3.to_wei(1, "ether"),
+    #         0,
+    #         random.sample([token1.address, token2.address], 2),
+    #         self.user.address,
+    #         MAX_UINT_256,
+    #     ).build_transaction(
+    #         {
+    #             "from": self.user.address,
+    #             "nonce": self.neon_client.get_nonce(self.user.address),
+    #             "gasPrice": self.neon_client.gas_price(),
+    #         }
+    #     )
+    #     self.send_swap_transaction(swap_trx, "Swap USDC <-> USDT")
+    #
+    # @task
+    # def swap_tokena_tokenb(self):
+    #     token1 = self.environment.uniswap["token_contracts"]["tokenA"]
+    #     token2 = self.environment.uniswap["token_contracts"]["tokenB"]
+    #
+    #     router = self.environment.uniswap["router"]
+    #
+    #     token1_balance = token1.functions.balanceOf(self.user.address).call()
+    #     token2_balance = token2.functions.balanceOf(self.user.address).call()
+    #     LOG.info(f"User {self.user.address} balances: tokenA: {token1_balance}, tokenB: {token2_balance}")
+    #
+    #     swap_trx = router.functions.swapExactTokensForTokens(
+    #         web3.Web3.to_wei(1, "ether"),
+    #         0,
+    #         random.sample([token1.address, token2.address], 2),
+    #         self.user.address,
+    #         MAX_UINT_256,
+    #     ).build_transaction(
+    #         {
+    #             "from": self.user.address,
+    #             "nonce": self.neon_client.get_nonce(self.user.address),
+    #             "gasPrice": self.neon_client.gas_price(),
+    #         }
+    #     )
+    #     self.send_swap_transaction(swap_trx, "Swap tokenA <-> tokenB")
+    #
+    # @task
+    # def swap_usdc_spl_usdt_spl(self):
+    #     token1 = self.environment.uniswap["token_contracts"]["USDC_SPL"].contract
+    #     token2 = self.environment.uniswap["token_contracts"]["USDT_SPL"].contract
+    #
+    #     router = self.environment.uniswap["router"]
+    #
+    #     token1_balance = token1.functions.balanceOf(self.user.address).call()
+    #     token2_balance = token2.functions.balanceOf(self.user.address).call()
+    #     LOG.info(f"User {self.user.address} balances: USDC_SPL: {token1_balance}, USDT_SPL: {token2_balance}")
+    #
+    #     swap_trx = router.functions.swapExactTokensForTokens(
+    #         web3.Web3.to_wei(1, "gwei"),
+    #         0,
+    #         random.sample([token1.address, token2.address], 2),
+    #         self.user.address,
+    #         MAX_UINT_256,
+    #     ).build_transaction(
+    #         {
+    #             "from": self.user.address,
+    #             "nonce": self.neon_client.get_nonce(self.user.address),
+    #             "gasPrice": self.neon_client.gas_price(),
+    #         }
+    #     )
+    #     self.send_swap_transaction(swap_trx, "Swap USDC_SPL <-> USDT_SPL")
+    #
+    # @task
+    # def swap_wneon_usdc_spl(self):
+    # token1 = self.environment.uniswap["token_contracts"]["wNEON"]
+    # token2 = self.environment.uniswap["token_contracts"]["USDC_SPL"].contract
+    #
+    # router = self.environment.uniswap["router"]
+    #
+    # token1_balance = token1.functions.balanceOf(self.user.address).call()
+    # token2_balance = token2.functions.balanceOf(self.user.address).call()
+    # LOG.info(f"User {self.user.address} balances: wNEON: {token1_balance}, USDC_SPL: {token2_balance}")
+    #
+    # swap_trx = router.functions.swapExactTokensForTokens(
+    #     web3.Web3.to_wei(0.01, "gwei"),
+    #     0,
+    #     random.sample([token1.address, token2.address], 2),
+    #     self.user.address,
+    #     MAX_UINT_256,
+    # ).build_transaction(
+    #     {
+    #         "from": self.user.address,
+    #         "nonce": self.neon_client.get_nonce(self.user.address),
+    #         "gasPrice": self.neon_client.gas_price(),
+    #     }
+    # )
+    # self.send_swap_transaction(swap_trx, "Swap wNEON <-> USDC_SPL")
+
     @task
-    def swap_wneon_usdc(self):
+    def swap_wneon_usdc_usdc_usdt_tokenA_tokenB(self):
         token1 = self.environment.uniswap["token_contracts"]["wNEON"]
         token2 = self.environment.uniswap["token_contracts"]["USDC"]
+        token3 = self.environment.uniswap["token_contracts"]["USDT"]
+        token4 = self.environment.uniswap["token_contracts"]["tokenA"]
+        token5 = self.environment.uniswap["token_contracts"]["tokenB"]
 
         router = self.environment.uniswap["router"]
 
         token1_balance = token1.functions.balanceOf(self.user.address).call()
-        token2_balance = token2.functions.balanceOf(self.user.address).call()
-        LOG.info(f"User {self.user.address} balances: wNEON: {token1_balance}, USDC: {token2_balance}")
+        token5_balance = token5.functions.balanceOf(self.user.address).call()
+        LOG.info(f"User {self.user.address} balances: wNEON: {token1_balance}, tokenB: {token5_balance}")
 
         swap_trx = router.functions.swapExactTokensForTokens(
-            web3.Web3.to_wei(1, "ether"),
+            web3.Web3.to_wei(0.01, "gwei"),
             0,
-            random.sample([token1.address, token2.address], 2),
+            [token1.address, token2.address, token3.address, token4.address, token5.address],
             self.user.address,
             MAX_UINT_256,
         ).build_transaction(
@@ -446,134 +620,4 @@ class SwapUser(User):
                 "gasPrice": self.neon_client.gas_price(),
             }
         )
-        self.send_swap_transaction(swap_trx, "Swap wNEON <-> USDC")
-
-    @task
-    def swap_wneon_usdt(self):
-        token1 = self.environment.uniswap["token_contracts"]["wNEON"]
-        token2 = self.environment.uniswap["token_contracts"]["USDT"]
-
-        router = self.environment.uniswap["router"]
-
-        token1_balance = token1.functions.balanceOf(self.user.address).call()
-        token2_balance = token2.functions.balanceOf(self.user.address).call()
-        LOG.info(f"User {self.user.address} balances: wNEON: {token1_balance}, USDT: {token2_balance}")
-
-        swap_trx = router.functions.swapExactTokensForTokens(
-            web3.Web3.to_wei(1, "ether"),
-            0,
-            random.sample([token1.address, token2.address], 2),
-            self.user.address,
-            MAX_UINT_256,
-        ).build_transaction(
-            {
-                "from": self.user.address,
-                "nonce": self.neon_client.get_nonce(self.user.address),
-                "gasPrice": self.neon_client.gas_price(),
-            }
-        )
-        self.send_swap_transaction(swap_trx, "Swap wNEON <-> USDT")
-
-    @task
-    def swap_usdc_usdt(self):
-        token1 = self.environment.uniswap["token_contracts"]["USDC"]
-        token2 = self.environment.uniswap["token_contracts"]["USDT"]
-
-        router = self.environment.uniswap["router"]
-
-        token1_balance = token1.functions.balanceOf(self.user.address).call()
-        token2_balance = token2.functions.balanceOf(self.user.address).call()
-        LOG.info(f"User {self.user.address} balances: USDC: {token1_balance}, USDT: {token2_balance}")
-
-        swap_trx = router.functions.swapExactTokensForTokens(
-            web3.Web3.to_wei(1, "ether"),
-            0,
-            random.sample([token1.address, token2.address], 2),
-            self.user.address,
-            MAX_UINT_256,
-        ).build_transaction(
-            {
-                "from": self.user.address,
-                "nonce": self.neon_client.get_nonce(self.user.address),
-                "gasPrice": self.neon_client.gas_price(),
-            }
-        )
-        self.send_swap_transaction(swap_trx, "Swap USDC <-> USDT")
-
-    @task
-    def swap_tokena_tokenb(self):
-        token1 = self.environment.uniswap["token_contracts"]["tokenA"]
-        token2 = self.environment.uniswap["token_contracts"]["tokenB"]
-
-        router = self.environment.uniswap["router"]
-
-        token1_balance = token1.functions.balanceOf(self.user.address).call()
-        token2_balance = token2.functions.balanceOf(self.user.address).call()
-        LOG.info(f"User {self.user.address} balances: tokenA: {token1_balance}, tokenB: {token2_balance}")
-
-        swap_trx = router.functions.swapExactTokensForTokens(
-            web3.Web3.to_wei(1, "ether"),
-            0,
-            random.sample([token1.address, token2.address], 2),
-            self.user.address,
-            MAX_UINT_256,
-        ).build_transaction(
-            {
-                "from": self.user.address,
-                "nonce": self.neon_client.get_nonce(self.user.address),
-                "gasPrice": self.neon_client.gas_price(),
-            }
-        )
-        self.send_swap_transaction(swap_trx, "Swap tokenA <-> tokenB")
-
-    @task
-    def swap_usdc_spl_usdt_spl(self):
-        token1 = self.environment.uniswap["token_contracts"]["USDC_SPL"]
-        token2 = self.environment.uniswap["token_contracts"]["USDT_SPL"]
-
-        router = self.environment.uniswap["router"]
-
-        token1_balance = token1.functions.balanceOf(self.user.address).call()
-        token2_balance = token2.functions.balanceOf(self.user.address).call()
-        LOG.info(f"User {self.user.address} balances: USDC_SPL: {token1_balance}, USDT_SPL: {token2_balance}")
-
-        swap_trx = router.functions.swapExactTokensForTokens(
-            web3.Web3.to_wei(1, "ether"),
-            0,
-            random.sample([token1.address, token2.address], 2),
-            self.user.address,
-            MAX_UINT_256,
-        ).build_transaction(
-            {
-                "from": self.user.address,
-                "nonce": self.neon_client.get_nonce(self.user.address),
-                "gasPrice": self.neon_client.gas_price(),
-            }
-        )
-        self.send_swap_transaction(swap_trx, "Swap USDC_SPL <-> USDT_SPL")
-
-    @task
-    def swap_wneon_usdc_spl(self):
-        token1 = self.environment.uniswap["token_contracts"]["wNEON"]
-        token2 = self.environment.uniswap["token_contracts"]["USDC_SPL"]
-
-        router = self.environment.uniswap["router"]
-
-        token1_balance = token1.functions.balanceOf(self.user.address).call()
-        token2_balance = token2.functions.balanceOf(self.user.address).call()
-        LOG.info(f"User {self.user.address} balances: wNEON: {token1_balance}, USDC_SPL: {token2_balance}")
-
-        swap_trx = router.functions.swapExactTokensForTokens(
-            web3.Web3.to_wei(1, "ether"),
-            0,
-            random.sample([token1.address, token2.address], 2),
-            self.user.address,
-            MAX_UINT_256,
-        ).build_transaction(
-            {
-                "from": self.user.address,
-                "nonce": self.neon_client.get_nonce(self.user.address),
-                "gasPrice": self.neon_client.gas_price(),
-            }
-        )
-        self.send_swap_transaction(swap_trx, "Swap wNEON <-> USDC_SPL")
+        self.send_swap_transaction(swap_trx, "Swap wNEON -> USDC -> USDT -> tokenA -> tokenB")

@@ -200,10 +200,11 @@ class Web3Client:
         account: eth_account.signers.local.LocalAccount,
         transaction: tp.Dict,
         gas_multiplier: tp.Optional[float] = None,  # fix for some event depends transactions
+        timeout: int = 120,
     ) -> web3.types.TxReceipt:
         instruction_tx = self._web3.eth.account.sign_transaction(transaction, account.key)
         signature = self._web3.eth.send_raw_transaction(instruction_tx.rawTransaction)
-        return self._web3.eth.wait_for_transaction_receipt(signature)
+        return self._web3.eth.wait_for_transaction_receipt(signature, timeout=timeout)
 
     def deploy_and_get_contract(
         self,
@@ -277,8 +278,17 @@ class Web3Client:
             balance = self._web3.from_wei(balance, unit.value)
         return balance
 
-    def get_deployed_contract(self, address, contract_file, contract_name=None, solc_version="0.8.12"):
-        contract_interface = helpers.get_contract_interface(contract_file, solc_version, contract_name)
+    def get_deployed_contract(
+        self,
+        address,
+        contract_file,
+        contract_name=None,
+        solc_version="0.8.12",
+        import_remapping: tp.Optional[dict] = None,
+    ):
+        contract_interface = helpers.get_contract_interface(
+            contract_file, solc_version, contract_name, import_remapping=import_remapping
+        )
         contract = self.eth.contract(address=address, abi=contract_interface["abi"])
         return contract
 

@@ -14,18 +14,18 @@ INIT_TOKEN_AMOUNT = 1000000000000000
 
 class ERC20Wrapper:
     def __init__(
-            self,
-            web3_client: web3client.NeonChainWeb3Client,
-            faucet,
-            name,
-            symbol,
-            sol_client,
-            solana_account,
-            decimals=18,
-            evm_loader_id=None,
-            account=None,
-            mintable=True,
-            contract_address=None
+        self,
+        web3_client: web3client.NeonChainWeb3Client,
+        faucet,
+        name,
+        symbol,
+        sol_client,
+        solana_account,
+        decimals=18,
+        evm_loader_id=None,
+        account=None,
+        mintable=True,
+        contract_address=None,
     ):
         self.solana_associated_token_acc = None
         self.token_mint = None
@@ -42,12 +42,15 @@ class ERC20Wrapper:
         self.sol_client = sol_client
 
         if contract_address:
-            self.contract = web3_client.get_deployed_contract(contract_address,
-                                                              contract_file = "EIPs/ERC20/IERC20ForSpl")
+            self.contract = web3_client.get_deployed_contract(contract_address, contract_file="EIPs/ERC20/IERC20ForSpl")
         else:
             self.contract_address = self.deploy_wrapper(mintable)
-            self.contract = self.web3_client.get_deployed_contract(self.contract_address,
-                                                                   "EIPs/ERC20/IERC20ForSpl")
+            self.contract = self.web3_client.get_deployed_contract(self.contract_address, "EIPs/ERC20/IERC20ForSpl")
+
+    @property
+    def address(self):
+        """Compatibility with web3.eth.Contract"""
+        return self.contract.address
 
     def make_tx_object(self, from_address, gas_price=None, gas=None):
         tx = {
@@ -66,13 +69,13 @@ class ERC20Wrapper:
         assert contract_deploy_tx["status"] == 1, f"ERC20 Factory wasn't deployed: {contract_deploy_tx}"
         tx_object = self.make_tx_object(self.account.address)
         if mintable:
-
             instruction_tx = contract.functions.createErc20ForSplMintable(
                 self.name, self.symbol, self.decimals, self.account.address
             ).build_transaction(tx_object)
         else:
-            self.token_mint, self.solana_associated_token_acc = self.sol_client.create_spl(self.solana_acc,
-                                                                                           self.decimals)
+            self.token_mint, self.solana_associated_token_acc = self.sol_client.create_spl(
+                self.solana_acc, self.decimals
+            )
             metadata = create_metadata_instruction_data(self.name, self.symbol)
             txn = Transaction()
             txn.add(

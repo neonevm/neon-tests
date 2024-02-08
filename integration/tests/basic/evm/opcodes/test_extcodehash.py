@@ -156,6 +156,7 @@ class TestExtCodeHashOpcode:
         contract_hash = event_logs[0]["args"]["hash"]
         assert contract_hash.hex() == ZERO_HASH
 
+    @pytest.mark.only_stands
     def test_extcodehash_for_new_account_with_changed_balance(self, eip1052_checker, common_contract):
         # Check the EXTCODEHASH of a new account after sent some funds to it in one transaction
         sender_account = self.accounts[0]
@@ -168,6 +169,7 @@ class TestExtCodeHashOpcode:
         assert event_logs[0]["args"]["hash"].hex() == ZERO_HASH
         assert event_logs[1]["args"]["hash"] == keccak(self.web3_client.eth.get_code(new_acc.address, "latest"))
 
+    @pytest.mark.only_stands
     def test_extcodehash_for_new_account_with_changed_nonce(self, eip1052_checker, json_rpc_client):
         new_account = self.web3_client.create_account()
 

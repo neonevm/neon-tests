@@ -54,6 +54,7 @@ RUN python3 ./clickfile.py update-contracts
 
 # Install UI requirements
 RUN python3 ./clickfile.py requirements -d ui
+RUN python3 playwright install
 
 ARG OZ_BRANCH=master
 

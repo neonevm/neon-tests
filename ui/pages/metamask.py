@@ -5,7 +5,7 @@ Created on 2022-05-19
 """
 import allure
 import pyperclip3 as clipboard
-from playwright._impl._api_types import TimeoutError
+from playwright._impl._errors import TimeoutError
 
 from ui import components
 from ui import libs
@@ -54,7 +54,6 @@ class MetaMaskConnectPage(BasePage):
 
 
 class MetaMaskAccountsPage(BasePage):
-
     _networks_menu: components.Menu = None
     _accounts_menu: components.Menu = None
 

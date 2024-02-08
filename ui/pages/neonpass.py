@@ -7,7 +7,7 @@ Created on 2022-06-16
 import os
 
 import allure
-from playwright._impl._api_types import TimeoutError
+from playwright._impl._errors import TimeoutError
 from playwright.sync_api import expect
 
 from ui import components, libs
@@ -96,12 +96,13 @@ class NeonPassPage(BasePage):
         try:
             with self.page.context.expect_page(timeout=timeout) as phantom_page_info:
                 components.Button(
-                    self.page, selector="//app-wallet-button[@label='From']//*[text()='Connect Wallet']").click()
-                components.Button(
-                    self.page, selector="//app-wallets-dialog//*[text()='Phantom']/parent::*").click()
+                    self.page, selector="//app-wallet-button[@label='From']//*[text()='Connect Wallet']"
+                ).click()
+                components.Button(self.page, selector="//app-wallets-dialog//*[text()='Phantom']/parent::*").click()
             self._handle_phantom_unlock(phantom_page_info.value)
             self.page.wait_for_selector(
-                selector="//app-wallet-button[@label='From']//*[contains(text(),'B4t7')]", timeout=timeout)
+                selector="//app-wallet-button[@label='From']//*[contains(text(),'B4t7')]", timeout=timeout
+            )
         except TimeoutError as e:
             if 'waiting for event "page"' not in e.message:
                 raise e
@@ -115,11 +116,13 @@ class NeonPassPage(BasePage):
         try:
             with self.page.context.expect_page(timeout=timeout) as mm_page_connect:
                 components.Button(
-                    self.page, selector="//app-wallet-button[@label='To']//*[text()='Connect Wallet']").click()
+                    self.page, selector="//app-wallet-button[@label='To']//*[text()='Connect Wallet']"
+                ).click()
                 components.Button(self.page, selector="w3m-wallet-button[name='MetaMask']").click()
             self._handle_metamask_connect(mm_page_connect.value)
             self.page.wait_for_selector(
-                selector="//app-wallet-button[@label='To']//*[contains(text(),'0x4701')]", timeout=timeout)
+                selector="//app-wallet-button[@label='To']//*[contains(text(),'0x4701')]", timeout=timeout
+            )
         except TimeoutError as e:
             if 'waiting for event "page"' not in e.message:
                 raise e

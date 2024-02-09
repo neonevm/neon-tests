@@ -157,9 +157,9 @@ class TestNonce:
         assert "error" not in response
         assert "result" in response
 
-    def test_send_transaction_with_old_nonce(self, json_rpc_client):
+    def test_send_transaction_with_old_nonce(self, json_rpc_client, new_account):
         """Check that transaction with old nonce can't be sent"""
-        sender_account = self.accounts[0]
+        sender_account = new_account
         nonce = self.web3_client.eth.get_transaction_count(sender_account.address)
         transaction = self.web3_client.make_raw_tx(sender_account, amount=1, nonce=nonce, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)

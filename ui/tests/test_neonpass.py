@@ -90,11 +90,11 @@ class TestNeonPass:
             return init_balance < balance
 
     @pytest.fixture
-    def metamask_page(
-        self, request: FixtureRequest, page, network: str, chrome_extension_password
-    ):
+    def metamask_page(self, request: FixtureRequest, page, network: str, chrome_extension_password):
+        page.goto("chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/home.html")
         login_page = metamask.MetaMaskLoginPage(page)
-        mm_page = login_page.login(password=chrome_extension_password)
+        popup_news = login_page.login(password=chrome_extension_password)
+        mm_page = popup_news.close()
         mm_page.check_funds_protection()
         mm_page.change_network(network)
         mm_page.switch_assets()
@@ -138,7 +138,6 @@ class TestNeonPass:
         neonpass_page.connect_metamask()
         neonpass_page.switch_platform_source(platform)
         neonpass_page.set_source_token(token.name, 0.001)
-        neonpass_page.set_transaction_fee(platform, token.name, fee_type)
         neonpass_page.confirm_tokens_transfer(platform, token)
 
         with allure.step("Assert the balance in the wallet changed"):

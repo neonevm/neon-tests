@@ -181,4 +181,5 @@ class TestExtCodeHashOpcode:
         ]
 
         response = json_rpc_client.send_rpc("eth_call", params=params)
+        assert "result" in response
         assert response["result"][2:] == keccak(self.web3_client.eth.get_code(new_account.address, "latest")).hex()

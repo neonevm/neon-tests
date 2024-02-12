@@ -41,7 +41,7 @@ class TestRpcGetBlock:
     def test_eth_get_block_by_hash_with_not_existing_hash(self, full_trx, json_rpc_client):
         """Verify implemented rpc calls work eth_getBlockByHash with incorrect hash"""
         response = json_rpc_client.send_rpc(method="eth_getBlockByHash", params=[gen_hash_of_block(32), full_trx])
-        assert response["result"] is None, "Result should be None"
+        assert "result" in response and response["result"] is None, "Result should be None"
 
     @pytest.mark.parametrize("full_trx", [False, True])
     def test_eth_get_block_by_number_via_numbers(self, full_trx, json_rpc_client):
@@ -75,7 +75,7 @@ class TestRpcGetBlock:
     def test_eth_get_block_by_number_with_not_exist_data(self, number, full_trx, json_rpc_client):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
         response = json_rpc_client.send_rpc(method="eth_getBlockByNumber", params=[gen_hash_of_block(number), full_trx])
-        assert response["result"] is None, "Result should be None"
+        assert "result" in response and response["result"] is None, "Result should be None"
 
     @pytest.mark.parametrize(
         "quantity_tag, full_trx",

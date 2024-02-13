@@ -5,15 +5,13 @@ import shutil
 import pathlib
 import typing as tp
 from dataclasses import dataclass
-from http.client import HTTPConnection
 
 import pytest
 from _pytest.config import Config
 from _pytest.runner import runtestprotocol
 from solana.keypair import Keypair
 
-from utils import create_allure_environment_opts
-from utils.allure_log_handler import AllureLogger
+from utils import create_allure_environment_opts, setup_logging
 from utils.faucet import Faucet
 from utils.accounts import EthAccounts
 from utils.web3client import NeonChainWeb3Client
@@ -101,18 +99,7 @@ def pytest_configure(config: Config):
 
 
 def pytest_runtestloop(session) -> None:
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
-    allure_logger = AllureLogger()
-
-    if allure_logger not in logger.handlers:
-        logger.info("Adding Allure logger")
-        logger.addHandler(allure_logger)
-
-    requests_log = logging.getLogger("requests.packages.urllib3")
-    requests_log.setLevel(logging.DEBUG)
-    requests_log.propagate = True
-    HTTPConnection.debuglevel = 1
+    setup_logging()
 
 
 @pytest.fixture(scope="session")

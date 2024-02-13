@@ -1,4 +1,3 @@
-import logging
 import os
 import json
 import shutil
@@ -96,9 +95,6 @@ def pytest_configure(config: Config):
         env["proxy_url"] = env["proxy_url"].replace("<proxy_ip>", os.environ.get("PROXY_IP"))
         env["faucet_url"] = env["faucet_url"].replace("<proxy_ip>", os.environ.get("PROXY_IP"))
     config.environment = EnvironmentConfig(**env)
-
-
-def pytest_runtestloop(session) -> None:
     setup_logging()
 
 

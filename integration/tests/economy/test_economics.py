@@ -637,6 +637,7 @@ class TestEconomics:
         )
         get_gas_used_percent(w3_client, contract_deploy_tx)
 
+    @pytest.mark.slow
     @pytest.mark.timeout(960)
     def test_deploy_contract_alt_on(self, sol_client, neon_price, sol_price, operator, web3_client, accounts):
         """Trigger transaction than requires more than 30 accounts"""

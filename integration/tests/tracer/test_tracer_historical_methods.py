@@ -50,8 +50,8 @@ def call_storage(sender_account, storage_contract, storage_value, request_type, 
     tx, receipt = retrieve_value(sender_account, storage_contract, web3_client)
 
     tx_obj = web3_client.make_raw_tx(
-        sender=sender_account.address,
-        recipient=storage_contract.address,
+        from_=sender_account.address,
+        to=storage_contract.address,
         amount=tx["value"],
         gas=hex(tx["gas"]),
         gas_price=hex(tx["gasPrice"]),
@@ -60,7 +60,6 @@ def call_storage(sender_account, storage_contract, storage_value, request_type, 
     )
     del tx_obj["chainId"]
     del tx_obj["nonce"]
-    tx_obj["value"] = hex(tx_obj["value"])
 
     if request_type == "blockNumber":
         request_value = hex(receipt[request_type])
@@ -145,9 +144,9 @@ class TestTracerHistoricalMethods:
             timeout_sec=120,
         )
 
-    def test_eth_call_invalid_params(self, storage_contract):
+    def test_eth_call_invalid_params(self, storage_contract, web3_client):
         store_value_1 = random.randint(0, 100)
-        tx_obj, _, _ = call_storage(self, storage_contract, store_value_1, "blockHash")
+        tx_obj, _, _ = call_storage(self, storage_contract, store_value_1, "blockHash", web3_client)
         response = self.tracer_api.send_rpc(
             method="eth_call", req_type="blockHash", params=[tx_obj, {"blockHash": "0x0000"}]
         )
@@ -364,16 +363,19 @@ class TestTracerHistoricalMethods:
     def test_eth_get_code(self):
         request_type = "blockNumber"
         sender_account = self.accounts[0]
-
+        recipient_account = self.accounts[1]
+        
         tx = self.web3_client.make_raw_tx(
             from_=sender_account.address,
+            to=recipient_account.address,
             amount=0,
             data=bytes.fromhex(DEPLOY_CODE),
         )
-        del tx["to"]
-        del tx["gas"]
+        gas = self.web3_client._web3.eth.estimate_gas(tx)
+        tx["gas"] = gas
 
         receipt = self.web3_client.send_transaction(account=sender_account, transaction=tx)
+        print(receipt)
         assert receipt["status"] == 1
 
         wait_condition(
@@ -420,9 +422,8 @@ class TestTracerHistoricalMethods:
             nonce=self.web3_client.eth.get_transaction_count(sender_account.address),
             data=bytes.fromhex(DEPLOY_CODE),
         )
-        del tx["to"]
-        del tx["gas"]
-
+        gas = self.web3_client._web3.eth.estimate_gas(tx)
+        tx["gas"] = gas
         receipt = self.web3_client.send_transaction(account=sender_account, transaction=tx)
         assert receipt["status"] == 1
 

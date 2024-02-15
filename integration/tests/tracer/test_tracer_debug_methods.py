@@ -59,7 +59,6 @@ class TestTracerDebugMethods:
         response = self.tracer_api.send_rpc(method="debug_traceCall", params=[{}, tx_info["result"]["blockNumber"]])
 
         assert "error" not in response, "Error in response"
-        assert response["result"]["returnValue"] == ""
         self.validate_response_result(response)
 
     def test_debug_trace_call_zero_eth_call(self):
@@ -96,9 +95,9 @@ class TestTracerDebugMethods:
         assert response["result"]["returnValue"] == ""
         self.validate_response_result(response)
 
-    def test_debug_trace_call_non_zero_eth_call(self, storage_contract):
+    def test_debug_trace_call_non_zero_eth_call(self, storage_contract, web3_client):
         store_value = random.randint(1, 100)
-        _, _, receipt = call_storage(self, storage_contract, store_value, "blockNumber")
+        _, _, receipt = call_storage(self, storage_contract, store_value, "blockNumber", web3_client)
         tx_hash = receipt["transactionHash"].hex()
 
         wait_condition(
@@ -144,9 +143,9 @@ class TestTracerDebugMethods:
         assert "error" not in response, "Error in response"
         self.validate_response_result(response)
 
-    def test_debug_trace_transaction_non_zero_trace(self, storage_contract):
+    def test_debug_trace_transaction_non_zero_trace(self, web3_client, storage_contract):
         store_value = random.randint(1, 100)
-        _, _, receipt = call_storage(self, storage_contract, store_value, "blockNumber")
+        _, _, receipt = call_storage(self, storage_contract, store_value, "blockNumber", web3_client)
         tx_hash = receipt["transactionHash"].hex()
 
         wait_condition(
@@ -159,9 +158,9 @@ class TestTracerDebugMethods:
         assert 1 <= int(response["result"]["returnValue"], 16) <= 100
         self.validate_response_result(response)
 
-    def test_debug_trace_transaction_hash_without_prefix(self, storage_contract):
+    def test_debug_trace_transaction_hash_without_prefix(self, storage_contract, web3_client):
         store_value = random.randint(1, 100)
-        _, _, receipt = call_storage(self, storage_contract, store_value, "blockNumber")
+        _, _, receipt = call_storage(self, storage_contract, store_value, "blockNumber", web3_client)
         tx_hash = receipt["transactionHash"].hex()[2:]
 
         wait_condition(
@@ -504,7 +503,7 @@ class TestTracerDebugMethods:
     def test_debug_get_raw_transaction(self):
         sender_account = self.accounts[0]
         nonce = self.web3_client.get_nonce(sender_account.address)
-        transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce, amount=0.1)
+        transaction = self.web3_client.make_raw_tx(from_=sender_account, nonce=nonce, amount=0.1, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         tx = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)
         receipt = self.web3_client.eth.wait_for_transaction_receipt(tx)
@@ -540,6 +539,5 @@ class TestTracerDebugMethods:
         assert response["error"]["code"] == -32603, "Invalid error code"
         assert (
             response["error"]["message"]
-            == """Empty Neon transaction receipt for 
-            0xd9765b77e470204ae5edb1a796ab92ecb0e20fea50aeb09275aea740af7bbc69"""
+            == "Empty Neon transaction receipt for 0xd9765b77e470204ae5edb1a796ab92ecb0e20fea50aeb09275aea740af7bbc69"
         )

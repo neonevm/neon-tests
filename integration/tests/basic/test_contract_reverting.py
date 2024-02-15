@@ -1,3 +1,5 @@
+import time
+
 import allure
 import pytest
 import solcx
@@ -8,6 +10,7 @@ from semantic_version import Version
 
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from integration.tests.helpers.basic import cryptohex, int_to_hex
+from utils.consts import Time
 from utils.helpers import get_contract_abi
 from utils.accounts import EthAccounts
 from utils.web3client import NeonChainWeb3Client
@@ -134,3 +137,31 @@ class TestContractReverting:
     def test_assert_revert(self, revert_contract):
         with pytest.raises(web3.exceptions.ContractPanicError, match="Panic error 0x01: Assert evaluates to false"):
             revert_contract.functions.doAssert().call()
+
+    @pytest.mark.slow
+    @pytest.mark.timeout(40 * Time.MINUTE)
+    def test_reverted_tx_receipt_after_30_minutes(self, revert_contract, json_rpc_client):
+        sender_account = self.accounts[0]
+        # instruction_tx = revert_contract.functions.doTrivialRevert().build_transaction(
+        instruction_tx = revert_contract.functions.customErrorRevert(1, 2).build_transaction(
+            {
+                "from": sender_account.address,
+                "nonce": self.web3_client.eth.get_transaction_count(sender_account.address),
+                "gasPrice": self.web3_client.gas_price(),
+                "gas": 100000000,
+            }
+        )
+        receipt = self.web3_client.send_transaction(account=sender_account, transaction=instruction_tx)
+
+        method = "eth_getTransactionReceipt"
+        params = [receipt["transactionHash"].hex()]
+        response_json_rpc = json_rpc_client.send_rpc(method=method, params=params)
+        response_web3_client = self.web3_client.eth.get_transaction_receipt(receipt["transactionHash"].hex())
+        # validate expected error message
+
+        time.sleep(25 * Time.MINUTE)
+        response_web3_client = self.web3_client.eth.get_transaction_receipt(receipt["transactionHash"].hex())
+        # validate expected error message after 25 minutes
+        time.sleep(5 * Time.MINUTE)
+        response_web3_client = self.web3_client.eth.get_transaction_receipt(receipt["transactionHash"].hex())
+        # validate no error message after 30 minutes

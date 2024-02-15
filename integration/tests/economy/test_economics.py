@@ -18,7 +18,7 @@ from spl.token.instructions import (
     get_associated_token_address,
 )
 
-from utils.consts import LAMPORT_PER_SOL
+from utils.consts import LAMPORT_PER_SOL, Time
 from utils.erc20 import ERC20
 from utils.helpers import wait_condition, gen_hash_of_block
 from .const import SOLCX_VERSIONS, INSUFFICIENT_FUNDS_ERROR, GAS_LIMIT_ERROR, BIG_STRING, TX_COST
@@ -638,7 +638,7 @@ class TestEconomics:
         get_gas_used_percent(w3_client, contract_deploy_tx)
 
     @pytest.mark.slow
-    @pytest.mark.timeout(960)
+    @pytest.mark.timeout(16 * Time.MINUTE)
     def test_deploy_contract_alt_on(self, sol_client, neon_price, sol_price, operator, web3_client, accounts):
         """Trigger transaction than requires more than 30 accounts"""
         sender_account = accounts[0]
@@ -699,7 +699,7 @@ class TestEconomics:
         # the charge for alt creating should be returned
         wait_condition(
             lambda: sol_client.get_balance(operator_key).value > operator_balance,
-            timeout_sec=60 * 15,
+            timeout_sec=15 * Time.MINUTE,
             delay=3,
         )
 

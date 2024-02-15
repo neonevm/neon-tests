@@ -37,6 +37,9 @@ def pytest_collection_modifyitems(config, items):
     else:
         deselected_marks.append("only_devnet")
 
+    if network_name != "night-stand":
+        deselected_marks.append("slow")
+
     envs_file = config.getoption("--envs")
     with open(pathlib.Path().parent.parent / envs_file, "r+") as f:
         environments = json.load(f)

@@ -19,7 +19,7 @@ DEPLOY_CODE = "60606040523415600e57600080fd5b603580601b6000396000f300" + CONTRAC
 
 
 def store_value(sender_account, value, storage_contract, web3_client):
-    nonce = web3_client.eth.get_transaction_count(sender_account.address)
+    nonce = web3_client.eth.get_transaction_count(sender_account)
     instruction_tx = storage_contract.functions.store(value).build_transaction(
         {
             "nonce": nonce,
@@ -31,7 +31,7 @@ def store_value(sender_account, value, storage_contract, web3_client):
 
 
 def retrieve_value(sender_account, storage_contract, web3_client):
-    nonce = web3_client.eth.get_transaction_count(sender_account.address)
+    nonce = web3_client.eth.get_transaction_count(sender_account)
     instruction_tx = storage_contract.functions.retrieve().build_transaction(
         {
             "nonce": nonce,
@@ -50,7 +50,7 @@ def call_storage(sender_account, storage_contract, storage_value, request_type, 
     tx, receipt = retrieve_value(sender_account, storage_contract, web3_client)
 
     tx_obj = web3_client.make_raw_tx(
-        from_=sender_account.address,
+        from_=sender_account,
         to=storage_contract.address,
         amount=tx["value"],
         gas=hex(tx["gas"]),
@@ -132,7 +132,7 @@ class TestTracerHistoricalMethods:
         )
 
         store_value_3 = random.randint(0, 100)
-        tx_obj_3, request_value_3, _ = call_storage(self, storage_contract, store_value_3, request_type)
+        tx_obj_3, request_value_3, _ = call_storage(self, storage_contract, store_value_3, request_type, self.web3_client)
         wait_condition(
             lambda: int(
                 self.tracer_api.send_rpc(
@@ -145,8 +145,9 @@ class TestTracerHistoricalMethods:
         )
 
     def test_eth_call_invalid_params(self, storage_contract, web3_client):
+        sender_account = self.accounts[0]
         store_value_1 = random.randint(0, 100)
-        tx_obj, _, _ = call_storage(self, storage_contract, store_value_1, "blockHash", web3_client)
+        tx_obj, _, _ = call_storage(self, sender_account, storage_contract, store_value_1, "blockHash", web3_client)
         response = self.tracer_api.send_rpc(
             method="eth_call", req_type="blockHash", params=[tx_obj, {"blockHash": "0x0000"}]
         )
@@ -231,7 +232,7 @@ class TestTracerHistoricalMethods:
     @pytest.mark.parametrize("request_type", ["blockNumber", "blockHash"])
     def test_eth_get_transaction_count(self, storage_contract, request_type):
         sender_account = self.accounts[0]
-        nonce = self.web3_client.eth.get_transaction_count(sender_account.address)
+        nonce = self.web3_client.eth.get_transaction_count(sender_account)
         store_value_1 = random.randint(0, 100)
         _, request_value_1, _ = call_storage(
             sender_account, storage_contract, store_value_1, request_type, self.web3_client
@@ -242,7 +243,7 @@ class TestTracerHistoricalMethods:
                 self.tracer_api.send_rpc(
                     method="eth_getTransactionCount",
                     req_type=request_type,
-                    params=[sender_account.address, {request_type: request_value_1}],
+                    params=[sender_account, {request_type: request_value_1}],
                 )["result"],
                 0,
             )
@@ -263,7 +264,7 @@ class TestTracerHistoricalMethods:
                 self.tracer_api.send_rpc(
                     method="eth_getTransactionCount",
                     req_type=request_type,
-                    params=[sender_account.address, {request_type: request_value_2}],
+                    params=[sender_account, {request_type: request_value_2}],
                 )["result"],
                 0,
             )
@@ -286,8 +287,8 @@ class TestTracerHistoricalMethods:
         receipt_1 = self.web3_client.send_neon(sender_account, recipient_account, transfer_amount)
         assert receipt_1["status"] == 1
 
-        sender_balance = self.web3_client.get_balance(sender_account.address)
-        recipient_balance = self.web3_client.get_balance(recipient_account.address)
+        sender_balance = self.web3_client.get_balance(sender_account)
+        recipient_balance = self.web3_client.get_balance(sender_account)
 
         if request_type == "blockNumber":
             request_value = hex(receipt_1[request_type])
@@ -299,7 +300,7 @@ class TestTracerHistoricalMethods:
                 self.tracer_api.send_rpc(
                     method="eth_getBalance",
                     req_type=request_type,
-                    params=[sender_account.address, {request_type: request_value}],
+                    params=[sender_account, {request_type: request_value}],
                 )["result"],
                 sender_balance,
             ),
@@ -311,7 +312,7 @@ class TestTracerHistoricalMethods:
                 self.tracer_api.send_rpc(
                     method="eth_getBalance",
                     req_type=request_type,
-                    params=[recipient_account.address, {request_type: request_value}],
+                    params=[sender_account, {request_type: request_value}],
                 )["result"],
                 recipient_balance,
             ),
@@ -321,8 +322,8 @@ class TestTracerHistoricalMethods:
         receipt_2 = self.web3_client.send_neon(sender_account, recipient_account, transfer_amount)
         assert receipt_2["status"] == 1
 
-        sender_balance_after = self.web3_client.get_balance(sender_account.address)
-        recipient_balance_after = self.web3_client.get_balance(recipient_account.address)
+        sender_balance_after = self.web3_client.get_balance(sender_account)
+        recipient_balance_after = self.web3_client.get_balance(sender_account)
 
         if request_type == "blockNumber":
             request_value = hex(receipt_2[request_type])
@@ -334,7 +335,7 @@ class TestTracerHistoricalMethods:
                 self.tracer_api.send_rpc(
                     method="eth_getBalance",
                     req_type=request_type,
-                    params=[sender_account.address, {request_type: request_value}],
+                    params=[sender_account, {request_type: request_value}],
                 )["result"],
                 sender_balance_after,
             ),
@@ -346,7 +347,7 @@ class TestTracerHistoricalMethods:
                 self.tracer_api.send_rpc(
                     method="eth_getBalance",
                     req_type=request_type,
-                    params=[recipient_account.address, {request_type: request_value}],
+                    params=[sender_account, {request_type: request_value}],
                 )["result"],
                 recipient_balance_after,
             ),
@@ -356,7 +357,7 @@ class TestTracerHistoricalMethods:
     def test_eth_get_balance_invalid_params(self):
         sender_account = self.accounts[0]
         response = self.tracer_api.send_rpc(
-            method="eth_getBalance", req_type="blockHash", params=[sender_account.address, {"blockHash": "0x0"}]
+            method="eth_getBalance", req_type="blockHash", params=[sender_account, {"blockHash": "0x0"}]
         )
         self.assert_invalid_params(response)
 
@@ -366,8 +367,8 @@ class TestTracerHistoricalMethods:
         recipient_account = self.accounts[1]
         
         tx = self.web3_client.make_raw_tx(
-            from_=sender_account.address,
-            to=recipient_account.address,
+            from_=sender_account,
+            to=sender_account,
             amount=0,
             data=bytes.fromhex(DEPLOY_CODE),
         )
@@ -417,9 +418,9 @@ class TestTracerHistoricalMethods:
     def test_eth_get_code_invalid_params(self):
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(
-            sender_account.address,
+            sender_account,
             amount=0,
-            nonce=self.web3_client.eth.get_transaction_count(sender_account.address),
+            nonce=self.web3_client.eth.get_transaction_count(sender_account),
             data=bytes.fromhex(DEPLOY_CODE),
         )
         gas = self.web3_client._web3.eth.estimate_gas(tx)

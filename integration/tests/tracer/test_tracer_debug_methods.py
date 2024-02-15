@@ -278,7 +278,7 @@ class TestTracerDebugMethods:
         assert response["error"]["code"] == -32603, "Invalid error code"
         assert (
             response["error"]["message"]
-            == "eth_getBlockByHash returns None for '\"0xd97ff4869d52c4add6f5bcb1ba96020dd7877244b4cbf49044f49f002015ea85\"' block"
+            == "eth_getBlockByHash failed for '\"0xd97ff4869d52c4add6f5bcb1ba96020dd7877244b4cbf49044f49f002015ea85\"' block"
         )
 
     def decode_raw_header(self, header: bytes):
@@ -350,7 +350,7 @@ class TestTracerDebugMethods:
         assert "error" not in response, "Error in response"
         assert response["result"] is not None and response["result"] != []
         assert isinstance(response["result"], list)
-        assert sender_account.address in response["result"]
+        assert sender_account in response["result"]
         for item in response["result"]:
             assert re.match(r"^0x[a-fA-F\d]{64}$", item)
 
@@ -502,7 +502,7 @@ class TestTracerDebugMethods:
 
     def test_debug_get_raw_transaction(self):
         sender_account = self.accounts[0]
-        nonce = self.web3_client.get_nonce(sender_account.address)
+        nonce = self.web3_client.get_nonce(sender_account)
         transaction = self.web3_client.make_raw_tx(from_=sender_account, nonce=nonce, amount=0.1, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         tx = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)

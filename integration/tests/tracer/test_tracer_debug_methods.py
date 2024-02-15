@@ -17,7 +17,7 @@ from utils.apiclient import JsonRPCSession
 from integration.tests.tracer.test_tracer_historical_methods import call_storage
 
 SCHEMAS = "./integration/tests/tracer/schemas/"
-
+GOOD_CALLDATA = ["0x60fe60005360016000f3"]
 
 @allure.feature("Tracer API")
 @allure.story("Tracer API RPC calls debug methods check")
@@ -96,8 +96,9 @@ class TestTracerDebugMethods:
         self.validate_response_result(response)
 
     def test_debug_trace_call_non_zero_eth_call(self, storage_contract, web3_client):
+        sender_account = self.accounts[0]
         store_value = random.randint(1, 100)
-        _, _, receipt = call_storage(self, storage_contract, store_value, "blockNumber", web3_client)
+        _, _, receipt = call_storage(sender_account, storage_contract, store_value, "blockNumber", web3_client)
         tx_hash = receipt["transactionHash"].hex()
 
         wait_condition(
@@ -144,8 +145,9 @@ class TestTracerDebugMethods:
         self.validate_response_result(response)
 
     def test_debug_trace_transaction_non_zero_trace(self, web3_client, storage_contract):
+        sender_account = self.accounts[0]
         store_value = random.randint(1, 100)
-        _, _, receipt = call_storage(self, storage_contract, store_value, "blockNumber", web3_client)
+        _, _, receipt = call_storage(sender_account, storage_contract, store_value, "blockNumber", web3_client)
         tx_hash = receipt["transactionHash"].hex()
 
         wait_condition(
@@ -159,8 +161,9 @@ class TestTracerDebugMethods:
         self.validate_response_result(response)
 
     def test_debug_trace_transaction_hash_without_prefix(self, storage_contract, web3_client):
+        sender_account = self.accounts[0]
         store_value = random.randint(1, 100)
-        _, _, receipt = call_storage(self, storage_contract, store_value, "blockNumber", web3_client)
+        _, _, receipt = call_storage(sender_account, storage_contract, store_value, "blockNumber", web3_client)
         tx_hash = receipt["transactionHash"].hex()[2:]
 
         wait_condition(
@@ -502,10 +505,13 @@ class TestTracerDebugMethods:
 
     def test_debug_get_raw_transaction(self):
         sender_account = self.accounts[0]
-        nonce = self.web3_client.get_nonce(sender_account)
-        transaction = self.web3_client.make_raw_tx(from_=sender_account, nonce=nonce, amount=0.1, estimate_gas=True)
+        transaction = self.web3_client.make_raw_tx(sender_account)
+        transaction["data"] = GOOD_CALLDATA[0]
+        transaction["chainId"] = self.web3_client.eth.chain_id
+        transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         tx = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)
+
         receipt = self.web3_client.eth.wait_for_transaction_receipt(tx)
         assert receipt["status"] == 1
         wait_condition(

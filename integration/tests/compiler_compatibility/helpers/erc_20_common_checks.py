@@ -10,8 +10,7 @@ def check_erc20_mint_function(
 ):
     balance_before = contract.functions.balanceOf(account.address).call()
     amount = random.randint(1, MAX_TOKENS_AMOUNT)
-    tx = web3_client.make_raw_tx(account.address, gas=0)
-    del tx["gas"]
+    tx = web3_client.make_raw_tx(account.address, estimate_gas=False)
     instruction_tx = contract.functions.mint(account.address, amount).build_transaction(tx)
     web3_client.send_transaction(account, instruction_tx)
     balance_after = contract.functions.balanceOf(account.address).call()
@@ -23,12 +22,10 @@ def check_erc20_transfer_function(web3_client, contract, sender, receiver):
     balance_acc2_before = contract.functions.balanceOf(receiver.address).call()
     total_before = contract.functions.totalSupply().call()
     amount = random.randint(1, 100)
-    tx = web3_client.make_raw_tx(sender.address, gas=0)
-    del tx["gas"]
+    tx = web3_client.make_raw_tx(sender.address, estimate_gas=False)
     contract.functions.mint(sender.address, amount).build_transaction(tx)
 
-    tx = web3_client.make_raw_tx(sender.address, gas=0)
-    del tx["gas"]
+    tx = web3_client.make_raw_tx(sender.address, estimate_gas=False)
     instruction_tx = contract.functions.transfer(receiver.address, amount).build_transaction(tx)
     web3_client.send_transaction(sender, instruction_tx)
     balance_acc1_after = contract.functions.balanceOf(sender.address).call()

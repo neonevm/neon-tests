@@ -58,6 +58,7 @@ class TestRpcGetTransaction:
             method="eth_getTransactionByBlockNumberAndIndex",
             params=[hex(tx_receipt.blockNumber), transaction_index],
         )
+        assert "result" in response
         if not valid_index:
             assert response["result"] is None, "Result should be None"
         else:
@@ -77,6 +78,7 @@ class TestRpcGetTransaction:
             method="eth_getTransactionByBlockHashAndIndex",
             params=[tx_receipt.blockHash.hex(), transaction_index],
         )
+        assert "result" in response
         if not valid_index:
             assert response["result"] is None, "Result should be None"
         else:
@@ -151,7 +153,7 @@ class TestRpcGetTransaction:
 
         if param is pow(2, 5):
             assert "error" not in response
-            assert response["result"] is None, f"Invalid response: {response['result']}"
+            assert "result" in response and response["result"] is None, f"Invalid response: {response['result']}"
             return
 
         assert "error" in response, "error field not in response"
@@ -228,7 +230,7 @@ class TestRpcGetTransaction:
     def test_eth_get_transaction_receipt_when_hash_doesnt_exist(self, method, json_rpc_client):
         """Verify implemented rpc calls work eth_getTransactionReceipt when transaction hash doesn't exist"""
         response = json_rpc_client.send_rpc(method=method, params=gen_hash_of_block(32))
-        assert response["result"] is None, "Result should be None"
+        assert "result" in response and response["result"] is None, "Result should be None"
 
     @pytest.mark.parametrize(
         "params, error_code, error_message",

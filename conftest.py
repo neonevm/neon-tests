@@ -10,7 +10,7 @@ from _pytest.config import Config
 from _pytest.runner import runtestprotocol
 from solana.keypair import Keypair
 
-from utils import create_allure_environment_opts
+from utils import create_allure_environment_opts, setup_logging
 from utils.faucet import Faucet
 from utils.accounts import EthAccounts
 from utils.web3client import NeonChainWeb3Client
@@ -95,6 +95,7 @@ def pytest_configure(config: Config):
         env["proxy_url"] = env["proxy_url"].replace("<proxy_ip>", os.environ.get("PROXY_IP"))
         env["faucet_url"] = env["faucet_url"].replace("<proxy_ip>", os.environ.get("PROXY_IP"))
     config.environment = EnvironmentConfig(**env)
+    setup_logging()
 
 
 @pytest.fixture(scope="session")

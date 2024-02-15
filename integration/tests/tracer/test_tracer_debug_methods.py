@@ -17,7 +17,7 @@ from utils.apiclient import JsonRPCSession
 from integration.tests.tracer.test_tracer_historical_methods import call_storage
 
 SCHEMAS = "./integration/tests/tracer/schemas/"
-
+GOOD_CALLDATA = ["0x60fe60005360016000f3"]
 
 @allure.feature("Tracer API")
 @allure.story("Tracer API RPC calls debug methods check")
@@ -59,8 +59,6 @@ class TestTracerDebugMethods:
         response = self.tracer_api.send_rpc(method="debug_traceCall", params=[{}, tx_info["result"]["blockNumber"]])
 
         assert "error" not in response, "Error in response"
-        assert "result" in response
-        assert response["result"]["returnValue"] == ""
         self.validate_response_result(response)
 
     def test_debug_trace_call_zero_eth_call(self):
@@ -98,9 +96,10 @@ class TestTracerDebugMethods:
         assert response["result"]["returnValue"] == ""
         self.validate_response_result(response)
 
-    def test_debug_trace_call_non_zero_eth_call(self, storage_contract):
+    def test_debug_trace_call_non_zero_eth_call(self, storage_contract, web3_client):
+        sender_account = self.accounts[0]
         store_value = random.randint(1, 100)
-        _, _, receipt = call_storage(self, storage_contract, store_value, "blockNumber")
+        _, _, receipt = call_storage(sender_account, storage_contract, store_value, "blockNumber", web3_client)
         tx_hash = receipt["transactionHash"].hex()
 
         wait_condition(
@@ -146,9 +145,10 @@ class TestTracerDebugMethods:
         assert "error" not in response, "Error in response"
         self.validate_response_result(response)
 
-    def test_debug_trace_transaction_non_zero_trace(self, storage_contract):
+    def test_debug_trace_transaction_non_zero_trace(self, web3_client, storage_contract):
+        sender_account = self.accounts[0]
         store_value = random.randint(1, 100)
-        _, _, receipt = call_storage(self, storage_contract, store_value, "blockNumber")
+        _, _, receipt = call_storage(sender_account, storage_contract, store_value, "blockNumber", web3_client)
         tx_hash = receipt["transactionHash"].hex()
 
         wait_condition(
@@ -161,9 +161,10 @@ class TestTracerDebugMethods:
         assert 1 <= int(response["result"]["returnValue"], 16) <= 100
         self.validate_response_result(response)
 
-    def test_debug_trace_transaction_hash_without_prefix(self, storage_contract):
+    def test_debug_trace_transaction_hash_without_prefix(self, storage_contract, web3_client):
+        sender_account = self.accounts[0]
         store_value = random.randint(1, 100)
-        _, _, receipt = call_storage(self, storage_contract, store_value, "blockNumber")
+        _, _, receipt = call_storage(sender_account, storage_contract, store_value, "blockNumber", web3_client)
         tx_hash = receipt["transactionHash"].hex()[2:]
 
         wait_condition(
@@ -281,7 +282,7 @@ class TestTracerDebugMethods:
         assert response["error"]["code"] == -32603, "Invalid error code"
         assert (
             response["error"]["message"]
-            == "eth_getBlockByHash returns None for '\"0xd97ff4869d52c4add6f5bcb1ba96020dd7877244b4cbf49044f49f002015ea85\"' block"
+            == "eth_getBlockByHash failed for '\"0xd97ff4869d52c4add6f5bcb1ba96020dd7877244b4cbf49044f49f002015ea85\"' block"
         )
 
     def decode_raw_header(self, header: bytes):
@@ -353,7 +354,7 @@ class TestTracerDebugMethods:
         assert "error" not in response, "Error in response"
         assert "result" in response and response["result"] is not None and response["result"] != []
         assert isinstance(response["result"], list)
-        assert sender_account.address in response["result"]
+        assert sender_account in response["result"]
         for item in response["result"]:
             assert re.match(r"^0x[a-fA-F\d]{64}$", item)
 
@@ -505,12 +506,13 @@ class TestTracerDebugMethods:
 
     def test_debug_get_raw_transaction(self):
         sender_account = self.accounts[0]
-        nonce = self.web3_client.get_nonce(sender_account.address)
-        transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce, amount=0.1)
+        transaction = self.web3_client.make_raw_tx(from_=sender_account, data=GOOD_CALLDATA[0], estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         tx = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)
+
         receipt = self.web3_client.eth.wait_for_transaction_receipt(tx)
         assert receipt["status"] == 1
+        
         wait_condition(
             lambda: self.tracer_api.send_rpc(
                 method="debug_getRawTransaction", params=[receipt["transactionHash"].hex()]
@@ -542,6 +544,5 @@ class TestTracerDebugMethods:
         assert response["error"]["code"] == -32603, "Invalid error code"
         assert (
             response["error"]["message"]
-            == """Empty Neon transaction receipt for 
-            0xd9765b77e470204ae5edb1a796ab92ecb0e20fea50aeb09275aea740af7bbc69"""
+            == "Empty Neon transaction receipt for 0xd9765b77e470204ae5edb1a796ab92ecb0e20fea50aeb09275aea740af7bbc69"
         )

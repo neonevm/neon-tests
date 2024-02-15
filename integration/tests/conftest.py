@@ -394,6 +394,18 @@ def storage_contract(web3_client, class_account) -> tp.Any:
     yield contract
 
 
+@pytest.fixture(scope="class")
+def storage_contract_with_deploy_tx(web3_client, class_account) -> tp.Any:
+    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
+        "common/StorageSoliditySource",
+        "0.8.8",
+        class_account,
+        contract_name="Storage",
+        constructor_args=[],
+    )
+    yield contract, contract_deploy_tx
+
+
 @pytest.fixture(scope="session")
 def sol_price() -> float:
     """Get SOL price from Solana mainnet"""

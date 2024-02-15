@@ -59,6 +59,7 @@ class TestTracerDebugMethods:
         response = self.tracer_api.send_rpc(method="debug_traceCall", params=[{}, tx_info["result"]["blockNumber"]])
 
         assert "error" not in response, "Error in response"
+        assert "result" in response
         assert response["result"]["returnValue"] == ""
         self.validate_response_result(response)
 
@@ -93,6 +94,7 @@ class TestTracerDebugMethods:
         )
         response = self.tracer_api.send_rpc(method="debug_traceCall", params=params)
         assert "error" not in response, "Error in response"
+        assert "result" in response
         assert response["result"]["returnValue"] == ""
         self.validate_response_result(response)
 
@@ -231,7 +233,7 @@ class TestTracerDebugMethods:
 
         response = self.tracer_api.send_rpc(method="debug_traceBlockByNumber", params=["0x2ee1"])
         assert "error" not in response, "Error in response"
-        assert response["result"] == [], "Result is not empty"
+        assert "result" in response and response["result"] == [], "Result is not empty"
 
     def test_debug_trace_block_by_hash(self):
         sender_account = self.accounts[0]
@@ -301,7 +303,7 @@ class TestTracerDebugMethods:
 
         response = self.tracer_api.send_rpc(method="debug_getRawHeader", params=[hex(receipt["blockNumber"])])
         assert "error" not in response, "Error in response"
-        assert response["result"] is not None
+        assert "result" in response and response["result"] is not None
 
         header = self.decode_raw_header(bytes.fromhex(response["result"]))
         block_info = self.web3_client.eth.get_block(receipt["blockNumber"])
@@ -330,7 +332,7 @@ class TestTracerDebugMethods:
 
         response = self.tracer_api.send_rpc(method="debug_getRawHeader", params=[receipt["blockHash"].hex()])
         assert "error" not in response, "Error in response"
-        assert response["result"] is not None
+        assert "result" in response and response["result"] is not None
 
         header = self.decode_raw_header(bytes.fromhex(response["result"]))
         block_info = self.web3_client.eth.get_block(receipt["blockNumber"])
@@ -349,7 +351,7 @@ class TestTracerDebugMethods:
     def check_modified_accounts_response(self, response):
         sender_account = self.accounts[0]
         assert "error" not in response, "Error in response"
-        assert response["result"] is not None and response["result"] != []
+        assert "result" in response and response["result"] is not None and response["result"] != []
         assert isinstance(response["result"], list)
         assert sender_account.address in response["result"]
         for item in response["result"]:
@@ -519,7 +521,7 @@ class TestTracerDebugMethods:
 
         response = self.tracer_api.send_rpc(method="debug_getRawTransaction", params=[receipt["transactionHash"].hex()])
         assert "error" not in response, "Error in response"
-        assert response["result"] == signed_tx.rawTransaction.hex()
+        assert "result" in response and response["result"] == signed_tx.rawTransaction.hex()
 
     def test_debug_get_raw_transaction_invalid_tx_hash(self):
         sender_account = self.accounts[0]

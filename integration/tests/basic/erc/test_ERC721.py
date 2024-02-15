@@ -112,18 +112,15 @@ class TestERC721:
         assert symbol == "MPL"
 
     def test_balanceOf(self, erc721):
-        with allure.step("Get balance for user"):
-            balance_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
+        balance_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
         uri = generate_text(min_len=10, max_len=200)
         mint_amount = random.randint(1, 5)
 
-        with allure.step("Mint several times"):
-            for _ in range(mint_amount):
-                seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
-                erc721.mint(seed, erc721.account.address, uri)
+        for _ in range(mint_amount):
+            seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
+            erc721.mint(seed, erc721.account.address, uri)
 
-        with allure.step("Get balance after mint"):
-            balance = erc721.contract.functions.balanceOf(erc721.account.address).call()
+        balance = erc721.contract.functions.balanceOf(erc721.account.address).call()
         assert mint_amount == balance - balance_before
 
     @pytest.mark.parametrize(*INCORRECT_ADDRESS_PARAMS)
@@ -160,15 +157,13 @@ class TestERC721:
             erc721.contract.functions.tokenURI(token_id).call()
 
     def test_transferFrom(self, erc721, new_account, token_id):
-        with allure.step("Get balance for 2 users"):
-            balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
-            balance_usr2_before = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
+        balance_usr2_before = erc721.contract.functions.balanceOf(new_account.address).call()
 
         erc721.transfer_from(erc721.account.address, new_account.address, token_id, erc721.account)
 
-        with allure.step("Get balance after transfer for 2 users"):
-            balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
-            balance_usr2_after = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
+        balance_usr2_after = erc721.contract.functions.balanceOf(new_account.address).call()
 
         assert balance_usr1_after - balance_usr1_before == -1
         assert balance_usr2_after - balance_usr2_before == 1
@@ -219,16 +214,14 @@ class TestERC721:
             )
 
     def test_transferFrom_with_approval(self, erc721, new_account, token_id):
-        with allure.step("Get balance for 2 users"):
-            balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
-            balance_usr2_before = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
+        balance_usr2_before = erc721.contract.functions.balanceOf(new_account.address).call()
 
         erc721.approve(new_account.address, token_id, erc721.account)
         erc721.transfer_from(erc721.account.address, new_account.address, token_id, new_account)
 
-        with allure.step("Get balance after transfer for 2 users"):
-            balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
-            balance_usr2_after = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
+        balance_usr2_after = erc721.contract.functions.balanceOf(new_account.address).call()
 
         assert balance_usr1_after - balance_usr1_before == -1
         assert balance_usr2_after - balance_usr2_before == 1
@@ -267,46 +260,39 @@ class TestERC721:
             erc721.approve(new_account.address, token_id, erc721.account, **param)
 
     def test_safeTransferFrom_to_user(self, erc721, token_id, new_account):
-        with allure.step("Get balance for 2 users"):
-            balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
-            balance_usr2_before = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
+        balance_usr2_before = erc721.contract.functions.balanceOf(new_account.address).call()
 
         erc721.safe_transfer_from(erc721.account.address, new_account.address, token_id, erc721.account)
 
-        with allure.step("Get balance after transfer for 2 users"):
-            balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
-            balance_usr2_after = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
+        balance_usr2_after = erc721.contract.functions.balanceOf(new_account.address).call()
 
         assert balance_usr1_after - balance_usr1_before == -1
         assert balance_usr2_after - balance_usr2_before == 1
 
     def test_safeTransferFrom_to_contract(self, erc721, token_id, nft_receiver):
-        with allure.step("Get balance for 2 users"):
-            balance_usr_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
-            balance_contract_before = erc721.contract.functions.balanceOf(nft_receiver.address).call()
+        balance_usr_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
+        balance_contract_before = erc721.contract.functions.balanceOf(nft_receiver.address).call()
 
         erc721.safe_transfer_from(erc721.account.address, nft_receiver.address, token_id, erc721.account)
 
-        with allure.step("Get balance after transfer for 2 users"):
-            balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
-            balance_contract_after = erc721.contract.functions.balanceOf(nft_receiver.address).call()
+        balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
+        balance_contract_after = erc721.contract.functions.balanceOf(nft_receiver.address).call()
 
         assert balance_usr1_after - balance_usr_before == -1
         assert balance_contract_after - balance_contract_before == 1
 
     def test_safeTransferFrom_with_data(self, erc721, token_id, nft_receiver):
-        with allure.step("Get balance for 2 users"):
-            balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
-            balance_usr2_before = erc721.contract.functions.balanceOf(nft_receiver.address).call()
+        balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
+        balance_usr2_before = erc721.contract.functions.balanceOf(nft_receiver.address).call()
         data = generate_text(max_len=100).encode("utf-8")
         erc721.safe_transfer_from(erc721.account.address, nft_receiver.address, token_id, erc721.account, data)
 
-        with allure.step("Get balance after transfer for 2 users"):
-            balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
-            balance_usr2_after = erc721.contract.functions.balanceOf(nft_receiver.address).call()
+        balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
+        balance_usr2_after = erc721.contract.functions.balanceOf(nft_receiver.address).call()
 
-        with allure.step("Invoke nft_receiver data"):
-            nft_receiver_data = nft_receiver.functions.contractData().call()
+        nft_receiver_data = nft_receiver.functions.contractData().call()
 
         assert nft_receiver_data == data
         assert balance_usr1_after - balance_usr1_before == -1
@@ -357,15 +343,14 @@ class TestERC721:
             erc721.safe_mint(seed, invalid_nft_receiver.address, uri)
 
     def test_setApprovalForAll(self, erc721, new_account):
-        with allure.step("Get balance for 2 users"):
-            tokens = []
-            for _ in range(2):
-                seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
-                uri = generate_text(min_len=10, max_len=200)
-                tokens.append(erc721.mint(seed, erc721.account.address, uri))
+        tokens = []
+        for _ in range(2):
+            seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
+            uri = generate_text(min_len=10, max_len=200)
+            tokens.append(erc721.mint(seed, erc721.account.address, uri))
 
-            balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
-            balance_usr2_before = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
+        balance_usr2_before = erc721.contract.functions.balanceOf(new_account.address).call()
 
         erc721.set_approval_for_all(new_account.address, True, erc721.account)
         erc721.transfer_from(erc721.account.address, new_account.address, tokens[0], new_account)
@@ -376,9 +361,8 @@ class TestERC721:
             match=ErrorMessage.NOT_TOKEN_OWNER_ERC721.value,
         ):
             erc721.transfer_from(erc721.account.address, new_account.address, tokens[1], new_account)
-        with allure.step("Get balance after transfer for 2 users"):
-            balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
-            balance_usr2_after = erc721.contract.functions.balanceOf(new_account.address).call()
+        balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
+        balance_usr2_after = erc721.contract.functions.balanceOf(new_account.address).call()
 
         assert balance_usr1_before - balance_usr1_after == 1
         assert balance_usr2_before - balance_usr2_after == -1
@@ -436,30 +420,27 @@ class TestERC721:
 
     @pytest.mark.xfail(reason="NDEV-1333")
     def test_transferSolanaFrom(self, erc721, token_id, sol_client, solana_account):
-        with allure.step("Create solana transaction"):
-            acc = solana_account
-            token_mint = PublicKey(base58.b58encode(token_id.to_bytes(32, "big")).decode("utf-8"))
-            trx = Transaction()
-            trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))
-            opts = TxOpts(skip_preflight=False, skip_confirmation=False)
-        with allure.step("Send transaction via solana client and get solana address"):
-            sol_client.send_transaction(trx, acc, opts=opts)
-            solana_address = bytes(get_associated_token_address(acc.public_key, token_mint))
+        acc = solana_account
+        token_mint = PublicKey(base58.b58encode(token_id.to_bytes(32, "big")).decode("utf-8"))
+        trx = Transaction()
+        trx.add(create_associated_token_account(acc.public_key, acc.public_key, token_mint))
+        opts = TxOpts(skip_preflight=False, skip_confirmation=False)
+        sol_client.send_transaction(trx, acc, opts=opts)
+        solana_address = bytes(get_associated_token_address(acc.public_key, token_mint))
 
         erc721.transfer_solana_from(erc721.account.address, solana_address, token_id, erc721.account)
         opts = TokenAccountOpts(token_mint)
 
-        with allure.step("Get token data and token amount"):
-            wait_condition(
-                lambda: int(
-                    sol_client.get_token_accounts_by_owner_json_parsed(acc.public_key, opts)
-                    .value[0]
-                    .account.data.parsed["info"]["tokenAmount"]["amount"]
-                )
-                > 0
+        wait_condition(
+            lambda: int(
+                sol_client.get_token_accounts_by_owner_json_parsed(acc.public_key, opts)
+                .value[0]
+                .account.data.parsed["info"]["tokenAmount"]["amount"]
             )
-            token_data = sol_client.get_token_accounts_by_owner_json_parsed(acc.public_key, opts).value[0]
-            token_amount = token_data.account.data.parsed["info"]["tokenAmount"]
+            > 0
+        )
+        token_data = sol_client.get_token_accounts_by_owner_json_parsed(acc.public_key, opts).value[0]
+        token_amount = token_data.account.data.parsed["info"]["tokenAmount"]
         assert int(token_amount["amount"]) == 1
         assert int(token_amount["decimals"]) == 0
 

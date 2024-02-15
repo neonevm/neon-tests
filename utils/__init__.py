@@ -23,6 +23,8 @@ def setup_logging(log_level=logging.DEBUG):
     logger = logging.getLogger()
     logger.setLevel(log_level)
 
+    # Disable Request Manager, as it only shows duplication information regarding method names,
+    # which HTTPProvider already does
     logging.getLogger("web3.RequestManager").setLevel(logging.WARNING)
 
     # Disable all internal debug logging of requests and urllib3

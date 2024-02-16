@@ -90,6 +90,17 @@ def pytest_configure(config: Config):
         env["use_bank"] = False
     if "eth_bank_account" not in env:
         env["eth_bank_account"] = ""
+
+    # Set envs for integration/tests/neon_evm project
+    if "SOLANA_URL" not in os.environ or not os.environ["SOLANA_URL"]:
+        os.environ["SOLANA_URL"] = env["solana_url"]
+    if "EVM_LOADER" not in os.environ or not os.environ["EVM_LOADER"]:
+        os.environ["EVM_LOADER"] = env["evm_loader"]
+    if "NEON_TOKEN_MINT" not in os.environ or not os.environ["NEON_TOKEN_MINT"]:
+        os.environ["NEON_TOKEN_MINT"] = env["spl_neon_mint"]
+    if "CHAIN_ID" not in os.environ or not os.environ["CHAIN_ID"]:
+        os.environ["CHAIN_ID"]: env["network_ids"]["neon"]
+
     if network_name == "terraform":
         env["solana_url"] = env["solana_url"].replace("<solana_ip>", os.environ.get("SOLANA_IP"))
         env["proxy_url"] = env["proxy_url"].replace("<proxy_ip>", os.environ.get("PROXY_IP"))

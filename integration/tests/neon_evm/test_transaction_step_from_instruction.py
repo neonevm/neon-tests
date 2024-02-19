@@ -16,7 +16,7 @@ from solana.rpc.commitment import Confirmed
 from solana.rpc.core import RPCException
 
 from .solana_utils import execute_transaction_steps_from_instruction, \
-    create_treasury_pool_address, send_transaction_step_from_instruction
+    create_treasury_pool_address, send_transaction_step_from_instruction, EVM_STEPS
 from .utils.assert_messages import InstructionAsserts
 from .utils.constants import TAG_FINALIZED_STATE
 from .utils.contract import make_deployment_transaction, make_contract_call_trx, deploy_contract, get_contract_bin
@@ -449,37 +449,49 @@ class TestTransactionStepFromInstructionParallelRuns:
     def test_one_user_call_2_contracts(self, rw_lock_contract, string_setter_contract, user_account, evm_loader,
                                        operator_keypair, treasury_pool, new_holder_acc):
         signed_tx = make_contract_call_trx(user_account, rw_lock_contract, 'unchange_storage(uint8,uint8)', [1, 1])
-        send_transaction_step_from_instruction(operator_keypair, evm_loader, treasury_pool, new_holder_acc, signed_tx,
-                                               [user_account.solana_account_address,
-                                                user_account.balance_account_address,
-                                                rw_lock_contract.solana_address], 1, operator_keypair)
+
+        def send_transaction_steps(holder_acc, contract, trx):
+            send_transaction_step_from_instruction(operator_keypair, evm_loader, treasury_pool, holder_acc, trx,
+                                                   [user_account.solana_account_address,
+                                                    user_account.balance_account_address,
+                                                    contract.solana_address], EVM_STEPS, operator_keypair)
+
+        send_transaction_steps(new_holder_acc, rw_lock_contract, signed_tx)
 
         signed_tx2 = make_contract_call_trx(user_account, string_setter_contract, 'get()')
         holder_acc2 = create_holder(operator_keypair)
-        with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.LOCKED_ACC):
-            send_transaction_step_from_instruction(operator_keypair, evm_loader, treasury_pool, holder_acc2, signed_tx2,
-                                                   [user_account.solana_account_address,
-                                                    user_account.balance_account_address,
-                                                    string_setter_contract.solana_address], 1, operator_keypair)
+
+        send_transaction_steps(holder_acc2, string_setter_contract, signed_tx2)
+        send_transaction_steps(new_holder_acc, rw_lock_contract, signed_tx)
+        send_transaction_steps(holder_acc2, string_setter_contract, signed_tx2)
+        send_transaction_steps(new_holder_acc, rw_lock_contract, signed_tx)
+        send_transaction_steps(holder_acc2, string_setter_contract, signed_tx2)
+        check_holder_account_tag(new_holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
+        check_holder_account_tag(holder_acc2, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
 
     def test_2_users_call_the_same_contract(self, rw_lock_contract, user_account,
                                             session_user, evm_loader, operator_keypair,
                                             treasury_pool, new_holder_acc):
         signed_tx = make_contract_call_trx(user_account, rw_lock_contract, 'unchange_storage(uint8,uint8)', [1, 1])
 
-        send_transaction_step_from_instruction(operator_keypair, evm_loader, treasury_pool, new_holder_acc, signed_tx,
-                                               [user_account.solana_account_address,
-                                                user_account.balance_account_address,
-                                                rw_lock_contract.solana_address], 1, operator_keypair)
+        def send_transaction_steps(user, holder_acc, trx):
+            send_transaction_step_from_instruction(operator_keypair, evm_loader, treasury_pool, holder_acc,
+                                                   trx,
+                                                   [user.solana_account_address,
+                                                    user.balance_account_address,
+                                                    rw_lock_contract.solana_address], EVM_STEPS, operator_keypair)
+
+        send_transaction_steps(user_account, new_holder_acc, signed_tx)
 
         signed_tx2 = make_contract_call_trx(session_user, rw_lock_contract, 'get_text()')
         holder_acc2 = create_holder(operator_keypair)
-
-        with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.LOCKED_ACC):
-            send_transaction_step_from_instruction(operator_keypair, evm_loader, treasury_pool, holder_acc2, signed_tx2,
-                                                   [session_user.solana_account_address,
-                                                    session_user.balance_account_address,
-                                                    rw_lock_contract.solana_address], 1, operator_keypair)
+        send_transaction_steps(session_user, holder_acc2, signed_tx2)
+        send_transaction_steps(user_account, new_holder_acc, signed_tx)
+        send_transaction_steps(session_user, holder_acc2, signed_tx2)
+        send_transaction_steps(user_account, new_holder_acc, signed_tx)
+        send_transaction_steps(session_user, holder_acc2, signed_tx2)
+        check_holder_account_tag(new_holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
+        check_holder_account_tag(holder_acc2, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
 
     def test_two_contracts_call_same_contract(self, rw_lock_contract, user_account,
                                               session_user, evm_loader, operator_keypair,
@@ -493,27 +505,30 @@ class TestTransactionStepFromInstructionParallelRuns:
 
         signed_tx1 = make_contract_call_trx(user_account, contract1, 'unchange_storage(uint8,uint8)', [1, 1])
         signed_tx2 = make_contract_call_trx(session_user, contract2, 'get_text()')
-
-        send_transaction_step_from_instruction(operator_keypair, evm_loader, treasury_pool, new_holder_acc, signed_tx1,
-                                               [user_account.solana_account_address,
-                                                user_account.balance_account_address,
-                                                rw_lock_contract.solana_address,
-                                                contract1.solana_address], 1, operator_keypair)
-
         holder_acc2 = create_holder(operator_keypair)
-        with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.LOCKED_ACC):
-            send_transaction_step_from_instruction(operator_keypair, evm_loader, treasury_pool, holder_acc2, signed_tx2,
-                                                   [session_user.solana_account_address,
-                                                    session_user.balance_account_address,
+
+        def send_transaction_steps(user, holder_acc, contract, trx):
+            send_transaction_step_from_instruction(operator_keypair, evm_loader, treasury_pool, holder_acc,
+                                                   trx,
+                                                   [user.solana_account_address,
+                                                    user.balance_account_address,
                                                     rw_lock_contract.solana_address,
-                                                    contract2.solana_address], 1,
-                                                   operator_keypair)
+                                                    contract.solana_address], EVM_STEPS, operator_keypair)
+
+        send_transaction_steps(user_account, new_holder_acc, contract1, signed_tx1)
+        send_transaction_steps(session_user, holder_acc2, contract2, signed_tx2)
+        send_transaction_steps(user_account, new_holder_acc, contract1, signed_tx1)
+        send_transaction_steps(session_user, holder_acc2, contract2, signed_tx2)
+        send_transaction_steps(user_account, new_holder_acc, contract1, signed_tx1)
+        send_transaction_steps(session_user, holder_acc2, contract2, signed_tx2)
+        check_holder_account_tag(new_holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
+        check_holder_account_tag(holder_acc2, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
 
 
 class TestStepFromInstructionChangingOperatorsDuringTrxRun:
     def test_next_operator_can_continue_trx(self, rw_lock_contract, user_account, evm_loader,
-                                                            operator_keypair, second_operator_keypair, treasury_pool,
-                                                            new_holder_acc):
+                                            operator_keypair, second_operator_keypair, treasury_pool,
+                                            new_holder_acc):
         signed_tx = make_contract_call_trx(user_account, rw_lock_contract, 'update_storage_str(string)', ['text'])
 
         send_transaction_step_from_instruction(operator_keypair, evm_loader, treasury_pool, new_holder_acc,

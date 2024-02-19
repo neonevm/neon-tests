@@ -5,7 +5,7 @@ Created on 2022-05-19
 """
 import allure
 import pyperclip3 as clipboard
-from playwright._impl._api_types import TimeoutError
+from playwright._impl._errors import TimeoutError
 
 from ui import components
 from ui import libs
@@ -31,12 +31,12 @@ class MetaMaskLoginPage(BasePage):
         super(MetaMaskLoginPage, self).__init__(*args, **kwargs)
 
     def page_loaded(self) -> None:
-        self.page.wait_for_selector("//div[contains(@class, 'app-header__logo-container--clickable')]")
+        self.page.wait_for_selector("//button[contains(@class, 'app-header__logo-container')]")
 
-    def login(self, password: str) -> "MetaMaskAccountsPage":
+    def login(self, password: str) -> "MetaMaskPopoverNewsPage":
         components.Input(self.page, element_id="password").fill(password)
         components.Button(self.page, selector="//input[@id='password']/following::button").click()
-        return MetaMaskAccountsPage(self.page)
+        return MetaMaskPopoverNewsPage(self.page)
 
 
 class MetaMaskConnectPage(BasePage):
@@ -44,7 +44,7 @@ class MetaMaskConnectPage(BasePage):
         super(MetaMaskConnectPage, self).__init__(*args, **kwargs)
 
     def page_loaded(self) -> None:
-        self.page.wait_for_selector("//div[text()='Connect With MetaMask']")
+        self.page.wait_for_selector("//*[text()='Connect with MetaMask']")
 
     def next(self):
         components.Button(self.page, text="Next").click()
@@ -53,8 +53,19 @@ class MetaMaskConnectPage(BasePage):
         components.Button(self.page, text="Connect").click()
 
 
-class MetaMaskAccountsPage(BasePage):
+class MetaMaskPopoverNewsPage(BasePage):
+    def __init__(self, *args, **kwargs) -> None:
+        super(MetaMaskPopoverNewsPage, self).__init__(*args, **kwargs)
 
+    def page_loaded(self) -> None:
+        self.page.wait_for_selector("//section[contains(@class,'whats-new-popup__popover')]")
+
+    def close(self) -> "MetaMaskAccountsPage":
+        components.Button(self.page, selector="//button[contains(@data-testid, 'popover-close')]").click()
+        return MetaMaskAccountsPage(self.page)
+
+
+class MetaMaskAccountsPage(BasePage):
     _networks_menu: components.Menu = None
     _accounts_menu: components.Menu = None
 
@@ -62,9 +73,7 @@ class MetaMaskAccountsPage(BasePage):
         super(MetaMaskAccountsPage, self).__init__(*args, **kwargs)
 
     def page_loaded(self) -> None:
-        self.page.wait_for_selector(
-            "//button[@class='selected-account__clickable']/descendant::div[text()='Account 1']"
-        )
+        self.page.wait_for_selector("//button[@data-testid='account-menu-icon']/descendant::span[text()='Account 1']")
 
     @property
     def networks_menu(self) -> components.Menu:
@@ -72,7 +81,7 @@ class MetaMaskAccountsPage(BasePage):
             self._networks_menu = components.Menu(
                 self.page,
                 header_selector="//div[@class='network-dropdown-title' and text()='Networks']",
-                menu_selector="//div[contains(@class, 'network-display--clickable') and @role='button']",
+                menu_selector="//div[contains(@class, 'multichain-network-list-item')]",
             )
         return self._networks_menu
 
@@ -88,16 +97,16 @@ class MetaMaskAccountsPage(BasePage):
 
     @property
     def current_network(self) -> str:
-        return self.page.query_selector("//div[contains(@class, 'network-display')]/span").text_content()
+        return self.page.query_selector("//button[contains(@data-testid, 'network-display')]/span").text_content()
 
     @property
     def active_account(self) -> str:
-        return self.page.query_selector("//div[@class='selected-account__name']").text_content()
+        return self.page.query_selector("//button[@data-testid='account-menu-icon']/span").text_content()
 
     @property
     def active_account_address(self) -> str:
         clipboard.clear()
-        components.Button(self.page, selector="//button[@class='selected-account__clickable']").click()
+        components.Button(self.page, selector="//button[@data-testid='address-copy-button-text']").click()
         return clipboard.paste()
 
     @property
@@ -143,7 +152,7 @@ class MetaMaskAccountsPage(BasePage):
 
     def switch_assets(self) -> None:
         """Switch to assets tab"""
-        self.page.query_selector("//button[text()='Assets']").click()
+        self.page.query_selector("//*[@data-testid='home__asset-tab']/button").click()
 
     def switch_activity(self) -> None:
         """Switch to assets tab"""
@@ -155,8 +164,11 @@ class MetaMaskAccountsPage(BasePage):
             self.change_account(account)
         return float(
             self.page.wait_for_selector(
-                f"//button[contains(@title, '{token}')]/descendant::span[@class='asset-list-item__token-value']"
-            ).text_content()
+                f"//*[@data-testid='multichain-token-list-button']//*[text()='{token}']"
+                f"/../../../*[@data-testid='multichain-token-list-item-value']"
+            )
+            .text_content()
+            .split(" ")[0]
         )
 
     def check_funds_protection(self) -> None:

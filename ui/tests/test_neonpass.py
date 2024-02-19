@@ -2,6 +2,7 @@ import pathlib
 import typing as tp
 import uuid
 from dataclasses import dataclass
+from time import sleep
 
 import allure
 import pytest
@@ -136,8 +137,10 @@ class TestNeonPass:
         init_balance = metamask_page.get_balance(token)
         neonpass_page.connect_phantom()
         neonpass_page.connect_metamask()
+        # neonpass_page.set_transaction_fee(fee_type) fee functionality is not working in app
         neonpass_page.switch_platform_source(platform)
         neonpass_page.set_source_token(token.name, 0.001)
+        sleep(2)  # wait for all wallets to be loaded properly
         neonpass_page.confirm_tokens_transfer(platform, token)
 
         with allure.step("Assert the balance in the wallet changed"):

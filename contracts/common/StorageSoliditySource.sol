@@ -8,7 +8,7 @@ contract Storage {
     uint256 number;
 
     /**
-     * @dev Store value in variable
+     * @dev Stores value in variable
      * @param num value to store
      */
     function store(uint256 num) public {
@@ -16,11 +16,19 @@ contract Storage {
     }
 
     /**
-     * @dev Return value
+     * @dev Returns value
      * @return value of 'number'
      */
     function retrieve() public view returns (uint256) {
         return number;
+    }
+
+    /**
+     * @dev Returns code for given address
+     * @return value of '_addr.code'
+     */
+    function at(address _addr) public view returns (bytes memory) {
+        return _addr.code;
     }
 }
 

@@ -11,13 +11,6 @@ from utils.accounts import EthAccounts
 from utils.apiclient import JsonRPCSession
 from utils.helpers import wait_condition
 
-# test contract code to check eth_getCode method
-CONTRACT_CODE = (
-    "6060604052600080fd00a165627a7a72305820e75cae05548a56ec53108e39a532f0644e4b92aa900cc9f2cf98b7ab044539380029"
-)
-DEPLOY_CODE = "60606040523415600e57600080fd5b603580601b6000396000f300" + CONTRACT_CODE
-
-
 def store_value(sender_account, value, storage_contract, web3_client):
     nonce = web3_client.eth.get_transaction_count(sender_account.address)
     instruction_tx = storage_contract.functions.store(value).build_transaction(
@@ -50,8 +43,8 @@ def call_storage(sender_account, storage_contract, storage_value, request_type, 
     tx, receipt = retrieve_value(sender_account, storage_contract, web3_client)
 
     tx_obj = web3_client.make_raw_tx(
-        sender=sender_account.address,
-        recipient=storage_contract.address,
+        from_=sender_account.address,
+        to=storage_contract.address,
         amount=tx["value"],
         gas=hex(tx["gas"]),
         gas_price=hex(tx["gasPrice"]),
@@ -60,7 +53,6 @@ def call_storage(sender_account, storage_contract, storage_value, request_type, 
     )
     del tx_obj["chainId"]
     del tx_obj["nonce"]
-    tx_obj["value"] = hex(tx_obj["value"])
 
     if request_type == "blockNumber":
         request_value = hex(receipt[request_type])
@@ -78,17 +70,8 @@ class TestTracerHistoricalMethods:
     accounts: EthAccounts
     tracer_api: JsonRPCSession
 
-    @pytest.fixture
-    def storage_contract(self, storage_contract, accounts, web3_client) -> tp.Any:
-        sender_account = accounts[0]
-        if not TestTracerHistoricalMethods._contract:
-            contract = storage_contract
-            TestTracerHistoricalMethods._contract = contract
-        yield TestTracerHistoricalMethods._contract
-        store_value(sender_account, 0, TestTracerHistoricalMethods._contract, web3_client)
-
     def compare_values(self, value, value_to_compare):
-        return math.isclose(abs(round(int(value, 0) / 1e18, 9) - value_to_compare), 0.0, rel_tol=1e-9)
+        return math.isclose(abs(float.fromhex(value) - value_to_compare), 0.0, rel_tol=1e-9)
 
     def assert_invalid_params(self, response):
         assert "error" in response, "No errors in response"
@@ -133,7 +116,7 @@ class TestTracerHistoricalMethods:
         )
 
         store_value_3 = random.randint(0, 100)
-        tx_obj_3, request_value_3, _ = call_storage(self, storage_contract, store_value_3, request_type)
+        tx_obj_3, request_value_3, _ = call_storage(sender_account, storage_contract, store_value_3, request_type, self.web3_client)
         wait_condition(
             lambda: int(
                 self.tracer_api.send_rpc(
@@ -145,9 +128,10 @@ class TestTracerHistoricalMethods:
             timeout_sec=120,
         )
 
-    def test_eth_call_invalid_params(self, storage_contract):
+    def test_eth_call_invalid_params(self, storage_contract, web3_client):
+        sender_account = self.accounts[0]
         store_value_1 = random.randint(0, 100)
-        tx_obj, _, _ = call_storage(self, storage_contract, store_value_1, "blockHash")
+        tx_obj, _, _ = call_storage(sender_account, storage_contract, store_value_1, "blockHash", web3_client)
         response = self.tracer_api.send_rpc(
             method="eth_call", req_type="blockHash", params=[tx_obj, {"blockHash": "0x0000"}]
         )
@@ -361,27 +345,17 @@ class TestTracerHistoricalMethods:
         )
         self.assert_invalid_params(response)
 
-    def test_eth_get_code(self):
+    def test_eth_get_code(self, storage_contract_with_deploy_tx):
+        storage_contract_code = storage_contract_with_deploy_tx[0].functions.at(storage_contract_with_deploy_tx[1]["contractAddress"]).call().hex()
         request_type = "blockNumber"
-        sender_account = self.accounts[0]
-
-        tx = self.web3_client.make_raw_tx(
-            from_=sender_account.address,
-            amount=0,
-            data=bytes.fromhex(DEPLOY_CODE),
-        )
-        del tx["to"]
-        del tx["gas"]
-
-        receipt = self.web3_client.send_transaction(account=sender_account, transaction=tx)
-        assert receipt["status"] == 1
 
         wait_condition(
             lambda: (
                 self.tracer_api.send_rpc(
                     method="eth_getCode",
                     req_type=request_type,
-                    params=[receipt["contractAddress"], {request_type: hex(receipt[request_type] - 1)}],
+                    params=[storage_contract_with_deploy_tx[0].address, 
+                            {request_type: hex(storage_contract_with_deploy_tx[1]['blockNumber'] - 1)}],
                 )
             )["result"]
             == "",
@@ -393,10 +367,11 @@ class TestTracerHistoricalMethods:
                 self.tracer_api.send_rpc(
                     method="eth_getCode",
                     req_type="blockHash",
-                    params=[receipt["contractAddress"], {"blockHash": receipt["blockHash"].hex()}],
+                     params=[storage_contract_with_deploy_tx[0].address, 
+                             {request_type: hex(storage_contract_with_deploy_tx[1]['blockNumber'])}],
                 )
             )["result"]
-            == CONTRACT_CODE,
+            == storage_contract_code,
             timeout_sec=120,
         )
 
@@ -405,31 +380,19 @@ class TestTracerHistoricalMethods:
                 self.tracer_api.send_rpc(
                     method="eth_getCode",
                     req_type=request_type,
-                    params=[receipt["contractAddress"], {request_type: hex(receipt[request_type])}],
+                    params=[storage_contract_with_deploy_tx[0].address, 
+                            {request_type: hex(storage_contract_with_deploy_tx[1]['blockNumber'] + 1)}],
                 )
             )["result"]
-            == CONTRACT_CODE,
+            == storage_contract_code,
             timeout_sec=120,
         )
 
-    def test_eth_get_code_invalid_params(self):
-        sender_account = self.accounts[0]
-        tx = self.web3_client.make_raw_tx(
-            sender_account.address,
-            amount=0,
-            nonce=self.web3_client.eth.get_transaction_count(sender_account.address),
-            data=bytes.fromhex(DEPLOY_CODE),
-        )
-        del tx["to"]
-        del tx["gas"]
-
-        receipt = self.web3_client.send_transaction(account=sender_account, transaction=tx)
-        assert receipt["status"] == 1
-
+    def test_eth_get_code_invalid_params(self, storage_contract_with_deploy_tx):
         response = self.tracer_api.send_rpc(
-            method="eth_getCode", req_type="blockHash", params=[receipt["contractAddress"], {"blockHash": "0x0002"}]
+            method="eth_getCode", req_type="blockHash", 
+            params=[storage_contract_with_deploy_tx[0].address, {"blockHash": "0x0002"}]
         )
-
         self.assert_invalid_params(response)
 
     def test_neon_revision(self):

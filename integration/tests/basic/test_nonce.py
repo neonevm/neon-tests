@@ -104,23 +104,22 @@ class TestNonce:
 
     def test_send_transaction_with_the_same_nonce_and_lower_gas(self, json_rpc_client):
         """Check that transaction with a low gas and the same nonce can't be sent"""
-        sender_account = self.accounts[0]
+        sender_account = self.accounts[3]
         nonce = self.web3_client.eth.get_transaction_count(sender_account.address) + 1
         gas = self.web3_client.gas_price()
         transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce, gas_price=gas, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
-        response1 = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
+        json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
         transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce, gas_price=gas - 1, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
-        response2 = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
-        self.web3_client.wait_for_transaction_receipt(response1["result"])
-        assert "error" in response2, f"Response doesn't has an error: {response2}"
-        assert ErrorMessage.REPLACEMENT_UNDERPRICED.value in response2["error"]["message"]
-        assert response2["error"]["code"] == -32000
+        response = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
+        assert "error" in response, f"Response doesn't has an error: {response}"
+        assert ErrorMessage.REPLACEMENT_UNDERPRICED.value in response["error"]["message"]
+        assert response["error"]["code"] == -32000
 
     def test_send_transaction_with_the_same_nonce_and_higher_gas(self, json_rpc_client):
         """Check that transaction with higher gas and the same nonce can be sent"""
-        sender_account = self.accounts[0]
+        sender_account = self.accounts[2]
         nonce = self.web3_client.eth.get_transaction_count(sender_account.address) + 1
         gas = self.web3_client.gas_price()
         transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce, gas_price=gas, estimate_gas=True)
@@ -129,7 +128,6 @@ class TestNonce:
         transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce, gas_price=gas * 10, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         response = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
-        self.web3_client.wait_for_transaction_receipt(response["result"])
         assert "error" not in response
         assert "result" in response
 

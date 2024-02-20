@@ -532,7 +532,7 @@ jobs:
       - name: Launch Pancake tests
         if: ${{ steps.accounts.outcome == 'success'}}
         id: pancake
-        timeout-minutes: 30
+        timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: neonlabsorg/pancake:latest

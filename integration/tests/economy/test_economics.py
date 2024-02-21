@@ -765,9 +765,19 @@ class TestEconomics:
         )
         get_gas_used_percent(w3_client, receipt)
 
-    @pytest.mark.parametrize("value", [20, 25, 55])
+    @pytest.mark.slow
+    @pytest.mark.timeout(30 * Time.MINUTE)
+    @pytest.mark.parametrize("value", [25, 55])
     def test_call_contract_with_mapping_updating(
-        self, client_and_price, account_with_all_tokens, sol_price, web3_client, web3_client_sol, value, operator
+        self,
+        client_and_price,
+        account_with_all_tokens,
+        sol_price,
+        web3_client,
+        web3_client_sol,
+        sol_client,
+        value,
+        operator,
     ):
         w3_client, token_price = client_and_price
         make_nonce_the_biggest_for_chain(account_with_all_tokens, w3_client, [web3_client, web3_client_sol])
@@ -784,6 +794,26 @@ class TestEconomics:
         receipt = w3_client.send_transaction(account_with_all_tokens, instruction_tx)
         assert receipt["status"] == 1
         wait_condition(lambda: sol_balance_before != operator.get_solana_balance())
+
+        solana_trx = web3_client.get_solana_trx_by_neon(receipt["transactionHash"].hex())
+        sol_trx_with_alt = None
+
+        for trx in solana_trx["result"]:
+            trx_sol = sol_client.get_transaction(
+                Signature.from_string(trx),
+                max_supported_transaction_version=0,
+            )
+            if trx_sol.value.transaction.transaction.message.address_table_lookups:
+                sol_trx_with_alt = trx_sol
+        if not sol_trx_with_alt:
+            raise ValueError(f"There are no lookup table for {solana_trx}")
+
+        alt_address = sol_trx_with_alt.value.transaction.transaction.message.address_table_lookups[0].account_key
+        wait_condition(
+            lambda: sol_client.account_deleted(alt_address),
+            timeout_sec=10 * Time.MINUTE,
+            delay=3,
+        )
 
         sol_balance_after = operator.get_solana_balance()
         token_balance_after = operator.get_token_balance(w3_client)

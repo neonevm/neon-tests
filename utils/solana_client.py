@@ -195,3 +195,13 @@ class SolanaClient(solana.rpc.api.Client):
         except TimeoutError:
             return None
         return self.get_transaction(Signature.from_string(tx), max_supported_transaction_version=0)
+
+    def account_deleted(self, account_address) -> bool:
+        try:
+            account_info = self.get_account_info(PublicKey(account_address))
+            if account_info.value is None:
+                return True
+            else:
+                return False
+        except Exception as e:
+            print(f"An error occurred: {e}")

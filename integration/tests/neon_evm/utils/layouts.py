@@ -12,7 +12,7 @@ HOLDER_ACCOUNT_INFO_LAYOUT = Struct(
 
 FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT = Struct(
     "tag" / Int8ul,
-    "revision" / Int32ul,
+    "nothing" / Int8ul,
     "owner" / Bytes(32),
     "hash" / Bytes(32),
 )

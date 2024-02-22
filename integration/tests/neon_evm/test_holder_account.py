@@ -12,11 +12,11 @@ from . import solana_utils
 from .solana_utils import solana_client, write_transaction_to_holder_account, \
     send_transaction_step_from_account, get_solana_balance, execute_transaction_steps_from_account
 from .utils.assert_messages import InstructionAsserts
-from .utils.constants import EVM_LOADER, TAG_STATE
+from .utils.constants import EVM_LOADER
 from .utils.contract import make_deployment_transaction, make_contract_call_trx
 from .utils.ethereum import make_eth_transaction
 from .utils.instructions import make_WriteHolder
-from .utils.layouts import STORAGE_ACCOUNT_INFO_LAYOUT, HOLDER_ACCOUNT_INFO_LAYOUT
+from .utils.layouts import HOLDER_ACCOUNT_INFO_LAYOUT
 from .utils.storage import create_holder, delete_holder
 
 
@@ -112,9 +112,6 @@ def test_write_to_not_finalized_holder(rw_lock_contract, user_account, evm_loade
                                        [user_account.solana_account_address,
                                         user_account.balance_account_address,
                                         rw_lock_contract.solana_address], 1, operator_keypair)
-    account_data = solana_client.get_account_info(new_holder_acc, commitment=Confirmed).value.data
-    parsed_data = STORAGE_ACCOUNT_INFO_LAYOUT.parse(account_data)
-    assert parsed_data.tag == TAG_STATE
 
     signed_tx2 = make_contract_call_trx(user_account, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1])
 

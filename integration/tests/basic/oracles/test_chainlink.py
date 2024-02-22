@@ -5,6 +5,7 @@ import allure
 import pytest
 import requests
 
+from clickfile import EXTERNAL_CONTRACT_PATH
 from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts
 
@@ -25,13 +26,15 @@ class TestChainlink:
         sender_account = self.accounts[0]
         """Deploy chainlink contract, then get the latest price for SOL/USD"""
         contract, _ = self.web3_client.deploy_and_get_contract(
-            contract="./external/hoodies_chainlink/ChainlinkOracle",
+            contract="./external/hoodies_chainlink/contracts/ChainlinkOracle",
             version="0.8.19",
             account=sender_account,
             constructor_args=[SOL_USD_ID],
             import_remapping={
-                "@chainlink": "node_modules/@chainlink",
-                "solidity-bytes-utils": "node_modules/solidity-bytes-utils",
+                "@chainlink": str(EXTERNAL_CONTRACT_PATH / "hoodies_chainlink/node_modules/@chainlink"),
+                "solidity-bytes-utils": str(
+                    EXTERNAL_CONTRACT_PATH / "hoodies_chainlink/node_modules/solidity-bytes-utils"
+                ),
             },
         )
         version = contract.functions.version().call()

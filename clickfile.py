@@ -401,25 +401,16 @@ def get_evm_pinned_version(branch):
     return tag
 
 
-def update_contracts_from_git(git_url: str, local_dir_name: str, branch="develop", contracts_dir="contracts"):
-    download_dir = "tmp_download"
-    download_path = EXTERNAL_CONTRACT_PATH / download_dir
+def update_contracts_from_git(git_url: str, local_dir_name: str, branch="develop"):
+    download_path = EXTERNAL_CONTRACT_PATH / local_dir_name
     click.echo(f"Downloading contracts from {git_url} {branch}")
     if download_path.exists():
         shutil.rmtree(download_path)
-    command = f"git clone --branch {branch} -n --depth=1 --filter=tree:0 {git_url} {download_path}"
-    subprocess.check_call(command, shell=True)
-    os.chdir(download_path)
     commands = f"""
-        git sparse-checkout set --no-cone {contracts_dir}
-        git checkout
+        git clone --branch {branch} {git_url} {download_path}
+        npm ci --prefix {download_path}
     """
     subprocess.check_call(commands, shell=True)
-    if (EXTERNAL_CONTRACT_PATH / local_dir_name).exists():
-        shutil.rmtree(EXTERNAL_CONTRACT_PATH / local_dir_name)
-    shutil.move(contracts_dir, EXTERNAL_CONTRACT_PATH / local_dir_name)
-    os.chdir(EXTERNAL_CONTRACT_PATH)
-    shutil.rmtree(download_path)
     click.echo(f"Contracts downloaded from {git_url} {branch} to {EXTERNAL_CONTRACT_PATH / local_dir_name}")
 
 

@@ -65,7 +65,8 @@ RUN chmod a+x run-full-test-suite.sh && \
     git -C compatibility/openzeppelin-contracts checkout origin/${OZ_BRANCH}  && \
 # Install oz tests requirements
     python3 clickfile.py requirements -d devel && \
-    npm install --save-dev hardhat
+    npm install --save-dev hardhat && \
+    npm i
 
 # Download solc separatly as hardhat implementation is flucky
 ENV DOWNLOAD_PATH="/root/.cache/hardhat-nodejs/compilers-v2/linux-amd64" \

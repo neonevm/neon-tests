@@ -25,17 +25,23 @@ class TestChainlink:
     def test_deploy_contract_chainlink_network(self):
         sender_account = self.accounts[0]
         """Deploy chainlink contract, then get the latest price for SOL/USD"""
+        remapping = {
+            "@chainlink": str(EXTERNAL_CONTRACT_PATH / "hoodies_chainlink/node_modules/@chainlink"),
+            "solidity-bytes-utils": str(EXTERNAL_CONTRACT_PATH / "hoodies_chainlink/node_modules/solidity-bytes-utils"),
+        }
+        utils_lib, _ = self.web3_client.deploy_and_get_contract(
+            contract="./external/hoodies_chainlink/contracts/libraries/Utils.sol",
+            version="0.8.19",
+            account=sender_account,
+            import_remapping=remapping,
+        )
         contract, _ = self.web3_client.deploy_and_get_contract(
             contract="./external/hoodies_chainlink/contracts/ChainlinkOracle",
             version="0.8.19",
             account=sender_account,
             constructor_args=[SOL_USD_ID],
-            import_remapping={
-                "@chainlink": str(EXTERNAL_CONTRACT_PATH / "hoodies_chainlink/node_modules/@chainlink"),
-                "solidity-bytes-utils": str(
-                    EXTERNAL_CONTRACT_PATH / "hoodies_chainlink/node_modules/solidity-bytes-utils"
-                ),
-            },
+            import_remapping=remapping,
+            libraries={"contracts/external/hoodies_chainlink/contracts/libraries/Utils.sol:Utils": utils_lib.address},
         )
         version = contract.functions.version().call()
         description = contract.functions.description().call()

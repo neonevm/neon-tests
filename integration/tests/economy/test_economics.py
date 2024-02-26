@@ -667,6 +667,7 @@ class TestEconomics:
         check_alt_on(web3_client, sol_client, receipt, accounts_quantity)
 
         sol_trx_with_alt = get_sol_trx_with_alt(web3_client, sol_client, receipt)
+        assert sol_trx_with_alt is not None, "There are no lookup table for alt transaction"
         operator_key = PublicKey(sol_trx_with_alt.value.transaction.transaction.message.account_keys[0])
 
         alt_address = sol_trx_with_alt.value.transaction.transaction.message.address_table_lookups[0].account_key
@@ -789,8 +790,8 @@ class TestEconomics:
         assert receipt["status"] == 1
         wait_condition(lambda: sol_balance_before != operator.get_solana_balance())
 
-        if value >= 25:  # alt tables created only for 25 and more
-            sol_trx_with_alt = get_sol_trx_with_alt(web3_client, sol_client, receipt)
+        sol_trx_with_alt = get_sol_trx_with_alt(web3_client, sol_client, receipt)
+        if sol_trx_with_alt is not None:
             alt_address = sol_trx_with_alt.value.transaction.transaction.message.address_table_lookups[0].account_key
             wait_condition(
                 lambda: not sol_client.account_exists(alt_address),

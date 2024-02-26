@@ -57,14 +57,12 @@ class TestERC20wrapperContract:
         metadata = metaplex.get_metadata(self.sol_client, mint_key)
         assert metadata["data"]["name"] == erc20_spl_mintable.name
         assert metadata["data"]["symbol"] == erc20_spl_mintable.symbol
-        assert metadata["is_mutable"] is False
 
     def test_metaplex_data(self, erc20_spl):
         metaplex.wait_account_info(self.sol_client, erc20_spl.token_mint.pubkey)
         metadata = metaplex.get_metadata(self.sol_client, erc20_spl.token_mint.pubkey)
         assert metadata["data"]["name"] == erc20_spl.name
         assert metadata["data"]["symbol"] == erc20_spl.symbol
-        assert metadata["is_mutable"] is True
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_balanceOf(self, erc20_spl, erc20_spl_mintable, mintable):

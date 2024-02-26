@@ -765,7 +765,6 @@ class TestEconomics:
         )
         get_gas_used_percent(w3_client, receipt)
 
-    @pytest.mark.skip(reason="https://neonlabs.atlassian.net/browse/NDEV-2136")
     @pytest.mark.parametrize("value", [20, 25, 55])
     def test_call_contract_with_mapping_updating(
         self, client_and_price, account_with_all_tokens, sol_price, web3_client, web3_client_sol, value, operator

@@ -23,7 +23,11 @@ runs:
       shell: bash
       if: github.ref_name !='develop' || github.ref_name !='master'
       run: |
+         if [[ "${{ github.ref }}" =~ "refs/heads/"[vt][0-9]+\.[0-9]+\.x ]]; then
           value=${{ github.ref_name }}
+         elif [[ "${{ github.head_ref }}" != "" ]]; then # pr to feature/develop branch
+          value=${{ github.head_ref }}
+         fi;
           echo "value=${value}"
           echo "value=${value}" >> $GITHUB_OUTPUT
     - name: Build and push neon tests docker image

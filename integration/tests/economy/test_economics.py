@@ -789,13 +789,14 @@ class TestEconomics:
         assert receipt["status"] == 1
         wait_condition(lambda: sol_balance_before != operator.get_solana_balance())
 
-        sol_trx_with_alt = get_sol_trx_with_alt(web3_client, sol_client, receipt)
-        alt_address = sol_trx_with_alt.value.transaction.transaction.message.address_table_lookups[0].account_key
-        wait_condition(
-            lambda: not sol_client.account_exists(alt_address),
-            timeout_sec=10 * Time.MINUTE,
-            delay=3,
-        )
+        if value >= 25:  # alt tables created only for 25 and more
+            sol_trx_with_alt = get_sol_trx_with_alt(web3_client, sol_client, receipt)
+            alt_address = sol_trx_with_alt.value.transaction.transaction.message.address_table_lookups[0].account_key
+            wait_condition(
+                lambda: not sol_client.account_exists(alt_address),
+                timeout_sec=10 * Time.MINUTE,
+                delay=3,
+            )
 
         sol_balance_after = operator.get_solana_balance()
         token_balance_after = operator.get_token_balance(w3_client)

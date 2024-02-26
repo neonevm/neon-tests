@@ -326,7 +326,7 @@ class TestTransactionStepFromAccount:
                 )
             },
         )
-        signed_tx = make_contract_call_trx(sender_with_tokens, calculator_caller_contract, "callCalculator()", [],
+        signed_tx = make_contract_call_trx(sender_with_tokens, calculator_caller_contract, "callCalculator()",
                                            access_list=access_list)
         write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 

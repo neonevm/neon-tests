@@ -294,7 +294,7 @@ class TestExecuteTrxFromInstruction:
                 )
             },
         )
-        signed_tx = make_contract_call_trx(sender_with_tokens, calculator_caller_contract, "callCalculator()", [],
+        signed_tx = make_contract_call_trx(sender_with_tokens, calculator_caller_contract, "callCalculator()",
                                            access_list=access_list)
 
         resp = execute_trx_from_instruction(operator_keypair, evm_loader, treasury_pool.account, treasury_pool.buffer,
@@ -308,7 +308,7 @@ class TestExecuteTrxFromInstruction:
 
     def test_old_trx_type_with_leading_zeros(self, sender_with_tokens, operator_keypair, evm_loader,
                                              calculator_caller_contract, calculator_contract, treasury_pool):
-        signed_tx = make_contract_call_trx(sender_with_tokens, calculator_caller_contract, "callCalculator()", [])
+        signed_tx = make_contract_call_trx(sender_with_tokens, calculator_caller_contract, "callCalculator()")
         new_raw_trx = HexBytes(bytes([0]) + signed_tx.rawTransaction)
 
         signed_tx_new = SignedTransaction(

@@ -56,8 +56,7 @@ class TestSolcCompatibility:
         check_erc20_transfer_function(web3_client, erc20_solc, class_account, new_account)
 
     def test_deploy_contract_by_contract(self, recursion_factory, class_account, web3_client):
-        tx = web3_client.make_raw_tx(class_account.address, gas=0)
-        del tx["gas"]
+        tx = web3_client.make_raw_tx(class_account.address, estimate_gas=False)
         salt = generate_text(min_len=5, max_len=7)
         instruction_tx = recursion_factory.functions.deploySecondContractViaCreate2(salt).build_transaction(tx)
         receipt = web3_client.send_transaction(class_account, instruction_tx)

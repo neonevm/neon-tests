@@ -105,7 +105,7 @@ class TestNonce:
     @pytest.mark.only_stands  #  This doesn't work on devnet because sticky session is not enabled
     def test_send_transaction_with_the_same_nonce_and_lower_gas(self, json_rpc_client, new_account):
         """Check that transaction with a low gas and the same nonce can't be sent"""
-        sender_account = new_account
+        sender_account = self.accounts[3]
         nonce = self.web3_client.eth.get_transaction_count(sender_account.address) + 1
         gas = self.web3_client.gas_price()
         tx1 = self.web3_client.make_raw_tx(sender_account, nonce=nonce, gas_price=gas, estimate_gas=True)
@@ -121,7 +121,7 @@ class TestNonce:
 
     def test_send_transaction_with_the_same_nonce_and_higher_gas(self, json_rpc_client):
         """Check that transaction with higher gas and the same nonce can be sent"""
-        sender_account = self.accounts[0]
+        sender_account = self.accounts[2]
         nonce = self.web3_client.eth.get_transaction_count(sender_account.address) + 1
         gas = self.web3_client.gas_price()
         transaction = self.web3_client.make_raw_tx(sender_account, nonce=nonce, gas_price=gas, estimate_gas=True)
@@ -156,6 +156,7 @@ class TestNonce:
         params = [signed_tx.rawTransaction.hex()]
         json_rpc_client.send_rpc("eth_sendRawTransaction", params)
         response = json_rpc_client.send_rpc("eth_sendRawTransaction", params)
+        self.web3_client.wait_for_transaction_receipt(response["result"])
         assert "error" not in response
         assert "result" in response
 
@@ -166,7 +167,7 @@ class TestNonce:
         transaction = self.web3_client.make_raw_tx(sender_account, amount=1, nonce=nonce, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         response = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
-        assert response["result"], f"Response doesn't have result field: {response}"
+        assert "result" in response and response["result"], f"Response doesn't have result field: {response}"
         receipt = self.web3_client.wait_for_transaction_receipt(response["result"])
         block_num = receipt["blockNumber"]
         wait_finalized_block(json_rpc_client, block_num)

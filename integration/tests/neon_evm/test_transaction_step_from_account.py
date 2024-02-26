@@ -383,7 +383,7 @@ class TestAccountStepContractCallContractInteractions:
                                                       [rw_lock_caller.solana_address,
                                                        rw_lock_contract.solana_address,
                                                        session_user.solana_account_address,
-                                                       session_user.balance_account_address], 1000)
+                                                       session_user.balance_account_address])
 
         check_holder_account_tag(holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
         check_transaction_logs_have_text(resp.value.transaction.transaction.signatures[0], "exit_status=0x11")
@@ -420,7 +420,6 @@ class TestAccountStepContractCallContractInteractions:
                                session_user.balance_account_address,
                                rw_lock_contract.solana_address,
                                rw_lock_caller.solana_address]
-        print(result)
         for acc in result['solana_accounts']:
             additional_accounts.append(PublicKey(acc['pubkey']))
 

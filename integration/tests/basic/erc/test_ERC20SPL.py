@@ -476,6 +476,7 @@ class TestERC20wrapperContract:
         with pytest.raises(ValueError, match=msg):
             erc20.transfer_from(new_account, erc20.account.address, new_account.address, 1, **param)
 
+    @pytest.mark.only_stands
     @pytest.mark.parametrize("mintable", [True, False])
     def test_transferSolana(
         self,
@@ -522,6 +523,7 @@ class TestERC20wrapperContract:
         assert contract_balance_before - contract_balance_after == amount, "Contract balance is not correct"
         assert sol_balance_after == sol_balance_before, "Sol balance is changed"
 
+    @pytest.mark.only_stands
     @pytest.mark.parametrize("mintable", [True, False])
     def test_approveSolana(
         self,

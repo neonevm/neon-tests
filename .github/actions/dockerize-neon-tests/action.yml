@@ -8,10 +8,6 @@ inputs:
     description: 'branch name for oz tests'
     required: true
     default: master
-  branch_tag:
-    description: 'tag for feature or version branch'
-    required: false
-    default: ''
   docker_username:
     description: 'docker hub username'
     required: true
@@ -22,6 +18,14 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Define feature or version branch
+      id: feature_branch
+      shell: bash
+      if: github.ref_name !='develop' || github.ref_name !='master'
+      run: |
+          value=${{ github.ref_name }}
+          echo "value=${value}"
+          echo "value=${value}" >> $GITHUB_OUTPUT
     - name: Build and push neon tests docker image
       id: docker_pipeline
       shell: bash
@@ -29,12 +33,11 @@ runs:
         image_id="neonlabsorg/neon_tests"
         delimeter=$(printf "%0.s-" {1..30})
         echo " ${delimeter} Build new docker image ${image_id} ${delimeter}"
-        docker build . --no-cache --tag ${image_id}:${{ inputs.image_tag }} --build-arg OZ_BRANCH='${{ inputs.oz_branch }}'
-        if [[ "${{ inputs.branch_tag }}" != ''  ]]; then
-          docker tag ${image_id}:${{ inputs.image_tag }} ${image_id}:${{ inputs.branch_tag }}
+        docker build . --no-cache --tag ${image_id}:${{ inputs.image_tag }} --build-arg OZ_BRANCH='${{ inputs.oz_branch }}' --build-arg CONTRACTS_BRANCH="${{ steps.feature_branch.outputs.value || 'develop'}}"
+        if [[ "${{ steps.feature_branch.outputs.value }}" != ''  ]]; then
+          docker tag ${image_id}:${{ inputs.image_tag }} ${image_id}:${{ steps.feature_branch.outputs.value }}
         fi;
         echo "${delimeter} Login into Docker registry as ${{ inputs.docker_username }} ${delimeter}"
         echo "${{ inputs.docker_password }}" | docker login -u ${{ inputs.docker_username }} --password-stdin
         echo "${delimeter} Push image ${image_id} to Docker registry ${delimeter}"
         docker push --all-tags ${image_id}
-        

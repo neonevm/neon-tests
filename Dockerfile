@@ -50,7 +50,8 @@ COPY ./deploy/oz/run-full-test-suite.sh /opt/neon-tests/
 
 WORKDIR /opt/neon-tests
 ADD ./ /opt/neon-tests
-RUN python3 ./clickfile.py update-contracts
+ARG CONTRACTS_BRANCH
+RUN python3 ./clickfile.py update-contracts --branch ${CONTRACTS_BRANCH}
 
 # Install UI requirements
 RUN python3 ./clickfile.py requirements -d ui

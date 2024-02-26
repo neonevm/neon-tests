@@ -24,8 +24,8 @@ class TestAccountRevision:
         self, operator_keypair, treasury_pool, sender_with_tokens: Caller, session_user: Caller, evm_loader
     ):
         trx_count = 6
-        sender_revisions_before = evm_loader.get_balance_account_revision(sender_with_tokens.balance_account_address)
-        recipient_revisions_before = evm_loader.get_balance_account_revision(session_user.balance_account_address)
+        sender_revision_before = evm_loader.get_balance_account_revision(sender_with_tokens.balance_account_address)
+        recipient_revision_before = evm_loader.get_balance_account_revision(session_user.balance_account_address)
         for i in range(trx_count):
             signed_tx = make_eth_transaction(session_user.eth_address, None, sender_with_tokens, 10)
             execute_trx_from_instruction(
@@ -42,10 +42,10 @@ class TestAccountRevision:
                 operator_keypair,
             )
 
-        sender_revisions_after = evm_loader.get_balance_account_revision(sender_with_tokens.balance_account_address)
-        recipient_revisions_after = evm_loader.get_balance_account_revision(session_user.balance_account_address)
-        assert sender_revisions_after == sender_revisions_before + trx_count
-        assert recipient_revisions_after == recipient_revisions_before + trx_count
+        sender_revision_after = evm_loader.get_balance_account_revision(sender_with_tokens.balance_account_address)
+        recipient_revision_after = evm_loader.get_balance_account_revision(session_user.balance_account_address)
+        assert sender_revision_after == sender_revision_before + trx_count
+        assert recipient_revision_after == recipient_revision_before + trx_count
 
     def test_call_contract_with_changing_data(
         self,
@@ -60,9 +60,9 @@ class TestAccountRevision:
     ):
         trx_count = 5
         data_storage_acc_count = 3
-        sender_revisions_before = evm_loader.get_balance_account_revision(session_user.balance_account_address)
-        contract_revisions_before = evm_loader.get_contract_account_revision(rw_lock_contract.solana_address)
-        contract2_revisions_before = evm_loader.get_contract_account_revision(rw_lock_caller.solana_address)
+        sender_revision_before = evm_loader.get_balance_account_revision(session_user.balance_account_address)
+        contract_revision_before = evm_loader.get_contract_account_revision(rw_lock_contract.solana_address)
+        contract2_revision_before = evm_loader.get_contract_account_revision(rw_lock_caller.solana_address)
         additional_accounts = [
             session_user.balance_account_address,
             rw_lock_contract.solana_address,
@@ -84,18 +84,18 @@ class TestAccountRevision:
             execute_transaction_steps_from_account(
                 operator_keypair, evm_loader, treasury_pool, holder_acc, acc_from_emulation
             )
-        sender_revisions_after = evm_loader.get_balance_account_revision(session_user.balance_account_address)
-        contract_revisions_after = evm_loader.get_contract_account_revision(rw_lock_contract.solana_address)
-        contract2_revisions_after = evm_loader.get_contract_account_revision(rw_lock_caller.solana_address)
-        assert sender_revisions_before == sender_revisions_after
-        assert contract_revisions_before == contract_revisions_after
-        assert contract2_revisions_before == contract2_revisions_after
+        sender_revision_after = evm_loader.get_balance_account_revision(session_user.balance_account_address)
+        contract_revision_after = evm_loader.get_contract_account_revision(rw_lock_contract.solana_address)
+        contract2_revision_after = evm_loader.get_contract_account_revision(rw_lock_caller.solana_address)
+        assert sender_revision_before == sender_revision_after
+        assert contract_revision_before == contract_revision_after
+        assert contract2_revision_before == contract2_revision_after
 
         data_accounts = set(acc_from_emulation) - set(additional_accounts)
         assert len(data_accounts) == data_storage_acc_count
         for acc in data_accounts:
-            data_acc_revisions_after = evm_loader.get_contract_account_revision(acc)
-            assert data_acc_revisions_after == trx_count
+            data_acc_revision_after = evm_loader.get_contract_account_revision(acc)
+            assert data_acc_revision_after == trx_count
 
     def test_2_users_call_one_contract_with_different_storage_accounts(
         self,
@@ -114,8 +114,8 @@ class TestAccountRevision:
         user2 = user_account
         holder1 = holder_acc
         holder2 = new_holder_acc
-        user1_revisions_before = evm_loader.get_balance_account_revision(user1.balance_account_address)
-        user2_revisions_before = evm_loader.get_balance_account_revision(user2.balance_account_address)
+        user1_revision_before = evm_loader.get_balance_account_revision(user1.balance_account_address)
+        user2_revision_before = evm_loader.get_balance_account_revision(user2.balance_account_address)
         signed_tx1 = make_contract_call_trx(
             user1, rw_lock_contract, "update_storage_map(uint256)", [data_storage_acc_count]
         )
@@ -134,7 +134,8 @@ class TestAccountRevision:
             [data_storage_acc_count],
         )
         acc_from_emulation1 = [PublicKey(item["pubkey"]) for item in emulate_result1["solana_accounts"]]
-
+        data_accounts1 = list(set(acc_from_emulation1) - {user1.balance_account_address,
+                                                          rw_lock_contract.solana_address})
         signed_tx2 = make_contract_call_trx(
             user2, rw_lock_contract, "update_storage_map(uint256)", [data_storage_acc_count]
         )
@@ -146,7 +147,8 @@ class TestAccountRevision:
             [data_storage_acc_count],
         )
         acc_from_emulation2 = [PublicKey(item["pubkey"]) for item in emulate_result2["solana_accounts"]]
-
+        data_accounts2 = list(set(acc_from_emulation2) - {user2.balance_account_address,
+                                                          rw_lock_contract.solana_address})
         write_transaction_to_holder_account(signed_tx2, holder2, operator_keypair)
 
         send_transaction_steps(holder1, acc_from_emulation1)
@@ -162,8 +164,11 @@ class TestAccountRevision:
         check_holder_account_tag(holder2, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
         user1_revision_after = evm_loader.get_balance_account_revision(user1.balance_account_address)
         user2_revision_after = evm_loader.get_balance_account_revision(user2.balance_account_address)
-        assert user1_revisions_before == user1_revision_after
-        assert user2_revisions_before == user2_revision_after
+        assert user1_revision_before == user1_revision_after
+        assert user2_revision_before == user2_revision_after
+        for acc in data_accounts1 + data_accounts2:
+            data_acc_revision = evm_loader.get_contract_account_revision(acc)
+            assert data_acc_revision == 1
 
     # TODO: add case (4, 0) after fixing NDEV-2698
     @pytest.mark.parametrize("storage_data_len, expected_count_data_acc", [(60, 1)])
@@ -225,16 +230,16 @@ class TestAccountRevision:
                 rw_lock_contract.balance_account_address,
             ]
             data_account = list(set(acc_from_emulation1) - set(additional_accounts))[0]
-            data_acc_revisions_after_user1_finished = evm_loader.get_contract_account_revision(data_account)
-            assert data_acc_revisions_after_user1_finished == 1
+            data_acc_revision_after_user1_finished = evm_loader.get_contract_account_revision(data_account)
+            assert data_acc_revision_after_user1_finished == 1
 
         # repeat steps for second user because revision for data accounts is changed
         resp2 = send_transaction_steps(holder2, acc_from_emulation2)
         check_transaction_logs_have_text(resp2.value.transaction.transaction.signatures[0], "exit_status=0x11")
 
         if expected_count_data_acc > 0:
-            data_acc_revisions_after_user2_finished = evm_loader.get_contract_account_revision(data_account)
-            assert data_acc_revisions_after_user2_finished == 2
+            data_acc_revision_after_user2_finished = evm_loader.get_contract_account_revision(data_account)
+            assert data_acc_revision_after_user2_finished == 2
 
     def test_2_users_sent_neons_to_the_same_recipients(
         self,
@@ -349,8 +354,8 @@ class TestAccountRevision:
         check_transaction_logs_have_text(resp.value.transaction.transaction.signatures[0], "exit_status=0x11")
         check_holder_account_tag(holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
         for acc in data_accounts:
-            data_acc_revisions_after = evm_loader.get_contract_account_revision(acc)
-            assert data_acc_revisions_after == 3
+            data_acc_revision_after = evm_loader.get_contract_account_revision(acc)
+            assert data_acc_revision_after == 3
 
     def test_1_user_send_2_parallel_trx_with_neon_balance_change(
         self,
@@ -366,7 +371,7 @@ class TestAccountRevision:
         recipients = [make_new_user(evm_loader), make_new_user(evm_loader)]
         contract = deploy_contract(operator_keypair, session_user, "transfers", evm_loader, treasury_pool)
 
-        sender_revisions_before = evm_loader.get_balance_account_revision(session_user.balance_account_address)
+        sender_revision_before = evm_loader.get_balance_account_revision(session_user.balance_account_address)
         recipients_eth_addresses = [rec.eth_address for rec in recipients]
         signed_tx1 = make_contract_call_trx(
             session_user,
@@ -421,4 +426,4 @@ class TestAccountRevision:
         check_transaction_logs_have_text(resp.value.transaction.transaction.signatures[0], "exit_status=0x11")
         check_holder_account_tag(holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
         sender_revision_after = evm_loader.get_balance_account_revision(session_user.balance_account_address)
-        assert sender_revisions_before == sender_revision_after - 2
+        assert sender_revision_before == sender_revision_after - 2

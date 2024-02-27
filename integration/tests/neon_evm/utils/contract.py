@@ -90,6 +90,7 @@ def make_contract_call_trx(
     signed_tx = make_eth_transaction(
         contract.eth_address, data, user, value=value, chain_id=chain_id, access_list=access_list, type=trx_type
     )
+    return signed_tx
 
 
 def deploy_contract(

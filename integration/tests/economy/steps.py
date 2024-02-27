@@ -45,7 +45,7 @@ def check_alt_on(web3_client, sol_client, receipt, accounts_quantity):
             Signature.from_string(solana_trx["result"][0]),
             max_supported_transaction_version=0,
         )
-                != GetTransactionResp(None)
+        != GetTransactionResp(None)
     )
     trx = sol_client.get_transaction(
         Signature.from_string(solana_trx["result"][0]),
@@ -83,3 +83,30 @@ def wait_for_block(client, block, timeout=60):
             time.sleep(3)
         time.sleep(3)
     raise TimeoutError("Block not available for slot")
+
+
+@allure.step("Get solana transaction with ALT")
+def get_sol_trx_with_alt(web3_client, sol_client, web3_transaction_receipt):
+    solana_trx = web3_client.get_solana_trx_by_neon(web3_transaction_receipt["transactionHash"].hex())
+    sol_trx_with_alt = None
+
+    wait_condition(
+        lambda: sol_client.get_transaction(
+            Signature.from_string(solana_trx["result"][0]),
+            max_supported_transaction_version=0,
+        )
+        != GetTransactionResp(None)
+    )
+
+    for trx in solana_trx["result"]:
+        trx_sol = sol_client.get_transaction(
+            Signature.from_string(trx),
+            max_supported_transaction_version=0,
+        )
+        if trx_sol.value.transaction.transaction.message.address_table_lookups:
+            sol_trx_with_alt = trx_sol
+    if not sol_trx_with_alt:
+        print(f"There are no lookup table for {solana_trx}")
+        return None
+
+    return sol_trx_with_alt

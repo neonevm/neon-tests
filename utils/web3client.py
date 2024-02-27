@@ -234,6 +234,7 @@ class Web3Client:
         contract_name: tp.Optional[str] = None,
         constructor_args: tp.Optional[tp.Any] = None,
         import_remapping: tp.Optional[dict] = None,
+        libraries: tp.Optional[dict] = None,
         gas: tp.Optional[int] = 0,
         value=0,
     ) -> tp.Tuple[tp.Any, web3.types.TxReceipt]:
@@ -242,6 +243,7 @@ class Web3Client:
             version,
             contract_name=contract_name,
             import_remapping=import_remapping,
+            libraries=libraries,
         )
 
         contract_deploy_tx = self.deploy_contract(

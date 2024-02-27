@@ -21,7 +21,7 @@ class ERC20Wrapper:
         symbol,
         sol_client,
         solana_account,
-        decimals=18,
+        decimals=9,
         evm_loader_id=None,
         account=None,
         mintable=True,
@@ -40,12 +40,23 @@ class ERC20Wrapper:
         self.symbol = symbol
         self.decimals = decimals
         self.sol_client = sol_client
+        self.contract_address = contract_address
 
-        if contract_address:
-            self.contract = web3_client.get_deployed_contract(contract_address, contract_file="EIPs/ERC20/IERC20ForSpl")
-        else:
+        if not contract_address:
             self.contract_address = self.deploy_wrapper(mintable)
-            self.contract = self.web3_client.get_deployed_contract(self.contract_address, "EIPs/ERC20/IERC20ForSpl")
+
+        if mintable:
+            self.contract = web3_client.get_deployed_contract(
+                self.contract_address,
+                contract_file="external/ERC20ForSPL/contracts/ERC20ForSPLMintable",
+                solc_version="0.8.24",
+            )
+        else:
+            self.contract = web3_client.get_deployed_contract(
+                self.contract_address,
+                contract_file="external/ERC20ForSPL/contracts/ERC20ForSPL",
+                solc_version="0.8.24",
+            )
 
     @property
     def address(self):
@@ -62,16 +73,82 @@ class ERC20Wrapper:
             tx["gas"] = gas
         return tx
 
-    def deploy_wrapper(self, mintable: bool):
-        contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "erc20_for_spl_factory", "0.8.10", self.account, contract_name="ERC20ForSplFactory"
+    def _deploy_mintable_wrapper(self):
+        beacon_erc20_impl, tx = self.web3_client.deploy_and_get_contract(
+            "external/ERC20ForSPL/contracts/ERC20ForSPLMintable",
+            "0.8.24",
+            self.account,
+            contract_name="ERC20ForSPLMintable",
         )
-        assert contract_deploy_tx["status"] == 1, f"ERC20 Factory wasn't deployed: {contract_deploy_tx}"
+        assert tx["status"] == 1, f"ERC20ForSPLMintable wasn't deployed: {tx}"
+
+        factory_contract, tx = self.web3_client.deploy_and_get_contract(
+            "external/ERC20ForSPL/contracts/ERC20ForSPLMintableFactory",
+            "0.8.24",
+            self.account,
+            contract_name="ERC20ForSPLMintableFactory",
+        )
+        assert tx["status"] == 1, f"ERC20ForSPLMintableFactory wasn't deployed: {tx}"
+
+        proxy_contract, tx = self.web3_client.deploy_and_get_contract(
+            "external/ERC20ForSPL/contracts/openzeppelin-fork/contracts/proxy/ERC1967/ERC1967Proxy",
+            "0.8.24",
+            self.account,
+            contract_name="ERC1967Proxy",
+            constructor_args=[
+                factory_contract.address,
+                factory_contract.encodeABI("initialize", [beacon_erc20_impl.address]),
+            ],
+        )
+        assert tx["status"] == 1, f"ERC1967Proxy wasn't deployed: {tx}"
+
+        factory_proxy_contract = self.web3_client.eth.contract(address=proxy_contract.address, abi=factory_contract.abi)
+
+        return factory_proxy_contract
+
+    def _deploy_not_mintable_wrapper(self):
+        beacon_erc20_impl, tx = self.web3_client.deploy_and_get_contract(
+            "external/ERC20ForSPL/contracts/ERC20ForSPL",
+            "0.8.24",
+            self.account,
+            contract_name="ERC20ForSPL",
+        )
+        assert tx["status"] == 1, f"ERC20ForSPL wasn't deployed: {tx}"
+
+        factory_contract, tx = self.web3_client.deploy_and_get_contract(
+            "external/ERC20ForSPL/contracts/ERC20ForSPLFactory",
+            "0.8.24",
+            self.account,
+            contract_name="ERC20ForSPLFactory",
+        )
+        assert tx["status"] == 1, f"ERC20ForSPL wasn't deployed: {tx}"
+
+        proxy_contract, tx = self.web3_client.deploy_and_get_contract(
+            "external/ERC20ForSPL/contracts/openzeppelin-fork/contracts/proxy/ERC1967/ERC1967Proxy",
+            "0.8.24",
+            self.account,
+            contract_name="ERC1967Proxy",
+            constructor_args=[
+                factory_contract.address,
+                factory_contract.encodeABI("initialize", [beacon_erc20_impl.address]),
+            ],
+        )
+        assert tx["status"] == 1, f"ERC1967Proxy wasn't deployed: {tx}"
+
+        factory_proxy_contract = self.web3_client.eth.contract(address=proxy_contract.address, abi=factory_contract.abi)
+
+        return factory_proxy_contract
+
+    def deploy_wrapper(self, mintable: bool):
+        if mintable:
+            contract = self._deploy_mintable_wrapper()
+        else:
+            contract = self._deploy_not_mintable_wrapper()
         tx_object = self.make_tx_object(self.account.address)
         if mintable:
-            instruction_tx = contract.functions.createErc20ForSplMintable(
-                self.name, self.symbol, self.decimals, self.account.address
-            ).build_transaction(tx_object)
+            instruction_tx = contract.functions.deploy(self.name, self.symbol, self.decimals).build_transaction(
+                tx_object
+            )
         else:
             self.token_mint, self.solana_associated_token_acc = self.sol_client.create_spl(
                 self.solana_acc, self.decimals
@@ -90,14 +167,14 @@ class ERC20Wrapper:
             self.sol_client.send_transaction(
                 txn, self.solana_acc, opts=TxOpts(preflight_commitment=Confirmed, skip_confirmation=False)
             )
-            instruction_tx = contract.functions.createErc20ForSpl(bytes(self.token_mint.pubkey)).build_transaction(
-                tx_object
-            )
+            instruction_tx = contract.functions.deploy(bytes(self.token_mint.pubkey)).build_transaction(tx_object)
 
         instruction_receipt = self.web3_client.send_transaction(self.account, instruction_tx)
+
+        assert instruction_receipt["status"] == 1, f"Token wasn't deployed: {instruction_receipt}"
         if instruction_receipt:
-            logs = contract.events.ERC20ForSplCreated().process_receipt(instruction_receipt)
-            return logs[0]["args"]["pair"]
+            logs = contract.events.TokenDeploy().process_receipt(instruction_receipt)
+            return logs[0]["args"]["token"]
         return instruction_receipt
 
     # TODO: In all this methods verify if exist self.account

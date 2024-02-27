@@ -80,19 +80,16 @@ def make_deployment_transaction(
 def make_contract_call_trx(
     user, contract, function_signature, params=None, value=0, chain_id=111, access_list=None, trx_type=None
 ):
+    # does not work for tuple in params
     data = abi.function_signature_to_4byte_selector(function_signature)
 
     if params is not None:
-        for param in params:
-            if isinstance(param, int):
-                data += eth_abi.encode(["uint256"], [param])
-            elif isinstance(param, str):
-                data += eth_abi.encode(["string"], [param])
+        types = function_signature.split("(")[1].split(")")[0].split(",")
+        data += eth_abi.encode(types, params)
 
     signed_tx = make_eth_transaction(
         contract.eth_address, data, user, value=value, chain_id=chain_id, access_list=access_list, type=trx_type
     )
-    return signed_tx
 
 
 def deploy_contract(

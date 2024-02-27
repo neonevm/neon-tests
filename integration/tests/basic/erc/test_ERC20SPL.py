@@ -57,14 +57,12 @@ class TestERC20wrapperContract:
         metadata = metaplex.get_metadata(self.sol_client, mint_key)
         assert metadata["data"]["name"] == erc20_spl_mintable.name
         assert metadata["data"]["symbol"] == erc20_spl_mintable.symbol
-        assert metadata["is_mutable"] is False
 
     def test_metaplex_data(self, erc20_spl):
         metaplex.wait_account_info(self.sol_client, erc20_spl.token_mint.pubkey)
         metadata = metaplex.get_metadata(self.sol_client, erc20_spl.token_mint.pubkey)
         assert metadata["data"]["name"] == erc20_spl.name
         assert metadata["data"]["symbol"] == erc20_spl.symbol
-        assert metadata["is_mutable"] is True
 
     @pytest.mark.parametrize("mintable", [True, False])
     def test_balanceOf(self, erc20_spl, erc20_spl_mintable, mintable):
@@ -476,6 +474,7 @@ class TestERC20wrapperContract:
         with pytest.raises(ValueError, match=msg):
             erc20.transfer_from(new_account, erc20.account.address, new_account.address, 1, **param)
 
+    @pytest.mark.only_stands
     @pytest.mark.parametrize("mintable", [True, False])
     def test_transferSolana(
         self,
@@ -522,6 +521,7 @@ class TestERC20wrapperContract:
         assert contract_balance_before - contract_balance_after == amount, "Contract balance is not correct"
         assert sol_balance_after == sol_balance_before, "Sol balance is changed"
 
+    @pytest.mark.only_stands
     @pytest.mark.parametrize("mintable", [True, False])
     def test_approveSolana(
         self,

@@ -15,7 +15,7 @@ jobs:
   dockerize:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Define env
         id: define-env
         run: |
@@ -36,18 +36,10 @@ jobs:
             echo "oz_branch=${oz_branch}"
             echo "tag=${tag}" >> $GITHUB_OUTPUT
             echo "oz_branch=${oz_branch}" >> $GITHUB_OUTPUT
-      - name: Define feature or version branch
-        id: feature_branch
-        if: github.ref_name !='develop' || github.ref_name !='master'
-        run: |
-            value=${{ github.ref_name }}
-            echo "value=${value}"
-            echo "value=${value}" >> $GITHUB_OUTPUT
       - name: "Dockerize neon tests"
         uses: ./.github/actions/dockerize-neon-tests
         with:
           image_tag: ${{ steps.define-env.outputs.tag }}
-          branch_tag: ${{ steps.feature_branch.outputs.value }}
           docker_username: ${{ secrets.DOCKER_USERNAME }}
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
           oz_branch: ${{ steps.define-env.outputs.oz_branch }}

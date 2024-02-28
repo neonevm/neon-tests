@@ -112,6 +112,7 @@ class TestEconomics:
         self, account_with_all_tokens, client_and_price, web3_client, sol_price, operator
     ):
         # for transactions without chain_id NEONs would be sent (even for sol chain)
+        # checks eip1820
         w3_client, token_price = client_and_price
         acc2 = w3_client.create_account()
         sol_balance_before = operator.get_solana_balance()

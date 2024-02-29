@@ -415,6 +415,33 @@ def update_contracts_from_git(git_url: str, local_dir_name: str, branch="develop
     click.echo(f"Contracts downloaded from {git_url} {branch} to {EXTERNAL_CONTRACT_PATH / local_dir_name}")
 
 
+def download_evm_contracts(branch):
+    if is_neon_evm_branch_exist(branch) and branch != "develop":
+        neon_evm_branch = branch
+    else:
+        neon_evm_branch = get_evm_pinned_version("develop")
+    click.echo(f"Contracts would be downloaded from {neon_evm_branch} neon-evm branch")
+    pathlib.Path(EXTERNAL_CONTRACT_PATH / "neon-evm").mkdir(parents=True, exist_ok=True)
+
+    click.echo(f"Check contract availability in neon-evm repo")
+    response = requests.get(f"{NEON_EVM_GITHUB_URL}/contents/solidity?ref={neon_evm_branch}")
+    if response.status_code != 200:
+        click.echo(f"Repository doesn't has solidity directory, check old structure")
+        response = requests.get(f"{NEON_EVM_GITHUB_URL}/contents/evm_loader/solidity?ref={neon_evm_branch}")
+        if response.status_code != 200:
+            raise click.ClickException(f"Can't get contracts from neon-evm repo: {response.text}")
+
+    for item in response.json():
+        click.echo(f"Downloading {item['name']}")
+        r = requests.get(item["download_url"])
+        if r.status_code == 200:
+            with open(EXTERNAL_CONTRACT_PATH / "neon-evm" / item["name"], "wb") as f:
+                f.write(r.content)
+            click.echo(f" {item['name']} downloaded")
+        else:
+            raise click.ClickException(f"The contract {item['name']} is not downloaded. Error: {r.text}")
+
+
 @cli.command(help="Download test contracts from neon-evm repo")
 @click.option(
     "--branch",
@@ -427,9 +454,7 @@ def update_contracts(branch):
     update_contracts_from_git(
         "https://github.com/neonlabsorg/neon-contracts.git", "neon-contracts", "main", update_npm=False
     )
-    shutil.move(EXTERNAL_CONTRACT_PATH / "neon-contracts" / "ERC20ForSPL", EXTERNAL_CONTRACT_PATH / "ERC20ForSPL")
-    shutil.rmtree(EXTERNAL_CONTRACT_PATH / "neon-contracts")
-    subprocess.check_call(f'npm ci --prefix {EXTERNAL_CONTRACT_PATH / "ERC20ForSPL"}', shell=True)
+    subprocess.check_call(f'npm ci --prefix {EXTERNAL_CONTRACT_PATH / "neon-contracts" / "ERC20ForSPL"}', shell=True)
 
 
 @cli.command(help="Run any type of tests")

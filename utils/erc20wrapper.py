@@ -48,13 +48,13 @@ class ERC20Wrapper:
         if mintable:
             self.contract = web3_client.get_deployed_contract(
                 self.contract_address,
-                contract_file="external/ERC20ForSPL/contracts/ERC20ForSPLMintable",
+                contract_file="external/neon-contracts/ERC20ForSPL/contracts/ERC20ForSPLMintable",
                 solc_version="0.8.24",
             )
         else:
             self.contract = web3_client.get_deployed_contract(
                 self.contract_address,
-                contract_file="external/ERC20ForSPL/contracts/ERC20ForSPL",
+                contract_file="external/neon-contracts/ERC20ForSPL/contracts/ERC20ForSPL",
                 solc_version="0.8.24",
             )
 
@@ -65,7 +65,7 @@ class ERC20Wrapper:
 
     def _deploy_mintable_wrapper(self):
         beacon_erc20_impl, tx = self.web3_client.deploy_and_get_contract(
-            "external/ERC20ForSPL/contracts/ERC20ForSPLMintable",
+            "external/neon-contracts/ERC20ForSPL/contracts/ERC20ForSPLMintable",
             "0.8.24",
             self.account,
             contract_name="ERC20ForSPLMintable",
@@ -73,7 +73,7 @@ class ERC20Wrapper:
         assert tx["status"] == 1, f"ERC20ForSPLMintable wasn't deployed: {tx}"
 
         factory_contract, tx = self.web3_client.deploy_and_get_contract(
-            "external/ERC20ForSPL/contracts/ERC20ForSPLMintableFactory",
+            "external/neon-contracts/ERC20ForSPL/contracts/ERC20ForSPLMintableFactory",
             "0.8.24",
             self.account,
             contract_name="ERC20ForSPLMintableFactory",
@@ -81,7 +81,7 @@ class ERC20Wrapper:
         assert tx["status"] == 1, f"ERC20ForSPLMintableFactory wasn't deployed: {tx}"
 
         proxy_contract, tx = self.web3_client.deploy_and_get_contract(
-            "external/ERC20ForSPL/contracts/openzeppelin-fork/contracts/proxy/ERC1967/ERC1967Proxy",
+            "external/neon-contracts/ERC20ForSPL/contracts/openzeppelin-fork/contracts/proxy/ERC1967/ERC1967Proxy",
             "0.8.24",
             self.account,
             contract_name="ERC1967Proxy",
@@ -98,7 +98,7 @@ class ERC20Wrapper:
 
     def _deploy_not_mintable_wrapper(self):
         beacon_erc20_impl, tx = self.web3_client.deploy_and_get_contract(
-            "external/ERC20ForSPL/contracts/ERC20ForSPL",
+            "external/neon-contracts/ERC20ForSPL/contracts/ERC20ForSPL",
             "0.8.24",
             self.account,
             contract_name="ERC20ForSPL",
@@ -106,7 +106,7 @@ class ERC20Wrapper:
         assert tx["status"] == 1, f"ERC20ForSPL wasn't deployed: {tx}"
 
         factory_contract, tx = self.web3_client.deploy_and_get_contract(
-            "external/ERC20ForSPL/contracts/ERC20ForSPLFactory",
+            "external/neon-contracts/ERC20ForSPL/contracts/ERC20ForSPLFactory",
             "0.8.24",
             self.account,
             contract_name="ERC20ForSPLFactory",
@@ -114,7 +114,7 @@ class ERC20Wrapper:
         assert tx["status"] == 1, f"ERC20ForSPL wasn't deployed: {tx}"
 
         proxy_contract, tx = self.web3_client.deploy_and_get_contract(
-            "external/ERC20ForSPL/contracts/openzeppelin-fork/contracts/proxy/ERC1967/ERC1967Proxy",
+            "external/neon-contracts/ERC20ForSPL/contracts/openzeppelin-fork/contracts/proxy/ERC1967/ERC1967Proxy",
             "0.8.24",
             self.account,
             contract_name="ERC1967Proxy",
@@ -149,9 +149,9 @@ class ERC20Wrapper:
         if mintable:
             contract = self._deploy_mintable_wrapper()
             tx_object = self.web3_client.make_raw_tx(self.account.address)
-            instruction_tx = contract.functions.deploy(self.name, self.symbol, self.decimals).build_transaction(
-                tx_object
-            )
+            instruction_tx = contract.functions.deploy(
+                self.name, self.symbol, "http://uri.com", self.decimals
+            ).build_transaction(tx_object)
         else:
             contract = self._deploy_not_mintable_wrapper()
             self._prepare_spl_token()

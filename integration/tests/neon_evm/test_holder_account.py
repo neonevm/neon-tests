@@ -63,7 +63,7 @@ def test_write_tx_to_holder(operator_keypair, session_user, second_session_user,
 def test_write_tx_to_holder_in_parts(operator_keypair, session_user):
     holder_acc = create_holder(operator_keypair)
 
-    signed_tx = make_deployment_transaction(session_user, "erc20_for_spl_factory", "ERC20ForSplFactory")
+    signed_tx = make_deployment_transaction(session_user, "neon-evm/erc20_for_spl_factory", "ERC20ForSplFactory")
     write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
     assert signed_tx.rawTransaction == transaction_from_holder(holder_acc), \
         "Account data is not correct"

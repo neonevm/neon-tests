@@ -84,20 +84,6 @@ class TestERC20SPL:
         assert balance_after == balance_before - amount
         assert total_after == total_before - amount
 
-    def test_owner(self, erc20_contract):
-        owner = erc20_contract.contract.functions.owner().call()
-        assert owner == erc20_contract.account.address
-
-    @pytest.fixture()
-    def return_ownership(self, erc20_contract, accounts):
-        yield
-        erc20_contract.transfer_ownership(accounts[2].account, erc20_contract.account.address)
-
-    def test_transferOwnership(self, erc20_contract, accounts, return_ownership):
-        erc20_contract.transfer_ownership(erc20_contract.account, accounts[2].address)
-        owner = erc20_contract.contract.functions.owner().call()
-        assert owner == accounts[2].address
-
     @pytest.mark.parametrize(
         "block_len, expected_exception, msg",
         [
@@ -474,12 +460,27 @@ class TestERC20SPLMintable(TestERC20SPL):
                 default_value - current_balance,
             )
 
+    def test_owner(self, erc20_contract):
+        owner = erc20_contract.contract.functions.owner().call()
+        assert owner == erc20_contract.account.address
+
+    @pytest.fixture()
+    def return_ownership(self, erc20_contract, accounts):
+        yield
+        erc20_contract.transfer_ownership(accounts[2], erc20_contract.account.address)
+
+    def test_transferOwnership(self, erc20_contract, accounts, return_ownership):
+        erc20_contract.transfer_ownership(erc20_contract.account, accounts[2].address)
+        owner = erc20_contract.contract.functions.owner().call()
+        assert owner == accounts[2].address
+
     def test_metaplex_data(self, erc20_contract):
         mint_key = erc20_contract.contract.functions.findMintAccount().call()
         metaplex.wait_account_info(self.sol_client, mint_key)
         metadata = metaplex.get_metadata(self.sol_client, mint_key)
         assert metadata["data"]["name"] == erc20_contract.name
         assert metadata["data"]["symbol"] == erc20_contract.symbol
+        assert metadata["data"]["uri"] == "http://uri.com"
         assert metadata["is_mutable"] is True
 
     def test_mint_to_self(self, erc20_contract, restore_balance):

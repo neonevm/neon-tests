@@ -17,16 +17,9 @@ on:
         required: true
         description: "Stand name"
         options:
+          - terraform
           - night-stand
           - devnet
-      runner:
-        type: choice
-        default: ubuntu-20.04
-        required: true
-        description: "Where to run tests (our runner or github)"
-        options:
-          - neon-hosted
-          - ubuntu-20.04
       numprocesses:
         type: choice
         default: 4
@@ -39,11 +32,10 @@ on:
           - 12
           - auto
 env:
-  NETWORK: night-stand
-  RUNNER: neon-hosted
+  NETWORK: ${{ github.event.inputs.network || 'night-stand' }}
+  NUMPROCESSES: ${{ github.event.inputs.numprocesses || 4 }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   SOLANA_URL: "${{ secrets.SOLANA_URL }}"
-  NUMPROCESSES: 4
   IMAGE:  neonlabsorg/neon_tests
   CONTAINER:  basic-${{ github.run_id }}
 jobs:
@@ -73,49 +65,13 @@ jobs:
         if: github.event.schedule=='0 4 * * 0,1,2,3,4'
         run: |
           echo "NETWORK=devnet" >> $GITHUB_ENV
-      - name: Setup env
-        id: setup
-        run: |
-          # $1 - inputs
-          # $2 - env.VAR
-          function setVar {
-            if [ -z "$1" ]
-              then
-                RESULT="$2"
-              else
-                RESULT="$1"
-            fi
-            echo $RESULT
-          }
-
-          NETWORK=$( setVar "${{ github.event.inputs.network }}" "${{ env.NETWORK }}" )
-          RUNNER=$( setVar "${{ github.event.inputs.runner }}" "${{ env.RUNNER }}" )
-          NUMPROCESSES=$( setVar "${{ github.event.inputs.numprocesses }}" "2" )
-
-          echo "Network: ${NETWORK}"
-          echo "Runner: ${RUNNER}"
-          echo "Numprocesses: ${NUMPROCESSES}"
-          echo "Build url: ${{ env.BUILD_URL }}"
-
-          echo "network=${NETWORK}" >> $GITHUB_OUTPUT
-          echo "runner=${RUNNER}" >> $GITHUB_OUTPUT
-          echo "jobs=${JOBS_NUMBER}" >> $GITHUB_OUTPUT
-          echo "numprocesses=${NUMPROCESSES}" >> $GITHUB_OUTPUT
-    outputs:
-      network: ${{ steps.setup.outputs.network }}
-      runner: ${{ steps.setup.outputs.runner }}
-      numprocesses: ${{ steps.setup.outputs.numprocesses }}
 
   tests:
     name: "Basic tests"
     needs:
       - dockerize
       - prepare-env
-    runs-on: ${{ needs.prepare-env.outputs.runner }}
-    env:
-      NETWORK: ${{ needs.prepare-env.outputs.network }}
-      RUNNER: ${{ needs.prepare-env.outputs.runner }}
-      NUMPROCESSES: ${{ needs.prepare-env.outputs.numprocesses }}
+    runs-on: neon-hosted
     if: |
       always() &&
       !contains(needs.*.result, 'failure') &&

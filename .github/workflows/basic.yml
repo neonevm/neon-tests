@@ -137,7 +137,7 @@ jobs:
   destroy:
     runs-on: ubuntu-20.04
     needs: [ prepare-env, tests ]
-    if: always() && needs.prepare-env.outputs.network == 'terraform'
+    if: always() && env.NETWORK == 'terraform'
     steps:
       - uses: actions/checkout@v4
       - name: "Destroy stand"

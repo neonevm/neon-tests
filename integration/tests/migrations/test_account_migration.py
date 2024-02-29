@@ -11,7 +11,7 @@ from utils.erc721ForMetaplex import ERC721ForMetaplex
 from utils.helpers import gen_hash_of_block
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def accounts(web3_client):
     account_keys = os.environ.get("ACCOUNTS").split(",")
     accounts = []
@@ -20,28 +20,32 @@ def accounts(web3_client):
     print("Before testing:")
     for acc in accounts:
         print(
-            f"Balance for {acc.address}: {web3_client.to_atomic_currency(web3_client.get_balance(acc.address))}, nonce: {web3_client.eth.get_transaction_count(acc.address)}"
+            f"Balance for {acc.address}: "
+            f"{web3_client.to_atomic_currency(web3_client.get_balance(acc.address))}, "
+            f"nonce: {web3_client.eth.get_transaction_count(acc.address)}"
         )
 
     yield accounts
     print("After testing:")
     for acc in accounts:
         print(
-            f"Balance for {acc.address}: {web3_client.to_atomic_currency(web3_client.get_balance(acc.address))}, nonce: {web3_client.eth.get_transaction_count(acc.address)}"
+            f"Balance for {acc.address}: "
+            f"{web3_client.to_atomic_currency(web3_client.get_balance(acc.address))}, "
+            f"nonce: {web3_client.eth.get_transaction_count(acc.address)}"
         )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def bob(accounts):
     return accounts[0]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def alice(accounts):
     return accounts[1]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def trx_list():
     list = []
     yield list
@@ -50,7 +54,7 @@ def trx_list():
         print(trx.hex())
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def erc20(web3_client, faucet, sol_client, solana_account, bob):
     contract_address = os.environ.get("ERC20_ADDRESS")
 
@@ -84,7 +88,7 @@ def erc20(web3_client, faucet, sol_client, solana_account, bob):
     return erc20
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def erc721(web3_client, faucet, bob):
     contract_address = os.environ.get("ERC721_ADDRESS")
     if contract_address:

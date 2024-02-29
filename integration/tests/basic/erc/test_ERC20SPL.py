@@ -548,7 +548,6 @@ class TestERC20SPLMintable(TestERC20SPL):
 
     def test_transferSolana(self, sol_client, erc20_contract, solana_associated_token_mintable_erc20):
         acc, token_mint, solana_address = solana_associated_token_mintable_erc20
-
         amount = random.randint(10000, 1000000)
         sol_balance_before = sol_client.get_balance(acc.public_key).value
         contract_balance_before = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()

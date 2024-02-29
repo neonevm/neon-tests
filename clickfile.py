@@ -71,6 +71,10 @@ HOME_DIR = pathlib.Path(__file__).absolute().parent
 
 OZ_BALANCES = "./compatibility/results/oz_balance.json"
 NEON_EVM_GITHUB_URL = "https://api.github.com/repos/neonlabsorg/neon-evm"
+HOODIES_CHAINLINK_GITHUB_URL = "https://github.com/hoodieshq/chainlink-neon"
+PROXY_GITHUB_URL = "https://api.github.com/repos/neonlabsorg/proxy-model.py"
+
+EXTERNAL_CONTRACT_PATH = pathlib.Path.cwd() / "contracts" / "external"
 
 network_manager = NetworkManager()
 
@@ -370,10 +374,8 @@ def requirements(dep):
 
 def is_neon_evm_branch_exist(branch):
     if branch:
-        neon_evm_branches_obj = requests.get(f"{NEON_EVM_GITHUB_URL}/branches?per_page=100").json()
-        neon_evm_branches = [item["name"] for item in neon_evm_branches_obj]
-
-        if branch in neon_evm_branches:
+        response = requests.get(f"{NEON_EVM_GITHUB_URL}/branches/{branch}")
+        if response.status_code == 200:
             click.echo(f"The branch {branch} exist in the neon_evm repository")
             return True
     else:
@@ -382,9 +384,8 @@ def is_neon_evm_branch_exist(branch):
 
 def get_evm_pinned_version(branch):
     click.echo(f"Get pinned version for proxy branch {branch}")
-    resp = requests.get(
-        f"https://api.github.com/repos/neonlabsorg/proxy-model.py/contents/.github/workflows/pipeline.yml?ref={branch}"
-    )
+    resp = requests.get(f"{PROXY_GITHUB_URL}/contents/.github/workflows/pipeline.yml?ref={branch}")
+
     if resp.status_code != 200:
         click.echo(f"Can't get pipeline file for branch {branch}: {resp.text}")
         raise click.ClickException(f"Can't get pipeline file for branch {branch}")
@@ -398,6 +399,19 @@ def get_evm_pinned_version(branch):
     return tag
 
 
+def update_contracts_from_git(git_url: str, local_dir_name: str, branch="develop"):
+    download_path = EXTERNAL_CONTRACT_PATH / local_dir_name
+    click.echo(f"Downloading contracts from {git_url} {branch}")
+    if download_path.exists():
+        shutil.rmtree(download_path)
+    commands = f"""
+        git clone --branch {branch} {git_url} {download_path}
+        npm ci --prefix {download_path}
+    """
+    subprocess.check_call(commands, shell=True)
+    click.echo(f"Contracts downloaded from {git_url} {branch} to {EXTERNAL_CONTRACT_PATH / local_dir_name}")
+
+
 @cli.command(help="Download test contracts from neon-evm repo")
 @click.option(
     "--branch",
@@ -405,10 +419,13 @@ def get_evm_pinned_version(branch):
     help="neon_evm branch name. " "If branch doesn't exist, develop branch will be used",
 )
 def update_contracts(branch):
-    neon_evm_branch = get_evm_pinned_version(branch)
+    update_contracts_from_git(HOODIES_CHAINLINK_GITHUB_URL, "hoodies_chainlink", "main")
+    if is_neon_evm_branch_exist(branch) and branch != "develop":
+        neon_evm_branch = branch
+    else:
+        neon_evm_branch = get_evm_pinned_version("develop")
     click.echo(f"Contracts would be downloaded from {neon_evm_branch} neon-evm branch")
-    contract_path = pathlib.Path.cwd() / "contracts" / "external"
-    pathlib.Path(contract_path).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(EXTERNAL_CONTRACT_PATH).mkdir(parents=True, exist_ok=True)
 
     click.echo(f"Check contract availability in neon-evm repo")
     response = requests.get(f"{NEON_EVM_GITHUB_URL}/contents/solidity?ref={neon_evm_branch}")
@@ -422,7 +439,7 @@ def update_contracts(branch):
         click.echo(f"Downloading {item['name']}")
         r = requests.get(item["download_url"])
         if r.status_code == 200:
-            with open(contract_path / item["name"], "wb") as f:
+            with open(EXTERNAL_CONTRACT_PATH / item["name"], "wb") as f:
                 f.write(r.content)
             click.echo(f" {item['name']} downloaded")
         else:

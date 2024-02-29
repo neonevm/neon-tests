@@ -45,7 +45,7 @@ class TestSelfDestructOpcode:
 
     def check_contract_code_is_not_empty(self, contract_address, proxy_api):
         response = proxy_api.send_rpc("eth_getCode", params=[contract_address, "latest"])
-        assert response["result"] != "0x"
+        assert "result" in response and response["result"] != "0x"
 
     def test_destroy(self, destroyable_contract, json_rpc_client):
         sender_account = self.accounts[0]

@@ -52,7 +52,7 @@ jobs:
   prepare:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Define dapps to run
         id: dapps
         run: |
@@ -113,7 +113,7 @@ jobs:
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -162,7 +162,7 @@ jobs:
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       DUMP_ENVS: True
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -210,7 +210,7 @@ jobs:
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -259,7 +259,7 @@ jobs:
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -301,7 +301,7 @@ jobs:
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -348,7 +348,7 @@ jobs:
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -378,7 +378,7 @@ jobs:
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -425,7 +425,7 @@ jobs:
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -470,7 +470,7 @@ jobs:
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
       DUMP_ENVS: True
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -519,7 +519,7 @@ jobs:
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       DUMP_ENVS: True
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -532,7 +532,7 @@ jobs:
       - name: Launch Pancake tests
         if: ${{ steps.accounts.outcome == 'success'}}
         id: pancake
-        timeout-minutes: 30
+        timeout-minutes: 60
         env:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: neonlabsorg/pancake:latest
@@ -564,7 +564,7 @@ jobs:
       NETWORK: ${{ needs.prepare.outputs.network }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -629,7 +629,7 @@ jobs:
     needs: [ prepare, uniswap-v2, uniswap-v3, saddle, curve, aave, yearn, robonomics, swap-report, compound, curve-factory, pancake ]
     if: always() && needs.prepare.outputs.network == 'terraform'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Destroy stand"
         env:
           AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
@@ -652,7 +652,7 @@ jobs:
     needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory, pancake]
     if: failure() && github.ref_name == 'develop'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements

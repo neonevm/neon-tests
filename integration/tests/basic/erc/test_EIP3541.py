@@ -29,7 +29,7 @@ class TestRejectingContractsStartingWith0xEF:
         with pytest.raises(web3.exceptions.ContractLogicError, match=EIP_3541_ERROR_MESSAGE):
             self.web3_client.make_raw_tx(sender_account, data=data, estimate_gas=True)
 
-        transaction = self.web3_client.make_raw_tx(sender_account, data=data, gas=1000000000)
+        transaction = self.web3_client.make_raw_tx(sender_account, data=data, gas=10000000)
         resp = self.web3_client.send_transaction(sender_account, transaction)
         assert resp["status"] == 0
 

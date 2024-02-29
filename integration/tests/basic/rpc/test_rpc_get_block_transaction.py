@@ -27,7 +27,7 @@ class TestRpcGetBlockTransaction:
 
         if param is pow(2, 5):
             assert "error" not in response
-            assert response["result"] == "0x0", f"Invalid response: {response['result']}"
+            assert "result" in response and response["result"] == "0x0", f"Invalid response: {response['result']}"
             return
 
         assert "error" in response, "error field not in response"

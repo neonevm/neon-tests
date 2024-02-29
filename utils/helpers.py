@@ -5,23 +5,28 @@ import string
 import time
 import typing as tp
 
-import web3
+import allure
 import solcx
+import web3
 from eth_abi import abi
 from eth_utils import keccak
+from solcx import link_code
 
 
+@allure.step("Get contract abi")
 def get_contract_abi(name, compiled):
     for key in compiled.keys():
         if name == key.rsplit(":")[-1]:
             return compiled[key]
 
 
+@allure.step("Get contract interface")
 def get_contract_interface(
     contract: str,
     version: str,
     contract_name: tp.Optional[str] = None,
     import_remapping: tp.Optional[dict] = None,
+    libraries: tp.Optional[dict] = None,
 ):
     if not contract.endswith(".sol"):
         contract += ".sol"
@@ -51,10 +56,13 @@ def get_contract_interface(
         optimize=True,
     )  # this allow_paths isn't very good...
     contract_interface = get_contract_abi(contract_name, compiled)
+    if libraries:
+        contract_interface["bin"] = link_code(contract_interface["bin"], libraries)
 
     return contract_interface
 
 
+@allure.step("Gen hash of block")
 def gen_hash_of_block(size: int) -> str:
     """Generates a block hash of the given size"""
     try:
@@ -67,6 +75,7 @@ def gen_hash_of_block(size: int) -> str:
         return gen_hash_of_block(size)
 
 
+@allure.step("Generate random text")
 def generate_text(min_len: int = 2, max_len: int = 200, simple: bool = True) -> str:
     length = random.randint(min_len, max_len)
     if simple:
@@ -76,6 +85,7 @@ def generate_text(min_len: int = 2, max_len: int = 200, simple: bool = True) -> 
     return "".join(random.choice(chars) for _i in range(length)).strip()
 
 
+@allure.step("Wait condition")
 def wait_condition(func_cond, timeout_sec=15, delay=0.5):
     start_time = time.time()
     while True:
@@ -91,6 +101,7 @@ def wait_condition(func_cond, timeout_sec=15, delay=0.5):
     return True
 
 
+@allure.step("Decode function signature")
 def decode_function_signature(function_name: str, args=None) -> str:
     data = keccak(text=function_name)[:4]
     if args is not None:
@@ -99,6 +110,7 @@ def decode_function_signature(function_name: str, args=None) -> str:
     return "0x" + data.hex()
 
 
+@allure.step("Get functions signatures with params as keccak256 from contract abi")
 def get_selectors(abi):
     """Get functions signatures with params as keccak256 from contract abi"""
     selectors = []
@@ -118,6 +130,7 @@ def get_selectors(abi):
     return selectors
 
 
+@allure.step("Create non-existing account address")
 def create_invalid_address(length=20) -> str:
     """Create non-existing account address"""
     address = gen_hash_of_block(length)

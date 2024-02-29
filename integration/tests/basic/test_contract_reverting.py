@@ -1,3 +1,5 @@
+import time
+
 import allure
 import pytest
 import solcx
@@ -8,6 +10,7 @@ from semantic_version import Version
 
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from integration.tests.helpers.basic import cryptohex, int_to_hex
+from utils.consts import Time
 from utils.helpers import get_contract_abi
 from utils.accounts import EthAccounts
 from utils.web3client import NeonChainWeb3Client

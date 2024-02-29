@@ -142,7 +142,7 @@
     },
     "solana_url": "http://127.0.0.1:8899/",
     "faucet_url": "http://127.0.0.1:3333/",
-    "tracer_url": "http://neon-rpc:9090",
+    "tracer_url": "http://127.0.0.1:9091",
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
     "operator_neon_rewards_address": [

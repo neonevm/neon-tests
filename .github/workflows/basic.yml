@@ -22,7 +22,7 @@ on:
           - devnet
       numprocesses:
         type: choice
-        default: 4
+        default: 8
         required: true
         description: "Number of parallel jobs"
         options:
@@ -134,3 +134,25 @@ jobs:
       - name: Remove docker container
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}
+  destroy:
+    runs-on: ubuntu-20.04
+    needs: [ prepare-env, tests ]
+    if: always() && needs.prepare-env.outputs.network == 'terraform'
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Destroy stand"
+        env:
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
+          TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
+          TFSTATE_KEY_PREFIX: ${{vars.TFSTATE_KEY_PREFIX}}
+          TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
+          PROXY_IP: ${{ needs.prepare-env.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}
+        uses: ./.github/actions/destroy-tf-stand
+        with:
+          ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
+          devnet_solana_url: ${{ secrets.SOLANA_URL }}
+

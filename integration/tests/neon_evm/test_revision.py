@@ -391,7 +391,7 @@ class TestAccountRevision:
         neon_api_client,
         session_user,
         evm_loader,
-        holder_acc,
+        new_holder_acc,
     ):
         sender = make_new_user(evm_loader)
         recipient = session_user
@@ -400,7 +400,6 @@ class TestAccountRevision:
         contract = deploy_contract(operator_keypair, session_user, "transfers", evm_loader, treasury_pool)
 
         amount = evm_loader.get_neon_balance(sender.eth_address)
-        # sender_balance_before = evm_loader.get_neon_balance(session_user.eth_address)
 
         signed_tx1 = make_contract_call_trx(
             sender,
@@ -418,12 +417,12 @@ class TestAccountRevision:
             recipient.solana_account_address,
         ]
 
-        write_transaction_to_holder_account(signed_tx1, holder_acc, operator_keypair)
+        write_transaction_to_holder_account(signed_tx1, new_holder_acc, operator_keypair)
         send_transaction_step_from_account(
-            operator_keypair, evm_loader, treasury_pool, holder_acc, accounts, EVM_STEPS, operator_keypair
+            operator_keypair, evm_loader, treasury_pool, new_holder_acc, accounts, EVM_STEPS, operator_keypair
         )
         send_transaction_step_from_account(
-            operator_keypair, evm_loader, treasury_pool, holder_acc, accounts, EVM_STEPS, operator_keypair
+            operator_keypair, evm_loader, treasury_pool, new_holder_acc, accounts, EVM_STEPS, operator_keypair
         )
 
         signed_tx2 = make_contract_call_trx(
@@ -447,5 +446,5 @@ class TestAccountRevision:
 
         with pytest.raises(solana.rpc.core.RPCException, match=ErrorMessage.INSUFFICIENT_BALANCE.value):
             send_transaction_step_from_account(
-                operator_keypair, evm_loader, treasury_pool, holder_acc, accounts, EVM_STEPS, operator_keypair
+                operator_keypair, evm_loader, treasury_pool, new_holder_acc, accounts, EVM_STEPS, operator_keypair
             )

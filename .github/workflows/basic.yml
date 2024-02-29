@@ -65,6 +65,7 @@ jobs:
         if: github.event.schedule=='0 4 * * 0,1,2,3,4'
         run: |
           echo "NETWORK=devnet" >> $GITHUB_ENV
+      - uses: actions/checkout@v4
       - name: "Prepare stand"
         id: prepare_terraform
         env:

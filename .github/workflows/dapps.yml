@@ -90,7 +90,7 @@ jobs:
         #    echo "network=${{ env.NETWORK }}" >> $GITHUB_OUTPUT
     outputs:
       runner: ${{ steps.vars.outputs.runner }}
-     # network: ${{ steps.vars.outputs.network }}
+      network: ${{ env.NETWORK }}
       solana_url: ${{ steps.prepare_stand.outputs.solana_url }}
       proxy_url: ${{ steps.prepare_stand.outputs.proxy_url }}
       faucet_url:  ${{ steps.prepare_stand.outputs.faucet_url }}

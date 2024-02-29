@@ -83,6 +83,7 @@ jobs:
     outputs:
       proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
       solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
+      network: ${{ env.NETWORK }}
 
   tests:
     name: "Basic tests"
@@ -137,7 +138,7 @@ jobs:
   destroy:
     runs-on: ubuntu-20.04
     needs: [ prepare-env, tests ]
-    if: always() && env.NETWORK == 'terraform'
+    if: always() && needs.prepare-env.outputs.network == 'terraform'
     steps:
       - uses: actions/checkout@v4
       - name: "Destroy stand"

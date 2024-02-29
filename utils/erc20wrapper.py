@@ -63,16 +63,6 @@ class ERC20Wrapper:
         """Compatibility with web3.eth.Contract"""
         return self.contract.address
 
-    def make_tx_object(self, from_address, gas_price=None, gas=None):
-        tx = {
-            "from": from_address,
-            "nonce": self.web3_client.eth.get_transaction_count(from_address),
-            "gasPrice": gas_price if gas_price is not None else self.web3_client.gas_price(),
-        }
-        if gas is not None:
-            tx["gas"] = gas
-        return tx
-
     def _deploy_mintable_wrapper(self):
         beacon_erc20_impl, tx = self.web3_client.deploy_and_get_contract(
             "external/ERC20ForSPL/contracts/ERC20ForSPLMintable",
@@ -136,37 +126,36 @@ class ERC20Wrapper:
         assert tx["status"] == 1, f"ERC1967Proxy wasn't deployed: {tx}"
 
         factory_proxy_contract = self.web3_client.eth.contract(address=proxy_contract.address, abi=factory_contract.abi)
-
         return factory_proxy_contract
+
+    def _prepare_spl_token(self):
+        self.token_mint, self.solana_associated_token_acc = self.sol_client.create_spl(self.solana_acc, self.decimals)
+        metadata = create_metadata_instruction_data(self.name, self.symbol)
+        txn = Transaction()
+        txn.add(
+            create_metadata_instruction(
+                metadata,
+                self.solana_acc.public_key,
+                self.token_mint.pubkey,
+                self.solana_acc.public_key,
+                self.solana_acc.public_key,
+            )
+        )
+        self.sol_client.send_transaction(
+            txn, self.solana_acc, opts=TxOpts(preflight_commitment=Confirmed, skip_confirmation=False)
+        )
 
     def deploy_wrapper(self, mintable: bool):
         if mintable:
             contract = self._deploy_mintable_wrapper()
-        else:
-            contract = self._deploy_not_mintable_wrapper()
-        tx_object = self.make_tx_object(self.account.address)
-        if mintable:
+            tx_object = self.web3_client.make_raw_tx(self.account.address)
             instruction_tx = contract.functions.deploy(self.name, self.symbol, self.decimals).build_transaction(
                 tx_object
             )
         else:
-            self.token_mint, self.solana_associated_token_acc = self.sol_client.create_spl(
-                self.solana_acc, self.decimals
-            )
-            metadata = create_metadata_instruction_data(self.name, self.symbol)
-            txn = Transaction()
-            txn.add(
-                create_metadata_instruction(
-                    metadata,
-                    self.solana_acc.public_key,
-                    self.token_mint.pubkey,
-                    self.solana_acc.public_key,
-                    self.solana_acc.public_key,
-                )
-            )
-            self.sol_client.send_transaction(
-                txn, self.solana_acc, opts=TxOpts(preflight_commitment=Confirmed, skip_confirmation=False)
-            )
+            contract = self._deploy_not_mintable_wrapper()
+            self._prepare_spl_token()
+            tx_object = self.web3_client.make_raw_tx(self.account.address)
             instruction_tx = contract.functions.deploy(bytes(self.token_mint.pubkey)).build_transaction(tx_object)
 
         instruction_receipt = self.web3_client.send_transaction(self.account, instruction_tx)
@@ -179,43 +168,43 @@ class ERC20Wrapper:
 
     # TODO: In all this methods verify if exist self.account
     def mint_tokens(self, signer, to_address, amount: int = INIT_TOKEN_AMOUNT, gas_price=None, gas=None):
-        tx = self.make_tx_object(signer.address, gas_price, gas)
+        tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.mint(to_address, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def claim(self, signer, from_address, amount: int = INIT_TOKEN_AMOUNT, gas_price=None, gas=None):
-        tx = self.make_tx_object(signer.address, gas_price, gas)
+        tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.claim(from_address, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def claim_to(self, signer, from_address, to_address, amount, gas_price=None, gas=None):
-        tx = self.make_tx_object(signer.address, gas_price, gas)
+        tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.claimTo(from_address, to_address, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def burn(self, signer, sender_address, amount, gas_price=None, gas=None):
-        tx = self.make_tx_object(sender_address, gas_price, gas)
+        tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.burn(amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def burn_from(self, signer, from_address, amount, gas_price=None, gas=None):
-        tx = self.make_tx_object(signer.address, gas_price, gas)
+        tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.burnFrom(from_address, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def approve(self, signer, spender_address, amount, gas_price=None, gas=None):
-        tx = self.make_tx_object(signer.address, gas_price, gas)
+        tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.approve(spender_address, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def transfer(self, signer, address_to, amount, gas_price=None, gas=None):
-        tx = self.make_tx_object(signer.address, gas_price, gas)
+        tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         if isinstance(address_to, LocalAccount):
             address_to = address_to.address
         instruction_tx = self.contract.functions.transfer(address_to, amount).build_transaction(tx)
@@ -223,20 +212,26 @@ class ERC20Wrapper:
         return resp
 
     def transfer_from(self, signer, address_from, address_to, amount, gas_price=None, gas=None):
-        tx = self.make_tx_object(signer.address, gas_price, gas)
+        tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.transferFrom(address_from, address_to, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def transfer_solana(self, signer, address_to, amount, gas_price=None, gas=None):
-        tx = self.make_tx_object(signer.address, gas_price, gas)
+        tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.transferSolana(address_to, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
     def approve_solana(self, signer, spender, amount, gas_price=None, gas=None):
-        tx = self.make_tx_object(signer.address, gas_price, gas)
+        tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.approveSolana(spender, amount).build_transaction(tx)
+        resp = self.web3_client.send_transaction(signer, instruction_tx)
+        return resp
+
+    def transfer_ownership(self, signer, new_owner, gas_price=None, gas=None):
+        tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
+        instruction_tx = self.contract.functions.transferOwnership(new_owner).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 

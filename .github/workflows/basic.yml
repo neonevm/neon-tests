@@ -65,6 +65,23 @@ jobs:
         if: github.event.schedule=='0 4 * * 0,1,2,3,4'
         run: |
           echo "NETWORK=devnet" >> $GITHUB_ENV
+      - name: "Prepare stand"
+        id: prepare_terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
+          TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
+          TFSTATE_KEY_PREFIX: ${{vars.TFSTATE_KEY_PREFIX}}
+          TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
+        uses: ./.github/actions/prepare-stand
+        with:
+          network: ${{ env.NETWORK }}
+          ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
+    outputs:
+      proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
+      solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
 
   tests:
     name: "Basic tests"
@@ -72,6 +89,9 @@ jobs:
       - dockerize
       - prepare-env
     runs-on: neon-hosted
+    env:
+      SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare-env.outputs.proxy_ip }}
     if: |
       always() &&
       !contains(needs.*.result, 'failure') &&

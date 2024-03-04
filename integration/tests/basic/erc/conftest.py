@@ -39,15 +39,6 @@ def solana_associated_token_erc20(erc20_spl, sol_client, solana_account):
 
 @pytest.fixture(scope="class")
 def multiple_actions_erc20(web3_client_session, class_account, erc20_spl_mintable):
-    # symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
-    #
-    # contract, contract_deploy_tx = web3_client_session.deploy_and_get_contract(
-    #     "EIPs/ERC20/MultipleActions",
-    #     "0.8.24",
-    #     class_account,
-    #     contract_name="MultipleActionsERC20",
-    #     constructor_args=[f"Test {symbol}", symbol, "http://uri.com", 18],
-    # )
     contract, contract_deploy_tx = web3_client_session.deploy_and_get_contract(
         "EIPs/ERC20/MultipleActions",
         "0.8.24",

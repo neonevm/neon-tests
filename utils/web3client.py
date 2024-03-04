@@ -67,6 +67,9 @@ class Web3Client:
     @allure.step("Get cli version")
     def get_cli_version(self):
         return self._get_evm_info("neon_cli_version")
+    @allure.step("Get neon version")
+    def get_neon_versions(self):
+        return self._get_evm_info("neon_versions")
 
     @allure.step("Get evm version")
     def get_evm_version(self):

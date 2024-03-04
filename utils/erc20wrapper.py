@@ -185,7 +185,7 @@ class ERC20Wrapper:
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
-    def burn(self, signer, sender_address, amount, gas_price=None, gas=None):
+    def burn(self, signer, amount, gas_price=None, gas=None):
         tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.burn(amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)

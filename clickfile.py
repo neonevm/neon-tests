@@ -449,6 +449,7 @@ def download_evm_contracts(branch):
     help="neon_evm branch name. " "If branch doesn't exist, develop branch will be used",
 )
 def update_contracts(branch):
+    download_evm_contracts(branch)
     update_contracts_from_git(HOODIES_CHAINLINK_GITHUB_URL, "hoodies_chainlink", "main")
 
     update_contracts_from_git(

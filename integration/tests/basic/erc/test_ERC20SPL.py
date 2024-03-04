@@ -19,8 +19,8 @@ UINT64_LIMIT = 18446744073709551615
 MAX_TOKENS_AMOUNT = 1000000000000000
 
 NO_ENOUGH_GAS_PARAMS = [
-    ({"gas_price": 0}, "transaction underpriced"),
-    ({"gas": 0}, "gas limit reached"),
+    ({"gas_price": 1000}, "transaction underpriced"),
+    ({"gas": 10}, "gas limit reached"),
 ]
 
 
@@ -77,33 +77,22 @@ class TestERC20SPL:
         balance_before = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
         total_before = erc20_contract.contract.functions.totalSupply().call()
         amount = random.randint(0, 1000)
-        erc20_contract.burn(erc20_contract.account, erc20_contract.account.address, amount)
+        erc20_contract.burn(erc20_contract.account, amount)
         balance_after = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
         total_after = erc20_contract.contract.functions.totalSupply().call()
 
         assert balance_after == balance_before - amount
         assert total_after == total_before - amount
 
-    @pytest.mark.parametrize(
-        "block_len, expected_exception, msg",
-        [
-            (
-                ZERO_ADDRESS,
-                web3.exceptions.ContractLogicError,
-                "0x7138356f",  # EmptyAddress error
-            ),
-        ],
-    )
-    def test_burn_incorrect_address(
+    def test_burn_more_than_exist(
         self,
         erc20_contract,
-        block_len,
-        expected_exception,
-        msg,
     ):
-        address = create_invalid_address(block_len) if isinstance(block_len, int) else block_len
-        with pytest.raises(expected_exception, match=msg):
-            erc20_contract.burn(erc20_contract.account, address, 1)
+        with pytest.raises(
+            web3.exceptions.ContractLogicError,
+            match="0x96ab19c8",  # AmountExceedsBalance error
+        ):
+            erc20_contract.burn(self.accounts[2], 1000)
 
     def test_burn_more_than_total_supply(self, erc20_contract):
         total = erc20_contract.contract.functions.totalSupply().call()
@@ -111,12 +100,12 @@ class TestERC20SPL:
             web3.exceptions.ContractLogicError,
             match="0x96ab19c8",  # AmountExceedsBalance error
         ):
-            erc20_contract.burn(erc20_contract.account, erc20_contract.account.address, total + 1)
+            erc20_contract.burn(erc20_contract.account, total + 1)
 
     @pytest.mark.parametrize("param, msg", NO_ENOUGH_GAS_PARAMS)
     def test_burn_no_enough_gas(self, erc20_contract, param, msg):
         with pytest.raises(ValueError, match=msg):
-            erc20_contract.burn(erc20_contract.account, erc20_contract.account.address, 1, **param)
+            erc20_contract.burn(erc20_contract.account, 1, **param)
 
     def test_burnFrom(self, erc20_contract, new_account, restore_balance):
         balance_before = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
@@ -145,12 +134,6 @@ class TestERC20SPL:
             match="0x65ba6fc3",  # InvalidAllowance error
         ):
             erc20_contract.burn_from(new_account, erc20_contract.account.address, amount + 1)
-
-    def test_burnFrom_incorrect_address(
-        self, erc20_contract
-    ):  # FIXME: Check this, looks like we don't send any call to proxy
-        with pytest.raises(web3.exceptions.InvalidAddress):
-            erc20_contract.burn_from(erc20_contract.account, create_invalid_address(), 1)
 
     @pytest.mark.parametrize("param, msg", NO_ENOUGH_GAS_PARAMS)
     def test_burnFrom_no_enough_gas(self, erc20_contract, new_account, param, msg):
@@ -450,7 +433,6 @@ class TestERC20SPLMintable(TestERC20SPL):
         if current_balance > default_value:
             erc20_spl_mintable.burn(
                 erc20_spl_mintable.account,
-                erc20_spl_mintable.account.address,
                 current_balance - default_value,
             )
         else:

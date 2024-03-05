@@ -14,15 +14,6 @@ on:
           - night-stand
           - devnet
           - terraform
-      runner:
-        type: choice
-        default: neon-hosted
-        required: true
-        description: "Where to run tests (our runner or github)"
-        options:
-          - neon-hosted
-          - aws-hosted
-          - ubuntu-20.04
       jobsNumber:
         description: "Count of parallel jobs"
         required: true
@@ -35,7 +26,6 @@ on:
 env:
   JOBS_NUMBER: ${{ github.event.inputs.jobsNumber || '8' }}
   NETWORK: ${{ github.event.inputs.network || 'night-stand' }}
-  RUNNER: ${{github.event.inputs.runner || 'neon-hosted' }}
   IMAGE:  neonlabsorg/neon_tests
   CONTAINER:  oz-${{ github.run_id }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
@@ -57,8 +47,9 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
-      - name: "Prepare stand"
-        id: prepare_stand
+      - name: "Prepare terraform stand"
+        if: ${{ env.NETWORK == 'terraform' }}
+        id: prepare_terraform
         env:
           AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
           AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
@@ -67,36 +58,40 @@ jobs:
           TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
           TFSTATE_KEY_PREFIX: ${{vars.TFSTATE_KEY_PREFIX}}
           TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
-        uses: ./.github/actions/prepare-stand
+        uses: ./.github/actions/create-tf-stand
         with:
-          network: ${{ env.NETWORK }}
           ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
           devnet_solana_url: ${{ secrets.SOLANA_URL }}
-      - name: Set outputs
+      - name: "Define outputs"
         id: vars
-        run: |
-            echo "runner=${{ env.RUNNER }}" >> $GITHUB_OUTPUT
-            echo "network=${{ env.NETWORK }}" >> $GITHUB_OUTPUT
+        uses: ./.github/actions/define-stand-env
+        with:
+          network: ${{ env.NETWORK }}
+          devnet_solana_url: ${{ secrets.SOLANA_URL }}
+          proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
+          solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
+          proxy_url: ${{ github.event.inputs.proxy_url }}
+          solana_url: ${{ github.event.inputs.solana_url }}
+          faucet_url: ${{ github.event.inputs.faucet_url }}
+          network_id: ${{ github.event.inputs.network_id }}
+
     outputs:
-      runner: ${{ steps.vars.outputs.runner }}
-      network: ${{ steps.vars.outputs.network }}
+      network: ${{ env.NETWORK }}
       solana_url: ${{ steps.prepare_stand.outputs.solana_url }}
-      proxy_url: ${{ steps.prepare_stand.outputs.proxy_url }}
-      faucet_url:  ${{ steps.prepare_stand.outputs.faucet_url }}
-      network_id: ${{ steps.prepare_stand.outputs.network_id }}
-      proxy_ip: ${{ steps.prepare_stand.outputs.proxy_ip }}
-      solana_ip: ${{ steps.prepare_stand.outputs.solana_ip }}
+      proxy_url: ${{ steps.vars.outputs.proxy_url }}
+      faucet_url:  ${{ steps.vars.outputs.faucet_url }}
+      network_id: ${{ steps.vars.outputs.network_id }}
+      proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
+      solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
+      dapps: ${{ steps.dapps.outputs.list }}
 
   tests:
     name: OpenZeppelin tests
     needs:
       - prepare-env
       - dockerize
-    runs-on: ${{ needs.prepare-env.outputs.runner }}
+    runs-on: neon-hosted
     if: always() && contains(fromJSON('["success", "skipped"]'), needs.dockerize.result)
-    env:
-      AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-      AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
     steps:
       - uses: actions/checkout@v4
       - name: Define image tag

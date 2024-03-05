@@ -64,8 +64,9 @@ jobs:
           echo "list=${list}"
           echo "list=${list}" >> $GITHUB_OUTPUT
 
-      - name: "Prepare stand"
-        id: prepare_stand
+      - name: "Prepare terraform stand"
+        if: ${{ env.NETWORK == 'terraform' }}
+        id: prepare_terraform
         env:
           AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
           AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
@@ -74,29 +75,31 @@ jobs:
           TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
           TFSTATE_KEY_PREFIX: ${{vars.TFSTATE_KEY_PREFIX}}
           TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
-        uses: ./.github/actions/prepare-stand
+        uses: ./.github/actions/create-tf-stand
         with:
-          network: ${{ env.NETWORK }}
           ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
           devnet_solana_url: ${{ secrets.SOLANA_URL }}
+      - name: "Define outputs"
+        id: vars
+        uses: ./.github/actions/define-stand-env
+        with:
+          network: ${{ env.NETWORK }}
+          devnet_solana_url: ${{ secrets.SOLANA_URL }}
+          proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
+          solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
           proxy_url: ${{ github.event.inputs.proxy_url }}
           solana_url: ${{ github.event.inputs.solana_url }}
           faucet_url: ${{ github.event.inputs.faucet_url }}
           network_id: ${{ github.event.inputs.network_id }}
-      - name: Set outputs
-        id: vars
-        run: |
-            echo "runner=${{ env.RUNNER }}" >> $GITHUB_OUTPUT
-        #    echo "network=${{ env.NETWORK }}" >> $GITHUB_OUTPUT
+
     outputs:
-      runner: ${{ steps.vars.outputs.runner }}
       network: ${{ env.NETWORK }}
       solana_url: ${{ steps.prepare_stand.outputs.solana_url }}
-      proxy_url: ${{ steps.prepare_stand.outputs.proxy_url }}
-      faucet_url:  ${{ steps.prepare_stand.outputs.faucet_url }}
-      network_id: ${{ steps.prepare_stand.outputs.network_id }}
-      proxy_ip: ${{ steps.prepare_stand.outputs.proxy_ip }}
-      solana_ip: ${{ steps.prepare_stand.outputs.solana_ip }}
+      proxy_url: ${{ steps.vars.outputs.proxy_url }}
+      faucet_url:  ${{ steps.vars.outputs.faucet_url }}
+      network_id: ${{ steps.vars.outputs.network_id }}
+      proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
+      solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
       dapps: ${{ steps.dapps.outputs.list }}
 
   uniswap-v2:

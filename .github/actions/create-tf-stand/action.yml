@@ -1,0 +1,66 @@
+name: "Prepare stand"
+description: "Create terraform stand"
+outputs:
+  proxy_ip:
+    description: "proxy ip"
+    value: ${{ steps.share.outputs.proxy_ip }}
+  solana_ip:
+    description: "solana ip"
+    value: ${{ steps.share.outputs.solana_ip }}
+inputs:
+  ci_stands_key_hcloud:
+    description: 'Private key for hcloud'
+    required: false
+  tfstate_bucket:
+    description: 'Terraform state bucket'
+    required: false
+  tfstate_key_prefix:
+    description: 'Terraform state key prefix'
+    required: false
+  tfstate_region:
+    description: 'Terraform state region'
+    required: false
+
+runs:
+  using: composite
+
+  steps:
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+      - name: Deploy stand with terraform
+        id: deploy
+        shell: bash
+        run: |
+          ssh_key='/tmp/ci-stands'
+          echo "${{ inputs.ci_stands_key_hcloud  }}" >> ${ssh_key} && chmod 400 ${ssh_key}
+          python3 ./clickfile.py infra deploy
+      - uses: actions/upload-artifact@v3
+        if: inputs.network == 'terraform'
+        with:
+          name: tf-state
+          path: deploy/hetzner/
+
+      - name: Set outputs
+        id: share
+        env:
+          SOLANA_IP: ${{ env.SOLANA_IP }}
+          PROXY_IP: ${{ env.PROXY_IP }}
+        shell: bash
+        run: |
+            proxy_url=`python ./clickfile.py infra print-network-param -n '${{inputs.network}}' -p 'proxy_url'`
+          
+          echo "proxy_url=$proxy_url"
+          echo "solana_ip=${{ env.SOLANA_IP }}"
+          echo "proxy_ip=${{ env.PROXY_IP }}"
+          echo "proxy_url=$proxy_url" >> $GITHUB_OUTPUT
+          echo "proxy_ip=${{ env.PROXY_IP }}" >> $GITHUB_OUTPUT
+          echo "solana_ip=${{ env.SOLANA_IP }}" >> $GITHUB_OUTPUT
+
+      - name: Wait until proxy is ready
+        shell: bash
+        run: |
+            while [[ "$(curl -s -X POST -o /dev/null -w ''%{http_code}'' ${{ steps.share.outputs.proxy_url }})" != "200" ]];
+              do echo  "Proxy is not ready yet. Waiting 5 seconds...";
+              sleep 5;
+            done

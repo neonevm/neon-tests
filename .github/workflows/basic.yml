@@ -66,7 +66,8 @@ jobs:
         run: |
           echo "NETWORK=devnet" >> $GITHUB_ENV
       - uses: actions/checkout@v4
-      - name: "Prepare stand"
+
+      - name: "Prepare terraform stand"
         id: prepare_terraform
         if: ${{ env.NETWORK == 'terraform' }}
         env:
@@ -77,10 +78,11 @@ jobs:
           TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
           TFSTATE_KEY_PREFIX: ${{vars.TFSTATE_KEY_PREFIX}}
           TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
-        uses: ./.github/actions/prepare-stand
+          TF_VAR_ci_pp_solana_url: ${{ secrets.SOLANA_URL }}
+        uses: ./.github/actions/create-tf-stand
         with:
-          network: ${{ env.NETWORK }}
           ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
+
     outputs:
       proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
       solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
@@ -108,7 +110,7 @@ jobs:
         run: |
           docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
           docker run -i -d -e CI -e GITHUB_RUN_ID -e GITHUB_WORKFLOW -e BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }} \
-            -e PROXY_URL -e SOLANA_URL \
+            -e SOLANA_URL \
             -e SOLANA_IP -e PROXY_IP \
             --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
       - name: "Run basic tests"

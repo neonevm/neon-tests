@@ -3,7 +3,8 @@ name: Docker Image for all neon tests
 on:
   push:
     branches:
-      - "**"
+      - develop
+      - '[vt][0-9].[0-9]+.[0-9x]+*'
   workflow_dispatch:
     inputs:
       oz_branch:

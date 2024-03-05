@@ -68,6 +68,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: "Prepare stand"
         id: prepare_terraform
+        if: ${{ env.NETWORK == 'terraform' }}
         env:
           AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
           AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}

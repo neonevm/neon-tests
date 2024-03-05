@@ -36,11 +36,9 @@ runs:
           echo "${{ inputs.ci_stands_key_hcloud  }}" >> ${ssh_key} && chmod 400 ${ssh_key}
           python3 ./clickfile.py infra deploy
       - uses: actions/upload-artifact@v3
-        if: inputs.network == 'terraform'
         with:
           name: tf-state
           path: deploy/hetzner/
-
       - name: Set outputs
         id: share
         env:
@@ -48,14 +46,13 @@ runs:
           PROXY_IP: ${{ env.PROXY_IP }}
         shell: bash
         run: |
-            proxy_url=`python ./clickfile.py infra print-network-param -n '${{inputs.network}}' -p 'proxy_url'`
-          
-          echo "proxy_url=$proxy_url"
-          echo "solana_ip=${{ env.SOLANA_IP }}"
-          echo "proxy_ip=${{ env.PROXY_IP }}"
-          echo "proxy_url=$proxy_url" >> $GITHUB_OUTPUT
-          echo "proxy_ip=${{ env.PROXY_IP }}" >> $GITHUB_OUTPUT
-          echo "solana_ip=${{ env.SOLANA_IP }}" >> $GITHUB_OUTPUT
+            proxy_url=`python ./clickfile.py infra print-network-param -n 'terraform' -p 'proxy_url'`
+            echo "proxy_url=$proxy_url"
+            echo "solana_ip=${{ env.SOLANA_IP }}"
+            echo "proxy_ip=${{ env.PROXY_IP }}"
+            echo "proxy_url=$proxy_url" >> $GITHUB_OUTPUT
+            echo "proxy_ip=${{ env.PROXY_IP }}" >> $GITHUB_OUTPUT
+            echo "solana_ip=${{ env.SOLANA_IP }}" >> $GITHUB_OUTPUT
 
       - name: Wait until proxy is ready
         shell: bash

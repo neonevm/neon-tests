@@ -32,7 +32,7 @@ on:
           - 12
           - auto
 env:
-  NETWORK: ${{ github.event.inputs.network || 'night-stand' }}
+  NETWORK: ${{ github.event.inputs.network || 'terraform' }}
   NUMPROCESSES: ${{ github.event.inputs.numprocesses || 4 }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   SOLANA_URL: "${{ secrets.SOLANA_URL }}"
@@ -158,5 +158,4 @@ jobs:
         uses: ./.github/actions/destroy-tf-stand
         with:
           ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
-          devnet_solana_url: ${{ secrets.SOLANA_URL }}
 

@@ -75,10 +75,10 @@ jobs:
           TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
           TFSTATE_KEY_PREFIX: ${{vars.TFSTATE_KEY_PREFIX}}
           TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
+          TF_VAR_ci_pp_solana_url: ${{ secrets.SOLANA_URL }}
         uses: ./.github/actions/create-tf-stand
         with:
           ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
-          devnet_solana_url: ${{ secrets.SOLANA_URL }}
       - name: "Define outputs"
         id: vars
         uses: ./.github/actions/define-stand-env
@@ -565,7 +565,8 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       NETWORK: ${{ needs.prepare.outputs.network }}
-
+      SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
     steps:
       - uses: actions/checkout@v4
       - name: Install python requirements

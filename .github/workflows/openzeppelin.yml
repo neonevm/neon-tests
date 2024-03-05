@@ -58,10 +58,10 @@ jobs:
           TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
           TFSTATE_KEY_PREFIX: ${{vars.TFSTATE_KEY_PREFIX}}
           TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
+          TF_VAR_ci_pp_solana_url: ${{ secrets.SOLANA_URL }}
         uses: ./.github/actions/create-tf-stand
         with:
           ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
-          devnet_solana_url: ${{ secrets.SOLANA_URL }}
       - name: "Define outputs"
         id: vars
         uses: ./.github/actions/define-stand-env
@@ -91,7 +91,7 @@ jobs:
       - prepare-env
       - dockerize
     runs-on: neon-hosted
-    if: always() && contains(fromJSON('["success", "skipped"]'), needs.dockerize.result)
+    if: always() && contains(fromJSON('["success", "skipped"]'), needs.dockerize.result) && needs.prepare-env.result == 'success'
     steps:
       - uses: actions/checkout@v4
       - name: Define image tag

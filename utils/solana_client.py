@@ -1,6 +1,9 @@
 import json
 import time
 import typing as tp
+import uuid
+import requests
+
 
 import solana.rpc.api
 import spl.token.client
@@ -14,7 +17,7 @@ from solana.system_program import TransferParams, transfer
 from solana.transaction import Transaction
 from solders.rpc.errors import InternalErrorMessage
 from solders.rpc.responses import RequestAirdropResp
-from spl.token.instructions import get_associated_token_address, create_associated_token_account, mint_to, MintToParams
+from spl.token.instructions import get_associated_token_address, create_associated_token_account
 from spl.token.client import Token as SplToken
 
 from utils.consts import LAMPORT_PER_SOL, wSOL
@@ -27,6 +30,7 @@ from utils.transfers_inter_networks import wSOL_tx, token_from_solana_to_neon_tx
 class SolanaClient(solana.rpc.api.Client):
     def __init__(self, endpoint, account_seed_version="\3"):
         super().__init__(endpoint=endpoint, timeout=120)
+        self.endpoint = endpoint
         self.account_seed_version = (
             bytes(account_seed_version, encoding="utf-8").decode("unicode-escape").encode("utf-8")
         )
@@ -205,3 +209,18 @@ class SolanaClient(solana.rpc.api.Client):
                 return False
         except Exception as e:
             print(f"An error occurred: {e}")
+
+    def get_account_whole_info(
+        self,
+        pubkey: PublicKey,
+    ):
+        # get_account_info method returns cut data
+
+        body = {
+            "jsonrpc": "2.0",
+            "id": str(uuid.uuid4()),
+            "method": "getAccountInfo",
+            "params": [f"{pubkey}", {"encoding": "base64", "commitment": "confirmed"}],
+        }
+        response = requests.post(self.endpoint, json=body, headers={"Content-Type": "application/json"})
+        return response.json()

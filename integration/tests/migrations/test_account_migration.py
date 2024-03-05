@@ -1,8 +1,12 @@
 """Tests to check old accounts continue work after structure changes
 Environment variables ACCOUNTS, ERC20_ADDRESS, ERC721_ADDRESS should be set"""
 import os
+import time
 
+import eth_abi
 import pytest
+from eth_utils import abi
+
 from web3.logs import DISCARD
 
 from integration.tests.economy.steps import assert_profit
@@ -11,8 +15,10 @@ from utils.erc721ForMetaplex import ERC721ForMetaplex
 from utils.helpers import gen_hash_of_block
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def accounts(web3_client):
+    print("VERSIONS", web3_client.get_neon_versions())
+
     account_keys = os.environ.get("ACCOUNTS").split(",")
     accounts = []
     for key in account_keys:
@@ -20,28 +26,33 @@ def accounts(web3_client):
     print("Before testing:")
     for acc in accounts:
         print(
-            f"Balance for {acc.address}: {web3_client.to_atomic_currency(web3_client.get_balance(acc.address))}, nonce: {web3_client.eth.get_transaction_count(acc.address)}"
+            f"Balance for {acc.address}: "
+            f"{web3_client.to_atomic_currency(web3_client.get_balance(acc.address))}, "
+            f"nonce: {web3_client.eth.get_transaction_count(acc.address)}"
         )
 
     yield accounts
     print("After testing:")
+    time.sleep(3)
     for acc in accounts:
         print(
-            f"Balance for {acc.address}: {web3_client.to_atomic_currency(web3_client.get_balance(acc.address))}, nonce: {web3_client.eth.get_transaction_count(acc.address)}"
+            f"Balance for {acc.address}: "
+            f"{web3_client.to_atomic_currency(web3_client.get_balance(acc.address))}, "
+            f"nonce: {web3_client.eth.get_transaction_count(acc.address)}"
         )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def bob(accounts):
     return accounts[0]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def alice(accounts):
     return accounts[1]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def trx_list():
     list = []
     yield list
@@ -49,8 +60,35 @@ def trx_list():
     for trx in list:
         print(trx.hex())
 
+@pytest.fixture(scope="class")
+def counter(web3_client, accounts):
+    contract_address = os.environ.get("COUNTER_ADDRESS")
+    if contract_address:
+        contract = web3_client.get_deployed_contract(
+            contract_address, contract_file="common/Counter"
+        )
+        print(f"Using Counter deployed earlier at {contract_address}")
+    else:
+        contract, _ = web3_client.deploy_and_get_contract("common/Counter", "0.8.10", account=accounts[0])
+        print(f"Counter deployed at address: {contract.address}")
+    return contract
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
+def counter_with_map(web3_client, accounts):
+    contract_address = os.environ.get("COUNTER_MAP_ADDRESS")
+    if contract_address:
+        contract = web3_client.get_deployed_contract(
+            contract_address, contract_file="common/Counter", contract_name="CounterWithMap"
+        )
+        print(f"Using CounterWithMap deployed earlier at {contract_address}")
+    else:
+        contract, _ = web3_client.deploy_and_get_contract("common/Counter", "0.8.10", contract_name="CounterWithMap", account=accounts[0])
+        print(f"CounterWithMap deployed at address: {contract.address}")
+    return contract
+
+
+
+@pytest.fixture(scope="class")
 def erc20(web3_client, faucet, sol_client, solana_account, bob):
     contract_address = os.environ.get("ERC20_ADDRESS")
 
@@ -84,7 +122,7 @@ def erc20(web3_client, faucet, sol_client, solana_account, bob):
     return erc20
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def erc721(web3_client, faucet, bob):
     contract_address = os.environ.get("ERC721_ADDRESS")
     if contract_address:
@@ -95,6 +133,46 @@ def erc721(web3_client, faucet, bob):
         print(f"ERC721 deployed at address: {erc721.contract.address}")
 
     return erc721
+
+def check_counter(sender, contract, web3_client, sol_client):
+
+    tx = web3_client.make_raw_tx(sender.address)
+
+    solana_accounts = get_solana_accounts_by_emulation(web3_client, sender, contract.address,
+                                           "inc()")
+    print_solana_accounts_info(sol_client, solana_accounts,"before inc")
+
+    value_before = contract.functions.get().call({"from": sender.address})
+    print("Value before:", value_before)
+
+    tx = contract.functions.inc().build_transaction(tx)
+    receipt = web3_client.send_transaction(sender, tx)
+    print_solana_accounts_info(sol_client, solana_accounts,"after inc")
+
+    print("Transaction receipt:", receipt)
+    value_after = contract.functions.get().call({"from": sender.address})
+    print("Value after:", value_after)
+    assert value_after == value_before + 1
+
+def get_solana_accounts_by_emulation(web3_client, sender, contract, function_signature, params=None):
+    data = abi.function_signature_to_4byte_selector(function_signature)
+
+    if params is not None:
+        types = function_signature.split("(")[1].split(")")[0].split(",")
+        data += eth_abi.encode(types, params)
+    tx = web3_client.make_raw_tx(sender.address, contract, data=data, estimate_gas=True)
+    signed_tx = web3_client.eth.account.sign_transaction(
+        tx, sender.key)
+    result = web3_client.get_neon_emulate(
+        str(signed_tx.rawTransaction.hex())[2:])
+    print(result)
+    return [item["pubkey"] for item in result["result"]["solana_accounts"]]
+
+def print_solana_accounts_info(sol_client, accounts, action):
+    print("Solana accounts info", action)
+    for acc in accounts:
+        print(sol_client.get_account_whole_info(acc))
+        print(f"Account {acc}: {sol_client.get_account_whole_info(acc)['result']['value']}")
 
 
 class TestAccountMigration:
@@ -116,6 +194,7 @@ class TestAccountMigration:
 
         token_diff = web3_client.to_main_currency(token_balance_after - token_balance_before)
         assert_profit(sol_diff, sol_price, token_diff, neon_price, web3_client.native_token_name)
+
 
     def test_transfers(self, alice, bob, accounts, web3_client, trx_list, check_operator_balance):
         web3_client.send_neon(alice, bob, 5)
@@ -170,17 +249,37 @@ class TestAccountMigration:
         seed = web3_client.text_to_bytes32(gen_hash_of_block(8))
         erc721.mint(seed, erc721.account.address, "uri")
 
-    def test_erc721_interaction(self, erc721, web3_client, bob, alice, accounts, trx_list, check_operator_balance):
+
+    def test_erc721_interaction(self, erc721, web3_client, sol_client, bob, alice, accounts, trx_list, check_operator_balance):
         seed = web3_client.text_to_bytes32(gen_hash_of_block(8))
+
+        solana_accounts = get_solana_accounts_by_emulation(web3_client, erc721.account, erc721.contract.address,
+                                               "mint(bytes32,address,string)",
+                                               [seed, erc721.account.address, "uri"])
+        print_solana_accounts_info(sol_client, solana_accounts,"before mint")
         token_id = erc721.mint(seed, erc721.account.address, "uri")
+        print_solana_accounts_info(sol_client, solana_accounts,"after mint")
 
         balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
         balance_usr2_before = erc721.contract.functions.balanceOf(alice.address).call()
 
+        solana_accounts = get_solana_accounts_by_emulation(web3_client, erc721.account, erc721.contract.address,
+                                               "approve(address,uint256)",
+                                               [alice.address, token_id])
+        print_solana_accounts_info(sol_client, solana_accounts,"before approve")
         resp = erc721.approve(alice.address, token_id, erc721.account)
+        print_solana_accounts_info(sol_client, solana_accounts,"after approve")
+
         trx_list.append(resp["transactionHash"])
 
+        solana_accounts = get_solana_accounts_by_emulation(web3_client, alice, erc721.contract.address,
+                                               "transferFrom(address,address,uint256)",
+                                               [erc721.account.address, alice.address, token_id])
+        print_solana_accounts_info(sol_client, solana_accounts,"before transfer_from")
+
         resp = erc721.transfer_from(erc721.account.address, alice.address, token_id, alice)
+        print_solana_accounts_info(sol_client, solana_accounts,"after transfer_from")
+
         trx_list.append(resp["transactionHash"])
 
         balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
@@ -196,16 +295,12 @@ class TestAccountMigration:
 
         for i in range(5):
             recipient = accounts[i + 3]
-
             balance_usr1_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
             balance_usr2_before = erc721.contract.functions.balanceOf(recipient.address).call()
-
             resp = erc721.transfer_from(erc721.account.address, recipient.address, token_ids[i], erc721.account)
             trx_list.append(resp["transactionHash"])
-
             balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
             balance_usr2_after = erc721.contract.functions.balanceOf(recipient.address).call()
-
             assert balance_usr1_after - balance_usr1_before == -1
             assert balance_usr2_after - balance_usr2_before == 1
 
@@ -272,3 +367,16 @@ class TestAccountMigration:
             assert balance_acc1_after == balance_acc1_before - amount
             assert balance_acc2_after == balance_acc2_before + amount
             assert total_before == total_after
+
+
+
+    def test_simple_counter(self, web3_client, accounts, counter, sol_client):
+        # the data fits into contract account
+        sender = accounts[7]
+        check_counter(sender, counter, web3_client, sol_client)
+
+    def test_counter_with_map(self, web3_client, accounts, counter_with_map, sol_client):
+        sender = accounts[9]
+        check_counter(sender, counter_with_map, web3_client, sol_client)
+
+

@@ -34,3 +34,17 @@ contract Counter {
         bytes memory _baseBytes = bytes(text);
     }
 }
+
+
+contract CounterWithMap {
+
+mapping(address => uint256) map;
+
+    function inc() public {
+        map[msg.sender] += 1;
+    }
+
+    function get() public view returns (uint256) {
+        return map[msg.sender];
+    }
+}

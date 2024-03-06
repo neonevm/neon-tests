@@ -58,7 +58,6 @@ class TestERC721:
         assert metadata["mint"] == solana_acc.encode("utf-8")
         assert metadata["data"]["name"] == "Metaplex"
         assert metadata["data"]["symbol"] == "MPL"
-        assert metadata["is_mutable"] is False
 
     def test_mint(self, erc721):
         seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))

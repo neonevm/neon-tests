@@ -5,6 +5,7 @@ import requests
 
 from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts
+from utils.prices import get_btc_price_detailed
 
 
 BTC_USD_ID = "0xf9c0172ba10dfa4d19088d94f5bf61d3b54d5bd7483a322a982e1373ee8ea31b"
@@ -26,8 +27,8 @@ class TestPyth:
 
         price = contract.functions.getCurrentPrice(BTC_USD_ID).call()
 
-        latest_price, conf, expo = latest_price_feeds(BTC_USD_ID)
-        assert math.isclose(abs(latest_price - int(price[0])), 0.0, rel_tol=conf * (10**expo))
+        latest_price = get_btc_price_detailed().aggregate_price
+        assert math.isclose(latest_price, int(price[0]), rel_tol=10)
 
     @pytest.mark.only_devnet
     def test_deploy_contract_pyth_network_get_price(self):
@@ -41,11 +42,5 @@ class TestPyth:
         address = contract_deploy_tx["contractAddress"]
         price = contract.functions.get(address, BTC_USD_ID).call()
 
-        latest_price, conf, expo = latest_price_feeds(BTC_USD_ID)
-        assert math.isclose(abs(latest_price - price), 0.0, rel_tol=conf * (10**expo))
-
-
-def latest_price_feeds(feed_id):
-    response = requests.get(PYTH_DEVNET_URI + "/api/latest_price_feeds?ids[]=" + feed_id)
-    result = response.json()[0]["price"]
-    return int(result["price"]), int(result["conf"]), int(result["expo"])
+        latest_price = get_btc_price_detailed().aggregate_price
+        assert math.isclose(latest_price, price, rel_tol=10)

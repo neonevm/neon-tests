@@ -67,6 +67,10 @@ class Web3Client:
     @allure.step("Get cli version")
     def get_cli_version(self):
         return self._get_evm_info("neon_cli_version")
+    
+    @allure.step("Get neon version")
+    def get_neon_versions(self):
+        return self._get_evm_info("neon_versions")
 
     @allure.step("Get evm version")
     def get_evm_version(self):
@@ -234,6 +238,7 @@ class Web3Client:
         contract_name: tp.Optional[str] = None,
         constructor_args: tp.Optional[tp.Any] = None,
         import_remapping: tp.Optional[dict] = None,
+        libraries: tp.Optional[dict] = None,
         gas: tp.Optional[int] = 0,
         value=0,
     ) -> tp.Tuple[tp.Any, web3.types.TxReceipt]:
@@ -242,6 +247,7 @@ class Web3Client:
             version,
             contract_name=contract_name,
             import_remapping=import_remapping,
+            libraries=libraries,
         )
 
         contract_deploy_tx = self.deploy_contract(

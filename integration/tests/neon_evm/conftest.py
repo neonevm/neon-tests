@@ -36,7 +36,6 @@ def prepare_operator(key_file):
     wait_for_account_to_exists(solana_client, account.public_key)
 
     a = solana_client.get_account_info(account.public_key, commitment=Confirmed)
-    print(f"{a}")
 
     operator_ether = eth_keys.PrivateKey(account.secret_key[:32]).public_key.to_canonical_address()
 

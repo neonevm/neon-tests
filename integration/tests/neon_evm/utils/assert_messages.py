@@ -1,5 +1,4 @@
 class InstructionAsserts:
-    LOCKED_ACC = "trying to execute transaction on rw locked account"
     INVALID_CHAIN_ID = "Invalid Chain ID"
     INVALID_NONCE = "Invalid Nonce"
     TRX_ALREADY_FINALIZED = "Transaction already finalized"

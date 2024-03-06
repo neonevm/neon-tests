@@ -24,7 +24,7 @@ RUN apt update && \
     echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
 # Install py3.10 from deadsnakes repository and pip from standard ubuntu packages
     add-apt-repository ppa:deadsnakes/ppa && apt update && \
-    apt install -y python3.10 python3.10-distutils nodejs
+    apt install -y python3.10 python3.10-distutils nodejs build-essential
 
 RUN update-alternatives --install /usr/bin/python3 python /usr/bin/python3.10 2
 RUN update-alternatives --install /usr/bin/python3 python /usr/bin/python3.8 1
@@ -50,7 +50,8 @@ COPY ./deploy/oz/run-full-test-suite.sh /opt/neon-tests/
 
 WORKDIR /opt/neon-tests
 ADD ./ /opt/neon-tests
-RUN python3 ./clickfile.py update-contracts
+ARG CONTRACTS_BRANCH
+RUN python3 ./clickfile.py update-contracts --branch ${CONTRACTS_BRANCH}
 
 # Install UI requirements
 RUN python3 ./clickfile.py requirements -d ui

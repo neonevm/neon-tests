@@ -35,7 +35,8 @@ class Platform:
 class FeeType:
     neon: str = "NEON"
     sol: str = "SOL"
-    none: str = "none"
+    none: str = None
+
 
 @dataclass
 class Tokens:

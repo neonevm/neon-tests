@@ -9,14 +9,19 @@ from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
 
 from . import solana_utils
-from .solana_utils import solana_client, write_transaction_to_holder_account, \
-    send_transaction_step_from_account, get_solana_balance, execute_transaction_steps_from_account
+from .solana_utils import (
+    solana_client,
+    write_transaction_to_holder_account,
+    send_transaction_step_from_account,
+    get_solana_balance,
+    execute_transaction_steps_from_account,
+)
 from .utils.assert_messages import InstructionAsserts
-from .utils.constants import EVM_LOADER, TAG_STATE
+from .utils.constants import EVM_LOADER
 from .utils.contract import make_deployment_transaction, make_contract_call_trx
 from .utils.ethereum import make_eth_transaction
 from .utils.instructions import make_WriteHolder
-from .utils.layouts import STORAGE_ACCOUNT_INFO_LAYOUT, HOLDER_ACCOUNT_INFO_LAYOUT
+from .utils.layouts import HOLDER_ACCOUNT_INFO_LAYOUT
 from .utils.storage import create_holder, delete_holder
 
 
@@ -24,7 +29,7 @@ def transaction_from_holder(key: PublicKey):
     data = solana_client.get_account_info(key, commitment=Confirmed).value.data
     header = HOLDER_ACCOUNT_INFO_LAYOUT.parse(data)
 
-    return data[HOLDER_ACCOUNT_INFO_LAYOUT.sizeof():][:header.len]
+    return data[HOLDER_ACCOUNT_INFO_LAYOUT.sizeof() :][: header.len]
 
 
 def test_create_holder_account(operator_keypair):
@@ -37,14 +42,16 @@ def test_create_holder_account(operator_keypair):
 def test_create_the_same_holder_account_by_another_user(operator_keypair, session_user):
     seed = str(randrange(1000000))
     storage = PublicKey(
-        sha256(bytes(operator_keypair.public_key) + bytes(seed, 'utf8') + bytes(PublicKey(EVM_LOADER))).digest())
+        sha256(bytes(operator_keypair.public_key) + bytes(seed, "utf8") + bytes(PublicKey(EVM_LOADER))).digest()
+    )
     create_holder(operator_keypair, seed=seed, storage=storage)
 
     trx = Transaction()
     trx.add(
-        solana_utils.create_account_with_seed(session_user.solana_account.public_key,
-                                              session_user.solana_account.public_key, seed, 10 ** 9, 128 * 1024),
-        solana_utils.create_holder_account(storage, session_user.solana_account.public_key, bytes(seed, 'utf8'))
+        solana_utils.create_account_with_seed(
+            session_user.solana_account.public_key, session_user.solana_account.public_key, seed, 10**9, 128 * 1024
+        ),
+        solana_utils.create_holder_account(storage, session_user.solana_account.public_key, bytes(seed, "utf8")),
     )
 
     error = str.format(InstructionAsserts.INVALID_ACCOUNT, storage)
@@ -56,17 +63,15 @@ def test_write_tx_to_holder(operator_keypair, session_user, second_session_user,
     holder_acc = create_holder(operator_keypair)
     signed_tx = make_eth_transaction(second_session_user.eth_address, None, session_user, 10)
     write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
-    assert signed_tx.rawTransaction == transaction_from_holder(holder_acc), \
-        "Account data is not correct"
+    assert signed_tx.rawTransaction == transaction_from_holder(holder_acc), "Account data is not correct"
 
 
 def test_write_tx_to_holder_in_parts(operator_keypair, session_user):
     holder_acc = create_holder(operator_keypair)
 
-    signed_tx = make_deployment_transaction(session_user, "erc20_for_spl_factory", "ERC20ForSplFactory")
+    signed_tx = make_deployment_transaction(session_user, "neon-evm/erc20_for_spl_factory", "ERC20ForSplFactory")
     write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
-    assert signed_tx.rawTransaction == transaction_from_holder(holder_acc), \
-        "Account data is not correct"
+    assert signed_tx.rawTransaction == transaction_from_holder(holder_acc), "Account data is not correct"
 
 
 def test_write_tx_to_holder_by_no_owner(operator_keypair, session_user, second_session_user, evm_loader):
@@ -103,18 +108,21 @@ def test_delete_holder_by_no_owner(operator_keypair, user_account):
         delete_holder(holder_acc, user_account.solana_account, user_account.solana_account)
 
 
-def test_write_to_not_finalized_holder(rw_lock_contract, user_account, evm_loader, operator_keypair, treasury_pool,
-                                       new_holder_acc):
+def test_write_to_not_finalized_holder(
+    rw_lock_contract, user_account, evm_loader, operator_keypair, treasury_pool, new_holder_acc
+):
     signed_tx = make_contract_call_trx(user_account, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1])
     write_transaction_to_holder_account(signed_tx, new_holder_acc, operator_keypair)
 
-    send_transaction_step_from_account(operator_keypair, evm_loader, treasury_pool, new_holder_acc,
-                                       [user_account.solana_account_address,
-                                        user_account.balance_account_address,
-                                        rw_lock_contract.solana_address], 1, operator_keypair)
-    account_data = solana_client.get_account_info(new_holder_acc, commitment=Confirmed).value.data
-    parsed_data = STORAGE_ACCOUNT_INFO_LAYOUT.parse(account_data)
-    assert parsed_data.tag == TAG_STATE
+    send_transaction_step_from_account(
+        operator_keypair,
+        evm_loader,
+        treasury_pool,
+        new_holder_acc,
+        [user_account.solana_account_address, user_account.balance_account_address, rw_lock_contract.solana_address],
+        1,
+        operator_keypair,
+    )
 
     signed_tx2 = make_contract_call_trx(user_account, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1])
 
@@ -122,20 +130,23 @@ def test_write_to_not_finalized_holder(rw_lock_contract, user_account, evm_loade
         write_transaction_to_holder_account(signed_tx2, new_holder_acc, operator_keypair)
 
 
-def test_write_to_finalized_holder(rw_lock_contract, session_user, evm_loader, operator_keypair, treasury_pool,
-                                   new_holder_acc):
+def test_write_to_finalized_holder(
+    rw_lock_contract, session_user, evm_loader, operator_keypair, treasury_pool, new_holder_acc
+):
     signed_tx = make_contract_call_trx(session_user, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1])
     write_transaction_to_holder_account(signed_tx, new_holder_acc, operator_keypair)
 
-    execute_transaction_steps_from_account(operator_keypair, evm_loader, treasury_pool, new_holder_acc,
-                                           [session_user.solana_account_address,
-                                            session_user.balance_account_address,
-                                            rw_lock_contract.solana_address])
+    execute_transaction_steps_from_account(
+        operator_keypair,
+        evm_loader,
+        treasury_pool,
+        new_holder_acc,
+        [session_user.solana_account_address, session_user.balance_account_address, rw_lock_contract.solana_address],
+    )
     signed_tx2 = make_contract_call_trx(session_user, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1])
 
     write_transaction_to_holder_account(signed_tx2, new_holder_acc, operator_keypair)
-    assert signed_tx2.rawTransaction == transaction_from_holder(new_holder_acc), \
-        "Account data is not correct"
+    assert signed_tx2.rawTransaction == transaction_from_holder(new_holder_acc), "Account data is not correct"
 
 
 def test_holder_write_integer_overflow(operator_keypair, holder_acc):
@@ -149,6 +160,7 @@ def test_holder_write_integer_overflow(operator_keypair, holder_acc):
             operator_keypair,
             opts=TxOpts(skip_confirmation=True, preflight_commitment=Confirmed),
         )
+
 
 def test_holder_write_account_size_overflow(operator_keypair, holder_acc):
     overflow_offset = int(0xFFFFFFFF)

@@ -15,7 +15,7 @@ jobs:
     if: ${{ github.ref_name != 'develop'}}
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Dockerize neon tests"
         id: requirements
         uses: ./.github/actions/dockerize-neon-tests
@@ -38,7 +38,7 @@ jobs:
       NETWORK: "devnet"
     steps:
       - name: "Checkout repository"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: "Define image tag"
         id: image_tag
         uses: ./.github/actions/define-image-tag

@@ -45,7 +45,7 @@ jobs:
     if: github.ref_name != 'develop' || github.event.inputs.oz_branch !=''
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Dockerize neon tests"
         uses: ./.github/actions/dockerize-neon-tests
         with:
@@ -56,7 +56,7 @@ jobs:
   prepare-env:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Prepare stand"
         id: prepare_stand
         env:
@@ -98,7 +98,7 @@ jobs:
       AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
       AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Define image tag
         id: image_tag
         run: |
@@ -155,7 +155,7 @@ jobs:
     needs: [tests, prepare-env]
     if: always() && needs.prepare-env.outputs.network == 'terraform'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Destroy stand"
         env:
           AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}

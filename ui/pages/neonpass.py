@@ -5,9 +5,10 @@ Created on 2022-06-16
 """
 
 import os
+from typing import Optional
 
 import allure
-from playwright._impl._api_types import TimeoutError
+from playwright._impl._errors import TimeoutError
 from playwright.sync_api import expect
 
 from ui import components, libs
@@ -29,7 +30,6 @@ class NeonPassPage(BasePage):
         phantom_page = phantom.PhantomUnlockPage(page)
         phantom_page.page_loaded()
         phantom_page.unlock(os.environ.get("CHROME_EXT_PASSWORD"))
-        phantom_page.connect()
 
     @staticmethod
     def _handle_metamask_connect(page) -> None:
@@ -96,12 +96,13 @@ class NeonPassPage(BasePage):
         try:
             with self.page.context.expect_page(timeout=timeout) as phantom_page_info:
                 components.Button(
-                    self.page, selector="//app-wallet-button[@label='From']//*[text()='Connect Wallet']").click()
-                components.Button(
-                    self.page, selector="//app-wallets-dialog//*[text()='Phantom']/parent::*").click()
+                    self.page, selector="//app-wallet-button[@label='From']//*[text()='Connect Wallet']"
+                ).click()
+                components.Button(self.page, selector="//app-wallets-dialog//*[text()='Phantom']/parent::*").click()
             self._handle_phantom_unlock(phantom_page_info.value)
             self.page.wait_for_selector(
-                selector="//app-wallet-button[@label='From']//*[contains(text(),'B4t7')]", timeout=timeout)
+                selector="//app-wallet-button[@label='From']//*[contains(text(),'B4t7')]", timeout=timeout
+            )
         except TimeoutError as e:
             if 'waiting for event "page"' not in e.message:
                 raise e
@@ -115,11 +116,14 @@ class NeonPassPage(BasePage):
         try:
             with self.page.context.expect_page(timeout=timeout) as mm_page_connect:
                 components.Button(
-                    self.page, selector="//app-wallet-button[@label='To']//*[text()='Connect Wallet']").click()
-                components.Button(self.page, selector="w3m-wallet-button[name='MetaMask']").click()
+                    self.page, selector="//app-wallet-button[@label='To']//*[text()='Connect Wallet']"
+                ).click()
+                self.page.locator("w3m-modal").locator("button", has_text="MetaMask").click()
+                # components.Button(self.page, selector="w3m-wallet-button[name='MetaMask']").click()
             self._handle_metamask_connect(mm_page_connect.value)
             self.page.wait_for_selector(
-                selector="//app-wallet-button[@label='To']//*[contains(text(),'0x4701')]", timeout=timeout)
+                selector="//app-wallet-button[@label='To']//*[contains(text(),'0x4701')]", timeout=timeout
+            )
         except TimeoutError as e:
             if 'waiting for event "page"' not in e.message:
                 raise e
@@ -129,18 +133,30 @@ class NeonPassPage(BasePage):
         """Set source token and amount ti transfer"""
         components.Button(self.page, text="Select token").click()
         self.page.wait_for_selector(selector="//div[contains(@class, 'tokens-options')]")
-        components.Button(self.page, selector=f"//button//*[text()='{token}']").click()
+        components.Button(
+            self.page, selector=f"//div[@class='cdk-overlay-container']//button//*[text()='{token}']"
+        ).click()
         self.page.wait_for_selector(selector="//label[contains(text(), 'balance')]")
         components.Input(self.page, selector="//input[contains(@class, 'token-amount-input')]").fill(str(amount))
 
-    @allure.step("Set transaction fee for platform {platform}, token {token_name} and fee type {fee_type}")
-    def set_transaction_fee(self, platform: str, token_name: str, fee_type: str) -> None:
-        """Set Neon transaction fee type"""
-        if platform != Platform.solana or token_name != Tokens.neon.name:
+    @allure.step("Set transaction fee type {fee_type}")
+    def set_transaction_fee(self, fee_type: Optional[str]) -> None:
+        """Set transaction fee type"""
+        if fee_type is None:
             return
-        selector = f"//app-neon-transaction-fee//*[contains(text(),'{fee_type}')]/parent::*"
-        components.Button(self.page, selector=selector).click()
-        expect(self.page.locator(selector + "[contains(@class, 'selected')]")).to_be_visible()
+
+        fee_selector = "//app-header//app-token-select/button"
+        fee_selector_options = (
+            f"//app-header//app-token-select/div[contains(@class, 'token-dropdown')]/*[text()='{fee_type}']"
+        )
+
+        if self.page.query_selector(fee_selector).text_content() == fee_type:
+            return
+
+        components.Button(self.page, selector=fee_selector).click()
+        components.Button(self.page, selector=fee_selector_options).click()
+
+        assert self.page.query_selector(fee_selector).text_content() == fee_type
 
     def next_tab(self) -> None:
         """Got to next tab"""
@@ -152,20 +168,13 @@ class NeonPassPage(BasePage):
         """Confirm tokens withdraw"""
         try:
             with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
-                self.page.wait_for_selector(selector="//button[contains(@class, 'transfer-button')]").click()
+                components.Button(self.page, selector="//button[contains(@class, 'transfer-button')]").click()
         except TimeoutError as e:
             raise AssertionError("expected new window with wallet confirmation page") from e
 
         confirm_page = confirm_page_info.value
 
         if platform == Platform.solana:
-            if token in [libs.Tokens.sol]:
-                try:
-                    with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
-                        self._handle_pt_withdraw_confirm(confirm_page)
-                except TimeoutError as e:
-                    raise AssertionError("expected new window with Phantom confirmation page") from e
-                confirm_page = confirm_page_info.value
             self._handle_pt_withdraw_confirm(confirm_page)
 
         if platform == Platform.neon:

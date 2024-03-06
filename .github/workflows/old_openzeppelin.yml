@@ -79,7 +79,7 @@ jobs:
       IMAGE_TAG: "neon-release-v3.4-solc0.7"
       CONTAINER:  oz-3.4-${{ github.run_id }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Pull docker image
         run: docker pull ${{ env.IMAGE }}:${{ env.IMAGE_TAG }}
       - name: Run docker container
@@ -128,7 +128,7 @@ jobs:
       IMAGE_TAG: "neon-release-v2.5-solc0.5"
       CONTAINER:  oz-2.5-${{ github.run_id }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Pull docker image
         run: docker pull ${{ env.IMAGE }}:${{ env.IMAGE_TAG }}
       - name: Run docker container

@@ -1,6 +1,6 @@
 pragma solidity >=0.7.0;
 
-import "../../external/erc721_for_metaplex.sol";
+import "../../external/neon-evm/erc721_for_metaplex.sol";
 
 contract MultipleActionsERC721 {
     uint256 data;

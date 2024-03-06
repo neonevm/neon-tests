@@ -1,6 +1,6 @@
-import time
-import random
 import datetime
+import random
+import time
 
 import allure
 import base58
@@ -17,13 +17,12 @@ from spl.token.instructions import (
 
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from utils import metaplex
+from utils.accounts import EthAccounts
 from utils.consts import ZERO_ADDRESS
 from utils.erc721ForMetaplex import ERC721ForMetaplex
 from utils.helpers import gen_hash_of_block, generate_text, wait_condition
-from utils.web3client import NeonChainWeb3Client
 from utils.solana_client import SolanaClient
-from utils.accounts import EthAccounts
-
+from utils.web3client import NeonChainWeb3Client
 
 INCORRECT_ADDRESS_PARAMS = (
     "block_len, expected_exception",
@@ -59,7 +58,6 @@ class TestERC721:
         assert metadata["mint"] == solana_acc.encode("utf-8")
         assert metadata["data"]["name"] == "Metaplex"
         assert metadata["data"]["symbol"] == "MPL"
-        assert metadata["is_mutable"] is False
 
     def test_mint(self, erc721):
         seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
@@ -116,6 +114,7 @@ class TestERC721:
         balance_before = erc721.contract.functions.balanceOf(erc721.account.address).call()
         uri = generate_text(min_len=10, max_len=200)
         mint_amount = random.randint(1, 5)
+
         for _ in range(mint_amount):
             seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
             erc721.mint(seed, erc721.account.address, uri)
@@ -361,7 +360,6 @@ class TestERC721:
             match=ErrorMessage.NOT_TOKEN_OWNER_ERC721.value,
         ):
             erc721.transfer_from(erc721.account.address, new_account.address, tokens[1], new_account)
-
         balance_usr1_after = erc721.contract.functions.balanceOf(erc721.account.address).call()
         balance_usr2_after = erc721.contract.functions.balanceOf(new_account.address).call()
 

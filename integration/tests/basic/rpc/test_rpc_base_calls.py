@@ -95,7 +95,7 @@ class TestRpcBaseCalls:
 
         response = json_rpc_client.send_rpc("eth_call", params=params)
         assert "error" not in response
-        assert response["result"] == "0x", f"Invalid response result, `{response['result']}`"
+        assert "result" in response and response["result"] == "0x", f"Invalid response result, `{response['result']}`"
 
     def test_eth_gas_price(self, json_rpc_client):
         """Verify implemented rpc calls work eth_gasPrice"""
@@ -146,6 +146,7 @@ class TestRpcBaseCalls:
             params=[sender_account.address, Tag.LATEST.value],
         )
         assert "error" not in response
+        assert "result" in response
         assert response["result"] == "0x", f"Invalid response {response['result']} at a given contract address"
 
     def test_eth_get_code_wrong_address(self, json_rpc_client):
@@ -183,10 +184,10 @@ class TestRpcBaseCalls:
         assert "error" not in response
         assert rpc_checks.is_hex(response["result"]), f"Invalid response result {response['result']}"
 
-    def test_eth_sendRawTransaction_max_size(self, json_rpc_client):
+    def test_eth_sendRawTransaction_max_size(self, json_rpc_client, new_account):
         """Validate max size for transaction, 127 KB"""
         size = 127 * 1024
-        sender_account = self.accounts[0]
+        sender_account = new_account
         recipient_account = self.accounts[1]
         transaction = self.web3_client.make_raw_tx(
             from_=sender_account, to=recipient_account, amount=1, estimate_gas=True
@@ -217,6 +218,7 @@ class TestRpcBaseCalls:
         response2 = json_rpc_client.send_rpc(method="eth_blockNumber")
 
         assert "error" not in response and response2
+        assert "result" in response and response2
         assert rpc_checks.is_hex(response["result"]), f"Invalid response result {response['result']}"
         assert rpc_checks.is_hex(response2["result"]), f"Invalid response result {response2['result']}"
         assert response["result"] != response2["result"]
@@ -294,6 +296,7 @@ class TestRpcBaseCalls:
         response = json_rpc_client.send_rpc(method="web3_sha3", params=param)
         if isinstance(param, str) and param.startswith("0"):
             assert "error" not in response
+            assert "result" in response
             assert response["result"][2:].startswith("e5105")
         else:
             assert "error" in response, "Error not in response"

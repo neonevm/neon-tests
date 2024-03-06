@@ -1,7 +1,7 @@
 pragma solidity >=0.7.0 <0.9.0;
 
-import "../external/Metaplex.sol";
-import "../external/SPLToken.sol";
+import "../external/neon-evm/Metaplex.sol";
+import "../external/neon-evm/SPLToken.sol";
 
 contract MetaplexCaller {
 

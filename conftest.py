@@ -40,7 +40,7 @@ class EnvironmentConfig:
 
 
 def pytest_addoption(parser):
-    parser.addoption("--network", action="store", default="local", help="Which stand use")
+    parser.addoption("--network", action="store", default="devnet", help="Which stand use")
     parser.addoption(
         "--make-report",
         action="store_true",

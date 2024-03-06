@@ -34,7 +34,7 @@ runs:
         run: |
           ssh_key='/tmp/ci-stands'
           echo "${{ inputs.ci_stands_key_hcloud  }}" >> ${ssh_key} && chmod 400 ${ssh_key}
-          python3 ./clickfile.py infra deploy
+          python3 ./clickfile.py infra deploy --current_branch ${{ github.ref_name}} --head_branch ${{ github.head_ref }} --base_branch ${{ github.base_ref }}
       - uses: actions/upload-artifact@v3
         with:
           name: tf-state

@@ -865,7 +865,7 @@ def deploy(current_branch, head_branch, base_branch):
     evm_branch = evm_tag if evm_tag != "latest" else "develop"
     proxy_branch = proxy_tag if proxy_tag != "latest" else "develop"
 
-    infrastructure.deploy_infrastructure(proxy_tag, evm_tag, faucet_tag, evm_branch, proxy_branch)
+    infrastructure.deploy_infrastructure(evm_tag, proxy_tag, faucet_tag, evm_branch, proxy_branch)
 
 
 @infra.command(name="destroy", help="Destroy test infrastructure")

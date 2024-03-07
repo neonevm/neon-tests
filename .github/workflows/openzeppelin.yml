@@ -50,6 +50,7 @@ jobs:
       - name: "Prepare terraform stand"
         if: ${{ env.NETWORK == 'terraform' }}
         id: prepare_terraform
+        timeout-minutes: 15
         env:
           AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
           AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}

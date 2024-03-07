@@ -9,17 +9,18 @@ import tabulate
 from paramiko.client import SSHClient
 
 from deploy.cli.infrastructure import upload_service_logs, get_solana_accounts_in_tx
+from deploy.cli.network_manager import NetworkManager
 
 from utils.web3client import NeonChainWeb3Client
 from utils.prices import get_neon_price
 
 
-WEB3_CLIENT = NeonChainWeb3Client(os.environ.get("PROXY_URL"))
 REPORT_HEADERS = ["Action", "Fee", "Cost in $", "Accounts", "TRx", "Estimated Gas", "Used Gas", "Used % of EG"]
+NETWORK_MANAGER = NetworkManager()
 
 
 def set_github_env(envs: tp.Dict, upper=True) -> None:
-    """Set environment for github action"""
+    """Set environment for GitHub action"""
     path = os.getenv("GITHUB_ENV", str())
     if os.path.exists(path):
         with open(path, "a") as env_file:
@@ -56,6 +57,8 @@ def download_remote_docker_logs():
 
 
 def prepare_report_data(directory):
+    proxy_url = NETWORK_MANAGER.get_network_param(os.environ.get("NETWORK"), "proxy_url")
+    web3_client = NeonChainWeb3Client(proxy_url)
     out = {}
     reports = {}
     for path in glob.glob(str(pathlib.Path(directory) / "*-report.json")):
@@ -73,7 +76,7 @@ def prepare_report_data(directory):
         out[app] = []
         for action in reports[app]:
             accounts, trx = get_solana_accounts_in_tx(action["tx"])
-            tx = WEB3_CLIENT.get_transaction_by_hash(action["tx"])
+            tx = web3_client.get_transaction_by_hash(action["tx"])
             estimated_gas = int(tx.gas) if tx and tx.gas else None
             used_gas = int(action["usedGas"])
             row = [action["name"]]

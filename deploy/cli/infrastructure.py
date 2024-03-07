@@ -33,7 +33,7 @@ terraform = Terraform(working_dir=pathlib.Path(__file__).parent.parent / "hetzne
 
 WEB3_CLIENT = NeonChainWeb3Client(os.environ.get("PROXY_URL"))
 REPORT_HEADERS = ["Action", "Fee", "Cost in $", "Accounts", "TRx", "Estimated Gas", "Used Gas", "Used % of EG"]
-
+NETWORK_MANAGER = NetworkManager()
 
 def set_github_env(envs: tp.Dict, upper=True) -> None:
     """Set environment for github action"""
@@ -134,8 +134,7 @@ def upload_service_logs(ssh_client, service, artifact_logs):
 
 
 def prepare_accounts(network_name, count, amount) -> tp.List:
-    network_manager = NetworkManager()
-    network = network_manager.get_network_object(network_name)
+    network = NETWORK_MANAGER.get_network_object(network_name)
     accounts = faucet_cli.prepare_wallets_with_balance(network, count, amount)
     if os.environ.get("CI"):
         set_github_env(dict(accounts=",".join(accounts)))
@@ -144,9 +143,11 @@ def prepare_accounts(network_name, count, amount) -> tp.List:
 
 def get_solana_accounts_in_tx(eth_transaction):
     network = os.environ.get("NETWORK")
-    solana_url = NetworkManager().get_network_param(network, "solana_url")
+    solana_url = NETWORK_MANAGER.get_network_param(network, "solana_url")
+    proxy_url = NETWORK_MANAGER.get_network_param(network, "proxy_url")
     sol_client = SolanaClient(solana_url)
-    trx = WEB3_CLIENT.get_solana_trx_by_neon(eth_transaction)
+    web3_client = NeonChainWeb3Client(proxy_url)
+    trx = web3_client.get_solana_trx_by_neon(eth_transaction)
     tr = sol_client.get_transaction(Signature.from_string(trx["result"][0]), max_supported_transaction_version=0)
     if tr.value.transaction.transaction.message.address_table_lookups:
         alt = tr.value.transaction.transaction.message.address_table_lookups

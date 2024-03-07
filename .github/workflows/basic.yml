@@ -33,7 +33,7 @@ on:
           - auto
 env:
   NETWORK: ${{ github.event.inputs.network || 'terraform' }}
-  NUMPROCESSES: ${{ github.event.inputs.numprocesses || 4 }}
+  NUMPROCESSES: ${{ github.event.inputs.numprocesses || 8 }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   SOLANA_URL: "${{ secrets.SOLANA_URL }}"
   IMAGE:  neonlabsorg/neon_tests
@@ -97,6 +97,7 @@ jobs:
     env:
       SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}
       PROXY_IP: ${{ needs.prepare-env.outputs.proxy_ip }}
+      NETWORK: ${{ needs.prepare-env.outputs.network }}
     if: |
       always() &&
       !contains(needs.*.result, 'failure') &&

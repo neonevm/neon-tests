@@ -1,4 +1,4 @@
-name: "OpenZeppelin"
+name: "OpenZeppelin / ${{ github.event.inputs.network || 'night-stand' }}"
 
 on:
   schedule:

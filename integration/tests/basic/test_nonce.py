@@ -62,7 +62,6 @@ class TestNonce:
             transaction = self.web3_client.make_raw_tx(
                 sender_account, recipient_account, nonce=nonce, estimate_gas=True
             )
-            print(transaction)
             signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
             tx = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)
             tx_hash_list.append(tx.hex())

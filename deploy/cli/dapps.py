@@ -36,8 +36,8 @@ os.environ["TF_VAR_neon_evm_commit"] = os.environ.get("NEON_EVM_TAG", "latest")
 os.environ["TF_VAR_faucet_model_commit"] = os.environ.get("NEON_FAUCET_TAG", "latest")
 os.environ["TF_VAR_dockerhub_org_name"] = os.environ.get("DOCKERHUB_ORG_NAME", "neonlabsorg")
 terraform = Terraform(working_dir=pathlib.Path(__file__).parent.parent / "hetzner")
+NETWORK_MANAGER = NetworkManager()
 
-WEB3_CLIENT = NeonChainWeb3Client(os.environ.get("PROXY_URL"))
 REPORT_HEADERS = ["Action", "Fee", "Cost in $", "Accounts", "TRx", "Estimated Gas", "Used Gas", "Used % of EG"]
 
 
@@ -131,8 +131,7 @@ def upload_service_logs(ssh_client, service, artifact_logs):
 
 
 def prepare_accounts(network_name, count, amount) -> tp.List:
-    network_manager = NetworkManager()
-    network = network_manager.get_network_object(network_name)
+    network = NETWORK_MANAGER.get_network_object(network_name)
     accounts = faucet_cli.prepare_wallets_with_balance(network, count, amount)
     if os.environ.get("CI"):
         set_github_env(dict(accounts=",".join(accounts)))
@@ -141,9 +140,11 @@ def prepare_accounts(network_name, count, amount) -> tp.List:
 
 def get_solana_accounts_in_tx(eth_transaction):
     network = os.environ.get("NETWORK")
-    solana_url = NetworkManager().get_network_param(network, "solana_url")
+    solana_url = NETWORK_MANAGER.get_network_param(network, "solana_url")
+    proxy_url = NETWORK_MANAGER.get_network_param(network, "proxy_url")
     sol_client = SolanaClient(solana_url)
-    trx = WEB3_CLIENT.get_solana_trx_by_neon(eth_transaction)
+    web3_client = NeonChainWeb3Client(proxy_url)
+    trx = web3_client.get_solana_trx_by_neon(eth_transaction)
     tr = sol_client.get_transaction(Signature.from_string(trx["result"][0]), max_supported_transaction_version=0)
     if tr.value.transaction.transaction.message.address_table_lookups:
         alt = tr.value.transaction.transaction.message.address_table_lookups
@@ -153,6 +154,8 @@ def get_solana_accounts_in_tx(eth_transaction):
 
 
 def prepare_report_data(directory):
+    proxy_url = NETWORK_MANAGER.get_network_param(os.environ.get("NETWORK"), "proxy_url")
+    web3_client = NeonChainWeb3Client(proxy_url)
     out = {}
     reports = {}
     for path in glob.glob(str(pathlib.Path(directory) / "*-report.json")):
@@ -170,7 +173,7 @@ def prepare_report_data(directory):
         out[app] = []
         for action in reports[app]:
             accounts, trx = get_solana_accounts_in_tx(action["tx"])
-            tx = WEB3_CLIENT.get_transaction_by_hash(action["tx"])
+            tx = web3_client.get_transaction_by_hash(action["tx"])
             estimated_gas = int(tx.gas) if tx and tx.gas else None
             used_gas = int(action["usedGas"])
             row = [action["name"]]

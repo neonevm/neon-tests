@@ -47,7 +47,9 @@ env:
   AWS_REGION: us-east-2
   AWS_S3_BUCKET: neon-tests-dapps
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+  DUMP_ENVS: True
   ALL_DAPPS: "aave,curve,uniswap-v2,uniswap-v3,saddle,yearn,robonomics,compound,curve-factory,pancake"
+
 jobs:
   prepare:
     runs-on: ubuntu-20.04
@@ -94,7 +96,7 @@ jobs:
 
     outputs:
       network: ${{ env.NETWORK }}
-      solana_url: ${{ steps.prepare_stand.outputs.solana_url }}
+      solana_url: ${{ steps.vars.outputs.solana_url }}
       proxy_url: ${{ steps.vars.outputs.proxy_url }}
       faucet_url:  ${{ steps.vars.outputs.faucet_url }}
       network_id: ${{ steps.vars.outputs.network_id }}
@@ -114,7 +116,6 @@ jobs:
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-      DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v4
       - name: Install python requirements
@@ -163,7 +164,6 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v4
       - name: Install python requirements
@@ -211,7 +211,6 @@ jobs:
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-      DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v4
       - name: Install python requirements
@@ -260,7 +259,6 @@ jobs:
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-      DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v4
       - name: Install python requirements
@@ -302,7 +300,6 @@ jobs:
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-      DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v4
       - name: Install python requirements
@@ -349,7 +346,6 @@ jobs:
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-      DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v4
       - name: Install python requirements
@@ -379,7 +375,6 @@ jobs:
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-      DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v4
       - name: Install python requirements
@@ -426,7 +421,6 @@ jobs:
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-      DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v4
       - name: Install python requirements
@@ -471,7 +465,6 @@ jobs:
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
       PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-      DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v4
       - name: Install python requirements
@@ -520,7 +513,6 @@ jobs:
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       FAUCET_URL: ${{ needs.prepare.outputs.faucet_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
-      DUMP_ENVS: True
     steps:
       - uses: actions/checkout@v4
       - name: Install python requirements
@@ -561,7 +553,7 @@ jobs:
     needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory, pancake]
     if: always()
     env:
-      SOLANA_URL: ${{ needs.prepare.outputs.solana_url || secrets.SOLANA_URL }}
+      SOLANA_URL: ${{ needs.prepare.outputs.solana_url }}
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       NETWORK: ${{ needs.prepare.outputs.network }}

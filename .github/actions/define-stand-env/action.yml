@@ -1,5 +1,5 @@
 name: "Prepare stand"
-description: "Prepare environments for running tests and create terraform stand if it needed"
+description: "Create terraform stand if it needed"
 outputs:
   solana_url:
     description: "solana url"
@@ -23,32 +23,26 @@ inputs:
   network:
     description: 'Stand name'
     required: true
-  ci_stands_key_hcloud:
-    description: 'Private key for hcloud'
-    required: false
   devnet_solana_url:
     description: 'Solana url for devnet'
     required: false
-  tfstate_bucket:
-    description: 'Terraform state bucket'
-    required: false
-  tfstate_key_prefix:
-    description: 'Terraform state key prefix'
-    required: false
-  tfstate_region:
-    description: 'Terraform state region'
-    required: false
   proxy_url:
-    description: 'Proxy url if network is custom'
+    description: 'Proxy url if the network is custom'
     required: false
   faucet_url:
-    description: 'Faucet url if network is custom'
+    description: 'Faucet url if the network is custom'
     required: false
   solana_url:
-    description: 'Solana url if network is custom'
+    description: 'Solana url if the network is custom'
     required: false
   network_id:
-    description: 'Network id if network is custom'
+    description: 'Network id if the network is custom'
+    required: false
+  solana_ip:
+    description: "solana ip if the network is terraform"
+    required: false
+  proxy_ip:
+    description: "proxy ip if the network is terraform"
     required: false
 runs:
   using: composite
@@ -57,30 +51,12 @@ runs:
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
-      - name: Deploy stand with terraform
-        id: deploy
-        env:
-          TF_VAR_ci_pp_solana_url: ${{inputs.devnet_solana_url}}
-        shell: bash
-        if: inputs.network == 'terraform'
-        run: |
-          ssh_key='/tmp/ci-stands'
-          echo "${{ inputs.ci_stands_key_hcloud  }}" >> ${ssh_key} && chmod 400 ${ssh_key}
-          python3 ./clickfile.py infra deploy
-      - uses: actions/upload-artifact@v3
-        if: inputs.network == 'terraform'
-        with:
-          name: tf-state
-          path: deploy/hetzner/
-
       - name: Set outputs
         id: share
         env:
           SOLANA_IP: ${{ env.SOLANA_IP }}
           PROXY_IP: ${{ env.PROXY_IP }}
-          TFSTATE_BUCKET: ${{ inputs.tfstate_bucket }}
-          TFSTATE_KEY_PREFIX: ${{ inputs.tfstate_key_prefix }}
-          TFSTATE_REGION: ${{ inputs.tfstate_region }}
+
         shell: bash
         run: |
           if [[ "${{inputs.network}}" == "custom" ]]; then
@@ -110,11 +86,3 @@ runs:
           echo "network_id=$network_id" >> $GITHUB_OUTPUT
           echo "proxy_ip=${{ env.PROXY_IP }}" >> $GITHUB_OUTPUT
           echo "solana_ip=${{ env.SOLANA_IP }}" >> $GITHUB_OUTPUT
-
-      - name: Wait until proxy is ready
-        shell: bash
-        run: |
-            while [[ "$(curl -s -X POST -o /dev/null -w ''%{http_code}'' ${{ steps.share.outputs.proxy_url }})" != "200" ]];
-              do echo  "Proxy is not ready yet. Waiting 5 seconds...";
-              sleep 5;
-            done

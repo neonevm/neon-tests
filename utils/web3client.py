@@ -4,10 +4,11 @@ import time
 import typing as tp
 from decimal import Decimal
 
+import allure
+import eth_account.signers.local
+import requests
 import web3
 import web3.types
-import requests
-import eth_account.signers.local
 from eth_abi import abi
 from web3.exceptions import TransactionNotFound
 
@@ -32,6 +33,7 @@ class Web3Client:
         return getattr(self._web3, item)
 
     @property
+    @allure.step("Get native token name")
     def native_token_name(self):
         if self._proxy_url.split("/")[-1] != "solana":
             return self._proxy_url.split("/")[-1].upper()
@@ -39,11 +41,13 @@ class Web3Client:
             return "NEON"
 
     @property
+    @allure.step("Get chain id")
     def chain_id(self):
         if self._chain_id is None:
             self._chain_id = self._web3.eth.chain_id
         return self._chain_id
 
+    @allure.step("Get evm info")
     def _get_evm_info(self, method):
         resp = requests.post(
             self._proxy_url,
@@ -56,15 +60,23 @@ class Web3Client:
         except json.JSONDecodeError as e:
             raise RuntimeError(f"Failed to decode EVM info: {resp.text}")
 
+    @allure.step("Get proxy version")
     def get_proxy_version(self):
         return self._get_evm_info("neon_proxy_version")
 
+    @allure.step("Get cli version")
     def get_cli_version(self):
         return self._get_evm_info("neon_cli_version")
+    
+    @allure.step("Get neon version")
+    def get_neon_versions(self):
+        return self._get_evm_info("neon_versions")
 
+    @allure.step("Get evm version")
     def get_evm_version(self):
         return self._get_evm_info("web3_clientVersion")
 
+    @allure.step("Get neon emulate")
     def get_neon_emulate(self, params):
         return requests.post(
             self._proxy_url,
@@ -76,6 +88,7 @@ class Web3Client:
             },
         ).json()
 
+    @allure.step("Get solana trx by neon")
     def get_solana_trx_by_neon(self, tr_id: str):
         return requests.post(
             self._proxy_url,
@@ -87,25 +100,31 @@ class Web3Client:
             },
         ).json()
 
+    @allure.step("Get transaction by hash")
     def get_transaction_by_hash(self, transaction_hash):
         try:
             return self._web3.eth.get_transaction(transaction_hash)
         except TransactionNotFound:
             return None
 
+    @allure.step("Get gas price")
     def gas_price(self):
         gas = self._web3.eth.gas_price
         return gas
 
+    @allure.step("Create account")
     def create_account(self):
         return self._web3.eth.account.create()
 
+    @allure.step("Get block number")
     def get_block_number(self):
         return self._web3.eth.get_block_number()
 
+    @allure.step("Get block number by id")
     def get_block_number_by_id(self, block_identifier):
         return self._web3.eth.get_block(block_identifier)
 
+    @allure.step("Get nonce")
     def get_nonce(
         self,
         address: tp.Union[eth_account.signers.local.LocalAccount, str],
@@ -114,9 +133,11 @@ class Web3Client:
         address = address if isinstance(address, str) else address.address
         return self._web3.eth.get_transaction_count(address, block)
 
+    @allure.step("Wait for transaction receipt")
     def wait_for_transaction_receipt(self, tx_hash, timeout=120):
         return self._web3.eth.wait_for_transaction_receipt(tx_hash, timeout=timeout)
 
+    @allure.step("Get contract")
     def deploy_contract(
         self,
         from_: eth_account.signers.local.LocalAccount,
@@ -150,6 +171,7 @@ class Web3Client:
         tx = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
         return self._web3.eth.wait_for_transaction_receipt(tx)
 
+    @allure.step("Make raw tx")
     def make_raw_tx(
         self,
         from_: tp.Union[str, eth_account.signers.local.LocalAccount],
@@ -195,6 +217,7 @@ class Web3Client:
             transaction["gas"] = gas
         return transaction
 
+    @allure.step("Send transaction")
     def send_transaction(
         self,
         account: eth_account.signers.local.LocalAccount,
@@ -206,6 +229,7 @@ class Web3Client:
         signature = self._web3.eth.send_raw_transaction(instruction_tx.rawTransaction)
         return self._web3.eth.wait_for_transaction_receipt(signature, timeout=timeout)
 
+    @allure.step("Deploy and get contract")
     def deploy_and_get_contract(
         self,
         contract: str,
@@ -214,6 +238,7 @@ class Web3Client:
         contract_name: tp.Optional[str] = None,
         constructor_args: tp.Optional[tp.Any] = None,
         import_remapping: tp.Optional[dict] = None,
+        libraries: tp.Optional[dict] = None,
         gas: tp.Optional[int] = 0,
         value=0,
     ) -> tp.Tuple[tp.Any, web3.types.TxReceipt]:
@@ -222,6 +247,7 @@ class Web3Client:
             version,
             contract_name=contract_name,
             import_remapping=import_remapping,
+            libraries=libraries,
         )
 
         contract_deploy_tx = self.deploy_contract(
@@ -237,6 +263,7 @@ class Web3Client:
 
         return contract, contract_deploy_tx
 
+    @allure.step("Compile by vyper and deploy")
     def compile_by_vyper_and_deploy(self, account, contract_name, constructor_args=None):
         import vyper  # Import here because vyper prevent override decimal precision (uses in economy tests)
 
@@ -254,9 +281,11 @@ class Web3Client:
         return self.eth.contract(address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"])
 
     @staticmethod
+    @allure.step("Text to bytes32")
     def text_to_bytes32(text: str) -> bytes:
         return text.encode().ljust(32, b"\0")
 
+    @allure.step("Call function at address")
     def call_function_at_address(self, contract_address, signature, args, result_types):
         calldata = decode_function_signature(signature, args)
         tx = {
@@ -266,6 +295,7 @@ class Web3Client:
         result = self._web3.eth.call(tx)
         return abi.decode(result_types, result)[0]
 
+    @allure.step("Get balance")
     def get_balance(
         self,
         address: tp.Union[str, eth_account.signers.local.LocalAccount],
@@ -278,6 +308,7 @@ class Web3Client:
             balance = self._web3.from_wei(balance, unit.value)
         return balance
 
+    @allure.step("Get deployed contract")
     def get_deployed_contract(
         self,
         address,
@@ -292,6 +323,7 @@ class Web3Client:
         contract = self.eth.contract(address=address, abi=contract_interface["abi"])
         return contract
 
+    @allure.step("Send tokens")
     def send_tokens(
         self,
         from_: eth_account.signers.local.LocalAccount,
@@ -310,12 +342,15 @@ class Web3Client:
         return self.eth.wait_for_transaction_receipt(tx)
 
     @staticmethod
+    @allure.step("To atomic currency")
     def to_atomic_currency(amount):
         return web3.Web3.to_wei(amount, "ether")
 
+    @allure.step("To main currency")
     def to_main_currency(self, value):
         return web3.Web3.from_wei(value, "ether")
 
+    @allure.step("Calculate trx gas")
     def calculate_trx_gas(self, tx_receipt: web3.types.TxReceipt) -> int:
         tx = self._web3.eth.get_transaction(tx_receipt.transactionHash)
         gas_used_in_tx = tx_receipt.gasUsed * tx["gasPrice"]
@@ -331,6 +366,7 @@ class NeonChainWeb3Client(Web3Client):
     ):
         super().__init__(proxy_url, tracer_url, session)
 
+    @allure.step("Create account with balance")
     def create_account_with_balance(
         self,
         faucet,
@@ -353,6 +389,7 @@ class NeonChainWeb3Client(Web3Client):
             raise AssertionError(f"Balance didn't changed after 20 seconds ({account.address})")
         return account
 
+    @allure.step("Send neon")
     def send_neon(
         self,
         from_: eth_account.signers.local.LocalAccount,

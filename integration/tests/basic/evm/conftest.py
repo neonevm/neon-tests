@@ -23,14 +23,14 @@ def metaplex_caller(web3_client, accounts):
 
 @pytest.fixture(scope="class")
 def metaplex(web3_client):
-    contract_interface = helpers.get_contract_interface("Metaplex", "0.8.10", contract_name="Metaplex")
+    contract_interface = helpers.get_contract_interface("neon-evm/Metaplex", "0.8.10", contract_name="Metaplex")
     contract = web3_client.eth.contract(address=METAPLEX_ADDRESS, abi=contract_interface["abi"])
     return contract
 
 
 @pytest.fixture(scope="class")
 def spl_token(web3_client):
-    contract_interface = helpers.get_contract_interface("SPLToken", "0.8.10")
+    contract_interface = helpers.get_contract_interface("neon-evm/SPLToken", "0.8.10")
     contract = web3_client.eth.contract(address=SPL_TOKEN_ADDRESS, abi=contract_interface["abi"])
     return contract
 

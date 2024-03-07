@@ -41,9 +41,7 @@ class TestVyperCompatibility:
         check_erc20_transfer_function(web3_client, erc20_vyper, accounts[0], accounts[1])
 
     def test_deploy_contract_by_contract(self, simple, forwarder, accounts, web3_client):
-        tx = web3_client.make_raw_tx(accounts[0].address, gas=0)
-        del tx["gas"]
-
+        tx = web3_client.make_raw_tx(accounts[0].address, estimate_gas=False)
         instr = forwarder.functions.deploy(simple.address, accounts[0].address).build_transaction(tx)
         resp = web3_client.send_transaction(accounts[0], instr)
         assert resp["status"] == 1

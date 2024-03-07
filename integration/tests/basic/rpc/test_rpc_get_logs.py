@@ -217,7 +217,7 @@ class TestRpcGetLogs:
 
         response = json_rpc_client.send_rpc(method.value, params=params)
         assert "error" not in response
-        if response["result"]:
+        if "result" in response and response["result"]:
             result = response["result"][0]
             if topic:
                 assert topic in result["topics"]

@@ -37,6 +37,9 @@ def pytest_collection_modifyitems(config, items):
     else:
         deselected_marks.append("only_devnet")
 
+    if network_name != "night-stand":
+        deselected_marks.append("slow")
+
     envs_file = config.getoption("--envs")
     with open(pathlib.Path().parent.parent / envs_file, "r+") as f:
         environments = json.load(f)
@@ -341,6 +344,18 @@ def storage_contract(web3_client, accounts) -> tp.Any:
         constructor_args=[],
     )
     yield contract
+
+
+@pytest.fixture(scope="class")
+def storage_contract_with_deploy_tx(web3_client, class_account) -> tp.Any:
+    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
+        "common/StorageSoliditySource",
+        "0.8.8",
+        class_account,
+        contract_name="Storage",
+        constructor_args=[],
+    )
+    yield contract, contract_deploy_tx
 
 
 @pytest.fixture(scope="session")

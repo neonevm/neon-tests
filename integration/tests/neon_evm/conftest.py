@@ -11,8 +11,9 @@ from solana.rpc.commitment import Confirmed
 
 from .solana_utils import EvmLoader, create_treasury_pool_address, make_new_user, \
     deposit_neon, solana_client, wait_for_account_to_exists
-from .utils.constants import NEON_CORE_API_URL
+from .utils.constants import NEON_CORE_API_URL, NEON_CORE_API_RPC_URL
 from .utils.contract import deploy_contract
+from .utils.neon_api_rpc_client import NeonApiRpcClient
 from .utils.storage import create_holder
 from .types.types import TreasuryPool, Caller, Contract
 from .utils.neon_api_client import NeonApiClient
@@ -35,7 +36,6 @@ def prepare_operator(key_file):
     wait_for_account_to_exists(solana_client, account.public_key)
 
     a = solana_client.get_account_info(account.public_key, commitment=Confirmed)
-    print(f"{a}")
 
     operator_ether = eth_keys.PrivateKey(account.secret_key[:32]).public_key.to_canonical_address()
 
@@ -162,4 +162,10 @@ def calculator_caller_contract(evm_loader: EvmLoader, operator_keypair: Keypair,
 @pytest.fixture(scope="session")
 def neon_api_client():
     client = NeonApiClient(url=NEON_CORE_API_URL)
+    return client
+
+
+@pytest.fixture(scope="session")
+def neon_rpc_client():
+    client = NeonApiRpcClient(url=NEON_CORE_API_RPC_URL)
     return client

@@ -1,0 +1,88 @@
+name: "Prepare stand"
+description: "Create terraform stand if it needed"
+outputs:
+  solana_url:
+    description: "solana url"
+    value: ${{ steps.share.outputs.solana_url }}
+  proxy_url:
+    description: "proxy url"
+    value: ${{ steps.share.outputs.proxy_url }}
+  faucet_url:
+    description: "faucet url"
+    value: ${{ steps.share.outputs.faucet_url }}
+  network_id:
+    description: "network id"
+    value: ${{ steps.share.outputs.network_id }}
+  proxy_ip:
+    description: "proxy ip"
+    value: ${{ steps.share.outputs.proxy_ip }}
+  solana_ip:
+    description: "solana ip"
+    value: ${{ steps.share.outputs.solana_ip }}
+inputs:
+  network:
+    description: 'Stand name'
+    required: true
+  devnet_solana_url:
+    description: 'Solana url for devnet'
+    required: false
+  proxy_url:
+    description: 'Proxy url if the network is custom'
+    required: false
+  faucet_url:
+    description: 'Faucet url if the network is custom'
+    required: false
+  solana_url:
+    description: 'Solana url if the network is custom'
+    required: false
+  network_id:
+    description: 'Network id if the network is custom'
+    required: false
+  solana_ip:
+    description: "solana ip if the network is terraform"
+    required: false
+  proxy_ip:
+    description: "proxy ip if the network is terraform"
+    required: false
+runs:
+  using: composite
+
+  steps:
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+      - name: Set outputs
+        id: share
+        env:
+          SOLANA_IP: ${{ env.SOLANA_IP }}
+          PROXY_IP: ${{ env.PROXY_IP }}
+
+        shell: bash
+        run: |
+          if [[ "${{inputs.network}}" == "custom" ]]; then
+            proxy_url=${{ inputs.proxy_url }}
+            faucet_url=${{ inputs.faucet_url }}
+            solana_url=${{ inputs.solana_url }}
+            network_id=${{ inputs.network_id }}
+          else
+            proxy_url=`python ./clickfile.py infra print-network-param -n '${{inputs.network}}' -p 'proxy_url'`
+            solana_url=`python ./clickfile.py infra print-network-param -n '${{inputs.network}}' -p 'solana_url'`
+            faucet_url=`python ./clickfile.py infra print-network-param -n '${{inputs.network}}' -p 'faucet_url'`
+            network_id=`python ./clickfile.py infra print-network-param -n '${{inputs.network}}' -p 'network_ids.neon'`
+          fi;
+          
+          if [[ "${{ inputs.network }}" == "devnet" ]]; then
+            solana_url="${{ inputs.devnet_solana_url }}"
+          fi;
+          echo "proxy_url=$proxy_url"
+          echo "solana_url=$solana_url"
+          echo "faucet_url=$faucet_url"
+          echo "network_id=$network_id"
+          echo "solana_ip=${{ env.SOLANA_IP }}"
+          echo "proxy_ip=${{ env.PROXY_IP }}"
+          echo "proxy_url=$proxy_url" >> $GITHUB_OUTPUT
+          echo "solana_url=$solana_url" >> $GITHUB_OUTPUT
+          echo "faucet_url=$faucet_url" >> $GITHUB_OUTPUT
+          echo "network_id=$network_id" >> $GITHUB_OUTPUT
+          echo "proxy_ip=${{ env.PROXY_IP }}" >> $GITHUB_OUTPUT
+          echo "solana_ip=${{ env.SOLANA_IP }}" >> $GITHUB_OUTPUT

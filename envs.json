@@ -97,7 +97,7 @@
     "network_ids": {
       "neon": 245022926
     },
-    "solana_url": "https://api.devnet.solana.com",
+    "solana_url": "https://devnet.sol-rpc.neoninfra.xyz:8443/qccxeCwY02UM5p0ELvbdHS9uedrKbPE2f7eUqabd/",
     "faucet_url": "http://3.13.67.238/request_neon",
     "neonpass_url": "http://devnet.neonpass.live",
     "tracer_url": "https://ch2-graph.neontest.xyz/neon-rpc",
@@ -142,7 +142,7 @@
     },
     "solana_url": "http://127.0.0.1:8899/",
     "faucet_url": "http://127.0.0.1:3333/",
-    "tracer_url": "http://neon-rpc:9090",
+    "tracer_url": "http://127.0.0.1:9091",
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
     "operator_neon_rewards_address": [
@@ -320,7 +320,7 @@
     "tracer_url": "http://neon-rpc:9090",
     "spl_neon_mint": "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g",
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
-    "use_bank": true,
+    "use_bank": false,
     "operator_neon_rewards_address": [
       "0x04fb33d72b5c836e468e217f79c404a32fe5003a"
     ],

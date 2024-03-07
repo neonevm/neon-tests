@@ -42,6 +42,7 @@ jobs:
         if: github.event.schedule=='0 6 * * *'
         run: |
           echo "NETWORK=night-stand" >> $GITHUB_ENV
+      - uses: actions/checkout@v4
       - name: "Prepare terraform stand"
         id: prepare_terraform
         if: ${{ env.NETWORK == 'terraform' }}

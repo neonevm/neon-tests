@@ -86,8 +86,9 @@ jobs:
       - name: Run docker container
         run: |
           docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
-          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} \
-            -e SOLANA_IP -e PROXY_IP /bin/bash
+          docker run -i -d -e SOLANA_IP -e PROXY_IP \
+            --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} \
+            /bin/bash
       - name: "Run economy tests"
         run: |
           docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py run economy -n ${{ env.NETWORK }}

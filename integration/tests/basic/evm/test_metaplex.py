@@ -18,17 +18,17 @@ class TestPrecompiledMetaplex:
     accounts: EthAccounts
 
     @pytest.fixture(scope="class")
-    def mint_id(self, web3_client, class_account, metaplex_caller):
+    def mint_id(self, web3_client, accounts, metaplex_caller):
         mint = Keypair.generate()
         tx = {
-            "from": class_account.address,
-            "nonce": web3_client.eth.get_transaction_count(class_account.address),
+            "from": accounts[0].address,
+            "nonce": web3_client.eth.get_transaction_count(accounts[0].address),
             "gasPrice": web3_client.gas_price(),
         }
         instruction_tx = metaplex_caller.functions.callCreateMetadata(
             bytes(mint.public_key), NAME, SYMBOL, URI
         ).build_transaction(tx)
-        resp = web3_client.send_transaction(class_account, instruction_tx)
+        resp = web3_client.send_transaction(accounts[0], instruction_tx)
         log = metaplex_caller.events.LogBytes().process_receipt(resp)[0]
         mint = log["args"]["value"]
         return mint

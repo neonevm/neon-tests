@@ -13,18 +13,18 @@ class TestChainIdDependentOpcodes:
     accounts: EthAccounts
 
     @pytest.fixture(scope="class")
-    def contract_neon(self, web3_client, class_account):
-        contract, _ = web3_client.deploy_and_get_contract("opcodes/ChainIdDependentOpCodes", "0.8.10", class_account)
+    def contract_neon(self, web3_client, accounts):
+        contract, _ = web3_client.deploy_and_get_contract("opcodes/ChainIdDependentOpCodes", "0.8.10", accounts[0])
         return contract
 
     @pytest.fixture(scope="class")
-    def contract_neon_caller(self, web3_client_sol, class_account):
+    def contract_neon_caller(self, web3_client_sol, accounts):
         contract, _ = web3_client_sol.deploy_and_get_contract(
             "opcodes/ChainIdDependentOpCodes",
             "0.8.10",
-            class_account,
+            accounts[0],
             contract_name="ChainIdDependentOpCodesCaller",
-            constructor_args=[class_account.address],
+            constructor_args=[accounts[0].address],
         )
         return contract
 
@@ -46,11 +46,11 @@ class TestChainIdDependentOpcodes:
         return contract
 
     @pytest.fixture(scope="class")
-    def contract_caller_neon(self, web3_client, class_account):
+    def contract_caller_neon(self, web3_client, accounts):
         contract, _ = web3_client.deploy_and_get_contract(
             "opcodes/ChainIdDependentOpCodes",
             "0.8.10",
-            class_account,
+            accounts[0],
             contract_name="ChainIdDependentOpCodesCaller",
         )
         return contract
@@ -97,12 +97,14 @@ class TestChainIdDependentOpcodes:
 
     @pytest.mark.multipletokens
     def test_balance_by_neon_contract(
-        self, contract_neon, sol_client, class_account, web3_client, web3_client_sol, contract_caller_neon
+        self, contract_neon, sol_client, web3_client, web3_client_sol, contract_caller_neon
     ):
         # user call neon contract in neon chain == neon balance
         # user calls neon contract in sol chain == sol balance
         # neon contract calls neon contract in neon chain == neon balance
         # neon contract calls neon contract in sol chain == neon balance
+
+        class_account = self.accounts[0]
 
         expected_balance_sol = web3_client_sol.get_balance(class_account.address)
         expected_balance_neon = web3_client.get_balance(class_account.address)

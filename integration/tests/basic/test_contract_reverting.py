@@ -7,19 +7,18 @@ from eth_utils import keccak
 from semantic_version import Version
 
 from integration.tests.basic.helpers.assert_message import ErrorMessage
-from integration.tests.helpers.basic import cryptohex, int_to_hex
-from utils.helpers import get_contract_abi
+from utils.helpers import get_contract_abi, cryptohex, int_to_hex
 from utils.accounts import EthAccounts
 from utils.web3client import NeonChainWeb3Client
 
 
 @pytest.fixture(scope="class")
-def revert_contract(web3_client, class_account):
+def revert_contract(web3_client, accounts):
     contract, _ = web3_client.deploy_and_get_contract(
         contract="common/Revert",
         version="0.8.10",
         contract_name="TrivialRevert",
-        account=class_account,
+        account=accounts[0],
     )
     yield contract
 
@@ -114,7 +113,7 @@ class TestContractReverting:
         ):
             revert_contract.functions.doStringBasedRevert().call()
 
-    def test_gas_limit_reached(self, revert_contract, class_account):
+    def test_gas_limit_reached(self, revert_contract):
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account, amount=1)
         tx["gas"] = 1  # setting low level of gas limit to get the error

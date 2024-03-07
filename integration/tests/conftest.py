@@ -23,7 +23,7 @@ from utils.operator import Operator
 from utils.web3client import NeonChainWeb3Client, Web3Client
 from utils.prices import get_sol_price, get_neon_price
 
-NEON_AIRDROP_AMOUNT = 10_000
+NEON_AIRDROP_AMOUNT = 1_000
 
 
 def pytest_collection_modifyitems(config, items):
@@ -112,31 +112,6 @@ def operator(pytestconfig: Config, web3_client_session: NeonChainWeb3Client) -> 
         pytestconfig.environment.operator_keys,
         web3_client=web3_client_session,
     )
-
-
-@pytest.fixture(scope="class")
-def prepare_account(operator, faucet, web3_client: NeonChainWeb3Client):
-    """Create new account for tests and save operator pre and post balances"""
-    with allure.step("Create account for tests"):
-        acc = web3_client.eth.account.create()
-    with allure.step(f"Request {NEON_AIRDROP_AMOUNT} NEON from faucet for {acc.address}"):
-        faucet.request_neon(acc.address, NEON_AIRDROP_AMOUNT)
-        assert web3_client.get_balance(acc, Unit.ETHER) == NEON_AIRDROP_AMOUNT
-    start_neon_balance = operator.get_token_balance()
-    start_sol_balance = operator.get_solana_balance()
-    with allure.step(
-        f"Operator initial balance: {start_neon_balance / LAMPORT_PER_SOL} NEON {start_sol_balance / LAMPORT_PER_SOL} SOL"
-    ):
-        pass
-    yield acc
-    end_neon_balance = operator.get_token_balance()
-    end_sol_balance = operator.get_solana_balance()
-    with allure.step(
-        f"Operator end balance: {end_neon_balance / LAMPORT_PER_SOL} NEON {end_sol_balance / LAMPORT_PER_SOL} SOL"
-    ):
-        pass
-    with allure.step(f"Account end balance: {web3_client.get_balance(acc, Unit.ETHER)} NEON"):
-        pass
 
 
 @pytest.fixture(scope="session")
@@ -238,26 +213,6 @@ def erc20_spl_mintable(web3_client_session: NeonChainWeb3Client, faucet, sol_cli
     yield erc20
 
 
-@pytest.fixture(scope="function")
-def new_account(web3_client_session, faucet, eth_bank_account):
-    account = web3_client_session.create_account_with_balance(faucet, bank_account=eth_bank_account)
-    yield account
-
-
-@pytest.fixture(scope="class")
-def class_account(
-    web3_client,
-    faucet,
-    eth_bank_account,
-    solana_account,
-    sol_client_session,
-    web3_client_sol,
-    pytestconfig,
-):
-    account = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
-    yield account
-
-
 @pytest.fixture(scope="class")
 def class_account_sol_chain(
     sol_client_session,
@@ -322,12 +277,6 @@ def account_with_all_tokens(
     return account
 
 
-@pytest.fixture(scope="function")
-def new_account_zero_balance(web3_client):
-    new_acc = web3_client.create_account()
-    yield new_acc
-
-
 @pytest.fixture(scope="session")
 def neon_mint(pytestconfig: Config):
     neon_mint = PublicKey(pytestconfig.environment.spl_neon_mint)
@@ -335,31 +284,31 @@ def neon_mint(pytestconfig: Config):
 
 
 @pytest.fixture(scope="class")
-def withdraw_contract(web3_client, faucet, class_account):
-    contract, _ = web3_client.deploy_and_get_contract("precompiled/NeonToken", "0.8.10", account=class_account)
+def withdraw_contract(web3_client, faucet, accounts):
+    contract, _ = web3_client.deploy_and_get_contract("precompiled/NeonToken", "0.8.10", account=accounts[0])
     return contract
 
 
 @pytest.fixture(scope="class")
-def common_contract(web3_client, class_account):
+def common_contract(web3_client, accounts):
     contract, _ = web3_client.deploy_and_get_contract(
         contract="common/Common",
         version="0.8.12",
         contract_name="Common",
-        account=class_account,
+        account=accounts[0],
     )
     yield contract
 
 
 @pytest.fixture(scope="class")
-def meta_proxy_contract(web3_client, class_account):
-    contract, _ = web3_client.deploy_and_get_contract("./EIPs/MetaProxy", "0.8.10", account=class_account)
+def meta_proxy_contract(web3_client, accounts):
+    contract, _ = web3_client.deploy_and_get_contract("./EIPs/MetaProxy", "0.8.10", account=accounts[0])
     return contract
 
 
 @pytest.fixture(scope="class")
-def event_caller_contract(web3_client, class_account) -> tp.Any:
-    event_caller, _ = web3_client.deploy_and_get_contract("common/EventCaller", "0.8.12", class_account)
+def event_caller_contract(web3_client, accounts) -> tp.Any:
+    event_caller, _ = web3_client.deploy_and_get_contract("common/EventCaller", "0.8.12", accounts[0])
     yield event_caller
 
 
@@ -375,19 +324,19 @@ def wsol(web3_client_sol, class_account_sol_chain):
 
 
 @pytest.fixture(scope="class")
-def wneon(web3_client, faucet, class_account):
+def wneon(web3_client, faucet, accounts):
     contract, _ = web3_client.deploy_and_get_contract(
-        "common/WNeon", "0.4.26", account=class_account, contract_name="WNEON"
+        "common/WNeon", "0.4.26", account=accounts[0], contract_name="WNEON"
     )
     return contract
 
 
 @pytest.fixture(scope="class")
-def storage_contract(web3_client, class_account) -> tp.Any:
+def storage_contract(web3_client, accounts) -> tp.Any:
     contract, _ = web3_client.deploy_and_get_contract(
         "common/StorageSoliditySource",
         "0.8.8",
-        class_account,
+        accounts[0],
         contract_name="Storage",
         constructor_args=[],
     )

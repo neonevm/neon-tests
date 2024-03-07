@@ -25,22 +25,22 @@ class TestSolcCompatibility:
 
     @pytest.mark.parametrize()
     @pytest.fixture(scope="class")
-    def erc20_solc(self, web3_client, class_account, solc_version):
+    def erc20_solc(self, web3_client, accounts, solc_version):
         contract, _ = web3_client.deploy_and_get_contract(
             "EIPs/ERC20/ERC20.sol",
             solc_version,
-            class_account,
+            accounts[0],
             contract_name="ERC20",
             constructor_args=[INIT_NAME, INIT_SYMBOL, INIT_SUPPLY],
         )
         return contract
 
     @pytest.fixture(scope="class")
-    def recursion_factory(self, class_account, web3_client, solc_version):
+    def recursion_factory(self, accounts, web3_client, solc_version):
         contract, _ = web3_client.deploy_and_get_contract(
             "common/Recursion",
             solc_version,
-            class_account,
+            accounts[0],
             contract_name="DeployRecursionFactory",
             constructor_args=[3],
         )
@@ -49,18 +49,18 @@ class TestSolcCompatibility:
     def test_name(self, erc20_solc):
         assert erc20_solc.functions.name().call() == INIT_NAME
 
-    def test_mint(self, erc20_solc, class_account, web3_client):
-        check_erc20_mint_function(web3_client, erc20_solc, class_account)
+    def test_mint(self, erc20_solc, accounts, web3_client):
+        check_erc20_mint_function(web3_client, erc20_solc, accounts[0])
 
-    def test_transfer(self, erc20_solc, class_account, new_account, web3_client):
-        check_erc20_transfer_function(web3_client, erc20_solc, class_account, new_account)
+    def test_transfer(self, erc20_solc, accounts, web3_client):
+        check_erc20_transfer_function(web3_client, erc20_solc, accounts[0], accounts[1])
 
-    def test_deploy_contract_by_contract(self, recursion_factory, class_account, web3_client):
-        tx = web3_client.make_raw_tx(class_account.address, gas=0)
+    def test_deploy_contract_by_contract(self, recursion_factory, accounts, web3_client):
+        tx = web3_client.make_raw_tx(accounts[0].address, gas=0)
         del tx["gas"]
         salt = generate_text(min_len=5, max_len=7)
         instruction_tx = recursion_factory.functions.deploySecondContractViaCreate2(salt).build_transaction(tx)
-        receipt = web3_client.send_transaction(class_account, instruction_tx)
+        receipt = web3_client.send_transaction(accounts[0], instruction_tx)
         assert receipt["status"] == 1
 
         event_logs = recursion_factory.events.SecondContractDeployed().process_receipt(receipt)

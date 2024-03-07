@@ -20,8 +20,8 @@ class TestERC173ContractOwnershipStandard:
         contract, contract_deploy_tx = web3_client.deploy_and_get_contract("EIPs/ERC173", "0.8.10", sender_account)
         return contract
 
-    def test_ownership_transfer(self, erc173, new_account):
-        new_owner = new_account
+    def test_ownership_transfer(self, erc173):
+        new_owner = self.accounts.create_account()
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = erc173.functions.transferOwnership(new_owner.address).build_transaction(tx)
@@ -35,7 +35,8 @@ class TestERC173ContractOwnershipStandard:
         assert event_logs[0].args["newOwner"] == new_owner.address
         assert event_logs[0].event == "OwnershipTransferred"
 
-    def test_only_owner_can_transfer_ownership(self, erc173, new_account):
+    def test_only_owner_can_transfer_ownership(self, erc173):
+        new_account = self.accounts.create_account()
         tx = self.web3_client.make_raw_tx(new_account)
 
         with pytest.raises(
@@ -53,8 +54,10 @@ class TestERC173ContractOwnershipStandard:
         assert receipt["status"] == 1
         assert erc173.functions.owner().call() == ZERO_ADDRESS
 
-    def test_contract_call_ownership_transfer(self, erc173, new_account):
+    def test_contract_call_ownership_transfer(self, erc173):
         sender_account = self.accounts[0]
+        new_account = self.accounts.create_account()
+
         erc173_caller_contract, _ = self.web3_client.deploy_and_get_contract(
             "EIPs/ERC173",
             "0.8.10",

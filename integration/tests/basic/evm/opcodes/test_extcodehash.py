@@ -20,11 +20,11 @@ class TestExtCodeHashOpcode:
     accounts: EthAccounts
 
     @pytest.fixture(scope="class")
-    def eip1052_checker(self, web3_client, faucet, class_account):
+    def eip1052_checker(self, web3_client, faucet, accounts):
         contract, _ = web3_client.deploy_and_get_contract(
             "EIPs/EIP1052Extcodehash",
             "0.8.10",
-            class_account,
+            accounts[0],
             contract_name="EIP1052Checker",
         )
         return contract

@@ -28,9 +28,9 @@ class TestReturnDataSizeAndCopyOpcodes:
     accounts: EthAccounts
 
     @pytest.fixture(scope="class")
-    def eip211_checker(self, web3_client, faucet, class_account):
+    def eip211_checker(self, web3_client, faucet, accounts):
         contract, _ = web3_client.deploy_and_get_contract(
-            "EIPs/EIP211ReturnDataSizeAndCopy", "0.8.10", class_account, contract_name="EIP211Checker"
+            "EIPs/EIP211ReturnDataSizeAndCopy", "0.8.10", accounts[0], contract_name="EIP211Checker"
         )
         return contract
 

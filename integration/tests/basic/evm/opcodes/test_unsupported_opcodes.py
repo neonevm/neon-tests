@@ -8,8 +8,8 @@ from utils.consts import ZERO_ADDRESS, MAX_UINT_256
 @allure.story("Unsupported opcode")
 class TestUnsupportedOpcodes:
     @pytest.fixture(scope="class")
-    def contract(self, web3_client, class_account):
-        contract, _ = web3_client.deploy_and_get_contract("opcodes/UnsupportedOpcodes", "0.8.10", class_account)
+    def contract(self, web3_client, accounts):
+        contract, _ = web3_client.deploy_and_get_contract("opcodes/UnsupportedOpcodes", "0.8.10", accounts[0])
         return contract
 
     def test_basefee(self, contract):

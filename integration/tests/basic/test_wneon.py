@@ -95,10 +95,10 @@ class TestWNeon:
         )
         assert wneon_balance_after == wneon_balance_before - withdraw_amount
 
-    def test_transfer_and_check_token_does_not_use_spl(self, wneon, new_account):
+    def test_transfer_and_check_token_does_not_use_spl(self, wneon):
         deposit_amount = 10
         sender_account = self.accounts[0]
-        recipient_account = self.accounts[1]
+        new_account = self.accounts.create_account()
         self.deposit(wneon, deposit_amount, sender_account)
         neon_balance_sender_before, wneon_balance_sender_before = self.get_balances(wneon, sender_account.address)
 
@@ -128,9 +128,11 @@ class TestWNeon:
         assert wneon_balance_sender_after == wneon_balance_sender_before - transfer_amount
         assert neon_balance_sender_after - neon_balance_sender_before < 0.2
 
-    def test_transfer_from(self, wneon, new_account):
+    def test_transfer_from(self, wneon):
         deposit_amount = 10
         sender_account = self.accounts[0]
+        new_account = self.accounts.create_account()
+
         self.deposit(wneon, deposit_amount, sender_account)
         neon_balance_sender_before, wneon_balance_sender_before = self.get_balances(wneon, sender_account.address)
         (

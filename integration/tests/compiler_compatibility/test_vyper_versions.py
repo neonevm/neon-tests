@@ -18,32 +18,32 @@ class TestVyperCompatibility:
         print(f"{request.param} vyper version installed")
 
     @pytest.fixture
-    def erc20_vyper(self, web3_client, class_account):
+    def erc20_vyper(self, web3_client, accounts):
         return web3_client.compile_by_vyper_and_deploy(
-            class_account, "Erc20", [INIT_NAME, INIT_SYMBOL, INIT_DECIMALS, INIT_SUPPLY]
+            accounts[0], "Erc20", [INIT_NAME, INIT_SYMBOL, INIT_DECIMALS, INIT_SUPPLY]
         )
 
     @pytest.fixture
-    def forwarder(self, web3_client, class_account):
-        return web3_client.compile_by_vyper_and_deploy(class_account, "Forwarder")
+    def forwarder(self, web3_client, accounts):
+        return web3_client.compile_by_vyper_and_deploy(accounts[0], "Forwarder")
 
     @pytest.fixture
-    def simple(self, web3_client, class_account):
-        return web3_client.compile_by_vyper_and_deploy(class_account, "Simple")
+    def simple(self, web3_client, accounts):
+        return web3_client.compile_by_vyper_and_deploy(accounts[0], "Simple")
 
     def test_name(self, erc20_vyper):
         assert erc20_vyper.functions.name().call() == INIT_NAME
 
-    def test_mint(self, erc20_vyper, class_account, web3_client):
-        check_erc20_mint_function(web3_client, erc20_vyper, class_account)
+    def test_mint(self, erc20_vyper, accounts, web3_client):
+        check_erc20_mint_function(web3_client, erc20_vyper, accounts[0])
 
-    def test_transfer(self, erc20_vyper, class_account, new_account, web3_client):
-        check_erc20_transfer_function(web3_client, erc20_vyper, class_account, new_account)
+    def test_transfer(self, erc20_vyper, accounts, web3_client):
+        check_erc20_transfer_function(web3_client, erc20_vyper, accounts[0], accounts[1])
 
-    def test_deploy_contract_by_contract(self, simple, forwarder, class_account, web3_client):
-        tx = web3_client.make_raw_tx(class_account.address, gas=0)
+    def test_deploy_contract_by_contract(self, simple, forwarder, accounts, web3_client):
+        tx = web3_client.make_raw_tx(accounts[0].address, gas=0)
         del tx["gas"]
 
-        instr = forwarder.functions.deploy(simple.address, class_account.address).build_transaction(tx)
-        resp = web3_client.send_transaction(class_account, instr)
+        instr = forwarder.functions.deploy(simple.address, accounts[0].address).build_transaction(tx)
+        resp = web3_client.send_transaction(accounts[0], instr)
         assert resp["status"] == 1

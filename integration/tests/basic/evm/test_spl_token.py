@@ -54,7 +54,7 @@ class TestPrecompiledSplToken:
         return account_info
 
     @pytest.fixture(scope="class")
-    def token_mint(self, solana_account, spl_token_caller, class_account):
+    def token_mint(self, solana_account, spl_token_caller):
         token_mint, _ = self.sol_client.create_spl(solana_account, DECIMALS)
         metadata = create_metadata_instruction_data(NAME, SYMBOL)
         txn = Transaction()
@@ -73,19 +73,19 @@ class TestPrecompiledSplToken:
             opts=TxOpts(preflight_commitment=Confirmed, skip_confirmation=False),
         )
         tx = {
-            "from": class_account.address,
-            "nonce": self.web3_client.eth.get_transaction_count(class_account.address),
+            "from": self.accounts[0].address,
+            "nonce": self.web3_client.eth.get_transaction_count(self.accounts[0].address),
             "gasPrice": self.web3_client.gas_price(),
         }
         instruction_tx = spl_token_caller.functions.initializeMint(DECIMALS).build_transaction(tx)
-        receipt = self.web3_client.send_transaction(class_account, instruction_tx)
+        receipt = self.web3_client.send_transaction(self.accounts[0], instruction_tx)
         assert receipt["status"] == 1
         log = spl_token_caller.events.LogBytes().process_receipt(receipt)[0]
         mint = log["args"]["value"]
         return mint
 
     @pytest.fixture(scope="class")
-    def non_initialized_token_mint(self, solana_account, spl_token_caller, class_account):
+    def non_initialized_token_mint(self, solana_account, spl_token_caller):
         token_mint, _ = self.sol_client.create_spl(solana_account, DECIMALS)
         metadata = create_metadata_instruction_data(NAME, SYMBOL)
         txn = Transaction()
@@ -107,17 +107,17 @@ class TestPrecompiledSplToken:
         return bytes(token_mint.pubkey)
 
     @pytest.fixture(scope="class")
-    def bob(self, spl_token_caller, token_mint, class_account):
+    def bob(self, spl_token_caller, token_mint, accounts):
         tx = {
-            "from": class_account.address,
-            "nonce": self.web3_client.eth.get_transaction_count(class_account.address),
+            "from": accounts[0].address,
+            "nonce": self.web3_client.eth.get_transaction_count(accounts[0].address),
             "gasPrice": self.web3_client.gas_price(),
         }
         instruction_tx = spl_token_caller.functions.initializeAccount(
-            class_account.address, token_mint
+            accounts[0].address, token_mint
         ).build_transaction(tx)
-        self.web3_client.send_transaction(class_account, instruction_tx)
-        return class_account
+        self.web3_client.send_transaction(accounts[0], instruction_tx)
+        return accounts[0]
 
     @pytest.fixture(scope="class")
     def alice(self, spl_token_caller, token_mint, faucet, eth_bank_account):
@@ -197,8 +197,8 @@ class TestPrecompiledSplToken:
         mint = log["args"]["value"]
         assert Mint(spl_token_caller.functions.getMint(mint).call()).is_initialized is True
 
-    def test_initialize_acc_incorrect_mint(self, spl_token_caller, class_account):
-        sender_account = class_account
+    def test_initialize_acc_incorrect_mint(self, spl_token_caller):
+        sender_account = self.accounts[1]
         tx = self.web3_client.make_raw_tx(sender_account)
 
         acc = Keypair.generate()
@@ -212,8 +212,8 @@ class TestPrecompiledSplToken:
         except ValueError as e:
             assert "incorrect program id for instruction" in str(e)
 
-    def test_is_system_account(self, spl_token_caller, token_mint, class_account):
-        assert spl_token_caller.functions.isSystemAccount(class_account.address).call() is True
+    def test_is_system_account(self, spl_token_caller, token_mint):
+        assert spl_token_caller.functions.isSystemAccount(self.accounts[0].address).call() is True
         assert spl_token_caller.functions.isSystemAccount(token_mint).call() is False
 
     def test_find_account(self, spl_token_caller, token_mint):
@@ -221,8 +221,8 @@ class TestPrecompiledSplToken:
         assert spl_token_caller.functions.findAccount(sender_account.address).call() != ZERO_HASH
         assert spl_token_caller.functions.findAccount(token_mint).call() != ZERO_HASH
 
-    def test_close_account(self, spl_token_caller, token_mint, class_account):
-        sender_account = class_account
+    def test_close_account(self, spl_token_caller, token_mint):
+        sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account)
 
         instruction_tx = spl_token_caller.functions.initializeAccount(
@@ -278,7 +278,9 @@ class TestPrecompiledSplToken:
         except ValueError as e:
             assert "invalid account data for instruction" in str(e)
 
-    def test_freeze_non_initialized_token(self, spl_token_caller, new_account, non_initialized_token_mint):
+    def test_freeze_non_initialized_token(self, spl_token_caller, non_initialized_token_mint):
+        new_account = self.accounts.create_account()
+
         tx = self.web3_client.make_raw_tx(new_account)
 
         instruction_tx = spl_token_caller.functions.initializeAccount(
@@ -344,7 +346,9 @@ class TestPrecompiledSplToken:
         except ValueError as e:
             assert "invalid account data for instruction" in str(e)
 
-    def test_mint_to_non_initialized_token(self, spl_token_caller, non_initialized_token_mint, new_account):
+    def test_mint_to_non_initialized_token(self, spl_token_caller, non_initialized_token_mint):
+        new_account = self.accounts.create_account()
+
         tx = self.web3_client.make_raw_tx(new_account)
         instruction_tx = spl_token_caller.functions.initializeAccount(
             new_account.address, non_initialized_token_mint

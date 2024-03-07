@@ -13,7 +13,7 @@ from integration.tests.basic.helpers.rpc_checks import (
     assert_fields_are_specified_type,
     assert_equal_fields,
 )
-from integration.tests.helpers.basic import cryptohex
+from utils.helpers import cryptohex
 from utils.accounts import EthAccounts
 from utils.web3client import NeonChainWeb3Client
 

@@ -14,9 +14,9 @@ class TestOpCodes:
     accounts: EthAccounts
 
     @pytest.fixture(scope="class")
-    def opcodes_checker(self, web3_client, faucet, class_account):
+    def opcodes_checker(self, web3_client, faucet, accounts):
         contract, _ = web3_client.deploy_and_get_contract(
-            "opcodes/BaseOpCodes", "0.5.16", class_account, contract_name="BaseOpCodes"
+            "opcodes/BaseOpCodes", "0.5.16", accounts[0], contract_name="BaseOpCodes"
         )
         return contract
 

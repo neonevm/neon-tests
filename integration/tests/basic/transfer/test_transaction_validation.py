@@ -83,8 +83,9 @@ class TestTransactionsValidation:
         assert response["error"]["code"] == -32000
 
     @pytest.mark.skip(reason="Test doesn't work with MINIMAL_GAS_PRICE in config. NDEV-2386")
-    def test_send_transaction_with_small_gas_price(self, new_account, json_rpc_client):
+    def test_send_transaction_with_small_gas_price(self, json_rpc_client):
         """Check that transaction can't be accepted if gas value is too small"""
+        new_account = self.accounts.create_account()
         gas_price = self.web3_client.gas_price()
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]

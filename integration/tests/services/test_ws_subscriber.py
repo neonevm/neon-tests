@@ -9,8 +9,8 @@ import pytest
 import websockets
 
 from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex
-from integration.tests.helpers.basic import cryptohex, hasattr_recursive
 from integration.tests.services.helpers.websockets import ws_receive_all_messages, ws_receive_messages_limit_time
+from utils.helpers import cryptohex, hasattr_recursive
 from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts
 

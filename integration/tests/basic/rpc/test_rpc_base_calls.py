@@ -11,8 +11,7 @@ from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import Tag
 from integration.tests.basic.helpers.errors import Error32000, Error32602
 from integration.tests.basic.helpers.rpc_checks import is_hex, hex_str_consists_not_only_of_zeros
-from integration.tests.helpers.basic import cryptohex
-from utils.helpers import gen_hash_of_block
+from utils.helpers import gen_hash_of_block, cryptohex
 from utils.accounts import EthAccounts
 from utils.web3client import NeonChainWeb3Client
 
@@ -198,7 +197,9 @@ class TestRpcBaseCalls:
         assert "error" not in response
         assert rpc_checks.is_hex(response["result"]), f"Invalid response result {response['result']}"
 
-    def test_eth_sendRawTransaction_max_contract_size(self, json_rpc_client, new_account):
+    def test_eth_sendRawTransaction_max_contract_size(self, json_rpc_client):
+        new_account = self.accounts.create_account()
+
         """Validate max size for contract, 24 KB"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
             "common/BigMemoryValue", "0.8.12", contract_name="ValueOf24K", account=new_account
@@ -236,7 +237,9 @@ class TestRpcBaseCalls:
         assert rpc_checks.is_hex(result), f"Invalid response: {result}"
         assert int(result, 16) == 52193458690378020725790142635571483517433973554952025871423338986830750023688
 
-    def test_eth_get_storage_at_eq_val(self, json_rpc_client, new_account):
+    def test_eth_get_storage_at_eq_val(self, json_rpc_client):
+        new_account = self.accounts.create_account()
+
         """Verify implemented rpc calls work eht_getStorageAt and equal values"""
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
             "common/StorageSoliditySource", "0.8.12", contract_name="StorageMultipleVars", account=new_account

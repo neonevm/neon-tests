@@ -57,8 +57,8 @@ class TestRpcEstimateGas:
 
     @pytest.mark.parametrize("contract_name", ["BigGasFactory1", "BigGasFactory2"])
     @pytest.mark.parametrize("process_gas, reserve_gas", [(850_000, 15_000), (8_500_000, 150_000)])
-    def test_eth_estimate_gas_with_big_int(self, contract_name, process_gas, reserve_gas, json_rpc_client, new_account):
-        sender_account = new_account
+    def test_eth_estimate_gas_with_big_int(self, contract_name, process_gas, reserve_gas, json_rpc_client):
+        sender_account = self.accounts.create_account()
 
         big_gas_contract, _ = self.web3_client.deploy_and_get_contract(
             contract="issues/Ndev49",

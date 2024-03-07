@@ -21,11 +21,11 @@ class TestDiamond:
     accounts: EthAccounts
 
     @pytest.fixture(scope="class")
-    def diamond_init(self, web3_client_session, class_account):
+    def diamond_init(self, web3_client_session, accounts):
         contract, _ = web3_client_session.deploy_and_get_contract(
             "EIPs/EIP2535/upgradeInitializers/DiamondInit.sol",
             "0.8.10",
-            class_account,
+            accounts[0],
             contract_name="DiamondInit",
         )
         return contract
@@ -38,43 +38,43 @@ class TestDiamond:
         return facet_cuts
 
     @pytest.fixture(scope="class")
-    def diamond_cut_facet(self, web3_client_session, class_account):
+    def diamond_cut_facet(self, web3_client_session, accounts):
         contract, _ = web3_client_session.deploy_and_get_contract(
             "EIPs/EIP2535/facets/DiamondCutFacet",
             "0.8.10",
-            class_account,
+            accounts[0],
             contract_name="DiamondCutFacet",
         )
         return contract
 
     @pytest.fixture(scope="class")
-    def diamond_loupe_facet(self, web3_client_session, class_account):
+    def diamond_loupe_facet(self, web3_client_session, accounts):
         contract, _ = web3_client_session.deploy_and_get_contract(
             "EIPs/EIP2535/facets/DiamondLoupeFacet.sol",
             "0.8.10",
-            class_account,
+            accounts[0],
             contract_name="DiamondLoupeFacet",
         )
         return contract
 
     @pytest.fixture(scope="class")
-    def ownership_facet(self, web3_client_session, class_account):
+    def ownership_facet(self, web3_client_session, accounts):
         contract, _ = web3_client_session.deploy_and_get_contract(
             "EIPs/EIP2535/facets/OwnershipFacet",
             "0.8.10",
-            class_account,
+            accounts[0],
             contract_name="OwnershipFacet",
         )
         return contract
 
     @pytest.fixture(scope="class")
-    def diamond(self, web3_client_session, diamond_init, facet_cuts, class_account):
+    def diamond(self, web3_client_session, diamond_init, facet_cuts, accounts):
         calldata = decode_function_signature("init()")
-        diamond_args = [class_account.address, diamond_init.address, calldata]
+        diamond_args = [accounts[0].address, diamond_init.address, calldata]
         contract, tx = web3_client_session.deploy_and_get_contract(
             "EIPs/EIP2535/Diamond",
             "0.8.10",
-            class_account,
+            accounts[0],
             contract_name="Diamond",
             constructor_args=[facet_cuts, diamond_args],
         )
@@ -98,11 +98,12 @@ class TestDiamond:
             for i in range(len(result)):
                 assert result[i] == selectors[i]
 
-    def test_add_and_remove_function(self, diamond, diamond_cut_facet, class_account):
+    def test_add_and_remove_function(self, diamond, diamond_cut_facet):
+        account = self.accounts[0]
         new_facet, _ = self.web3_client.deploy_and_get_contract(
             "EIPs/EIP2535/facets/Test1Facet",
             "0.8.10",
-            class_account,
+            account,
             contract_name="Test1Facet",
         )
         facet_cuts = [(new_facet.address, facet_cut_action["Add"], get_selectors(new_facet.abi))]
@@ -111,8 +112,8 @@ class TestDiamond:
             [facet_cuts, ZERO_ADDRESS, b"0x"],
         )
 
-        tx = self.web3_client.make_raw_tx(class_account, diamond.address, 0, data=calldata, estimate_gas=True)
-        self.web3_client.send_transaction(class_account, tx)
+        tx = self.web3_client.make_raw_tx(account, diamond.address, 0, data=calldata, estimate_gas=True)
+        self.web3_client.send_transaction(account, tx)
         result = self.web3_client.call_function_at_address(
             diamond.address,
             "facetFunctionSelectors(address)",
@@ -133,8 +134,8 @@ class TestDiamond:
             [facet_cuts, ZERO_ADDRESS, b"0x"],
         )
 
-        tx = self.web3_client.make_raw_tx(class_account, diamond.address, 0, data=calldata, estimate_gas=True)
-        self.web3_client.send_transaction(class_account, tx)
+        tx = self.web3_client.make_raw_tx(account, diamond.address, 0, data=calldata, estimate_gas=True)
+        self.web3_client.send_transaction(account, tx)
 
         result = self.web3_client.call_function_at_address(
             diamond.address,

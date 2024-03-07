@@ -834,8 +834,8 @@ def infra():
 
 @infra.command(name="deploy", help="Deploy test infrastructure")
 @click.option("--current_branch", help="Branch of neon-tests repository")
-@click.option("--head_branch", help="Feature branch name")
-@click.option("--base_branch", help="Target branch of the pull request")
+@click.option("--head_branch", default="", help="Feature branch name")
+@click.option("--base_branch", default="", help="Target branch of the pull request")
 
 def deploy(current_branch, head_branch, base_branch):
     # use feature branch or version tag as tag for proxy, evm and faucet images or use latest

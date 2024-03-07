@@ -96,7 +96,7 @@ jobs:
 
     outputs:
       network: ${{ env.NETWORK }}
-      solana_url: ${{ steps.prepare_stand.outputs.solana_url }}
+      solana_url: ${{ steps.vars.outputs.solana_url }}
       proxy_url: ${{ steps.vars.outputs.proxy_url }}
       faucet_url:  ${{ steps.vars.outputs.faucet_url }}
       network_id: ${{ steps.vars.outputs.network_id }}
@@ -553,7 +553,7 @@ jobs:
     needs: [prepare, uniswap-v2, uniswap-v3, saddle, aave, curve, robonomics, yearn, compound, curve-factory, pancake]
     if: always()
     env:
-      SOLANA_URL: ${{ needs.prepare.outputs.solana_url || secrets.SOLANA_URL }}
+      SOLANA_URL: ${{ needs.prepare.outputs.solana_url }}
       PROXY_URL: ${{ needs.prepare.outputs.proxy_url }}
       NETWORK_ID: ${{ needs.prepare.outputs.network_id }}
       NETWORK: ${{ needs.prepare.outputs.network }}

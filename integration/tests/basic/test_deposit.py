@@ -197,7 +197,7 @@ class TestWithdraw:
         # assert json.loads(response.to_json())["message"] == "Invalid param: could not find account"
 
         with pytest.raises(error):
-            self.withdraw(self.accounts.create_account(), dest_acc, amount, withdraw_contract)
+            self.withdraw(self.accounts.create_account(10000), dest_acc, amount, withdraw_contract)
 
         response = spl_neon_token.get_balance(dest_token_acc, commitment=Commitment("confirmed"))
         assert json.loads(response.to_json())["message"] == "Invalid param: could not find account"

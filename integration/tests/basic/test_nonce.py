@@ -103,7 +103,7 @@ class TestNonce:
             assert rpc_checks.is_hex(result)
 
     @pytest.mark.only_stands  #  This doesn't work on devnet because sticky session is not enabled
-    def test_send_transaction_with_the_same_nonce_and_lower_gas(self, json_rpc_client, new_account):
+    def test_send_transaction_with_the_same_nonce_and_lower_gas(self, json_rpc_client):
         """Check that transaction with a low gas and the same nonce can't be sent"""
         sender_account = self.accounts[3]
         nonce = self.web3_client.eth.get_transaction_count(sender_account.address) + 1
@@ -160,9 +160,9 @@ class TestNonce:
         assert "error" not in response
         assert "result" in response
 
-    def test_send_transaction_with_old_nonce(self, json_rpc_client, new_account):
+    def test_send_transaction_with_old_nonce(self, json_rpc_client):
         """Check that transaction with old nonce can't be sent"""
-        sender_account = new_account
+        sender_account = self.accounts.create_account()
         nonce = self.web3_client.eth.get_transaction_count(sender_account.address)
         transaction = self.web3_client.make_raw_tx(sender_account, amount=1, nonce=nonce, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)

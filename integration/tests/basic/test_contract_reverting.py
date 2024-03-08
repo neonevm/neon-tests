@@ -36,10 +36,7 @@ class TestContractReverting:
 
     @pytest.fixture(scope="class")
     def solc_version(self) -> Version:
-        version = "0.7.0"
-        if version not in [str(v) for v in solcx.get_installed_solc_versions()]:
-            solcx.install_solc(version)
-        return Version(version)
+        return solcx.install_solc("0.7.0")
 
     def test_constructor_raises_string_based_error(self, solc_version):
         contract = """

@@ -108,16 +108,15 @@ class TestPrecompiledSplToken:
 
     @pytest.fixture(scope="class")
     def bob(self, spl_token_caller, token_mint, accounts):
+        user = accounts.create_account()
         tx = {
-            "from": accounts[0].address,
-            "nonce": self.web3_client.eth.get_transaction_count(accounts[0].address),
+            "from": user.address,
+            "nonce": self.web3_client.eth.get_transaction_count(user.address),
             "gasPrice": self.web3_client.gas_price(),
         }
-        instruction_tx = spl_token_caller.functions.initializeAccount(
-            accounts[0].address, token_mint
-        ).build_transaction(tx)
-        self.web3_client.send_transaction(accounts[0], instruction_tx)
-        return accounts[0]
+        instruction_tx = spl_token_caller.functions.initializeAccount(user.address, token_mint).build_transaction(tx)
+        self.web3_client.send_transaction(user, instruction_tx)
+        return user
 
     @pytest.fixture(scope="class")
     def alice(self, spl_token_caller, token_mint, faucet, eth_bank_account):

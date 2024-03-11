@@ -11,15 +11,6 @@ inputs:
   ci_stands_key_hcloud:
     description: 'Private key for hcloud'
     required: false
-  tfstate_bucket:
-    description: 'Terraform state bucket'
-    required: false
-  tfstate_key_prefix:
-    description: 'Terraform state key prefix'
-    required: false
-  tfstate_region:
-    description: 'Terraform state region'
-    required: false
 
 runs:
   using: composite

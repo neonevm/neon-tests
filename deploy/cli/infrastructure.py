@@ -19,9 +19,8 @@ from python_terraform import Terraform
 
 
 TFSTATE_BUCKET = os.environ.get("TFSTATE_BUCKET")
-TFSTATE_KEY_PREFIX = os.environ.get("TFSTATE_KEY_PREFIX")
 TFSTATE_REGION = os.environ.get("TFSTATE_REGION")
-TF_STATE_KEY = f"{TFSTATE_KEY_PREFIX}neon-tests-{os.environ.get('GITHUB_RUN_ID', '0')}"
+TF_STATE_KEY = os.environ.get("TF_STATE_KEY")
 TF_BACKEND_CONFIG = {"bucket": TFSTATE_BUCKET, "key": TF_STATE_KEY, "region": TFSTATE_REGION}
 
 

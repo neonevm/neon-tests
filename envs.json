@@ -314,7 +314,7 @@
     "network_ids": {
       "neon": 245022926
     },
-    "solana_url": "https://api.devnet.solana.com",
+    "solana_url": "http://neon-solrpc-devnet-lb-1.solana.p2p.org/0LcGBYwNa9b0ifu7odnVPEF9TiYHQUXfOuxrTXlH",
     "faucet_url": "http://3.13.67.238/request_neon",
     "neonpass_url": "http://devnet.neonpass.live",
     "tracer_url": "http://neon-rpc:9090",

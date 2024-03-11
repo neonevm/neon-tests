@@ -51,12 +51,12 @@ class TestTracerDebugMethods:
         tx_hash = receipt["transactionHash"].hex()
 
         wait_condition(
-            lambda: self.tracer_api.send_rpc(method="eth_getTransactionByHash", params=[tx_hash])["result"] is not None,
-            timeout_sec=120,
+            lambda: self.web3_client.get_transaction_by_hash(tx_hash) is not None,
+            timeout_sec=10,
         )
-        tx_info = self.tracer_api.send_rpc(method="eth_getTransactionByHash", params=[tx_hash])
+        tx_info = self.web3_client.get_transaction_by_hash(tx_hash)
 
-        response = self.tracer_api.send_rpc(method="debug_traceCall", params=[{}, tx_info["result"]["blockNumber"]])
+        response = self.tracer_api.send_rpc(method="debug_traceCall", params=[{}, hex(tx_info["blockNumber"])])
 
         assert "error" not in response, "Error in response"
         self.validate_response_result(response)
@@ -69,26 +69,26 @@ class TestTracerDebugMethods:
         tx_hash = receipt["transactionHash"].hex()
 
         wait_condition(
-            lambda: self.tracer_api.send_rpc(method="eth_getTransactionByHash", params=[tx_hash])["result"] is not None,
-            timeout_sec=120,
+            lambda: self.web3_client.get_transaction_by_hash(tx_hash) is not None,
+            timeout_sec=10,
         )
-        tx_info = self.tracer_api.send_rpc(method="eth_getTransactionByHash", params=[tx_hash])
+        tx_info = self.web3_client.get_transaction_by_hash(tx_hash)
 
         params = [
             {
-                "to": tx_info["result"]["to"],
-                "from": tx_info["result"]["from"],
-                "gas": tx_info["result"]["gas"],
-                "gasPrice": tx_info["result"]["gasPrice"],
-                "value": tx_info["result"]["value"],
-                "data": tx_info["result"]["input"],
+                "to": tx_info["to"],
+                "from": tx_info["from"],
+                "gas": hex(tx_info["gas"]),
+                "gasPrice": hex(tx_info["gasPrice"]),
+                "value": hex(tx_info["value"]),
+                "data": tx_info["input"].hex(),
             },
-            tx_info["result"]["blockNumber"],
+            hex(tx_info["blockNumber"]),
         ]
 
         wait_condition(
             lambda: self.tracer_api.send_rpc(method="debug_traceCall", params=params)["result"] is not None,
-            timeout_sec=120,
+            timeout_sec=10,
         )
         response = self.tracer_api.send_rpc(method="debug_traceCall", params=params)
         assert "error" not in response, "Error in response"
@@ -103,26 +103,26 @@ class TestTracerDebugMethods:
         tx_hash = receipt["transactionHash"].hex()
 
         wait_condition(
-            lambda: self.tracer_api.send_rpc(method="eth_getTransactionByHash", params=[tx_hash])["result"] is not None,
-            timeout_sec=120,
+            lambda: self.web3_client.get_transaction_by_hash(tx_hash) is not None,
+            timeout_sec=10,
         )
-        tx_info = self.tracer_api.send_rpc(method="eth_getTransactionByHash", params=[tx_hash])
+        tx_info = self.web3_client.get_transaction_by_hash(tx_hash)
 
         params = [
             {
-                "to": tx_info["result"]["to"],
-                "from": tx_info["result"]["from"],
-                "gas": tx_info["result"]["gas"],
-                "gasPrice": tx_info["result"]["gasPrice"],
-                "value": tx_info["result"]["value"],
-                "data": tx_info["result"]["input"],
+                "to": tx_info["to"],
+                "from": tx_info["from"],
+                "gas": hex(tx_info["gas"]),
+                "gasPrice": hex(tx_info["gasPrice"]),
+                "value": hex(tx_info["value"]),
+                "data": tx_info["input"].hex(),
             },
-            tx_info["result"]["blockNumber"],
+            hex(tx_info["blockNumber"]),
         ]
 
         wait_condition(
             lambda: self.tracer_api.send_rpc(method="debug_traceCall", params=params)["result"] is not None,
-            timeout_sec=120,
+            timeout_sec=10,
         )
 
         response = self.tracer_api.send_rpc(method="debug_traceCall", params=params)

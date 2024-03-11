@@ -75,6 +75,12 @@ def deploy_infrastructure(evm_tag, proxy_tag, faucet_tag, evm_branch, proxy_bran
 
 
 def destroy_infrastructure():
+    os.environ["TF_VAR_neon_evm_commit"] = "latest"
+    os.environ["TF_VAR_faucet_model_commit"] = "develop"
+    os.environ["TF_VAR_branch"] = "develop"
+    os.environ["TF_VAR_proxy_image_tag"] = "latest"
+    os.environ["TF_VAR_proxy_model_commit"] = "develop"
+
     log = logging.getLogger()
     log.handlers = []
     handler = logging.StreamHandler(sys.stdout)

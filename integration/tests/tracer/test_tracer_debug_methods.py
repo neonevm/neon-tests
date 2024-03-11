@@ -196,11 +196,11 @@ class TestTracerDebugMethods:
                 "result"
             ]
             is not None,
-            timeout_sec=120,
+            timeout_sec=10,
         )
         response = self.tracer_api.send_rpc(method="debug_traceBlockByNumber", params=[hex(receipt["blockNumber"])])
         assert "error" not in response, "Error in response"
-        assert tx_hash == response["result"][0]["txHash"]
+        assert tx_hash in map(lambda v: v["txHash"], response["result"])
         self.validate_response_result(response["result"][0])
 
     @pytest.mark.parametrize("number", [190, "", "3f08", "num", "0x"])

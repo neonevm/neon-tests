@@ -27,7 +27,7 @@ try:
     from deploy.cli.github_api_client import GithubClient
     from deploy.cli.network_manager import NetworkManager
     from deploy.cli import dapps as dapps_cli
-
+    from deploy.cli import infrastructure
     from utils import create_allure_environment_opts
     from utils import web3client
     from utils import cloud
@@ -73,8 +73,9 @@ OZ_BALANCES = "./compatibility/results/oz_balance.json"
 NEON_EVM_GITHUB_URL = "https://api.github.com/repos/neonlabsorg/neon-evm"
 HOODIES_CHAINLINK_GITHUB_URL = "https://github.com/hoodieshq/chainlink-neon"
 PROXY_GITHUB_URL = "https://api.github.com/repos/neonlabsorg/proxy-model.py"
-
+FAUCET_GITHUB_URL = "https://api.github.com/repos/neonlabsorg/neon-faucet"
 EXTERNAL_CONTRACT_PATH = pathlib.Path.cwd() / "contracts" / "external"
+VERSION_BRANCH_TEMPLATE = r"[vt]{1}\d{1,2}\.\d{1,2}\.x.*"
 
 network_manager = NetworkManager()
 
@@ -180,7 +181,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     if not list(cwd.glob("*")):
         subprocess.check_call("git submodule init && git submodule update", shell=True, cwd=cwd)
     (cwd.parent / "results").mkdir(parents=True, exist_ok=True)
-    keys_env = [dapps_cli.prepare_accounts(network, users, amount) for i in range(jobs)]
+    keys_env = [infrastructure.prepare_accounts(network, users, amount) for i in range(jobs)]
 
     tests = list(Path(f"{cwd}/test").rglob("*.test.js"))
     tests = [str(test) for test in tests]
@@ -372,15 +373,14 @@ def requirements(dep):
         install_ui_requirements()
 
 
-def is_neon_evm_branch_exist(branch):
+def is_branch_exist(endpoint, branch):
     if branch:
-        response = requests.get(f"{NEON_EVM_GITHUB_URL}/branches/{branch}")
+        response = requests.get(f"{endpoint}/branches/{branch}")
         if response.status_code == 200:
-            click.echo(f"The branch {branch} exist in the neon_evm repository")
+            click.echo(f"The branch {branch} exist in the {endpoint} repository")
             return True
     else:
         return False
-
 
 def get_evm_pinned_version(branch):
     click.echo(f"Get pinned version for proxy branch {branch}")
@@ -416,7 +416,7 @@ def update_contracts_from_git(git_url: str, local_dir_name: str, branch="develop
 
 
 def download_evm_contracts(branch):
-    if is_neon_evm_branch_exist(branch) and branch != "develop":
+    if is_branch_exist(NEON_EVM_GITHUB_URL, branch) and branch != "develop":
         neon_evm_branch = branch
     else:
         neon_evm_branch = get_evm_pinned_version("develop")
@@ -833,13 +833,44 @@ def infra():
 
 
 @infra.command(name="deploy", help="Deploy test infrastructure")
-def deploy():
-    dapps_cli.deploy_infrastructure()
+@click.option("--current_branch", help="Branch of neon-tests repository")
+@click.option("--head_branch", default="", help="Feature branch name")
+@click.option("--base_branch", default="", help="Target branch of the pull request")
+
+def deploy(current_branch, head_branch, base_branch):
+    # use feature branch or version tag as tag for proxy, evm and faucet images or use latest
+    proxy_tag, evm_tag, faucet_tag = "", "", ""
+
+    if head_branch:
+        proxy_tag  = head_branch if  is_branch_exist(PROXY_GITHUB_URL, head_branch) else ""
+        evm_tag = head_branch if is_branch_exist(NEON_EVM_GITHUB_URL, head_branch) else ""
+        faucet_tag = head_branch if is_branch_exist(FAUCET_GITHUB_URL, head_branch) else ""
+
+    if re.match(VERSION_BRANCH_TEMPLATE, base_branch):
+        version_branch = re.match(VERSION_BRANCH_TEMPLATE, base_branch)
+    elif re.match(VERSION_BRANCH_TEMPLATE, current_branch):
+        version_branch = re.match(VERSION_BRANCH_TEMPLATE, current_branch)
+    else:
+        version_branch = None
+
+    if version_branch:
+        proxy_tag  = version_branch if  is_branch_exist(PROXY_GITHUB_URL, version_branch) and not proxy_tag else ""
+        evm_tag = version_branch if is_branch_exist(NEON_EVM_GITHUB_URL, version_branch) and not evm_tag else ""
+        faucet_tag = version_branch if is_branch_exist(FAUCET_GITHUB_URL, version_branch) and not faucet_tag else ""
+
+    proxy_tag = "latest" if not proxy_tag else proxy_tag
+    evm_tag = "latest" if not evm_tag else evm_tag
+    faucet_tag = "latest" if not faucet_tag else faucet_tag
+
+    evm_branch = evm_tag if evm_tag != "latest" else "develop"
+    proxy_branch = proxy_tag if proxy_tag != "latest" else "develop"
+
+    infrastructure.deploy_infrastructure(evm_tag, proxy_tag, faucet_tag, evm_branch, proxy_branch)
 
 
 @infra.command(name="destroy", help="Destroy test infrastructure")
 def destroy():
-    dapps_cli.destroy_infrastructure()
+    infrastructure.destroy_infrastructure()
 
 
 @infra.command(name="download-logs", help="Download remote docker logs")
@@ -852,7 +883,7 @@ def download_logs():
 @click.option("-a", "--amount", default=10000, help="How many airdrop")
 @click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 def prepare_accounts(count, amount, network):
-    dapps_cli.prepare_accounts(network, count, amount)
+    infrastructure.prepare_accounts(network, count, amount)
 
 
 @infra.command("print-network-param")

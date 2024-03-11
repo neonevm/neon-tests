@@ -13,22 +13,13 @@ on:
         options:
           - night-stand
           - devnet
-      runner:
-        type: choice
-        default: ubuntu-20.04
-        required: true
-        description: "Where to run tests (our runner or github)"
-        options:
-          - neon-hosted
-          - aws-hosted
-          - ubuntu-20.04
+          - terraform
 
 env:
-  NETWORK: night-stand
-  RUNNER: neon-hosted
+  NETWORK: ${{ github.event.inputs.network || 'night-stand' }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   IMAGE:  neonlabsorg/neon_tests
-  CONTAINER:  economy-${{ github.run_id }}
+  CONTAINER:  economy-F
 jobs:
   dockerize:
     if: ${{ github.ref_name != 'develop'}}
@@ -51,44 +42,38 @@ jobs:
         if: github.event.schedule=='0 6 * * *'
         run: |
           echo "NETWORK=night-stand" >> $GITHUB_ENV
-      - name: Setup env
-        id: setup
-        run: |
-          # $1 - inputs
-          # $2 - env.VAR
-          function setVar {
-            if [ -z "$1" ]
-              then
-                RESULT="$2"
-              else
-                RESULT="$1"
-            fi
-            echo $RESULT
-          }
+      - uses: actions/checkout@v4
+      - name: "Prepare terraform stand"
+        id: prepare_terraform
+        if: ${{ env.NETWORK == 'terraform' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
+          TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
+          TFSTATE_KEY: ${{vars.TFSTATE_KEY_PREFIX}}-${{ github.run_number }}
+          TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
+          TF_VAR_ci_pp_solana_url: ${{ secrets.SOLANA_URL }}
+        uses: ./.github/actions/create-tf-stand
+        with:
+          ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
 
-          NETWORK=$( setVar "${{ github.event.inputs.network }}" "${{ env.NETWORK }}" )
-          RUNNER=$( setVar "${{ github.event.inputs.runner }}" "${{ env.RUNNER }}" )
-
-          echo "Network: ${NETWORK}"
-          echo "Runner: ${RUNNER}"
-          echo "Build url: ${{ env.BUILD_URL }}"
-
-          echo "network=${NETWORK}" >> $GITHUB_OUTPUT
-          echo "runner=${RUNNER}" >> $GITHUB_OUTPUT
-          echo "jobs=${JOBS_NUMBER}" >> $GITHUB_OUTPUT
     outputs:
-      network: ${{ steps.setup.outputs.network }}
-      runner: ${{ steps.setup.outputs.runner }}
+      proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
+      solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
+      network: ${{ env.NETWORK }}
 
   tests:
     name: "Operator tests"
     needs:
       - prepare-env
       - dockerize
-    runs-on: ${{ needs.prepare-env.outputs.runner }}
+    runs-on: neon-hosted
     env:
       NETWORK: ${{ needs.prepare-env.outputs.network }}
-      RUNNER: ${{ needs.prepare-env.outputs.runner }}
+      SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare-env.outputs.proxy_ip }}
     if: |
       always() &&
       !contains(needs.*.result, 'failure') &&
@@ -101,9 +86,10 @@ jobs:
       - name: Run docker container
         run: |
           docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
-          docker run -i -d --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
+          docker run -i -d -e SOLANA_IP -e PROXY_IP \
+            --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} \
+            /bin/bash
       - name: "Run economy tests"
-        id: economy
         run: |
           docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py run economy -n ${{ env.NETWORK }}
       - name: "Notify on failure."
@@ -113,7 +99,6 @@ jobs:
             -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
             -b ${{ env.BUILD_URL }}
       - name: "Generate allure report"
-        id: requirements
         uses: ./.github/actions/generate-allure-report
         if: always()
         with:
@@ -125,3 +110,24 @@ jobs:
       - name: Remove docker container
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}
+  destroy:
+    runs-on: ubuntu-20.04
+    needs: [ prepare-env, tests ]
+    if: always() && needs.prepare-env.outputs.network == 'terraform'
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Destroy stand"
+        env:
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
+          TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
+          TFSTATE_KEY: ${{vars.TFSTATE_KEY_PREFIX}}-${{ github.run_number }}
+          TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
+          PROXY_IP: ${{ needs.prepare-env.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}
+        uses: ./.github/actions/destroy-tf-stand
+        with:
+          ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
+

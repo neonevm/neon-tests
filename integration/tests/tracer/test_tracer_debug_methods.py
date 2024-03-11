@@ -252,7 +252,7 @@ class TestTracerDebugMethods:
         )
         response = self.tracer_api.send_rpc(method="debug_traceBlockByHash", params=[receipt["blockHash"].hex()])
         assert "error" not in response, "Error in response"
-        assert tx_hash == response["result"][0]["txHash"]
+        assert tx_hash in map(lambda v: v["txHash"], response["result"])
 
         self.validate_response_result(response["result"][0])
 

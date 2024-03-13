@@ -25,13 +25,12 @@ class NeonApiClient:
             },
             "accounts": []
         }
-        print(body)
         resp = requests.post(url=f"{self.url}/emulate", json=body, headers=self.headers)
-        print(resp.text)
         if resp.status_code == 200:
             return resp.json()["value"]
         else:
             return resp.json()
+
 
 
     def emulate_contract_call(self, sender, contract, function_signature, params=None):
@@ -43,6 +42,7 @@ class NeonApiClient:
             data += eth_abi.encode(types, params)
         return self.emulate(sender, contract, data)
 
+
     def get_storage_at(self, contract_id, index="0x0"):
         body = {
             "contract": contract_id,
@@ -50,11 +50,12 @@ class NeonApiClient:
         }
         return requests.post(url=f"{self.url}/storage", json=body, headers=self.headers).json()
 
+
     def get_holder(self, public_key):
         body = {"pubkey": f"{public_key}"}
         return requests.post(url=f"{self.url}/holder", json=body, headers=self.headers).json()
 
-    def get_ether_account_data(self, ether, chain_id = CHAIN_ID):
+    def get_balance(self, ether, chain_id = CHAIN_ID):
         body = {
             "account": [
                 { "address": ether, "chain_id": chain_id }

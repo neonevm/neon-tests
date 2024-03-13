@@ -134,11 +134,8 @@ class TestPrecompiledContracts:
         amount = random.choice([0, 10])
         balance_before = self.web3_client.get_balance(address)
 
-        instruction_tx = self.web3_client.make_raw_tx(sender_account, amount=amount, estimate_gas=True)
-        instruction_tx["data"] = input_data
-        instruction_tx["chainId"] = self.web3_client.eth.chain_id
-        instruction_tx["to"] = address
-        instruction_tx["from"] = sender_account.address
+        instruction_tx = self.web3_client.make_raw_tx(sender_account, address, data=input_data,
+                                                      amount=amount, estimate_gas=True)
         if request.node.callspec.id not in [
             "modexp-nagydani-5-square0",
             "modexp-nagydani-5-square1",

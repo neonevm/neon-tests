@@ -33,7 +33,7 @@ on:
           - auto
 env:
   NETWORK: ${{ github.event.inputs.network || 'terraform' }}
-  NUMPROCESSES: ${{ github.event.inputs.numprocesses || 4 }}
+  NUMPROCESSES: ${{ github.event.inputs.numprocesses || 8 }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   SOLANA_URL: "${{ secrets.SOLANA_URL }}"
   IMAGE:  neonlabsorg/neon_tests
@@ -70,13 +70,14 @@ jobs:
       - name: "Prepare terraform stand"
         id: prepare_terraform
         if: ${{ env.NETWORK == 'terraform' }}
+        timeout-minutes: 15
         env:
           AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
           AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
           AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
           HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
           TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
-          TFSTATE_KEY_PREFIX: ${{vars.TFSTATE_KEY_PREFIX}}
+          TFSTATE_KEY: ${{vars.TFSTATE_KEY_PREFIX}}-${{ github.run_number }}
           TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
           TF_VAR_ci_pp_solana_url: ${{ secrets.SOLANA_URL }}
         uses: ./.github/actions/create-tf-stand
@@ -97,6 +98,7 @@ jobs:
     env:
       SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}
       PROXY_IP: ${{ needs.prepare-env.outputs.proxy_ip }}
+      NETWORK: ${{ needs.prepare-env.outputs.network }}
     if: |
       always() &&
       !contains(needs.*.result, 'failure') &&
@@ -151,7 +153,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
           HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
           TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
-          TFSTATE_KEY_PREFIX: ${{vars.TFSTATE_KEY_PREFIX}}
+          TFSTATE_KEY: ${{vars.TFSTATE_KEY_PREFIX}}-${{ github.run_number }}
           TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
           PROXY_IP: ${{ needs.prepare-env.outputs.proxy_ip }}
           SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}

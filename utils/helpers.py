@@ -36,8 +36,7 @@ def get_contract_interface(
         else:
             contract_name = contract.rsplit(".", 1)[0]
 
-    if version not in [str(v) for v in solcx.get_installed_solc_versions()]:
-        solcx.install_solc(version)
+    solcx.install_solc(version)
     if contract.startswith("/"):
         contract_path = pathlib.Path(contract)
     else:

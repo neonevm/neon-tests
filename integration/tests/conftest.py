@@ -22,8 +22,15 @@ from utils.erc20wrapper import ERC20Wrapper
 from utils.operator import Operator
 from utils.web3client import NeonChainWeb3Client, Web3Client
 from utils.prices import get_sol_price, get_neon_price
+from utils.transfers_inter_networks import token_from_solana_to_neon_tx
 
 NEON_AIRDROP_AMOUNT = 10_000
+
+
+MULTITOKEN_MINTS = {
+    "USDT": "2duuuuhNJHUYqcnZ7LKfeufeeTBgSJdftf2zM3cZV6ym",
+    "ETH": "EwJYd3UAFAgzodVeHprB2gMQ68r4ZEbbvpoVzCZ1dGq5",
+}
 
 
 def pytest_collection_modifyitems(config, items):
@@ -90,17 +97,17 @@ def web3_client_sol(pytestconfig: Config) -> tp.Union[Web3Client, None]:
 
 
 @pytest.fixture(scope="session")
-def web3_client_abc(pytestconfig: Config) -> tp.Union[Web3Client, None]:
-    if "abc" in pytestconfig.environment.network_ids:
-        return Web3Client(f"{pytestconfig.environment.proxy_url}/abc")
+def web3_client_usdt(pytestconfig: Config) -> tp.Union[Web3Client, None]:
+    if "usdt" in pytestconfig.environment.network_ids:
+        return Web3Client(f"{pytestconfig.environment.proxy_url}/usdt")
     else:
         return None
 
 
 @pytest.fixture(scope="session", autouse=True)
-def web3_client_def(pytestconfig: Config) -> tp.Union[Web3Client, None]:
-    if "def" in pytestconfig.environment.network_ids:
-        return Web3Client(f"{pytestconfig.environment.proxy_url}/def")
+def web3_client_eth(pytestconfig: Config) -> tp.Union[Web3Client, None]:
+    if "eth" in pytestconfig.environment.network_ids:
+        return Web3Client(f"{pytestconfig.environment.proxy_url}/eth")
     else:
         return None
 
@@ -288,8 +295,8 @@ def account_with_all_tokens(
     sol_client_session,
     solana_account,
     web3_client,
-    web3_client_abc,
-    web3_client_def,
+    web3_client_usdt,
+    web3_client_eth,
     web3_client_sol,
     pytestconfig,
     faucet,
@@ -298,31 +305,37 @@ def account_with_all_tokens(
     operator_keypair,
     evm_loader_keypair,
 ):
-    account = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
+    neon_account = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
     if web3_client_sol:
         sol_client_session.request_airdrop(solana_account.public_key, 1 * LAMPORT_PER_SOL)
         sol_client_session.deposit_wrapped_sol_from_solana_to_neon(
             solana_account,
-            account,
+            neon_account,
             web3_client_sol.eth.chain_id,
             pytestconfig.environment.evm_loader,
             1 * LAMPORT_PER_SOL,
         )
-    for client in [web3_client_abc, web3_client_def]:
+    for client in [web3_client_usdt, web3_client_eth]:
         if client:
-            new_sol_account = Keypair.generate()
-            sol_client_session.send_sol(solana_account, new_sol_account.public_key, 5000000)
-            sol_client_session.deposit_neon_like_tokens_from_solana_to_neon(
-                neon_mint,
-                new_sol_account,
-                account,
-                client.eth.chain_id,
-                operator_keypair,
-                evm_loader_keypair,
+            if client == web3_client_usdt:
+                mint = MULTITOKEN_MINTS["USDT"]
+            else:
+                mint = MULTITOKEN_MINTS["ETH"]
+            token_mint = PublicKey(mint)
+
+            sol_client_session.mint_spl_to(token_mint, solana_account, 1000000000000000000)
+
+            tx = token_from_solana_to_neon_tx(
+                sol_client_session,
+                solana_account,
+                token_mint,
+                neon_account,
+                100000000,
                 pytestconfig.environment.evm_loader,
-                1000000000000000000,
+                client.eth.chain_id,
             )
-    return account
+            sol_client_session.send_tx_and_check_status_ok(tx, solana_account)
+    return neon_account
 
 
 @pytest.fixture(scope="function")

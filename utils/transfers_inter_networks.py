@@ -11,9 +11,11 @@ def token_from_solana_to_neon_tx(sol_client, solana_account, mint, neon_account,
     """Transfer any token from solana to neon transaction"""
     balance_pubkey = sol_client.ether2balance(neon_account.address, chain_id, evm_loader_id)
     contract_pubkey = PublicKey(sol_client.ether2program(neon_account.address, evm_loader_id)[0])
+    associated_token_address = get_associated_token_address(solana_account.public_key, mint)
+    authority_pool = get_authority_pool_address(evm_loader_id)
+    pool = get_associated_token_address(authority_pool, mint)
 
     tx = Transaction(fee_payer=solana_account.public_key)
-    associated_token_address = get_associated_token_address(solana_account.public_key, mint)
     tx.add(
         approve(
             ApproveParams(
@@ -26,9 +28,6 @@ def token_from_solana_to_neon_tx(sol_client, solana_account, mint, neon_account,
         )
     )
 
-    authority_pool = get_authority_pool_address(evm_loader_id)
-
-    pool = get_associated_token_address(authority_pool, mint)
     tx.add(
         Instruction.deposit(
             bytes.fromhex(neon_account.address[2:]),
@@ -71,7 +70,7 @@ def mint_tx(amount, dest, neon_mint, mint_authority):
 
 
 def neon_transfer_tx(
-        web3_client, sol_client, amount, spl_token, solana_account, neon_account, erc20_spl, evm_loader_id
+    web3_client, sol_client, amount, spl_token, solana_account, neon_account, erc20_spl, evm_loader_id
 ):
     chain_id = web3_client.eth.chain_id
     delegate_pda = sol_client.ether2balance(neon_account.address, chain_id, evm_loader_id)
@@ -109,12 +108,20 @@ def neon_transfer_tx(
     )
 
     tx.add(
-        Instruction.balance_account(solana_wallet, delegate_pda, contract_pubkey, neon_account.address, evm_loader_id,
-                                    chain_id))
+        Instruction.balance_account(
+            solana_wallet, delegate_pda, contract_pubkey, neon_account.address, evm_loader_id, chain_id
+        )
+    )
 
     tx.add(
-        Instruction.balance_account(solana_wallet, emulated_signer_pda, emulated_contract_pubkey,
-                                    emulate_signer.address, evm_loader_id, chain_id)
+        Instruction.balance_account(
+            solana_wallet,
+            emulated_signer_pda,
+            emulated_contract_pubkey,
+            emulate_signer.address,
+            evm_loader_id,
+            chain_id,
+        )
     )
 
     tx.add(

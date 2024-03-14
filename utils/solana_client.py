@@ -3,6 +3,7 @@ import time
 import typing as tp
 import uuid
 import requests
+import pathlib
 
 
 import solana.rpc.api
@@ -128,9 +129,9 @@ class SolanaClient(solana.rpc.api.Client):
         sig_status = json.loads((self.confirm_transaction(sig)).to_json())
         assert sig_status["result"]["value"][0]["status"] == {"Ok": None}, f"error:{sig_status}"
 
-    def create_ata(self, solana_account, neon_mint):
+    def create_ata(self, solana_account, token_mint):
         trx = Transaction()
-        trx.add(create_associated_token_account(solana_account.public_key, solana_account.public_key, neon_mint))
+        trx.add(create_associated_token_account(solana_account.public_key, solana_account.public_key, token_mint))
         opts = TxOpts(skip_preflight=True, skip_confirmation=False)
         self.send_transaction(trx, solana_account, opts=opts)
 
@@ -152,7 +153,6 @@ class SolanaClient(solana.rpc.api.Client):
         tx = token_from_solana_to_neon_tx(
             self, solana_account, wSOL["address_spl"], neon_account, full_amount, evm_loader_id, chain_id
         )
-
         self.send_tx_and_check_status_ok(tx, solana_account)
 
     def deposit_neon_like_tokens_from_solana_to_neon(
@@ -168,7 +168,7 @@ class SolanaClient(solana.rpc.api.Client):
     ):
         spl_neon_token = SplToken(self, neon_mint, TOKEN_PROGRAM_ID, payer=operator_keypair)
         associated_token_address = spl_neon_token.create_associated_token_account(solana_account.public_key)
-
+        # TODO: Refactor this and mint_spl_to methods
         tx = mint_tx(
             amount=amount,
             dest=associated_token_address,
@@ -224,3 +224,16 @@ class SolanaClient(solana.rpc.api.Client):
         }
         response = requests.post(self.endpoint, json=body, headers={"Content-Type": "application/json"})
         return response.json()
+
+    def mint_spl_to(self, mint: PublicKey, dest: Keypair, amount: int, authority: tp.Optional[Keypair] = None):
+        token_account = get_associated_token_address(dest.public_key, mint)
+
+        if not self.account_exists(token_account):
+            self.create_ata(dest, mint)
+
+        if authority is None:
+            operator_path = pathlib.Path(__file__).parent.parent / "operator-keypair.json"
+            with open(operator_path, "r") as f:
+                authority = Keypair.from_seed(json.load(f)[:32])
+        token = spl.token.client.Token(self, mint, TOKEN_PROGRAM_ID, authority)
+        token.mint_to(token_account, authority, amount)

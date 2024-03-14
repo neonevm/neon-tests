@@ -73,7 +73,7 @@ class TestDeposit:
         solana_account,
         pytestconfig: Config,
         neon_mint,
-        web3_client_abc,
+        web3_client_usdt,
         operator_keypair,
         evm_loader_keypair,
     ):
@@ -86,15 +86,15 @@ class TestDeposit:
             neon_mint,
             new_sol_account,
             new_account,
-            web3_client_abc.eth.chain_id,
+            web3_client_usdt.eth.chain_id,
             operator_keypair,
             evm_loader_keypair,
             evm_loader_id,
             amount,
         )
 
-        abc_balance_after = web3_client_abc.get_balance(new_account)
-        assert abc_balance_after == amount * 1000000000
+        usdt_balance_after = web3_client_usdt.get_balance(new_account)
+        assert usdt_balance_after == amount * 1000000000
 
     def test_transfer_spl_token_from_solana_to_neon(self, solana_account, new_account, pytestconfig: Config, erc20_spl):
         evm_loader_id = pytestconfig.environment.evm_loader

@@ -18,3 +18,7 @@ deepdiff==7.0.1
 pydantic==2.7.3
 slack-sdk==3.30.0
 filelock==3.15.4
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.31
+pandas==2.2.2
+matplotlib==3.9.1

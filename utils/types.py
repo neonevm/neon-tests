@@ -26,6 +26,7 @@ class Contract:
     solana_address: PublicKey
     balance_account_address: PublicKey
 
+
 @dataclass
 class TreasuryPool:
     index: int
@@ -43,3 +44,14 @@ TestGroup = tp.Literal[
     "evm",
     "compiler_compatibility",
 ]
+
+GithubEvent = tp.Literal[
+    "push_no_tag",
+    "push_with_tag",
+    "pull_request",
+    "merge_request",
+    "workflow_dispatch",
+    "unknown",
+]
+
+RepoType = tp.Literal["proxy", "evm", "tests"]

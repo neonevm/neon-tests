@@ -18,9 +18,10 @@ from urllib.parse import urlparse
 
 import pytest
 
+from deploy.test_results_db.test_results_handler import TestResultsHandler
 from utils.error_log import error_log
 from utils.slack_notification import SlackNotification
-from utils.types import TestGroup
+from utils.types import TestGroup, RepoType
 
 try:
     import click
@@ -108,6 +109,7 @@ def red(s):
 
 def catch_traceback(func: tp.Callable) -> tp.Callable:
     """Catch traceback to file"""
+
     def add_error_log_comment(func_name, exc: BaseException):
         err_msg = ERR_MESSAGES.get(func_name) or f"{exc.__class__.__name__}({exc})"
         error_log.add_comment(text=f"{func_name}: {err_msg}")
@@ -522,13 +524,14 @@ def update_contracts(branch):
 
 
 @cli.command(help="Run any type of tests")
-@click.option("-n", "--network", default=EnvName.NIGHT_STAND.value, type=click.Choice(EnvName),
-              help="In which stand run tests")
+@click.option(
+    "-n", "--network", default=EnvName.NIGHT_STAND.value, type=click.Choice(EnvName), help="In which stand run tests"
+)
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
 @click.option("-p", "--numprocesses", help="Number of parallel jobs for basic tests")
 @click.option("-a", "--amount", default=20000, help="Requested amount from faucet")
 @click.option("-u", "--users", default=8, help="Accounts numbers used in OZ tests")
-@click.option("-c", "--case", default='', type=str, help="Specific test case name pattern to run")
+@click.option("-c", "--case", default="", type=str, help="Specific test case name pattern to run")
 @click.option("--marker", help="Run tests by mark")
 @click.option(
     "--ui-item",
@@ -537,10 +540,7 @@ def update_contracts(branch):
     help="Which UI test run",
 )
 @click.option(
-    "--keep-error-log",
-    is_flag=True,
-    default=False,
-    help=f"Don't clear {error_log.file_path.name} before run"
+    "--keep-error-log", is_flag=True, default=False, help=f"Don't clear {error_log.file_path.name} before run"
 )
 @click.argument(
     "name",
@@ -607,10 +607,10 @@ def run(
     if name == "tracer":
         assert wait_for_tracer_service(network)
 
-    if case != '':
+    if case != "":
         command += " -vk {}".format(case)
     if marker:
-        command += f' -m {marker}'
+        command += f" -m {marker}"
 
     command += f" -s --network={network} --make-report --test-group {name}"
     if keep_error_log:
@@ -625,8 +625,8 @@ def run(
 
 @cli.command(
     help="OZ actions:\n"
-         "report - summarize openzeppelin tests results\n"
-         "analyze - analyze openzeppelin tests results"
+    "report - summarize openzeppelin tests results\n"
+    "analyze - analyze openzeppelin tests results"
 )
 @click.argument(
     "name",
@@ -719,7 +719,7 @@ locust_run_time = click.option(
     "--run-time",
     type=int,
     help="Stop after the specified amount of time, e.g. (300s, 20m, 3h, 1h30m, etc.). "
-         "Only used together without Locust Web UI. [default: always run]",
+    "Only used together without Locust Web UI. [default: always run]",
 )
 
 locust_tags = click.option(
@@ -903,8 +903,9 @@ def generate_allure_report():
 @cli.command(help="Send notification to slack")
 @click.option("-u", "--url", help="slack app endpoint url.")
 @click.option("-b", "--build_url", help="github action test build url.")
-@click.option("-n", "--network", type=click.Choice(EnvName), default=EnvName.NIGHT_STAND.value,
-              help="In which stand run tests")
+@click.option(
+    "-n", "--network", type=click.Choice(EnvName), default=EnvName.NIGHT_STAND.value, help="In which stand run tests"
+)
 @click.option("--test-group", help="Name of the failed test group")
 def send_notification(url, build_url, network, test_group: str):
     slack_notification = SlackNotification()
@@ -954,12 +955,7 @@ def send_notification(url, build_url, network, test_group: str):
 @click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 def get_operator_balances(network: str):
     net = network_manager.get_network_object(network)
-    operator = Operator(
-        net["proxy_url"],
-        net["solana_url"],
-        net["spl_neon_mint"],
-        evm_loader=net["evm_loader"]
-    )
+    operator = Operator(net["proxy_url"], net["solana_url"], net["spl_neon_mint"], evm_loader=net["evm_loader"])
     neon_balance = operator.get_token_balance()
     sol_balance = operator.get_solana_balance()
     print(
@@ -1058,16 +1054,180 @@ def dapps():
 
 @dapps.command("report", help="Print dapps report (from .json files)")
 @click.option("-d", "--directory", default="reports", help="Directory with reports")
+@click.option("--repo", type=click.Choice(tp.get_args(RepoType)), required=True)
+@click.option("--event_name", required=True)
+@click.option("--ref", required=True)
+@click.option("--ref_name", required=True)
+@click.option("--head_ref", required=True)
+@click.option("--base_ref", required=True)
+@click.option("--last_commit_message", required=True)
+@click.option("--docker_image_tag", required=True)
+@click.option("--history_depth_limit", default=10, type=int, help="How many runs to include into statistical analysis")
+def make_dapps_report(
+        directory: str,
+        repo: RepoType,
+        event_name: str,
+        ref: str,
+        ref_name: str,
+        head_ref: str,
+        base_ref: str,
+        last_commit_message: str,
+        docker_image_tag: str,
+        history_depth_limit: int,
+):
+    gh_client = GithubClient(
+        token="",
+        repo=repo,
+        event_name=event_name,
+        ref=ref,
+        ref_name=ref_name,
+        head_ref=head_ref,
+        base_ref=base_ref,
+        last_commit_message=last_commit_message,
+    )
+
+    do_save = False
+    do_compare = False
+    do_delete = False
+
+    save_branch = None
+    current_branch = None
+    previous_branch = None
+    tag = None
+
+    if repo != "tests":
+
+        # merge to develop
+        if gh_client.event == "merge_request":
+            if gh_client.is_base_branch(base_ref):
+                do_save = True
+                save_branch = head_ref
+
+        # creating a tag
+        elif gh_client.event == "push_with_tag":
+            do_save = do_compare = True
+            save_branch = current_branch = previous_branch = gh_client.base_branch
+            tag = ref_name
+
+        # PR
+        elif gh_client.event == "pull_request":
+
+            is_base = gh_client.is_base_branch(base_ref)
+            is_version = gh_client.is_version_branch(base_ref)
+
+            # to develop
+            if is_base:
+                do_save = do_compare = do_delete = True
+                save_branch = head_ref
+                current_branch = head_ref
+                previous_branch = base_ref
+
+            # to version branch
+            elif is_version:
+                do_save = do_compare = True
+                save_branch = head_ref
+                current_branch = head_ref
+                previous_branch = base_ref
+
+    report_data = dapps_cli.prepare_report_data(directory)
+    test_results_handler = TestResultsHandler()
+
+    if do_delete:
+        test_results_handler.delete_report_and_data(repo=repo, branch=save_branch, tag=None)
+
+    if do_save:
+        proxy_url = network_manager.get_network_param(os.environ.get("NETWORK"), "proxy_url")
+        web3_client = NeonChainWeb3Client(proxy_url)
+        token_usd_gas_price = web3_client.get_token_usd_gas_price()
+        # token_usd_gas_price = 0.6064  # proxy 1.14.25
+        # token_usd_gas_price = 0.59922  # proxy 1.14.26
+        test_results_handler.save_to_db(
+            report_data=report_data,
+            repo=repo,
+            branch=save_branch,
+            github_tag=gh_client.tag_name,
+            docker_image_tag=docker_image_tag or None,
+            token_usd_gas_price=token_usd_gas_price,
+        )
+
+    if do_compare:
+        compare_and_save_dapp_results(
+            repo=repo,
+            current_branch=current_branch,
+            previous_branch=previous_branch,
+            tag=tag,
+            docker_image_tag=docker_image_tag,
+            history_depth_limit=history_depth_limit,
+        )
+    else:
+        report_as_table_markdown = dapps_cli.format_report_as_table_markdown(df=report_data)
+        Path("cost_reports.md").write_text(report_as_table_markdown)
+
+
+@dapps.command("compare_results", help="Compare dApp results")
+@click.option("--repo", type=click.Choice(tp.get_args(RepoType)), required=True)
+@click.option("--current_branch", help="Head branch", required=True)
+@click.option("--previous_branch", help="The branch to compare against", required=True)
+@click.option("--tag", help="Github tag")
+@click.option("--docker_image_tag", required=True)
+@click.option("--history_depth_limit", type=int, help="How many runs to include into statistical analysis")
+def compare_and_save_results(
+        repo: RepoType,
+        current_branch: str,
+        previous_branch: str,
+        tag: tp.Optional[str],
+        docker_image_tag: str,
+        history_depth_limit: int,
+):
+    compare_and_save_dapp_results(
+        repo=repo,
+        current_branch=current_branch,
+        previous_branch=previous_branch,
+        tag=tag,
+        docker_image_tag=docker_image_tag,
+        history_depth_limit=history_depth_limit,
+    )
+
+
+def compare_and_save_dapp_results(
+        repo: RepoType,
+        current_branch: str,
+        previous_branch: str,
+        tag: tp.Optional[str],
+        docker_image_tag: str,
+        history_depth_limit: int,
+):
+    test_results_handler = TestResultsHandler()
+
+    # fetch statistical data
+    historical_data = test_results_handler.get_historical_data(
+        depth=history_depth_limit,
+        repo=repo,
+        last_branch=current_branch,
+        previous_branch=previous_branch,
+        tag=tag,
+    )
+
+    # generate plots and save to pdf
+    tag_ = f", tag {tag}" if tag else ""
+    test_results_handler.generate_and_save_plots_pdf(
+        historical_data=historical_data,
+        title_end=f"{repo}, branch {current_branch}{tag_}, Docker image tag {docker_image_tag}"
+    )
+
+
+@dapps.command("add_pr_comment", help="Add PR comment with dApp cost reports")
 @click.option("--pr_url_for_report", default="", help="Url to send the report as comment for PR")
 @click.option("--token", default="", help="github token")
-def make_dapps_report(directory, pr_url_for_report, token):
-    report_data = dapps_cli.prepare_report_data(directory)
-    dapps_cli.print_report(report_data)
-    if pr_url_for_report:
-        gh_client = GithubClient(token)
-        gh_client.delete_last_comment(pr_url_for_report)
-        format_data = dapps_cli.format_report_for_github_comment(report_data)
-        gh_client.add_comment_to_pr(pr_url_for_report, format_data)
+@click.option("--md_file", help="File with markdown for the comment")
+def add_pr_comment(pr_url_for_report: str, token: str, md_file: str):
+    gh_client = GithubClient(token=token)
+    gh_client.delete_last_comment(pr_url_for_report)
+
+    with open(md_file) as f:
+        markdown = f.read()
+
+    gh_client.add_comment_to_pr(pr_url_for_report, markdown)
 
 
 if __name__ == "__main__":

@@ -1,12 +1,15 @@
 import os
-import boto3
-import pathlib
 import mimetypes
 
+import boto3
+import pathlib
+
 NEON_TESTS_BUCKET_NAME = os.environ.get("AWS_S3_BUCKET", "neon-test-allure")
+REGION = os.environ.get("AWS_REGION", "eu-central-1")
+S3_ENDPOINT = f"s3-website.{REGION}.amazonaws.com"
+S3_UPLOAD_URL = f"http://{NEON_TESTS_BUCKET_NAME}/{S3_ENDPOINT}/" + "{key}"
 
-
-client = boto3.client("s3", region_name=os.environ.get("AWS_REGION", "eu-central-1"))
+client = boto3.client("s3", region_name=REGION)
 
 
 def download(source, destination, bucket=NEON_TESTS_BUCKET_NAME):
@@ -39,3 +42,4 @@ def upload(source, destination, bucket=NEON_TESTS_BUCKET_NAME):
 def list_bucket(directory, bucket=NEON_TESTS_BUCKET_NAME):
     result = client.list_objects_v2(Bucket=bucket, Prefix=str(directory))
     return result.get("Contents", [])
+

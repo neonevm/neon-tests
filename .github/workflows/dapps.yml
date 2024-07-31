@@ -118,6 +118,15 @@ jobs:
       proxy_ip: ${{ needs.prepare.outputs.proxy_ip }}
       solana_ip: ${{ needs.prepare.outputs.solana_ip }}
       external_call: false
+      repo: 'tests'
+      event_name: ${{ github.event_name }}
+      ref: ${{ github.ref }}
+      ref_name: ${{ github.ref_name }}
+      head_ref: ${{ github.head_ref }}
+      base_ref: ${{ github.base_ref }}
+      last_commit_message: ${{ github.event.head_commit.message }}
+      docker_image_tag: ''
+      history_depth_limit: '10'
 
   notify:
     runs-on: ubuntu-20.04

@@ -44,6 +44,42 @@ on:
           type: boolean
           required: false
           default: true
+        repo:
+          type: string
+          description: "Repository type: tests | proxy | evm"
+          required: false
+        event_name:
+          type: string
+          description: "Event name"
+          required: false
+        ref:
+          type: string
+          description: "Reference (branch or tag)"
+          required: false
+        ref_name:
+          type: string
+          description: "Reference name"
+          required: false
+        head_ref:
+          type: string
+          description: "Head reference for pull requests"
+          required: false
+        base_ref:
+          type: string
+          description: "Base reference for pull requests"
+          required: false
+        last_commit_message:
+          type: string
+          description: "Message of the last commit"
+          required: false
+        docker_image_tag:
+          type: string
+          description: "Docker image tag"
+          required: false
+        history_depth_limit:
+          type: string
+          description: "Limit for commit history depth"
+          required: false
 
 env:
   NETWORK: ${{ inputs.network }}
@@ -612,7 +648,46 @@ jobs:
           name: pancake-report
           path: reports/
       - name: "Swap report"
+        env:
+          TEST_RESULTS_DB_HOST: ${{ secrets.TEST_RESULTS_DB_HOST }}
+          TEST_RESULTS_DB_PORT: ${{ secrets.TEST_RESULTS_DB_PORT }}
+          TEST_RESULTS_DB_NAME: ${{ secrets.TEST_RESULTS_DB_NAME }}
+          TEST_RESULTS_DB_USER: ${{ secrets.TEST_RESULTS_DB_USER }}
+          TEST_RESULTS_DB_PASSWORD: ${{ secrets.TEST_RESULTS_DB_PASSWORD }}
         run: |
           python3 ./clickfile.py dapps report --directory=reports \
-          --pr_url_for_report=${{ inputs.pr_url_for_report }} \
-          --token=${{secrets.GHTOKEN}}
+          --repo="${{inputs.repo}}" \
+          --event_name="${{inputs.event_name}}" \
+          --ref="${{inputs.ref}}" \
+          --ref_name="${{inputs.ref_name}}" \
+          --head_ref="${{inputs.head_ref}}" \
+          --base_ref="${{inputs.base_ref}}" \
+          --last_commit_message="${{inputs.last_commit_message}}" \
+          --docker_image_tag="${{inputs.docker_image_tag}}" \
+          --history_depth_limit="${{inputs.history_depth_limit}}"
+      - name: "Upload cost_reports.pdf"
+        if: ${{ hashFiles('cost_reports.pdf') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cost_reports
+          path: cost_reports.pdf
+      - name: Get the download url for cost_reports and save to cost_reports.md
+        if: ${{ hashFiles('cost_reports.pdf') != '' }}
+        id: get_artifact_url
+        env:
+          GITHUB_TOKEN: ${{ secrets.GHTOKEN }}
+        run: |
+          ARTIFACT_NAME="cost_reports"
+          ARTIFACT_ID=$(gh api -X GET /repos/${{ github.repository }}/actions/artifacts | jq -r ".artifacts[] | select(.name==\"${ARTIFACT_NAME}\") | .id")
+          ARTIFACT_URL=$(gh api -X GET /repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID} | jq -r ".archive_download_url")
+          echo "🔗 [Cost report](${ARTIFACT_URL})\n" > cost_reports.md
+      - name: "Add cost reports to summary"
+        run: |
+          cat cost_reports.md >> $GITHUB_STEP_SUMMARY
+      - name: "Add PR comment"
+        if: ${{ inputs.pr_url_for_report != '' }}
+        run: |
+          python3 ./clickfile.py dapps add_pr_comment \
+          --pr_url_for_report="${{ inputs.pr_url_for_report }}" \
+          --token="${{ secrets.GHTOKEN }}" \
+          --md_file cost_reports.md

@@ -1,18 +1,19 @@
 # Overview
 
-Check timestamp and block number
+Check timestamp and block number opcodes.
 
 # Tests list
 
-| Test case                                                  | Description                                         | XFailed |
-|------------------------------------------------------------|-----------------------------------------------------|---------|
-| TestTimestamp::test_block_timestamp_call                   | Get timestamp by function call                      |         |
-| TestTimestamp::test_block_timestamp_send_simple_trx        | Get timestamp by event                              |         |
-| TestTimestamp::test_block_timestamp_iterative              | Get timestamp in iterative fuction                  |         |
-| TestTimestamp::test_block_timestamp_constructor            | Set timestamp in constructor                        |         |
-| TestTimestamp::test_block_timestamp_mapping_get_data       | Get timestamp in mapping                            |         |
-| TestBlockNumber::test_block_number_call                    | Get block number by function call                   |         |
-| TestBlockNumber::test_block_number_event                   | Get block number by event                           |         |
-| TestBlockNumber::test_block_number_iterative               | Get block number in iterative function              |         |
-| TestBlockNumber::test_block_number_constructor             | Set block number in constructor                     |         |
-| TestBlockNumber::test_block_number_mapping_get_data        | Get block number in mapping                         |         |
+| Test case                                                                  | Description                                    | XFailed |
+|----------------------------------------------------------------------------|------------------------------------------------|---------|
+| TestBlockTimestampAndNumber::test_block_timestamp_call                     | Check contract return timestamp                |         |
+| TestBlockTimestampAndNumber::test_block_timestamp_simple_trx               | Check simple transaction with timestamp        |         |
+| TestBlockTimestampAndNumber::test_block_timestamp_iterative                | Check iterative transaction with timestamp     |         |
+| TestBlockTimestampAndNumber::test_block_timestamp_constructor              | Check timestamp in constructor                 |         |
+| TestBlockTimestampAndNumber::test_block_timestamp_in_mapping               | Check timestamp as a key in mapping            |         |
+| TestBlockTimestampAndNumber::test_contract_deploys_contract_with_timestamp | Check contract deploys contract with timestamp |         |
+| TestBlockTimestampAndNumber::test_block_number_call                        | Check contract return block number             |         |
+| TestBlockTimestampAndNumber::test_block_number_simple_trx                  | Check simple transaction with block number     |         |
+| TestBlockTimestampAndNumber::test_block_number_iterative                   | Check iterative transaction with block number  |         |
+| TestBlockTimestampAndNumber::test_block_number_constructor                 | Check block number in constructor              |         |
+| TestBlockTimestampAndNumber::test_block_number_in_mapping                  | Check block number as a key in mapping         |         |

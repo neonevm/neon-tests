@@ -58,7 +58,7 @@ def test_emulate_with_small_amount_of_steps(neon_api_client, evm_loader, user_ac
 
 
 @pytest.mark.parametrize("name", ["BlockTimestamp", "BlockNumber"])
-def test_emulate_call_contract(name, neon_api_client, operator_keypair, treasury_pool, evm_loader):
+def test_emulate_call_contract_with_block_timestamp_number(name, neon_api_client, operator_keypair, treasury_pool, evm_loader):
     user_account = evm_loader.make_new_user(operator_keypair)
     contract = deploy_contract(
         operator_keypair,
@@ -70,7 +70,7 @@ def test_emulate_call_contract(name, neon_api_client, operator_keypair, treasury
         contract_name=name,
     )
     assert contract.eth_address
-    data = abi.function_signature_to_4byte_selector("callEventsInLoop()")
+    data = abi.function_signature_to_4byte_selector("callTimeStampIterativeTrx()")
 
     result = neon_api_client.emulate(user_account.eth_address.hex(), contract=contract.eth_address.hex(), data=data)
 

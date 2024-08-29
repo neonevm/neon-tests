@@ -4,8 +4,8 @@ pragma solidity ^0.8.10;
 
 contract BlockTimestamp {
     event Result(uint256 block_timestamp);
-    uint256 a;
-    uint256 block_timestamp;
+    uint256 public a;
+    uint256 public initial_block_timestamp;
 
     struct Data {
         string info;
@@ -15,52 +15,62 @@ contract BlockTimestamp {
     event DataAdded(uint256 timestamp, string info, uint256 value);
 
     constructor() {
-        block_timestamp = block.timestamp;
-    }
-
-    function getInitBlockTimestamp() public view returns (uint256) {
-        return block_timestamp;
+        initial_block_timestamp = block.timestamp;
     }
 
     function getBlockTimestamp() public view returns (uint256) {
         return block.timestamp;
     }
 
-    function callEvent() public {
+    function logTimestamp() public {
         emit Result(block.timestamp);
     }
 
-    function callEventsInLoop() public payable {
-        for (uint256 i = 0; i < 100; i++) {
-            a = a + i;
+    function callTimestampIterativeTrx() public payable {
+        for (uint256 i = 0; i < 2000; i++) {
+            a = a + block.timestamp;
         }
         emit Result(block.timestamp);
     }
 
-    function addData(string memory _info, uint256 _value) public {
+    function addDataToMapping(string memory _info, uint256 _value) public {
         uint256 currentTimestamp = block.timestamp;
-        Data memory newData = Data({
-            info: _info,
-            value: _value
-        });
-        
-        dataByTimestamp[currentTimestamp] = newData;
-        emit DataAdded(currentTimestamp, _info, _value);
+        for (uint256 i = 0; i < 5; i++) {
+            Data memory newData = Data({
+                info: _info,
+                value: _value
+            });
+
+            dataByTimestamp[currentTimestamp] = newData;
+            emit DataAdded(currentTimestamp, _info, _value);
+            currentTimestamp = currentTimestamp + 1;
+        }
     }
-    
-    function getData(uint256 _timestamp) public view returns (string memory, uint256) {
+
+    function getDataFromMapping(uint256 _timestamp) public view returns (string memory, uint256) {
         Data memory retrievedData = dataByTimestamp[_timestamp];
         return (retrievedData.info, retrievedData.value);
     }
 
 }
 
+contract BlockTimestampDeployer {
+    BlockTimestamp public blockTimestamp;
+    event Log(address indexed addr);
+
+    constructor() {
+        blockTimestamp = new BlockTimestamp();
+        emit Log(address(blockTimestamp));
+    }
+}
+
+
 contract BlockNumber {
     event Log(address indexed sender, string message);
     event Result(uint256 block_number);
-    uint256 a;
+    uint256 public a;
 
-    uint256 public block_number;
+    uint256 public initial_block_number;
 
     struct Data {
         string info;
@@ -70,40 +80,40 @@ contract BlockNumber {
     event DataAdded(uint256 number, string info, uint256 value);
 
     constructor() payable {
-        block_number = block.number;
+        initial_block_number = block.number;
     }
 
-    function getInitBlockNumber() public view returns (uint256) {
-        return block_number;
-    }
 
     function getBlockNumber() public view returns (uint256) {
         return block.number;
     }
-    
-    function callEvent() public {
+
+    function logBlockNumber() public {
         emit Result(block.number);
     }
 
-    function callEventsInLoop() public payable {
-        for (uint256 i = 0; i < 100; i++) {
-            a = a + i;
+    function callBlockNumberIterativeTrx() public payable {
+        for (uint256 i = 0; i < 2000; i++) {
+            a = a + block.number;
         }
         emit Result(block.number);
     }
 
-    function addData(string memory _info, uint256 _value) public {
+    function addDataToMapping(string memory _info, uint256 _value) public {
         uint256 currentNumber = block.number;
-        Data memory newData = Data({
-            info: _info,
-            value: _value
-        });
-        
-        dataByNumber[currentNumber] = newData;
-        emit DataAdded(currentNumber, _info, _value);
+        for (uint256 i = 0; i < 5; i++) {
+            Data memory newData = Data({
+                info: _info,
+                value: _value
+            });
+
+            dataByNumber[currentNumber] = newData;
+            emit DataAdded(currentNumber, _info, _value);
+            currentNumber = currentNumber + 1;
+        }
     }
 
-    function getData(uint256 _number) public view returns (string memory, uint256) {
+    function getDataFromMapping(uint256 _number) public view returns (string memory, uint256) {
         Data memory retrievedData = dataByNumber[_number];
         return (retrievedData.info, retrievedData.value);
     }

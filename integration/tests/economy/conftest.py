@@ -94,6 +94,6 @@ def mapping_actions_contract(account_with_all_tokens, client_and_price, web3_cli
     w3_client = client_and_price[0]
     make_nonce_the_biggest_for_chain(account_with_all_tokens, w3_client, [web3_client, web3_client_sol])
     contract, _ = w3_client.deploy_and_get_contract(
-        contract="common/Common", version="0.8.12", contract_name="MappingActions", account=account_with_all_tokens
+        contract="common/Common", version="0.8.19", contract_name="MappingActions", account=account_with_all_tokens
     )
     return contract

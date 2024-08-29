@@ -126,7 +126,7 @@ jobs:
             /bin/bash -c "export SOLANA_URL=http://${{ env.SOLANA_IP }}:8899 \
             && export NEON_CORE_API_URL=http://${{ env.SOLANA_IP }}:8085/api \
             && export NEON_CORE_API_RPC_URL=http://${{ env.SOLANA_IP }}:3100 \
-            && python3 ./clickfile.py run evm --numprocesses 8 --keep-error-log"
+            && python3 ./clickfile.py run evm --numprocesses 8 --network terraform --keep-error-log"
       - name: Set failed test group to evm
         if: failure()
         run: echo "FAILED_TEST_GROUP=evm" >> $GITHUB_ENV
@@ -154,7 +154,7 @@ jobs:
         run: |
           docker exec -i ${{ env.CONTAINER }} \
             python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
-          -b ${{ env.BUILD_URL }} -n ${{ env.NETWORK }} --test-group ${{ env.FAILED_TEST_GROUP }}
+          -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group ${{ env.FAILED_TEST_GROUP }}
       - name: Remove docker container
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}

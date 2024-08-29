@@ -11,6 +11,7 @@ from _pytest.config.argparsing import Parser
 from _pytest.nodes import Item
 from _pytest.runner import runtestprotocol
 from solana.keypair import Keypair
+from web3.middleware import geth_poa_middleware
 
 from clickfile import TEST_GROUPS, EnvName
 from utils.types import TestGroup
@@ -58,7 +59,7 @@ def pytest_addoption(parser: Parser):
         help="Store tests result to file",
     )
     known_args = parser.parse_known_args(args=sys.argv[1:])
-    test_group_required = True if known_args.make_report else False
+    test_group_required = known_args.make_report
     parser.addoption(
         "--test-group",
         choices=TEST_GROUPS,
@@ -198,16 +199,21 @@ def allure_environment(pytestconfig: Config, web3_client_session: NeonChainWeb3C
 
 
 @pytest.fixture(scope="session")
-def web3_client_session(pytestconfig: Config) -> NeonChainWeb3Client:
+def web3_client_session(
+        pytestconfig: Config,
+        env_name: EnvName,
+) -> NeonChainWeb3Client:
     client = NeonChainWeb3Client(
         pytestconfig.environment.proxy_url,
         tracer_url=pytestconfig.environment.tracer_url,
     )
+    if env_name is EnvName.GETH:
+        client._web3.middleware_onion.inject(geth_poa_middleware, layer=0)
     return client
 
 
 @pytest.fixture(scope="session")
-def sol_client_session(pytestconfig: Config):
+def sol_client_session(pytestconfig: Config) -> SolanaClient:
     client = SolanaClient(
         pytestconfig.environment.solana_url,
         pytestconfig.environment.account_seed_version,

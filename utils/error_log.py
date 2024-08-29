@@ -2,7 +2,7 @@ import contextlib
 import json
 from pathlib import Path
 from collections import defaultdict
-from typing import Optional, Type, Generator
+from typing import Type, Generator
 
 import pydantic
 from filelock import FileLock

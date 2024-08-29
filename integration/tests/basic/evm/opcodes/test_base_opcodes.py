@@ -4,6 +4,7 @@ import web3
 
 from utils.accounts import EthAccounts
 from utils.consts import ZERO_HASH
+from utils.types import TransactionType
 from utils.web3client import NeonChainWeb3Client
 
 
@@ -13,6 +14,26 @@ from utils.web3client import NeonChainWeb3Client
 class TestOpCodes:
     web3_client: NeonChainWeb3Client
     accounts: EthAccounts
+
+    @pytest.fixture(scope="class")
+    def mcopy_checker(self, web3_client, faucet, accounts):
+        contract, _ = web3_client.deploy_and_get_contract(
+            "opcodes/EIP5656MCopy",
+            "0.8.25",
+            accounts[0],
+            contract_name="MemoryCopy",
+        )
+        return contract
+
+    @pytest.fixture(scope="class")
+    def basefee_checker(self, web3_client, accounts):
+        contract, _ = web3_client.deploy_and_get_contract(
+            contract="opcodes/EIP1559BaseFee.sol",
+            contract_name="BaseFeeOpcode",
+            version="0.8.19",
+            account=accounts[0],
+        )
+        return contract
 
     def test_base_opcodes(self, opcodes_checker):
         sender_account = self.accounts[0]
@@ -39,16 +60,6 @@ class TestOpCodes:
         tx = self.web3_client.make_raw_tx(sender_account)
         with pytest.raises(web3.exceptions.ContractLogicError, match="execution reverted"):
             opcodes_checker.functions.test_revert().build_transaction(tx)
-
-    @pytest.fixture(scope="class")
-    def mcopy_checker(self, web3_client, faucet, accounts):
-        contract, _ = web3_client.deploy_and_get_contract(
-            "opcodes/EIP5656MCopy",
-            "0.8.25",
-            accounts[0],
-            contract_name="MemoryCopy",
-        )
-        return contract
 
     @pytest.mark.proxy_version("v1.12.0")
     @pytest.mark.parametrize(
@@ -97,3 +108,38 @@ class TestOpCodes:
         self.web3_client.send_transaction(sender_account, instr)
         result = contract.functions.read().call()
         assert result.hex() == ZERO_HASH
+
+    def test_base_fee_call(
+            self,
+            web3_client: NeonChainWeb3Client,
+            accounts: EthAccounts,
+            basefee_checker
+    ):
+        base_fee_contract = basefee_checker.functions.baseFee().call()
+        assert base_fee_contract == 0
+
+    def test_base_fee_trx_type_0(
+            self,
+            web3_client: NeonChainWeb3Client,
+            accounts: EthAccounts,
+            basefee_checker,
+    ):
+        tx = web3_client.make_raw_tx(accounts[0])
+        instruction_tx = basefee_checker.functions.baseFeeTrx().build_transaction(tx)
+        resp = web3_client.send_transaction(accounts[0], instruction_tx)
+        base_fee_from_log = basefee_checker.events.Log().process_receipt(resp)[0]['args']['baseFee']
+        assert base_fee_from_log == web3_client.gas_price()
+
+    def test_base_fee_trx_type_2(
+            self,
+            web3_client: NeonChainWeb3Client,
+            accounts: EthAccounts,
+            basefee_checker,
+    ):
+        tx = web3_client.make_raw_tx(accounts[0], tx_type=TransactionType.EIP_1559)
+        instruction_tx = basefee_checker.functions.baseFeeTrx().build_transaction(tx)
+        instruction_tx["maxFeePerGas"] = 2000000000
+        instruction_tx["maxPriorityFeePerGas"] = 2000000
+        resp = web3_client.send_transaction(accounts[0], instruction_tx)
+        base_fee_from_log = basefee_checker.events.Log().process_receipt(resp)[0]['args']['baseFee']
+        assert base_fee_from_log == instruction_tx["maxFeePerGas"] - instruction_tx["maxPriorityFeePerGas"]

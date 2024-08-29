@@ -1,3 +1,4 @@
+import logging
 import inspect
 import os
 import random
@@ -9,10 +10,15 @@ import typing as tp
 import base58
 import pytest
 from _pytest.config import Config
+from eth_account.signers.local import LocalAccount
 from solana.keypair import Keypair
 from solana.publickey import PublicKey
 from solana.rpc import commitment
 from solana.rpc.types import TxOpts
+from web3.contract import Contract
+
+from clickfile import EnvName
+from utils.accounts import EthAccounts
 
 from utils.apiclient import JsonRPCSession
 from utils.consts import COUNTER_ID, LAMPORT_PER_SOL, MULTITOKEN_MINTS
@@ -20,8 +26,11 @@ from utils.erc20 import ERC20
 from utils.erc20wrapper import ERC20Wrapper
 from utils.evm_loader import EvmLoader
 from utils.operator import Operator
+from utils.solana_client import SolanaClient
 from utils.prices import get_sol_price
 from utils.web3client import NeonChainWeb3Client, Web3Client
+
+log = logging.getLogger(__name__)
 
 NEON_AIRDROP_AMOUNT = 1_000
 
@@ -37,14 +46,14 @@ def json_rpc_client(pytestconfig: Config) -> JsonRPCSession:
 
 
 @pytest.fixture(scope="class")
-def web3_client(request, web3_client_session):
+def web3_client(request, web3_client_session) -> NeonChainWeb3Client:
     if inspect.isclass(request.cls):
         request.cls.web3_client = web3_client_session
     yield web3_client_session
 
 
 @pytest.fixture(scope="class")
-def sol_client(request, sol_client_session):
+def sol_client(request, sol_client_session) -> SolanaClient:
     if inspect.isclass(request.cls):
         request.cls.sol_client = sol_client_session
     yield sol_client_session
@@ -115,6 +124,22 @@ def solana_account(bank_account, pytestconfig: Config, sol_client_session):
 
     if pytestconfig.environment.use_bank:
         sol_client_session.send_sol(bank_account, account.public_key, int(0.5 * LAMPORT_PER_SOL))
+    else:
+        sol_client_session.request_airdrop(account.public_key, 1 * LAMPORT_PER_SOL)
+    yield account
+    if pytestconfig.environment.use_bank:
+        balance = sol_client_session.get_balance(account.public_key, commitment=commitment.Confirmed).value
+        try:
+            sol_client_session.send_sol(account, bank_account.public_key, balance - 5000)
+        except:
+            pass
+
+
+@pytest.fixture(scope="function")
+def new_solana_account(bank_account, pytestconfig: Config, sol_client_session):
+    account = Keypair.generate()
+    if pytestconfig.environment.use_bank:
+        sol_client_session.send_sol(bank_account, account.public_key, int(0.01 * LAMPORT_PER_SOL))
     else:
         sol_client_session.request_airdrop(account.public_key, 1 * LAMPORT_PER_SOL)
     yield account
@@ -213,8 +238,15 @@ def erc20_spl_mintable(
 
 @pytest.fixture(scope="class")
 def class_account_sol_chain(
-    evm_loader, solana_account, web3_client, web3_client_sol, faucet, eth_bank_account, bank_account, pytestconfig
-):
+    evm_loader,
+    solana_account,
+    web3_client,
+    web3_client_sol,
+    faucet,
+    eth_bank_account,
+    bank_account,
+    pytestconfig
+) -> LocalAccount:
     account = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
     if pytestconfig.environment.use_bank:
         evm_loader.send_sol(bank_account, solana_account.public_key, int(1 * LAMPORT_PER_SOL))
@@ -289,7 +321,7 @@ def neon_mint(pytestconfig: Config):
 
 
 @pytest.fixture(scope="class")
-def withdraw_contract(web3_client, faucet, accounts):
+def withdraw_contract(web3_client, faucet, accounts) -> Contract:
     contract, _ = web3_client.deploy_and_get_contract("precompiled/NeonToken", "0.8.10", account=accounts[1])
     return contract
 
@@ -511,3 +543,64 @@ def counter_resource_address(call_solana_caller, accounts, web3_client):
     )
     web3_client.send_transaction(accounts[0], instruction_tx)
     yield call_solana_caller.functions.getResourceAddress(salt).call()
+
+
+@pytest.fixture(scope="class")
+def eip1559_setup(
+        request: pytest.FixtureRequest,
+        pytestconfig: Config,
+        accounts_session: EthAccounts,
+        web3_client_session: NeonChainWeb3Client,
+        env_name: EnvName,
+):
+    """
+    Creates type-2 transactions in the db
+    """
+
+    # Get the max value of marker @pytest.mark.need_eip1559_blocks(...) among selected tests in the class
+    block_count = 1
+    selected_tests_in_class = [item for item in request.session.items if item.cls is request.cls]  # noqa
+    markers = request.cls.pytestmark + [mark for test in selected_tests_in_class for mark in test.own_markers]
+    for marker in markers:
+        if marker.name == "need_eip1559_blocks":
+            need_eip1559_blocks = marker.args[0]
+            block_count = max(block_count, need_eip1559_blocks)
+
+    # Check if the latest blocks already have enough type-2 transactions. If that's the case - return
+    fee_history = web3_client_session._web3.eth.fee_history(block_count, 'latest', None)  # noqa
+    base_fee_per_gas_history = fee_history["baseFeePerGas"]
+    if len(base_fee_per_gas_history) >= block_count + 1:
+        return
+
+    # Send the transactions
+    sender = accounts_session[0]
+    recipient = web3_client_session.create_account()
+    gas_estimate: tp.Union[int, tp.Literal["auto"]] = "auto"
+    value = 10
+
+    for nonce in range(block_count):
+        tx_params = web3_client_session.make_raw_tx_eip_1559(
+            nonce=nonce,
+            chain_id="auto",
+            from_=sender.address,
+            to=recipient.address,
+            value=value,
+            gas=gas_estimate,
+            max_priority_fee_per_gas="auto",
+            max_fee_per_gas="auto",
+            access_list=None,
+            data=None,
+        )
+
+        if gas_estimate == "auto":
+            gas_estimate = int(tx_params["gas"])
+
+        start = time.time()
+        receipt = web3_client_session.send_transaction(account=sender, transaction=tx_params)
+        assert receipt.status == 1
+
+        # Sleep to make sure the next transaction goes to the next block
+        min_pause = 3 if env_name is EnvName.GETH else 0.4
+        pause = min_pause - (time.time() - start)
+        if pause > 0:
+            time.sleep(pause)

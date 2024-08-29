@@ -180,9 +180,10 @@ class EvmLoader(SolanaClient):
         additional_accounts,
         signer: Keypair = None,
         system_program=sp.SYS_PROGRAM_ID,
+        compute_unit_price=None
     ) -> SendTransactionResp:
         signer = operator if signer is None else signer
-        trx = TransactionWithComputeBudget(operator)
+        trx = TransactionWithComputeBudget(operator, compute_unit_price=compute_unit_price)
         operator_balance = self.get_operator_balance_pubkey(operator)
 
         trx.add(
@@ -195,8 +196,7 @@ class EvmLoader(SolanaClient):
                 treasury_buffer,
                 instruction.rawTransaction,
                 additional_accounts,
-                system_program,
-            )
+                system_program)
         )
 
         return self.send_tx(trx, signer)
@@ -319,7 +319,7 @@ class EvmLoader(SolanaClient):
                 treasury,
                 additional_accounts,
                 system_program,
-                tag,
+                tag
             )
         )
 
@@ -374,10 +374,11 @@ class EvmLoader(SolanaClient):
         steps_count,
         signer: Keypair,
         system_program=sp.SYS_PROGRAM_ID,
+        compute_unit_price = None,
         tag=0x35,
         index=0,
     ) -> GetTransactionResp:
-        trx = TransactionWithComputeBudget(operator)
+        trx = TransactionWithComputeBudget(operator, compute_unit_price=compute_unit_price)
         trx.add(
             make_ExecuteTrxFromAccountDataIterativeOrContinue(
                 index,
@@ -389,13 +390,19 @@ class EvmLoader(SolanaClient):
                 treasury,
                 additional_accounts,
                 system_program,
-                tag,
+                tag
             )
         )
         return self.send_tx(trx, signer)
 
     def execute_transaction_steps_from_account(
-        self, operator: Keypair, treasury, storage_account, additional_accounts, signer: Keypair = None
+        self,
+        operator: Keypair,
+        treasury,
+        storage_account,
+        additional_accounts,
+        signer: Keypair = None,
+        compute_unit_price = None
     ) -> GetTransactionResp:
         signer = operator if signer is None else signer
         operator_balance_pubkey = self.get_operator_balance_pubkey(operator)
@@ -413,6 +420,7 @@ class EvmLoader(SolanaClient):
                 EVM_STEPS,
                 signer,
                 index=index,
+                compute_unit_price=compute_unit_price
             )
             index += 1
 
@@ -445,9 +453,10 @@ class EvmLoader(SolanaClient):
                 EVM_STEPS,
                 signer,
                 tag=0x36,
-                index=index,
+                index=index
             )
             index += 1
+
 
             if receipt.value.transaction.meta.err:
                 raise AssertionError(f"Can't deploy contract: {receipt.value.transaction.meta.err}")

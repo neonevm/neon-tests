@@ -120,7 +120,7 @@ jobs:
         run: |
           docker exec -i ${{ env.CONTAINER }} \
             python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
-          -b ${{ env.BUILD_URL }} -n ${{ env.NETWORK }} --test-group compiler_compatibility
+          -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group compiler_compatibility
       - name: Remove docker container
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}

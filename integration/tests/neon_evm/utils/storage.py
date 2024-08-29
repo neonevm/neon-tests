@@ -17,7 +17,7 @@ def create_holder(signer: Keypair, evm_loader:EvmLoader, seed: str = None, size:
     if fund is None:
         fund = 10 ** 9
     if seed is None:
-        seed = str(randrange(1000000))
+        seed = str(randrange(100000000000))
     if storage is None:
         storage = PublicKey(
             sha256(bytes(signer.public_key) + bytes(seed, 'utf8') + bytes(evm_loader.loader_id)).digest())
@@ -31,8 +31,9 @@ def create_holder(signer: Keypair, evm_loader:EvmLoader, seed: str = None, size:
             make_CreateHolderAccount(storage, signer.public_key, bytes(seed, 'utf8'), evm_loader.loader_id)
         )
         evm_loader.send_tx(trx, signer)
-    print(f"Created holder account: {storage}")
-    return storage
+        return storage
+    else:
+        create_holder(signer, evm_loader, seed, size, fund, storage)
 
 
 def delete_holder(del_key: PublicKey, acc: Keypair, signer: Keypair, evm_loader: EvmLoader):

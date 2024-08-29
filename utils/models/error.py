@@ -1,8 +1,9 @@
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, field_validator
 
 from integration.tests.basic.helpers.errors import Error32602
+from utils.models.mixins import ForbidExtra
 from utils.models.model_types import (
     ErrorCodeField,
     IdField,
@@ -10,10 +11,6 @@ from utils.models.model_types import (
     NotSupportedMethodString,
     RequiredParamsString,
 )
-
-
-class ForbidExtra(BaseModel):
-    model_config = ConfigDict(extra="forbid")
 
 
 class EthErrorData(ForbidExtra):

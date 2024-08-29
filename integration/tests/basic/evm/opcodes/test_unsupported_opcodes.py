@@ -12,9 +12,6 @@ class TestUnsupportedOpcodes:
         contract, _ = web3_client.deploy_and_get_contract("opcodes/UnsupportedOpcodes", "0.8.10", accounts[0])
         return contract
 
-    def test_basefee(self, contract):
-        assert contract.functions.baseFee().call() == 0
-
     def test_coinbase(self, contract):
         assert contract.functions.coinbase().call() == ZERO_ADDRESS
 

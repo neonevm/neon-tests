@@ -16,7 +16,9 @@ markers = [
     "slow: these tests are slow and should be run separately",
     "proxy_version(version): thee tests work only on specified proxy version and all the following higher versions",
     "bug: mark for tests containing bugs which need to be fixed or refactored",
-    "neon_only: tests for Neon functionality"
+    "neon_only: tests for Neon functionality",
+    "need_eip1559_blocks: values passed to this marker will be used by fixture eip1559_setup",
+    "execute_in_the_end_of_session: moves the test to the end of the session"
 ]
 asyncio_mode = "auto"
 addopts = "--alluredir=allure-results"

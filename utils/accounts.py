@@ -1,4 +1,5 @@
 import allure
+from eth_account.signers.local import LocalAccount
 
 from utils.consts import InputTestConstants
 from .web3client import NeonChainWeb3Client
@@ -9,10 +10,10 @@ class EthAccounts:
         self._web3_client = web3_client
         self._faucet = faucet
         self._bank_account = eth_bank_account
-        self._accounts = []
+        self._accounts: list[LocalAccount] = []
         self.accounts_collector = []
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> LocalAccount:
         if len(self._accounts) < (item + 1):
             for _ in range(item + 1 - len(self._accounts)):
                 with allure.step("Create new account with default balance"):

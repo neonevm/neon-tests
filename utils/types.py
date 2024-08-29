@@ -1,5 +1,7 @@
 import typing as tp
+import enum
 from dataclasses import dataclass
+
 from solana.publickey import PublicKey
 from solana.keypair import Keypair
 
@@ -26,6 +28,7 @@ class Contract:
     solana_address: PublicKey
     balance_account_address: PublicKey
 
+
 @dataclass
 class TreasuryPool:
     index: int
@@ -43,3 +46,8 @@ TestGroup = tp.Literal[
     "evm",
     "compiler_compatibility",
 ]
+
+
+class TransactionType(enum.IntEnum):
+    LEGACY = 0
+    EIP_1559 = 2

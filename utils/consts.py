@@ -16,6 +16,7 @@ SOLANA_CALL_PRECOMPILED_ID: PublicKey = PublicKey("83fAnx3LLG612mHbEh4HzXEpYwvSB
 COUNTER_ID: PublicKey = PublicKey("4RJAXLPq1HrXWP4zFrMhvB5drrzqrRFwaRVNUnALcaeh")
 TRANSFER_SOL_ID: PublicKey = PublicKey("6x9dAYQehxXLh16EHAKXevnQADTZPKP6ZT4t8BfNDxtB")
 TRANSFER_TOKENS_ID: PublicKey = PublicKey("BFsGPJUwgE1rz4eoL322HaKZYNZ5wDLafwYtKwomv2XF")
+TEST_INVOKE_ID: PublicKey = PublicKey("8iqgWRzFNXmpUHLffB6uJD1ER3NLLq2ND3BioNgG9ZpZ")
 
 
 class Time:

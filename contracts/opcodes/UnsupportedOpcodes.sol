@@ -2,10 +2,6 @@ pragma solidity ^0.8.4;
 
 contract UnsupportedOpcodes {
 
-    function baseFee() public returns (uint256){
-        return block.basefee;
-    }
-
     function coinbase() public returns (address){
         return block.coinbase;
     }

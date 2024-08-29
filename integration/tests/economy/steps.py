@@ -1,3 +1,4 @@
+import logging
 import time
 from decimal import Decimal
 
@@ -11,24 +12,32 @@ from utils.consts import LAMPORT_PER_SOL
 from utils.helpers import wait_condition, hasattr_recursive
 
 
+logger = logging.getLogger(__name__)
+
+
 @allure.step("Verify operator profit")
 def assert_profit(sol_diff, sol_price, token_diff, token_price, token_name):
-    sol_amount = sol_diff / LAMPORT_PER_SOL
+    expense_lamports = sol_diff / LAMPORT_PER_SOL
     if token_diff < 0:
         raise AssertionError(f"NEON has negative difference {token_diff}")
-    sol_cost = Decimal(sol_amount, DECIMAL_CONTEXT) * Decimal(sol_price, DECIMAL_CONTEXT)
-    token_cost = Decimal(token_diff, DECIMAL_CONTEXT) * Decimal(token_price, DECIMAL_CONTEXT)
+    expense_usd = Decimal(expense_lamports, DECIMAL_CONTEXT) * Decimal(sol_price, DECIMAL_CONTEXT)
+    revenue_usd = Decimal(token_diff, DECIMAL_CONTEXT) * Decimal(token_price, DECIMAL_CONTEXT)
+    profit_usd = revenue_usd - expense_usd
+    profit_percentage = (profit_usd / expense_usd * 100)
 
-    msg = "Operator receive {:.9f} {} ({:.2f} $) and spend {:.9f} SOL ({:.2f} $), profit - {:.9f}% ".format(
+    log_level = logging.WARNING if profit_percentage < 2 else logging.INFO
+    logger.log(level=log_level, msg=f"Operator income: {profit_percentage}%")
+
+    msg = "Operator receive {:.9f} {} ({:.2f} $) and spend {:.9f} SOL ({:.2f} $), profit: {:.9f}% ".format(
         token_diff,
         token_name,
-        token_cost,
-        sol_amount,
-        sol_cost,
-        ((token_cost - sol_cost) / sol_cost * 100),
+        revenue_usd,
+        expense_lamports,
+        expense_usd,
+        profit_percentage,
     )
     with allure.step(msg):
-        assert token_cost > sol_cost, msg
+        assert revenue_usd > expense_usd, msg
 
 
 @allure.step("Get single transaction gas")

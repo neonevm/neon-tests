@@ -1,8 +1,10 @@
 import typing as tp
 from typing import List, Union
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, Field, model_validator
 
+from utils.models.mixins import ForbidExtra
+from integration.tests.basic.helpers.basic import NeonEventType
 from integration.tests.basic.helpers.basic import NeonEventType, SolanaInstruction
 from utils.models.model_types import (
     BalanceString,
@@ -17,10 +19,6 @@ from utils.models.model_types import (
     StorageString,
     ZeroBytesString,
 )
-
-
-class ForbidExtra(BaseModel):
-    model_config = ConfigDict(extra="forbid")
 
 
 class EthResult(ForbidExtra):

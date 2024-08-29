@@ -68,6 +68,8 @@ def make_deployment_transaction(
     gas: int = 999999999,
     chain_id=111,
     access_list=None,
+    max_priority_fee_per_gas=None,
+    max_fee_per_gas=None,
     version: str = "0.7.6",
 ) -> SignedTransaction:
     data = get_contract_bin(contract_file_name, contract_name, version)
@@ -83,12 +85,27 @@ def make_deployment_transaction(
         tx["type"] = 1
     if value:
         tx["value"] = value
+    if max_priority_fee_per_gas:
+        tx["maxPriorityFeePerGas"] = max_priority_fee_per_gas
+    if max_fee_per_gas:
+        tx["maxFeePerGas"] = max_fee_per_gas
+        tx.pop("gasPrice")
 
     return w3.eth.account.sign_transaction(tx, user.solana_account.secret_key[:32])
 
 
 def make_contract_call_trx(
-    evm_loader, user, contract, function_signature, params=None, value=0, chain_id=111, access_list=None, trx_type=None
+    evm_loader,
+    user,
+    contract,
+    function_signature,
+    params=None,
+    value=0,
+    chain_id=111,
+    access_list=None,
+    max_priority_fee_per_gas=None,
+    max_fee_per_gas=None,
+    trx_type=None,
 ):
     # does not work for tuple in params
     data = abi.function_signature_to_4byte_selector(function_signature)
@@ -109,6 +126,8 @@ def make_contract_call_trx(
         value=value,
         chain_id=chain_id,
         access_list=access_list,
+        max_priority_fee_per_gas=max_priority_fee_per_gas,
+        max_fee_per_gas=max_fee_per_gas,
         type=trx_type,
     )
 

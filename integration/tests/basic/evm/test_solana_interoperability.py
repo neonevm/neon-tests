@@ -241,26 +241,26 @@ class TestSolanaInteroperability:
         event_logs = call_solana_caller.events.LogBytes().process_receipt(resp)
         assert int.from_bytes(event_logs[0].args.value, byteorder="little") == 0
 
-    def test_gas_estimate_for_wsol_transfer(self, solana_account, call_solana_caller, sol_client):
+    def test_gas_estimate_for_wsol_transfer(self, new_solana_account, call_solana_caller, sol_client):
         sender = self.accounts[0]
         mint = wSOL["address_spl"]
         recipient = Keypair.generate()
 
-        spl_token = SplToken(sol_client, mint, TOKEN_PROGRAM_ID, solana_account)
-        ata_address_from = get_associated_token_address(solana_account.public_key, mint)
+        spl_token = SplToken(sol_client, mint, TOKEN_PROGRAM_ID, new_solana_account)
+        ata_address_from = get_associated_token_address(new_solana_account.public_key, mint)
         ata_address_to = get_associated_token_address(recipient.public_key, mint)
-        sol_client.create_associate_token_acc(solana_account, solana_account, mint)
-        sol_client.create_associate_token_acc(solana_account, recipient, mint)
+        sol_client.create_associate_token_acc(new_solana_account, new_solana_account, mint)
+        sol_client.create_associate_token_acc(new_solana_account, recipient, mint)
 
         def get_gas_used_for_emulate_send_wsol(amount):
-            wrap_sol_tx = make_wSOL(amount, solana_account.public_key, ata_address_from)
-            sol_client.send_tx_and_check_status_ok(wrap_sol_tx, solana_account)
+            wrap_sol_tx = make_wSOL(amount, new_solana_account.public_key, ata_address_from)
+            sol_client.send_tx_and_check_status_ok(wrap_sol_tx, new_solana_account)
             seed = self.web3_client.text_to_bytes32("myseed")
             authority = call_solana_caller.functions.getExtAuthority(seed).call({"from": sender.address}).hex()
             authority = bytes32_to_solana_pubkey(authority)
             spl_token.set_authority(
                 ata_address_from,
-                solana_account,
+                new_solana_account,
                 spl.token.instructions.AuthorityType.ACCOUNT_OWNER,
                 authority,
                 opts=TxOpts(skip_confirmation=False, skip_preflight=True),

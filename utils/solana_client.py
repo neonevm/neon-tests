@@ -2,6 +2,8 @@ import json
 import time
 import typing as tp
 import uuid
+
+import allure
 import requests
 import pathlib
 
@@ -186,4 +188,21 @@ class SolanaClient(solana.rpc.api.Client):
         self.send_tx(trx.add(instr), payer, account)
         return account
 
-
+    @allure.step("Get Solana transaction with wait")
+    def get_transaction_with_wait(
+            self,
+            tx_sig: Signature,
+            encoding: str = "json",
+            commitment: tp.Optional[Commitment] = None,
+            max_supported_transaction_version: tp.Optional[int] = None,
+    ) -> GetTransactionResp:
+        tx = wait_condition(
+            func_cond=lambda: super(SolanaClient, self).get_transaction(
+                tx_sig=tx_sig,
+                encoding=encoding,
+                commitment=commitment,
+                max_supported_transaction_version=max_supported_transaction_version,
+            ),
+            check_success=lambda trx: trx.value is not None
+        )
+        return tx

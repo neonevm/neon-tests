@@ -3,6 +3,7 @@ from typing_extensions import Annotated
 
 import utils.models.model_type_validators as mtv
 
+
 HexString = Annotated[str, AfterValidator(mtv.validate_hex_string)]
 JsonRPCString = Annotated[str, AfterValidator(mtv.validate_jsonrpc)]
 IdField = Annotated[int, AfterValidator(mtv.validate_id)]

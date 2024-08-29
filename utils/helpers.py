@@ -5,7 +5,8 @@ import string
 import time
 import typing
 import typing as tp
-
+import logging
+from queue import Queue
 
 import allure
 import base58
@@ -15,7 +16,10 @@ from eth_abi import abi
 from eth_utils import keccak
 from solana.publickey import PublicKey
 from solcx import link_code
+import polling2
 
+
+T = tp.TypeVar('T')
 
 
 @allure.step("Get contract abi")
@@ -90,19 +94,36 @@ def generate_text(min_len: int = 2, max_len: int = 200, simple: bool = True) -> 
 
 
 @allure.step("Wait condition")
-def wait_condition(func_cond, timeout_sec=15, delay=0.5):
-    start_time = time.time()
-    while True:
-        if time.time() - start_time > timeout_sec:
-            raise TimeoutError(f"The condition not reached within {timeout_sec} sec")
-        try:
-            if func_cond():
-                break
-
-        except Exception as e:
-            print(f"Error during waiting: {e}")
-        time.sleep(delay)
-    return True
+def wait_condition(
+        func_cond: tp.Callable[..., T],
+        timeout_sec: float = 15,
+        delay: float = 0.5,
+        args: tp.Tuple = (),
+        kwargs: tp.Optional[dict[str, tp.Any]] = None,
+        max_tries: tp.Optional[int] = None,
+        check_success: tp.Callable[[T], bool] = polling2.is_truthy,
+        step_function: tp.Callable[[float], float] = polling2.step_constant,
+        ignore_exceptions: tp.Tuple[Exception, ...] = (),
+        poll_forever: bool = False,
+        collect_values: tp.Optional[Queue] = None,
+        log: int = logging.NOTSET,
+        log_error: int = logging.NOTSET
+):
+    return polling2.poll(
+        target=func_cond,
+        timeout=timeout_sec,
+        step=delay,
+        args=args,
+        kwargs=kwargs,
+        max_tries=max_tries,
+        check_success=check_success,
+        step_function=step_function,
+        ignore_exceptions=ignore_exceptions,
+        poll_forever=poll_forever,
+        collect_values=collect_values,
+        log=log,
+        log_error=log_error,
+    )
 
 
 @allure.step("Decode function signature")
@@ -143,7 +164,6 @@ def create_invalid_address(length=20) -> str:
     return address
 
 
-
 def cryptohex(text: str):
     return "0x" + keccak(text=text).hex()
 
@@ -163,6 +183,7 @@ def hasattr_recursive(obj: typing.Any, attribute: str) -> bool:
 
     return True
 
+
 def bytes32_to_solana_pubkey(bytes32_data):
     byte_data = bytes.fromhex(bytes32_data)
     base58_data = base58.b58encode(byte_data)
@@ -172,6 +193,7 @@ def bytes32_to_solana_pubkey(bytes32_data):
 def solana_pubkey_to_bytes32(solana_pubkey):
     byte_data = base58.b58decode(str(solana_pubkey))
     return byte_data
+
 
 def serialize_instruction(program_id, instruction) -> bytes:
     program_id_bytes = solana_pubkey_to_bytes32(PublicKey(program_id))
@@ -185,5 +207,13 @@ def serialize_instruction(program_id, instruction) -> bytes:
     serialized += len(instruction.data).to_bytes(8, "little") + instruction.data
     return serialized
 
+
+def case_snake_to_camel(snake_str: str) -> str:
+    components = snake_str.split('_')
+    camel_case = components[0].lower() + ''.join(x.title() for x in components[1:])
+    return camel_case
+
+
 def padhex(s, size):
     return '0x' + s[2:].zfill(size)
+

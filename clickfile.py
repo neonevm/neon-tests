@@ -454,7 +454,7 @@ def get_evm_pinned_version(branch):
         raise click.ClickException(f"Can't get pipeline file for branch {branch}")
     info = resp.json()
     pipeline_file = yaml.safe_load(requests.get(info["download_url"]).text)
-    tag = pipeline_file["env"]["NEON_EVM_TAG"]
+    tag = pipeline_file["env"]["DEFAULT_NEON_EVM_TAG"]
     if tag == "latest":
         return "develop"
     if re.match(r"[vt]{1}\d{1,2}\.\d{1,2}.*", tag) is not None:
@@ -522,7 +522,7 @@ def update_contracts(branch):
 
 
 @cli.command(help="Run any type of tests")
-@click.option("-n", "--network", default=EnvName.NIGHT_STAND.value, type=click.Choice(EnvName),
+@click.option("-n", "--network", type=click.Choice(EnvName),
               help="In which stand run tests")
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
 @click.option("-p", "--numprocesses", help="Number of parallel jobs for basic tests")

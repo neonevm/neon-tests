@@ -23,7 +23,8 @@ class NeonApiClient:
                 "chain_id": chain_id,
                 "value": value
             },
-            "accounts": []
+            "accounts": [],
+            "provide_account_info": None
         }
         resp = requests.post(url=f"{self.url}/emulate", json=body, headers=self.headers)
         if resp.status_code == 200:

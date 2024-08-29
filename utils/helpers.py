@@ -184,3 +184,6 @@ def serialize_instruction(program_id, instruction) -> bytes:
 
     serialized += len(instruction.data).to_bytes(8, "little") + instruction.data
     return serialized
+
+def padhex(s, size):
+    return '0x' + s[2:].zfill(size)

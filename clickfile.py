@@ -605,7 +605,8 @@ def run(
         raise click.ClickException("Unknown test name")
 
     if name == "tracer":
-        assert wait_for_tracer_service(network)
+        if network != "geth":
+            assert wait_for_tracer_service(network)
 
     if case != '':
         command += " -vk {}".format(case)

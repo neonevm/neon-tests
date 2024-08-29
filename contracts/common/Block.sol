@@ -8,11 +8,11 @@ contract BlockTimestamp {
     uint256 public initial_block_timestamp;
 
     struct Data {
-        string info;
-        uint256 value;
+        uint256 value1;
+        uint256 value2;
     }
     mapping(uint256 => Data) public dataByTimestamp;
-    event DataAdded(uint256 timestamp, string info, uint256 value);
+    event DataAdded(uint256 timestamp, uint256 value1, uint256 value2);
 
     constructor() {
         initial_block_timestamp = block.timestamp;
@@ -26,30 +26,30 @@ contract BlockTimestamp {
         emit Result(block.timestamp);
     }
 
-    function callTimestampIterativeTrx() public payable {
-        for (uint256 i = 0; i < 2000; i++) {
+    function callIterativeTrx() public payable {
+        for (uint256 i = 0; i < 500; i++) {
             a = a + block.timestamp;
         }
         emit Result(block.timestamp);
     }
 
-    function addDataToMapping(string memory _info, uint256 _value) public {
+    function addDataToMapping(uint256 _value1, uint256 _value2) public {
         uint256 currentTimestamp = block.timestamp;
         for (uint256 i = 0; i < 5; i++) {
             Data memory newData = Data({
-                info: _info,
-                value: _value
+                value1: _value1,
+                value2: _value2
             });
 
             dataByTimestamp[currentTimestamp] = newData;
-            emit DataAdded(currentTimestamp, _info, _value);
+            emit DataAdded(currentTimestamp, _value1, _value2);
             currentTimestamp = currentTimestamp + 1;
         }
     }
 
-    function getDataFromMapping(uint256 _timestamp) public view returns (string memory, uint256) {
+    function getDataFromMapping(uint256 _timestamp) public view returns (uint256, uint256) {
         Data memory retrievedData = dataByTimestamp[_timestamp];
-        return (retrievedData.info, retrievedData.value);
+        return (retrievedData.value1, retrievedData.value2);
     }
 
 }
@@ -73,11 +73,11 @@ contract BlockNumber {
     uint256 public initial_block_number;
 
     struct Data {
-        string info;
-        uint256 value;
+        uint256 value1;
+        uint256 value2;
     }
     mapping(uint256 => Data) public dataByNumber;
-    event DataAdded(uint256 number, string info, uint256 value);
+    event DataAdded(uint256 number, uint256 value1, uint256 value2);
 
     constructor() payable {
         initial_block_number = block.number;
@@ -92,29 +92,29 @@ contract BlockNumber {
         emit Result(block.number);
     }
 
-    function callBlockNumberIterativeTrx() public payable {
-        for (uint256 i = 0; i < 2000; i++) {
+    function callIterativeTrx() public payable {
+        for (uint256 i = 0; i < 500; i++) {
             a = a + block.number;
         }
         emit Result(block.number);
     }
 
-    function addDataToMapping(string memory _info, uint256 _value) public {
+    function addDataToMapping(uint256 _value1, uint256 _value2) public {
         uint256 currentNumber = block.number;
         for (uint256 i = 0; i < 5; i++) {
             Data memory newData = Data({
-                info: _info,
-                value: _value
+                value1: _value1,
+                value2: _value2
             });
 
             dataByNumber[currentNumber] = newData;
-            emit DataAdded(currentNumber, _info, _value);
+            emit DataAdded(currentNumber, _value1, _value2);
             currentNumber = currentNumber + 1;
         }
     }
 
-    function getDataFromMapping(uint256 _number) public view returns (string memory, uint256) {
+    function getDataFromMapping(uint256 _number) public view returns (uint256, uint256) {
         Data memory retrievedData = dataByNumber[_number];
-        return (retrievedData.info, retrievedData.value);
+        return (retrievedData.value1, retrievedData.value2);
     }
 }

@@ -845,61 +845,65 @@ class TestTransactionStepFromAccountParallelRuns:
 
     @pytest.mark.parametrize("name", ["BlockTimestamp", "BlockNumber"])
     def test_1_user_2_parallel_trx_with_number_timestamp(
-        self, name, operator_keypair, treasury_pool, neon_api_client, evm_loader, new_holder_acc
+        self, name, operator_keypair, treasury_pool, neon_api_client, evm_loader,
+            sender_with_tokens
     ):
-        evm_steps = 2000
-        session_user = evm_loader.make_new_user(operator_keypair)
-
+        holder1 = create_holder(operator_keypair, evm_loader)
+        holder2 = create_holder(operator_keypair, evm_loader)
         contract = deploy_contract(
             operator_keypair,
-            session_user,
+            sender_with_tokens,
             "common/Block.sol",
             evm_loader,
             treasury_pool,
             version="0.8.10",
             contract_name=name,
         )
-        evm_loader.deposit_neon(operator_keypair, session_user.eth_address, 10000)
+        params = [4, 123]
+        func_signature = "addDataToMapping(uint256,uint256)"
 
-        emulate_session_result = neon_api_client.emulate_contract_call(
-            session_user.eth_address.hex(), contract.eth_address.hex(), "callEventsInLoop()", value="0x1"
+        emulate_result = neon_api_client.emulate_contract_call(
+            sender_with_tokens.eth_address.hex(), contract.eth_address.hex(), func_signature,
+            params=params
         )
-        additional_session_accounts = [PublicKey(item["pubkey"]) for item in emulate_session_result["solana_accounts"]]
+        additional_accounts = [PublicKey(item["pubkey"]) for item in emulate_result["solana_accounts"]]
+        signed_tx = make_contract_call_trx(evm_loader, sender_with_tokens, contract,
+                                           func_signature, params=params)
 
-        emulate_user_result = neon_api_client.emulate_contract_call(
-            session_user.eth_address.hex(), contract.eth_address.hex(), "callEventsInLoop()", value="0x1"
-        )
-        additional_user_accounts = [PublicKey(item["pubkey"]) for item in emulate_user_result["solana_accounts"]]
-        signed_tx = make_contract_call_trx(evm_loader, session_user, contract, "callEventsInLoop()", value=1)
-        evm_loader.write_transaction_to_holder_account(signed_tx, new_holder_acc, operator_keypair)
+        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
+        evm_loader.write_transaction_to_holder_account(signed_tx, holder1, operator_keypair)
 
-        def send_transaction_steps(holder_acc, additional_accounts):
-            operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
+        def send_transaction_steps_for_holder1():
             resp = evm_loader.send_transaction_step_from_account(
                 operator_keypair,
                 operator_balance_pubkey,
                 treasury_pool,
-                holder_acc,
+                holder1,
                 additional_accounts,
-                evm_steps,
+                EVM_STEPS,
                 operator_keypair,
             )
             return resp
 
-        send_transaction_steps(new_holder_acc, additional_user_accounts)
 
-        signed_tx2 = make_contract_call_trx(evm_loader, session_user, contract, "callEventsInLoop()", value=1)
-        holder_acc2 = create_holder(operator_keypair, evm_loader)
-        evm_loader.write_transaction_to_holder_account(signed_tx2, holder_acc2, operator_keypair)
+        send_transaction_steps_for_holder1()
+        send_transaction_steps_for_holder1()
 
-        for _ in range(5):
-            send_transaction_steps(holder_acc2, additional_session_accounts)
-        check_holder_account_tag(holder_acc2, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
-        check_holder_account_tag(new_holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_ACTIVE_STATE)
+        # run trx2 between iterations of trx1 to make trx1 rerun
+        signed_tx2 = make_contract_call_trx(evm_loader, sender_with_tokens, contract,
+                                            func_signature, params=params)
 
-        for _ in range(4):
-            send_transaction_steps(new_holder_acc, additional_user_accounts)
-        check_holder_account_tag(new_holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
+        evm_loader.write_transaction_to_holder_account(signed_tx2, holder2, operator_keypair)
+        evm_loader.execute_transaction_steps_from_account(operator_keypair,
+                                                          treasury_pool,
+                                                          holder2,
+                                                          additional_accounts)
+
+        send_transaction_steps_for_holder1()
+        send_transaction_steps_for_holder1()
+        send_transaction_steps_for_holder1()
+
+        check_holder_account_tag(holder1, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
 
 
 class TestStepFromAccountChangingOperatorsDuringTrxRun:

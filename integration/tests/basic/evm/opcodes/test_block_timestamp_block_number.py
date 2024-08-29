@@ -59,8 +59,10 @@ class TestBlockTimestampAndNumber:
         sender_account = self.accounts[0]
 
         tx = self.web3_client.make_raw_tx(sender_account)
-        instruction_tx = contract.functions.callTimestampIterativeTrx().build_transaction(tx)
+        instruction_tx = contract.functions.callIterativeTrx().build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
+        assert self.web3_client.is_trx_iterative(receipt["transactionHash"].hex())
+
         response = json_rpc_client.send_rpc(method="eth_getBlockByHash", params=[receipt["blockHash"].hex(), False])
         tx_block_timestamp = EthGetBlockByHashResult(**response).result.timestamp
 
@@ -75,26 +77,28 @@ class TestBlockTimestampAndNumber:
 
         assert hex(contract.functions.initial_block_timestamp().call()) <= tx_block_timestamp
 
-    def test_block_timestamp_in_mapping(self, block_timestamp_contract):
+    def test_block_timestamp_in_mapping(self, block_timestamp_contract, json_rpc_client):
         contract, _ = block_timestamp_contract
         sender_account = self.accounts[0]
 
-        text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
+        v1 = random.randint(1, 100)
+        v2 = random.randint(1, 100)
         tx = self.web3_client.make_raw_tx(sender_account)
-        instruction_tx = contract.functions.addDataToMapping(text, 1).build_transaction(tx)
+        instruction_tx = contract.functions.addDataToMapping(v1, v2).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
+        response = json_rpc_client.send_rpc(method="eth_getBlockByHash", params=[receipt["blockHash"].hex(), False])
+        tx_block_timestamp = EthGetBlockByHashResult(**response).result.timestamp
 
         event_logs = contract.events.DataAdded().process_receipt(receipt)
         added_timestamp = event_logs[0]["args"]["timestamp"]
 
-        info, value = contract.functions.getDataFromMapping(added_timestamp).call()
-        assert info == text
-        assert value == 1
+        assert hex(added_timestamp) <= tx_block_timestamp
+        assert contract.functions.getDataFromMapping(added_timestamp).call() == [v1, v2]
 
     def test_block_number_call(self, block_number_contract, json_rpc_client):
         contract, _ = block_number_contract
         current_block_number = json_rpc_client.send_rpc(method="eth_blockNumber", params=[])["result"]
-        assert hex(contract.functions.getBlockNumber().call()) <= current_block_number
+        assert hex(contract.functions.getBlockNumber().call()) >= current_block_number
 
     def test_block_number_simple_trx(self, block_number_contract, json_rpc_client):
         contract, _ = block_number_contract
@@ -114,8 +118,9 @@ class TestBlockTimestampAndNumber:
         sender_account = self.accounts[0]
 
         tx = self.web3_client.make_raw_tx(sender_account)
-        instruction_tx = contract.functions.callBlockNumberIterativeTrx().build_transaction(tx)
+        instruction_tx = contract.functions.callIterativeTrx().build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
+        assert self.web3_client.is_trx_iterative(receipt["transactionHash"].hex())
         response = json_rpc_client.send_rpc(method="eth_getBlockByHash", params=[receipt["blockHash"].hex(), False])
         tx_block_number = EthGetBlockByHashResult(**response).result.number
 
@@ -144,13 +149,14 @@ class TestBlockTimestampAndNumber:
         contract, _ = block_number_contract
         sender_account = self.accounts[0]
 
-        text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
         tx = self.web3_client.make_raw_tx(sender_account)
-        instruction_tx = contract.functions.addDataToMapping(text, 1).build_transaction(tx)
+        v1 = random.randint(1, 100)
+        v2 = random.randint(1, 100)
+        instruction_tx = contract.functions.addDataToMapping(v1, v2).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
+        assert receipt["status"] == 1
         event_logs = contract.events.DataAdded().process_receipt(receipt)
+        assert len(event_logs) == 1, "Event logs are not found"
         block_number_added = event_logs[0]["args"]["number"]
-
-        info, value = contract.functions.getDataFromMapping(block_number_added).call()
-        assert event_logs[0]["args"]["info"] == info
-        assert event_logs[0]["args"]["value"] == value
+        assert hex(block_number_added) <= receipt["blockNumber"]
+        assert contract.functions.getDataFromMapping(block_number_added).call() == (v1, v2)

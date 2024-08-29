@@ -32,8 +32,6 @@ class NeonApiClient:
         else:
             return resp.json()
 
-
-
     def emulate_contract_call(self, sender, contract, function_signature, params=None, value='0x0'):
         # does not work for tuple in params
         data = abi.function_signature_to_4byte_selector(function_signature)
@@ -42,7 +40,6 @@ class NeonApiClient:
             types = function_signature.split("(")[1].split(")")[0].split(",")
             data += eth_abi.encode(types, params)
         return self.emulate(sender, contract, data, value=value)
-
 
     def get_storage_at(self, contract_id, index="0x0"):
         body = {

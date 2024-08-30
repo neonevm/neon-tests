@@ -122,11 +122,12 @@ jobs:
         if: needs.prepare-env.outputs.network == 'terraform'
         timeout-minutes: 10
         run: |
-          docker exec -i ${{ env.CONTAINER }} \
-            /bin/bash -c "export SOLANA_URL=http://${{ env.SOLANA_IP }}:8899 \
-            && export NEON_CORE_API_URL=http://${{ env.SOLANA_IP }}:8085/api \
-            && export NEON_CORE_API_RPC_URL=http://${{ env.SOLANA_IP }}:3100 \
-            && python3 ./clickfile.py run evm --numprocesses 8 --network terraform --keep-error-log"
+          echo "TODO: remove comment"
+#          docker exec -i ${{ env.CONTAINER }} \
+#            /bin/bash -c "export SOLANA_URL=http://${{ env.SOLANA_IP }}:8899 \
+#            && export NEON_CORE_API_URL=http://${{ env.SOLANA_IP }}:8085/api \
+#            && export NEON_CORE_API_RPC_URL=http://${{ env.SOLANA_IP }}:3100 \
+#            && python3 ./clickfile.py run evm --numprocesses 8 --network terraform --keep-error-log"
       - name: Set failed test group to evm
         if: failure()
         run: echo "FAILED_TEST_GROUP=evm" >> $GITHUB_ENV

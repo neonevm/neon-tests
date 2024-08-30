@@ -27,23 +27,27 @@ contract BlockTimestamp {
     }
 
     function callIterativeTrx() public payable {
-        for (uint256 i = 0; i < 500; i++) {
+        uint256 timestamp_before = block.timestamp;
+        for (uint256 i = 0; i < 800; i++) {
             a = a + block.timestamp;
         }
         emit Result(block.timestamp);
+        uint256 timestamp_after = block.timestamp;
+
+        require(timestamp_after == timestamp_before, "Timestamp changed during transaction execution");
+
     }
 
     function addDataToMapping(uint256 _value1, uint256 _value2) public {
-        uint256 currentTimestamp = block.timestamp;
+        uint256 currentTimestamp = block.timestamp % 1000000;
         for (uint256 i = 0; i < 5; i++) {
             Data memory newData = Data({
                 value1: _value1,
                 value2: _value2
             });
-
             dataByTimestamp[currentTimestamp] = newData;
             emit DataAdded(currentTimestamp, _value1, _value2);
-            currentTimestamp = currentTimestamp + 1;
+            currentTimestamp = currentTimestamp + 1500;
         }
     }
 
@@ -68,7 +72,7 @@ contract BlockTimestampDeployer {
 contract BlockNumber {
     event Log(address indexed sender, string message);
     event Result(uint256 block_number);
-    uint256 public a;
+
 
     uint256 public initial_block_number;
 
@@ -77,6 +81,8 @@ contract BlockNumber {
         uint256 value2;
     }
     mapping(uint256 => Data) public dataByNumber;
+    uint256 public a;
+
     event DataAdded(uint256 number, uint256 value1, uint256 value2);
 
     constructor() payable {
@@ -93,7 +99,8 @@ contract BlockNumber {
     }
 
     function callIterativeTrx() public payable {
-        for (uint256 i = 0; i < 500; i++) {
+        uint256 b = 1223;
+        for (uint256 i = 0; i < 1000; i++) {
             a = a + block.number;
         }
         emit Result(block.number);

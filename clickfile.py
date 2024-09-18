@@ -58,10 +58,9 @@ ERR_MESSAGES = {
 }
 
 SRC_ALLURE_CATEGORIES = Path("./allure/categories.json")
-
 DST_ALLURE_CATEGORIES = Path("./allure-results/categories.json")
-
 DST_ALLURE_ENVIRONMENT = Path("./allure-results/environment.properties")
+COST_REPORT_DIR = Path("reports/cost_reports")
 
 BASE_EXTENSIONS_TPL_DATA = "ui/extensions/data"
 

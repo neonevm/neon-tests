@@ -32,6 +32,11 @@ on:
           - 8
           - 12
           - auto
+      generate_cost_report:
+        type: boolean
+        default: false
+        required: false
+        description: "Flag defining whether cost report should be generated"
 env:
   NETWORK: ${{ github.event.inputs.network || 'terraform' }}
   NUMPROCESSES: ${{ github.event.inputs.numprocesses || 8 }}
@@ -152,6 +157,13 @@ jobs:
           aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           tests_name: basic
+      - name: Swap Cost Reports and echo to Summary
+        if: ${{ inputs.generate_cost_report }}
+        run: |
+          docker exec -i ${{ env.CONTAINER }} \
+            python3 ./clickfile.py dapps save_dapps_cost_report_to_md \
+            --directory reports/cost_reports && \
+          cat cost_reports.md >> $GITHUB_STEP_SUMMARY
       - name: "Notify on failure."
         if: failure() && github.ref_name == 'develop'
         run: |

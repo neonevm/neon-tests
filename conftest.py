@@ -13,7 +13,7 @@ from _pytest.runner import runtestprotocol
 from solders.keypair import Keypair
 from web3.middleware import geth_poa_middleware
 
-from clickfile import TEST_GROUPS, EnvName
+from clickfile import TEST_GROUPS, EnvName, COST_REPORT_DIR
 from utils.types import TestGroup
 from utils.error_log import error_log
 from utils import create_allure_environment_opts, setup_logging
@@ -24,6 +24,7 @@ from utils.solana_client import SolanaClient
 
 
 pytest_plugins = ["ui.plugins.browser"]
+GEN_COST_REPORTS: bool = False
 
 
 @dataclass
@@ -58,6 +59,12 @@ def pytest_addoption(parser: Parser):
         default=False,
         help="Store tests result to file",
     )
+    parser.addoption(
+        "--cost-reports",
+        action="store_true",
+        default=False,
+        help=f"Saves cost reports .json files in {COST_REPORT_DIR}",
+    )
     known_args = parser.parse_known_args(args=sys.argv[1:])
     test_group_required = known_args.make_report
     parser.addoption(
@@ -82,6 +89,9 @@ def pytest_sessionstart(session: pytest.Session):
     if not keep_error_log:
         error_log.clear()
 
+    if COST_REPORT_DIR.exists() and COST_REPORT_DIR.is_dir():
+        shutil.rmtree(COST_REPORT_DIR)
+
 
 def pytest_runtest_protocol(item: Item, nextitem):
     ihook = item.ihook
@@ -101,6 +111,9 @@ def pytest_runtest_protocol(item: Item, nextitem):
 
 
 def pytest_configure(config: Config):
+    global GEN_COST_REPORTS
+    GEN_COST_REPORTS: bool = config.getoption("--cost-reports")
+
     solana_url_env_vars = ["SOLANA_URL", "DEVNET_INTERNAL_RPC", "MAINNET_INTERNAL_RPC"]
     network_name = config.getoption("--network")
     envs_file = config.getoption("--envs")

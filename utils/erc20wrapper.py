@@ -5,8 +5,9 @@ from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
+from web3.types import TxReceipt
 
-from . import web3client
+from . import web3client, stats_collector
 from .metaplex import create_metadata_instruction_data, create_metadata_instruction
 
 INIT_TOKEN_AMOUNT = 1000000000000000
@@ -182,37 +183,43 @@ class ERC20Wrapper:
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
-    def claim(self, signer, from_address, amount: int = INIT_TOKEN_AMOUNT, gas_price=None, gas=None):
+    @stats_collector.cost_report
+    def claim(self, signer, from_address, amount: int = INIT_TOKEN_AMOUNT, gas_price=None, gas=None) -> TxReceipt:
         tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.claim(from_address, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
-    def claim_to(self, signer, from_address, to_address, amount, gas_price=None, gas=None):
+    @stats_collector.cost_report
+    def claim_to(self, signer, from_address, to_address, amount, gas_price=None, gas=None) -> TxReceipt:
         tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.claimTo(from_address, to_address, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
-    def burn(self, signer, amount, gas_price=None, gas=None):
+    @stats_collector.cost_report
+    def burn(self, signer, amount, gas_price=None, gas=None) -> TxReceipt:
         tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.burn(amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
-    def burn_from(self, signer, from_address, amount, gas_price=None, gas=None):
+    @stats_collector.cost_report
+    def burn_from(self, signer, from_address, amount, gas_price=None, gas=None) -> TxReceipt:
         tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.burnFrom(from_address, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
-    def approve(self, signer, spender_address, amount, gas_price=None, gas=None):
+    @stats_collector.cost_report
+    def approve(self, signer, spender_address, amount, gas_price=None, gas=None) -> TxReceipt:
         tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.approve(spender_address, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
-    def transfer(self, signer, address_to, amount, gas_price=None, gas=None):
+    @stats_collector.cost_report
+    def transfer(self, signer, address_to, amount, gas_price=None, gas=None) -> TxReceipt:
         tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         if isinstance(address_to, LocalAccount):
             address_to = address_to.address
@@ -220,19 +227,22 @@ class ERC20Wrapper:
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
-    def transfer_from(self, signer, address_from, address_to, amount, gas_price=None, gas=None):
+    @stats_collector.cost_report
+    def transfer_from(self, signer, address_from, address_to, amount, gas_price=None, gas=None) -> TxReceipt:
         tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.transferFrom(address_from, address_to, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
-    def transfer_solana(self, signer, address_to, amount, gas_price=None, gas=None):
+    @stats_collector.cost_report
+    def transfer_solana(self, signer, address_to, amount, gas_price=None, gas=None) -> TxReceipt:
         tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.transferSolana(address_to, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)
         return resp
 
-    def approve_solana(self, signer, spender, amount, gas_price=None, gas=None):
+    @stats_collector.cost_report
+    def approve_solana(self, signer, spender, amount, gas_price=None, gas=None) -> TxReceipt:
         tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
         instruction_tx = self.contract.functions.approveSolana(spender, amount).build_transaction(tx)
         resp = self.web3_client.send_transaction(signer, instruction_tx)

@@ -17,7 +17,8 @@ class Button:
             raise AssertionError("Provide text or icon name for button")
 
     def click(self):
-        self.page.wait_for_selector(self._selector, timeout=self._timeout).click()
+        self.page.wait_for_selector(self._selector, timeout=self._timeout)
+        self.page.click(self._selector)
 
 
 class Input:

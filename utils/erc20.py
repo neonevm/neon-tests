@@ -1,7 +1,9 @@
 from eth_account.signers.local import LocalAccount
+from _pytest.config import Config
 
 from utils import web3client
 
+pytestconfig: Config
 
 class ERC20:
     def __init__(
@@ -11,20 +13,27 @@ class ERC20:
             owner=None,
             name="Test Token",
             symbol="TT",
-            amount=1000000
+            amount=1000000,
+            bank_account=None,
     ):
         self.web3_client = web3_client
         self.owner = owner
         if self.owner is None:
             self.owner = web3_client.create_account()
-            faucet.request_neon(self.owner.address, 300)
+            if bank_account is not None:
+                web3_client.send_neon(bank_account, self.owner.address, 50)
+            else:
+                faucet.request_neon(self.owner.address, 50)
+        else:
+            if bank_account is not None:
+                web3_client.send_neon(bank_account, self.owner.address, 50)
         self.initial_balance = amount
         self.contract = self.deploy(name, symbol)
 
     def _make_tx_object(self, from_address):
         tx = {
             "from": from_address,
-            "nonce": self.web3_client.eth.get_transaction_count(from_address),
+            "nonce": self.web3_client.get_nonce(from_address),
             "gasPrice": self.web3_client.gas_price(),
         }
         return tx

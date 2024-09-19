@@ -6,21 +6,19 @@ from construct import (
     Subconstruct, Enum
 )
 
-from solana.publickey import PublicKey
-from solana.transaction import AccountMeta, TransactionInstruction
+from solders.pubkey import Pubkey
+from solana.transaction import AccountMeta, Instruction
 
 import enum
-import base64
-import base58
 
 from utils.helpers import wait_condition
 
 
-METADATA_PROGRAM_ID = PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
-SYSTEM_PROGRAM_ID = PublicKey('11111111111111111111111111111111')
-SYSVAR_RENT_PUBKEY = PublicKey('SysvarRent111111111111111111111111111111111')
-ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID = PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL')
-TOKEN_PROGRAM_ID = PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
+METADATA_PROGRAM_ID = Pubkey.from_string('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
+SYSTEM_PROGRAM_ID = Pubkey.from_string('11111111111111111111111111111111')
+SYSVAR_RENT_PUBKEY = Pubkey.from_string('SysvarRent111111111111111111111111111111111')
+ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID = Pubkey.from_string('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL')
+TOKEN_PROGRAM_ID = Pubkey.from_string('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
 
 
 class MetadataLimit(enum.IntEnum):
@@ -190,19 +188,19 @@ CreateInstruction = Struct(
 )
 
 
-def get_metadata_account(mint_key):
-    return PublicKey.find_program_address(
-        [b'metadata', bytes(METADATA_PROGRAM_ID), bytes(PublicKey(mint_key))],
+def get_metadata_account(mint_key: Pubkey):
+    return Pubkey.find_program_address(
+        [b'metadata', bytes(METADATA_PROGRAM_ID), bytes(mint_key)],
         METADATA_PROGRAM_ID
     )[0]
 
 
-def get_edition(mint_key):
-    return PublicKey.find_program_address(
-        [b'metadata', bytes(METADATA_PROGRAM_ID), bytes(PublicKey(mint_key)), b"edition"],
+def get_edition(mint_key: Pubkey):
+    return Pubkey.find_program_address(
+        [b'metadata', bytes(METADATA_PROGRAM_ID), bytes(mint_key), b"edition"],
         METADATA_PROGRAM_ID
     )[0]
-    
+
 
 def create_associated_token_account_instruction(associated_token_account, payer, wallet_address, token_mint_address):
     keys = [
@@ -214,7 +212,7 @@ def create_associated_token_account_instruction(associated_token_account, payer,
         AccountMeta(pubkey=TOKEN_PROGRAM_ID, is_signer=False, is_writable=False),
         AccountMeta(pubkey=SYSVAR_RENT_PUBKEY, is_signer=False, is_writable=False),
     ]
-    return TransactionInstruction(keys=keys, program_id=ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID, data=b'')
+    return Instruction(accounts=keys, program_id=ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID, data=b'')
 
 
 def create_metadata_instruction_data(name: str, symbol: str, uri='', fee=0):
@@ -273,10 +271,10 @@ def create_metadata_instruction(data, update_authority, mint_key, mint_authority
         AccountMeta(pubkey=SYSVAR_RENT_PUBKEY, is_signer=False, is_writable=False)
         # AccountMeta(pubkey=TOKEN_PROGRAM_ID, is_signer=False, is_writable=False)
     ]
-    return TransactionInstruction(keys=keys, program_id=METADATA_PROGRAM_ID, data=data)
+    return Instruction(accounts=keys, program_id=METADATA_PROGRAM_ID, data=data)
 
 
-def get_metadata(client, mint_key):
+def get_metadata(client, mint_key: Pubkey):
     metadata_account = get_metadata_account(mint_key)
     data = client.get_account_info(metadata_account).value.data
 
@@ -285,7 +283,7 @@ def get_metadata(client, mint_key):
     def _strip_utf8(value) -> str:
         return value.strip("\x00")
 
-    metadata.mint = str(PublicKey(metadata.mint)).encode('utf-8')
+    metadata.mint = str(Pubkey(metadata.mint)).encode('utf-8')
 
     metadata.data.name = _strip_utf8(metadata.data.name)
     metadata.data.symbol = _strip_utf8(metadata.data.symbol)
@@ -298,7 +296,6 @@ def get_metadata(client, mint_key):
     return metadata
 
 
-def wait_account_info(client, mint_key):
+def wait_account_info(client, mint_key: Pubkey):
     metadata_account = get_metadata_account(mint_key)
     wait_condition(lambda: client.get_account_info(metadata_account).value is not None, timeout_sec=30)
-

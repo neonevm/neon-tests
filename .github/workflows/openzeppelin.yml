@@ -1,103 +1,114 @@
 name: "OpenZeppelin"
+run-name: "OpenZeppelin / ${{ github.event.inputs.network || 'terraform' }} / ${{ github.event.inputs.jobsNumber || '16' }} jobs"
 
 on:
+  schedule:
+    - cron: "0 3 * * 0,1,2,3,4"
   workflow_dispatch:
     inputs:
       network:
         type: choice
-        default: night-stand
+        default: terraform
         required: true
         description: "Stand name"
         options:
           - night-stand
           - devnet
-      runner:
-        type: choice
-        default: neon-hosted
-        required: true
-        description: "Where to run tests (our runner or github)"
-        options:
-          - neon-hosted
-          - aws-hosted
-          - ubuntu-20.04
+          - terraform
       jobsNumber:
         description: "Count of parallel jobs"
         required: true
-        default: "8"
+        default: "16"
+      oz_tag:
+        description: "Which OZ tag to use (if it is empty, the 'latest' tag will be used)"
+        required: false
+        default: latest
 
 env:
-  JOBS_NUMBER: "8"
-  NETWORK: night-stand
-  RUNNER: neon-hosted
-  IMAGE:  ${{ vars.DOCKERHUB_ORG_NAME }}/neon_tests
+  JOBS_NUMBER: ${{ github.event.inputs.jobsNumber || '8' }}
+  NETWORK: ${{ github.event.inputs.network || 'terraform' }}
+  IMAGE:  ${{ github.repository_owner }}/neon_tests
   CONTAINER:  oz-${{ github.run_id }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
+  DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
 jobs:
   dockerize:
-    if: ${{ github.ref_name != 'develop'}}
+    if: github.ref_name != 'develop' || github.event.inputs.oz_tag !=''
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Dockerize neon tests"
         uses: ./.github/actions/dockerize-neon-tests
         with:
           image_tag: ${{ github.sha }}
-          org_name: ${{ vars.DOCKERHUB_ORG_NAME }}
           docker_username: ${{ secrets.DOCKER_USERNAME }}
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
+          oz_tag: ${{ github.event.inputs.oz_tag || 'latest' }}
+          image_name: ${{ env.IMAGE }}
+          docker_hub_org_name: ${{ github.repository_owner }}
   prepare-env:
     runs-on: ubuntu-20.04
     steps:
-      - name: Setup env
-        id: setup
-        run: |
-          # $1 - inputs
-          # $2 - env.VAR
-          function setVar {
-            if [ -z "$1" ]
-              then
-                RESULT="$2"
-              else
-                RESULT="$1"
-            fi
-            echo $RESULT
-          }
+      - uses: actions/checkout@v4
+      - name: "Prepare terraform stand"
+        if: ${{ env.NETWORK == 'terraform' }}
+        id: prepare_terraform
+        timeout-minutes: 15
+        env:
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
+          TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
+          TFSTATE_KEY: ${{vars.TFSTATE_KEY_PREFIX}}-${{ github.run_number }}
+          TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
+          TF_VAR_ci_pp_solana_url: ${{ secrets.SOLANA_URL }}
+        uses: ./.github/actions/create-tf-stand
+        with:
+          ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
+      - name: "Define outputs"
+        id: vars
+        uses: ./.github/actions/define-stand-env
+        with:
+          network: ${{ env.NETWORK }}
+          devnet_solana_url: ${{ secrets.SOLANA_URL }}
+          devnet_faucet_url: ${{ secrets.DEVNET_FAUCET_URL }}
+          proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
+          solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
+          proxy_url: ${{ github.event.inputs.proxy_url }}
+          solana_url: ${{ github.event.inputs.solana_url }}
+          faucet_url: ${{ github.event.inputs.faucet_url }}
+          network_id: ${{ github.event.inputs.network_id }}
 
-          NETWORK=$( setVar "${{ github.event.inputs.network }}" "${{ env.NETWORK }}" )
-          RUNNER=$( setVar "${{ github.event.inputs.runner }}" "${{ env.RUNNER }}" )
-          JOBS_NUMBER=$( setVar "${{ github.event.inputs.jobsNumber }}" "${{ env.JOBS_NUMBER }}" )
-
-          echo "Network: ${NETWORK}"
-          echo "Runner: ${RUNNER}"
-          echo "Jobs: ${JOBS_NUMBER}"
-
-          echo "network=${NETWORK}" >> $GITHUB_OUTPUT
-          echo "runner=${RUNNER}" >> $GITHUB_OUTPUT
-          echo "jobs=${JOBS_NUMBER}" >> $GITHUB_OUTPUT
     outputs:
-      network: ${{ steps.setup.outputs.network }}
-      runner: ${{ steps.setup.outputs.runner }}
-      jobs: ${{ steps.setup.outputs.jobs }}
+      network: ${{ env.NETWORK }}
+      solana_url: ${{ steps.prepare_stand.outputs.solana_url }}
+      proxy_url: ${{ steps.vars.outputs.proxy_url }}
+      faucet_url:  ${{ steps.vars.outputs.faucet_url }}
+      network_id: ${{ steps.vars.outputs.network_id }}
+      proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
+      solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
+      dapps: ${{ steps.dapps.outputs.list }}
 
   tests:
     name: OpenZeppelin tests
     needs:
       - prepare-env
       - dockerize
-    if: |
-      always() &&
-      !contains(needs.*.result, 'failure') &&
-      !contains(needs.*.result, 'cancelled')
-    runs-on: ${{ needs.prepare-env.outputs.runner }}
-    env:
-      AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-      AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+    runs-on: neon-hosted
+    if: always() && contains(fromJSON('["success", "skipped"]'), needs.dockerize.result) && needs.prepare-env.result == 'success'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Define image tag
         id: image_tag
-        uses: ./.github/actions/define-image-tag
+        run: |
+          if [[ "${{ needs.dockerize.result }}" != "skipped" ]]; then
+            tag=${{ github.sha }}
+          else
+            tag='latest'
+          fi
+          echo "tag=${tag}"
+          echo "tag=${tag}" >> $GITHUB_OUTPUT
       - name: Pull docker image
         run: docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
       - name: Run docker container
@@ -106,13 +117,18 @@ jobs:
       - name: Run OpenZeppelin tests
         timeout-minutes: 150
         run: |
-          docker exec -i -e OZ_BALANCES_REPORT_FLAG=1 ${{ env.CONTAINER }} python3 ./clickfile.py run oz \
-            --network ${{ needs.prepare-env.outputs.network }} \
-            --jobs ${{ needs.prepare-env.outputs.jobs }} \
+          env=''
+          if [ "${{ env.NETWORK }}" == "terraform" ]; then
+            env="-e PROXY_IP=${{ needs.prepare-env.outputs.proxy_ip }} -e SOLANA_IP=${{ needs.prepare-env.outputs.solana_ip }}"
+          fi
+          echo "env=${env}"
+          docker exec -i -e OZ_BALANCES_REPORT_FLAG=1 -e DEVNET_FAUCET_URL=${{ env.DEVNET_FAUCET_URL }} ${env} ${{ env.CONTAINER }} python3 ./clickfile.py run oz \
+            --network ${{ env.NETWORK }} \
+            --jobs ${{ env.JOBS_NUMBER }} \
             --users 10
       - name: Print OpenZeppelin report
         run: |
-          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py ozreport
+          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py oz report
       - name: "Generate allure report"
         uses: ./.github/actions/generate-allure-report
         with:
@@ -123,13 +139,35 @@ jobs:
           tests_name: oz
       - name: Analyze tests results
         run: |
-          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py analyze-openzeppelin-results
+          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py oz analyze
       - name: "Notify on failure."
-        if: failure()
+        if: failure() && github.ref_name == 'develop'
         run: |
           docker exec -i ${{ env.CONTAINER }} \
             python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
-          -b ${{ env.BUILD_URL }} -n ${{ needs.prepare-env.outputs.network }}
+          -b ${{ env.BUILD_URL }} -n ${{ env.NETWORK }} --test-group oz
       - name: Remove docker container
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}
+
+  destroy:
+    runs-on: ubuntu-20.04
+    needs: [tests, prepare-env]
+    if: always() && needs.prepare-env.outputs.network == 'terraform'
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Destroy stand"
+        env:
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
+          TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
+          TFSTATE_KEY: ${{vars.TFSTATE_KEY_PREFIX}}-${{ github.run_number }}
+          TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
+          PROXY_IP: ${{ needs.prepare-env.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}
+        uses: ./.github/actions/destroy-tf-stand
+        with:
+          ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
+          devnet_solana_url: ${{ secrets.SOLANA_URL }}

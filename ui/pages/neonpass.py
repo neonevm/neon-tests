@@ -5,15 +5,17 @@ Created on 2022-06-16
 """
 
 import os
+from typing import Optional
 
 import allure
-from playwright._impl._api_types import TimeoutError
+from playwright._impl._errors import TimeoutError
 from playwright.sync_api import expect
 
-from ui import components, libs
+from ui import components
 from ui.pages import phantom, metamask
+from utils.consts import Time
 from . import BasePage
-from ..libs import Platform, Token, Tokens
+from ..libs import Platform, Token, PriorityFee, TransactionFee
 
 
 class NeonPassPage(BasePage):
@@ -21,15 +23,12 @@ class NeonPassPage(BasePage):
         super(NeonPassPage, self).__init__(*args, **kwargs)
 
     def page_loaded(self) -> None:
-        self.page.wait_for_selector("button.wallet-button")
+        self.page.wait_for_selector("//h1[text()='NEONPASS']")
 
     @staticmethod
     def _handle_phantom_unlock(page) -> None:
-        page.wait_for_load_state()
         phantom_page = phantom.PhantomUnlockPage(page)
-        phantom_page.page_loaded()
         phantom_page.unlock(os.environ.get("CHROME_EXT_PASSWORD"))
-        phantom_page.connect()
 
     @staticmethod
     def _handle_metamask_connect(page) -> None:
@@ -96,15 +95,21 @@ class NeonPassPage(BasePage):
         try:
             with self.page.context.expect_page(timeout=timeout) as phantom_page_info:
                 components.Button(
-                    self.page, selector="//app-wallet-button[@label='From']//*[text()='Connect Wallet']").click()
-                components.Button(
-                    self.page, selector="//app-wallets-dialog//*[text()='Phantom']/parent::*").click()
-            self._handle_phantom_unlock(phantom_page_info.value)
-            self.page.wait_for_selector(
-                selector="//app-wallet-button[@label='From']//*[contains(text(),'B4t7')]", timeout=timeout)
+                    self.page, selector="//app-wallet-button[@label='From']//*[text()='Connect Wallet']"
+                ).click()
+                app_wallets_dialog = "//app-wallets-dialog"
+                self.page.wait_for_selector(
+                    selector=app_wallets_dialog + "//*[text()='Select Wallet']", timeout=timeout
+                )
+                components.Button(self.page, selector=app_wallets_dialog + "//*[text()='Phantom']/parent::*").click()
         except TimeoutError as e:
             if 'waiting for event "page"' not in e.message:
                 raise e
+
+        self._handle_phantom_unlock(phantom_page_info.value)
+        self.page.wait_for_selector(
+            selector="//app-wallet-button[@label='From']//*[contains(text(),'B4t7')]", timeout=30000
+        )
 
     @allure.step("Connect Metamask Wallet")
     def connect_metamask(self, timeout: float = 30000) -> None:
@@ -115,32 +120,70 @@ class NeonPassPage(BasePage):
         try:
             with self.page.context.expect_page(timeout=timeout) as mm_page_connect:
                 components.Button(
-                    self.page, selector="//app-wallet-button[@label='To']//*[text()='Connect Wallet']").click()
-                components.Button(self.page, selector="w3m-wallet-button[name='MetaMask']").click()
+                    self.page, selector="//app-wallet-button[@label='To']//*[text()='Connect Wallet']"
+                ).click()
+                self.page.locator("w3m-modal").locator("button", has_text="MetaMask").click()
+                # components.Button(self.page, selector="w3m-wallet-button[name='MetaMask']").click()
             self._handle_metamask_connect(mm_page_connect.value)
-            self.page.wait_for_selector(
-                selector="//app-wallet-button[@label='To']//*[contains(text(),'0x4701')]", timeout=timeout)
         except TimeoutError as e:
             if 'waiting for event "page"' not in e.message:
                 raise e
+
+        self.page.wait_for_selector(
+            selector="//app-wallet-button[@label='To']//*[contains(text(),'0x4701')]", timeout=timeout
+        )
 
     @allure.step("Set source token to {token} and amount to {amount}")
     def set_source_token(self, token: str, amount: float) -> None:
         """Set source token and amount ti transfer"""
         components.Button(self.page, text="Select token").click()
         self.page.wait_for_selector(selector="//div[contains(@class, 'tokens-options')]")
-        components.Button(self.page, selector=f"//button//*[text()='{token}']").click()
+        components.Button(
+            self.page, selector=f"//div[@class='cdk-overlay-container']//button//*[text()='{token}']"
+        ).click()
         self.page.wait_for_selector(selector="//label[contains(text(), 'balance')]")
         components.Input(self.page, selector="//input[contains(@class, 'token-amount-input')]").fill(str(amount))
 
-    @allure.step("Set transaction fee for platform {platform}, token {token_name} and fee type {fee_type}")
-    def set_transaction_fee(self, platform: str, token_name: str, fee_type: str) -> None:
-        """Set Neon transaction fee type"""
-        if platform != Platform.solana or token_name != Tokens.neon.name:
+    @allure.step("Set transaction fee {transaction_fee}")
+    def set_transaction_fee(self, transaction_fee: Optional[TransactionFee]) -> None:
+        """Set transaction fee type"""
+        if transaction_fee is None:
             return
-        selector = f"//app-neon-transaction-fee//*[contains(text(),'{fee_type}')]/parent::*"
-        components.Button(self.page, selector=selector).click()
-        expect(self.page.locator(selector + "[contains(@class, 'selected')]")).to_be_visible()
+
+        fee_parent = "//app-neon-transaction-fee"
+        fee_header = fee_parent + "//*[@class='header']"
+
+        if transaction_fee.token_name in self.page.query_selector(fee_header).text_content():
+            return
+
+        components.Button(self.page, selector=fee_parent).click()
+        components.Button(
+            self.page, selector=fee_parent + f"//button/*[text()='{transaction_fee.network_name}']"
+        ).click()
+
+        assert transaction_fee.token_name in self.page.query_selector(fee_header).text_content()
+
+    @allure.step("Set priority fee to {priority_fee}")
+    def set_priority_fee(self, priority_fee: Optional[str]) -> None:
+        """Set priority fee"""
+        if priority_fee is None:
+            return
+        priority_fee_parent = "//app-solana-priority-fee"
+        priority_fee_header = priority_fee_parent + "//*[@class='header']"
+
+        if priority_fee in self.page.query_selector(priority_fee_header).text_content():
+            return
+
+        components.Button(self.page, selector=priority_fee_parent).click()
+        components.Button(self.page, selector=priority_fee_parent + f"//button/*[text()='{priority_fee}']").click()
+
+        if priority_fee == PriorityFee.custom:
+            priority_fee_popup = "//app-priority-fee-dialog"
+            # Set custom fee
+            components.Input(self.page, selector=priority_fee_popup + "//input").fill("0.001")
+            components.Button(self.page, selector=priority_fee_popup + "//button[@class='save']").click()
+
+        assert priority_fee in self.page.wait_for_selector(priority_fee_header).text_content()
 
     def next_tab(self) -> None:
         """Got to next tab"""
@@ -152,30 +195,16 @@ class NeonPassPage(BasePage):
         """Confirm tokens withdraw"""
         try:
             with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
-                self.page.wait_for_selector(selector="//button[contains(@class, 'transfer-button')]").click()
+                components.Button(self.page, selector="//button[contains(@class, 'transfer-button')]").click()
         except TimeoutError as e:
             raise AssertionError("expected new window with wallet confirmation page") from e
 
         confirm_page = confirm_page_info.value
 
         if platform == Platform.solana:
-            if token in [libs.Tokens.sol]:
-                try:
-                    with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
-                        self._handle_pt_withdraw_confirm(confirm_page)
-                except TimeoutError as e:
-                    raise AssertionError("expected new window with Phantom confirmation page") from e
-                confirm_page = confirm_page_info.value
             self._handle_pt_withdraw_confirm(confirm_page)
 
         if platform == Platform.neon:
-            if token in [libs.Tokens.wsol, libs.Tokens.usdt, libs.Tokens.usdc]:
-                try:
-                    with self.page.context.expect_page(timeout=timeout) as confirm_page_info:
-                        self._handle_pt_withdraw_confirm(confirm_page)
-                except TimeoutError as e:
-                    raise AssertionError("expected new window with MetaMask confirmation page") from e
-                confirm_page = confirm_page_info.value
             self._handle_mm_withdraw_confirm(confirm_page)
 
         # Close overlay message 'Transfer complete'

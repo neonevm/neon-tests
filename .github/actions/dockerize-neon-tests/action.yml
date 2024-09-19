@@ -4,40 +4,55 @@ inputs:
   image_tag:  # id of input
     description: 'neon tests image tag'
     required: true
-  org_name:
-    description: 'docker hub organization name'
+  image_name:
+    description: 'neon tests image name'
     required: true
-  oz_branch:
-    description: 'branch name for oz tests'
+  oz_tag:
+    description: 'tag name for oz tests'
     required: true
-    default: master
-  version_tag:
-    description: 'neon-tests version tag'
-    required: false
-    default: ''
+    default: latest
   docker_username:
     description: 'docker hub username'
     required: true
   docker_password:
     description: 'docker hub password'
     required: true
+  docker_hub_org_name:
+    description: 'docker hub organization name'
+    required: true
 
 runs:
   using: composite
   steps:
+    - name: Define feature or version branch
+      id: feature_branch
+      shell: bash
+      if: github.ref_name !='develop' || github.ref_name !='master'
+      run: |
+         if [[ "${{ github.ref }}" =~ "refs/heads/"[vt][0-9]+\.[0-9]+\.x ]]; then
+          value=${{ github.ref_name }}
+         elif [[ "${{ github.head_ref }}" != "" ]]; then # pr to feature/develop branch
+          value=${{ github.head_ref }}
+         fi;
+          echo "value=${value}"
+          echo "value=${value}" >> $GITHUB_OUTPUT
     - name: Build and push neon tests docker image
       id: docker_pipeline
       shell: bash
+      env:
+        DOCKER_HUB_ORG_NAME: ${{ inputs.docker_hub_org_name }}
       run: |
-        image_id="${{ inputs.org_name }}/neon_tests"
+        image_name=${{ inputs.image_name }}
         delimeter=$(printf "%0.s-" {1..30})
-        echo " ${delimeter} Build new docker image ${image_id} ${delimeter}"
-        docker build . --no-cache --tag ${image_id}:${{ inputs.image_tag }} --build-arg OZ_BRANCH='${{ inputs.oz_branch }}'
-        if [[ "${{ inputs.version_tag }}" != ''  ]]; then
-          docker tag ${image_id}:${{ inputs.image_tag }} ${image_id}:${{ inputs.version_tag }}
+        echo " ${delimeter} Build new docker image ${image_name} ${delimeter}"
+        docker build . --no-cache --tag ${image_name}:${{ inputs.image_tag }} \
+            --build-arg OZ_TAG='${{ inputs.oz_tag }}' \
+            --build-arg CONTRACTS_BRANCH="${{ steps.feature_branch.outputs.value || 'develop'}}" \
+            --build-arg DOCKER_HUB_ORG_NAME="${{env.DOCKER_HUB_ORG_NAME}}"
+        if [[ "${{ steps.feature_branch.outputs.value }}" != ''  ]]; then
+          docker tag ${image_name}:${{ inputs.image_tag }} ${image_name}:${{ steps.feature_branch.outputs.value }}
         fi;
         echo "${delimeter} Login into Docker registry as ${{ inputs.docker_username }} ${delimeter}"
         echo "${{ inputs.docker_password }}" | docker login -u ${{ inputs.docker_username }} --password-stdin
         echo "${delimeter} Push image ${image_id} to Docker registry ${delimeter}"
-        docker push --all-tags ${image_id}
-        
+        docker push --all-tags ${image_name}

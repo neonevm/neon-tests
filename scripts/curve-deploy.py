@@ -21,9 +21,7 @@ PROXY_URL = os.environ.get("PROXY_URL")
 NETWORK_ID = os.environ.get("NETWORK_ID")
 web3_client = NeonChainWeb3Client(PROXY_URL)
 faucet_client = Faucet(FAUCET_URL, web3_client)
-CURVE_DATA_URL = (
-    "https://raw.githubusercontent.com/curvefi/curve-factory/simple-dev/data.json"
-)
+CURVE_DATA_URL = "https://raw.githubusercontent.com/curvefi/curve-factory/simple-dev/data.json"
 
 report = {"name": "Curve-factory", "actions": []}
 
@@ -43,9 +41,11 @@ def wait_transaction_accepted(transaction, timeout=20):
                 "id": random.randint(1, 1000),
             },
         ).json()
-        if response['result'] is not None:
+        if "error" in response and response["error"] is not None:
+            raise Exception(f"Error in response: {response['error']}")
+        if "result" in response and response["result"] is not None:
             return response
-        time.sleep(1)
+        time.sleep(2)
     raise TimeoutError(f"Transaction is not accepted for {timeout} seconds")
 
 
@@ -72,6 +72,7 @@ gas_price = int(
 )
 
 for key in ["factory", "2", "3", "4"]:
+    print(f"Deploying key: {key}")
     tr = curve_data[key]
 
     resp = requests.post(
@@ -85,7 +86,7 @@ for key in ["factory", "2", "3", "4"]:
     )
     print(f"Response on sendRawTransaction: {resp.text}")
     tr_id = resp.json()["result"]
-    receipt = wait_transaction_accepted(tr_id, timeout=20)
+    receipt = wait_transaction_accepted(tr_id, timeout=60)
 
     report["actions"].append(
         {
@@ -96,9 +97,7 @@ for key in ["factory", "2", "3", "4"]:
         }
     )
 
-    assert (
-            receipt["result"]["status"] == "0x1"
-    ), f"Transaction for factory: {key} failed: {receipt}"
+    assert receipt["result"]["status"] == "0x1", f"Transaction for factory: {key} failed: {receipt}"
 
     with open("curve-factory-report.json", "w") as f:
         json.dump(report, f)

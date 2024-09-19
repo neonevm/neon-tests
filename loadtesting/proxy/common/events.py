@@ -28,7 +28,7 @@ LOG = logging.getLogger(__name__)
 
 def get_token_balance(op: operator.Operator) -> tp.Dict:
     """Return tokens balance"""
-    return dict(neon=op.get_neon_balance(), sol=op.get_solana_balance())
+    return dict(neon=op.get_token_balance(), sol=op.get_solana_balance())
 
 
 def execute_before(*attrs) -> tp.Callable:
@@ -68,10 +68,9 @@ def operator_economy_pre_balance(environment, **kwargs):
     op = operator.Operator(
         environment.credentials["proxy_url"],
         environment.credentials["solana_url"],
-        environment.credentials["operator_neon_rewards_address"],
         environment.credentials["spl_neon_mint"],
-        environment.credentials["operator_keys"],
         web3_client=NeonChainWeb3Client(environment.credentials["proxy_url"]),
+        evm_loader=environment.credentials["evm_loader"],
     )
     environment.op = op
     environment.pre_balance = get_token_balance(op)

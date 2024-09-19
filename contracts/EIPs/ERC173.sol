@@ -47,7 +47,7 @@ contract ERC173Caller {
     }
 
     function transferOwnership(address newOwner) external {
-        address(erc173_address).call(abi.encodeWithSignature("transferOwnership(address)", newOwner));
+        ERC173(erc173_address).transferOwnership(newOwner);
     }
 
 }

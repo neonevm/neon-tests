@@ -9,8 +9,9 @@ from functools import lru_cache
 import web3.types
 import requests
 import gevent
+from eth_account.signers.local import LocalAccount
 from gevent.pool import Pool
-from locust import TaskSet, events
+from locust import TaskSet, events, env
 
 from utils import helpers
 from utils.faucet import Faucet
@@ -24,7 +25,7 @@ saved_transactions = []
 
 
 @events.test_stop.add_listener
-def save_transactions_list(environment: "locust.env.Environment", **kwargs):
+def save_transactions_list(environment: env.Environment, **kwargs):
     if "SAVE_TRANSACTIONS" in os.environ:
         web3_client = NeonWeb3ClientExt(
             environment.credentials["proxy_url"])
@@ -81,7 +82,7 @@ class NeonProxyTasksSet(TaskSet):
     """Implements base initialization, creates data requirements and helpers"""
 
     faucet: tp.Optional[Faucet] = None
-    account: tp.Optional["eth_account.signers.local.LocalAccount"] = None
+    account: tp.Optional[LocalAccount] = None
     web3_client: tp.Optional[NeonWeb3ClientExt] = None
 
     def setup(self) -> None:
@@ -137,7 +138,7 @@ class NeonProxyTasksSet(TaskSet):
         self,
         name: str,
         version: str,
-        account: "eth_account.signers.local.LocalAccount",
+        account: LocalAccount,
         constructor_args: tp.Optional[tp.Any] = None,
         gas: tp.Optional[int] = 0,
         contract_name: tp.Optional[str] = None,

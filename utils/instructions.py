@@ -1,202 +1,383 @@
-import hashlib
-import json
-import math
-import random
+import typing as tp
+from hashlib import sha256
 
-import base58
-from solana.publickey import PublicKey
-from solana.system_program import SYS_PROGRAM_ID
-from solana.transaction import AccountMeta, TransactionInstruction
+from solders.keypair import Keypair
+from solders.pubkey import Pubkey
+import solders.system_program as sp
+from solana.transaction import AccountMeta, Instruction, Transaction
+
+from utils.consts import COMPUTE_BUDGET_ID
+from solders.system_program import ID as SYS_PROGRAM_ID
+from .metaplex import SYSVAR_RENT_PUBKEY
 from spl.token.constants import ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address
 
-COMPUTE_BUDGET_ID: PublicKey = PublicKey(
-    "ComputeBudget111111111111111111111111111111")
-DEFAULT_UNITS = 500 * 1000
+from utils.types import TreasuryPool
+
+DEFAULT_UNITS = 1_400_000
 DEFAULT_HEAP_FRAME = 256 * 1024
+DEFAULT_ADDITIONAL_FEE = 0
 
 
-class Instruction:
+class ComputeBudget:
     @staticmethod
-    def account_v3(solana_wallet, neon_wallet_pda,
-                   neon_wallet, evm_loader_id) -> TransactionInstruction:
-        keys = [
-            AccountMeta(pubkey=solana_wallet,
-                        is_signer=True, is_writable=True),
-            AccountMeta(pubkey=SYS_PROGRAM_ID,
-                        is_signer=False, is_writable=False),
-            AccountMeta(pubkey=neon_wallet_pda,
-                        is_signer=False, is_writable=True),
-        ]
-
-        data = bytes.fromhex('28') + bytes.fromhex(str(neon_wallet)[2:])
-        return TransactionInstruction(
-            program_id=PublicKey(evm_loader_id),
-            keys=keys,
-            data=data)
-
-    @staticmethod
-    def sync_native(account: PublicKey):
-        keys = [AccountMeta(pubkey=account, is_signer=False, is_writable=True)]
-        data = bytes.fromhex('11')
-        return TransactionInstruction(keys=keys, program_id=TOKEN_PROGRAM_ID, data=data)
-
-
-    @staticmethod
-    def deposit(solana_pubkey, neon_pubkey, deposit_pubkey,
-                neon_wallet_address, neon_mint, evm_loader_id) -> TransactionInstruction:
-        associated_token_address = get_associated_token_address(
-            solana_pubkey, neon_mint)
-        pool_key = get_associated_token_address(deposit_pubkey, neon_mint)
-        keys = [
-            AccountMeta(pubkey=associated_token_address,
-                        is_signer=False, is_writable=True),
-            AccountMeta(pubkey=pool_key, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=neon_pubkey, is_signer=False, is_writable=True),
-            AccountMeta(pubkey=TOKEN_PROGRAM_ID,
-                        is_signer=False, is_writable=False),
-            AccountMeta(pubkey=solana_pubkey,
-                        is_signer=True, is_writable=True),
-            AccountMeta(pubkey=SYS_PROGRAM_ID,
-                        is_signer=False, is_writable=False),
-        ]
-
-        data = bytes.fromhex('27') + bytes.fromhex(neon_wallet_address[2:])
-        return TransactionInstruction(
-            program_id=PublicKey(evm_loader_id),
-            keys=keys,
-            data=data)
-
-    @staticmethod
-    def compute_budget_utils(operator, units=DEFAULT_UNITS) -> TransactionInstruction:
-        return TransactionInstruction(
+    def request_units(operator: Keypair, units):
+        return Instruction(
             program_id=COMPUTE_BUDGET_ID,
-            keys=[AccountMeta(PublicKey(operator.public_key),
-                              is_signer=True, is_writable=False)],
+            accounts=[AccountMeta(operator.pubkey(), is_signer=True, is_writable=False)],
             data=bytes.fromhex("02") + units.to_bytes(4, "little")
         )
 
     @staticmethod
-    def request_heap_frame(operator, heap_frame=DEFAULT_HEAP_FRAME) -> TransactionInstruction:
-        return TransactionInstruction(
+    def request_heap_frame(operator: Keypair, heap_frame):
+        return Instruction(
             program_id=COMPUTE_BUDGET_ID,
-            keys=[AccountMeta(PublicKey(operator.public_key),
-                              is_signer=True, is_writable=False)],
+            accounts=[AccountMeta(operator.pubkey(), is_signer=True, is_writable=False)],
             data=bytes.fromhex("01") + heap_frame.to_bytes(4, "little")
         )
 
     @staticmethod
-    def associated_token_account(
-            payer: PublicKey,
-            associated_token: PublicKey,
-            owner: PublicKey,
-            mint: PublicKey,
-            instruction_data: bytes,
-            programId=TOKEN_PROGRAM_ID,
-            associatedTokenProgramId=ASSOCIATED_TOKEN_PROGRAM_ID) -> TransactionInstruction:
-        keys = [
+    def set_compute_units_price(price, operator: Keypair):
+        return Instruction(
+            program_id=COMPUTE_BUDGET_ID,
+            accounts=[AccountMeta(operator.pubkey(), is_signer=True, is_writable=False)],
+            data=bytes.fromhex("03") + price.to_bytes(8, "little")
+        )
+
+
+class TransactionWithComputeBudget(Transaction):
+    def __init__(
+        self,
+        operator: Keypair,
+        units=DEFAULT_UNITS,
+        heap_frame=DEFAULT_HEAP_FRAME,
+        compute_unit_price=None,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        if units:
+            self.add(ComputeBudget.request_units(operator, units))
+
+        if heap_frame:
+            self.add(ComputeBudget.request_heap_frame(operator, heap_frame))
+        if compute_unit_price:
+            self.add(ComputeBudget.set_compute_units_price(compute_unit_price,  operator))
+
+
+def make_WriteHolder(
+    operator: Pubkey, evm_loader_id: Pubkey, holder_account: Pubkey, hash_: bytes, offset: int, payload: bytes
+):
+    d = bytes([0x26]) + hash_ + offset.to_bytes(8, byteorder="little") + payload
+
+    return Instruction(
+        program_id=evm_loader_id,
+        data=d,
+        accounts=[
+            AccountMeta(pubkey=holder_account, is_signer=False, is_writable=True),
+            AccountMeta(pubkey=operator, is_signer=True, is_writable=False),
+        ],
+    )
+
+
+def make_ExecuteTrxFromInstruction(
+    operator: Keypair,
+    operator_balance: Pubkey,
+    holder_address: Pubkey,
+    evm_loader_id: Pubkey,
+    treasury_address: Pubkey,
+    treasury_buffer: bytes,
+    message: bytes,
+    additional_accounts: tp.List[Pubkey],
+    system_program=sp.ID,
+    tag=0x3D
+):
+    data = bytes([tag]) + treasury_buffer + message
+    print("make_ExecuteTrxFromInstruction accounts")
+    print("Holder: ", holder_address)
+    print("Operator: ", operator.pubkey())
+    print("Treasury: ", treasury_address)
+    print("Operator balance: ", operator_balance)
+    accounts = [
+        AccountMeta(pubkey=holder_address, is_signer=False, is_writable=True),
+        AccountMeta(pubkey=operator.pubkey(), is_signer=True, is_writable=True),
+        AccountMeta(pubkey=treasury_address, is_signer=False, is_writable=True),
+        AccountMeta(pubkey=operator_balance, is_signer=False, is_writable=True),
+        AccountMeta(system_program, is_signer=False, is_writable=True)
+    ]
+    for acc in additional_accounts:
+        print("Additional acc ", acc)
+        accounts.append(
+            AccountMeta(acc, is_signer=False, is_writable=True),
+        )
+
+    return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
+
+
+def make_ExecuteTrxFromAccount(
+    operator: Keypair,
+    operator_balance: Pubkey,
+    evm_loader_id: Pubkey,
+    holder_address: Pubkey,
+    treasury_address: Pubkey,
+    treasury_buffer: bytes,
+    additional_accounts: tp.List[Pubkey],
+    additional_signers: tp.List[Keypair] = None,
+    system_program=sp.ID,
+    tag=0x33
+):
+    data = bytes([tag]) + treasury_buffer
+    print("make_ExecuteTrxFromInstruction accounts")
+    print("Operator: ", operator.pubkey())
+    print("Treasury: ", treasury_address)
+    print("Operator eth solana: ", operator_balance)
+    accounts = [
+        AccountMeta(pubkey=holder_address, is_signer=False, is_writable=True),
+        AccountMeta(pubkey=operator.pubkey(), is_signer=True, is_writable=True),
+        AccountMeta(pubkey=treasury_address, is_signer=False, is_writable=True),
+        AccountMeta(pubkey=operator_balance, is_signer=False, is_writable=True),
+        AccountMeta(system_program, is_signer=False, is_writable=True)
+    ]
+    for acc in additional_accounts:
+        print("Additional acc ", acc)
+        accounts.append(
+            AccountMeta(acc, is_signer=False, is_writable=True),
+        )
+    if additional_signers:
+        for acc in additional_signers:
+            accounts.append(
+                AccountMeta(acc.pubkey(), is_signer=True, is_writable=True),
+            )
+    return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
+
+
+def make_ExecuteTrxFromAccountDataIterativeOrContinue(
+    index: int,
+    step_count: int,
+    operator: Keypair,
+    operator_balance: Pubkey,
+    evm_loader_id: Pubkey,
+    holder_address: Pubkey,
+    treasury,
+    additional_accounts: tp.List[Pubkey],
+    sys_program_id=sp.ID,
+    tag=0x35
+):
+    # 0x35 - TransactionStepFromAccount
+    # 0x36 - TransactionStepFromAccountNoChainId
+    data = tag.to_bytes(1, "little") + treasury.buffer + step_count.to_bytes(4, "little") + index.to_bytes(4, "little")
+    print("make_ExecuteTrxFromAccountDataIterativeOrContinue accounts")
+    print("Holder: ", holder_address)
+    print("Operator: ", operator.pubkey())
+    print("Treasury: ", treasury.account)
+    print("Operator eth solana: ", operator_balance)
+    accounts = [
+        AccountMeta(pubkey=holder_address, is_signer=False, is_writable=True),
+        AccountMeta(pubkey=operator.pubkey(), is_signer=True, is_writable=True),
+        AccountMeta(pubkey=treasury.account, is_signer=False, is_writable=True),
+        AccountMeta(pubkey=operator_balance, is_signer=False, is_writable=True),
+        AccountMeta(sys_program_id, is_signer=False, is_writable=True)
+    ]
+
+    for acc in additional_accounts:
+        print("Additional acc ", acc)
+        accounts.append(
+            AccountMeta(acc, is_signer=False, is_writable=True),
+        )
+
+    return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
+
+
+def make_PartialCallOrContinueFromRawEthereumTX(
+    index: int,
+    step_count: int,
+    instruction: bytes,
+    operator: Keypair,
+    operator_balance: Pubkey,
+    evm_loader_id: Pubkey,
+    storage_address: Pubkey,
+    treasury: TreasuryPool,
+    additional_accounts: tp.List[Pubkey],
+    system_program=sp.ID,
+    tag=0x34  # TransactionStepFromInstruction
+):
+    data = bytes([tag]) + treasury.buffer + step_count.to_bytes(4, "little") + index.to_bytes(4, "little") + instruction
+
+    accounts = [
+        AccountMeta(pubkey=storage_address, is_signer=False, is_writable=True),
+        AccountMeta(pubkey=operator.pubkey(), is_signer=True, is_writable=True),
+        AccountMeta(pubkey=treasury.account, is_signer=False, is_writable=True),
+        AccountMeta(pubkey=operator_balance, is_signer=False, is_writable=True),
+        AccountMeta(system_program, is_signer=False, is_writable=True)
+    ]
+    for acc in additional_accounts:
+        accounts.append(
+            AccountMeta(acc, is_signer=False, is_writable=True),
+        )
+
+    return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
+
+
+def make_Cancel(
+    evm_loader_id: Pubkey,
+    storage_address: Pubkey,
+    operator: Keypair,
+    operator_balance: Pubkey,
+    hash_: bytes,
+    additional_accounts: tp.List[Pubkey],
+):
+    data = bytes([0x37]) + hash_
+
+    accounts = [
+        AccountMeta(pubkey=storage_address, is_signer=False, is_writable=True),
+        AccountMeta(pubkey=operator.pubkey(), is_signer=True, is_writable=True),
+        AccountMeta(pubkey=operator_balance, is_signer=False, is_writable=True),
+    ]
+
+    for acc in additional_accounts:
+        accounts.append(
+            AccountMeta(acc, is_signer=False, is_writable=True),
+        )
+
+    return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
+
+
+def make_DepositV03(
+    ether_address: bytes,
+    chain_id: int,
+    balance_account: Pubkey,
+    contract_account: Pubkey,
+    mint: Pubkey,
+    source: Pubkey,
+    pool: Pubkey,
+    token_program: Pubkey,
+    operator_pubkey: Pubkey,
+    evm_loader_id: Pubkey,
+) -> Instruction:
+    data = bytes([0x31]) + ether_address + chain_id.to_bytes(8, "little")
+
+    accounts = [
+        AccountMeta(pubkey=mint, is_signer=False, is_writable=True),
+        AccountMeta(pubkey=source, is_signer=False, is_writable=True),
+        AccountMeta(pubkey=pool, is_signer=False, is_writable=True),
+        AccountMeta(pubkey=balance_account, is_signer=False, is_writable=True),
+        AccountMeta(pubkey=contract_account, is_signer=False, is_writable=True),
+        AccountMeta(pubkey=token_program, is_signer=False, is_writable=False),
+        AccountMeta(pubkey=operator_pubkey, is_signer=True, is_writable=True),
+        AccountMeta(pubkey=sp.ID, is_signer=False, is_writable=False),
+    ]
+
+    return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
+
+
+def make_CreateAssociatedTokenIdempotent(payer: Pubkey, owner: Pubkey, mint: Pubkey) -> Instruction:
+    """Creates a transaction instruction to create an associated token account.
+
+    Returns:
+        The instruction to create the associated token account.
+    """
+    associated_token_address = get_associated_token_address(owner, mint)
+    return Instruction(
+        data=bytes([1]),
+        accounts=[
             AccountMeta(pubkey=payer, is_signer=True, is_writable=True),
-            AccountMeta(pubkey=associated_token,
-                        is_signer=False, is_writable=True),
+            AccountMeta(pubkey=associated_token_address, is_signer=False, is_writable=True),
             AccountMeta(pubkey=owner, is_signer=False, is_writable=False),
             AccountMeta(pubkey=mint, is_signer=False, is_writable=False),
-            AccountMeta(pubkey=SYS_PROGRAM_ID,
-                        is_signer=False, is_writable=False),
-            AccountMeta(pubkey=programId, is_signer=False, is_writable=False),
-        ]
+            AccountMeta(pubkey=SYS_PROGRAM_ID, is_signer=False, is_writable=False),
+            AccountMeta(pubkey=TOKEN_PROGRAM_ID, is_signer=False, is_writable=False),
+            AccountMeta(pubkey=SYSVAR_RENT_PUBKEY, is_signer=False, is_writable=False)
+        ],
+        program_id=ASSOCIATED_TOKEN_PROGRAM_ID,
+    )
 
-        return TransactionInstruction(
-            keys=keys,
-            program_id=associatedTokenProgramId,
-            data=instruction_data
+
+def make_CreateBalanceAccount(
+    evm_loader_id: Pubkey,
+    sender_pubkey: Pubkey,
+    ether_address: bytes,
+    account_pubkey: Pubkey,
+    contract_pubkey: Pubkey,
+    chain_id,
+) -> Instruction:
+    print("createBalanceAccount: {}".format(account_pubkey))
+
+    data = bytes([0x30]) + ether_address + chain_id.to_bytes(8, "little")
+    return Instruction(
+        program_id=evm_loader_id,
+        data=data,
+        accounts=[
+            AccountMeta(pubkey=sender_pubkey, is_signer=True, is_writable=True),
+            AccountMeta(pubkey=sp.ID, is_signer=False, is_writable=False),
+            AccountMeta(pubkey=account_pubkey, is_signer=False, is_writable=True),
+            AccountMeta(pubkey=contract_pubkey, is_signer=False, is_writable=True)
+        ],
+    )
+
+
+def make_SyncNative(account: Pubkey):
+    keys = [AccountMeta(pubkey=account, is_signer=False, is_writable=True)]
+    data = bytes.fromhex("11")
+    return Instruction(accounts=keys, program_id=TOKEN_PROGRAM_ID, data=data)
+
+
+def make_CreateAccountWithSeed(funding, base, seed, lamports, space, program):
+    created = Pubkey(sha256(bytes(base) + bytes(seed, "utf8") + bytes(program)).digest())
+    print(f"Created: {created}")
+    return sp.create_account_with_seed(
+        sp.CreateAccountWithSeedParams(
+            from_pubkey=funding,
+            to_pubkey=created,
+            base=base,
+            seed=seed,
+            lamports=lamports,
+            space=space,
+            owner=program,
         )
-
-    @staticmethod
-    def claim(_from, to, amount, web3_client, ata_address,
-              emulate_signer, contract, gas_price=None):
-        emulated_tx = None
-        result = dict()
-
-        claim_to = contract.contract.functions.claimTo(
-            bytes(ata_address), _from.address, amount)
-        data = claim_to.abi
-
-        tx = {
-            "from": _from.address,
-            "to": to,
-            "nonce": web3_client.eth.get_transaction_count(emulate_signer.address),
-            "gasPrice": gas_price if gas_price is not None else web3_client.gas_price(),
-            "chainId": web3_client.eth.chain_id,
-            "data": json.dumps(data).encode('utf-8'),
-            "gas": 100000000
-        }
-
-        signed_tx = web3_client._web3.eth.account.sign_transaction(
-            tx, _from.key)
-
-        if signed_tx.rawTransaction is not None:
-            emulated_tx = web3_client.get_neon_emulate(
-                str(signed_tx.rawTransaction.hex())[2:])
-
-        if emulated_tx is not None:
-            for account in emulated_tx['result']['accounts']:
-                key = account['account']
-                result[key] = AccountMeta(pubkey=PublicKey(
-                    key), is_signer=False, is_writable=True)
-                if 'contract' in account:
-                    key = account['contract']
-                    result[key] = AccountMeta(pubkey=PublicKey(
-                        key), is_signer=False, is_writable=True)
-
-            for account in emulated_tx['result']['solana_accounts']:
-                key = account['pubkey']
-                result[key] = AccountMeta(pubkey=PublicKey(
-                    key), is_signer=False, is_writable=True)
-
-        return signed_tx, result
-
-    @staticmethod
-    def buld_tx_instruction(solana_wallet, neon_wallet, neon_raw_transaction,
-                            neon_keys, evm_loader_id, neon_pool_count):
-        program_id = PublicKey(evm_loader_id)
-        treasure_pool_index = math.floor(random.randint(
-            0, 1) * int(neon_pool_count)) % int(neon_pool_count)
-        treasure_pool_address = get_collateral_pool_address(
-            treasure_pool_index, evm_loader_id)
-
-        data = bytes.fromhex('1f') + treasure_pool_index.to_bytes(4, 'little') + \
-            bytes.fromhex(str(neon_raw_transaction.hex())[2:])
-        keys = [AccountMeta(pubkey=solana_wallet, is_signer=True, is_writable=True),
-                AccountMeta(pubkey=treasure_pool_address,
-                            is_signer=False, is_writable=True),
-                AccountMeta(pubkey=neon_wallet,
-                            is_signer=False, is_writable=True),
-                AccountMeta(pubkey=SYS_PROGRAM_ID,
-                            is_signer=False, is_writable=False),
-                AccountMeta(pubkey=program_id, is_signer=False,
-                            is_writable=False),
-                ]
-
-        for k in neon_keys:
-            keys.append(neon_keys[k])
-
-        return TransactionInstruction(
-            keys=keys,
-            program_id=program_id,
-            data=data
-        )
+    )
 
 
-def get_collateral_pool_address(index: int, evm_loader_id):
-    return PublicKey.find_program_address(
-        [bytes('treasury_pool', 'utf8'), index.to_bytes(4, 'little')],
-        PublicKey(evm_loader_id)
-    )[0]
+def make_CreateHolderAccount(account, operator, seed, evm_loader_id):
+    return Instruction(
+        accounts=[
+            AccountMeta(pubkey=account, is_signer=False, is_writable=True),
+            AccountMeta(pubkey=operator, is_signer=True, is_writable=False),
+        ],
+        program_id=evm_loader_id,
+        data=bytes.fromhex("24") + len(seed).to_bytes(8, "little") + seed,
+    )
 
 
-def get_solana_wallet_signer(solana_account, neon_account, web3_client):
-    solana_wallet = base58.b58encode(str(solana_account.public_key))
-    neon_wallet = bytes(neon_account.address, 'utf-8')
-    new_wallet = hashlib.sha256(solana_wallet + neon_wallet).hexdigest()
-    emulate_signer_private_key = f'0x{new_wallet}'
-    return web3_client._web3.eth.account.from_key(emulate_signer_private_key)
+def make_wSOL(amount, solana_wallet, ata_address):
+    tx = Transaction(fee_payer=solana_wallet)
+    tx.add(sp.transfer(sp.TransferParams(
+        from_pubkey=solana_wallet, to_pubkey=ata_address, lamports=amount)
+    ))
+    tx.add(make_SyncNative(ata_address))
+
+    return tx
+
+
+def make_OperatorBalanceAccount(operator_keypair, operator_balance_pubkey, ether_bytes, chain_id, evm_loader_id):
+    trx = Transaction()
+    trx.add(Instruction(
+        accounts=[
+            AccountMeta(pubkey=operator_keypair.pubkey(), is_signer=True, is_writable=True),
+            AccountMeta(pubkey=sp.ID, is_signer=False, is_writable=True),
+            AccountMeta(pubkey=operator_balance_pubkey, is_signer=False, is_writable=True)
+        ],
+        program_id=evm_loader_id,
+        data=bytes.fromhex("3A") + ether_bytes + chain_id.to_bytes(8, 'little')
+    ))
+    return trx
+
+
+def get_compute_unit_price_eip_1559(
+        gas_price: int,
+        max_priority_fee_per_gas: int,
+) -> int:
+    """
+    :return: micro lamports
+    """
+    cu_price = max(1, int(max_priority_fee_per_gas * 1_000_000 * 5000.0 / (gas_price * DEFAULT_UNITS)))
+    return cu_price

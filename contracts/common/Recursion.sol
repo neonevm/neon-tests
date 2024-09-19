@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity >= 0.6.12;
 
 contract DeployRecursionFactory {
     address [] public firstContractAddresses;
@@ -9,7 +9,7 @@ contract DeployRecursionFactory {
     event FirstContractDeployed(address addr);
     event SecondContractDeployed(address addr);
     event ThirdContractDeployed(address addr);
-    constructor(uint _depth) {
+    constructor(uint _depth) public {
         setDepth(_depth);
     }
 
@@ -93,13 +93,13 @@ contract DeployRecursionFactory {
 }
 
 contract FirstContract {
-    constructor(address _factoryAddress) {
+    constructor(address _factoryAddress) public {
         address(_factoryAddress).call(abi.encodeWithSignature("deployFirstContract()"));
     }
 }
 
 contract SecondContract {
-    constructor(address _factoryAddress, string memory stringSalt) {
+    constructor(address _factoryAddress, string memory stringSalt) public {
         address(_factoryAddress).call{gas: 19135420}(abi.encodeWithSignature("deploySecondContractViaCreate2(string)", stringSalt));
     }
 
@@ -118,7 +118,7 @@ contract RecursionCaller1 {
     event SecondContractCalled(bool result);
 
 
-    constructor(uint _depth, address _contract2, bool setDepthThroughContract2) {
+    constructor(uint _depth, address _contract2, bool setDepthThroughContract2) public {
         contract2 = _contract2;
         if (setDepthThroughContract2){
           address(contract2).call(abi.encodeWithSignature("callContract1SetDepth(address,uint)", address(this), _depth));

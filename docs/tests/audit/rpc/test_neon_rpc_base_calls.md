@@ -11,3 +11,4 @@ Tests for neon rpc base endpoints (check availability and basic functionality)
 | TestNeonRPCBaseCalls::test_neon_get_solana_transaction_by_neon_transaction_list_of_tx      | List of sol tx                           |         |
 | TestNeonRPCBaseCalls::test_neon_get_solana_transaction_by_neon_transaction_negative        | Negative cases                           |         |
 | TestNeonRPCBaseCalls::test_neon_get_solana_transaction_by_neon_transaction_non_existent_tx | Non existent transaction, empty response |         |
+| TestNeonRPCBaseCalls::test_neon_get_native_token_list                                      | Get list of native tokens                |         |

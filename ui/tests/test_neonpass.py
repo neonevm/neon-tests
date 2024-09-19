@@ -2,6 +2,7 @@ import pathlib
 import typing as tp
 import uuid
 from dataclasses import dataclass
+from time import sleep
 
 import allure
 import pytest
@@ -11,7 +12,7 @@ from playwright.sync_api import BrowserContext
 from playwright.sync_api import BrowserType
 
 from ui import libs
-from ui.libs import Platform, open_safe, Token, Tokens, FeeType
+from ui.libs import Platform, open_safe, Token, Tokens, TransactionFeeType, PriorityFee, TransactionFee
 from ui.pages import metamask, neonpass
 from ui.plugins import browser
 
@@ -90,11 +91,11 @@ class TestNeonPass:
             return init_balance < balance
 
     @pytest.fixture
-    def metamask_page(
-        self, request: FixtureRequest, page, network: str, chrome_extension_password
-    ):
+    def metamask_page(self, request: FixtureRequest, page, network: str, chrome_extension_password):
+        page.goto("chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/home.html")
         login_page = metamask.MetaMaskLoginPage(page)
-        mm_page = login_page.login(password=chrome_extension_password)
+        popup_news = login_page.login(password=chrome_extension_password)
+        mm_page = popup_news.close()
         mm_page.check_funds_protection()
         mm_page.change_network(network)
         mm_page.switch_assets()
@@ -111,17 +112,17 @@ class TestNeonPass:
         neon_page.page.close()
 
     @pytest.mark.parametrize(
-        "platform, token, fee_type",
+        "platform, token, transaction_fee, priority_fee",
         [
-            (Platform.solana, Tokens.neon, FeeType.neon),
-            (Platform.solana, Tokens.neon, FeeType.sol),
-            (Platform.solana, Tokens.sol, FeeType.none),
-            (Platform.solana, Tokens.usdt, FeeType.none),
-            (Platform.solana, Tokens.usdc, FeeType.none),
-            (Platform.neon, Tokens.neon, FeeType.none),
-            (Platform.neon, Tokens.wsol, FeeType.none),
-            (Platform.neon, Tokens.usdt, FeeType.none),
-            (Platform.neon, Tokens.usdc, FeeType.none),
+            (Platform.solana, Tokens.neon, TransactionFeeType.sol, PriorityFee.ultra),
+            (Platform.solana, Tokens.neon, TransactionFeeType.neon, PriorityFee.turbo),
+            (Platform.solana, Tokens.sol, TransactionFeeType.none, PriorityFee.ultra),
+            (Platform.solana, Tokens.usdt, TransactionFeeType.none, PriorityFee.fast),
+            (Platform.solana, Tokens.usdc, TransactionFeeType.none, PriorityFee.fast),
+            (Platform.neon, Tokens.neon, TransactionFeeType.none, PriorityFee.none),
+            (Platform.neon, Tokens.wsol, TransactionFeeType.none, PriorityFee.none),
+            (Platform.neon, Tokens.usdt, TransactionFeeType.none, PriorityFee.none),
+            (Platform.neon, Tokens.usdc, TransactionFeeType.none, PriorityFee.none),
         ],
         ids=str,
     )
@@ -131,14 +132,17 @@ class TestNeonPass:
         neonpass_page: neonpass.NeonPassPage,
         platform: str,
         token: Token,
-        fee_type: str,
+        transaction_fee: TransactionFee,
+        priority_fee: str,
     ) -> None:
         init_balance = metamask_page.get_balance(token)
         neonpass_page.connect_phantom()
         neonpass_page.connect_metamask()
         neonpass_page.switch_platform_source(platform)
         neonpass_page.set_source_token(token.name, 0.001)
-        neonpass_page.set_transaction_fee(platform, token.name, fee_type)
+        sleep(2)  # wait for all wallets to be loaded properly
+        neonpass_page.set_transaction_fee(transaction_fee)
+        neonpass_page.set_priority_fee(priority_fee)
         neonpass_page.confirm_tokens_transfer(platform, token)
 
         with allure.step("Assert the balance in the wallet changed"):

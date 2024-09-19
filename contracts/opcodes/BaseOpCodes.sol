@@ -223,23 +223,7 @@ contract BaseOpCodes {
      }
 
      //callcode
-     assembly {
-         let x := mload(0x40)   //Find empty storage location using "free memory pointer"
-         mstore(x,sig) //Place signature at beginning of empty storage
-         mstore(add(x,0x04),a) // first address parameter. just after signature
-         mstore(add(x,0x24),a) // 2nd address parameter - first padded. add 32 bytes (not 20 bytes)
-         mstore(0x40,add(x,0x64)) // this is missing in other examples. Set free pointer before function call. so it is used by called function.
-          // new free pointer position after the output values of the called function.
-
-         let success := callcode(
-                         5000, //5k gas
-                         contractAddr, //To addr
-                         0,    //No wei passed
-                         x,    // Inputs are at location x
-                         0x44, //Inputs size two padded, so 68 bytes
-                         x,    //Store output over input
-                         0x20) //Output is 32 bytes long
-     }
+     test_callcode();
 
      //delegatecall
      assembly {
@@ -319,4 +303,29 @@ contract BaseOpCodes {
     assembly{ stop() }
   }
 
+  function test_callcode() public {
+    address contractAddr = address(test1);
+    bytes4 sig = bytes4(keccak256("isSameAddress(address,address)"));
+    address a = msg.sender;
+
+    //callcode
+    assembly {
+        let x := mload(0x40) //Find empty storage location using "free memory pointer"
+        mstore(x, sig) //Place signature at beginning of empty storage
+        mstore(add(x, 0x04), a) // first address parameter. just after signature
+        mstore(add(x, 0x24), a) // 2nd address parameter - first padded. add 32 bytes (not 20 bytes)
+        mstore(0x40, add(x, 0x64)) // this is missing in other examples. Set free pointer before function call. so it is used by called function.
+        // new free pointer position after the output values of the called function.
+
+        let success := callcode(
+            5000, //5k gas
+            contractAddr, //To addr
+            0, //No wei passed
+            x, // Inputs are at location x
+            0x44, //Inputs size two padded, so 68 bytes
+            x, //Store output over input
+            0x20
+        ) //Output is 32 bytes long
+    }
+  }
 }

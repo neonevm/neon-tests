@@ -1,3 +1,9 @@
+from locust import tag, task
+from solders.keypair import Keypair
+
+from loadtesting.proxy.common.base import NeonProxyTasksSet
+from loadtesting.proxy.common.events import execute_before
+
 
 @tag("withdraw")
 class WithDrawTasksSet(NeonProxyTasksSet):
@@ -10,14 +16,14 @@ class WithDrawTasksSet(NeonProxyTasksSet):
     @execute_before("task_block_number", "task_keeps_balance")
     def task_withdraw_tokens(self) -> None:
         """withdraw Ethereum tokens to Solana"""
-        keys = Keypair.generate()
+        keys = Keypair()
         contract_interface = self._compile_contract_interface(self.contract_name, self.version)
         erc20wrapper_address = self.credentials.get("neon_erc20wrapper_address")
         if erc20wrapper_address:
             self.log.info(f"withdraw tokens to Solana from {self.account.address[:8]}")
             contract = self.web3_client.eth.contract(address=erc20wrapper_address, abi=contract_interface["abi"])
             amount = self.web3_client._web3.to_wei(1, "ether")
-            instruction_tx = contract.functions.withdraw(bytes(keys.public_key)).build_transaction(
+            instruction_tx = contract.functions.withdraw(bytes(keys.pubkey())).build_transaction(
                 {
                     "from": self.account.address,
                     "nonce": self.web3_client.eth.get_transaction_count(self.account.address),

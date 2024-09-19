@@ -1,34 +1,29 @@
-name: "Basic tests"
-run-name: Basic tests / ${{ github.event.pull_request.title || github.event_name }}
+name: "Basic&EVM tests"
+run-name: Basic&EVM tests / ${{ github.event.pull_request.title || github.event_name }}
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 on:
+  schedule:
+    - cron: "0 1 * * 0,1,2,3,4"
+    - cron: "0 2 * * 0,1,2,3,4"
   pull_request:
     types: [ opened, reopened, synchronize ]
   workflow_dispatch:
     inputs:
       network:
         type: choice
-        default: night-stand
+        default: terraform
         required: true
         description: "Stand name"
         options:
+          - terraform
           - night-stand
           - devnet
-          - private-devnet
-      runner:
-        type: choice
-        default: ubuntu-20.04
-        required: true
-        description: "Where to run tests (our runner or github)"
-        options:
-          - neon-hosted
-          - aws-hosted
-          - ubuntu-20.04
+          - mainnet
       numprocesses:
         type: choice
-        default: 4
+        default: 8
         required: true
         description: "Number of parallel jobs"
         options:
@@ -38,112 +33,118 @@ on:
           - 12
           - auto
 env:
-  NETWORK: night-stand
-  RUNNER: neon-hosted
+  NETWORK: ${{ github.event.inputs.network || 'terraform' }}
+  NUMPROCESSES: ${{ github.event.inputs.numprocesses || 8 }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   SOLANA_URL: "${{ secrets.SOLANA_URL }}"
-  NUMPROCESSES: 4
-  IMAGE:  ${{ vars.DOCKERHUB_ORG_NAME }}/neon_tests
-  CONTAINER:  basic-${{ github.run_id }}
+  FAUCET_URL: "${{ secrets.DEVNET_FAUCET_URL }}"
+  IMAGE:  ${{ github.repository_owner }}/neon_tests
+  DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
 jobs:
   dockerize:
     if: ${{ github.ref_name != 'develop'}}
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
-      - name: "Dockerize neon tests"
-        id: requirements
+      - uses: actions/checkout@v4
+      - name: Dockerize neon tests
         uses: ./.github/actions/dockerize-neon-tests
         with:
           image_tag: ${{ github.sha }}
-          org_name: ${{ vars.DOCKERHUB_ORG_NAME }}
           docker_username: ${{ secrets.DOCKER_USERNAME }}
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
+          image_name: ${{ env.IMAGE }}
+          docker_hub_org_name: ${{ env.DOCKER_HUB_ORG_NAME }}
   prepare-env:
     runs-on: ubuntu-20.04
     if: always()
     steps:
-      - name: Setup `night-stand` by cron schedule
-        id: setup_night_stand
-        if: github.event.schedule=='0 23,2 * * 0,1,2,3,4'
+      - name: Setup `terraform` by cron schedule
+        id: setup_terraform_stand
+        if: github.event.schedule=='0 1 * * 0,1,2,3,4'
         run: |
-          echo "NETWORK=night-stand" >> $GITHUB_ENV
+          echo "NETWORK=terraform" >> $GITHUB_ENV
       - name: Setup `devnet` by cron schedule
-        id: setup_devnet
         if: github.event.schedule=='0 4 * * 0,1,2,3,4'
         run: |
           echo "NETWORK=devnet" >> $GITHUB_ENV
-      - name: Setup env
-        id: setup
-        run: |
-          # $1 - inputs
-          # $2 - env.VAR
-          function setVar {
-            if [ -z "$1" ]
-              then
-                RESULT="$2"
-              else
-                RESULT="$1"
-            fi
-            echo $RESULT
-          }
+      - uses: actions/checkout@v4
 
-          NETWORK=$( setVar "${{ github.event.inputs.network }}" "${{ env.NETWORK }}" )
-          RUNNER=$( setVar "${{ github.event.inputs.runner }}" "${{ env.RUNNER }}" )
-          NUMPROCESSES=$( setVar "${{ github.event.inputs.numprocesses }}" "2" )
+      - name: "Prepare terraform stand"
+        id: prepare_terraform
+        if: ${{ env.NETWORK == 'terraform' }}
+        timeout-minutes: 15
+        env:
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
+          TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
+          TFSTATE_KEY: ${{vars.TFSTATE_KEY_PREFIX}}-${{ github.run_number }}
+          TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
+          TF_VAR_ci_pp_solana_url: ${{ secrets.SOLANA_URL }}
+        uses: ./.github/actions/create-tf-stand
+        with:
+          ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
 
-          echo "Network: ${NETWORK}"
-          echo "Runner: ${RUNNER}"
-          echo "Numprocesses: ${NUMPROCESSES}"
-          echo "Build url: ${{ env.BUILD_URL }}"
-
-          echo "network=${NETWORK}" >> $GITHUB_OUTPUT
-          echo "runner=${RUNNER}" >> $GITHUB_OUTPUT
-          echo "jobs=${JOBS_NUMBER}" >> $GITHUB_OUTPUT
-          echo "numprocesses=${NUMPROCESSES}" >> $GITHUB_OUTPUT
     outputs:
-      network: ${{ steps.setup.outputs.network }}
-      runner: ${{ steps.setup.outputs.runner }}
-      numprocesses: ${{ steps.setup.outputs.numprocesses }}
+      proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
+      solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
+      network: ${{ env.NETWORK }}
 
   tests:
-    name: "Basic tests"
+    name: Run basic+evm tests
     needs:
       - dockerize
       - prepare-env
-    runs-on: ${{ needs.prepare-env.outputs.runner }}
+    runs-on: neon-hosted
     env:
+      SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare-env.outputs.proxy_ip }}
       NETWORK: ${{ needs.prepare-env.outputs.network }}
-      RUNNER: ${{ needs.prepare-env.outputs.runner }}
-      NUMPROCESSES: ${{ needs.prepare-env.outputs.numprocesses }}
+      CONTAINER: basic-tests-${{ github.run_id }}
     if: |
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Define image tag"
         id: image_tag
         uses: ./.github/actions/define-image-tag
       - name: Run docker container
         run: |
           docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
-          docker run -i -d -e CI -e GITHUB_RUN_ID -e GITHUB_WORKFLOW -e BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }} -e PROXY_URL -e SOLANA_URL --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
-      - name: "Run basic tests"
+          docker run -i -d -e CI -e GITHUB_RUN_ID -e GITHUB_WORKFLOW \
+            -e ETH_BANK_PRIVATE_KEY_MAINNET=${{ secrets.ETH_BANK_PRIVATE_KEY_MAINNET }} \
+            -e BANK_PRIVATE_KEY_MAINNET=${{ secrets.BANK_PRIVATE_KEY_MAINNET }} \
+            -e BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }} \
+            -e SOLANA_URL \
+            -e SOLANA_IP -e PROXY_IP \
+            --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
+      - name: Run evm tests
+        if: needs.prepare-env.outputs.network == 'terraform'
+        timeout-minutes: 10
+        run: |
+          docker exec -i ${{ env.CONTAINER }} \
+            /bin/bash -c "export SOLANA_URL=http://${{ env.SOLANA_IP }}:8899 \
+            && export NEON_CORE_API_URL=http://${{ env.SOLANA_IP }}:8085/api \
+            && export NEON_CORE_API_RPC_URL=http://${{ env.SOLANA_IP }}:3100 \
+            && python3 ./clickfile.py run evm --numprocesses 8 --network terraform --keep-error-log"
+      - name: Set failed test group to evm
+        if: failure()
+        run: echo "FAILED_TEST_GROUP=evm" >> $GITHUB_ENV
+      - name: Run basic proxy tests
         timeout-minutes: 60
         id: basic
         run: |
           docker exec -i ${{ env.CONTAINER }} \
-            python3 ./clickfile.py run basic -n ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}
-      - name: "Notify on failure."
+            /bin/bash -c "export DEVNET_FAUCET_URL=${{ env.FAUCET_URL }} && \
+            python3 ./clickfile.py run basic --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}"
+      - name: Set failed test group to basic
         if: failure()
-        run: |
-          docker exec -i ${{ env.CONTAINER }} \
-            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
-          -b ${{ env.BUILD_URL }} -n ${{ needs.prepare-env.outputs.network }}
+        run: echo "FAILED_TEST_GROUP=basic" >> $GITHUB_ENV
       - name: "Generate allure report"
         if: always()
-        id: requirements
         uses: ./.github/actions/generate-allure-report
         with:
           container: ${{ env.CONTAINER }}
@@ -151,6 +152,33 @@ jobs:
           aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           tests_name: basic
+      - name: "Notify on failure."
+        if: failure() && github.ref_name == 'develop'
+        run: |
+          docker exec -i ${{ env.CONTAINER }} \
+            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+          -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group ${{ env.FAILED_TEST_GROUP }}
       - name: Remove docker container
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}
+  destroy:
+    runs-on: ubuntu-20.04
+    needs: [ prepare-env, tests]
+    if: always() && needs.prepare-env.outputs.network == 'terraform'
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Destroy stand"
+        env:
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
+          TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
+          TFSTATE_KEY: ${{vars.TFSTATE_KEY_PREFIX}}-${{ github.run_number }}
+          TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
+          PROXY_IP: ${{ needs.prepare-env.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}
+        uses: ./.github/actions/destroy-tf-stand
+        with:
+          ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
+

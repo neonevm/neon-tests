@@ -1,15 +1,17 @@
 import allure
-from integration.tests.basic.helpers.basic import BaseMixin
+
 from utils.consts import ZERO_ADDRESS
 
 
 @allure.feature("EIP Verifications")
-@allure.story("EIP-3448: MetaProxy Standard: \
+@allure.story(
+    "EIP-3448: MetaProxy Standard: \
               A minimal bytecode implementation for creating proxy contracts \
-              with immutable metadata attached to the bytecode")
-class TestMetaProxyStandard(BaseMixin):
+              with immutable metadata attached to the bytecode"
+)
+class TestMetaProxyStandard:
     expected_a = ZERO_ADDRESS
-    expected_b = 0xc0ffe
+    expected_b = 0xC0FFE
     expected_c = [0, 0, 0, 0, 0, 0, 0, 0, 0]
 
     def test_create_from_call_data(self, meta_proxy_contract):

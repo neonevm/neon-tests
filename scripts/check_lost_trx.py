@@ -1,7 +1,6 @@
 import itertools
 import json
 import pathlib
-import glob
 from concurrent.futures import ThreadPoolExecutor
 
 from solana.transaction import Signature

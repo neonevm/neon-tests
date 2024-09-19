@@ -2,55 +2,47 @@ name: Docker Image for all neon tests
 
 on:
   push:
-    branches: ["develop"]
+    branches:
+      - develop
+      - '[vt][0-9].[0-9]+.[0-9x]+*'
   workflow_dispatch:
     inputs:
-      oz_branch:
+      oz_tag:
         type: string
         required: false
-        description: "Which OZ branch to use (if it is empty 'master', branch will be used)"
+        description: "Which OZ tag to use (if it is empty 'latest', branch will be used)"
 
 jobs:
   dockerize:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Define env
         id: define-env
         run: |
             if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == 'develop'  ]]; then
                 tag='latest'
-                oz_branch='master'
-            elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.ref_name }}" == 'develop' && ( "${{ github.event.inputs.oz_branch }}" == 'master' || "${{ github.event.inputs.oz_branch }}" == "" ) ]]; then
+                oz_tag='latest'
+            elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.ref_name }}" == 'develop' && ( "${{ github.event.inputs.oz_tag }}" == 'latest' || "${{ github.event.inputs.oz_tag }}" == "" ) ]]; then
                 tag='latest'
-                oz_branch='master'
-            elif [[ "${{ github.event.inputs.oz_branch }}" != "" ]]; then
-                tag='${{ github.event.inputs.oz_branch }}'
-                oz_branch='${{ github.event.inputs.oz_branch }}'
+                oz_tag='latest'
+            elif [[ "${{ github.event.inputs.oz_tag }}" != "" ]]; then
+                tag='${{ github.event.inputs.oz_tag }}'
+                oz_tag='${{ github.event.inputs.oz_tag }}'
             else
                 tag='${{ github.sha }}'
-                oz_branch='master'
+                oz_tag='latest'
             fi
             echo "tag=${tag}"
-            echo "oz_branch=${oz_branch}"
+            echo "oz_tag=${oz_tag}"
             echo "tag=${tag}" >> $GITHUB_OUTPUT
-            echo "oz_branch=${oz_branch}" >> $GITHUB_OUTPUT
-      - name: Define version branch
-        id: version_branch
-        run: |
-          if [[ "${{ github.ref }}" =~ "refs/heads/"[vt][0-9]+\.[0-9]+\.x ]]; then
-            value=${{ github.ref_name }}
-          else
-            value=""
-          fi
-            echo "value=${value}"
-            echo "value=${value}" >> $GITHUB_OUTPUT
+            echo "oz_tag=${oz_tag}" >> $GITHUB_OUTPUT
       - name: "Dockerize neon tests"
         uses: ./.github/actions/dockerize-neon-tests
         with:
           image_tag: ${{ steps.define-env.outputs.tag }}
-          version_tag: ${{ steps.version_branch.outputs.value }}
           docker_username: ${{ secrets.DOCKER_USERNAME }}
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
-          oz_branch: ${{ steps.define-env.outputs.oz_branch }}
-          org_name: ${{ vars.DOCKERHUB_ORG_NAME }}
+          oz_tag: ${{ steps.define-env.outputs.oz_tag }}
+          image_name: ${{ github.repository_owner }}/neon_tests
+          docker_hub_org_name: ${{ github.repository_owner }}

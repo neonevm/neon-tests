@@ -140,7 +140,7 @@ class TestOpCodes:
     ):
         tx = web3_client.make_raw_tx(accounts[0], tx_type=TransactionType.EIP_1559)
         instruction_tx = basefee_checker.functions.baseFeeTrx().build_transaction(tx)
-        instruction_tx["maxFeePerGas"] = 2000000000
+        instruction_tx["maxFeePerGas"] = 3000000000
         instruction_tx["maxPriorityFeePerGas"] = 2000000
         resp = web3_client.send_transaction(accounts[0], instruction_tx)
         base_fee_from_log = basefee_checker.events.Log().process_receipt(resp)[0]['args']['baseFee']

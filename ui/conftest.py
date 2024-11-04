@@ -21,6 +21,14 @@ CHROME_DATA_PATH = (
 )
 """CHROME_DATA_PATH is temporary local destination in project to untar chrome data directory and plugins"""
 
+@pytest.fixture(scope="class")
+def setup(request):
+    global driver
+    browser_name=request.config.getoption("browser_name")
+    if browser_name == "chrome":
+        driver = webdriver.Chrome()
+    driver.get("https://neonevm.org/")
+    driver.maximize_window()
 
 @pytest.fixture(scope="session")
 def network(pytestconfig: tp.Any) -> tp.Optional[str]:

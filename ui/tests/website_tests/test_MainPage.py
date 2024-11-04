@@ -5,7 +5,7 @@ from ui.pages.EcosystemPage import EcosystemPage
 from ui.pages.ExternalPages import ExternalPages
 from ui.pages.MainPage import MainPage
 from ui.pages.Menu import Menu
-from utils.BaseClass import BaseClass
+#from utils.BaseClass import BaseClass
 
 driver = webdriver.Chrome()
 driver.implicitly_wait(10)
@@ -17,7 +17,7 @@ menuPage = Menu(driver)
 developerPage = DeveloperPage(driver)
 ecosystemPage = EcosystemPage(driver)
 externalPages = ExternalPages(driver)
-baseClass = BaseClass(driver)
+#baseClass = BaseClass(driver)
 
 class TestMainPage:
 

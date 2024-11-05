@@ -64,6 +64,7 @@ jobs:
     runs-on: ["self-hosted", "k8s-prod"]
     if: always()
     steps:
+      - uses: hashicorp/setup-terraform@v3
       - name: Setup `terraform` by cron schedule
         id: setup_terraform_stand
         if: github.event.schedule=='0 1 * * 0,1,2,3,4'

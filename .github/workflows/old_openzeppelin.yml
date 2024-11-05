@@ -22,6 +22,7 @@ on:
         options:
           - neon-hosted
           - ubuntu-20.04
+          - self-hosted
       jobsNumber:
         description: "Count of parallel jobs"
         required: true

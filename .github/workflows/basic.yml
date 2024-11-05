@@ -65,6 +65,9 @@ jobs:
     if: always()
     steps:
       - uses: hashicorp/setup-terraform@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 16
       - name: Setup `terraform` by cron schedule
         id: setup_terraform_stand
         if: github.event.schedule=='0 1 * * 0,1,2,3,4'

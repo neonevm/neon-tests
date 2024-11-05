@@ -11,7 +11,7 @@ env:
 
 jobs:
   tests:
-    runs-on: ubuntu-20.04
+    runs-on: ["self-hosted", "k8s-prod"]
     name: The Graph tests
     steps:
       - uses: actions/checkout@v4

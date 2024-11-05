@@ -34,7 +34,7 @@ env:
 jobs:
   dockerize:
     if: github.ref_name != 'develop' || github.event.inputs.oz_tag !=''
-    runs-on: ubuntu-20.04
+    runs-on: ["self-hosted", "k8s-prod"]
     steps:
       - uses: actions/checkout@v4
       - name: "Dockerize neon tests"
@@ -47,7 +47,7 @@ jobs:
           image_name: ${{ env.IMAGE }}
           docker_hub_org_name: ${{ github.repository_owner }}
   prepare-env:
-    runs-on: ubuntu-20.04
+    runs-on: ["self-hosted", "k8s-prod"]
     steps:
       - uses: actions/checkout@v4
       - name: "Prepare terraform stand"
@@ -94,7 +94,7 @@ jobs:
     needs:
       - prepare-env
       - dockerize
-    runs-on: neon-hosted
+    runs-on: ["self-hosted", "k8s-prod"]
     if: always() && contains(fromJSON('["success", "skipped"]'), needs.dockerize.result) && needs.prepare-env.result == 'success'
     steps:
       - uses: actions/checkout@v4
@@ -150,7 +150,7 @@ jobs:
         run: docker rm -f ${{ env.CONTAINER }}
 
   destroy:
-    runs-on: ubuntu-20.04
+    runs-on: ["self-hosted", "k8s-prod"]
     needs: [tests, prepare-env]
     if: always() && needs.prepare-env.outputs.network == 'terraform'
     steps:

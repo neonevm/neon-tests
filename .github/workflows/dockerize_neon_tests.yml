@@ -14,7 +14,7 @@ on:
 
 jobs:
   dockerize:
-    runs-on: ubuntu-20.04
+    runs-on: ["self-hosted", "k8s-prod"]
     steps:
       - uses: actions/checkout@v4
       - name: Define env

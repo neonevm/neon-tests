@@ -15,10 +15,6 @@ jobs:
     name: The Graph tests
     steps:
       - uses: actions/checkout@v4
-      - name: Set up secret file
-        run: |
-          echo ${{env.DEVNET_SOLANA_URL}} | sed 's/./& /g';
-          echo ${{env.DEVNET_FAUCET_URL}} | sed 's/./& /g';
 
       - name: Install python requirements
         id: requirements

@@ -73,6 +73,7 @@ def test_emulate_call_contract_function(neon_api_client, operator_keypair, treas
     assert result["exit_status"] == "succeed", f"The 'exit_status' field is not succeed. Result: {result}"
     assert result["steps_executed"] > 0, f"Steps executed amount is 0. Result: {result}"
     assert result["used_gas"] > 0, f"Used gas is less than 0. Result: {result}"
+    assert result["is_timestamp_number_used"] is False, f"Value for is_timestamp_number_used is wrong. Result: {result}"
     assert "Hello World" in to_text(result["result"])
 
 
@@ -82,3 +83,26 @@ def test_emulate_with_small_amount_of_steps(neon_api_client, evm_loader, user_ac
         user_account.eth_address.hex(), contract=None, data=contract_code, max_steps_to_execute=10
     )
     assert result["exit_status"] == "revert", f"The 'exit_status' field is not revert. Result: {result}"
+
+
+@pytest.mark.parametrize("contract_name", ["BlockTimestamp", "BlockNumber"])
+def test_emulate_call_contract_with_block_timestamp_number(contract_name, neon_api_client, operator_keypair,
+                                                           treasury_pool, evm_loader):
+    user_account = evm_loader.make_new_user(operator_keypair)
+    contract = deploy_contract(
+        operator_keypair,
+        user_account,
+        "common/Block.sol",
+        evm_loader,
+        treasury_pool,
+        version="0.8.10",
+        contract_name=contract_name,
+    )
+
+    result = neon_api_client.emulate_contract_call(user_account.eth_address.hex(),
+                                                   contract=contract.eth_address.hex(),
+                                                   function_signature="addDataToMapping(uint256,uint256)",
+                                                   params=[1, 2])
+
+    assert result["exit_status"] == "succeed", f"The 'exit_status' field is not succeed. Result: {result}"
+    assert result["is_timestamp_number_used"], f"Timestamp number is not used. Result: {result}"

@@ -40,7 +40,7 @@ contract BlockTimestamp {
 
     function addDataToMapping(uint256 _value1, uint256 _value2) public {
         uint256 currentTimestamp = block.timestamp % 1000000;
-        for (uint256 i = 0; i < 5; i++) {
+        for (uint256 i = 0; i < 20; i++) {
             Data memory newData = Data({
                 value1: _value1,
                 value2: _value2

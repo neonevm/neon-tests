@@ -873,18 +873,6 @@ class TestTransactionStepFromAccountParallelRuns:
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         evm_loader.write_transaction_to_holder_account(signed_tx, holder, operator_keypair)
 
-        def send_transaction_steps_for_holder(accounts):
-            resp = evm_loader.send_transaction_step_from_account(
-                operator_keypair,
-                operator_balance_pubkey,
-                treasury_pool,
-                holder,
-                accounts,
-                EVM_STEPS,
-                operator_keypair,
-            )
-            return resp
-
         def get_account_override(eth_account):
             sender_address = eth_account.eth_address.hex()
             sender_account_info = neon_api_client.get_balance(sender_address)["value"][0]
@@ -904,7 +892,15 @@ class TestTransactionStepFromAccountParallelRuns:
 
         # State of the sender account should be fetched before the first iteration.
         sender_overrides = get_account_override(sender_with_tokens)
-        send_transaction_steps_for_holder(initial_accounts)
+        evm_loader.send_transaction_step_from_account(
+            operator_keypair,
+            operator_balance_pubkey,
+            treasury_pool,
+            holder,
+            initial_accounts,
+            EVM_STEPS,
+            operator_keypair,
+        )
 
         # Fetch block params after the first iteration as stored in the holder.
         block_params = get_block_params()
@@ -920,11 +916,8 @@ class TestTransactionStepFromAccountParallelRuns:
 
         # Fetch new account list that depends on the re-emulation.
         new_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
+        evm_loader.execute_transaction_steps_from_account(operator_keypair,treasury_pool,holder,new_accounts)
 
-        # Run the rest of iterations with the new account list.
-        send_transaction_steps_for_holder(new_accounts)
-        send_transaction_steps_for_holder(new_accounts)
-        send_transaction_steps_for_holder(new_accounts)
 
         check_holder_account_tag(holder, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
 

@@ -293,8 +293,14 @@ class TestPrecompiledSplToken:
             tx = self.web3_client.make_raw_tx(
                 non_initialized_acc, spl_token_caller.address, data=calldata, gas=1000000, estimate_gas=False
             )
+            balance_before = self.web3_client.get_balance(non_initialized_acc)
             receipt = self.web3_client.send_transaction(non_initialized_acc, tx)
             assert receipt["status"] == 0
+            balance_after = self.web3_client.get_balance(non_initialized_acc)
+            gas_used = int(receipt["gasUsed"])
+            gas_price = int(receipt["effectiveGasPrice"])
+            total_fee_paid = gas_used * gas_price
+            assert balance_before - balance_after == total_fee_paid
         except ValueError as e:
             assert ErrorMessage.INVALID_ACC_DATA.value in str(e)
 

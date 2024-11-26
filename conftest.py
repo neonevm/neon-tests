@@ -188,7 +188,7 @@ def allure_environment(pytestconfig: Config, web3_client_session: NeonChainWeb3C
             "Network": pytestconfig.environment.proxy_url,
             "Proxy.Version": web3_client_session.get_proxy_version()["result"],
             "EVM.Version": web3_client_session.get_evm_version()["result"],
-            "CLI.Version": web3_client_session.get_cli_version()["result"],
+            "NEON_CORE.Version": web3_client_session.get_neon_core_version()["result"],
         }
 
     yield opts

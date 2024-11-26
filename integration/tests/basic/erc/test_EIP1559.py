@@ -442,7 +442,7 @@ class TestEIP1559:
             nonce="auto",
             gas="auto",
             max_priority_fee_per_gas=0,
-            max_fee_per_gas=int(base_fee_per_gas * 0.8),
+            max_fee_per_gas=int(base_fee_per_gas * 0.5),
             data=None,
             access_list=None,
         )

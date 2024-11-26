@@ -72,7 +72,7 @@ class Web3Client:
         return self._get_evm_info("neon_proxyVersion")
 
     @allure.step("Get cli version")
-    def get_cli_version(self):
+    def get_neon_core_version(self):
         return self._get_evm_info("neon_coreVersion")
 
     @allure.step("Get neon version")
@@ -559,6 +559,18 @@ class Web3Client:
         max_fee_per_gas = gas_price
         max_priority_fee_per_gas = max_fee_per_gas - base_fee_per_gas
         return max_priority_fee_per_gas, max_fee_per_gas
+
+    def is_trx_iterative(self, trx_hash: str) -> bool:
+        resp = requests.post(
+            self._proxy_url,
+            json={
+                "jsonrpc": "2.0",
+                "method": "neon_getSolanaTransactionByNeonTransaction",
+                "params": [trx_hash],
+                "id": 0,
+            },
+        ).json()
+        return len(resp["result"]) > 1
 
 
 class NeonChainWeb3Client(Web3Client):

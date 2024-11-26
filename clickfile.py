@@ -279,7 +279,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     opts = {
         "Proxy.Version": web3_client.get_proxy_version()["result"],
         "EVM.Version": web3_client.get_evm_version()["result"],
-        "CLI.Version": web3_client.get_cli_version()["result"],
+        "NEON_CORE.Version": web3_client.get_neon_core_version()["result"],
     }
     create_allure_environment_opts(opts, DST_ALLURE_ENVIRONMENT)
     # Add epic name for allure result files

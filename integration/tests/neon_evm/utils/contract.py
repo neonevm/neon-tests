@@ -103,6 +103,8 @@ def make_contract_call_trx(
     value=0,
     chain_id=111,
     access_list=None,
+    gas=999999999,
+    gas_price=0,
     max_priority_fee_per_gas=None,
     max_fee_per_gas=None,
     trx_type=None,
@@ -126,9 +128,11 @@ def make_contract_call_trx(
         value=value,
         chain_id=chain_id,
         access_list=access_list,
+        gas=gas,
         max_priority_fee_per_gas=max_priority_fee_per_gas,
         max_fee_per_gas=max_fee_per_gas,
         type_=trx_type,
+        gas_price=gas_price
     )
 
     return signed_tx

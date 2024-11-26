@@ -1,12 +1,11 @@
-import os
-import pathlib
-import typing as tp
-import uuid
-
-import allure
 import pytest
-from _pytest.config import Config
-from playwright.sync_api import Page
+from selenium import webdriver
+from ui.pages.developer_page import DeveloperPage
+from ui.pages.ecosystem_page import EcosystemPage
+from ui.pages.external_pages import ExternalPages
+from ui.pages.MainPage import MainPage
+from ui.pages.menu import Menu
+from ui.pages.base_class import BaseClass
 
 # from ui import libs
 #
@@ -20,6 +19,45 @@ from playwright.sync_api import Page
 #     pathlib.Path(__file__).absolute().parent.parent / "chrome-data" / uuid.uuid4().hex
 # )
 # """CHROME_DATA_PATH is temporary local destination in project to untar chrome data directory and plugins"""
+@pytest.fixture(scope="session")
+def driver(request):
+    driver = webdriver.Chrome()
+    driver.implicitly_wait(10)
+    driver.get("https://neonevm.org/")
+    driver.maximize_window()
+    yield driver
+    driver.close()
+    driver.quit()
+
+@pytest.fixture(scope="function")
+def main_page(driver):
+    page = MainPage(driver)
+    return page
+
+@pytest.fixture(scope="function")
+def menu_page(driver):
+    page = Menu(driver)
+    return page
+
+@pytest.fixture(scope="function")
+def developers_page(driver):
+    page = DeveloperPage(driver)
+    return page
+
+@pytest.fixture(scope="function")
+def ecosystem_page(driver):
+    page = EcosystemPage(driver)
+    return page
+
+@pytest.fixture(scope="function")
+def external_pages(driver):
+    page = ExternalPages(driver)
+    return page
+
+@pytest.fixture(scope="function")
+def base_class(driver):
+    page = BaseClass(driver)
+    return page
 
 @pytest.fixture(scope="class")
 def setup(request):

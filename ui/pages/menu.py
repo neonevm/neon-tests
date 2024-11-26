@@ -1,0 +1,26 @@
+from selenium.webdriver import ActionChains
+from selenium.webdriver.common.by import By
+
+class Menu:
+    def __init__(self, driver):
+        self.driver = driver
+
+    developers_link = (By.XPATH, "(//a[@href='/developers'][contains(.,'Developers')])[2]")
+    link_on_github_in_menu = (By.XPATH, "(//div[contains(@class,'dropdown__list')])[1]//div[3]//span[1]")
+    ecosystem_link = (By.XPATH, "(//a[@href='/ecosystem'][contains(.,'Ecosystem')])[2]")
+    link_on_neonpass = (By.XPATH, "(//div[contains(@class,'dropdown__list')])[2]//div[3]//span[1]")
+
+    def click_on_menu_developers_link(self):
+        self.driver.find_element(*Menu.developers_link).click()
+
+    def check_dropdown_in_menu_developers_github_link(self):
+        for_developers = self.driver.find_element(*Menu.developers_link)
+        ActionChains(self.driver).move_to_element(for_developers).perform()
+        assert self.driver.find_element(*Menu.link_on_github_in_menu).text == "GitHub"
+        self.driver.find_element(*Menu.link_on_github_in_menu).click()
+
+    def check_dropdown_in_menu_ecosystem_neonpass_link(self):
+        ecosystem = self.driver.find_element(*Menu.ecosystem_link)
+        ActionChains(self.driver).move_to_element(ecosystem).perform()
+        assert self.driver.find_element(*Menu.link_on_neonpass).text == "NeonPass"
+        self.driver.find_element(*Menu.link_on_neonpass).click()

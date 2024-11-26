@@ -7,13 +7,13 @@ class DeveloperPage:
     def __init__(self, driver):
         self.driver = driver
 
-    buildOnNeonLinkBlock = (By.XPATH, "//a[contains(.,'Build on Neon')]")
+    build_on_neon_link_block = (By.XPATH, "//a[contains(.,'Build on Neon')]")
 
     def click_on_build_on_neon_link_block(self):
-        self.driver.find_element(*DeveloperPage.buildOnNeonLinkBlock).click()
+        self.driver.find_element(*DeveloperPage.build_on_neon_link_block).click()
 
     def assert_text_on_build_on_neon_block_link(self):
-        assert "Build on Neon" == self.driver.find_element(*DeveloperPage.buildOnNeonLinkBlock).text
+        assert "Build on Neon" == self.driver.find_element(*DeveloperPage.build_on_neon_link_block).text
 
     def assert_developers_page_url(self):
         self.driver.switch_to.window(self.driver.window_handles[1])

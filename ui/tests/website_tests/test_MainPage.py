@@ -1,5 +1,4 @@
 from ui.conftest import external_pages, base_class, menu_page, developers_page, main_page, ecosystem_page
-from selenium import webdriver
 
 class TestMainPage:
 

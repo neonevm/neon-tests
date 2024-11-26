@@ -6,6 +6,7 @@ class MainPage:
     def __init__(self, driver):
         self.driver = driver
 
+    website_url = "https://neonevm.org/"
     logo_on_header = (By.XPATH, "//*[@id='header']/div[2]/div[1]")
     logo_on_footer = (By.XPATH, "(//a[@aria-label='Go to home'])[3]")
     build_on_neon_button = (By.XPATH, "//span[contains(text(),'build on neon')]")
@@ -36,9 +37,9 @@ class MainPage:
     def click_add_your_dapp_button(self):
         self.driver.find_element(*MainPage.add_your_dapp_button).click()
 
-    def assert_main_page_url(self):
+    def assert_main_page_url(self, website_url=website_url):
         wait = WebDriverWait(self.driver, 10)
-        wait.until(EC.url_to_be("https://neonevm.org/"))
+        wait.until(EC.url_to_be(website_url))
         URL = self.driver.current_url
         print(URL)
-        assert 'https://neonevm.org/' == URL, "URLs are different!"
+        assert website_url == URL, "URLs are different!"

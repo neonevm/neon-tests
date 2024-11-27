@@ -638,6 +638,8 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Setup gh cli
+        uses: ksivamuthu/actions-setup-gh-cli@v3
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements

@@ -17,6 +17,7 @@ from solders.pubkey import Pubkey
 from solcx import link_code
 import polling2
 from semantic_version import Version
+from solders.rpc.responses import GetTransactionResp
 
 
 T = tp.TypeVar('T')
@@ -215,3 +216,15 @@ def case_snake_to_camel(snake_str: str) -> str:
 
 def padhex(s, size):
     return '0x' + s[2:].zfill(size)
+
+
+def split_into_tuples(collection: tp.Collection[T], length: int) -> tuple[tuple[T, ...], ...]:
+    return tuple(tuple(collection[i:i + length]) for i in range(0, len(collection), length))
+
+
+def get_key_index_from_solana_tx(tx: GetTransactionResp, key: Pubkey) -> int:
+    for index, account_key in enumerate(tx.value.transaction.transaction.message.account_keys):
+        if account_key == key:
+            return index
+    else:
+        raise LookupError(f"Key {key} not found in transaction {tx.value}")

@@ -14,6 +14,7 @@ from solana.rpc.commitment import Confirmed
 from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
 from solders.rpc.responses import SendTransactionResp, GetTransactionResp
+from solders.transaction_status import EncodedConfirmedTransactionWithStatusMeta
 from spl.token.instructions import get_associated_token_address, MintToParams, ApproveParams, approve
 from spl.token.constants import TOKEN_PROGRAM_ID
 
@@ -619,3 +620,6 @@ class EvmLoader(SolanaClient):
             operator_keypair, account, self.ether2bytes(operator_ether), chain_id, self.loader_id
         )
         self.send_tx(trx, operator_keypair)
+
+    def was_called_in_tx(self, tx: EncodedConfirmedTransactionWithStatusMeta) -> bool:
+        return self.transaction_contains_call_to_program(tx=tx, program_id=self.loader_id)

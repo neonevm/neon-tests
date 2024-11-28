@@ -41,14 +41,28 @@ export default function EthGetStorageAtTest() {
     const accountSenderPrivateKey = usersArray[index].sender_key;
 
     const client = ethClient(accountSenderPrivateKey);
-    const requestParams = {
+
+    // blockNumber
+    const requestParamsBlockNumber = {
         request_type: "blockNumber",
         method: "eth_getStorageAt",
         params: [txInfo.to, "0x0", {request_type: txInfo.blockNumber}]
     }
 
-    const startTime = new Date();
+    doRequest(client, requestParamsBlockNumber);
 
+    // blockHash
+    const requestParamsBlockHash = {
+        request_type: "blockHash",
+        method: "eth_getStorageAt",
+        params: [txInfo.to, "0x0", {request_type: txInfo.blockHash}]
+    }
+    
+    doRequest(client, requestParamsBlockHash);
+}
+
+function doRequest(client, requestParams) {
+    const startTime = new Date();
     try {
         const response = client.callTracer(requestParams);
         const checkResult = check(response, {

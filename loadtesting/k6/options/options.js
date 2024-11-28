@@ -1,8 +1,8 @@
 import { usersNumber } from "../tests/utils/consts.js";
 
-export const sendTokenOptions = {
+export const standardScenarioOptions = {
     scenarios: {
-        sendToken: {
+        standardScenario: {
             executor: 'ramping-vus',
             startVUs: 0,
             stages: [

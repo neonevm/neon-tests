@@ -25,13 +25,19 @@ export const networkId = parseInt(env.network_ids.neon);
 // Set Proxy URL
 export const proxyUrl = env.proxy_url;
 
+// Set Tracer URL
+export const tracerUrl = env.tracer_url;
+
 // Faucet URL
 let faucetUri = env.faucet_url;
 let faucetUrlObject;
 if (!faucetUri.includes("request_neon")) {
-    faucetUrlObject = http.url([faucetUri, 'request_neon']);
+    let urlObject = http.url([faucetUri, 'request_neon']);
+    faucetUrlObject = faucetUrlObject.url;
+} else {
+    faucetUrlObject = faucetUri;
 }
-export const faucetUrl = faucetUrlObject.url;
+export const faucetUrl = faucetUrlObject;  
 
 // Accounts data
 export const initialAccountBalance = parseInt(__ENV.K6_INITIAL_BALANCE);

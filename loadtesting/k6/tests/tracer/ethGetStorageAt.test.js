@@ -34,28 +34,26 @@ const usersArray = new SharedArray('Users accounts', function () {
 export default function EthGetStorageAtTest() {
     const vuID = exec.vu.idInTest
     const index = vuID % usersArray.length;
-
-    const dataIndex = vuID % testData.length;
+    const dataIndex = vuID % Object.entries(testData).length;
     const txInfo = testData[dataIndex].info[0];
 
     const accountSenderPrivateKey = usersArray[index].sender_key;
-
     const client = ethClient(accountSenderPrivateKey);
 
     // blockNumber
     const requestParamsBlockNumber = {
-        request_type: "blockNumber",
+        requestType: "blockNumber",
         method: "eth_getStorageAt",
-        params: [txInfo.to, "0x0", {request_type: txInfo.blockNumber}]
+        params: [txInfo.to, "0x0", {"blockNumber": txInfo.blockNumber}]
     }
 
     doRequest(client, requestParamsBlockNumber);
 
     // blockHash
     const requestParamsBlockHash = {
-        request_type: "blockHash",
+        requestType: "blockHash",
         method: "eth_getStorageAt",
-        params: [txInfo.to, "0x0", {request_type: txInfo.blockHash}]
+        params: [txInfo.to, "0x0", {"blockHash": txInfo.blockHash}]
     }
     
     doRequest(client, requestParamsBlockHash);
@@ -64,9 +62,14 @@ export default function EthGetStorageAtTest() {
 function doRequest(client, requestParams) {
     const startTime = new Date();
     try {
-        const response = client.callTracer(requestParams);
+        const responseBody = client.callTracer(
+            JSON.stringify(requestParams.requestType), 
+            JSON.stringify(requestParams.method), 
+            JSON.stringify(requestParams.params)
+        );
+        const response = JSON.parse(responseBody);
         const checkResult = check(response, {
-            'response result is not 0': (r) => response.result != "0x0",
+            'response result is not 0': (r) => r.result != "0x0",
         });
         if (!checkResult) {
             console.log('Error in response of eth_getStorageAt: ' + JSON.stringify(response));

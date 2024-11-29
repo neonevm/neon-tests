@@ -16,8 +16,8 @@ export const options = standardScenarioOptions;
 const historicalData = JSON.parse(open("../../data/transaction.json"));
 let testData = {};
 let i = 0;
-for (const [key, _] of Object.entries(historicalData.store)) {
-    testData[i] = {"address": key, "info": historicalData.store[key]};
+for (const [key, _] of Object.entries(historicalData.transfer)) {
+    testData[i] = {"address": key, "info": historicalData.transfer[key]};
     i++;
 }
 
@@ -41,7 +41,6 @@ export default function EthGetTransactionCountTest() {
     const accountSenderPrivateKey = usersArray[index].sender_key;
     const client = ethClient(accountSenderPrivateKey);
     const nonce = client.getNonce(accountSenderAddress);
-    console.log("nonce: ", nonce);
 
     // blockNumber
     const requestParamsBlockNumber = {

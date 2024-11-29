@@ -1,6 +1,6 @@
 import { ethClient, sendErc20ViaTransferFunction } from '../utils/ethClient.js';
 import { randomItem } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
-import { transferAmountRange } from '../utils/consts.js';
+import { transferAmountRange } from '../../utils/consts.js';
 import { standardScenarioOptions } from '../../options/options.js';
 import { Trend, Counter } from 'k6/metrics';
 import { check } from 'k6';
@@ -17,7 +17,7 @@ const pathToContractData = '../contracts/ERC20/ERC20';
 const abi = JSON.parse(open(pathToContractData + '.abi'));
 
 const usersArray = new SharedArray('Users accounts', function () {
-    const accounts = JSON.parse(open("../data/accounts.json"));
+    const accounts = JSON.parse(open("../../data/accounts.json"));
     let data = [];
     for (let i = 0; i < Object.keys(accounts).length; i++) {
         data[i] = accounts[i];

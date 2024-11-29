@@ -425,7 +425,7 @@ class EvmLoader(SolanaClient):
             index += 1
 
             if receipt.value.transaction.meta.err:
-                raise AssertionError(f"Can't deploy contract: {receipt.value.transaction.meta.err}")
+                raise AssertionError(f"Error in sol trx: {receipt}")
             for log in receipt.value.transaction.meta.log_messages:
                 if "exit_status" in log:
                     done = True

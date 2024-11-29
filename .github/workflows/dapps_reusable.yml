@@ -87,7 +87,7 @@ env:
 
 jobs:
   uniswap-v2:
-    runs-on: ubuntu-20.04
+    runs-on: ["self-hosted", "k8s-prod"]
     if: contains( inputs.dapps, 'uniswap-v2')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -139,7 +139,7 @@ jobs:
           path: uniswap-v2-report.json
 
   uniswap-v3:
-    runs-on: ubuntu-20.04
+    runs-on: ["self-hosted", "k8s-prod"]
     if: contains( inputs.dapps, 'uniswap-v3')
     env:
       SOLANA_IP: ${{ inputs.solana_ip }}
@@ -190,7 +190,7 @@ jobs:
           path: uniswap-v3-report.json
 
   saddle:
-    runs-on: ubuntu-22.04
+    runs-on: ["self-hosted", "k8s-prod"]
     if: contains( inputs.dapps, 'saddle')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -242,7 +242,7 @@ jobs:
           name: saddle-report
           path: saddle-report.json
   aave-v2:
-    runs-on: ubuntu-20.04
+    runs-on: ["self-hosted", "k8s-prod"]
     if: contains( inputs.dapps, 'aave-v2')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -288,7 +288,7 @@ jobs:
           name: aave-v2-report
           path: aave-v2-report.json
   aave-v3:
-    runs-on: ubuntu-20.04
+    runs-on: ["self-hosted", "k8s-prod"]
     if: contains( inputs.dapps, 'aave-v3')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -334,7 +334,7 @@ jobs:
           name: aave-v3-core-report
           path: aave-v3-core-report.json
   curve:
-    runs-on: ubuntu-20.04
+    runs-on: ["self-hosted", "k8s-prod"]
     if: contains( inputs.dapps, 'curve')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -385,7 +385,7 @@ jobs:
           name: curve-report
           path: curve-report.json
   curve-factory:
-    runs-on: ubuntu-20.04
+    runs-on: ["self-hosted", "k8s-prod"]
     if: false #contains( inputs.dapps, 'curve-factory') # skipped because of NDEV-2905
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -417,7 +417,7 @@ jobs:
           path: curve-factory-report.json
 
   compound:
-    runs-on: ubuntu-20.04
+    runs-on: ["self-hosted", "k8s-prod"]
     if: contains( inputs.dapps, 'compound')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -469,7 +469,7 @@ jobs:
           path: compound-report.json
 
   robonomics:
-    runs-on: ubuntu-22.04
+    runs-on: ["self-hosted", "k8s-prod"]
     if: contains( inputs.dapps, 'robonomics')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -519,7 +519,7 @@ jobs:
           path: robonomics-report.json
   yearn:
     if: contains( inputs.dapps, 'yearn')
-    runs-on: ubuntu-22.04
+    runs-on: ["self-hosted", "k8s-prod"]
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
       PROXY_URL: ${{ inputs.proxy_url }}
@@ -570,7 +570,7 @@ jobs:
           path: yearn-report.json
 
   pancake:
-    runs-on: ubuntu-20.04
+    runs-on: ["self-hosted", "k8s-prod"]
     if: contains( inputs.dapps, 'pancake')
     env:
       SOLANA_IP: ${{ inputs.solana_ip }}
@@ -621,7 +621,7 @@ jobs:
           path: pancake-report.json
 
   swap-report:
-    runs-on: ubuntu-20.04
+    runs-on: ["self-hosted", "k8s-prod"]
     needs: [uniswap-v2, uniswap-v3, saddle, aave-v2, aave-v3, curve, robonomics, yearn, compound, curve-factory, pancake]
     if: always()
     env:

@@ -16,6 +16,4 @@ class EcosystemPage:
         wait = WebDriverWait(self.driver, 10)
         wait.until(EC.url_to_be(url))
         URL = self.driver.current_url
-        print(URL)
-        assert url == URL, "URLs are different!"
-
+        assert url == URL, "the url is {URL}"

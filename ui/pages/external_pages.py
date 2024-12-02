@@ -19,18 +19,18 @@ class ExternalPages:
         wait = WebDriverWait(self.driver, 10)
         wait.until(EC.url_to_be(url))
         URL = self.driver.current_url
-        assert url == URL, "URLs are different!"
+        assert url == URL, "the url is {URL}"
 
     def assert_google_forms_page_url(self,url=google_forms_url):
         self.driver.switch_to.window(self.driver.window_handles[1])
         wait = WebDriverWait(self.driver, 10)
         wait.until(EC.url_to_be(url))
         URL = self.driver.current_url
-        assert url == URL, "URLs are different!"
+        assert url == URL, "the url is {URL}"
 
     def assert_github_page_url(self,url=github_url):
         self.driver.switch_to.window(self.driver.window_handles[1])
         wait = WebDriverWait(self.driver, 10)
         wait.until(EC.url_to_be(url))
         URL = self.driver.current_url
-        assert url == URL, "URLs are different!"
+        assert url == URL, "the url is {URL}"

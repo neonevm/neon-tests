@@ -1,4 +1,6 @@
-from ui.conftest import external_pages, base_class, menu_page, developers_page, main_page, ecosystem_page
+from ui.pages.developer_page import DeveloperPage
+from ui.tests.website_tests.conftest import external_pages, base_class, menu_page, developers_page, main_page, ecosystem_page
+from selenium.webdriver.support.wait import WebDriverWait
 
 class TestMainPage:
 
@@ -6,7 +8,7 @@ class TestMainPage:
         menu_page.click_on_menu_developers_link()
         developers_page.assert_text_on_build_on_neon_block_link()
         main_page.click_on_logo_on_header()
-        main_page.assert_main_page_url()
+        main_page.assert_page_url()
 
     def test_logo_footer(self,main_page, menu_page, developers_page):
         menu_page.click_on_menu_developers_link()
@@ -33,7 +35,7 @@ class TestMainPage:
 
     def test_explore_developer_hub_button(self, main_page, developers_page, base_class):
         main_page.click_explore_developer_hub_button()
-        developers_page.assert_page_url()
+        base_class.assert_page_url(developers_page.developers_url)
         developers_page.assert_text_on_build_on_neon_block_link()
         base_class.no_errors_on_page()
 

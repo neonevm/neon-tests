@@ -21,10 +21,10 @@ class DeveloperPage:
         wait = WebDriverWait(self.driver, 10)
         wait.until(EC.url_to_be(url))
         URL = self.driver.current_url
-        assert url == URL, "URLs are different!"
+        assert url == URL, "the url is {URL}"
 
     def assert_page_url(self, url=developers_url):
         wait = WebDriverWait(self.driver, 10)
         wait.until(EC.url_to_be(url))
         URL = self.driver.current_url
-        assert url == URL, "URLs are different!"
+        assert url == URL, "the url is {URL}"

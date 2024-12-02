@@ -37,9 +37,8 @@ class MainPage:
     def click_add_your_dapp_button(self):
         self.driver.find_element(*MainPage.add_your_dapp_button).click()
 
-    def assert_main_page_url(self, website_url=website_url):
+    def assert_page_url(self):
         wait = WebDriverWait(self.driver, 10)
-        wait.until(EC.url_to_be(website_url))
-        URL = self.driver.current_url
-        print(URL)
-        assert website_url == URL, "URLs are different!"
+        wait.until(EC.url_to_be(MainPage.website_url))
+        url = self.driver.current_url
+        assert url == MainPage.website_url, f"The url is {url}"

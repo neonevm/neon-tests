@@ -63,9 +63,6 @@ function doRequest(client, requestParams, expectedValue) {
             JSON.stringify(requestParams.params)
         );
         const response = JSON.parse(responseBody);
-        console.log('response: ' + JSON.stringify(response));
-        console.log('expectedValue: ' + expectedValue);
-        console.log('result: ' + parseInt(response.result, 16));
         const checkResult = check(response, {
             'response result is not expected value': (r) => parseInt(r.result, 16) == expectedValue,
         });

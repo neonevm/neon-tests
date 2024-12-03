@@ -33,35 +33,74 @@ export default function DebugTraceTransactionTest() {
     const txInfoStorage = historicalData.storage_contract_calls[dataIndexStorage];
 
     const dataIndexEvent = vuID % (historicalData.event_caller_contract_calls).length;
-    const txInfoEvent = historicalData.event_caller_contract_calls[dataIndexStorage];
+    const txInfoEvent = historicalData.event_caller_contract_calls[dataIndexEvent];
 
     const dataIndexIterative = vuID % (historicalData.iterative_tx_contract_calls).length;
-    const txInfoIterative = historicalData.iterative_tx_contract_calls[dataIndexStorage];
-
+    const txInfoIterative = historicalData.iterative_tx_contract_calls[dataIndexIterative];
 
     const accountPrivateKey = usersArray[index].sender_key;
     const client = ethClient(accountPrivateKey);
 
+    // call storage contract
     // blockNumber
-    const requestParamsBlockNumber = {
+    const requestParamsBlockNumberStorage = {
         requestType: "blockNumber",
         method: "debug_traceTransaction",
         params: [txInfoStorage.tx_hash, {"blockNumber": txInfoStorage.blockNumber}]
     }
 
-    doRequest(client, requestParamsBlockNumber, txInfoStorage.store_value);
+    doRequest(client, requestParamsBlockNumberStorage, checkExpectedValueStorage, txInfoStorage.store_value);
 
     // blockHash
-    const requestParamsBlockHash = {
+    const requestParamsBlockHashStorage = {
         requestType: "blockHash",
         method: "debug_traceTransaction",
         params: [txInfoStorage.tx_hash, {"blockHash": txInfoStorage.blockHash}]
     }
     
-    doRequest(client, requestParamsBlockHash, txInfoStorage.store_value);
+    doRequest(client, requestParamsBlockHashStorage, checkExpectedValueStorage, txInfoStorage.store_value);
+
+    // call event caller contract
+    // blockNumber
+    const tracer_config = { "tracer": "callTracer", "tracerConfig": { "withLog": true } }
+    const requestParamsBlockNumberEvent = {
+        requestType: "blockNumber",
+        method: "debug_traceTransaction",
+        params: [txInfoEvent.tx_hash, tracer_config]
+    }
+
+    doRequest(client, requestParamsBlockNumberEvent, checkExpectedValueEvent, [1, 2]);
+
+    // blockHash
+    const requestParamsBlockHashEvent = {
+        requestType: "blockHash",
+        method: "debug_traceTransaction",
+        params: [txInfoEvent.tx_hash, tracer_config]
+    }
+    
+    doRequest(client, requestParamsBlockHashEvent, checkExpectedValueEvent, [1, 2]);
+
+    // call iterative tx contract
+    // blockNumber
+    const requestParamsBlockNumberIterative = {
+        requestType: "blockNumber",
+        method: "debug_traceTransaction",
+        params: [txInfoIterative.tx_hash, tracer_config]
+    }
+
+    doRequest(client, requestParamsBlockNumberIterative, checkExpectedValueIterative, 1001);
+
+    // blockHash
+    const requestParamsBlockHashIterative = {
+        requestType: "blockHash",
+        method: "debug_traceTransaction",
+        params: [txInfoIterative.tx_hash, tracer_config]
+    }
+    
+    doRequest(client, requestParamsBlockHashIterative, checkExpectedValueIterative, 1001);                    
 }
 
-function doRequest(client, requestParams, expectedValue) {
+function doRequest(client, requestParams, checkExpectedValueFunction, args) {
     const startTime = new Date();
     try {
         const responseBody = client.callTracer(
@@ -70,19 +109,41 @@ function doRequest(client, requestParams, expectedValue) {
             JSON.stringify(requestParams.params)
         );
         const response = JSON.parse(responseBody);
-        console.log('expectedValue: ' + expectedValue);
-        console.log('result: ' + parseInt(response.result.returnValue, 16));
-        const checkResult = check(response, {
-            'response result is not expected value': (r) => parseInt(r.result.returnValue, 16) == expectedValue,
-        });
+        const checkResult = checkExpectedValueFunction(response, args);
         if (!checkResult) {
-            console.log('Error in response of eth_call: ' + JSON.stringify(response));
+            console.log('Error in response of debug_traceTransaction: ' + JSON.stringify(response));
             debugTraceTransactionRequestErrorCounter.add(1);
         }
     } catch (e) {
-        console.log('Error in eth_call: ' + e);
+        console.log('Error in debug_traceTransaction: ' + e);
         debugTraceTransactionErrorCounter.add(1);
     }
     debugTraceTransactionRequestTime.add(new Date() - startTime);
     debugTraceTransactionRequests.add(1);
+}
+
+
+function checkExpectedValueStorage(response, expectedValue) {
+    return check(response, {
+        'response result is not expected value': (r) => { 
+            return (parseInt(r.result.returnValue, 16) == expectedValue)
+        }
+    });
+}
+
+function checkExpectedValueEvent(response, expectedValue) {
+    return check(response, {
+        'response result is not expected value': (r) => { 
+            return ((r.result.calls[0].logs.length == expectedValue[0]) && (r.result.logs.length == expectedValue[1]))
+        }
+    });
+}
+
+function checkExpectedValueIterative(response, expectedValue) {
+    console.log("response check: ", (response.result.logs.length == expectedValue));
+    return check(response, {
+        'response result is not expected value': (r) => { 
+            return (r.result.logs.length == expectedValue)
+        }
+    });
 }

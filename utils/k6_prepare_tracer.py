@@ -182,7 +182,8 @@ class TracerDataProducer:
                         "storage_contract_address": storage_contract.contract_address,
                         "sender": sender_account.address,
                         "store_value": store_value,
-                        "retreive_function_tx": tx_obj
+                        "retreive_function_tx": tx_obj,
+                        "tx_hash": receipt["transactionHash"].hex()
                     })
             except Exception as e:
                 print(f"Error in call storage contract functions: {e}") 
@@ -210,7 +211,7 @@ class TracerDataProducer:
                         "blockNumber": hex(receipt["blockNumber"]),
                         "event_contract_address": contract.address,
                         "event_call_tx": instruction_tx,
-                        "event_call_tx_hash": receipt["transactionHash"].hex()
+                        "tx_hash": receipt["transactionHash"].hex()
                     })
             except Exception as e:
                 print(f"Error in call event caller contract functions: {e}")    
@@ -234,7 +235,7 @@ class TracerDataProducer:
                         "blockNumber": hex(receipt["blockNumber"]),
                         "iterative_tx_contract_contract_address": contract.address,
                         "iterative_tx": instruction_tx,
-                        "iterative_tx_hash": receipt["transactionHash"].hex()
+                        "tx_hash": receipt["transactionHash"].hex()
                     })
             except Exception as e:
                 print(f"Error in call iterative tx contract functions: {e}") 

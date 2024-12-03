@@ -68,7 +68,6 @@ class TracerDataProducer:
                 
                 print(f"ERC20 transfer {i}, receipt status: ", receipt["status"])
                 self.historical_data["erc20_transfers"].append({
-                    f"{i}": {
                         "blockHash": receipt["blockHash"].hex(),
                         "blockNumber": hex(receipt["blockNumber"]),
                         "erc20_contract_address": erc20_contract.contract.address,
@@ -80,7 +79,7 @@ class TracerDataProducer:
                         "recipient_balance_before": f"{recipient_balance_before}",
                         "recipient_balance_after": f"{erc20_contract.get_balance(account_receiver)}",
                         "amount": transfer_amount
-                    }})
+                    })
             except Exception as e:
                 print(f"Error in erc20_transfer_data: {e}") 
 
@@ -98,7 +97,6 @@ class TracerDataProducer:
 
                 print(f"Neon transfer {i}, receipt status: ", receipt["status"])
                 self.historical_data["neon_transfers"].append({
-                    f"{i}": {
                         "blockHash": receipt["blockHash"].hex(),
                         "blockNumber": hex(receipt["blockNumber"]),
                         "sender": sender_account.address,
@@ -109,7 +107,7 @@ class TracerDataProducer:
                         "recipient_balance_before": f"{recipient_balance_before}",
                         "recipient_balance_after": f"{self.web3_client.get_balance(recipient_account)}",
                         "amount": transfer_amount
-                    }})
+                    })
             except Exception as e:
                 print(f"Error in neon_transfer_data: {e}") 
 
@@ -142,7 +140,6 @@ class TracerDataProducer:
                 
                 print(f"ERC20 wrapped transfer {i}, receipt status: ", receipt["status"])
                 self.historical_data["erc20spl_transfers"].append({
-                    f"{i}": {
                         "blockHash": receipt["blockHash"].hex(),
                         "blockNumber": hex(receipt["blockNumber"]),
                         "erc20spl_contract_address": erc20_wrapper.contract_address,
@@ -154,7 +151,7 @@ class TracerDataProducer:
                         "recipient_balance_before": f"{recipient_balance_before}",
                         "recipient_balance_after": f"{erc20_wrapper.get_balance(account_receiver)}",
                         "amount": transfer_amount
-                    }})
+                    })
             except Exception as e:
                 print(f"Error in erc20_transfer_data: {e}") 
 
@@ -180,14 +177,13 @@ class TracerDataProducer:
                 
                 print(f"Storage contract call {i}, receipt status: ", receipt["status"])
                 self.historical_data["storage_contract_calls"].append({
-                    f"{i}": {
                         "blockHash": receipt["blockHash"].hex(),
                         "blockNumber": hex(receipt["blockNumber"]),
                         "storage_contract_address": storage_contract.contract_address,
                         "sender": sender_account.address,
                         "store_value": store_value,
                         "retreive_function_tx": tx_obj
-                    }})
+                    })
             except Exception as e:
                 print(f"Error in call storage contract functions: {e}") 
 
@@ -210,13 +206,12 @@ class TracerDataProducer:
                 receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
                 print(f"Event caller contract call {i}, receipt status: ", receipt["status"])
                 self.historical_data["event_caller_contract_calls"].append({
-                    f"{i}": {
                         "blockHash": receipt["blockHash"].hex(),
                         "blockNumber": hex(receipt["blockNumber"]),
                         "event_contract_address": contract.address,
                         "event_call_tx": instruction_tx,
                         "event_call_tx_hash": receipt["transactionHash"].hex()
-                    }})
+                    })
             except Exception as e:
                 print(f"Error in call event caller contract functions: {e}")    
 
@@ -235,13 +230,12 @@ class TracerDataProducer:
                 receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
                 print(f"Iterative tx contract call {i}, receipt status: ", receipt["status"])
                 self.historical_data["iterative_tx_contract_calls"].append({
-                    f"{i}": {
                         "blockHash": receipt["blockHash"].hex(),
                         "blockNumber": hex(receipt["blockNumber"]),
                         "iterative_tx_contract_contract_address": contract.address,
                         "iterative_tx": instruction_tx,
                         "iterative_tx_hash": receipt["transactionHash"].hex()
-                    }})
+                    })
             except Exception as e:
                 print(f"Error in call iterative tx contract functions: {e}") 
 

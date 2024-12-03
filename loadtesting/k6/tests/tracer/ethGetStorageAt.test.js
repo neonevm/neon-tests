@@ -13,13 +13,7 @@ const ethGetStorageAtRequestTime = new Trend('eth_get_storage_at_request_time', 
 
 export const options = standardScenarioOptions;
 
-const historicalData = JSON.parse(open("../../data/transaction.json"));
-let testData = {};
-let i = 0;
-for (const [key, _] of Object.entries(historicalData.store)) {
-    testData[i] = {"address": key, "info": historicalData.store[key]};
-    i++;
-}
+const historicalData = JSON.parse(open("../../data/tracer_data.json"));
 
 const usersArray = new SharedArray('Users accounts', function () {
     const accounts = JSON.parse(open("../../data/accounts.json"));
@@ -34,8 +28,9 @@ const usersArray = new SharedArray('Users accounts', function () {
 export default function EthGetStorageAtTest() {
     const vuID = exec.vu.idInTest
     const index = vuID % usersArray.length;
-    const dataIndex = vuID % Object.entries(testData).length;
-    const txInfo = testData[dataIndex].info[0];
+
+    const dataIndex = vuID % (historicalData.storage_contract_calls).length;
+    const txInfo = historicalData.storage_contract_calls[dataIndex];
 
     const accountSenderPrivateKey = usersArray[index].sender_key;
     const client = ethClient(accountSenderPrivateKey);
@@ -44,7 +39,7 @@ export default function EthGetStorageAtTest() {
     const requestParamsBlockNumber = {
         requestType: "blockNumber",
         method: "eth_getStorageAt",
-        params: [txInfo.to, "0x0", {"blockNumber": txInfo.blockNumber}]
+        params: [txInfo.storage_contract_address, "0x0", {"blockNumber": txInfo.blockNumber}]
     }
 
     doRequest(client, requestParamsBlockNumber);
@@ -53,7 +48,7 @@ export default function EthGetStorageAtTest() {
     const requestParamsBlockHash = {
         requestType: "blockHash",
         method: "eth_getStorageAt",
-        params: [txInfo.to, "0x0", {"blockHash": txInfo.blockHash}]
+        params: [txInfo.storage_contract_address, "0x0", {"blockHash": txInfo.blockHash}]
     }
     
     doRequest(client, requestParamsBlockHash);

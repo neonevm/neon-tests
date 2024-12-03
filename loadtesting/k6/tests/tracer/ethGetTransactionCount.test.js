@@ -13,13 +13,7 @@ const ethGetTransactionCountRequestTime = new Trend('eth_get_storage_at_request_
 
 export const options = standardScenarioOptions;
 
-const historicalData = JSON.parse(open("../../data/transaction.json"));
-let testData = {};
-let i = 0;
-for (const [key, _] of Object.entries(historicalData.transfer)) {
-    testData[i] = {"address": key, "info": historicalData.transfer[key]};
-    i++;
-}
+const historicalData = JSON.parse(open("../../data/tracer_data.json"));
 
 const usersArray = new SharedArray('Users accounts', function () {
     const accounts = JSON.parse(open("../../data/accounts.json"));
@@ -34,31 +28,31 @@ const usersArray = new SharedArray('Users accounts', function () {
 export default function EthGetTransactionCountTest() {
     const vuID = exec.vu.idInTest
     const index = vuID % usersArray.length;
-    const dataIndex = vuID % Object.entries(testData).length;
-    const txInfo = testData[dataIndex].info[0];
 
-    const accountSenderAddress = usersArray[index].sender_address;
-    const accountSenderPrivateKey = usersArray[index].sender_key;
-    const client = ethClient(accountSenderPrivateKey);
-    const nonce = client.getNonce(accountSenderAddress);
+    const mixedData = (historicalData.neon_transfers).concat(historicalData.erc20_transfers, 
+        historicalData.erc20spl_transfers);
+    const txInfo = mixedData[dataIndex];
+
+    const accountPrivateKey = usersArray[index].sender_key;
+    const client = ethClient(accountPrivateKey);
 
     // blockNumber
     const requestParamsBlockNumber = {
         requestType: "blockNumber",
         method: "eth_getTransactionCount",
-        params: [accountSenderAddress, {"blockNumber": txInfo.blockNumber}]
+        params: [txInfo.sender, {"blockNumber": txInfo.blockNumber}]
     }
 
-    doRequest(client, requestParamsBlockNumber, nonce);
+    doRequest(client, requestParamsBlockNumber, txInfo.sender_nonce);
 
     // blockHash
     const requestParamsBlockHash = {
         requestType: "blockHash",
         method: "eth_getTransactionCount",
-        params: [accountSenderAddress, {"blockHash": txInfo.blockHash}]
+        params: [txInfo.sender, {"blockHash": txInfo.blockHash}]
     }
     
-    doRequest(client, requestParamsBlockHash, nonce);
+    doRequest(client, requestParamsBlockHash, txInfo.sender_nonce);
 }
 
 function doRequest(client, requestParams, expectedValue) {
@@ -70,9 +64,8 @@ function doRequest(client, requestParams, expectedValue) {
             JSON.stringify(requestParams.params)
         );
         const response = JSON.parse(responseBody);
-
         const checkResult = check(response, {
-            'response result is not equal to real nonce': (r) => parseInt(r.result, 16) === expectedValue,
+            'response result is not equal to real nonce': (r) => parseInt(r.result, 16) == expectedValue,
         });
         if (!checkResult) {
             console.log('Error in response of eth_getTransactionCount: ' + JSON.stringify(response));

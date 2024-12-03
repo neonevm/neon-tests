@@ -13,11 +13,10 @@ from solders.keypair import Keypair
 
 
 class TracerDataProducer:
-    def __init__(self, web3_client, faucet, solana_url, evm_loader, account_seed_version, bank_account, eth_bank_account):
+    def __init__(self, web3_client, faucet, solana_url, evm_loader, account_seed_version, eth_bank_account):
         self.faucet = faucet
         self.web3_client = web3_client
         self.evm_loader = evm_loader
-        self.bank_account = self.account_from_private_key(bank_account)
         if eth_bank_account:
             self.eth_bank_account = self.web3_client.eth.account.from_key(eth_bank_account)
         else:
@@ -34,14 +33,14 @@ class TracerDataProducer:
                                 "event_caller_contract_calls": [], 
                                 "iterative_tx_contract_calls": []}
 
-    def prepare_tracer(self, transfers_number, contracts_calls_number):
+    def prepare_tracer(self, transfers_number, contracts_calls_number, iterative_txs_number):
         try:
             self.neon_transfer_data(transfers_number=transfers_number)
             self.erc20_transfer_data(transfers_number=transfers_number)
             self.erc20_wrapped_transfer_data(transfers_number=transfers_number)
             self.storage_contract_data(calls_number=contracts_calls_number)
             self.event_caller_contract_data(calls_number=contracts_calls_number)
-            self.iterative_tx_contract_data(calls_number=contracts_calls_number)
+            self.iterative_tx_contract_data(calls_number=iterative_txs_number)
         except Exception as e:
             print(f"Error in prepare_tracer: {e}")
         finally:

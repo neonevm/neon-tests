@@ -48,6 +48,7 @@ try:
     from utils.operator import Operator
     from utils.web3client import NeonChainWeb3Client
     from utils.k6_helpers import k6_prepare_accounts, k6_set_envs, deploy_erc20_contract
+    from utils.k6_prepare_tracer import TracerDataProducer
     from utils.prices import get_sol_price_with_retry
     from utils.helpers import wait_condition
     from utils.apiclient import JsonRPCSession
@@ -1265,13 +1266,36 @@ def build(tag):
     if command_build.returncode != 0:
         sys.exit(command_build.returncode)
 
+   
+@k6.command("prepare_tracer", help="Prepare tracer data for k6 load test.")
+@click.option("-n", "--network",required=True, default="local", help="Which network to use for envs assignment")
+@click.option("-t", "--transfers_number", default=100, required=False, help="Number of neon/erc20/erc20spl transfers to execute")
+@click.option("-c", "--contracts_calls_number", default=100, required=False, help="Number of contract calls to execute")
+@click.option("-i", "--iterative_txs_number", default=10, required=False, help="Number of iterative txs to execute")
+@click.option("-b", "--bank_account", default=None, required=False, help="Eth bank account key")
+@catch_traceback
+def prepare_accounts(network, transfers_number, contracts_calls_number, iterative_txs_number,bank_account):
+    network_object = network_manager.get_network_object(network)
+    web3_client = NeonChainWeb3Client(proxy_url=network_object["proxy_url"])
+    faucet = Faucet(faucet_url=network_object['faucet_url'], web3_client=web3_client)
+    
+    tracer_data_producer = TracerDataProducer(web3_client, 
+                                              faucet, 
+                                              network_object["solana_url"], 
+                                              network_object["evm_loader"], 
+                                              "\3",
+                                              bank_account)
+    tracer_data_producer.prepare_tracer(transfers_number=transfers_number, 
+                                        contracts_calls_number=contracts_calls_number,
+                                        iterative_txs_number=iterative_txs_number)
+
 
 @k6.command("run", help="Run k6 performance test.")
 @click.option("-n", "--network",required=True, default="local", help="Which network to use for envs assignment")
 @click.option("-s", "--script", required=True, default="./loadtesting/k6/tests/sendNeon.test.js", help="Path to k6 script")
 @click.option("-u", "--users", default=None, required=True, help="Number of users (have to be generated before load test run)")
 @click.option("-b", "--balance", default=None, required=True, help="Initial balance of accounts in Neon")
-@click.option("-a", "--bank_account", default=None, required=False, help="Bank account address")
+@click.option("-a", "--bank_account", default="", required=False, help="Eth bank account key")
 @catch_traceback
 def run(network, script, users, balance, bank_account):
     network_object = network_manager.get_network_object(network)

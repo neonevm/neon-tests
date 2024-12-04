@@ -25,30 +25,30 @@ def driver(request):
 
 @pytest.fixture(scope="function")
 def main_page(driver):
-    page = MainPage(driver)
+    page = MainPage(driver, website_url)
     return page
 
 @pytest.fixture(scope="function")
 def menu_page(driver):
-    page = Menu(driver)
+    page = Menu(driver, website_url)
     return page
 
 @pytest.fixture(scope="function")
 def developers_page(driver):
-    page = DeveloperPage(driver)
+    page = DeveloperPage(driver, website_url)
     return page
 
 @pytest.fixture(scope="function")
 def ecosystem_page(driver):
-    page = EcosystemPage(driver)
+    page = EcosystemPage(driver, website_url)
     return page
 
 @pytest.fixture(scope="function")
 def external_pages(driver):
-    page = ExternalPages(driver)
+    page = ExternalPages(driver, website_url)
     return page
 
 @pytest.fixture(scope="function")
 def base_class(driver):
-    page = BaseClass(driver)
+    page = BaseClass(driver, website_url)
     return page

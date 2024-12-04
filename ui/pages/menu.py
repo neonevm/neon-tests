@@ -1,9 +1,10 @@
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 
-class Menu:
-    def __init__(self, driver):
-        self.driver = driver
+from utils.base_class import BaseClass
+
+
+class Menu(BaseClass):
 
     developers_link = (By.XPATH, "(//a[@href='/developers'][contains(.,'Developers')])[2]")
     link_on_github_in_menu = (By.XPATH, "(//div[contains(@class,'dropdown__list')])[1]//div[3]//span[1]")

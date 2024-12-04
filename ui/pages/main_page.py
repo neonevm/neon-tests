@@ -1,10 +1,10 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from utils.base_class import BaseClass
 
-class MainPage:
-    def __init__(self, driver):
-        self.driver = driver
+class MainPage(BaseClass):
+    _url = "https://neonevm.org/"
 
     website_url = "https://neonevm.org/"
     logo_on_header = (By.XPATH, "//*[@id='header']/div[2]/div[1]")
@@ -17,25 +17,25 @@ class MainPage:
     transaction_cost_arrow = (By.XPATH, "(//div[contains(@class,'arrow-down-icon-container')])[2]")
 
     def click_on_logo_on_header(self):
-        self.driver.find_element(*MainPage.logo_on_header).click()
+        self.wait.until(EC.presence_of_element_located(MainPage.logo_on_header)).click()
 
     def click_on_logo_on_footer(self):
-        self.driver.find_element(*MainPage.logo_on_footer).click()
+        self.wait.until(EC.presence_of_element_located(MainPage.logo_on_footer)).click()
 
     def click_on_build_on_neon_button(self):
-        self.driver.find_element(*MainPage.build_on_neon_button).click()
+        self.wait.until(EC.presence_of_element_located(MainPage.build_on_neon_button)).click()
 
     def click_start_building_button(self):
-        self.driver.find_element(*MainPage.start_building_button).click()
+        self.wait.until(EC.presence_of_element_located(MainPage.start_building_button)).click()
 
     def click_explore_ecosystem_button(self):
-        self.driver.find_element(*MainPage.explore_ecosystem_button).click()
+        self.wait.until(EC.presence_of_element_located(MainPage.explore_ecosystem_button)).click()
 
     def click_explore_developer_hub_button(self):
-        self.driver.find_element(*MainPage.explore_developer_hub_button).click()
+        self.wait.until(EC.presence_of_element_located(MainPage.explore_developer_hub_button)).click()
 
     def click_add_your_dapp_button(self):
-        self.driver.find_element(*MainPage.add_your_dapp_button).click()
+        self.wait.until(EC.presence_of_element_located(MainPage.add_your_dapp_button)).click()
 
     def assert_page_url(self):
         wait = WebDriverWait(self.driver, 10)

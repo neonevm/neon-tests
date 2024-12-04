@@ -1,10 +1,9 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from utils.base_class import BaseClass
 
-class ExternalPages:
-    def __init__(self, driver):
-        self.driver = driver
+class ExternalPages(BaseClass):
 
     quick_start_url = "https://neonevm.org/docs/quick_start"
     google_forms_url = "https://docs.google.com/forms/d/15iL4l-Rj3GUdtE1tlQTto2sqgMS5Gpn92u0GUveWWVg/viewform?edit_requested=true"

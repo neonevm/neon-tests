@@ -140,7 +140,6 @@ function checkExpectedValueEvent(response, expectedValue) {
 }
 
 function checkExpectedValueIterative(response, expectedValue) {
-    console.log("response check: ", (response.result.logs.length == expectedValue));
     return check(response, {
         'response result is not expected value': (r) => { 
             return (r.result.logs.length == expectedValue)

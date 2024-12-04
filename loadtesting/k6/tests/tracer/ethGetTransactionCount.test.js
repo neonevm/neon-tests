@@ -31,6 +31,7 @@ export default function EthGetTransactionCountTest() {
 
     const mixedData = (historicalData.neon_transfers).concat(historicalData.erc20_transfers, 
         historicalData.erc20spl_transfers);
+    const dataIndex = vuID % mixedData.length;
     const txInfo = mixedData[dataIndex];
 
     const accountPrivateKey = usersArray[index].sender_key;

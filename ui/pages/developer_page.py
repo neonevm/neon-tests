@@ -4,22 +4,17 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from utils.base_class import BaseClass
 
-
 class DeveloperPage(BaseClass):
     _url = "https://neonevm.org/developers"
-
-    #def __init__(self, driver):
-        #self.driver = driver
 
     build_on_neon_link_block = (By.XPATH, "//a[contains(.,'Build on Neon')]")
     developers_url = "https://neonevm.org/developers"
 
     def click_on_build_on_neon_link_block(self):
-        #self.driver.find_element(*DeveloperPage.build_on_neon_link_block).click()
-        self.wait.until(EC.presence_of_element_located(**DeveloperPage.build_on_neon_link_block)).click()
+        self.wait.until(EC.presence_of_element_located(DeveloperPage.build_on_neon_link_block)).click()
 
     def assert_text_on_build_on_neon_block_link(self):
-        assert "Build on Neon" == self.driver.find_element(*DeveloperPage.build_on_neon_link_block).text
+        assert "Build on Neon" == self.wait.until(EC.presence_of_element_located(DeveloperPage.build_on_neon_link_block)).text
 
     def assert_developers_page_url(self, url=developers_url):
         self.driver.switch_to.window(self.driver.window_handles[1])

@@ -9,7 +9,7 @@ class EcosystemPage(BaseClass):
     join_our_ecosystem_button = (By.XPATH, "//span[@class='button__content'][contains(.,'Join Neon EVM Ecosystem')]")
 
     def assert_text_on_build_on_neon_block_link(self):
-        EC.visibility_of_element_located(self.driver.find_element(*EcosystemPage.join_our_ecosystem_button))
+        EC.visibility_of_element_located(self.wait.until(EC.presence_of_element_located(EcosystemPage.join_our_ecosystem_button)))
 
     def assert_ecosystem_page_url(self, url=ecosystem_url):
         wait = WebDriverWait(self.driver, 10)

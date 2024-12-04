@@ -7,8 +7,14 @@ from selenium.webdriver.support.select import Select
 
 @pytest.mark.usefixtures("setup")
 class BaseClass:
-    def __init__(self, driver):
+    _url:str
+
+    def __init__(self, driver,url=None):
         self.driver = driver
+        self.wait = WebDriverWait(self.driver, 10)
+        if url is None:
+            url = self._url
+        self.url = url
 
     def verify_link_presence(self, text):
         element = WebDriverWait(self.driver, 10).until(
@@ -21,3 +27,8 @@ class BaseClass:
     def select_option_by_text(self, locator, text):
         sel = Select(locator)
         sel.select_by_visible_text(text)
+
+    def assert_page_url(self,url=None):
+        self.wait.until(EC.url_to_be(self.url))
+        url = self.driver.current_url
+        assert url == self.url, f"The url is {url}"

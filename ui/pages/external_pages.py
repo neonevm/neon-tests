@@ -11,7 +11,7 @@ class ExternalPages(BaseClass):
     check_google_forms_title = (By.XPATH, "//div[contains(text(),'Join our')]")
 
     def assert_text_on_googleform_title(self):
-        assert "Join our Ecosystem" == self.driver.find_element(*ExternalPages.check_google_forms_title).text
+        assert "Join our Ecosystem" == self.wait.until(EC.presence_of_element_located(ExternalPages.check_google_forms_title)).text
 
     def assert_neon_docs_page_url(self, url=quick_start_url):
         self.driver.switch_to.window(self.driver.window_handles[1])

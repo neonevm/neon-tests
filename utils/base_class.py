@@ -5,6 +5,9 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
 
+from integration.tests.migrations.test_account_migration import counter
+
+
 @pytest.mark.usefixtures("setup")
 class BaseClass:
     _url:str
@@ -23,6 +26,7 @@ class BaseClass:
     def no_errors_on_page(self):
         response = requests.get(self.driver.current_url)
         assert response.status_code == 200, print("Not Found.")
+        self.wait.until(EC.visibility_of_any_elements_located((By.TAG_NAME, "a")))
 
     def select_option_by_text(self, locator, text):
         sel = Select(locator)

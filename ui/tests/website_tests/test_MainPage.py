@@ -18,7 +18,7 @@ class TestMainPage:
 
     def test_click_build_on_neon_button(self, main_page, menu_page, developers_page, base_class):
         main_page.click_on_build_on_neon_button()
-        developers_page.assert_developers_page_url()
+        base_class.switch_window(url=developers_page._url)
         developers_page.assert_text_on_build_on_neon_block_link()
         base_class.no_errors_on_page()
 

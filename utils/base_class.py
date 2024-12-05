@@ -28,13 +28,17 @@ class BaseClass:
         sel = Select(locator)
         sel.select_by_visible_text(text)
 
-    def assert_page_url(self,url_a=None):
-        self.wait.until(EC.url_to_be(self.url))
-        url_a = self.driver.current_url
-        assert url_a == self.url, f"The url is {url_a}"
+    def assert_page_url(self,url=None):
+        self.wait.until(EC.url_to_be(url))
+        if url is None:
+            url = self._url
+        current_url = self.driver.current_url
+        assert url == current_url, f"The url is {current_url}"
 
     def switch_window(self,url=None):
         self.driver.switch_to.window(self.driver.window_handles[1])
         self.wait.until(EC.url_to_be(url))
+        if url is None:
+            url = self._url
         current_url = self.driver.current_url
-        assert url == current_url, "the url is {URL}"
+        assert url == current_url, f"the url is {current_url}"

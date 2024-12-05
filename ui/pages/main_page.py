@@ -1,12 +1,10 @@
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from utils.base_class import BaseClass
 
 class MainPage(BaseClass):
     _url = "https://neonevm.org/"
 
-    website_url = "https://neonevm.org/"
     logo_on_header = (By.XPATH, "//*[@id='header']/div[2]/div[1]")
     logo_on_footer = (By.XPATH, "(//a[@aria-label='Go to home'])[3]")
     build_on_neon_button = (By.XPATH, "//span[contains(text(),'build on neon')]")
@@ -36,9 +34,3 @@ class MainPage(BaseClass):
 
     def click_add_your_dapp_button(self):
         self.wait.until(EC.presence_of_element_located(MainPage.add_your_dapp_button)).click()
-
-    def assert_page_url(self):
-        wait = WebDriverWait(self.driver, 10)
-        wait.until(EC.url_to_be(MainPage.website_url))
-        url = self.driver.current_url
-        assert url == MainPage.website_url, f"The url is {url}"

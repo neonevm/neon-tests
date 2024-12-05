@@ -1,5 +1,4 @@
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from utils.base_class import BaseClass
 
@@ -13,23 +12,4 @@ class ExternalPages(BaseClass):
     def assert_text_on_googleform_title(self):
         assert "Join our Ecosystem" == self.wait.until(EC.presence_of_element_located(ExternalPages.check_google_forms_title)).text
 
-    def assert_neon_docs_page_url(self, url=quick_start_url):
-        self.driver.switch_to.window(self.driver.window_handles[1])
-        wait = WebDriverWait(self.driver, 10)
-        wait.until(EC.url_to_be(url))
-        URL = self.driver.current_url
-        assert url == URL, "the url is {URL}"
 
-    def assert_google_forms_page_url(self,url=google_forms_url):
-        self.driver.switch_to.window(self.driver.window_handles[1])
-        wait = WebDriverWait(self.driver, 10)
-        wait.until(EC.url_to_be(url))
-        URL = self.driver.current_url
-        assert url == URL, "the url is {URL}"
-
-    def assert_github_page_url(self,url=github_url):
-        self.driver.switch_to.window(self.driver.window_handles[1])
-        wait = WebDriverWait(self.driver, 10)
-        wait.until(EC.url_to_be(url))
-        URL = self.driver.current_url
-        assert url == URL, "the url is {URL}"

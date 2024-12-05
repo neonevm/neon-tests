@@ -5,9 +5,6 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
 
-from integration.tests.migrations.test_account_migration import counter
-
-
 @pytest.mark.usefixtures("setup")
 class BaseClass:
     _url:str

@@ -6,10 +6,10 @@ import { SharedArray } from 'k6/data';
 import exec from 'k6/execution';
 import { check } from 'k6';
 
-const debugTraceTransactionRequests = new Counter('eth_get_storage_at_requests');
-const debugTraceTransactionRequestErrorCounter = new Counter('eth_get_storage_at_request_errors');
-const debugTraceTransactionErrorCounter = new Counter('eth_get_storage_at_errors');
-const debugTraceTransactionRequestTime = new Trend('eth_get_storage_at_request_time', true);
+const debugTraceTransactionRequests = new Counter('debug_trace_transaction_requests');
+const debugTraceTransactionRequestErrorCounter = new Counter('debug_trace_transaction_request_errors');
+const debugTraceTransactionErrorCounter = new Counter('debug_trace_transaction_errors');
+const debugTraceTransactionRequestTime = new Trend('debug_trace_transaction_request_time', true);
 
 export const options = standardScenarioOptions;
 

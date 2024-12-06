@@ -6,10 +6,10 @@ import { SharedArray } from 'k6/data';
 import exec from 'k6/execution';
 import { check } from 'k6';
 
-const ethGetBalanceRequests = new Counter('eth_get_storage_at_requests');
-const ethGetBalanceRequestErrorCounter = new Counter('eth_get_storage_at_request_errors');
-const ethGetBalanceErrorCounter = new Counter('eth_get_storage_at_errors');
-const ethGetBalanceRequestTime = new Trend('eth_get_storage_at_request_time', true);
+const ethGetBalanceRequests = new Counter('tracer_eth_get_balance_requests');
+const ethGetBalanceRequestErrorCounter = new Counter('tracer_eth_get_balance_request_errors');
+const ethGetBalanceErrorCounter = new Counter('tracer_eth_get_balance_errors');
+const ethGetBalanceRequestTime = new Trend('tracer_eth_get_balance_request_time', true);
 
 export const options = standardScenarioOptions;
 

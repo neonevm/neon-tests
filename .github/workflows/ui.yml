@@ -1,0 +1,33 @@
+name: "UI Website tests"
+run-name: UI tests
+
+on:
+  schedule:
+    - cron: "0 3 * * 0,1,2,3,4"
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install Chrome
+      run: sudo apt-get install google-chrome-stable
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install --upgrade pytest pytest-html
+
+    - name: Run tests
+      run:
+        python -m pytest ui/tests

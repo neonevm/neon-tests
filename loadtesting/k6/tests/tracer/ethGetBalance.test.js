@@ -5,6 +5,7 @@ import { SharedArray } from 'k6/data';
 
 import exec from 'k6/execution';
 import { check } from 'k6';
+import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 
 const ethGetBalanceRequests = new Counter('tracer_eth_get_balance_requests');
 const ethGetBalanceRequestErrorCounter = new Counter('tracer_eth_get_balance_request_errors');
@@ -33,7 +34,7 @@ export default function EthGetBalanceTest() {
     // const mixedData = (historicalData.neon_transfers).concat(historicalData.erc20_transfers, 
     //     historicalData.erc20spl_transfers);
     const mixedData = historicalData.neon_transfers
-    const dataIndex = vuID % mixedData.length;
+    const dataIndex = randomIntBetween(0, mixedData.length - 1);
     const txInfo = mixedData[dataIndex];
 
     const accountPrivateKey = usersArray[index].sender_key;

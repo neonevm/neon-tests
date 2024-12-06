@@ -3,6 +3,7 @@ import { standardScenarioOptions } from '../../options/options.js';
 import { Trend, Counter } from 'k6/metrics';
 import { SharedArray } from 'k6/data';
 
+import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 import exec from 'k6/execution';
 import { check } from 'k6';
 
@@ -31,7 +32,7 @@ export default function EthGetTransactionCountTest() {
 
     const mixedData = (historicalData.neon_transfers).concat(historicalData.erc20_transfers, 
         historicalData.erc20spl_transfers);
-    const dataIndex = vuID % mixedData.length;
+    const dataIndex = randomIntBetween(0, mixedData.length - 1);
     const txInfo = mixedData[dataIndex];
 
     const accountPrivateKey = usersArray[index].sender_key;

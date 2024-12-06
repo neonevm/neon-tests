@@ -3,6 +3,7 @@ import { standardScenarioOptions } from '../../options/options.js';
 import { Trend, Counter } from 'k6/metrics';
 import { SharedArray } from 'k6/data';
 
+import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 import exec from 'k6/execution';
 import { check } from 'k6';
 
@@ -29,13 +30,13 @@ export default function DebugTraceTransactionTest() {
     const vuID = exec.vu.idInTest
     const index = vuID % usersArray.length;
 
-    const dataIndexStorage = vuID % (historicalData.storage_contract_calls).length;
+    const dataIndexStorage = randomIntBetween(0, (historicalData.storage_contract_calls).length - 1);
     const txInfoStorage = historicalData.storage_contract_calls[dataIndexStorage];
 
-    const dataIndexEvent = vuID % (historicalData.event_caller_contract_calls).length;
+    const dataIndexEvent = randomIntBetween(0, (historicalData.event_caller_contract_calls).length - 1);
     const txInfoEvent = historicalData.event_caller_contract_calls[dataIndexEvent];
 
-    const dataIndexIterative = vuID % (historicalData.iterative_tx_contract_calls).length;
+    const dataIndexIterative = randomIntBetween(0, (historicalData.iterative_tx_contract_calls).length - 1);
     const txInfoIterative = historicalData.iterative_tx_contract_calls[dataIndexIterative];
 
     const accountPrivateKey = usersArray[index].sender_key;

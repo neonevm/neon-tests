@@ -5,6 +5,7 @@ import { SharedArray } from 'k6/data';
 
 import exec from 'k6/execution';
 import { check } from 'k6';
+import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 
 const ethGetStorageAtRequests = new Counter('tracer_eth_get_storage_at_requests');
 const ethGetStorageAtRequestErrorCounter = new Counter('tracer_eth_get_storage_at_request_errors');
@@ -29,7 +30,7 @@ export default function EthGetStorageAtTest() {
     const vuID = exec.vu.idInTest
     const index = vuID % usersArray.length;
 
-    const dataIndex = vuID % (historicalData.storage_contract_calls).length;
+    const dataIndex = randomIntBetween(0, (historicalData.storage_contract_calls).length - 1);
     const txInfo = historicalData.storage_contract_calls[dataIndex];
 
     const accountPrivateKey = usersArray[index].sender_key;

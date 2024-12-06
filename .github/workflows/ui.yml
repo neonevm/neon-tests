@@ -1,5 +1,5 @@
 name: "UI Website tests"
-run-name: UI tests / ${{ github.event.pull_request.title || github.event_name }}
+run-name: UI tests
 
 on:
   schedule:
@@ -30,4 +30,4 @@ jobs:
 
     - name: Run tests
       run:
-        python -m pytest
+        python -m pytest ui/tests

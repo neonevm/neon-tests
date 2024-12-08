@@ -1,7 +1,5 @@
 import json
 import pathlib
-import sys
-import time
 import typing as tp
 from decimal import Decimal
 
@@ -15,6 +13,7 @@ from eth_abi import abi
 from eth_typing import BlockIdentifier
 from web3.exceptions import TransactionNotFound
 
+from utils.scheduled_trx import ScheduledTransaction
 from utils.types import TransactionType
 from utils import helpers
 from utils.consts import InputTestConstants, Unit
@@ -262,6 +261,28 @@ class Web3Client:
         instruction_tx = self._web3.eth.account.sign_transaction(transaction, account.key)
         signature = self._web3.eth.send_raw_transaction(instruction_tx.rawTransaction)
         return self._web3.eth.wait_for_transaction_receipt(signature, timeout=timeout)
+
+    def send_scheduled_transaction(
+        self,
+        trx: ScheduledTransaction,
+        check_result: bool = True,
+    ):
+        resp = requests.post(
+            self._proxy_url,
+            json={
+                "jsonrpc": "2.0",
+                "method": "neon_sendRawScheduledTransaction",
+                "params": [trx.encode().hex()],
+                "id": 0,
+            },
+        ).json()
+        if check_result:
+            assert "result" in resp, f"Failed to send scheduled transaction: {resp}"
+        return resp
+
+    def send_all_scheduled_transactions(self, raw_transactions: tp.List[ScheduledTransaction]):
+        for trx in raw_transactions:
+            self.send_scheduled_transaction(trx)
 
     @allure.step("Create raw transaction EIP-1559")
     def make_raw_tx_eip_1559(
@@ -571,6 +592,19 @@ class Web3Client:
             },
         ).json()
         return len(resp["result"]) > 1
+
+    def get_pending_transactions(self, user_address: str) -> str:
+        resp = requests.post(
+            self._proxy_url,
+            json={
+                "jsonrpc": "2.0",
+                "method": "neon_getPendingTransactions",
+                "params": [user_address],
+                "id": 0,
+            },
+        ).json()
+        assert "result" in resp, f"Failed to get pending transactions: {resp}"
+        return resp["result"]
 
 
 class NeonChainWeb3Client(Web3Client):

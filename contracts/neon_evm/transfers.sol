@@ -14,9 +14,9 @@ contract transfers {
     function donateTenPercent() public payable {
         if (address(this).balance >= 1000) {
             payable(msg.sender).transfer(address(this).balance / 10);
-
         }
-
     }
-
+    function donate1000() public payable {
+        payable(msg.sender).transfer(1000);
+    }
 }

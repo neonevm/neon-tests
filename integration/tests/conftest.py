@@ -238,14 +238,7 @@ def erc20_spl_mintable(
 
 @pytest.fixture(scope="class")
 def class_account_sol_chain(
-    evm_loader,
-    solana_account,
-    web3_client,
-    web3_client_sol,
-    faucet,
-    eth_bank_account,
-    bank_account,
-    pytestconfig
+    evm_loader, solana_account, web3_client, web3_client_sol, faucet, eth_bank_account, bank_account, pytestconfig
 ) -> LocalAccount:
     account = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
     if pytestconfig.environment.use_bank:
@@ -261,7 +254,7 @@ def class_account_sol_chain(
     return account
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="session")
 def evm_loader(pytestconfig):
     return EvmLoader(pytestconfig.environment.evm_loader, pytestconfig.environment.solana_url)
 
@@ -281,7 +274,7 @@ def account_with_all_tokens(
     operator_keypair,
     evm_loader_keypair,
     bank_account,
-):
+) -> LocalAccount:
     neon_account = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account, amount=500)
     if web3_client_sol:
         if pytestconfig.environment.use_bank:
@@ -327,8 +320,8 @@ def withdraw_contract(web3_client, faucet, accounts) -> Contract:
 
 
 @pytest.fixture(scope="class")
-def common_contract(web3_client, accounts):
-    contract, _ = web3_client.deploy_and_get_contract(
+def common_contract(web3_client, accounts) -> Contract:
+    contract, tx = web3_client.deploy_and_get_contract(
         contract="common/Common",
         version="0.8.12",
         contract_name="Common",
@@ -346,6 +339,12 @@ def meta_proxy_contract(web3_client, accounts):
 @pytest.fixture(scope="class")
 def event_caller_contract(web3_client, accounts) -> tp.Any:
     event_caller, _ = web3_client.deploy_and_get_contract("common/EventCaller", "0.8.12", accounts[0])
+    yield event_caller
+
+
+@pytest.fixture(scope="class")
+def event_caller_sol_chain(web3_client_sol, account_with_all_tokens) -> tp.Any:
+    event_caller, _ = web3_client_sol.deploy_and_get_contract("common/EventCaller", "0.8.12", account_with_all_tokens)
     yield event_caller
 
 
@@ -448,7 +447,6 @@ def sol_price() -> float:
     return get_sol_price_with_retry()
 
 
-
 @pytest.fixture(scope="session")
 def neon_price(web3_client_session) -> float:
     """Get NEON price in usd"""
@@ -539,12 +537,28 @@ def counter_resource_address(call_solana_caller, accounts, web3_client) -> bytes
 
 
 @pytest.fixture(scope="class")
+def block_number_contract(web3_client, accounts):
+    block_number_contract, receipt = web3_client.deploy_and_get_contract(
+        "common/Block.sol", "0.8.10", accounts[0], contract_name="BlockNumber"
+    )
+    return block_number_contract, receipt
+
+
+@pytest.fixture(scope="class")
+def block_timestamp_contract(web3_client, accounts):
+    block_timestamp_contract, receipt = web3_client.deploy_and_get_contract(
+        "common/Block.sol", "0.8.10", accounts[0], contract_name="BlockTimestamp"
+    )
+    return block_timestamp_contract, receipt
+
+
+@pytest.fixture(scope="class")
 def eip1559_setup(
-        request: pytest.FixtureRequest,
-        pytestconfig: Config,
-        accounts_session: EthAccounts,
-        web3_client_session: NeonChainWeb3Client,
-        env_name: EnvName,
+    request: pytest.FixtureRequest,
+    pytestconfig: Config,
+    accounts_session: EthAccounts,
+    web3_client_session: NeonChainWeb3Client,
+    env_name: EnvName,
 ):
     """
     Creates type-2 transactions in the db
@@ -560,7 +574,7 @@ def eip1559_setup(
             block_count = max(block_count, need_eip1559_blocks)
 
     # Check if the latest blocks already have enough type-2 transactions. If that's the case - return
-    fee_history = web3_client_session._web3.eth.fee_history(block_count, 'latest', None)  # noqa
+    fee_history = web3_client_session._web3.eth.fee_history(block_count, "latest", None)  # noqa
     base_fee_per_gas_history = fee_history["baseFeePerGas"]
     if len(base_fee_per_gas_history) >= block_count + 1:
         return

@@ -21,4 +21,7 @@ EVM_LOADER = os.environ.get("EVM_LOADER", "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hG
 NEON_TOKEN_MINT_ID: Pubkey = Pubkey.from_string(
     os.environ.get("NEON_TOKEN_MINT") or "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU"
 )
+SOL_MINT_ID: Pubkey = Pubkey.from_string("So11111111111111111111111111111111111111112")
+
 CHAIN_ID = int(os.environ.get("NEON_CHAIN_ID", 111))
+SOL_CHAIN_ID = int(os.environ.get("SOL_CHAIN_ID", 112))

@@ -11,11 +11,14 @@ from _pytest.config import Config
 from _pytest.config.argparsing import Parser
 from _pytest.nodes import Item
 from _pytest.runner import runtestprotocol
+from solana.rpc.commitment import Confirmed
 from solders.keypair import Keypair
 from web3.middleware import geth_poa_middleware
 
 from clickfile import TEST_GROUPS, EnvName
-from utils.types import TestGroup
+from utils.consts import LAMPORT_PER_SOL
+from utils.neon_user import NeonUser
+from utils.types import TestGroup, TreasuryPool
 from utils.error_log import error_log
 from utils import create_allure_environment_opts, setup_logging
 from utils.faucet import Faucet
@@ -254,3 +257,30 @@ def faucet(pytestconfig: Config, web3_client_session) -> Faucet:
 def accounts_session(pytestconfig: Config, web3_client_session, faucet, eth_bank_account):
     accounts = EthAccounts(web3_client_session, faucet, eth_bank_account)
     return accounts
+
+
+@pytest.fixture(scope="function")
+def neon_user(evm_loader, pytestconfig) -> NeonUser:
+    user = NeonUser()
+    evm_loader.request_airdrop(user.solana_account.pubkey(), 1000 * 10**9, commitment=Confirmed)
+    evm_loader.deposit_wrapped_sol_from_solana_to_neon(
+        user.solana_account, "0x" + user.neon_address.hex(), pytestconfig.environment.network_ids["sol"], int(1 * LAMPORT_PER_SOL)
+    )
+    return user
+
+
+@pytest.fixture(scope="session")
+def treasury_pool(evm_loader) -> TreasuryPool:
+    index = 2
+    address = evm_loader.create_treasury_pool_address(index)
+    index_buf = index.to_bytes(4, "little")
+    evm_loader.request_airdrop(address, 10000 * 10**9, commitment=Confirmed)
+    return TreasuryPool(index, address, index_buf)
+
+@pytest.fixture(scope="session")
+def treasury_pool_new(evm_loader) -> TreasuryPool:
+    index = 3
+    address = evm_loader.create_treasury_pool_address(index)
+    index_buf = index.to_bytes(4, "little")
+    evm_loader.request_airdrop(address, 10000 * 10**9, commitment=Confirmed)
+    return TreasuryPool(index, address, index_buf)

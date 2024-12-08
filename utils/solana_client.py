@@ -60,13 +60,6 @@ class SolanaClient(solana.rpc.api.Client):
         )
         self.send_tx_and_check_status_ok(tx, from_)
 
-    @staticmethod
-    def ether2bytes(ether: tp.Union[str, bytes]):
-        if isinstance(ether, str):
-            if ether.startswith("0x"):
-                return bytes.fromhex(ether[2:])
-            return bytes.fromhex(ether)
-        return ether
 
     def get_erc_auth_address(self, neon_account_address: str, token_address: str, evm_loader_id: str):
         neon_account_addressbytes = bytes(12) + bytes.fromhex(neon_account_address[2:])
@@ -133,7 +126,7 @@ class SolanaClient(solana.rpc.api.Client):
 
     def account_exists(self, account_address: Pubkey) -> bool:
         try:
-            account_info = self.get_account_info(account_address)
+            account_info = self.get_account_info(account_address, commitment=Confirmed)
             if account_info.value is not None:
                 return True
             else:

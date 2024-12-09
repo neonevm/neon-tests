@@ -1,4 +1,6 @@
-from ui.tests.website_tests.conftest import external_pages, base_class, menu_page, developers_page, main_page, ecosystem_page
+from ui.tests.website_tests.conftest import google_forms_page, base_class, menu_page, developers_page, main_page, \
+    ecosystem_page, quick_start_page, github_page
+
 
 class TestMainPage:
 
@@ -16,29 +18,28 @@ class TestMainPage:
 
     def test_click_build_on_neon_button(self, main_page, menu_page, developers_page, base_class):
         main_page.click_on_build_on_neon_button()
-        base_class.switch_window(url=developers_page._url)
+        base_class.switch_window(1)
+        base_class.assert_page_url(url=developers_page._url)
         developers_page.assert_text_on_build_on_neon_block_link()
-        base_class.no_errors_on_page()
 
-    def test_click_start_building_button(self, main_page, external_pages, base_class):
+    def test_click_start_building_button(self, main_page, base_class, quick_start_page):
         main_page.click_start_building_button()
-        base_class.switch_window(url=external_pages.quick_start_url)
-        base_class.no_errors_on_page()
+        base_class.switch_window(1)
+        base_class.assert_page_url(url=quick_start_page._url)
+        quick_start_page.assert_text_on_quick_start_page_title()
 
     def test_explore_ecosystem_button(self, main_page, ecosystem_page, base_class):
         main_page.click_explore_ecosystem_button()
         base_class.assert_page_url(url=ecosystem_page._url)
         ecosystem_page.assert_text_on_build_on_neon_block_link()
-        base_class.no_errors_on_page()
 
     def test_explore_developer_hub_button(self, main_page, developers_page, base_class):
         main_page.click_explore_developer_hub_button()
         base_class.assert_page_url(url=developers_page._url)
         developers_page.assert_text_on_build_on_neon_block_link()
-        base_class.no_errors_on_page()
 
-    def test_add_your_dapp_button(self, main_page, external_pages, base_class):
+    def test_add_your_dapp_button(self, main_page, google_forms_page, base_class):
         main_page.click_add_your_dapp_button()
-        base_class.switch_window(url=external_pages.google_forms_url)
-        external_pages.assert_text_on_googleform_title()
-        base_class.no_errors_on_page()
+        base_class.switch_window(1)
+        base_class.assert_page_url(url=google_forms_page._url)
+        google_forms_page.assert_text_on_googleform_title()

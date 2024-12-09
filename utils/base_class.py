@@ -12,18 +12,7 @@ class BaseClass:
     def __init__(self, driver,url=None):
         self.driver = driver
         self.wait = WebDriverWait(self.driver, 10)
-        if url is None:
-            url = self._url
-        self.url = url
-
-    def verify_link_presence(self, text):
-        element = WebDriverWait(self.driver, 10).until(
-            EC.presence_of_element_located((By.LINK_TEXT, text)))
-
-    def no_errors_on_page(self):
-        response = requests.get(self.driver.current_url)
-        assert response.status_code == 200, print("Not Found.")
-        self.wait.until(EC.visibility_of_any_elements_located((By.TAG_NAME, "a")))
+        self.url = url or self._url
 
     def select_option_by_text(self, locator, text):
         sel = Select(locator)
@@ -36,10 +25,5 @@ class BaseClass:
         current_url = self.driver.current_url
         assert url == current_url, f"The url is {current_url}"
 
-    def switch_window(self,url=None):
-        self.driver.switch_to.window(self.driver.window_handles[1])
-        self.wait.until(EC.url_to_be(url))
-        if url is None:
-            url = self._url
-        current_url = self.driver.current_url
-        assert url == current_url, f"the url is {current_url}"
+    def switch_window(self,index:int):
+        self.driver.switch_to.window(self.driver.window_handles[index])

@@ -5,10 +5,10 @@ from selenium.webdriver.support import expected_conditions as EC
 
 class Menu(BaseClass):
 
-    developers_link = (By.XPATH, "(//a[@href='/developers'][contains(.,'Developers')])[2]")
-    link_on_github_in_menu = (By.XPATH, "(//div[contains(@class,'dropdown__list')])[1]//div[3]//span[1]")
-    ecosystem_link = (By.XPATH, "(//a[@href='/ecosystem'][contains(.,'Ecosystem')])[2]")
-    link_on_neonpass = (By.XPATH, "(//div[contains(@class,'dropdown__list')])[2]//div[3]//span[1]")
+    developers_link = (By.XPATH, "//div[@class='dropdown__link link'][contains(.,'Developers')]")
+    link_on_github_in_menu = (By.XPATH, "(//span[contains(.,'GitHub')])[2]")
+    ecosystem_link = (By.XPATH, "(//div[@class='dropdown__link link'][contains(.,'Ecosystem')]")
+    link_on_neonpass = (By.XPATH, "(//span[contains(.,'NeonPass')])[4]")
 
     def click_on_menu_developers_link(self):
         self.wait.until(EC.presence_of_element_located(Menu.developers_link)).click()
@@ -16,11 +16,17 @@ class Menu(BaseClass):
     def check_dropdown_in_menu_developers_github_link(self):
         for_developers = self.wait.until(EC.presence_of_element_located(Menu.developers_link))
         ActionChains(self.driver).move_to_element(for_developers).perform()
-        assert self.wait.until(EC.presence_of_element_located(Menu.link_on_github_in_menu)).text == "GitHub"
+        element = self.wait.until(EC.presence_of_element_located(Menu.link_on_github_in_menu))
+        assert element.text == "GitHub"
+
+    def click_on_github_link(self):
         self.wait.until(EC.presence_of_element_located(Menu.link_on_github_in_menu)).click()
 
     def check_dropdown_in_menu_ecosystem_neonpass_link(self):
         ecosystem = self.wait.until(EC.presence_of_element_located(Menu.ecosystem_link))
         ActionChains(self.driver).move_to_element(ecosystem).perform()
-        assert self.wait.until(EC.presence_of_element_located(Menu.link_on_neonpass)).text == "NeonPass"
+        element = self.wait.until(EC.presence_of_element_located(Menu.link_on_neonpass))
+        assert element.text == "NeonPass"
+
+    def click_on_neonpass_link(self):
         self.wait.until(EC.presence_of_element_located(Menu.link_on_neonpass)).click()

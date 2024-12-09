@@ -2,9 +2,11 @@ import pytest
 from selenium import webdriver
 from ui.pages.developer_page import DeveloperPage
 from ui.pages.ecosystem_page import EcosystemPage
-from ui.pages.external_pages import ExternalPages
+from ui.pages.google_forms_page import GoogleFormsPage
+from ui.pages.github_page import GithubPage
 from ui.pages.main_page import MainPage
 from ui.pages.menu import Menu
+from ui.pages.quick_start_page import QuickStartPage
 from utils.base_class import BaseClass
 
 website_url = "https://neonevm.org/"
@@ -44,8 +46,18 @@ def ecosystem_page(driver):
     return page
 
 @pytest.fixture(scope="function")
-def external_pages(driver):
-    page = ExternalPages(driver, website_url)
+def google_forms_page(driver):
+    page = GoogleFormsPage(driver, website_url)
+    return page
+
+@pytest.fixture(scope="function")
+def quick_start_page(driver):
+    page = QuickStartPage(driver, None)
+    return page
+
+@pytest.fixture(scope="function")
+def github_page(driver):
+    page = GithubPage(driver, None)
     return page
 
 @pytest.fixture(scope="function")

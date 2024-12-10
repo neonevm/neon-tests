@@ -9,8 +9,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    env:
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3

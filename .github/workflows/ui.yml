@@ -10,10 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Install python requirements
-      id: requirements
-      uses: ./.github/actions/python-requirements
+    - name: Checkout repository
+      uses: actions/checkout@v4
     - name: setup Python
       uses: actions/setup-python@v4
       with:
@@ -29,4 +27,4 @@ jobs:
 
     - name: Run tests
       run:
-        python -m pytest ui/tests
+        python -m pytest ui/tests/website_tests

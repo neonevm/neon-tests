@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "k8s-prod"]
 
     steps:
     - name: Checkout repository
@@ -30,4 +30,4 @@ jobs:
         pip3 install -r deploy/requirements/click.txt
         pip3 install -r deploy/requirements/devel.txt
         pip3 install -r deploy/requirements/ui.txt
-        python ui/tests -m pytest
+        pytest ui/tests

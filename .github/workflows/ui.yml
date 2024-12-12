@@ -27,4 +27,4 @@ jobs:
 
     - name: Run tests
       run:
-        python -m pytest ui/tests/website_tests/test_MainPage.py
+        python ui/tests/website_tests/test_MainPage.py -m pytest

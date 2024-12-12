@@ -12,7 +12,7 @@ from utils.solana_client import SolanaClient
 from solders.keypair import Keypair
 
 
-class TracerDataProducer:
+class TracerLoadTestsDataProducer:
     def __init__(self, web3_client, faucet, solana_url, evm_loader, account_seed_version, eth_bank_account):
         self.faucet = faucet
         self.web3_client = web3_client
@@ -65,6 +65,7 @@ class TracerDataProducer:
                 recipient_balance_before = erc20_contract.get_balance(account_receiver)
                 
                 receipt = erc20_contract.transfer(erc20_contract.owner, account_receiver, transfer_amount)
+                assert receipt["status"] == 1
                 
                 print(f"ERC20 transfer {i}, receipt status: ", receipt["status"])
                 self.historical_data["erc20_transfers"].append({
@@ -94,6 +95,7 @@ class TracerDataProducer:
                 recipient_balance_before = self.web3_client.get_balance(recipient_account)
                 
                 receipt = self.web3_client.send_neon(sender_account, recipient_account, transfer_amount)
+                assert receipt["status"] == 1
 
                 print(f"Neon transfer {i}, receipt status: ", receipt["status"])
                 self.historical_data["neon_transfers"].append({
@@ -137,6 +139,7 @@ class TracerDataProducer:
                 recipient_balance_before = erc20_wrapper.get_balance(account_receiver)
                 
                 receipt = erc20_wrapper.transfer(erc20_wrapper.account, account_receiver, transfer_amount)
+                assert receipt["status"] == 1
                 
                 print(f"ERC20 wrapped transfer {i}, receipt status: ", receipt["status"])
                 self.historical_data["erc20spl_transfers"].append({
@@ -174,6 +177,7 @@ class TracerDataProducer:
                 store_value = random.randint(0, 100)
                 
                 tx_obj, _, receipt = storage_contract.call_storage(sender_account, store_value, "blockNumber")
+                assert receipt["status"] == 1
                 
                 print(f"Storage contract call {i}, receipt status: ", receipt["status"])
                 self.historical_data["storage_contract_calls"].append({
@@ -204,7 +208,10 @@ class TracerDataProducer:
                 tx = self.web3_client.make_raw_tx(from_=sender_account)
                 instruction_tx = contract.functions.emitAllEventsAndCallContractCalleeWithEvent(
                     contract_deploy_tx["contractAddress"]).build_transaction(tx)
+                
                 receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
+                assert receipt["status"] == 1
+                
                 print(f"Event caller contract call {i}, receipt status: ", receipt["status"])
                 self.historical_data["event_caller_contract_calls"].append({
                         "blockHash": receipt["blockHash"].hex(),
@@ -228,7 +235,10 @@ class TracerDataProducer:
                 sender_account = self.get_account()
                 tx = self.web3_client.make_raw_tx(sender_account)
                 instruction_tx = contract.functions.moreInstructionWithLogs(0, 1000).build_transaction(tx)
+                
                 receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
+                assert receipt["status"] == 1
+                
                 print(f"Iterative tx contract call {i}, receipt status: ", receipt["status"])
                 self.historical_data["iterative_tx_contract_calls"].append({
                         "blockHash": receipt["blockHash"].hex(),
@@ -243,11 +253,6 @@ class TracerDataProducer:
     def dump_data(self):
        with open('./loadtesting/k6/data/tracer_data.json', 'w+') as f:
            json.dump(self.historical_data, f)
-
-    def account_from_private_key(self, private_key):
-        key = base58.b58decode(private_key)
-        account = Keypair.from_bytes(key)
-        return account
     
     def get_account(self, balance=InputTestConstants.NEW_USER_REQUEST_AMOUNT.value):
         return self.account_manager.create_account(balance=balance)

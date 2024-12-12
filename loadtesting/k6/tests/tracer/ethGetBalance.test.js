@@ -30,9 +30,6 @@ export default function EthGetBalanceTest() {
     const vuID = exec.vu.idInTest
     const index = vuID % usersArray.length;
 
-    // TODO: use this value when erc20 get balance will be available
-    // const mixedData = (historicalData.neon_transfers).concat(historicalData.erc20_transfers, 
-    //     historicalData.erc20spl_transfers);
     const mixedData = historicalData.neon_transfers
     const dataIndex = randomIntBetween(0, mixedData.length - 1);
     const txInfo = mixedData[dataIndex];

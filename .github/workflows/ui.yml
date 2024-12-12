@@ -43,4 +43,4 @@ jobs:
 
     - name: Run tests
       run:
-        pytest ui/tests/website_tests -v --rootdir=ui/tests/website_test
+        pytest ui/tests/website_tests

@@ -29,6 +29,5 @@ jobs:
       run: |
         pip3 install -r deploy/requirements/click.txt
         pip3 install -r deploy/requirements/devel.txt
-        pip3 install -r deploy/requirements/prod.txt
         pip3 install -r deploy/requirements/ui.txt
         python ui/tests/website_tests/test_MainPage.py -m pytest

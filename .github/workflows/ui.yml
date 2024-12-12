@@ -22,9 +22,9 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python3 -m pip install --upgrade pip
-        pip3 install --upgrade pytest pytest-html
+        python -m pip install --upgrade pip
+        pip install --upgrade pytest pytest-html
 
     - name: Run tests
       run:
-        python3 -m pytest ui/tests/website_tests
+        python ui/tests/website_tests -m pytest

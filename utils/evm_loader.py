@@ -87,7 +87,6 @@ class EvmLoader(SolanaClient):
     def create_tree_account_address(self, neon_address, nonce, chain_id=SOL_CHAIN_ID):
         chain_id_bytes = chain_id.to_bytes(8, "little")
         seeds = [self.account_seed_version, b"TREE", neon_address, chain_id_bytes, nonce]
-        print(seeds)
         return Pubkey.find_program_address(seeds, self.loader_id)[0]
 
     def create_get_authority_address(self):

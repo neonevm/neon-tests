@@ -1,5 +1,3 @@
-import os
-
 import eth_abi
 import pytest
 import solana
@@ -17,7 +15,6 @@ from utils.scheduled_trx import ScheduledTransaction
 
 
 class TestScheduledTrx:
-    @pytest.mark.skip("SCHEDULED")
     def test_execute_scheduled_trx_from_account(
         self, evm_loader, neon_user: NeonUser, treasury_pool, basic_contract, neon_api_client, operator_keypair
     ):
@@ -49,7 +46,6 @@ class TestScheduledTrx:
         evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
         assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).get_transaction_count() == 0
 
-    @pytest.mark.skip("SCHEDULED")
     def test_execute_scheduled_trx_from_instruction(
         self,
         evm_loader,
@@ -164,7 +160,6 @@ class TestScheduledTrx:
         with pytest.raises(solana.rpc.core.RPCException, match="transaction requires at least 25'000 gas limit"):
             evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode(), SOL_MINT_ID)
 
-    @pytest.mark.skip("SCHEDULED")
     def test_send_sol_with_priority_fee(
         self,
         evm_loader,

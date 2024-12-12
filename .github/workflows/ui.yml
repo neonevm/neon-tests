@@ -12,6 +12,10 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+    - name: Display file structure for debugging
+      run: |
+        echo "Displaying project directory structure:"
+        ls -R
     - name: setup Python
       uses: actions/setup-python@v4
       with:

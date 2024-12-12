@@ -38,6 +38,5 @@ jobs:
         pip3 install -r deploy/requirements/ui.txt
 
     - name: Run tests
-      working-directory: ui/tests/website_test/test_MainPage.py
       run:
         pytest ui/tests/website_tests

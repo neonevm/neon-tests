@@ -26,7 +26,7 @@ jobs:
         pip install --upgrade pytest pytest-html
 
     - name: Run tests
-      run:
+      run: |
         pip3 install -r deploy/requirements/click.txt
         pip3 install -r deploy/requirements/devel.txt
         pip3 install -r deploy/requirements/prod.txt

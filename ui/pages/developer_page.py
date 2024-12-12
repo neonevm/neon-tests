@@ -1,8 +1,8 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from utils.base_class import BaseClass
+from utils.base_page import BasePage
 
-class DeveloperPage(BaseClass):
+class DeveloperPage(BasePage):
     _url = "https://neonevm.org/developers"
 
     build_on_neon_link_block = (By.XPATH, "//a[text()='Build on Neon']")

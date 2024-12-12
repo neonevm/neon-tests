@@ -7,7 +7,7 @@ from ui.pages.github_page import GithubPage
 from ui.pages.main_page import MainPage
 from ui.pages.menu import Menu
 from ui.pages.quick_start_page import QuickStartPage
-from utils.base_class import BaseClass
+from utils.base_page import BasePage
 
 website_url = "https://neonevm.org/"
 
@@ -61,6 +61,6 @@ def github_page(driver):
     return page
 
 @pytest.fixture(scope="function")
-def base_class(driver):
-    page = BaseClass(driver, website_url)
+def base_page(driver):
+    page = BasePage(driver, website_url)
     return page

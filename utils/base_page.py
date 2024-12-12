@@ -1,4 +1,5 @@
 import pytest
+import abc
 import requests
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -6,7 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
 
 @pytest.mark.usefixtures("setup")
-class BaseClass:
+class BasePage(abc.ABC):
     _url:str
 
     def __init__(self, driver,url=None):
@@ -19,9 +20,9 @@ class BaseClass:
         sel.select_by_visible_text(text)
 
     def assert_page_url(self,url=None):
-        self.wait.until(EC.url_to_be(url))
         if url is None:
             url = self._url
+        self.wait.until(EC.url_to_be(url))
         current_url = self.driver.current_url
         assert url == current_url, f"The url is {current_url}"
 

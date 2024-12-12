@@ -1,8 +1,9 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from utils.base_class import BaseClass
+from utils.base_page import BasePage
 
-class MainPage(BaseClass):
+
+class MainPage(BasePage):
     _url = "https://neonevm.org/"
 
     logo_on_header = (By.XPATH, "//*[@id='header']/div[2]/div[1]")

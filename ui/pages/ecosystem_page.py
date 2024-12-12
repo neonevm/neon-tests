@@ -1,8 +1,8 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from utils.base_class import BaseClass
+from utils.base_page import BasePage
 
-class EcosystemPage(BaseClass):
+class EcosystemPage(BasePage):
     _url = "https://neonevm.org/ecosystem"
 
     join_our_ecosystem_button = (By.XPATH, "//span[contains(.,'Join Neon EVM Ecosystem')]")

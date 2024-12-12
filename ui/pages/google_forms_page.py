@@ -1,8 +1,9 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from utils.base_class import BaseClass
+from utils.base_page import BasePage
 
-class GoogleFormsPage(BaseClass):
+
+class GoogleFormsPage(BasePage):
     _url = "https://docs.google.com/forms/d/15iL4l-Rj3GUdtE1tlQTto2sqgMS5Gpn92u0GUveWWVg/viewform?edit_requested=true"
 
     check_google_forms_title = (By.XPATH, "(//form//*[@role='heading'])[1]")

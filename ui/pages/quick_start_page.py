@@ -1,8 +1,8 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from utils.base_class import BaseClass
+from utils.base_page import BasePage
 
-class QuickStartPage(BaseClass):
+class QuickStartPage(BasePage):
     _url = "https://neonevm.org/docs/quick_start"
 
     section_header = (By.XPATH, "//h1")

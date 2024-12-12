@@ -15,7 +15,7 @@ jobs:
     - name: Display file structure for debugging
       run: |
         echo "Displaying project directory structure:"
-        ls -R
+        ls -R ui/tests/
     - name: setup Python
       uses: actions/setup-python@v4
       with:

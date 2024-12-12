@@ -447,7 +447,6 @@ def is_branch_exist(endpoint, branch):
     if branch:
         response = requests.get(f"{endpoint}/branches/{branch}")
         if response.status_code == 200:
-            click.echo(f"The branch {branch} exist in the {endpoint} repository")
             return True
     else:
         return False

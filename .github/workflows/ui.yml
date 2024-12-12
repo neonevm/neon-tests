@@ -31,13 +31,13 @@ jobs:
       run: |
         pip install requests webdriver-manager selenium pytest
 
-    - name: Run tests
+    - name: Install requirements
       run: |
         pip3 install -r deploy/requirements/click.txt
         pip3 install -r deploy/requirements/devel.txt
         pip3 install -r deploy/requirements/ui.txt
 
     - name: Run tests
-      working-directory: ui/tests/website_test
+      working-directory: ui/tests/website_test/test_MainPage.py
       run:
         pytest ui/tests/website_tests

@@ -1,8 +1,11 @@
 import eth_abi
 import requests
 from eth_utils import abi
+from solders.pubkey import Pubkey
 
+from integration.tests.neon_evm.utils.constants import SOL_CHAIN_ID
 from utils.evm_loader import CHAIN_ID
+from utils.models.tree_account import TreeAccount
 from utils.types import Caller, Contract
 
 
@@ -82,4 +85,14 @@ class NeonApiClient:
             data
         )
         return result["steps_executed"]
+
+    def get_transaction_tree(self, address, nonce, chain_id=SOL_CHAIN_ID) -> TreeAccount:
+        if isinstance(address, Pubkey):
+            address = bytes(address).hex()
+        body = {
+            "origin": {"address": address, "chain_id": chain_id},
+            "nonce": nonce
+        }
+        response = requests.post(url=f"{self.url}/transaction_tree", json=body, headers=self.headers).json()
+        return TreeAccount.from_dict(response)
 

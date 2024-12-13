@@ -7,7 +7,6 @@ from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from utils.types import Caller
 
 
-
 class TestExecuteTrxFromAccount:
     def test_simple_transfer_transaction(
         self, operator_keypair, treasury_pool, sender_with_tokens: Caller, session_user: Caller, holder_acc, evm_loader

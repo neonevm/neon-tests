@@ -394,7 +394,7 @@ class TestInteroperability:
         account_pubkey = evm_loader.ether2balance(caller_ether)
         contract_pubkey = Pubkey.from_string(evm_loader.ether2program(caller_ether)[0])
 
-        data = bytes([0x30]) + evm_loader.ether2bytes(caller_ether) + CHAIN_ID.to_bytes(8, "little")
+        data = bytes([0x30]) + caller_ether + CHAIN_ID.to_bytes(8, "little")
         neon_instruction = Instruction(
             program_id=evm_loader.loader_id,
             data=data,

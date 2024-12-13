@@ -916,8 +916,7 @@ class TestTransactionStepFromAccountParallelRuns:
 
         # Fetch new account list that depends on the re-emulation.
         new_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
-        evm_loader.execute_transaction_steps_from_account(operator_keypair,treasury_pool,holder,new_accounts)
-
+        evm_loader.execute_transaction_steps_from_account(operator_keypair,treasury_pool, holder, new_accounts)
 
         check_holder_account_tag(holder, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
 

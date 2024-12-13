@@ -1,0 +1,11 @@
+apiVersion: 1
+
+datasources:
+  - name: "prometheus"
+    type: "prometheus"
+    access: "proxy"
+    url: "http://prometheus-bestarch:9090"
+    isDefault: true
+    jsonData:
+      httpMethod: "POST"
+    readOnly: false

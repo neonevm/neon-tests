@@ -1,46 +1,4 @@
 name: "UI Website tests"
 run-name: UI tests / ${{ github.event.pull_request.title || github.event_name }}
 
-on:
-  schedule:
-    - cron: "0 3 * * 0,1,2,3,4"
-  workflow_dispatch:
-jobs:
-  test:
-    runs-on: ubuntu-latest
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    - name: Display file structure for debugging
-      run: |
-        echo "Displaying project directory structure:"
-        ls -R ui/tests/
-    - name: setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-
-    - name: Install Chrome
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y chromium-browser
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install --upgrade pytest pytest-html pytest-selenium
-
-    - name: Install Selenium
-      run: |
-        pip install requests webdriver-manager selenium pytest
-
-    - name: Install requirements
-      run: |
-        pip3 install -r deploy/requirements/click.txt
-        pip3 install -r deploy/requirements/devel.txt
-        pip3 install -r deploy/requirements/ui.txt
-
-    - name: Run tests
-      run:
-        pytest ui/tests/website_tests

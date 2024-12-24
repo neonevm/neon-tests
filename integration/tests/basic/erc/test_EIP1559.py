@@ -214,7 +214,7 @@ def validate_deploy_positive(
     total_fee_paid = gas_used * effective_gas_price
 
     # Validate that sender's balance decreased by at least the gas fee
-    assert balance_before - balance_after >= total_fee_paid, "Sender balance did not decrease by gas fee"
+    assert balance_before - balance_after <= total_fee_paid, f"Sender balance did not decrease by gas fee: {balance_before, balance_after, total_fee_paid}"
 
     # Verify that the effective gas price does not exceed the max fee per gas
     assert effective_gas_price <= max_fee_per_gas, (

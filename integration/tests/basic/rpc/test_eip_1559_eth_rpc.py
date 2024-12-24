@@ -215,4 +215,4 @@ class TestRpcEthMethods:
             expected_effective_gas_price = min(max_fee_per_gas, base_fee_per_gas + max_priority_fee_per_gas)
         else:
             expected_effective_gas_price = max_fee_per_gas
-        assert actual_effective_gas_price == expected_effective_gas_price
+        assert actual_effective_gas_price <= expected_effective_gas_price

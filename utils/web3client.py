@@ -124,6 +124,10 @@ class Web3Client:
         base_fee = latest_block.baseFeePerGas  # noqa
         return base_fee
 
+    @allure.step("Get max priority fee per gas")
+    def max_priority_fee_per_gas(self) -> int:
+        return self._web3.eth.max_priority_fee
+
     @allure.step("Create account")
     def create_account(self) -> eth_account.signers.local.LocalAccount:
         return self._web3.eth.account.create()

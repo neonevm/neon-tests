@@ -1,5 +1,9 @@
 import pytest
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+
 from ui.pages.developer_page import DeveloperPage
 from ui.pages.ecosystem_page import EcosystemPage
 from ui.pages.google_forms_page import GoogleFormsPage
@@ -11,19 +15,24 @@ from utils.base_page import BasePage
 
 website_url = "https://neonevm.org/"
 
-@pytest.fixture(scope="session", autouse=True)
-def allure_environment():
-    return None
 
 @pytest.fixture(scope="function")
 def driver(request):
-    driver = webdriver.Chrome()
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+
     driver.implicitly_wait(10)
     driver.get(website_url)
     driver.maximize_window()
     yield driver
     driver.close()
     driver.quit()
+
 
 @pytest.fixture(scope="function")
 def main_page(driver):

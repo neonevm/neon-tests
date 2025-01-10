@@ -136,8 +136,8 @@ class TestBlockTimestampAndNumber:
         sender_account = self.accounts[0]
 
         tx = self.web3_client.make_raw_tx(sender_account)
-        v1 = random.randint(1, 100)
-        v2 = random.randint(1, 100)
+        v1 = 1
+        v2 = 5
         instruction_tx = contract.functions.addDataToMapping(v1, v2).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert self.web3_client.is_trx_iterative(receipt["transactionHash"].hex())

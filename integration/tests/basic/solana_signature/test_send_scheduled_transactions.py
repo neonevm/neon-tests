@@ -42,7 +42,7 @@ class TestScheduledTrx:
         )
         trxs = []
         max_fee_per_gas = 3000000000
-        max_priority_fee_per_gas = 15
+        max_priority_fee_per_gas = 2500000000
         for i in range(4):
             trxs.append(
                 ScheduledTransaction(
@@ -88,7 +88,7 @@ class TestScheduledTrx:
         call_data = abi.function_signature_to_4byte_selector("doAssert()")
         gas_limit = 30000000
         max_fee_per_gas = 3000000000
-        max_priority_fee_per_gas = 15
+        max_priority_fee_per_gas = 2500000000
 
         tx0 = ScheduledTransaction(
             neon_user.neon_address,
@@ -221,7 +221,7 @@ class TestScheduledTrx:
 
         gas_limit = 30000000
         max_fee_per_gas = 3000000000
-        max_priority_fee_per_gas = 15
+        max_priority_fee_per_gas = 2500000000
         trxs = []
         for i in range(trx_count):
             trxs.append(
@@ -276,7 +276,7 @@ class TestScheduledTrx:
         )
         gas_limit = 3000000
         max_fee_per_gas = 3000000000
-        max_priority_fee_per_gas = 15
+        max_priority_fee_per_gas = 2500000000
 
         tx0 = ScheduledTransaction(
             neon_user.neon_address,

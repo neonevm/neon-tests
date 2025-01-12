@@ -37,18 +37,22 @@ COST_REPORT_DIR: pathlib.Path = pathlib.Path()
 class EnvironmentConfig:
     name: EnvName
     evm_loader: str
+    neon_core_api_url: str
+    neon_core_api_rpc_url: str
     proxy_url: str
     tracer_url: str
     solana_url: str
     faucet_url: str
     network_ids: dict
     spl_neon_mint: str
+    sol_mint_id_string: str
     neon_erc20wrapper_address: str
     use_bank: bool
     eth_bank_account: str
     neonpass_url: str = ""
     ws_subscriber_url: str = ""
     account_seed_version: str = "\3"
+    
 
 
 def pytest_addoption(parser: Parser):
@@ -153,14 +157,14 @@ def pytest_configure(config: Config):
         env["eth_bank_account"] = ""
 
     # Set envs for integration/tests/neon_evm project
-    if "SOLANA_URL" not in os.environ or not os.environ["SOLANA_URL"]:
-        os.environ["SOLANA_URL"] = env["solana_url"]
-    if "EVM_LOADER" not in os.environ or not os.environ["EVM_LOADER"]:
-        os.environ["EVM_LOADER"] = env["evm_loader"]
-    if "NEON_TOKEN_MINT" not in os.environ or not os.environ["NEON_TOKEN_MINT"]:
-        os.environ["NEON_TOKEN_MINT"] = env["spl_neon_mint"]
-    if "CHAIN_ID" not in os.environ or not os.environ["CHAIN_ID"]:
-        os.environ["CHAIN_ID"] = str(env["network_ids"]["neon"])
+    # if "SOLANA_URL" not in os.environ or not os.environ["SOLANA_URL"]:
+    #     os.environ["SOLANA_URL"] = env["solana_url"]
+    # if "EVM_LOADER" not in os.environ or not os.environ["EVM_LOADER"]:
+    #     os.environ["EVM_LOADER"] = env["evm_loader"]
+    # if "NEON_TOKEN_MINT" not in os.environ or not os.environ["NEON_TOKEN_MINT"]:
+    #     os.environ["NEON_TOKEN_MINT"] = env["spl_neon_mint"]
+    # if "CHAIN_ID" not in os.environ or not os.environ["CHAIN_ID"]:
+    #     os.environ["CHAIN_ID"] = str(env["network_ids"]["neon"])
 
     if network_name == "terraform":
         env["solana_url"] = env["solana_url"].replace("<solana_ip>", os.environ.get("SOLANA_IP"))
@@ -256,18 +260,18 @@ def sol_client_session(pytestconfig: Config) -> SolanaClient:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def faucet(pytestconfig: Config, web3_client_session) -> Faucet:
+def faucet(pytestconfig: Config, web3_client_session: NeonChainWeb3Client) -> Faucet:
     return Faucet(pytestconfig.environment.faucet_url, web3_client_session)
 
 
 @pytest.fixture(scope="session")
-def accounts_session(pytestconfig: Config, web3_client_session, faucet, eth_bank_account):
+def accounts_session(pytestconfig: Config, web3_client_session: NeonChainWeb3Client, faucet: Faucet, eth_bank_account) -> EthAccounts:
     accounts = EthAccounts(web3_client_session, faucet, eth_bank_account)
     return accounts
 
 
 @pytest.fixture(scope="function")
-def neon_user(evm_loader, pytestconfig) -> NeonUser:
+def neon_user(evm_loader, pytestconfig: Config) -> NeonUser:
     user = NeonUser()
     evm_loader.request_airdrop(user.solana_account.pubkey(), 1000 * 10**9, commitment=Confirmed)
     evm_loader.deposit_wrapped_sol_from_solana_to_neon(
@@ -284,6 +288,7 @@ def treasury_pool(evm_loader) -> TreasuryPool:
     evm_loader.request_airdrop(address, 10000 * 10**9, commitment=Confirmed)
     return TreasuryPool(index, address, index_buf)
 
+
 @pytest.fixture(scope="session")
 def treasury_pool_new(evm_loader) -> TreasuryPool:
     index = 3
@@ -291,3 +296,5 @@ def treasury_pool_new(evm_loader) -> TreasuryPool:
     index_buf = index.to_bytes(4, "little")
     evm_loader.request_airdrop(address, 10000 * 10**9, commitment=Confirmed)
     return TreasuryPool(index, address, index_buf)
+
+

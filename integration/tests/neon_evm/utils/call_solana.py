@@ -2,10 +2,9 @@ import eth_abi
 from eth_utils import keccak
 from solders.pubkey import Pubkey
 
-from integration.tests.neon_evm.utils.constants import NEON_CORE_API_URL
+from integration.tests.conftest import environment
 from integration.tests.neon_evm.utils.contract import deploy_contract, make_contract_call_trx
 from integration.tests.neon_evm.utils.ethereum import make_eth_transaction
-from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
 from integration.tests.neon_evm.utils.transaction_checks import check_transaction_logs_have_text
 from utils.consts import SOLANA_CALL_PRECOMPILED_ID
 from utils.helpers import bytes32_to_solana_pubkey, serialize_instruction
@@ -13,16 +12,36 @@ from utils.metaplex import SYSTEM_PROGRAM_ID
 
 
 class SolanaCaller:
-    def __init__(self, operator_keypair, owner, evm_loader, treasury_pool, holder_acc):
+    def __init__(
+        self,
+        operator_keypair,
+        owner,
+        evm_loader,
+        treasury_pool,
+        holder_acc,
+        neon_api_client,
+        solana_client,
+        environment,
+    ) -> None:
         self.operator_keypair = operator_keypair
         self.owner = owner
         self.evm_loader = evm_loader
         self.treasury_pool = treasury_pool
         self.holder_acc = holder_acc
-        self.neon_api_client = NeonApiClient(url=NEON_CORE_API_URL)
+        self.neon_api_client = neon_api_client
+        self.solana_client = solana_client
+        self.environment = environment
 
         self.contract = deploy_contract(
-            operator_keypair, owner, "precompiled/CallSolanaCaller", evm_loader, treasury_pool, version="0.8.10"
+            operator=operator_keypair,
+            user=owner,
+            contract_file_name="precompiled/CallSolanaCaller",
+            evm_loader=evm_loader,
+            treasury_pool=treasury_pool,
+            neon_api_client=neon_api_client,
+            environment=environment,
+            solana_client=solana_client,
+            version="0.8.10"
         )
 
     def get_neon_address(self, eth_address):
@@ -175,7 +194,11 @@ class SolanaCaller:
                 SYSTEM_PROGRAM_ID
 
             ]        )
-        check_transaction_logs_have_text(resp, "exit_status=0x12")
+        check_transaction_logs_have_text(
+            solana_client=self.solana_client,
+            trx=resp,
+            text="exit_status=0x12"
+        )
         return resource_address_pubkey
 
     @staticmethod

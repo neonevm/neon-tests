@@ -1,32 +1,30 @@
 import json
 import pathlib
+from typing import Tuple, Any
 
 import eth_abi
 import pytest
+from _pytest.config import Config
 from solders.keypair import Keypair
 from eth_keys import keys as eth_keys
 from solders.pubkey import Pubkey
 from solana.rpc.commitment import Confirmed
 
+from conftest import EnvironmentConfig
 from utils.consts import OPERATOR_KEYPAIR_PATH
+from utils.solana_client import SolanaClient
 from utils.evm_loader import EvmLoader
 from utils.types import Contract, Caller, TreasuryPool
-from utils.neon_user import NeonUser
-from .utils.constants import NEON_CORE_API_URL, NEON_CORE_API_RPC_URL, SOLANA_URL, EVM_LOADER, SOL_CHAIN_ID, CHAIN_ID
-from .utils.contract import deploy_contract, make_contract_call_trx
-from .utils.neon_api_rpc_client import NeonApiRpcClient
-from .utils.storage import create_holder
+
 from .utils.neon_api_client import NeonApiClient
+from .utils.contract import deploy_contract, make_contract_call_trx
+from .utils.storage import create_holder
 from .utils.transaction_checks import check_transaction_logs_have_text
 
 
-@pytest.fixture(scope="session")
-def evm_loader() -> EvmLoader:
-    loader = EvmLoader(EVM_LOADER, SOLANA_URL)
-    return loader
 
-
-def prepare_operator(key_file, evm_loader: EvmLoader):
+def prepare_operator(key_file: pathlib.Path | str, evm_loader: EvmLoader, environment: EnvironmentConfig) -> Keypair:
+    chain_ids = (environment.network_ids['sol'], environment.network_ids['neon'])
     with open(key_file, "r") as key:
         secret_key = json.load(key)
         account = Keypair.from_bytes(secret_key)
@@ -34,7 +32,7 @@ def prepare_operator(key_file, evm_loader: EvmLoader):
     evm_loader.request_airdrop(account.pubkey(), 1000 * 10**9, commitment=Confirmed)
 
     operator_ether = eth_keys.PrivateKey(account.secret()[:32]).public_key.to_canonical_address()
-    for chain_id in (SOL_CHAIN_ID, CHAIN_ID):
+    for chain_id in chain_ids:
         ether_balance_pubkey = evm_loader.ether2operator_balance(account, operator_ether, chain_id)
         acc_info = evm_loader.get_account_info(ether_balance_pubkey, commitment=Confirmed)
         if acc_info.value is None:
@@ -44,16 +42,23 @@ def prepare_operator(key_file, evm_loader: EvmLoader):
 
 
 @pytest.fixture(scope="session")
-def default_operator_keypair(evm_loader: EvmLoader) -> Keypair:
+def default_operator_keypair(evm_loader: EvmLoader, pytestconfig: Config) -> Keypair:
     """
     Initialized solana keypair with balance. Get private keys from ci/operator-keypairs/id.json
     """
     key_file = pathlib.Path(OPERATOR_KEYPAIR_PATH / "id.json")
-    return prepare_operator(key_file, evm_loader)
+    return prepare_operator(key_file, evm_loader, pytestconfig)
 
 
+
+@pytest.fixture(scope='session')
+def solana_client(environment: EnvironmentConfig):
+    return SolanaClient(endpoint=environment.solana_url)
+
+
+# following two keypairs could be parametrized
 @pytest.fixture(scope="session")
-def operator_keypair(worker_id, evm_loader) -> Keypair:
+def operator_keypair(worker_id: str, evm_loader: EvmLoader, environment: EnvironmentConfig) -> Keypair:
     """
     Initialized solana keypair with balance. Get private keys from ci/operator-keypairs
     """
@@ -62,11 +67,11 @@ def operator_keypair(worker_id, evm_loader) -> Keypair:
     else:
         file_id = int(worker_id[-1]) + 2
         key_file = pathlib.Path(f"{OPERATOR_KEYPAIR_PATH}/id{file_id}.json")
-    return prepare_operator(key_file, evm_loader)
+    return prepare_operator(key_file, evm_loader, environment)
 
 
 @pytest.fixture(scope="session")
-def second_operator_keypair(worker_id, evm_loader) -> Keypair:
+def second_operator_keypair(worker_id: str, evm_loader: EvmLoader,  environment: EnvironmentConfig) -> Keypair:
     """
     Initialized solana keypair with balance. Get private key from cli or ./ci/operator-keypairs
     """
@@ -76,7 +81,7 @@ def second_operator_keypair(worker_id, evm_loader) -> Keypair:
         file_id = 20 + int(worker_id[-1]) + 2
         key_file = pathlib.Path(f"{OPERATOR_KEYPAIR_PATH}/id{file_id}.json")
 
-    return prepare_operator(key_file, evm_loader)
+    return prepare_operator(key_file, evm_loader, environment)
 
 
 @pytest.fixture(scope="function")
@@ -102,10 +107,12 @@ def sender_with_tokens(evm_loader, operator_keypair) -> Caller:
 
 
 @pytest.fixture(scope="session")
-def sender_with_wsol(evm_loader, operator_keypair) -> Caller:
+def sender_with_wsol(evm_loader, operator_keypair, pytestconfig) -> Caller:
     user = evm_loader.make_new_user(operator_keypair)
     evm_loader.deposit_wrapped_sol_from_solana_to_neon(
-        user.solana_account, "0x" + user.eth_address.hex(), SOL_CHAIN_ID, 100000
+        user.solana_account, "0x" + user.eth_address.hex(),
+        pytestconfig.environment.network_ids["sol"],
+        100000
     )
     return user
 
@@ -121,8 +128,25 @@ def new_holder_acc(operator_keypair, evm_loader) -> Pubkey:
 
 
 @pytest.fixture(scope="function")
-def rw_lock_contract(evm_loader: EvmLoader, operator_keypair: Keypair, session_user: Caller, treasury_pool) -> Contract:
-    return deploy_contract(operator_keypair, session_user, "rw_lock", evm_loader, treasury_pool)
+def rw_lock_contract(
+    evm_loader: EvmLoader,
+    operator_keypair: Keypair,
+    neon_api_client: NeonApiClient,
+    session_user: Caller,
+    treasury_pool: TreasuryPool,
+    pytestconfig: Config,
+    solana_client: SolanaClient
+) -> Contract:
+    return deploy_contract(
+        operator_keypair,
+        session_user,
+        "rw_lock",
+        evm_loader,
+        neon_api_client,
+        treasury_pool,
+        pytestconfig,
+        solana_client
+    )
 
 
 @pytest.fixture(scope="function")
@@ -147,25 +171,32 @@ def rw_lock_caller(
 
 @pytest.fixture(scope="function")
 def string_setter_contract(
-    evm_loader: EvmLoader, operator_keypair: Keypair, session_user: Caller, treasury_pool
+    evm_loader: EvmLoader, operator_keypair: Keypair, session_user: Caller, treasury_pool: TreasuryPool
 ) -> Contract:
-    return deploy_contract(operator_keypair, session_user, "string_setter", evm_loader, treasury_pool)
+    return deploy_contract(
+        operator_keypair,
+        session_user,
+        "string_setter",
+        evm_loader,
+        treasury_pool
+    )
 
 
 @pytest.fixture(scope="function")
-def basic_contract(evm_loader, operator_keypair, session_user, treasury_pool) -> Contract:
+def basic_contract(evm_loader: EvmLoader, operator_keypair: Keypair, session_user: Caller, treasury_pool: TreasuryPool
+) -> Contract:
     return deploy_contract(operator_keypair, session_user, "common/Common", evm_loader, treasury_pool, version="0.8.12")
 
 
 @pytest.fixture(scope="function")
-def spl_token_caller(operator_keypair, evm_loader, session_user, treasury_pool):
+def spl_token_caller(operator_keypair, evm_loader, session_user, treasury_pool, pytestconfig):
     return deploy_contract(
         operator_keypair,
         session_user,
         "precompiled/SplTokenCaller",
         evm_loader,
         treasury_pool,
-        chain_id=CHAIN_ID,
+        chain_id=pytestconfig.environment.network_ids["neon"],
         version="0.8.12",
     )
 
@@ -211,8 +242,14 @@ def erc20_for_spl_factory_contract(
 
 @pytest.fixture(scope="session")
 def erc20_for_spl(
-    evm_loader, operator_keypair, sender_with_tokens, treasury_pool, neon_api_client, holder_acc, proxy_contract
-):
+    evm_loader,
+    operator_keypair,
+    sender_with_tokens,
+    treasury_pool,
+    neon_api_client,
+    holder_acc,
+    proxy_contract
+) -> Tuple[Any, Any]:
     emulate_result = neon_api_client.emulate_contract_call(
         sender_with_tokens.eth_address.hex(),
         proxy_contract.eth_address.hex(),
@@ -244,13 +281,3 @@ def erc20_for_spl(
     return token_mint, erc20_for_spl_address
 
 
-@pytest.fixture(scope="session")
-def neon_api_client():
-    client = NeonApiClient(url=NEON_CORE_API_URL)
-    return client
-
-
-@pytest.fixture(scope="session")
-def neon_rpc_client():
-    client = NeonApiRpcClient(url=NEON_CORE_API_RPC_URL)
-    return client

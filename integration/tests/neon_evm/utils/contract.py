@@ -1,5 +1,6 @@
 import typing as tp
 import pathlib
+from _pytest.config import Config
 
 import eth_abi
 import solcx
@@ -8,8 +9,10 @@ from eth_utils import abi
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 
+from conftest import EnvironmentConfig
 from utils.evm_loader import EvmLoader
 from utils.neon_user import NeonUser
+from utils.solana_client import SolanaClient
 from utils.types import Caller, TreasuryPool, Contract
 from .constants import NEON_CORE_API_URL, CHAIN_ID
 from .neon_api_client import NeonApiClient
@@ -147,18 +150,22 @@ def deploy_contract(
     user: Caller,
     contract_file_name: tp.Union[pathlib.Path, str],
     evm_loader: EvmLoader,
+    neon_api_client: NeonApiClient,
     treasury_pool: TreasuryPool,
+    environment: EnvironmentConfig,
+    solana_client: SolanaClient,
     value: int = 0,
-    chain_id=CHAIN_ID,
     encoded_args=None,
     contract_name: tp.Optional[str] = None,
     version: str = "0.7.6",
-):
-    neon_api_client = NeonApiClient(url=NEON_CORE_API_URL)
+) -> Contract:
+
+    chain_id = environment.network_ids['neon']
 
     contract_code = get_contract_bin(contract_file_name, contract_name=contract_name, version=version)
     if encoded_args is None:
         encoded_args = b""
+
     emulate_result = neon_api_client.emulate(
         user.eth_address.hex(),
         contract=None,
@@ -185,5 +192,9 @@ def deploy_contract(
     resp = evm_loader.execute_transaction_steps_from_account(
         operator, treasury_pool, holder_acc, additional_accounts, chain_id=chain_id
     )
-    check_transaction_logs_have_text(resp, "exit_status=0x12")
+    check_transaction_logs_have_text(
+        solana_client=solana_client,
+        trx=resp,
+        text="exit_status=0x12"
+    )
     return contract

@@ -61,6 +61,8 @@
   },
   "testnet": {
     "evm_loader": "eeLSJgWzzxrqKv1UxtRVVH8FX3qCQWUs9QuAjJpETGU",
+    "neon_core_api_url": "http://neon_api:8085/api",
+    "neon_core_api_rpc_url": "http://neon_core_rpc:3100/api",
     "proxy_url": "https://proxy.testnet.neonlabs.org/solana",
     "network_ids": {
       "neon": 245022940
@@ -74,6 +76,8 @@
   },
   "local": {
     "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
+    "neon_core_api_url": "http://127.0.0.1:8085/api",
+    "neon_core_api_rpc_url": "http://127.0.0.1:3100/api",
     "proxy_url": "http://127.0.0.1:9090/solana",
     "network_ids": {
       "neon": 111,
@@ -81,6 +85,7 @@
       "usdt": 113,
       "eth": 114
     },
+    "sol_mint_id_string": "So11111111111111111111111111111111111111112", 
     "solana_url": "http://127.0.0.1:8899/",
     "faucet_url": "http://127.0.0.1:3333/",
     "tracer_url": "http://127.0.0.1:9091",

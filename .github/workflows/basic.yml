@@ -41,7 +41,7 @@ env:
   NETWORK: ${{ github.event.inputs.network || 'terraform' }}
   NUMPROCESSES: ${{ github.event.inputs.numprocesses || 8 }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-  SOLANA_URL: "${{ secrets.SOLANA_URL }}"
+  DEVNET_SOLANA_URL: "${{ secrets.SOLANA_URL }}"
   FAUCET_URL: "${{ secrets.DEVNET_FAUCET_URL }}"
   IMAGE:  ${{ github.repository_owner }}/neon_tests
   DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
@@ -197,7 +197,7 @@ jobs:
             -e ETH_BANK_PRIVATE_KEY_MAINNET=${{ secrets.ETH_BANK_PRIVATE_KEY_MAINNET }} \
             -e BANK_PRIVATE_KEY_MAINNET=${{ secrets.BANK_PRIVATE_KEY_MAINNET }} \
             -e BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }} \
-            -e SOLANA_URL \
+            -e DEVNET_SOLANA_URL \
             -e SOLANA_IP -e PROXY_IP \
             --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ needs.dockerize.outputs.tag }} /bin/bash
       - name: Run basic proxy tests

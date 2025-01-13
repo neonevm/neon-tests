@@ -1054,7 +1054,8 @@ def get_stand_param(current_branch, head_branch, base_branch, param):
 @click.option("--head_branch", default="", help="Feature branch name")
 @click.option("--base_branch", default="", help="Target branch of the pull request")
 @click.option("--use-real-price", required=False, default="0", help="Remove CONST_GAS_PRICE from proxy")
-def deploy(current_branch, head_branch, base_branch, use_real_price):
+@click.option("--devnet-solana-url", required=True, help="Solana devnet url")
+def deploy(current_branch, head_branch, base_branch, devnet_solana_url, use_real_price):
     # use feature branch or version tag as tag for proxy, evm and faucet images or use latest
     env = define_stand_env_by_branch(current_branch, head_branch, base_branch)
     use_real_price = True if use_real_price == "1" else False
@@ -1064,6 +1065,7 @@ def deploy(current_branch, head_branch, base_branch, use_real_price):
                                          env["faucet_tag"],
                                          env["evm_branch"],
                                          env["proxy_branch"],
+                                         devnet_solana_url,
                                          use_real_price)
 
 

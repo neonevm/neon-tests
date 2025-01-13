@@ -28,7 +28,6 @@ TF_BACKEND_CONFIG = {"bucket": TFSTATE_BUCKET, "key": TF_STATE_KEY, "region": TF
 os.environ["TF_VAR_run_number"] = os.environ.get("GITHUB_RUN_NUMBER", "0")
 os.environ["TF_VAR_branch"] = os.environ.get("GITHUB_REF_NAME", "develop").replace("/", "-").replace("_", "-")
 
-
 terraform = Terraform(working_dir=pathlib.Path(__file__).parent.parent / "hetzner")
 
 WEB3_CLIENT = NeonChainWeb3Client(os.environ.get("PROXY_URL"))
@@ -45,7 +44,7 @@ def set_github_env(envs: tp.Dict, upper=True) -> None:
 
 
 def deploy_infrastructure(
-    evm_tag, proxy_tag, faucet_tag, evm_branch, proxy_branch, use_real_price: bool = False
+    evm_tag, proxy_tag, faucet_tag, evm_branch, proxy_branch, devnet_solana_url, use_real_price: bool = False
 ) -> dict:
     print(
         f"Deploy infrastructure with evm_tag: {evm_tag}, "
@@ -57,6 +56,8 @@ def deploy_infrastructure(
     os.environ["TF_VAR_proxy_image_tag"] = proxy_tag
     os.environ["TF_VAR_proxy_model_commit"] = proxy_branch
     os.environ["TF_VAR_dockerhub_org_name"] = os.environ.get("GITHUB_REPOSITORY_OWNER")
+    os.environ["TF_VAR_devnet_solana_url"] = devnet_solana_url
+    os.environ["TF_LOG"] = "DEBUG"
 
     if use_real_price:
         os.environ["TF_VAR_use_real_price"] = "1"
@@ -88,6 +89,7 @@ def destroy_infrastructure():
     os.environ["TF_VAR_proxy_image_tag"] = "latest"
     os.environ["TF_VAR_proxy_model_commit"] = "develop"
     os.environ["TF_VAR_dockerhub_org_name"] = os.environ.get("GITHUB_REPOSITORY_OWNER")
+    os.environ["TF_VAR_devnet_solana_url"] = os.environ.get("DEVNET_SOLANA_URL")
 
     log = logging.getLogger()
     log.handlers = []

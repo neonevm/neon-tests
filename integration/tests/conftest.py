@@ -277,15 +277,16 @@ def account_with_all_tokens(
 ) -> LocalAccount:
     neon_account = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account, amount=500)
     if web3_client_sol:
+        lamports = 10 * LAMPORT_PER_SOL
         if pytestconfig.environment.use_bank:
-            evm_loader.send_sol(bank_account, solana_account.pubkey(), int(1 * LAMPORT_PER_SOL))
+            evm_loader.send_sol(bank_account, solana_account.pubkey(), lamports)
         else:
-            evm_loader.request_airdrop(solana_account.pubkey(), 1 * LAMPORT_PER_SOL)
+            evm_loader.request_airdrop(solana_account.pubkey(), lamports)
         evm_loader.deposit_wrapped_sol_from_solana_to_neon(
             solana_account,
             neon_account,
             web3_client_sol.eth.chain_id,
-            int(1 * LAMPORT_PER_SOL),
+            lamports,
         )
     for client in [web3_client_usdt, web3_client_eth]:
         if client:

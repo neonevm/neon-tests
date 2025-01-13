@@ -20,6 +20,7 @@ env:
   IMAGE:  ${{ github.repository_owner }}/neon_tests
   CONTAINER:  "economy-${{ github.run_id }}"
   DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
+  DEVNET_SOLANA_URL: ${{secrets.SOLANA_URL}}
 jobs:
   dockerize:
     if: ${{ github.ref_name != 'develop'}}

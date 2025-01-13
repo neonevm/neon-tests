@@ -78,7 +78,7 @@ class TestEconomics:
         w3_client, token_price = client_and_price
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(w3_client)
-        transfer_value = 50000000
+        transfer_value = 500000
         acc2 = w3_client.create_account()
         receipt = w3_client.send_tokens(account_with_all_tokens, acc2, transfer_value, tx_type=tx_type)
         assert w3_client.get_balance(acc2) == transfer_value
@@ -125,21 +125,23 @@ class TestEconomics:
         assert_profit(sol_diff, sol_price, token_diff, token_price, w3_client.native_token_name)
 
     def test_send_neon_token_without_chain_id(
-        self, account_with_all_tokens, web3_client, sol_price, operator, neon_price
+        self, account_with_all_tokens, web3_client, sol_price, operator, neon_price, faucet
     ):
         # for neon token transactions without chain_id NeonEVM execute it inside NEON network
         # checks eip1820
+        # for a transaction without chain_id users need in 1000 times more neon tokens for the execution
+        faucet.request_neon(account_with_all_tokens.address, 10000)
         acc2 = web3_client.create_account()
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(web3_client)
 
         instruction_tx = web3_client.make_raw_tx(
-            account_with_all_tokens.address, acc2.address, web3.Web3.to_wei(0.1, "ether"), estimate_gas=True
+            account_with_all_tokens.address, acc2.address, 1000, estimate_gas=True
         )
+
         instruction_tx.pop("chainId")
 
         web3_client.send_transaction(account_with_all_tokens, instruction_tx)
-
         sol_balance_after = operator.get_solana_balance()
         token_balance_after = operator.get_token_balance(web3_client)
         sol_diff = sol_balance_before - sol_balance_after
@@ -868,13 +870,14 @@ class TestEconomics:
         # if no fails - other tests interference
         """Trigger transaction than requires less than 30 accounts"""
         accounts_quantity = 10
+        sender = accounts[1]
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(web3_client)
 
-        tx = web3_client.make_raw_tx(from_=accounts[0].address, tx_type=tx_type)
+        tx = web3_client.make_raw_tx(from_=sender.address, tx_type=tx_type)
 
         instr = alt_contract.functions.fill(accounts_quantity).build_transaction(tx)
-        receipt = web3_client.send_transaction(accounts[0], instr)
+        receipt = web3_client.send_transaction(sender, instr)
         block = int(receipt["blockNumber"])
 
         response = wait_for_block(sol_client, block)
@@ -895,12 +898,13 @@ class TestEconomics:
         )
         get_gas_used_percent(web3_client, receipt)
 
-    def test_deploy_big_contract_with_structures(self, client_and_price, account_with_all_tokens, sol_price, operator):
+    def test_deploy_big_contract_with_structures(self, client_and_price, web3_client, web3_client_sol,
+                                                 account_with_all_tokens, sol_price, operator):
         w3_client, token_price = client_and_price
 
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(w3_client)
-
+        make_nonce_the_biggest_for_chain(account_with_all_tokens, w3_client, [web3_client, web3_client_sol])
         contract, receipt = w3_client.deploy_and_get_contract("EIPs/ERC3475", "0.8.10", account_with_all_tokens)
 
         sol_balance_after = operator.get_solana_balance()
@@ -920,16 +924,15 @@ class TestEconomics:
             sol_price: float,
             operator: Operator,
     ):
+        sender_account = accounts[3]
 
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(web3_client)
 
-        account = accounts.create_account()
-
         contract, receipt = web3_client.deploy_and_get_contract(
             contract="EIPs/ERC3475",
             version="0.8.10",
-            account=account,
+            account=sender_account,
             tx_type=TransactionType.EIP_1559,
         )
 
@@ -1032,13 +1035,13 @@ class TestEconomics:
             account_with_all_tokens: LocalAccount,
             sol_price: float
     ):
-        # Calculate profit and expense with a type-0 transaction
+        # Calculate profit and compare with a type-0 transaction, type-0 transaction should be more profitable
         w3_client, token_price = client_and_price
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(w3_client)
 
         recipient_0 = w3_client.create_account()
-        value = 1000000
+        value = 100
 
         w3_client.send_tokens(
             from_=account_with_all_tokens,
@@ -1059,10 +1062,10 @@ class TestEconomics:
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(w3_client)
 
-        base_fee_per_gas = w3_client.base_fee_per_gas()
-        base_fee_multiplier = 1.1
-        max_priority_fee_per_gas = 100000000
-        max_fee_per_gas = int((base_fee_per_gas * base_fee_multiplier) + max_priority_fee_per_gas)
+        latest_block: web3.types.BlockData = w3_client._web3.eth.get_block(block_identifier="latest")  # noqa
+        base_fee_per_gas = latest_block.baseFeePerGas  # noqa
+        max_priority_fee_per_gas = w3_client._web3.eth._max_priority_fee()  # noqa
+        max_fee_per_gas = (5 * base_fee_per_gas) + max_priority_fee_per_gas
         recipient_2 = w3_client.create_account()
 
         w3_client.send_tokens_eip_1559(
@@ -1085,4 +1088,4 @@ class TestEconomics:
         profit_tx_type_2 = revenue_usd_2 - expense_usd_2
 
         # compare operator profits
-        assert profit_tx_type_2 > profit_tx_type_0
+        assert profit_tx_type_2 < profit_tx_type_0

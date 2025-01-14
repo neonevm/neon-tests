@@ -22,7 +22,7 @@ class TestBlockTimestampAndNumber:
         current_timestamp = json_rpc_client.send_rpc("eth_getBlockByNumber", [last_block, False])["result"][
             "timestamp"
         ]
-        assert hex(contract.functions.getBlockTimestamp().call()) >= current_timestamp
+        assert contract.functions.getBlockTimestamp().call() >= int(current_timestamp, 16)
 
     def test_block_timestamp_simple_trx(self, block_timestamp_contract, json_rpc_client):
         contract, _ = block_timestamp_contract
@@ -35,7 +35,7 @@ class TestBlockTimestampAndNumber:
         tx_block_timestamp = EthGetBlockByHashResult(**response).result.timestamp
 
         event_logs = contract.events.Result().process_receipt(receipt)
-        assert hex(event_logs[0]["args"]["block_timestamp"]) <= tx_block_timestamp
+        assert event_logs[0]["args"]["block_timestamp"] <= int(tx_block_timestamp, 16)
 
     def test_block_timestamp_iterative(self, block_timestamp_contract, json_rpc_client):
         contract, _ = block_timestamp_contract
@@ -52,14 +52,14 @@ class TestBlockTimestampAndNumber:
 
         event_logs = contract.events.Result().process_receipt(receipt)
         assert len(event_logs) == 1, "Event logs are not found"
-        assert hex(event_logs[0]["args"]["block_timestamp"]) <= tx_block_timestamp
+        assert event_logs[0]["args"]["block_timestamp"] <= int(tx_block_timestamp, 16)
 
     def test_block_timestamp_constructor(self, block_timestamp_contract, json_rpc_client):
         contract, receipt = block_timestamp_contract
         response = json_rpc_client.send_rpc(method="eth_getBlockByHash", params=[receipt["blockHash"].hex(), False])
         tx_block_timestamp = EthGetBlockByHashResult(**response).result.timestamp
 
-        assert hex(contract.functions.initial_block_timestamp().call()) <= tx_block_timestamp
+        assert contract.functions.initial_block_timestamp().call() <= int(tx_block_timestamp, 16)
 
     def test_block_timestamp_in_mapping(self, block_timestamp_contract, json_rpc_client):
         contract, _ = block_timestamp_contract
@@ -84,7 +84,7 @@ class TestBlockTimestampAndNumber:
     def test_block_number_call(self, block_number_contract, json_rpc_client):
         contract, _ = block_number_contract
         current_block_number = json_rpc_client.send_rpc(method="eth_blockNumber", params=[])["result"]
-        assert hex(contract.functions.getBlockNumber().call()) >= current_block_number
+        assert contract.functions.getBlockNumber().call() >= int(current_block_number, 16)
 
     def test_block_number_simple_trx(self, block_number_contract, json_rpc_client):
         contract, _ = block_number_contract
@@ -97,7 +97,7 @@ class TestBlockTimestampAndNumber:
         tx_block_number = EthGetBlockByHashResult(**response).result.number
 
         event_logs = contract.events.Result().process_receipt(receipt)
-        assert hex(event_logs[0]["args"]["block_number"]) <= tx_block_number
+        assert event_logs[0]["args"]["block_number"] <= int(tx_block_number, 16)
 
     def test_block_number_iterative(self, block_number_contract, json_rpc_client):
         contract, _ = block_number_contract
@@ -111,14 +111,14 @@ class TestBlockTimestampAndNumber:
         tx_block_number = EthGetBlockByHashResult(**response).result.number
         event_logs = contract.events.Result().process_receipt(receipt)
 
-        assert hex(event_logs[0]["args"]["block_number"]) <= tx_block_number
+        assert event_logs[0]["args"]["block_number"] <= int(tx_block_number, 16)
 
     def test_block_number_constructor(self, block_number_contract, json_rpc_client):
         contract, receipt = block_number_contract
         response = json_rpc_client.send_rpc(method="eth_getBlockByHash", params=[receipt["blockHash"].hex(), False])
         tx_block_number = EthGetBlockByHashResult(**response).result.number
 
-        assert hex(contract.functions.initial_block_number().call()) <= tx_block_number
+        assert contract.functions.initial_block_number().call() <= int(tx_block_number, 16)
 
     def test_contract_deploys_contract_with_timestamp(self, json_rpc_client):
         deployer, receipt = self.web3_client.deploy_and_get_contract(
@@ -129,7 +129,7 @@ class TestBlockTimestampAndNumber:
 
         addr = deployer.events.Log().process_receipt(receipt)[0]["args"]["addr"]
         contract = self.web3_client.get_deployed_contract(addr, "common/Block.sol", "BlockTimestamp")
-        assert hex(contract.functions.initial_block_timestamp().call()) <= tx_block_timestamp
+        assert contract.functions.initial_block_timestamp().call() <= int(tx_block_timestamp, 16)
 
     def test_block_number_in_mapping(self, block_number_contract):
         contract, _ = block_number_contract

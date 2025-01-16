@@ -64,13 +64,14 @@ jobs:
           docker exec -i ${{ env.CONTAINER_NAME }} bash -c "$CMD"
 
   run-tests:
-      - name: Run tests
-        id: run-tests
-        run:
-          docker exec -i ${{ env.CONTAINER_NAME }} bash -c "CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} python3 clickfile.py run ui --network ${{ env.NETWORK }}"
+    name: Run tests
+    id: run-tests
+    run:
+      docker exec -i ${{ env.CONTAINER_NAME }} bash -c "CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} python3 clickfile.py run ui --network ${{ env.NETWORK }}"
   send-notification:
     name: Send notification on failure
     needs:
+      - dockerize
       - run-tests
     runs-on: [ "self-hosted", "k8s-prod" ]
     steps:

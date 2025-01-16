@@ -72,7 +72,7 @@ jobs:
       - name: Send notification on failure
         needs:
           - dockerize
-        runs-on: [ "self-hosted", "k8s-prod" ]
+        runs-on: ubuntu-latest
         steps:
           - uses: actions/checkout@v4
           - name: "Notify on failure."

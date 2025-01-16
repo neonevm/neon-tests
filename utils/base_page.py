@@ -27,4 +27,8 @@ class BasePage(abc.ABC):
         assert url == current_url, f"The url is {current_url}"
 
     def switch_window(self,index:int):
+        WebDriverWait(self.driver, 10).until(
+            lambda driver: len(driver.window_handles) > index,
+            message=f"Expected at least {index + 1} windows, but found {len(self.driver.window_handles)}"
+        )
         self.driver.switch_to.window(self.driver.window_handles[index])

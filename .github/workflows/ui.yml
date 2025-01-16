@@ -9,7 +9,7 @@ on:
 jobs:
   dockerize:
     name: Dockerize neon tests
-    if: ${{ github.ref_name != 'develop'}}
+    if: ${{ github.ref_name != 'develop' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,6 +26,7 @@ jobs:
         uses: ./.github/actions/define-image-tag
     outputs:
       tag: ${{ steps.image_tag.outputs.tag }}
+
   test:
     runs-on: ubuntu-latest
 
@@ -66,21 +67,9 @@ jobs:
 
       - name: Run tests
         id: run-tests
-        run:
+        run: |
           docker exec -i ${{ env.CONTAINER_NAME }} bash -c "CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} python3 clickfile.py run ui --network ${{ env.NETWORK }}"
 
-      - name: Send notification on failure
-        needs:
-          - dockerize
-        runs-on: ubuntu-latest
-        steps:
-          - uses: actions/checkout@v4
-          - name: "Notify on failure."
-        if: failure() && github.ref_name == 'develop'
-        run: |
-          docker exec -i ${{ env.CONTAINER }} \
-            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
-          -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group == 'ui'
       - name: "Generate allure report"
         if: always()
         uses: ./.github/actions/generate-allure-report
@@ -90,3 +79,16 @@ jobs:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           tests_name: ui
+
+  notify:
+    name: Send notification on failure
+    needs: test
+    if: failure() && github.ref_name == 'develop'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Notify on failure"
+        run: |
+          docker exec -i ${{ needs.test.outputs.CONTAINER_NAME }} \
+            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+            -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group ui

@@ -7,6 +7,25 @@ on:
   workflow_dispatch:
 
 jobs:
+  dockerize:
+    name: Dockerize neon tests
+    if: ${{ github.ref_name != 'develop'}}
+    runs-on: [ "self-hosted", "k8s-prod" ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dockerize neon tests
+        uses: ./.github/actions/dockerize-neon-tests
+        with:
+          image_tag: ${{ github.sha }}
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
+          image_name: ${{ env.IMAGE }}
+          docker_hub_org_name: ${{ env.DOCKER_HUB_ORG_NAME }}
+      - name: "Define image tag"
+        id: image_tag
+        uses: ./.github/actions/define-image-tag
+    outputs:
+      tag: ${{ steps.image_tag.outputs.tag }}
   test:
     runs-on: ubuntu-latest
 

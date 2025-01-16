@@ -6,6 +6,9 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
 
+from ui.tests.website_tests.conftest import driver
+
+
 @pytest.mark.usefixtures("setup")
 class BasePage(abc.ABC):
     _url:str
@@ -27,4 +30,5 @@ class BasePage(abc.ABC):
         assert url == current_url, f"The url is {current_url}"
 
     def switch_window(self,index:int):
+        WebDriverWait(self.driver, 10).until(len(self.driver.window_handles) > index)
         self.driver.switch_to.window(self.driver.window_handles[index])

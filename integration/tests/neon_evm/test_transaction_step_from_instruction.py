@@ -28,13 +28,13 @@ from .utils.transaction_checks import check_transaction_logs_have_text, check_ho
 
 class TestTransactionStepFromInstruction:
     def test_simple_transfer_transaction(
-        self, operator_keypair, treasury_pool, evm_loader, sender_with_tokens, session_user, holder_acc
+        self, operator_keypair, treasury_pool, evm_loader, sender_with_tokens, session_user, holder_acc, environment, sol_client
     ):
         amount = 10
         sender_balance_before = evm_loader.get_neon_balance(sender_with_tokens.eth_address)
         recipient_balance_before = evm_loader.get_neon_balance(session_user.eth_address)
 
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, amount)
+        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, environment, amount)
 
         resp = evm_loader.execute_transaction_steps_from_instruction(
             operator_keypair,
@@ -52,19 +52,25 @@ class TestTransactionStepFromInstruction:
         sender_balance_after = evm_loader.get_neon_balance(sender_with_tokens.eth_address)
         recipient_balance_after = evm_loader.get_neon_balance(session_user.eth_address)
 
-        check_holder_account_tag(holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
-        check_transaction_logs_have_text(resp, "exit_status=0x11")
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=holder_acc,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE
+        )
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")
         assert sender_balance_before - amount == sender_balance_after
         assert recipient_balance_before + amount == recipient_balance_after
 
+
     @pytest.mark.parametrize("chain_id", [None, 111])
     def test_deploy_contract(
-        self, operator_keypair, holder_acc, treasury_pool, evm_loader, sender_with_tokens, chain_id
+        self, operator_keypair, holder_acc, treasury_pool, evm_loader, sender_with_tokens, chain_id, environment, sol_client
     ):
         contract_filename = "small"
 
         signed_tx = make_deployment_transaction(evm_loader, sender_with_tokens, contract_filename, chain_id=chain_id)
-        contract = create_contract_address(sender_with_tokens, evm_loader)
+        contract = create_contract_address(sender_with_tokens, evm_loader, environment)
 
         resp = evm_loader.execute_transaction_steps_from_instruction(
             operator_keypair,
@@ -79,8 +85,14 @@ class TestTransactionStepFromInstruction:
             ],
         )
 
-        check_holder_account_tag(holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
-        check_transaction_logs_have_text(resp, "exit_status=0x12")
+
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=holder_acc,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE
+        )
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x12")
 
     def test_call_contract_function_without_neon_transfer(
         self,
@@ -91,10 +103,12 @@ class TestTransactionStepFromInstruction:
         holder_acc,
         string_setter_contract,
         neon_api_client,
+        environment,
+        sol_client
     ):
         text = "".join(random.choice(string.ascii_letters) for _ in range(10))
         signed_tx = make_contract_call_trx(
-            evm_loader, sender_with_tokens, string_setter_contract, "set(string)", [text]
+            evm_loader, sender_with_tokens, string_setter_contract, "set(string)", environment, [text]
         )
 
         resp = evm_loader.execute_transaction_steps_from_instruction(
@@ -110,8 +124,13 @@ class TestTransactionStepFromInstruction:
             ],
         )
 
-        check_holder_account_tag(holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
-        check_transaction_logs_have_text(resp, "exit_status=0x11")
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=holder_acc,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE
+        )
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")
 
         assert text in to_text(
             neon_api_client.call_contract_get_function(sender_with_tokens, string_setter_contract, "get()")
@@ -126,6 +145,8 @@ class TestTransactionStepFromInstruction:
         holder_acc,
         string_setter_contract,
         neon_api_client,
+        sol_client,
+        environment
     ):
         transfer_amount = random.randint(1, 1000)
 
@@ -134,7 +155,7 @@ class TestTransactionStepFromInstruction:
 
         text = "".join(random.choice(string.ascii_letters) for _ in range(10))
         signed_tx = make_contract_call_trx(
-            evm_loader, sender_with_tokens, string_setter_contract, "set(string)", [text], value=transfer_amount
+            evm_loader, sender_with_tokens, string_setter_contract, "set(string)", environment,[text], value=transfer_amount
         )
 
         resp = evm_loader.execute_transaction_steps_from_instruction(
@@ -150,8 +171,13 @@ class TestTransactionStepFromInstruction:
             ],
         )
 
-        check_holder_account_tag(holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
-        check_transaction_logs_have_text(resp, "exit_status=0x11")
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=holder_acc,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE
+        )
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")
 
         sender_balance_after = evm_loader.get_neon_balance(sender_with_tokens.eth_address)
         contract_balance_after = evm_loader.get_neon_balance(string_setter_contract.eth_address)
@@ -163,7 +189,7 @@ class TestTransactionStepFromInstruction:
         )
 
     def test_transfer_transaction_with_non_existing_recipient(
-        self, operator_keypair, treasury_pool, sender_with_tokens, evm_loader, holder_acc
+        self, operator_keypair, treasury_pool, sender_with_tokens, evm_loader, holder_acc, sol_client, environment
     ):
         # recipient account should be created
         recipient = Keypair()
@@ -171,7 +197,9 @@ class TestTransactionStepFromInstruction:
         recipient_solana_address, _ = evm_loader.ether2program(recipient_ether)
         recipient_balance_address = evm_loader.ether2balance(recipient_ether)
         amount = 10
-        signed_tx = make_eth_transaction(evm_loader, recipient_ether, None, sender_with_tokens, amount)
+        signed_tx = make_eth_transaction(
+            evm_loader, recipient_ether, None, sender_with_tokens, environment, amount
+        )
 
         resp = evm_loader.execute_transaction_steps_from_instruction(
             operator_keypair,
@@ -187,14 +215,15 @@ class TestTransactionStepFromInstruction:
         )
 
         recipient_balance_after = evm_loader.get_neon_balance(recipient_ether)
-        check_transaction_logs_have_text(resp, "exit_status=0x11")
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")
 
         assert recipient_balance_after == amount
 
     def test_incorrect_chain_id(
-        self, operator_keypair, holder_acc, treasury_pool, sender_with_tokens, session_user, evm_loader
+        self, operator_keypair, holder_acc, treasury_pool, sender_with_tokens, session_user, evm_loader, environment
     ):
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1, chain_id=1)
+        signed_tx = make_eth_transaction(
+            evm_loader, session_user.eth_address, None, sender_with_tokens, environment,1, chain_id=1)
 
         with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.INVALID_CHAIN_ID):
             evm_loader.execute_transaction_steps_from_instruction(
@@ -211,9 +240,11 @@ class TestTransactionStepFromInstruction:
             )
 
     def test_incorrect_nonce(
-        self, operator_keypair, treasury_pool, sender_with_tokens, evm_loader, session_user, holder_acc
+        self, operator_keypair, treasury_pool, sender_with_tokens, evm_loader, session_user, holder_acc, environment
     ):
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
+        signed_tx = make_eth_transaction(
+            evm_loader, session_user.eth_address, None, sender_with_tokens, environment, 1
+            )
         evm_loader.execute_transaction_steps_from_instruction(
             operator_keypair,
             treasury_pool,
@@ -242,9 +273,11 @@ class TestTransactionStepFromInstruction:
             )
 
     def test_run_finalized_transaction(
-        self, operator_keypair, treasury_pool, sender_with_tokens, evm_loader, session_user, holder_acc
+        self, operator_keypair, treasury_pool, sender_with_tokens, evm_loader, session_user, holder_acc, environment
     ):
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
+        signed_tx = make_eth_transaction(
+            evm_loader, session_user.eth_address, None, sender_with_tokens, environment, 1
+        )
         evm_loader.execute_transaction_steps_from_instruction(
             operator_keypair,
             treasury_pool,
@@ -273,12 +306,12 @@ class TestTransactionStepFromInstruction:
             )
 
     def test_insufficient_funds(
-        self, operator_keypair, treasury_pool, evm_loader, session_user, holder_acc, sender_with_tokens
+        self, operator_keypair, treasury_pool, evm_loader, session_user, holder_acc, sender_with_tokens, environment
     ):
         user_balance = evm_loader.get_neon_balance(session_user.eth_address)
 
         signed_tx = make_eth_transaction(
-            evm_loader, sender_with_tokens.eth_address, None, session_user, user_balance + 1
+            evm_loader, sender_with_tokens.eth_address, None, session_user, environment, user_balance + 1
         )
 
         with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.INSUFFICIENT_FUNDS):
@@ -296,9 +329,11 @@ class TestTransactionStepFromInstruction:
             )
 
     def test_gas_limit_reached(
-        self, operator_keypair, treasury_pool, session_user, evm_loader, sender_with_tokens, holder_acc
+        self, operator_keypair, treasury_pool, session_user, evm_loader, sender_with_tokens, holder_acc, environment
     ):
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 10, gas=1)
+        signed_tx = make_eth_transaction(
+            evm_loader, session_user.eth_address, None, sender_with_tokens, environment, 10, gas=1
+        )
 
         with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.OUT_OF_GAS):
             evm_loader.execute_transaction_steps_from_instruction(
@@ -315,9 +350,11 @@ class TestTransactionStepFromInstruction:
             )
 
     def test_sender_missed_in_remaining_accounts(
-        self, operator_keypair, treasury_pool, session_user, sender_with_tokens, evm_loader, holder_acc
+        self, operator_keypair, treasury_pool, session_user, sender_with_tokens, evm_loader, holder_acc, environment
     ):
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
+        signed_tx = make_eth_transaction(
+            evm_loader, session_user.eth_address, None, sender_with_tokens, environment, 1
+        )
 
         with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.ADDRESS_MUST_BE_PRESENT):
             evm_loader.execute_transaction_steps_from_instruction(
@@ -329,9 +366,11 @@ class TestTransactionStepFromInstruction:
             )
 
     def test_recipient_missed_in_remaining_accounts(
-        self, operator_keypair, treasury_pool, session_user, sender_with_tokens, evm_loader, holder_acc
+        self, operator_keypair, treasury_pool, session_user, sender_with_tokens, evm_loader, holder_acc, environment
     ):
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
+        signed_tx = make_eth_transaction(
+            evm_loader, session_user.eth_address, None, sender_with_tokens, environment, 1
+        )
 
         with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.ADDRESS_MUST_BE_PRESENT):
             evm_loader.execute_transaction_steps_from_instruction(
@@ -342,8 +381,12 @@ class TestTransactionStepFromInstruction:
                 [session_user.solana_account_address, session_user.balance_account_address],
             )
 
-    def test_incorrect_treasure_pool(self, operator_keypair, sender_with_tokens, evm_loader, session_user, holder_acc):
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
+    def test_incorrect_treasure_pool(
+        self, operator_keypair, sender_with_tokens, evm_loader, session_user, holder_acc, environment
+    ):
+        signed_tx = make_eth_transaction(
+            evm_loader, session_user.eth_address, None, sender_with_tokens, environment, 1
+        )
         index = 2
         treasury = TreasuryPool(index, Keypair().pubkey(), index.to_bytes(4, "little"))
 
@@ -362,8 +405,12 @@ class TestTransactionStepFromInstruction:
                 ],
             )
 
-    def test_incorrect_treasure_index(self, operator_keypair, sender_with_tokens, evm_loader, session_user, holder_acc):
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
+    def test_incorrect_treasure_index(
+        self, operator_keypair, sender_with_tokens, evm_loader, session_user, holder_acc, environment
+    ):
+        signed_tx = make_eth_transaction(
+            evm_loader, session_user.eth_address, None, sender_with_tokens, environment,1
+        )
         index = 2
         treasury = TreasuryPool(index, evm_loader.create_treasury_pool_address(index), (index + 1).to_bytes(4, "little"))
 
@@ -382,8 +429,12 @@ class TestTransactionStepFromInstruction:
                 ],
             )
 
-    def test_incorrect_operator_account(self, sender_with_tokens, evm_loader, treasury_pool, session_user, holder_acc):
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
+    def test_incorrect_operator_account(
+        self, sender_with_tokens, evm_loader, treasury_pool, session_user, holder_acc, environment
+    ):
+        signed_tx = make_eth_transaction(
+            evm_loader, session_user.eth_address, None, sender_with_tokens, environment,1
+        )
         fake_operator = Keypair()
         with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.ACC_NOT_FOUND):
             evm_loader.execute_transaction_steps_from_instruction(
@@ -400,9 +451,11 @@ class TestTransactionStepFromInstruction:
             )
 
     def test_operator_is_not_in_white_list(
-        self, sender_with_tokens, evm_loader, treasury_pool, session_user, holder_acc
+        self, sender_with_tokens, evm_loader, treasury_pool, session_user, holder_acc, environment
     ):
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
+        signed_tx = make_eth_transaction(
+            evm_loader, session_user.eth_address, None, sender_with_tokens, environment, 1
+        )
         with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.NOT_AUTHORIZED_OPERATOR):
             evm_loader.execute_transaction_steps_from_instruction(
                 sender_with_tokens.solana_account,
@@ -418,9 +471,11 @@ class TestTransactionStepFromInstruction:
             )
 
     def test_incorrect_system_program(
-        self, sender_with_tokens, operator_keypair, evm_loader, treasury_pool, session_user, holder_acc
+        self, sender_with_tokens, operator_keypair, evm_loader, treasury_pool, session_user, holder_acc, environment
     ):
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
+        signed_tx = make_eth_transaction(
+            evm_loader, session_user.eth_address, None, sender_with_tokens, environment, 1
+        )
         fake_sys_program_id = Keypair().pubkey()
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
         with pytest.raises(
@@ -444,9 +499,11 @@ class TestTransactionStepFromInstruction:
             )
 
     def test_incorrect_holder_account(
-        self, sender_with_tokens, operator_keypair, evm_loader, treasury_pool, session_user
+        self, sender_with_tokens, operator_keypair, evm_loader, treasury_pool, session_user, environment
     ):
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
+        signed_tx = make_eth_transaction(
+            evm_loader, session_user.eth_address, None, sender_with_tokens, environment, 1
+        )
         fake_holder_acc = Keypair().pubkey()
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
         with pytest.raises(
@@ -470,7 +527,7 @@ class TestTransactionStepFromInstruction:
 
     @pytest.mark.parametrize("value", [0, 10])
     def test_transaction_with_access_list(
-        self, operator_keypair, treasury_pool, sender_with_tokens, evm_loader, holder_acc, string_setter_contract, value
+        self, operator_keypair, treasury_pool, sender_with_tokens, evm_loader, holder_acc, string_setter_contract, value, sol_client, environment
     ):
         access_list = (
             {
@@ -486,6 +543,7 @@ class TestTransactionStepFromInstruction:
             sender_with_tokens,
             string_setter_contract,
             "set(string)",
+            environment,
             ["text"],
             value=value,
             access_list=access_list,
@@ -503,14 +561,19 @@ class TestTransactionStepFromInstruction:
             ],
         )
 
-        check_holder_account_tag(holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
-        check_transaction_logs_have_text(resp, "exit_status=0x11")
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=holder_acc,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE
+        )
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")
 
     def test_deploy_contract_with_access_list(
-        self, operator_keypair, holder_acc, treasury_pool, evm_loader, sender_with_tokens, neon_api_client
+        self, operator_keypair, holder_acc, treasury_pool, evm_loader, sender_with_tokens, neon_api_client, environment, sol_client
     ):
         contract_filename = "small"
-        contract = create_contract_address(sender_with_tokens, evm_loader)
+        contract = create_contract_address(sender_with_tokens, evm_loader, environment)
 
         access_list = (
             {
@@ -534,15 +597,24 @@ class TestTransactionStepFromInstruction:
                 sender_with_tokens.balance_account_address,
             ],
         )
-        check_transaction_logs_have_text(resp, "exit_status=0x12")
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x12")
 
 
 class TestInstructionStepContractCallContractInteractions:
     def test_contract_call_unchange_storage_function(
-        self, rw_lock_contract, session_user, evm_loader, operator_keypair, treasury_pool, holder_acc, rw_lock_caller
+        self,
+        rw_lock_contract,
+        session_user,
+        evm_loader,
+        operator_keypair,
+        treasury_pool,
+        holder_acc,
+        rw_lock_caller,
+        environment,
+        sol_client
     ):
         signed_tx = make_contract_call_trx(
-            evm_loader, session_user, rw_lock_caller, "unchange_storage(uint8,uint8)", [1, 1]
+            evm_loader, session_user, rw_lock_caller, "unchange_storage(uint8,uint8)", environment,[1, 1]
         )
         resp = evm_loader.execute_transaction_steps_from_instruction(
             operator_keypair,
@@ -557,8 +629,13 @@ class TestInstructionStepContractCallContractInteractions:
             ],
         )
 
-        check_holder_account_tag(holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
-        check_transaction_logs_have_text(resp, "exit_status=0x12")
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=holder_acc,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE
+        )
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x12")
 
     def test_contract_call_set_function(
         self,
@@ -570,9 +647,11 @@ class TestInstructionStepContractCallContractInteractions:
         holder_acc,
         rw_lock_caller,
         neon_api_client,
+        sol_client,
+        environment,
     ):
         signed_tx = make_contract_call_trx(
-            evm_loader, session_user, rw_lock_caller, "update_storage_str(string)", ["hello"]
+            evm_loader, session_user, rw_lock_caller, "update_storage_str(string)", environment, ["hello"]
         )
 
         resp = evm_loader.execute_transaction_steps_from_instruction(
@@ -588,17 +667,23 @@ class TestInstructionStepContractCallContractInteractions:
             ],
         )
 
-        check_holder_account_tag(holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
-        check_transaction_logs_have_text(resp, "exit_status=0x11")
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=holder_acc,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE
+        )
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")
 
         assert "hello" in to_text(
             neon_api_client.call_contract_get_function(session_user, rw_lock_contract, "get_text()")
         )
 
     def test_contract_call_get_function(
-        self, rw_lock_contract, session_user, evm_loader, operator_keypair, treasury_pool, holder_acc, rw_lock_caller
+        self, rw_lock_contract, session_user, evm_loader, operator_keypair, treasury_pool, holder_acc, rw_lock_caller, sol_client, environment
     ):
-        signed_tx = make_contract_call_trx(evm_loader, session_user, rw_lock_caller, "get_text()")
+        signed_tx = make_contract_call_trx(
+            evm_loader, session_user, rw_lock_caller, "get_text()", environment)
         resp = evm_loader.execute_transaction_steps_from_instruction(
             operator_keypair,
             treasury_pool,
@@ -612,8 +697,13 @@ class TestInstructionStepContractCallContractInteractions:
             ],
         )
 
-        check_holder_account_tag(holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
-        check_transaction_logs_have_text(resp, "exit_status=0x12")
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=holder_acc,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE
+        )
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x12")
 
     def test_contract_call_update_storage_map_function(
         self,
@@ -625,8 +715,11 @@ class TestInstructionStepContractCallContractInteractions:
         treasury_pool,
         holder_acc,
         neon_api_client,
+        environment,
+        sol_client,
     ):
-        signed_tx = make_contract_call_trx(evm_loader, session_user, rw_lock_caller, "update_storage_map(uint256)", [3])
+        signed_tx = make_contract_call_trx(
+            evm_loader, session_user, rw_lock_caller, "update_storage_map(uint256)", environment, [3])
 
         func_name = abi.function_signature_to_4byte_selector("update_storage_map(uint256)")
         data = func_name + eth_abi.encode(["uint256"], [3])
@@ -644,8 +737,13 @@ class TestInstructionStepContractCallContractInteractions:
             operator_keypair, treasury_pool, holder_acc, signed_tx, additional_accounts
         )
 
-        check_holder_account_tag(holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
-        check_transaction_logs_have_text(resp, "exit_status=0x11")
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=holder_acc,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE
+        )
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")
 
         constructor_args = eth_abi.encode(["address", "uint256"], [rw_lock_caller.eth_address.hex(), 2])
         actual_data = neon_api_client.call_contract_get_function(
@@ -664,9 +762,11 @@ class TestTransactionStepFromInstructionParallelRuns:
         operator_keypair,
         treasury_pool,
         new_holder_acc,
+        environment,
+        sol_client
     ):
         signed_tx = make_contract_call_trx(
-            evm_loader, user_account, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1]
+            evm_loader, user_account, rw_lock_contract, "unchange_storage(uint8,uint8)", environment, [1, 1]
         )
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
 
@@ -684,7 +784,9 @@ class TestTransactionStepFromInstructionParallelRuns:
 
         send_transaction_steps(new_holder_acc, rw_lock_contract, signed_tx)
 
-        signed_tx2 = make_contract_call_trx(evm_loader, user_account, string_setter_contract, "get()")
+        signed_tx2 = make_contract_call_trx(
+            evm_loader, user_account, string_setter_contract, "get()", environment
+        )
         holder_acc2 = create_holder(operator_keypair, evm_loader)
 
         send_transaction_steps(holder_acc2, string_setter_contract, signed_tx2)
@@ -692,16 +794,32 @@ class TestTransactionStepFromInstructionParallelRuns:
         send_transaction_steps(holder_acc2, string_setter_contract, signed_tx2)
         send_transaction_steps(new_holder_acc, rw_lock_contract, signed_tx)
         send_transaction_steps(holder_acc2, string_setter_contract, signed_tx2)
-        check_holder_account_tag(new_holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
-        check_holder_account_tag(holder_acc2, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_ACTIVE_STATE)
+
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=new_holder_acc,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE
+        )
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=holder_acc2,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_ACTIVE_STATE
+        )
         send_transaction_steps(holder_acc2, string_setter_contract, signed_tx2)
-        check_holder_account_tag(holder_acc2, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=holder_acc2,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE
+        )
 
     def test_2_users_call_the_same_contract(
-        self, rw_lock_contract, user_account, session_user, evm_loader, operator_keypair, treasury_pool, new_holder_acc
+        self, rw_lock_contract, user_account, session_user, evm_loader, operator_keypair, treasury_pool, new_holder_acc, environment, sol_client
     ):
         signed_tx = make_contract_call_trx(
-            evm_loader, user_account, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1]
+            evm_loader, user_account, rw_lock_contract, "unchange_storage(uint8,uint8)", environment, [1, 1]
         )
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
 
@@ -719,44 +837,42 @@ class TestTransactionStepFromInstructionParallelRuns:
 
         send_transaction_steps(user_account, new_holder_acc, signed_tx)
 
-        signed_tx2 = make_contract_call_trx(evm_loader, session_user, rw_lock_contract, "get_text()")
+        signed_tx2 = make_contract_call_trx(
+            evm_loader, session_user, rw_lock_contract, "get_text()", environment
+        )
         holder_acc2 = create_holder(operator_keypair, evm_loader)
         send_transaction_steps(session_user, holder_acc2, signed_tx2)
         send_transaction_steps(user_account, new_holder_acc, signed_tx)
         send_transaction_steps(session_user, holder_acc2, signed_tx2)
         send_transaction_steps(user_account, new_holder_acc, signed_tx)
         send_transaction_steps(session_user, holder_acc2, signed_tx2)
-        check_holder_account_tag(new_holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
-        check_holder_account_tag(holder_acc2, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
+        for holder in (new_holder_acc, holder_acc2):
+            check_holder_account_tag(
+                solana_client=sol_client,
+                storage_account=holder,
+                layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+                expected_tag=TAG_FINALIZED_STATE
+            )
+
 
     def test_two_contracts_call_same_contract(
-        self, rw_lock_contract, user_account, session_user, evm_loader, operator_keypair, treasury_pool, new_holder_acc
+        self, rw_lock_contract, user_account, session_user, evm_loader, operator_keypair, treasury_pool, new_holder_acc, neon_api_client, sol_client, environment
     ):
         constructor_args = eth_abi.encode(["address"], [rw_lock_contract.eth_address.hex()])
 
-        contract1 = deploy_contract(
-            operator_keypair,
-            session_user,
-            "rw_lock",
-            evm_loader,
-            treasury_pool,
-            encoded_args=constructor_args,
-            contract_name="rw_lock_caller",
-        )
-        contract2 = deploy_contract(
-            operator_keypair,
-            session_user,
-            "rw_lock",
-            evm_loader,
-            treasury_pool,
-            encoded_args=constructor_args,
-            contract_name="rw_lock_caller",
-        )
+        contract1 = deploy_contract(operator_keypair, session_user, "rw_lock", evm_loader, neon_api_client,
+                                    treasury_pool, environment, sol_client, encoded_args=constructor_args,
+                                    contract_name="rw_lock_caller")
+        contract2 = deploy_contract(operator_keypair, session_user, "rw_lock", evm_loader, neon_api_client,
+                                    treasury_pool, environment, sol_client, encoded_args=constructor_args,
+                                    contract_name="rw_lock_caller")
 
         signed_tx1 = make_contract_call_trx(
-            evm_loader, user_account, contract1, "unchange_storage(uint8,uint8)", [1, 1]
+            evm_loader, user_account, contract1, "unchange_storage(uint8,uint8)", environment,[1, 1]
         )
-        signed_tx2 = make_contract_call_trx(evm_loader, session_user, contract2, "get_text()")
+        signed_tx2 = make_contract_call_trx(
+            evm_loader, session_user, contract2, "get_text()", environment
+        )
         holder_acc2 = create_holder(operator_keypair, evm_loader)
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
 
@@ -783,8 +899,13 @@ class TestTransactionStepFromInstructionParallelRuns:
         send_transaction_steps(session_user, holder_acc2, contract2, signed_tx2)
         send_transaction_steps(user_account, new_holder_acc, contract1, signed_tx1)
         send_transaction_steps(session_user, holder_acc2, contract2, signed_tx2)
-        check_holder_account_tag(new_holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
-        check_holder_account_tag(holder_acc2, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
+        for holder in (new_holder_acc, holder_acc2):
+            check_holder_account_tag(
+                solana_client=sol_client,
+                storage_account=holder,
+                layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+                expected_tag=TAG_FINALIZED_STATE
+            )
 
 
 class TestStepFromInstructionChangingOperatorsDuringTrxRun:
@@ -797,11 +918,13 @@ class TestStepFromInstructionChangingOperatorsDuringTrxRun:
         second_operator_keypair,
         treasury_pool,
         new_holder_acc,
+        environment,
+        sol_client,
     ):
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
         second_operator_balance = evm_loader.get_operator_balance_pubkey(second_operator_keypair)
         signed_tx = make_contract_call_trx(
-            evm_loader, user_account, rw_lock_contract, "update_storage_str(string)", ["text"]
+            evm_loader, user_account, rw_lock_contract, "update_storage_str(string)", environment, ["text"]
         )
 
         evm_loader.send_transaction_step_from_instruction(
@@ -848,16 +971,16 @@ class TestStepFromInstructionChangingOperatorsDuringTrxRun:
             1,
             second_operator_keypair,
         )
-        check_transaction_logs_have_text(resp, "exit_status=0x11")
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")
 
 
 class TestStepFromInstructionWithChangedRLPTrx:
     def test_add_waste_to_trx(
-        self, sender_with_tokens, operator_keypair, treasury_pool, evm_loader, holder_acc, string_setter_contract
+        self, sender_with_tokens, operator_keypair, treasury_pool, evm_loader, holder_acc, string_setter_contract, environment
     ):
         text = "".join(random.choice(string.ascii_letters) for _ in range(10))
         signed_tx = make_contract_call_trx(
-            evm_loader, sender_with_tokens, string_setter_contract, "set(string)", [text]
+            evm_loader, sender_with_tokens, string_setter_contract, "set(string)", environment, [text]
         )
         decoded_tx = rlp.decode(signed_tx.rawTransaction)
         decoded_tx.insert(6, HexBytes(b"\x19p\x16l\xc0"))
@@ -884,11 +1007,11 @@ class TestStepFromInstructionWithChangedRLPTrx:
             )
 
     def test_add_waste_to_trx_without_decoding(
-        self, sender_with_tokens, operator_keypair, treasury_pool, evm_loader, holder_acc, string_setter_contract
+        self, sender_with_tokens, operator_keypair, treasury_pool, evm_loader, holder_acc, string_setter_contract, environment
     ):
         text = "".join(random.choice(string.ascii_letters) for _ in range(10))
         signed_tx = make_contract_call_trx(
-            evm_loader, sender_with_tokens, string_setter_contract, "set(string)", [text]
+            evm_loader, sender_with_tokens, string_setter_contract, "set(string)", environment, [text]
         )
         signed_tx_new = SignedTransaction(
             rawTransaction=signed_tx.rawTransaction + HexBytes(b"\x19p\x16l\xc0"),
@@ -911,12 +1034,12 @@ class TestStepFromInstructionWithChangedRLPTrx:
             )
 
     def test_old_trx_type_with_leading_zeros(
-        self, sender_with_tokens, operator_keypair, evm_loader, string_setter_contract, treasury_pool, holder_acc
+        self, sender_with_tokens, operator_keypair, evm_loader, string_setter_contract, treasury_pool, holder_acc, environment, sol_client
     ):
         text = "".join(random.choice(string.ascii_letters) for _ in range(10))
 
         signed_tx = make_contract_call_trx(
-            evm_loader, sender_with_tokens, string_setter_contract, "set(string)", [text]
+            evm_loader, sender_with_tokens, string_setter_contract, "set(string)", environment, [text]
         )
         new_raw_trx = HexBytes(bytes([0]) + signed_tx.rawTransaction)
 
@@ -939,4 +1062,4 @@ class TestStepFromInstructionWithChangedRLPTrx:
                 sender_with_tokens.balance_account_address,
             ],
         )
-        check_transaction_logs_have_text(resp, "exit_status=0x11")
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")

@@ -32,17 +32,10 @@ class SolanaCaller:
         self.solana_client = solana_client
         self.environment = environment
 
-        self.contract = deploy_contract(
-            operator=operator_keypair,
-            user=owner,
-            contract_file_name="precompiled/CallSolanaCaller",
-            evm_loader=evm_loader,
-            treasury_pool=treasury_pool,
-            neon_api_client=neon_api_client,
-            environment=environment,
-            solana_client=solana_client,
-            version="0.8.10"
-        )
+        self.contract = deploy_contract(operator=operator_keypair, user=owner,
+                                        contract_file_name="precompiled/CallSolanaCaller", evm_loader=evm_loader,
+                                        neon_api_client=neon_api_client, treasury_pool=treasury_pool,
+                                        environment=environment, solana_client=solana_client, version="0.8.10")
 
     def get_neon_address(self, eth_address):
         args = eth_abi.encode(["address"], [eth_address])
@@ -76,12 +69,12 @@ class SolanaCaller:
         )
         return bytes32_to_solana_pubkey(addr)
 
-    def execute(self, program_id, instruction, lamports=0, holder_acc=None, sender=None, additional_accounts=None):
+    def execute(self, program_id, instruction, environment, lamports=0, holder_acc=None, sender=None, additional_accounts=None):
         sender = self.owner if sender is None else sender
         holder_acc = self.holder_acc if holder_acc is None else holder_acc
         serialized_instructions = serialize_instruction(program_id, instruction)
-        signed_tx = make_contract_call_trx(self.evm_loader,
-            sender, self.contract, "execute(uint64,bytes)", [lamports, serialized_instructions]
+        signed_tx = make_contract_call_trx(
+            self.evm_loader, sender, self.contract, "execute(uint64,bytes)", environment, [lamports, serialized_instructions]
         )
         resp = self.evm_loader.execute_trx_from_instruction_with_solana_call(
             self.operator_keypair,
@@ -102,12 +95,14 @@ class SolanaCaller:
         )
         return resp
 
-    def execute_with_seed(self, program_id, instruction, seed, lamports=0, holder_acc=None, sender=None, additional_accounts=None):
+    def execute_with_seed(
+        self, program_id, instruction, seed, environment, lamports=0, holder_acc=None, sender=None, additional_accounts=None
+    ):
         sender = self.owner if sender is None else sender
         holder_acc = self.holder_acc if holder_acc is None else holder_acc
         serialized_instructions = serialize_instruction(program_id, instruction)
-        signed_tx = make_contract_call_trx(self.evm_loader,
-            sender, self.contract, "executeWithSeed(uint64,bytes32,bytes)", [lamports, seed, serialized_instructions]
+        signed_tx = make_contract_call_trx(
+            self.evm_loader, sender, self.contract, "executeWithSeed(uint64,bytes32,bytes)", environment, [lamports, seed, serialized_instructions]
         )
         resp = self.evm_loader.execute_trx_from_instruction_with_solana_call(
             self.operator_keypair,
@@ -127,18 +122,19 @@ class SolanaCaller:
             self._get_all_pubkeys_from_instructions([instruction]))
         return resp
 
-    def batch_execute(self, call_params, sender=None, additional_accounts=None, additional_signers=None):
+    def batch_execute(self, call_params, environment, sender=None, additional_accounts=None, additional_signers=None):
         # call_params = [(program_id, lamports, instruction), ...]
         execute_params = []
         for program_id, lamports, instruction in call_params:
             serialized_instruction = serialize_instruction(program_id, instruction)
             execute_params.append((lamports, serialized_instruction))
+
         calldata = keccak(text="batchExecute((uint64,bytes)[])")[:4] + eth_abi.encode(
             ["(uint64,bytes)[]"],
             [execute_params],
         )
 
-        signed_tx = make_eth_transaction(self.evm_loader, self.contract.eth_address, calldata, sender)
+        signed_tx = make_eth_transaction(self.evm_loader, self.contract.eth_address, calldata, sender, environment)
 
         self.evm_loader.write_transaction_to_holder_account(signed_tx, self.holder_acc, self.operator_keypair)
         accounts = (
@@ -172,9 +168,9 @@ class SolanaCaller:
         )
         return bytes32_to_solana_pubkey(resource_address)
 
-    def create_resource(self, sender, salt, space, lamports, owner):
+    def create_resource(self, sender, environment, salt, space, lamports, owner):
         signed_tx = make_contract_call_trx(self.evm_loader,
-            sender, self.contract, "createResource(bytes32,uint64,uint64,bytes32)", [salt, space, lamports, bytes(owner)]
+            sender, self.contract, "createResource(bytes32,uint64,uint64,bytes32)", environment, [salt, space, lamports, bytes(owner)]
         )
         self.evm_loader.write_transaction_to_holder_account(signed_tx, self.holder_acc, self.operator_keypair)
         resource_address_pubkey = self.get_resource_address(salt, sender)

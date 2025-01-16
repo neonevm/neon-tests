@@ -46,13 +46,14 @@ class EnvironmentConfig:
     network_ids: dict
     spl_neon_mint: str
     sol_mint_id_string: str
+    neon_mint_id_string: str
     neon_erc20wrapper_address: str
     use_bank: bool
     eth_bank_account: str
     neonpass_url: str = ""
     ws_subscriber_url: str = ""
     account_seed_version: str = "\3"
-    
+
 
 
 def pytest_addoption(parser: Parser):
@@ -180,14 +181,14 @@ def env_name(pytestconfig: Config) -> EnvName:
 
 
 @pytest.fixture(scope="session")
-def operator_keypair():
+def operator_keypair() -> Keypair:
     with open("operator-keypair.json", "r") as key:
         secret_key = json.load(key)
         return Keypair.from_bytes(secret_key)
 
 
 @pytest.fixture(scope="session")
-def evm_loader_keypair():
+def evm_loader_keypair() -> Keypair:
     with open("evm_loader-keypair.json", "r") as key:
         secret_key = json.load(key)
         return Keypair.from_bytes(secret_key)
@@ -238,12 +239,12 @@ def allure_environment(pytestconfig: Config, web3_client_session: NeonChainWeb3C
 
 @pytest.fixture(scope="session")
 def web3_client_session(
-        pytestconfig: Config,
+        environment: EnvironmentConfig,
         env_name: EnvName,
 ) -> NeonChainWeb3Client:
     client = NeonChainWeb3Client(
-        pytestconfig.environment.proxy_url,
-        tracer_url=pytestconfig.environment.tracer_url,
+        environment.proxy_url,
+        tracer_url=environment.tracer_url,
     )
     if env_name is EnvName.GETH:
         client._web3.middleware_onion.inject(geth_poa_middleware, layer=0)  # noqa
@@ -251,31 +252,27 @@ def web3_client_session(
 
 
 @pytest.fixture(scope="session")
-def sol_client_session(pytestconfig: Config) -> SolanaClient:
-    client = SolanaClient(
-        pytestconfig.environment.solana_url,
-        pytestconfig.environment.account_seed_version,
-    )
-    return client
+def sol_client_session(environment: EnvironmentConfig) -> SolanaClient:
+    return SolanaClient(environment.solana_url, environment.account_seed_version)
 
 
 @pytest.fixture(scope="session", autouse=True)
-def faucet(pytestconfig: Config, web3_client_session: NeonChainWeb3Client) -> Faucet:
-    return Faucet(pytestconfig.environment.faucet_url, web3_client_session)
+def faucet(environment: EnvironmentConfig, web3_client_session: NeonChainWeb3Client) -> Faucet:
+    return Faucet(environment.faucet_url, web3_client_session)
 
 
 @pytest.fixture(scope="session")
-def accounts_session(pytestconfig: Config, web3_client_session: NeonChainWeb3Client, faucet: Faucet, eth_bank_account) -> EthAccounts:
+def accounts_session(pytestconfig: Config, web3_client_session, faucet, eth_bank_account):
     accounts = EthAccounts(web3_client_session, faucet, eth_bank_account)
     return accounts
 
 
 @pytest.fixture(scope="function")
-def neon_user(evm_loader, pytestconfig: Config) -> NeonUser:
-    user = NeonUser()
+def neon_user(evm_loader, environment: EnvironmentConfig) -> NeonUser:
+    user = NeonUser(evm_loader=environment.evm_loader, neon_chain_id=environment.network_ids["neon"])
     evm_loader.request_airdrop(user.solana_account.pubkey(), 1000 * 10**9, commitment=Confirmed)
     evm_loader.deposit_wrapped_sol_from_solana_to_neon(
-        user.solana_account, "0x" + user.neon_address.hex(), pytestconfig.environment.network_ids["sol"], int(1 * LAMPORT_PER_SOL)
+        user.solana_account, "0x" + user.neon_address.hex(), environment.network_ids["sol"], int(1 * LAMPORT_PER_SOL)
     )
     return user
 
@@ -296,5 +293,3 @@ def treasury_pool_new(evm_loader) -> TreasuryPool:
     index_buf = index.to_bytes(4, "little")
     evm_loader.request_airdrop(address, 10000 * 10**9, commitment=Confirmed)
     return TreasuryPool(index, address, index_buf)
-
-

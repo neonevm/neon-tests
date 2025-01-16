@@ -3,13 +3,12 @@ import solana
 from solana.transaction import Transaction
 
 from utils.evm_loader import EVM_STEPS
-from utils.instructions import make_cancel
+from utils.instructions import make_Cancel
 from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from .utils.constants import TAG_FINALIZED_STATE
 from .utils.contract import make_contract_call_trx
 from .utils.storage import create_holder
 from .utils.transaction_checks import check_holder_account_tag
-
 
 
 class TestCancelTrx:
@@ -22,10 +21,11 @@ class TestCancelTrx:
         treasury_pool,
         evm_loader,
         solana_client,
+        environment
     ):
         """EVM can cancel transaction and finalize storage account"""
         signed_tx = make_contract_call_trx(
-            evm_loader, user_account, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1]
+            evm_loader, user_account, rw_lock_contract, "unchange_storage(uint8,uint8)", environment, [1, 1]
         )
 
         storage_account = create_holder(operator_keypair, evm_loader)
@@ -53,7 +53,7 @@ class TestCancelTrx:
         assert user_nonce_before_first_step + 1 == user_nonce_after_first_step
         trx = Transaction()
         trx.add(
-            make_cancel(evm_loader.loader_id, storage_account, operator_keypair, operator_balance, signed_tx.hash, [
+            make_Cancel(evm_loader.loader_id, storage_account, operator_keypair, operator_balance, signed_tx.hash, [
                 rw_lock_contract.solana_address,
                 rw_lock_contract.balance_account_address,
                 user_account.balance_account_address,
@@ -78,19 +78,21 @@ class TestCancelTrx:
         evm_loader,
         neon_api_client,
         gas_limit,
-        solana_client
+        solana_client,
+        environment
     ):
         """If after some iterations there is not enough neon to cancel, the cancel
         instruction can still be executed, and as many neons as possible will be charged
         (but not exceeding the gas limit)."""
         signed_tx = make_contract_call_trx(
             evm_loader, sender_with_tokens, rw_lock_contract,
-            "unchange_storage(uint8,uint8)", [1, 1], gas=gas_limit, gas_price=1
+            "unchange_storage(uint8,uint8)", environment, [1, 1], gas=gas_limit, gas_price=1
         )
 
         storage_account = create_holder(operator_keypair, evm_loader)
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
         user_neon_balance_before = evm_loader.get_neon_balance(sender_with_tokens.eth_address)
+
         # first successful iteration
         receipt = evm_loader.send_transaction_step_from_instruction(
             operator_keypair,
@@ -106,6 +108,7 @@ class TestCancelTrx:
             1,
             operator_keypair,
         )
+
         assert receipt.value.transaction.meta.err is None
         if gas_limit - 5000 < 5000:
             with pytest.raises(solana.rpc.core.RPCException, match="Out of Gas"):
@@ -126,14 +129,13 @@ class TestCancelTrx:
 
         trx = Transaction()
         trx.add(
-            make_cancel(evm_loader.loader_id, storage_account, operator_keypair, operator_balance, signed_tx.hash, [
+            make_Cancel(evm_loader.loader_id, storage_account, operator_keypair, operator_balance, signed_tx.hash, [
                 rw_lock_contract.solana_address,
                 rw_lock_contract.balance_account_address,
                 sender_with_tokens.balance_account_address,
             ])
         )
         evm_loader.send_tx(trx, operator_keypair)
-        #check_holder_account_tag(storage_account, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
         check_holder_account_tag(
             solana_client,
             storage_account=storage_account,

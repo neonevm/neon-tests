@@ -9,12 +9,18 @@ from utils.types import Caller
 
 class TestExecuteTrxFromAccount:
     def test_simple_transfer_transaction(
-        self, operator_keypair, treasury_pool, sender_with_tokens: Caller, session_user: Caller, holder_acc, evm_loader
+        self,
+        environment,
+        operator_keypair,
+        treasury_pool,
+        sender_with_tokens: Caller, session_user: Caller, holder_acc, evm_loader, sol_client
     ):
         amount = 10
         sender_balance_before = evm_loader.get_neon_balance(sender_with_tokens.eth_address)
         recipient_balance_before = evm_loader.get_neon_balance(session_user.eth_address)
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, amount)
+        signed_tx = make_eth_transaction(
+            evm_loader, session_user.eth_address, None, sender_with_tokens, environment, amount
+        )
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 
         resp = evm_loader.execute_trx_from_account(
@@ -33,12 +39,20 @@ class TestExecuteTrxFromAccount:
         recipient_balance_after = evm_loader.get_neon_balance(session_user.eth_address)
         assert sender_balance_before - amount == sender_balance_after
         assert recipient_balance_before + amount == recipient_balance_after
-        check_transaction_logs_have_text(resp, "exit_status=0x11")
+        check_transaction_logs_have_text(solana_client=sol_client,trx=resp, text="exit_status=0x11")
 
     def test_deploy_contract(
-        self, operator_keypair, new_holder_acc, treasury_pool, evm_loader, sender_with_tokens, neon_api_client
+        self,
+        operator_keypair,
+        sol_client,
+        new_holder_acc,
+        treasury_pool,
+        evm_loader,
+        sender_with_tokens,
+        neon_api_client,
+        environment
     ):
-        contract = create_contract_address(sender_with_tokens, evm_loader)
+        contract = create_contract_address(sender_with_tokens, evm_loader, environment)
 
         signed_tx = make_deployment_transaction(evm_loader, sender_with_tokens, "hello_world")
         evm_loader.write_transaction_to_holder_account(signed_tx, new_holder_acc, operator_keypair)
@@ -56,5 +70,10 @@ class TestExecuteTrxFromAccount:
             ],
             operator_keypair,
         )
-        check_holder_account_tag(new_holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_HOLDER)
-        check_transaction_logs_have_text(resp, "exit_status=0x12")
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=new_holder_acc,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_HOLDER
+        )
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x12")

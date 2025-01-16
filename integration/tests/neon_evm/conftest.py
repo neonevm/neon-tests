@@ -4,7 +4,7 @@ from typing import Tuple, Any
 
 import eth_abi
 import pytest
-from _pytest.config import Config
+
 from solders.keypair import Keypair
 from eth_keys import keys as eth_keys
 from solders.pubkey import Pubkey
@@ -18,9 +18,10 @@ from utils.types import Contract, Caller, TreasuryPool
 
 from .utils.neon_api_client import NeonApiClient
 from .utils.contract import deploy_contract, make_contract_call_trx
+from .utils.neon_api_rpc_client import NeonApiRpcClient
 from .utils.storage import create_holder
 from .utils.transaction_checks import check_transaction_logs_have_text
-
+from ..conftest import environment
 
 
 def prepare_operator(key_file: pathlib.Path | str, evm_loader: EvmLoader, environment: EnvironmentConfig) -> Keypair:
@@ -42,12 +43,12 @@ def prepare_operator(key_file: pathlib.Path | str, evm_loader: EvmLoader, enviro
 
 
 @pytest.fixture(scope="session")
-def default_operator_keypair(evm_loader: EvmLoader, pytestconfig: Config) -> Keypair:
+def default_operator_keypair(evm_loader: EvmLoader, environment: EnvironmentConfig) -> Keypair:
     """
     Initialized solana keypair with balance. Get private keys from ci/operator-keypairs/id.json
     """
     key_file = pathlib.Path(OPERATOR_KEYPAIR_PATH / "id.json")
-    return prepare_operator(key_file, evm_loader, pytestconfig)
+    return prepare_operator(key_file, evm_loader, environment)
 
 
 
@@ -56,7 +57,7 @@ def solana_client(environment: EnvironmentConfig):
     return SolanaClient(endpoint=environment.solana_url)
 
 
-# following two keypairs could be parametrized
+# following two keypair could be parametrized
 @pytest.fixture(scope="session")
 def operator_keypair(worker_id: str, evm_loader: EvmLoader, environment: EnvironmentConfig) -> Keypair:
     """
@@ -100,18 +101,18 @@ def second_session_user(evm_loader, operator_keypair) -> Caller:
 
 
 @pytest.fixture(scope="session")
-def sender_with_tokens(evm_loader, operator_keypair) -> Caller:
+def sender_with_tokens(evm_loader: EvmLoader, operator_keypair: Keypair) -> Caller:
     user = evm_loader.make_new_user(operator_keypair)
     evm_loader.deposit_neon(operator_keypair, user.eth_address, 100000)
     return user
 
 
 @pytest.fixture(scope="session")
-def sender_with_wsol(evm_loader, operator_keypair, pytestconfig) -> Caller:
+def sender_with_wsol(evm_loader: EvmLoader, operator_keypair: Keypair, environment: EnvironmentConfig) -> Caller:
     user = evm_loader.make_new_user(operator_keypair)
     evm_loader.deposit_wrapped_sol_from_solana_to_neon(
         user.solana_account, "0x" + user.eth_address.hex(),
-        pytestconfig.environment.network_ids["sol"],
+        environment.network_ids["sol"],
         100000
     )
     return user
@@ -123,7 +124,7 @@ def holder_acc(operator_keypair: Keypair, evm_loader: EvmLoader) -> Pubkey:
 
 
 @pytest.fixture(scope="function")
-def new_holder_acc(operator_keypair, evm_loader) -> Pubkey:
+def new_holder_acc(operator_keypair: Keypair, evm_loader: EvmLoader) -> Pubkey:
     return create_holder(operator_keypair, evm_loader)
 
 
@@ -134,7 +135,7 @@ def rw_lock_contract(
     neon_api_client: NeonApiClient,
     session_user: Caller,
     treasury_pool: TreasuryPool,
-    pytestconfig: Config,
+    environment: EnvironmentConfig,
     solana_client: SolanaClient
 ) -> Contract:
     return deploy_contract(
@@ -144,7 +145,7 @@ def rw_lock_contract(
         evm_loader,
         neon_api_client,
         treasury_pool,
-        pytestconfig,
+        environment,
         solana_client
     )
 
@@ -156,6 +157,9 @@ def rw_lock_caller(
     session_user: Caller,
     treasury_pool: TreasuryPool,
     rw_lock_contract: Contract,
+    neon_api_client: NeonApiClient,
+    environment: EnvironmentConfig,
+    sol_client: SolanaClient
 ) -> Contract:
     constructor_args = eth_abi.encode(["address"], [rw_lock_contract.eth_address.hex()])
     return deploy_contract(
@@ -163,80 +167,113 @@ def rw_lock_caller(
         session_user,
         "rw_lock",
         evm_loader,
+        neon_api_client,
         treasury_pool,
+        environment,
+        sol_client,
         encoded_args=constructor_args,
-        contract_name="rw_lock_caller",
+        contract_name="rw_lock_caller"
     )
 
 
 @pytest.fixture(scope="function")
 def string_setter_contract(
-    evm_loader: EvmLoader, operator_keypair: Keypair, session_user: Caller, treasury_pool: TreasuryPool
+    evm_loader: EvmLoader,
+    operator_keypair: Keypair,
+    session_user: Caller,
+    treasury_pool: TreasuryPool,
+    environment: EnvironmentConfig,
+    neon_api_client: NeonApiClient,
+    sol_client: SolanaClient
+) -> Contract:
+    return deploy_contract(operator_keypair, session_user, "string_setter", evm_loader, neon_api_client, treasury_pool,
+                           environment, sol_client)
+
+
+@pytest.fixture(scope="function")
+def basic_contract(
+    evm_loader: EvmLoader,
+    operator_keypair: Keypair,
+    session_user: Caller,
+    treasury_pool: TreasuryPool,
+    neon_api_client: NeonApiClient,
+    environment: EnvironmentConfig,
+    sol_client: SolanaClient
 ) -> Contract:
     return deploy_contract(
         operator_keypair,
         session_user,
-        "string_setter",
+        "common/Common",
         evm_loader,
-        treasury_pool
-    )
-
-
-@pytest.fixture(scope="function")
-def basic_contract(evm_loader: EvmLoader, operator_keypair: Keypair, session_user: Caller, treasury_pool: TreasuryPool
-) -> Contract:
-    return deploy_contract(operator_keypair, session_user, "common/Common", evm_loader, treasury_pool, version="0.8.12")
-
-
-@pytest.fixture(scope="function")
-def spl_token_caller(operator_keypair, evm_loader, session_user, treasury_pool, pytestconfig):
-    return deploy_contract(
-        operator_keypair,
-        session_user,
-        "precompiled/SplTokenCaller",
-        evm_loader,
+        neon_api_client,
         treasury_pool,
-        chain_id=pytestconfig.environment.network_ids["neon"],
-        version="0.8.12",
+        environment,
+        sol_client,
+        version="0.8.12"
     )
+
+
+@pytest.fixture(scope="function")
+def spl_token_caller(
+    operator_keypair, evm_loader, sol_client, session_user, treasury_pool, neon_api_client, environment: EnvironmentConfig
+) -> Contract:
+    return deploy_contract(operator_keypair, session_user, "precompiled/SplTokenCaller", evm_loader, neon_api_client,
+                           treasury_pool, environment, sol_client, version="0.8.12")
 
 
 @pytest.fixture(scope="session")
 def calculator_contract(
-    evm_loader: EvmLoader, operator_keypair: Keypair, session_user: Caller, treasury_pool
+    evm_loader: EvmLoader,
+    neon_api_client: NeonApiClient,
+    operator_keypair: Keypair,
+    session_user: Caller,
+    treasury_pool: TreasuryPool,
+    environment: EnvironmentConfig,
+    solana_client: SolanaClient
 ) -> Contract:
-    return deploy_contract(operator_keypair, session_user, "calculator", evm_loader, treasury_pool)
+    return deploy_contract(operator_keypair, session_user, "calculator", evm_loader, neon_api_client, treasury_pool,
+                           environment=environment, solana_client=solana_client)
 
 
 @pytest.fixture(scope="session")
 def calculator_caller_contract(
-    evm_loader: EvmLoader, operator_keypair: Keypair, session_user: Caller, treasury_pool, calculator_contract
+    evm_loader: EvmLoader, operator_keypair: Keypair, session_user: Caller, treasury_pool, calculator_contract, environment: EnvironmentConfig, solana_client: SolanaClient, neon_api_client: NeonApiClient
 ) -> Contract:
     constructor_args = eth_abi.encode(["address"], [calculator_contract.eth_address.hex()])
 
-    return deploy_contract(
-        operator_keypair,
-        session_user,
-        "calculator",
-        evm_loader,
-        treasury_pool,
-        encoded_args=constructor_args,
-        contract_name="calculatorCaller",
-    )
+    return deploy_contract(operator_keypair, session_user, "calculator", evm_loader, neon_api_client, treasury_pool,
+                           environment=environment, solana_client=solana_client, encoded_args=constructor_args,
+                           contract_name="calculatorCaller")
 
 
 @pytest.fixture(scope="session")
 def erc20_for_spl_factory_contract(
-    operator_keypair, evm_loader, sender_with_tokens, treasury_pool, neon_api_client, holder_acc
+    operator_keypair, evm_loader, sender_with_tokens, treasury_pool, neon_api_client, holder_acc, environment: EnvironmentConfig, solana_client: SolanaClient
 ):
     return deploy_contract(
         operator_keypair,
         sender_with_tokens,
         "external/neon-evm/erc20_for_spl_factory",
         evm_loader,
+        neon_api_client,
         treasury_pool,
+        environment,
+        solana_client,
         contract_name="ERC20ForSplFactory",
         version="0.8.24",
+    )
+
+
+@pytest.fixture(scope="session")
+def neon_rpc_client(environment: EnvironmentConfig) -> NeonApiRpcClient:
+    return NeonApiRpcClient(url=environment.neon_core_api_rpc_url, chain_id=environment.network_ids["neon"])
+
+@pytest.fixture(scope="session")
+def neon_api_client(environment: EnvironmentConfig) -> NeonApiClient:
+    return NeonApiClient(
+        url=environment.neon_core_api_url,
+        chain_id=environment.network_ids["neon"],
+        sol_chain_id=environment.network_ids["sol"],
     )
 
 
@@ -248,7 +285,9 @@ def erc20_for_spl(
     treasury_pool,
     neon_api_client,
     holder_acc,
-    proxy_contract
+    proxy_contract,
+    environment,
+    sol_client
 ) -> Tuple[Any, Any]:
     emulate_result = neon_api_client.emulate_contract_call(
         sender_with_tokens.eth_address.hex(),
@@ -262,6 +301,7 @@ def erc20_for_spl(
         sender_with_tokens,
         proxy_contract,
         "deploy(string,string,string,uint8)",
+        environment,
         ["Test", "TTT", "http://uri.com", 9],
     )
     evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
@@ -273,7 +313,7 @@ def erc20_for_spl(
         additional_accounts,
     )
 
-    check_transaction_logs_have_text(resp, "exit_status=0x12")
+    check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x12")
     byte_data = bytes.fromhex(emulate_result["result"])
     decoded_data = eth_abi.decode(["bytes32", "address"], byte_data)
     token_mint = decoded_data[0]

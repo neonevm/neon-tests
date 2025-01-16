@@ -85,7 +85,8 @@
       "usdt": 113,
       "eth": 114
     },
-    "sol_mint_id_string": "So11111111111111111111111111111111111111112", 
+    "sol_mint_id_string": "So11111111111111111111111111111111111111112",
+    "neon_mint_id_string": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "solana_url": "http://127.0.0.1:8899/",
     "faucet_url": "http://127.0.0.1:3333/",
     "tracer_url": "http://127.0.0.1:9091",

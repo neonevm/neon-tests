@@ -5,11 +5,11 @@ from .utils.storage import create_holder
 
 class TestTransactionStepFromAccount:
     def test_simple_transfer_transaction(
-        self, operator_keypair, treasury_pool, evm_loader, sender_with_tokens, session_user, holder_acc
+        self, operator_keypair, treasury_pool, evm_loader, sender_with_tokens, session_user, holder_acc, environment
     ):
         amount = 10
 
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, amount)
+        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, environment, amount)
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
         resp_from_acc = evm_loader.execute_transaction_steps_from_account(
             operator_keypair,
@@ -22,7 +22,7 @@ class TestTransactionStepFromAccount:
                 sender_with_tokens.balance_account_address,
             ],
         )
-        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, amount)
+        signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, environment, amount)
         resp_from_inst = evm_loader.execute_transaction_steps_from_instruction(
             operator_keypair,
             treasury_pool,
@@ -48,9 +48,11 @@ class TestTransactionStepFromAccount:
                 - resp_from_inst.value.transaction.meta.pre_balances[i]
             )
 
-    def test_deploy_contract(self, operator_keypair, holder_acc, treasury_pool, evm_loader, sender_with_tokens):
+    def test_deploy_contract(
+        self, operator_keypair, holder_acc, treasury_pool, evm_loader, sender_with_tokens, environment
+    ):
         contract_filename = "small"
-        contract = create_contract_address(sender_with_tokens, evm_loader)
+        contract = create_contract_address(sender_with_tokens, evm_loader, environment)
 
         signed_tx = make_deployment_transaction(evm_loader, sender_with_tokens, contract_filename)
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
@@ -68,7 +70,7 @@ class TestTransactionStepFromAccount:
         )
         signed_tx = make_deployment_transaction(evm_loader, sender_with_tokens, contract_filename)
         holder_acc = create_holder(operator_keypair, evm_loader)
-        contract = create_contract_address(sender_with_tokens, evm_loader)
+        contract = create_contract_address(sender_with_tokens, evm_loader, environment)
 
         resp_from_inst = evm_loader.execute_transaction_steps_from_instruction(
             operator_keypair,

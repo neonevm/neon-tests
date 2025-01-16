@@ -14,20 +14,23 @@ from utils.types import Caller
 
 class TestEIP1559Transactions:
     def test_contract_interaction_iterative_transactions(
-            self,
-            operator_keypair,
-            holder_acc,
-            treasury_pool,
-            sender_with_tokens,
-            evm_loader,
-            calculator_contract,
-            calculator_caller_contract,
+        self,
+        operator_keypair,
+        holder_acc,
+        treasury_pool,
+        sender_with_tokens,
+        evm_loader,
+        calculator_contract,
+        calculator_caller_contract,
+        environment,
+        sol_client
     ):
         signed_tx = make_contract_call_trx(
             evm_loader,
             sender_with_tokens,
             calculator_caller_contract,
             "callCalculator()",
+            environment,
             max_fee_per_gas=10000,
             max_priority_fee_per_gas=10,
             trx_type=2,
@@ -46,14 +49,20 @@ class TestEIP1559Transactions:
             compute_unit_price=3929,
         )
 
-        check_holder_account_tag(holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
-        check_transaction_logs_have_text(resp, "exit_status=0x12")
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=holder_acc,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE
+        )
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x12")
+
 
     def test_contract_deploy_iterative_transaction(
-            self, operator_keypair, holder_acc, treasury_pool, sender_with_tokens, evm_loader
+            self, operator_keypair, holder_acc, treasury_pool, sender_with_tokens, evm_loader, sol_client, environment
     ):
         contract_filename = "hello_world"
-        contract = create_contract_address(sender_with_tokens, evm_loader)
+        contract = create_contract_address(sender_with_tokens, evm_loader, environment)
 
         signed_tx = make_deployment_transaction(
             evm_loader, sender_with_tokens, contract_filename, max_fee_per_gas=10000, max_priority_fee_per_gas=10
@@ -72,25 +81,31 @@ class TestEIP1559Transactions:
             ],
             compute_unit_price=5000,
         )
-
-        check_holder_account_tag(holder_acc, FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT, TAG_FINALIZED_STATE)
-        check_transaction_logs_have_text(resp, "exit_status=0x12")
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=holder_acc,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE
+        )
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x12")
 
     def test_max_fee_less_then_max_priority_fee(
-            self,
-            operator_keypair,
-            holder_acc,
-            treasury_pool,
-            sender_with_tokens,
-            evm_loader,
-            calculator_contract,
-            calculator_caller_contract,
+        self,
+        operator_keypair,
+        holder_acc,
+        treasury_pool,
+        sender_with_tokens,
+        evm_loader,
+        calculator_contract,
+        calculator_caller_contract,
+        environment
     ):
         signed_tx = make_contract_call_trx(
             evm_loader,
             sender_with_tokens,
             calculator_caller_contract,
             "callCalculator()",
+            environment,
             max_fee_per_gas=10,
             max_priority_fee_per_gas=1000,
             trx_type=2,
@@ -117,7 +132,9 @@ class TestEIP1559Transactions:
             sender_with_tokens: Caller,
             session_user: Caller,
             evm_loader,
-            holder_acc
+            holder_acc,
+            environment,
+            sol_client
     ):
         amount = 10
         max_fee_per_gas = 50000
@@ -131,6 +148,7 @@ class TestEIP1559Transactions:
             session_user.eth_address,
             None,
             sender_with_tokens,
+            environment,
             amount,
             max_fee_per_gas=max_fee_per_gas,
             max_priority_fee_per_gas=max_priority_fee_per_gas,
@@ -157,4 +175,5 @@ class TestEIP1559Transactions:
         additional_fee = max_priority_fee_per_gas * 5000 * 1
         assert sender_balance_before - amount - sender_balance_after > additional_fee
         assert recipient_balance_before + amount == recipient_balance_after
-        check_transaction_logs_have_text(resp, "exit_status=0x11")
+
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")

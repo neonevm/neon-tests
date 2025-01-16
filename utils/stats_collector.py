@@ -52,7 +52,7 @@ def cost_report_from_receipt(func: Callable[..., TxReceipt]) -> Callable[..., Tx
             stack = inspect.stack()
             if is_called_from_test_marked_for_collection(stack=stack):
                 if (isinstance(result, (dict, AttributeDict)) and
-                        set(result.keys()).issubset(TxReceipt.__required_keys__)):
+                        set(TxReceipt.__required_keys__).issubset(result.keys())):
                     receipt = result
                 else:
                     try:

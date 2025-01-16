@@ -9,7 +9,7 @@ env:
   IMAGE:  ${{ github.repository_owner }}/neon_tests
   CONTAINER:  services-${{ github.run_id }}
   FAUCET_URL: "${{ secrets.DEVNET_FAUCET_URL }}"
-  SOLANA_URL: "${{ secrets.SOLANA_URL }}"
+  DEVNET_SOLANA_URL: "${{ secrets.SOLANA_URL }}"
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
 jobs:
@@ -55,7 +55,7 @@ jobs:
       - name: "Run Playwright Tests"
         run: |
           docker exec -i ${{ env.CONTAINER }} \
-            /bin/bash -c "export DEVNET_FAUCET_URL=${{ env.FAUCET_URL }} && export SOLANA_URL=${{ env.SOLANA_URL }} && \
+            /bin/bash -c "export DEVNET_FAUCET_URL=${{ env.FAUCET_URL }} && export DEVNET_SOLANA_URL=${{ env.DEVNET_SOLANA_URL }} && \
             xvfb-run python3 ./clickfile.py run ui --network=${{ env.NETWORK }} --ui-item=neonpass"
       - name: "Generate allure report"
         if: always()

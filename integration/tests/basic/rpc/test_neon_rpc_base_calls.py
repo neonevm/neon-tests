@@ -55,7 +55,7 @@ class TestNeonRPCBaseCalls:
         gas_price = result["gasPrice"]
         assert int(gas_price, 16) > 100000000, f"gas price should be greater 100000000, got {int(gas_price, 16)}"
 
-    def test_neon_cli_version(self, json_rpc_client):
+    def test_neon_core_version(self, json_rpc_client):
         response = json_rpc_client.send_rpc(method="neon_coreVersion", params=[])
         pattern = r"Neon-Core-API/[vt]\d{1,2}.\d{1,2}.\d{1,2}.*"
         assert re.match(

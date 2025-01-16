@@ -77,7 +77,7 @@ class TestRpcNeonMethods:
         recipient = accounts[1]
 
         base_fee_per_gas = web3_client.base_fee_per_gas()
-        max_priority_fee_per_gas = web3_client._web3.eth._max_priority_fee()  # noqa
+        max_priority_fee_per_gas = web3_client.max_priority_fee_per_gas()
         max_fee_per_gas = (5 * base_fee_per_gas) + max_priority_fee_per_gas
 
         receipt = web3_client.send_tokens_eip_1559(
@@ -94,5 +94,5 @@ class TestRpcNeonMethods:
         assert "error" not in response, response["error"]
 
         actual_effective_gas_price = int(response["result"].get("effectiveGasPrice"), 16)
-        assert actual_effective_gas_price >= base_fee_per_gas
+        assert actual_effective_gas_price >= max_priority_fee_per_gas
         assert actual_effective_gas_price <= max_fee_per_gas

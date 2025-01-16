@@ -116,6 +116,7 @@ def red(s):
 
 def catch_traceback(func: tp.Callable) -> tp.Callable:
     """Catch traceback to file"""
+
     def add_error_log_comment(func_name, exc: BaseException):
         err_msg = ERR_MESSAGES.get(func_name) or f"{exc.__class__.__name__}({exc})"
         error_log.add_comment(text=f"{func_name}: {err_msg}")
@@ -280,7 +281,7 @@ def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     opts = {
         "Proxy.Version": web3_client.get_proxy_version()["result"],
         "EVM.Version": web3_client.get_evm_version()["result"],
-        "CLI.Version": web3_client.get_cli_version()["result"],
+        "NEON_CORE.Version": web3_client.get_neon_core_version()["result"],
     }
     create_allure_environment_opts(opts, DST_ALLURE_ENVIRONMENT)
     # Add epic name for allure result files
@@ -447,7 +448,6 @@ def is_branch_exist(endpoint, branch):
     if branch:
         response = requests.get(f"{endpoint}/branches/{branch}")
         if response.status_code == 200:
-            click.echo(f"The branch {branch} exist in the {endpoint} repository")
             return True
     else:
         return False
@@ -609,7 +609,7 @@ def run(
             raise click.ClickException(
                 red("Please set the `CHROME_EXT_PASSWORD` environment variable (password for wallets).")
             )
-        command = "py.test ui/tests"
+        command = "py.test ui/tests/website_tests"
         if ui_item != "all":
             command = command + f"/test_{ui_item}.py"
     else:
@@ -996,12 +996,7 @@ def infra():
     pass
 
 
-@infra.command(name="deploy", help="Deploy test infrastructure")
-@click.option("--current_branch", help="Branch of neon-tests repository")
-@click.option("--head_branch", default="", help="Feature branch name")
-@click.option("--base_branch", default="", help="Target branch of the pull request")
-@click.option("--use-real-price", required=False, default="0", help="Remove CONST_GAS_PRICE from proxy")
-def deploy(current_branch, head_branch, base_branch, use_real_price):
+def define_stand_env_by_branch(current_branch, head_branch, base_branch):
     # use feature branch or version tag as tag for proxy, evm and faucet images or use latest
     proxy_tag, evm_tag, faucet_tag = "", "", ""
 
@@ -1032,12 +1027,47 @@ def deploy(current_branch, head_branch, base_branch, use_real_price):
     proxy_tag = "latest" if not proxy_tag else proxy_tag
     evm_tag = "latest" if not evm_tag else evm_tag
     faucet_tag = "latest" if not faucet_tag else faucet_tag
-    use_real_price = True if use_real_price == "1" else False
 
     evm_branch = evm_tag if evm_tag != "latest" else "develop"
     proxy_branch = proxy_tag if proxy_tag != "latest" else "develop"
 
-    infrastructure.deploy_infrastructure(evm_tag, proxy_tag, faucet_tag, evm_branch, proxy_branch, use_real_price)
+    return {"evm_tag": evm_tag,
+            "proxy_tag": proxy_tag,
+            "faucet_tag": faucet_tag,
+            "evm_branch": evm_branch,
+            "proxy_branch": proxy_branch}
+
+
+@infra.command("get-stand-param")
+@click.option("--current_branch", help="Branch of neon-tests repository")
+@click.option("--head_branch", default="", help="Feature branch name")
+@click.option("--base_branch", default="", help="Target branch of the pull request")
+@click.option("--param", default="", help="One of the stand param like evm_tag, "
+                                          "proxy_tag, faucet_tag, evm_branch, proxy_branch")
+def get_stand_param(current_branch, head_branch, base_branch, param):
+    env = define_stand_env_by_branch(current_branch, head_branch, base_branch)
+    print(env[param])
+    return env[param]
+
+
+@infra.command(name="deploy", help="Deploy test infrastructure")
+@click.option("--current_branch", help="Branch of neon-tests repository")
+@click.option("--head_branch", default="", help="Feature branch name")
+@click.option("--base_branch", default="", help="Target branch of the pull request")
+@click.option("--use-real-price", required=False, default="0", help="Remove CONST_GAS_PRICE from proxy")
+@click.option("--devnet-solana-url", required=True, help="Solana devnet url")
+def deploy(current_branch, head_branch, base_branch, devnet_solana_url, use_real_price):
+    # use feature branch or version tag as tag for proxy, evm and faucet images or use latest
+    env = define_stand_env_by_branch(current_branch, head_branch, base_branch)
+    use_real_price = True if use_real_price == "1" else False
+
+    infrastructure.deploy_infrastructure(env["evm_tag"],
+                                         env["proxy_tag"],
+                                         env["faucet_tag"],
+                                         env["evm_branch"],
+                                         env["proxy_branch"],
+                                         devnet_solana_url,
+                                         use_real_price)
 
 
 @infra.command(name="destroy", help="Destroy test infrastructure")
@@ -1291,9 +1321,11 @@ def prepare_tracer(network, transfers_number, contracts_calls_number, iterative_
 
 
 @k6.command("run", help="Run k6 performance test.")
-@click.option("-n", "--network",required=True, default="local", help="Which network to use for envs assignment")
-@click.option("-s", "--script", required=True, default="./loadtesting/k6/tests/sendNeon.test.js", help="Path to k6 script")
-@click.option("-u", "--users", default=None, required=True, help="Number of users (have to be generated before load test run)")
+@click.option("-n", "--network", required=True, default="local", help="Which network to use for envs assignment")
+@click.option("-s", "--script", required=True, default="./loadtesting/k6/tests/sendNeon.test.js",
+              help="Path to k6 script")
+@click.option("-u", "--users", default=None, required=True,
+              help="Number of users (have to be generated before load test run)")
 @click.option("-b", "--balance", default=None, required=True, help="Initial balance of accounts in Neon")
 @click.option("-a", "--bank_account", default="", required=False, help="Eth bank account key")
 @catch_traceback
@@ -1320,6 +1352,7 @@ def run(network, script, users, balance, bank_account):
     command_run = subprocess.run(command, shell=True)
     if command_run.returncode != 0:
         sys.exit(command_run.returncode)
+
 
 if __name__ == "__main__":
     cli()

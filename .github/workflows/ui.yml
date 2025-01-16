@@ -1,0 +1,60 @@
+name: "UI Website tests"
+run-name: UI tests
+
+on:
+  schedule:
+    - cron: "0 3 * * 0,1,2,3,4"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      IMAGE_NAME:  ${{ github.repository_owner }}/neon_tests
+      CHROME_EXT_PASSWORD: ${{ secrets.CHROME_EXT_PASSWORD }}
+      CONTAINER_NAME: neon_tests
+      NETWORK: "devnet"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set IMAGE_TAG
+        id: image-tag
+        run: |
+          GITHUB_REF="${{ github.ref }}"
+          IMAGE_TAG="${GITHUB_REF#refs/heads/}"
+          echo "IMAGE_TAG=$IMAGE_TAG" | tee -a $GITHUB_OUTPUT
+
+      - name: Run tests container
+        id: run-container
+        run: |
+          IMAGE=${{ env.IMAGE_NAME }}:${{ steps.image-tag.outputs.IMAGE_TAG }}
+          docker run -d --name ${{ env.CONTAINER_NAME }} $IMAGE tail -f /dev/null
+
+      - name: Install Chrome
+        run: |
+          CMD="
+            apt-get install -y wget
+            wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+            apt-get install -y ./google-chrome-stable_current_amd64.deb
+            apt-get install -f -y
+            google-chrome-stable --version
+          "
+          docker exec -i ${{ env.CONTAINER_NAME }} bash -c "$CMD"
+
+      - name: Run tests
+        id: run-tests
+        run:
+          docker exec -i ${{ env.CONTAINER_NAME }} bash -c "CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} python3 clickfile.py run ui --network ${{ env.NETWORK }}"
+
+      - name: "Generate allure report"
+        if: always()
+        uses: ./.github/actions/generate-allure-report
+        with:
+          container: ${{ env.CONTAINER_NAME }}
+          network: ${{ env.NETWORK }}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          tests_name: ui

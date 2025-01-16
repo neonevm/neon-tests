@@ -78,15 +78,6 @@ UNSUPPORTED_METHODS = [
 ]
 
 
-def get_event_signatures(abi: tp.List[tp.Dict]) -> tp.List[str]:
-    """Get topics as keccak256 from abi Events"""
-    topics = []
-    for event in filter(lambda item: item["type"] == "event", abi):
-        input_types = ",".join(i["type"] for i in event["inputs"])
-        signature = f"{event['name']}({input_types})"
-        topics.append(f"0x{keccak(signature.encode()).hex()}")
-    return topics
-
 
 @allure.feature("JSON-RPC validation")
 @allure.story("Verify JSON-RPC proxy calls work")

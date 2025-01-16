@@ -11,7 +11,8 @@ from solana.rpc.commitment import Confirmed
 from utils.consts import OPERATOR_KEYPAIR_PATH
 from utils.evm_loader import EvmLoader
 from utils.types import Contract, Caller, TreasuryPool
-from .utils.constants import NEON_CORE_API_URL, NEON_CORE_API_RPC_URL, SOLANA_URL, EVM_LOADER
+from utils.neon_user import NeonUser
+from .utils.constants import NEON_CORE_API_URL, NEON_CORE_API_RPC_URL, SOLANA_URL, EVM_LOADER, SOL_CHAIN_ID, CHAIN_ID
 from .utils.contract import deploy_contract, make_contract_call_trx
 from .utils.neon_api_rpc_client import NeonApiRpcClient
 from .utils.storage import create_holder
@@ -33,11 +34,11 @@ def prepare_operator(key_file, evm_loader: EvmLoader):
     evm_loader.request_airdrop(account.pubkey(), 1000 * 10**9, commitment=Confirmed)
 
     operator_ether = eth_keys.PrivateKey(account.secret()[:32]).public_key.to_canonical_address()
-
-    ether_balance_pubkey = evm_loader.ether2operator_balance(account, operator_ether)
-    acc_info = evm_loader.get_account_info(ether_balance_pubkey, commitment=Confirmed)
-    if acc_info.value is None:
-        evm_loader.create_operator_balance_account(account, operator_ether)
+    for chain_id in (SOL_CHAIN_ID, CHAIN_ID):
+        ether_balance_pubkey = evm_loader.ether2operator_balance(account, operator_ether, chain_id)
+        acc_info = evm_loader.get_account_info(ether_balance_pubkey, commitment=Confirmed)
+        if acc_info.value is None:
+            evm_loader.create_operator_balance_account(account, operator_ether, chain_id)
 
     return account
 
@@ -78,14 +79,6 @@ def second_operator_keypair(worker_id, evm_loader) -> Keypair:
     return prepare_operator(key_file, evm_loader)
 
 
-@pytest.fixture(scope="session")
-def treasury_pool(evm_loader) -> TreasuryPool:
-    index = 2
-    address = evm_loader.create_treasury_pool_address(index)
-    index_buf = index.to_bytes(4, "little")
-    return TreasuryPool(index, address, index_buf)
-
-
 @pytest.fixture(scope="function")
 def user_account(evm_loader, operator_keypair) -> Caller:
     return evm_loader.make_new_user(operator_keypair)
@@ -105,6 +98,15 @@ def second_session_user(evm_loader, operator_keypair) -> Caller:
 def sender_with_tokens(evm_loader, operator_keypair) -> Caller:
     user = evm_loader.make_new_user(operator_keypair)
     evm_loader.deposit_neon(operator_keypair, user.eth_address, 100000)
+    return user
+
+
+@pytest.fixture(scope="session")
+def sender_with_wsol(evm_loader, operator_keypair) -> Caller:
+    user = evm_loader.make_new_user(operator_keypair)
+    evm_loader.deposit_wrapped_sol_from_solana_to_neon(
+        user.solana_account, "0x" + user.eth_address.hex(), SOL_CHAIN_ID, 100000
+    )
     return user
 
 
@@ -148,6 +150,24 @@ def string_setter_contract(
     evm_loader: EvmLoader, operator_keypair: Keypair, session_user: Caller, treasury_pool
 ) -> Contract:
     return deploy_contract(operator_keypair, session_user, "string_setter", evm_loader, treasury_pool)
+
+
+@pytest.fixture(scope="function")
+def basic_contract(evm_loader, operator_keypair, session_user, treasury_pool) -> Contract:
+    return deploy_contract(operator_keypair, session_user, "common/Common", evm_loader, treasury_pool, version="0.8.12")
+
+
+@pytest.fixture(scope="function")
+def spl_token_caller(operator_keypair, evm_loader, session_user, treasury_pool):
+    return deploy_contract(
+        operator_keypair,
+        session_user,
+        "precompiled/SplTokenCaller",
+        evm_loader,
+        treasury_pool,
+        chain_id=CHAIN_ID,
+        version="0.8.12",
+    )
 
 
 @pytest.fixture(scope="session")

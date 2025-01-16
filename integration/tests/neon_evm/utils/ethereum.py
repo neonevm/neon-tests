@@ -9,15 +9,17 @@ from utils.types import Caller, Contract
 from .eth_tx_utils import pack
 
 
-def create_contract_address(user: Caller, evm_loader: EvmLoader) -> Contract:
+def create_contract_address(user: Union[Caller, bytes], evm_loader: EvmLoader, chain_id=CHAIN_ID) -> Contract:
     # Create contract address from (caller_address, nonce)
-    user_nonce = evm_loader.get_neon_nonce(user.eth_address)
+    if isinstance(user, Caller):
+        user = user.eth_address
+    user_nonce = evm_loader.get_neon_nonce(user, chain_id)
     contract_eth_address = (
-        keccak.new(digest_bits=256).update(pack([user.eth_address, user_nonce or None])).digest()[-20:]
+        keccak.new(digest_bits=256).update(pack([user, user_nonce or None])).digest()[-20:]
     )
 
     contract_solana_address, _ = evm_loader.ether2program(contract_eth_address)
-    contract_neon_address = evm_loader.ether2balance(contract_eth_address)
+    contract_neon_address = evm_loader.ether2balance(contract_eth_address, chain_id)
 
     print(f"Contract addresses: " f"  eth {contract_eth_address.hex()}, " f"  solana {contract_solana_address}")
 
@@ -36,9 +38,11 @@ def make_eth_transaction(
     max_fee_per_gas=None,
     access_list=None,
     type_=None,
+    gas_price=0
 ):
+
     nonce = evm_loader.get_neon_nonce(caller.eth_address)
-    tx = {"to": to_addr, "value": value, "gas": gas, "gasPrice": 0, "nonce": nonce}
+    tx = {"to": to_addr, "value": value, "gas": gas, "gasPrice": gas_price, "nonce": nonce}
 
     if chain_id is not None:
         tx["chainId"] = chain_id

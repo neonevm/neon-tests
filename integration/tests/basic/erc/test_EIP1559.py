@@ -214,7 +214,7 @@ def validate_deploy_positive(
     total_fee_paid = gas_used * effective_gas_price
 
     # Validate that sender's balance decreased by at least the gas fee
-    assert balance_before - balance_after >= total_fee_paid, "Sender balance did not decrease by gas fee"
+    assert balance_before - balance_after <= total_fee_paid, f"Sender balance did not decrease by gas fee: {balance_before, balance_after, total_fee_paid}"
 
     # Verify that the effective gas price does not exceed the max fee per gas
     assert effective_gas_price <= max_fee_per_gas, (
@@ -433,6 +433,8 @@ class TestEIP1559:
         recipient = self.web3_client.create_account()
 
         base_fee_per_gas = self.web3_client.base_fee_per_gas()
+        max_priority_fee_per_gas = self.web3_client.max_priority_fee_per_gas()
+        base_fee_per_gas -= max_priority_fee_per_gas
 
         tx_params = self.web3_client.make_raw_tx_eip_1559(
             chain_id="auto",
@@ -441,8 +443,8 @@ class TestEIP1559:
             value=1000000,
             nonce="auto",
             gas="auto",
-            max_priority_fee_per_gas=0,
-            max_fee_per_gas=int(base_fee_per_gas * 0.5),
+            max_priority_fee_per_gas=int(max_priority_fee_per_gas * 0.75),
+            max_fee_per_gas=base_fee_per_gas + max_priority_fee_per_gas,
             data=None,
             access_list=None,
         )
@@ -452,22 +454,21 @@ class TestEIP1559:
             self.web3_client.send_transaction(account=sender, transaction=tx_params, timeout=TX_TIMEOUT)
 
     @pytest.mark.neon_only
-    @pytest.mark.parametrize("max_priority_fee_per_gas, base_fee_multiplier",
-                             [(1000000000, 1.1), (1000, 1.5)])
+    @pytest.mark.parametrize("base_fee_multiplier",
+                             [1.1, 1.5])
     def test_compute_unit_price(
         self,
             accounts: EthAccounts,
             web3_client: NeonChainWeb3Client,
             json_rpc_client: JsonRPCSession,
             sol_client: SolanaClient,
-            max_priority_fee_per_gas,
             base_fee_multiplier
     ):
         sender = accounts[0]
         recipient = accounts[1]
 
-        latest_block: web3.types.BlockData = web3_client._web3.eth.get_block(block_identifier="latest")  # noqa
-        base_fee_per_gas = latest_block.baseFeePerGas  # noqa
+        max_priority_fee_per_gas = web3_client.max_priority_fee_per_gas()
+        base_fee_per_gas = web3_client.base_fee_per_gas()
         max_fee_per_gas = int((base_fee_multiplier * base_fee_per_gas) + max_priority_fee_per_gas)
 
         value = 1029380121

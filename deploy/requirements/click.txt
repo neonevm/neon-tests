@@ -11,7 +11,7 @@ pythclient==0.0.2
 boto3==1.28.54
 rlp==3.0.0
 python-terraform==0.10.1
-allure-pytest==2.9.45
+allure-pytest==2.13.5
 uv==0.1.13
 packaging==24.0
 deepdiff==7.0.1
@@ -23,3 +23,8 @@ psycopg2-binary==2.9.9
 sqlalchemy==2.0.31
 pandas==2.2.2
 matplotlib==3.9.1
+tenacity==9.0.0
+tqdm==4.66.5
+prometheus-client==0.21.0
+diskcache==5.6.3
+sshtunnel==0.4.0

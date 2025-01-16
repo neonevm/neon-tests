@@ -41,13 +41,14 @@ env:
   NETWORK: ${{ github.event.inputs.network || 'terraform' }}
   NUMPROCESSES: ${{ github.event.inputs.numprocesses || 8 }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-  SOLANA_URL: "${{ secrets.SOLANA_URL }}"
+  DEVNET_SOLANA_URL: "${{ secrets.SOLANA_URL }}"
   FAUCET_URL: "${{ secrets.DEVNET_FAUCET_URL }}"
   IMAGE:  ${{ github.repository_owner }}/neon_tests
   DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
   GENERATE_COST_REPORT: ${{ github.event.inputs.generate_cost_report || 'false' }}
 jobs:
   dockerize:
+    name: Dockerize neon tests
     if: ${{ github.ref_name != 'develop'}}
     runs-on: ["self-hosted", "k8s-prod"]
     steps:
@@ -60,7 +61,13 @@ jobs:
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
           image_name: ${{ env.IMAGE }}
           docker_hub_org_name: ${{ env.DOCKER_HUB_ORG_NAME }}
-  prepare-env:
+      - name: "Define image tag"
+        id: image_tag
+        uses: ./.github/actions/define-image-tag
+    outputs:
+      tag: ${{ steps.image_tag.outputs.tag }}
+  prepare-env-proxy:
+    name: Prepare environment for proxy tests
     runs-on: ["self-hosted", "k8s-prod"]
     if: always()
     steps:
@@ -94,22 +101,88 @@ jobs:
         uses: ./.github/actions/create-tf-stand
         with:
           ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
-
     outputs:
       proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
       solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
       network: ${{ env.NETWORK }}
-
-  tests:
-    name: Run basic+evm tests
+  run-evm-tests:
+    name: Run EVM tests
+    runs-on: ["self-hosted", "k8s-prod"]
     needs:
       - dockerize
-      - prepare-env
+    env:
+      DOCKER_PROJECT_NAME: "evm-tests-${{ github.run_number }}-${{ github.run_attempt }}"
+    steps:
+      - uses: actions/checkout@v4
+        if: ${{ env.NETWORK != 'devnet' }}
+        with:
+          fetch-depth: 0
+      - name: Install python requirements
+        if: ${{ env.NETWORK != 'devnet' }}
+        uses: ./.github/actions/python-requirements
+      - name: Set evm image tag
+        if: ${{ env.NETWORK != 'devnet' }}
+        id: share
+        run: |
+          env_tag=$(python3 ./clickfile.py infra get-stand-param \
+            --current_branch "${{ github.ref_name }}" \
+            --head_branch "${{ github.head_ref }}" \
+            --base_branch "${{ github.base_ref }}" \
+            --param "evm_tag")
+      
+          evm_branch=$(python3 ./clickfile.py infra get-stand-param \
+            --current_branch "${{ github.ref_name }}" \
+            --head_branch "${{ github.head_ref }}" \
+            --base_branch "${{ github.base_ref }}" \
+            --param "evm_branch")
+      
+          echo "evm_tag=$env_tag"
+          echo "evm_tag=$env_tag" >> $GITHUB_OUTPUT
+          echo "evm_branch=$evm_branch"
+          echo "evm_branch=$evm_branch" >> $GITHUB_OUTPUT
+
+      - name: Run tests
+        if: ${{ env.NETWORK != 'devnet' }}
+        env:
+          NEON_TESTS_IMAGE: ${{ env.IMAGE }}:${{ needs.dockerize.outputs.tag }}
+          EVM_LOADER_IMAGE: ${{ github.repository_owner }}/evm_loader:${{ steps.share.outputs.evm_tag }}
+        run: |
+          curl -O https://raw.githubusercontent.com/${{ github.repository_owner }}/neon-evm/${{ steps.share.outputs.evm_branch }}/ci/docker-compose-ci.yml
+          docker-compose -p ${{env.DOCKER_PROJECT_NAME}} -f docker-compose-ci.yml pull
+          docker-compose -p ${{env.DOCKER_PROJECT_NAME}} -f docker-compose-ci.yml up -d
+          docker exec -i ${{env.DOCKER_PROJECT_NAME}}-tests-1 bash -c "python3 clickfile.py run evm --numprocesses 8 --network docker_net"
+      - name: Set failed test group to evm
+        if: failure()
+        run: echo "FAILED_TEST_GROUP=evm" >> $GITHUB_ENV
+      - name: "Generate allure report"
+        if: always() && ${{ env.NETWORK != 'devnet' }}
+        uses: ./.github/actions/generate-allure-report
+        with:
+          container: ${{env.DOCKER_PROJECT_NAME}}-tests-1
+          network: docker_net
+          aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          tests_name: evm
+      - name: Stop and remove containers
+        env:
+          NEON_TESTS_IMAGE: ${{ env.IMAGE }}:${{ needs.dockerize.outputs.tag }}
+          EVM_LOADER_IMAGE: ${{ github.repository_owner }}/evm_loader:${{ steps.share.outputs.evm_tag }}
+        if: always() && env.NETWORK != 'devnet'
+        run: |
+          docker-compose -p ${{env.DOCKER_PROJECT_NAME}} -f docker-compose-ci.yml down
+      - name: Cancel the build if job failed
+        if: failure()
+        uses: "andymckay/cancel-action@0.4"
+  run-proxy-tests:
+    name: Run basic tests
+    needs:
+      - dockerize
+      - prepare-env-proxy
     runs-on: ["self-hosted", "k8s-prod"]
     env:
-      SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}
-      PROXY_IP: ${{ needs.prepare-env.outputs.proxy_ip }}
-      NETWORK: ${{ needs.prepare-env.outputs.network }}
+      SOLANA_IP: ${{ needs.prepare-env-proxy.outputs.solana_ip }}
+      PROXY_IP: ${{ needs.prepare-env-proxy.outputs.proxy_ip }}
+      NETWORK: ${{ needs.prepare-env-proxy.outputs.network }}
       CONTAINER: basic-tests-${{ github.run_id }}
     if: |
       always() &&
@@ -117,34 +190,18 @@ jobs:
       !contains(needs.*.result, 'cancelled')
     steps:
       - uses: actions/checkout@v4
-      - name: "Define image tag"
-        id: image_tag
-        uses: ./.github/actions/define-image-tag
       - name: Run docker container
         run: |
-          docker pull ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }}
+          docker pull ${{ env.IMAGE }}:${{ needs.dockerize.outputs.tag }}
           docker run -i -d -e CI -e GITHUB_RUN_ID -e GITHUB_WORKFLOW \
             -e ETH_BANK_PRIVATE_KEY_MAINNET=${{ secrets.ETH_BANK_PRIVATE_KEY_MAINNET }} \
             -e BANK_PRIVATE_KEY_MAINNET=${{ secrets.BANK_PRIVATE_KEY_MAINNET }} \
             -e BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }} \
-            -e SOLANA_URL \
+            -e DEVNET_SOLANA_URL \
             -e SOLANA_IP -e PROXY_IP \
-            --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ steps.image_tag.outputs.tag }} /bin/bash
-      - name: Run evm tests
-        if: needs.prepare-env.outputs.network == 'terraform'
-        timeout-minutes: 10
-        run: |
-          docker exec -i ${{ env.CONTAINER }} \
-            /bin/bash -c "export SOLANA_URL=http://${{ env.SOLANA_IP }}:8899 \
-            && export NEON_CORE_API_URL=http://${{ env.SOLANA_IP }}:8085/api \
-            && export NEON_CORE_API_RPC_URL=http://${{ env.SOLANA_IP }}:3100 \
-            && python3 ./clickfile.py run evm --numprocesses 8 --network terraform --keep-error-log"
-      - name: Set failed test group to evm
-        if: failure()
-        run: echo "FAILED_TEST_GROUP=evm" >> $GITHUB_ENV
+            --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ needs.dockerize.outputs.tag }} /bin/bash
       - name: Run basic proxy tests
         timeout-minutes: 60
-        id: basic
         run: |
           CMD="python3 ./clickfile.py run basic --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}"
       
@@ -184,19 +241,14 @@ jobs:
           aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           tests_name: basic
-      - name: "Notify on failure."
-        if: failure() && github.ref_name == 'develop'
-        run: |
-          docker exec -i ${{ env.CONTAINER }} \
-            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
-          -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group ${{ env.FAILED_TEST_GROUP }}
       - name: Remove docker container
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}
   destroy:
+    name: Destroy stand
     runs-on: ["self-hosted", "k8s-prod"]
-    needs: [ prepare-env, tests]
-    if: always() && needs.prepare-env.outputs.network == 'terraform'
+    needs: [ prepare-env-proxy, run-proxy-tests]
+    if: always() && needs.prepare-env-proxy.outputs.network == 'terraform'
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -212,8 +264,22 @@ jobs:
           TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
           TFSTATE_KEY: ${{vars.TFSTATE_KEY_PREFIX}}-${{ github.run_number }}
           TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
-          PROXY_IP: ${{ needs.prepare-env.outputs.proxy_ip }}
-          SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}
+          PROXY_IP: ${{ needs.prepare-env-proxy.outputs.proxy_ip }}
+          SOLANA_IP: ${{ needs.prepare-env-proxy.outputs.solana_ip }}
         uses: ./.github/actions/destroy-tf-stand
         with:
           ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
+  send-notification:
+    name: Send notification on failure
+    needs:
+      - run-proxy-tests
+      - run-evm-tests
+    runs-on: ["self-hosted", "k8s-prod"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Notify on failure."
+        if: failure() && github.ref_name == 'develop'
+        run: |
+          docker exec -i ${{ env.CONTAINER }} \
+            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+          -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group ${{ env.FAILED_TEST_GROUP }}

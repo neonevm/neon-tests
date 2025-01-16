@@ -22,6 +22,14 @@ CHROME_DATA_PATH = (
 """CHROME_DATA_PATH is temporary local destination in project to untar chrome data directory and plugins"""
 
 
+@pytest.fixture(scope="session", autouse=True)
+def allure_environment():
+    """
+    Override the allure_environment fixture to disable it
+    """
+    pass
+
+
 @pytest.fixture(scope="session")
 def network(pytestconfig: tp.Any) -> tp.Optional[str]:
     return PLATFORM_NETWORKS.get(

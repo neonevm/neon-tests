@@ -1,5 +1,5 @@
 class InstructionAsserts:
-    INVALID_CHAIN_ID = "Invalid Chain ID"
+    INVALID_CHAIN_ID = "invalid chainId"
     INVALID_NONCE = "Invalid Nonce"
     TRX_ALREADY_FINALIZED = "Transaction already finalized"
     INSUFFICIENT_FUNDS = "Insufficient balance"
@@ -15,3 +15,7 @@ class InstructionAsserts:
     INVALID_OPERATOR_KEY = "operator.key != storage.operator"
     HOLDER_OVERFLOW = "Checked Integer Math Overflow"
     HOLDER_INSUFFICIENT_SIZE = "Holder Account - insufficient size"
+    TRANSACTION_TREE_INVALID_DATA = "Transaction Tree - invalid transaction data"
+    TRANSACTION_TREE_INVALID_SUCCESS_LIMIT = "Transaction Tree - transaction invalid success execute limit"
+    TRANSACTION_TREE_NO_FEE = "Transaction Tree - transaction requires at least 1.1 GAlan for gas price"
+

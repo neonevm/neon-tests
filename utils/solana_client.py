@@ -9,6 +9,7 @@ import pathlib
 
 import solana.rpc.api
 import spl.token.client
+from solders.transaction_status import EncodedConfirmedTransactionWithStatusMeta
 from spl.token.client import Token
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
@@ -59,13 +60,6 @@ class SolanaClient(solana.rpc.api.Client):
         )
         self.send_tx_and_check_status_ok(tx, from_)
 
-    @staticmethod
-    def ether2bytes(ether: tp.Union[str, bytes]):
-        if isinstance(ether, str):
-            if ether.startswith("0x"):
-                return bytes.fromhex(ether[2:])
-            return bytes.fromhex(ether)
-        return ether
 
     def get_erc_auth_address(self, neon_account_address: str, token_address: str, evm_loader_id: str):
         neon_account_addressbytes = bytes(12) + bytes.fromhex(neon_account_address[2:])
@@ -132,7 +126,7 @@ class SolanaClient(solana.rpc.api.Client):
 
     def account_exists(self, account_address: Pubkey) -> bool:
         try:
-            account_info = self.get_account_info(account_address)
+            account_info = self.get_account_info(account_address, commitment=Confirmed)
             if account_info.value is not None:
                 return True
             else:
@@ -205,3 +199,36 @@ class SolanaClient(solana.rpc.api.Client):
             check_success=lambda trx: trx.value is not None
         )
         return tx
+
+    def transaction_contains_call_to_program(
+            self,
+            tx: EncodedConfirmedTransactionWithStatusMeta,
+            program_id: Pubkey,
+    ) -> bool:
+        account_key_index = self.get_account_key_index_from_tx(tx=tx, account=program_id)
+        return self.do_tx_instructions_contain_program_id_index(tx=tx, i=account_key_index)
+
+    @staticmethod
+    def get_account_key_index_from_tx(
+            tx: EncodedConfirmedTransactionWithStatusMeta,
+            account: Pubkey,
+    ) -> int:
+        """
+        :returns index in transaction.message.account_keys or -1 if not found
+        """
+        for i, account_key in enumerate(tx.transaction.transaction.message.account_keys):
+            if account_key == account:
+                return i
+        else:
+            return -1
+
+    @staticmethod
+    def do_tx_instructions_contain_program_id_index(
+            tx: EncodedConfirmedTransactionWithStatusMeta,
+            i: int,
+    ) -> bool:
+        for instruction in tx.transaction.transaction.message.instructions:
+            if instruction.program_id_index == i:
+                return True
+        else:
+            return False

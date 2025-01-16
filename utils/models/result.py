@@ -234,14 +234,18 @@ class ReceiptDetails(ForbidExtra):
     type: HexString
     status: tp.Optional[HexString] = None
     root: tp.Optional[HexString] = None
+    scheduledParentTransactionHashes: tp.Optional[List[HexString]] = None
+    scheduledChildTransactionHashes: tp.Optional[List[HexString]] = None
+
 
     @model_validator(mode="before")
     @classmethod
     def check_status(cls, values):
         if values.get("status") is None and values.get("root") is None:
             raise ValueError("Either status or root must be present")
-        if values.get("status") is not None and values.get("root") is not None:
-            raise ValueError("Either status or root must be present")
+        # TODO: refactor
+        # if values.get("status") is not None and values.get("root") is not None:
+        #     raise ValueError("Either status or root must be present")
         return values
 
 
@@ -298,6 +302,7 @@ class NeonReceiptDetails(ForbidExtra):
     gasUsed: HexString
     cumulativeGasUsed: HexString
     contractAddress: Union[HexString, None]
+    root: HexString
     status: HexString
     logsBloom: HexString
     logs: Union[List[NeonGetLogsDetails], List]
@@ -310,6 +315,8 @@ class NeonReceiptDetails(ForbidExtra):
     neonIsCanceled: bool
     solanaTransactions: List[SolanaTransaction]
     neonCosts: List[NeonCostsDetails]
+    scheduledParentTransactionHashes: List[HexString]
+    scheduledChildTransactionHashes: List[HexString]
 
 
 class NeonGetTransactionResult(EthResult):

@@ -9,8 +9,9 @@ from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 
 from utils.evm_loader import EvmLoader
+from utils.neon_user import NeonUser
 from utils.types import Caller, TreasuryPool, Contract
-from .constants import NEON_CORE_API_URL
+from .constants import NEON_CORE_API_URL, CHAIN_ID
 from .neon_api_client import NeonApiClient
 from .transaction_checks import check_transaction_logs_have_text
 
@@ -75,11 +76,14 @@ def make_deployment_transaction(
     data = get_contract_bin(contract_file_name, contract_name, version)
     if encoded_args is not None:
         data = data + encoded_args.hex()
-
-    nonce = evm_loader.get_neon_nonce(user.eth_address)
+    if chain_id:
+        nonce = evm_loader.get_neon_nonce(user.eth_address, chain_id)
+    else:
+        nonce = evm_loader.get_neon_nonce(user.eth_address)
     tx = {"to": None, "value": 0, "gas": gas, "gasPrice": 0, "nonce": nonce, "data": data}
     if chain_id:
         tx["chainId"] = chain_id
+
     if access_list:
         tx["accessList"] = access_list
         tx["type"] = 1
@@ -103,6 +107,8 @@ def make_contract_call_trx(
     value=0,
     chain_id=111,
     access_list=None,
+    gas=999999999,
+    gas_price=0,
     max_priority_fee_per_gas=None,
     max_fee_per_gas=None,
     trx_type=None,
@@ -126,9 +132,11 @@ def make_contract_call_trx(
         value=value,
         chain_id=chain_id,
         access_list=access_list,
+        gas=gas,
         max_priority_fee_per_gas=max_priority_fee_per_gas,
         max_fee_per_gas=max_fee_per_gas,
         type_=trx_type,
+        gas_price=gas_price
     )
 
     return signed_tx
@@ -141,6 +149,7 @@ def deploy_contract(
     evm_loader: EvmLoader,
     treasury_pool: TreasuryPool,
     value: int = 0,
+    chain_id=CHAIN_ID,
     encoded_args=None,
     contract_name: tp.Optional[str] = None,
     version: str = "0.7.6",
@@ -151,17 +160,30 @@ def deploy_contract(
     if encoded_args is None:
         encoded_args = b""
     emulate_result = neon_api_client.emulate(
-        user.eth_address.hex(), contract=None, data=contract_code + encoded_args.hex()
+        user.eth_address.hex(),
+        contract=None,
+        data=contract_code + encoded_args.hex(),
+        chain_id=chain_id,
+        value=hex(value),
     )
     additional_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
 
-    contract: Contract = create_contract_address(user, evm_loader)
+    contract: Contract = create_contract_address(user, evm_loader, chain_id)
     holder_acc = create_holder(operator, evm_loader)
     signed_tx = make_deployment_transaction(
-        evm_loader, user, contract_file_name, contract_name, encoded_args=encoded_args, value=value, version=version
+        evm_loader,
+        user,
+        contract_file_name,
+        contract_name,
+        encoded_args=encoded_args,
+        value=value,
+        version=version,
+        chain_id=chain_id,
     )
     evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator)
 
-    resp = evm_loader.execute_transaction_steps_from_account(operator, treasury_pool, holder_acc, additional_accounts)
+    resp = evm_loader.execute_transaction_steps_from_account(
+        operator, treasury_pool, holder_acc, additional_accounts, chain_id=chain_id
+    )
     check_transaction_logs_have_text(resp, "exit_status=0x12")
     return contract

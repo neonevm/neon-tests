@@ -24,7 +24,7 @@ env:
   NETWORK: ${{ github.event.inputs.network || 'terraform' }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   FAUCET_URL: "${{ secrets.DEVNET_FAUCET_URL }}"
-  SOLANA_URL: "${{ secrets.SOLANA_URL }}"
+  DEVNET_SOLANA_URL: "${{ secrets.SOLANA_URL }}"
   NUMPROCESSES: 2
   IMAGE:  ${{ github.repository_owner }}/neon_tests
   CONTAINER:  compilers-${{ github.run_id }}
@@ -108,7 +108,7 @@ jobs:
         timeout-minutes: 20
         run: |
           docker exec -i ${{ env.CONTAINER }} \
-            /bin/bash -c "export DEVNET_FAUCET_URL=${{ env.FAUCET_URL }} && export SOLANA_URL=${{ env.SOLANA_URL }} && \
+            /bin/bash -c "export DEVNET_FAUCET_URL=${{ env.FAUCET_URL }} && export DEVNET_SOLANA_URL=${{ env.DEVNET_SOLANA_URL }} && \
             export SOLANA_IP=${{ env.SOLANA_IP }} && export PROXY_IP=${{ env.PROXY_IP }} && \
             python3 ./clickfile.py run compiler_compatibility --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}"
       - name: "Generate allure report"

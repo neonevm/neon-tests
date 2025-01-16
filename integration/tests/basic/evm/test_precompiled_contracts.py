@@ -47,6 +47,13 @@ PRECOMPILED_FIXTURES = {
     },
 }
 
+NEON_PRECOMPILED = ["0xFF00000000000000000000000000000000000002",
+                    "0xFF00000000000000000000000000000000000003",
+                    "0xFF00000000000000000000000000000000000004",
+                    "0xFF00000000000000000000000000000000000005",
+                    "0xFF00000000000000000000000000000000000006"
+                    ]
+
 
 def load_parametrized_data():
     result = {"argnames": "address,input_data,expected", "argvalues": [], "ids": []}
@@ -170,3 +177,22 @@ class TestPrecompiledContracts:
         pytestconfig.getoption("--network")
         if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
             assert self.web3_client.get_balance(address) - balance_before == amount
+
+    @pytest.mark.parametrize("contract", PRECOMPILED_FIXTURES)
+    def test_eth_get_code_ethereum_precompiled(self, json_rpc_client, contract):
+        address = PRECOMPILED_FIXTURES[contract]["address"]
+
+        response = json_rpc_client.send_rpc(
+            "eth_getCode",
+            params=[address, "latest"],
+        )
+        assert response["result"] == "0x"
+
+    @pytest.mark.parametrize("address", NEON_PRECOMPILED)
+    def test_eth_get_code_neon_precompiled(self, json_rpc_client, address):
+
+        response = json_rpc_client.send_rpc(
+            "eth_getCode",
+            params=[address, "latest"],
+        )
+        assert response["result"] == "0xfe"

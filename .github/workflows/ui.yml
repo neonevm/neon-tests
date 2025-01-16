@@ -63,6 +63,7 @@ jobs:
           "
           docker exec -i ${{ env.CONTAINER_NAME }} bash -c "$CMD"
 
+  run-tests:
       - name: Run tests
         id: run-tests
         run:

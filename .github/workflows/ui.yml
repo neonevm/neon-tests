@@ -28,6 +28,7 @@ jobs:
       tag: ${{ steps.image_tag.outputs.tag }}
 
   test:
+    needs: dockerize
     runs-on: ubuntu-latest
 
     env:

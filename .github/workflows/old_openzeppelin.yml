@@ -34,6 +34,7 @@ env:
   RUNNER: self-hosted
   IMAGE:  ${{ github.repository_owner }}/neon_tests
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+  DEVNET_SOLANA_URL: ${{secrets.SOLANA_URL}}
 
 jobs:
   prepare-env:

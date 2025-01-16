@@ -11,11 +11,13 @@ Supported precompiled contracts:
 
 # Tests list
 
-| Test case                                                | Description                                              | XFailed |
-|----------------------------------------------------------|----------------------------------------------------------|---------|
-| TestPrecompiledContracts::test_call_direct               | Call precompiled contract direct from eth_call           |         |
-| TestPrecompiledContracts::test_call_via_contract         | Call precompiled contract from contract                  |         |
-| TestPrecompiledContracts::test_staticcall_via_contract   | Call precompiled contract from contract via staticcall   |         |
-| TestPrecompiledContracts::test_delegatecall_via_contract | Call precompiled contract from contract via delegatecall |         |
-| TestPrecompiledContracts::test_call_via_send_trx         | Call precompiled contract from contract in transaction   |         |
-| TestPrecompiledContracts::test_send_neon_without_data    | Send neon to precompiled contract                        |         |
+| Test case                                                        | Description                                                | XFailed |
+|------------------------------------------------------------------|------------------------------------------------------------|---------|
+| TestPrecompiledContracts::test_call_direct                       | Call precompiled contract direct from eth_call             |         |
+| TestPrecompiledContracts::test_call_via_contract                 | Call precompiled contract from contract                    |         |
+| TestPrecompiledContracts::test_staticcall_via_contract           | Call precompiled contract from contract via staticcall     |         |
+| TestPrecompiledContracts::test_delegatecall_via_contract         | Call precompiled contract from contract via delegatecall   |         |
+| TestPrecompiledContracts::test_call_via_send_trx                 | Call precompiled contract from contract in transaction     |         |
+| TestPrecompiledContracts::test_send_neon_without_data            | Send neon to precompiled contract                          |         |
+| TestPrecompiledContracts::test_eth_get_code_ethereum_precompiled | Call eth_getCode method for ethereum precompiled contracts |         |
+| TestPrecompiledContracts::test_eth_get_code_neon_precompiled     | Call eth_getCode method for neon precompiled contracts     |         |

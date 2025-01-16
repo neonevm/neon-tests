@@ -63,25 +63,23 @@ jobs:
           "
           docker exec -i ${{ env.CONTAINER_NAME }} bash -c "$CMD"
 
-  run-tests:
-    name: Run tests
-    id: run-tests
-    run:
-      docker exec -i ${{ env.CONTAINER_NAME }} bash -c "CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} python3 clickfile.py run ui --network ${{ env.NETWORK }}"
-  send-notification:
-    name: Send notification on failure
-    needs:
-      - dockerize
-      - run-tests
-    runs-on: [ "self-hosted", "k8s-prod" ]
-    steps:
-      - uses: actions/checkout@v4
-      - name: "Notify on failure."
+      - name: Run tests
+        id: run-tests
+        run:
+          docker exec -i ${{ env.CONTAINER_NAME }} bash -c "CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} python3 clickfile.py run ui --network ${{ env.NETWORK }}"
+
+      - name: Send notification on failure
+        needs:
+          - dockerize
+        runs-on: [ "self-hosted", "k8s-prod" ]
+        steps:
+          - uses: actions/checkout@v4
+          - name: "Notify on failure."
         if: failure() && github.ref_name == 'develop'
         run: |
           docker exec -i ${{ env.CONTAINER }} \
             python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
-          -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group ${{ env.FAILED_TEST_GROUP }}
+          -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group == 'ui'
       - name: "Generate allure report"
         if: always()
         uses: ./.github/actions/generate-allure-report

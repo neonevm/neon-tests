@@ -21,8 +21,6 @@ from web3.contract import Contract
 from eth_account.signers.local import LocalAccount
 
 from conftest import EnvironmentConfig
-from .neon_evm.utils.neon_api_rpc_client import NeonApiRpcClient
-from .neon_evm.utils.neon_api_client import NeonApiClient
 
 from clickfile import EnvName
 from utils.accounts import EthAccounts

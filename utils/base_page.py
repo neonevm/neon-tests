@@ -32,6 +32,6 @@ class BasePage(abc.ABC):
         )
         self.driver.switch_to.window(self.driver.window_handles[index])
 
-    def assert_windows_number(self,index:int):
-        assert len(self.driver.window_handles) == index + 1, \
-            f"Expected {index + 1} windows, but found {len(self.driver.window_handles)}"
+    def assert_windows_count(self,expected_windows_count:int):
+        assert len(self.driver.window_handles) == expected_windows_count, \
+            f"Expected {expected_windows_count} windows, but found {len(self.driver.window_handles)}"

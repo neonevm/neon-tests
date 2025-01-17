@@ -15,7 +15,7 @@ class MainPage(BasePage):
     add_your_dapp_button = (By.XPATH, "//span[@class='button__content'][contains(.,'add your dapp')]")
     transaction_cost_arrow = (By.XPATH, "(//div[contains(@class,'arrow-down-icon-container')])[2]")
     email_input_field = (By.XPATH, "//input")
-    test_mail = "new_user@gmail.com"
+    subscribe_button = (By.XPATH, "//button/span[text()='subscribe']")
 
     def click_on_logo_on_header(self):
         self.wait.until(EC.presence_of_element_located(MainPage.logo_on_header)).click()
@@ -38,5 +38,10 @@ class MainPage(BasePage):
     def click_add_your_dapp_button(self):
         self.wait.until(EC.presence_of_element_located(MainPage.add_your_dapp_button)).click()
 
-    def input_email(self, email = test_mail):
+    def input_email(self):
+        email = self.generate_email()
+        print(email)
         self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field)).send_keys(email)
+
+    def click_subscribe_button(self):
+        self.wait.until(EC.presence_of_element_located(MainPage.subscribe_button)).click()

@@ -46,3 +46,4 @@ class TestMainPage:
 
     def test_check_subscription(self, main_page):
         main_page.input_email()
+        main_page.click_subscribe_button()

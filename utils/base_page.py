@@ -1,7 +1,6 @@
 import pytest
 import abc
-import requests
-from selenium.webdriver.common.by import By
+import faker
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
@@ -28,3 +27,6 @@ class BasePage(abc.ABC):
 
     def switch_window(self,index:int):
         self.driver.switch_to.window(self.driver.window_handles[index])
+
+    def generate_email(self):
+        return faker.Faker().email()

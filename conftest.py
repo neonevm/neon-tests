@@ -263,8 +263,7 @@ def faucet(environment: EnvironmentConfig, web3_client_session: NeonChainWeb3Cli
 
 @pytest.fixture(scope="session")
 def accounts_session(pytestconfig: Config, web3_client_session, faucet, eth_bank_account):
-    accounts = EthAccounts(web3_client_session, faucet, eth_bank_account)
-    return accounts
+    return EthAccounts(web3_client_session, faucet, eth_bank_account)
 
 
 @pytest.fixture(scope="function")

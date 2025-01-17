@@ -1327,7 +1327,7 @@ def prepare_tracer(network, transfers_number, contracts_calls_number, iterative_
 @click.option("-u", "--users", default=None, required=True,
               help="Number of users (have to be generated before load test run)")
 @click.option("-b", "--balance", default=None, required=True, help="Initial balance of accounts in Neon")
-@click.option("-a", "--bank_account", default="", required=False, help="Eth bank account key")
+@click.option("-a", "--bank_account", default="", required=False, help="Eth bank account private key")
 @catch_traceback
 def run(network, script, users, balance, bank_account):
     network_object = network_manager.get_network_object(network)

@@ -43,3 +43,6 @@ class TestMainPage:
         main_page.switch_window(1)
         google_forms_page.assert_page_url()
         google_forms_page.assert_text_on_googleform_title()
+
+    def test_check_subscription(self, main_page):
+        main_page.input_email()

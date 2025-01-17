@@ -309,7 +309,7 @@ def account_with_all_tokens(
 
 
 @pytest.fixture(scope="session")
-def neon_mint(pytestconfig: Config):
+def neon_mint(pytestconfig: Config) -> Pubkey:
     neon_mint = Pubkey.from_string(pytestconfig.environment.spl_neon_mint)
     return neon_mint
 

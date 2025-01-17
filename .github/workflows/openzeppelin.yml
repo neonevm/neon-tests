@@ -31,6 +31,7 @@ env:
   CONTAINER:  oz-${{ github.run_id }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
+  DEVNET_SOLANA_URL: ${{secrets.SOLANA_URL}}
 jobs:
   dockerize:
     if: github.ref_name != 'develop' || github.event.inputs.oz_tag !=''

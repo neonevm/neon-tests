@@ -171,6 +171,8 @@ def make_ExecuteTrxFromAccountDataIterativeOrContinue(
     print("Operator: ", operator.pubkey())
     print("Treasury: ", treasury.account)
     print("Operator eth solana: ", operator_balance)
+    print("System program: ", sys_program_id)
+    print("Sys program type ", type(sys_program_id))
     accounts = [
         AccountMeta(pubkey=holder_address, is_signer=False, is_writable=True),
         AccountMeta(pubkey=operator.pubkey(), is_signer=True, is_writable=True),

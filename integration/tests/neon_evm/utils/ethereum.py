@@ -17,10 +17,10 @@ def create_contract_address(
     user: Union[Caller, bytes],
     evm_loader: EvmLoader,
     environment: EnvironmentConfig,
-    chain_id: int | float | None = float('nan'),
+    chain_id: int | None = None,
 ) -> Contract:
-    if chain_id == float('nan'):
-        chain_id = environment.network_ids["neon"]
+
+    chain_id = chain_id or environment.network_ids["neon"]
 
     # Create contract address from (caller_address, nonce)
     if isinstance(user, Caller):
@@ -45,7 +45,7 @@ def make_eth_transaction(
     caller: Caller,
     environment: EnvironmentConfig,
     value: int = 0,
-    chain_id: int | float | None = float('nan'),
+    chain_id: int | str | None = '',
     gas=9999999999,
     max_priority_fee_per_gas=None,
     max_fee_per_gas=None,
@@ -54,7 +54,7 @@ def make_eth_transaction(
     gas_price=0
 ):
 
-    if chain_id == float('nan'):
+    if chain_id == '':
         chain_id = environment.network_ids["neon"]
 
     nonce = evm_loader.get_neon_nonce(caller.eth_address)

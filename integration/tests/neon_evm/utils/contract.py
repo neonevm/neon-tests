@@ -106,7 +106,7 @@ def make_contract_call_trx(
     environment: EnvironmentConfig,
     params=None,
     value=0,
-    chain_id: int | float | None = float('nan'),
+    chain_id: int | str | None = '',
     access_list=None,
     gas=999999999,
     gas_price=0,
@@ -114,7 +114,7 @@ def make_contract_call_trx(
     max_fee_per_gas=None,
     trx_type=None,
 ):
-    if chain_id == float('nan'):
+    if chain_id == '':
         chain_id = environment.network_ids['neon']
 
     # does not work for tuple in params
@@ -147,6 +147,7 @@ def make_contract_call_trx(
     return signed_tx
 
 
+# TODO Move deploy_contract methods to EVMLoader class
 def deploy_contract(
     operator: Keypair,
     user: Caller,
@@ -201,7 +202,7 @@ def deploy_contract(
     )
     return contract
 
-
+# TODO Move deploy_contract methods to EVMLoader class
 def deploy_contract_sol(
     operator: Keypair,
     user: Caller,

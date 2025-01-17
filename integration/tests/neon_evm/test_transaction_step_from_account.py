@@ -637,10 +637,21 @@ class TestAccountStepContractCallContractInteractions:
         sol_client,
         environment
     ):
+        # Signed eth transaction is created
         signed_tx = make_contract_call_trx(
             evm_loader, session_user, rw_lock_caller, "update_storage_str(string)", environment, ["hello"]
         )
+        # Now we write this transaction to a holder acc
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
+
+        # TreasuryPool - account that is responsible for fees
+        # Operator - keypair - account of signer (in our case operator)
+        # We call evm instruction and pass all required arguments
+        # session_user - eth-user that is willing to make a transaction on NeonEVM
+        # rw_lock_caller - solidity contract address in Solana net
+        # rw_lock_contract - solidity contract address in Solana net
+
+
         resp = evm_loader.execute_transaction_steps_from_account(
             operator_keypair,
             treasury_pool,

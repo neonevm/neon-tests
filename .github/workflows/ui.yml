@@ -9,7 +9,6 @@ on:
 env:
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   IMAGE_NAME:  ${{ github.repository_owner }}/neon_tests
-  CHROME_EXT_PASSWORD: ${{ secrets.CHROME_EXT_PASSWORD }}
   DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
   CONTAINER_NAME: neon_tests
   NETWORK: "devnet"

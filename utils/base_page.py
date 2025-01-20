@@ -27,4 +27,11 @@ class BasePage(abc.ABC):
         assert url == current_url, f"The url is {current_url}"
 
     def switch_window(self,index:int):
+        WebDriverWait(self.driver, 10).until(
+            lambda driver: len(driver.window_handles) > index
+        )
         self.driver.switch_to.window(self.driver.window_handles[index])
+
+    def assert_windows_count(self,expected_windows_count:int):
+        assert len(self.driver.window_handles) == expected_windows_count, \
+            f"Expected {expected_windows_count} windows, but found {len(self.driver.window_handles)}"

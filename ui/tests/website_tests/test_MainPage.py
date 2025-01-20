@@ -47,3 +47,33 @@ class TestMainPage:
     def test_check_subscription(self, main_page):
         main_page.input_email()
         main_page.click_subscribe_button()
+
+    def test_check_twitter_page(self, main_page):
+        main_page.click_social_network_icon(icon_name=main_page.twitter_icon)
+        main_page.switch_window(1)
+        main_page.assert_page_url(url=main_page.twitter_page)
+
+    def test_check_github_page(self, main_page):
+        main_page.click_social_network_icon(icon_name=main_page.githib_icon)
+        main_page.switch_window(1)
+        main_page.assert_page_url(url=main_page.github_page)
+
+    def test_check_discord_page(self, main_page):
+        main_page.click_social_network_icon(icon_name=main_page.discord_icon)
+        main_page.switch_window(1)
+        main_page.assert_page_url(url=main_page.discord_page)
+
+    def test_check_medium_page(self, main_page):
+        main_page.click_social_network_icon(icon_name=main_page.medium_icon)
+        main_page.switch_window(1)
+        main_page.assert_page_url(url=main_page.medium_page)
+
+    def test_check_telegram_page(self, main_page):
+        main_page.click_social_network_icon(icon_name=main_page.telegram_icon)
+        main_page.switch_window(1)
+        main_page.assert_page_url(url=main_page.telegram_page)
+
+    def test_check_linkedin_page(self, main_page):
+        main_page.click_social_network_icon(icon_name=main_page.linkedin_icon)
+        main_page.switch_window(1)
+        main_page.assert_page_url(url=main_page.linkedin_page)

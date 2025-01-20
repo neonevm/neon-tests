@@ -30,3 +30,6 @@ class BasePage(abc.ABC):
 
     def generate_email(self):
         return faker.Faker().email()
+
+    def close_current_tab(self):
+        self.driver.close()

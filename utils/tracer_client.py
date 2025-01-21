@@ -6,7 +6,7 @@ class TracerClient:
     def __init__(self, url):
         self.url = url
         self.tracer_api = JsonRPCSession(url)
-    
+
     def send_rpc_and_wait_response(self, method_name, params, req_type=None, timeout_sec: int = 120):
         return wait_condition(
             func_cond=lambda: self.tracer_api.send_rpc(method=method_name, params=params, req_type=req_type),

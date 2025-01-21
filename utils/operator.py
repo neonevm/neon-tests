@@ -16,12 +16,12 @@ from utils.web3client import NeonChainWeb3Client
 
 class Operator:
     def __init__(
-            self,
-            proxy_url: str,
-            solana_url: str,
-            neon_token_mint: str,
-            web3_client: tp.Optional[NeonChainWeb3Client] = None,
-            evm_loader: tp.Optional[str] = None
+        self,
+        proxy_url: str,
+        solana_url: str,
+        neon_token_mint: str,
+        web3_client: tp.Optional[NeonChainWeb3Client] = None,
+        evm_loader: tp.Optional[str] = None,
     ):
         self._proxy_url = proxy_url
         self._solana_url = solana_url
@@ -54,7 +54,8 @@ class Operator:
             seed_version,
             operator_pubkey_bytes,
             operator_ether,
-            w3_client.chain_id.to_bytes(32, byteorder="big"))
+            w3_client.chain_id.to_bytes(32, byteorder="big"),
+        )
         balance_account, _ = Pubkey.find_program_address(seed_list, Pubkey.from_string(self.evm_loader))
         return balance_account
 

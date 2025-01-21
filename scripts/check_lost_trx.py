@@ -58,14 +58,14 @@ def run():
 
     print("Start check NEON txs")
     with ThreadPoolExecutor(10) as executor:
-        for res in executor.map(check_neon_tx, txs.keys(), [w3]*len(txs)):
+        for res in executor.map(check_neon_tx, txs.keys(), [w3] * len(txs)):
             if res is True:
                 success_neon += 1
 
     sol_txs = list(itertools.chain(*txs.values()))
     print("Start check Solana txs")
     with ThreadPoolExecutor(10) as executor:
-        for res in executor.map(check_sol_tx, sol_txs, [sol]*len(txs)):
+        for res in executor.map(check_sol_tx, sol_txs, [sol] * len(txs)):
             if res is True:
                 success_sol += 1
     print(f"NEON TX count: {len(txs)}, success got receipts: {success_neon}")

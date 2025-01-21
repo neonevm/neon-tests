@@ -44,10 +44,14 @@ class PostgresTestResultsHandler:
 
     def get_cost_report_ids(self, repo: str, tag: str) -> list[int]:
         tag_column = CostReport.neon_evm_tag if repo == "evm" else CostReport.proxy_tag
-        report_ids = self.session.query(CostReport.id).filter(
-            CostReport.repo == repo,
-            tag_column == tag,
-        ).all()
+        report_ids = (
+            self.session.query(CostReport.id)
+            .filter(
+                CostReport.repo == repo,
+                tag_column == tag,
+            )
+            .all()
+        )
         report_ids = [id_[0] for id_ in report_ids]
         return report_ids
 

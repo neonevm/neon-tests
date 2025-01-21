@@ -51,8 +51,9 @@ def cost_report_from_receipt(func: Callable[..., TxReceipt]) -> Callable[..., Tx
         if conftest.COST_REPORT_DIR != Path():
             stack = inspect.stack()
             if is_called_from_test_marked_for_collection(stack=stack):
-                if (isinstance(result, (dict, AttributeDict)) and
-                        set(TxReceipt.__required_keys__).issubset(result.keys())):
+                if isinstance(result, (dict, AttributeDict)) and set(TxReceipt.__required_keys__).issubset(
+                    result.keys()
+                ):
                     receipt = result
                 else:
                     try:
@@ -64,7 +65,7 @@ def cost_report_from_receipt(func: Callable[..., TxReceipt]) -> Callable[..., Tx
 
                 file_path = Path(inspect.getfile(func)).resolve()
                 neon_tests_index = file_path.parts.index("neon-tests")
-                relative_path = Path(*file_path.parts[neon_tests_index + 1:]).with_suffix("")
+                relative_path = Path(*file_path.parts[neon_tests_index + 1 :]).with_suffix("")
                 class_name = ".".join(func.__qualname__.split(".")[:-1]) if "." in func.__qualname__ else ""
                 report_file_name = ".".join(relative_path.parts) + f".{class_name}" + "-report.json"
                 report_file = conftest.COST_REPORT_DIR / report_file_name

@@ -1,19 +1,24 @@
 import pytest
 from sqlalchemy.testing import skip_test
 
-from ui.tests.website_tests.conftest import google_forms_page, menu_page, developers_page, main_page, \
-    ecosystem_page, quick_start_page
+from ui.tests.website_tests.conftest import (
+    google_forms_page,
+    menu_page,
+    developers_page,
+    main_page,
+    ecosystem_page,
+    quick_start_page,
+)
 
 
 class TestMainPage:
-
     def test_logo_header(self, main_page, menu_page, developers_page):
         menu_page.click_on_menu_developers_link()
         developers_page.assert_text_on_build_on_neon_block_link()
         main_page.click_on_logo_on_header()
         main_page.assert_page_url()
 
-    def test_logo_footer(self,main_page, menu_page, developers_page):
+    def test_logo_footer(self, main_page, menu_page, developers_page):
         menu_page.click_on_menu_developers_link()
         developers_page.assert_text_on_build_on_neon_block_link()
         main_page.click_on_logo_on_footer()

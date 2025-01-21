@@ -20,7 +20,8 @@ class RateLimitError(Exception):
 
 @retry(
     retry=retry_if_exception_type((RateLimitError, RequestException)),
-    wait=wait_fixed(WAIT), stop=stop_after_attempt(15)
+    wait=wait_fixed(WAIT),
+    stop=stop_after_attempt(15),
 )
 def get_coin_price(date_: date, coin_id: str, currency: str) -> Optional[float]:
     """
@@ -30,15 +31,15 @@ def get_coin_price(date_: date, coin_id: str, currency: str) -> Optional[float]:
     if cache_key in cache:
         return cache[cache_key]
 
-    formatted_date = date_.strftime('%d-%m-%Y')
-    url = f'https://api.coingecko.com/api/v3/coins/{coin_id}/history?date={formatted_date}&localization=false'
+    formatted_date = date_.strftime("%d-%m-%Y")
+    url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/history?date={formatted_date}&localization=false"
     logger.info(f"Get {coin_id} price in {currency} on {date_}")
     response = requests.get(url)
 
     if response.status_code == 200:
         data = response.json()
         try:
-            price = data['market_data']['current_price'][currency]
+            price = data["market_data"]["current_price"][currency]
             cache[cache_key] = price
             return price
         except KeyError:

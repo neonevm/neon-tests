@@ -18,9 +18,9 @@ class TestBatchOperations:
     web3_client: NeonChainWeb3Client
 
     def test_batch_operations_same_function(
-            self,
-            request: pytest.FixtureRequest,
-            common_contract,
+        self,
+        request: pytest.FixtureRequest,
+        common_contract,
     ):
         """
         sends a batch operation request with 100 calls to the same function with different parameters
@@ -75,8 +75,8 @@ class TestBatchOperations:
             assert actual_function_return == expected_function_return, "Invalid function return"
 
     def test_batch_operations_different_functions(
-            self,
-            request: pytest.FixtureRequest,
+        self,
+        request: pytest.FixtureRequest,
     ):
         """
         sends a batch operation request with a few calls to different functions
@@ -123,9 +123,9 @@ class TestBatchOperations:
             assert rpc_checks.is_hex(result["result"])
 
     def test_batch_operations_negative(
-            self,
-            request: pytest.FixtureRequest,
-            common_contract,
+        self,
+        request: pytest.FixtureRequest,
+        common_contract,
     ):
         """
         sends a batch operation request with a few calls with invalid parameters
@@ -161,7 +161,7 @@ class TestBatchOperations:
                     },
                     "latest",
                 ],
-            }
+            },
         ]
 
         response = requests.post(
@@ -177,8 +177,8 @@ class TestBatchOperations:
             assert "error" in result
 
     def test_batch_operations_positive_and_negative_mix(
-            self,
-            request: pytest.FixtureRequest,
+        self,
+        request: pytest.FixtureRequest,
     ):
         """
         sends a batch operation request with a mix of positive and calls to different functions
@@ -214,7 +214,6 @@ class TestBatchOperations:
                 "params": [],
                 "id": 5,
             },
-
         ]
 
         response = requests.post(

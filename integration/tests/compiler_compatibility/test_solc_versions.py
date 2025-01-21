@@ -14,12 +14,12 @@ INIT_SUPPLY = 1000
 
 def load_data():
     versions = [str(item) for item in solcx.get_installable_solc_versions()]
-    major_versions = sorted(set(version.split('.')[1] for version in versions), reverse=True)
+    major_versions = sorted(set(version.split(".")[1] for version in versions), reverse=True)
     last_three_majors = major_versions[:3]
     last_three_versions = []
     for major in last_three_majors:
-        filtered_versions = [version for version in versions if version.startswith(f'0.{major}.')]
-        highest_version = max(filtered_versions, key=lambda v: [int(part) for part in v.split('.')])
+        filtered_versions = [version for version in versions if version.startswith(f"0.{major}.")]
+        highest_version = max(filtered_versions, key=lambda v: [int(part) for part in v.split(".")])
         last_three_versions.append(highest_version)
 
     result = {"params": last_three_versions, "ids": last_three_versions}
@@ -27,7 +27,6 @@ def load_data():
 
 
 class TestSolcCompatibility:
-
     @pytest.fixture(scope="class", **load_data())
     def solc_version(self, request):
         return request.param

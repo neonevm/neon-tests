@@ -13,5 +13,3 @@ def set_github_env(envs: tp.Dict, upper=True) -> None:
         with open(path, "a") as env_file:
             for key, value in envs.items():
                 env_file.write(f"\n{key.upper() if upper else key}={str(value)}")
-
-

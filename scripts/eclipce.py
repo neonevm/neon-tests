@@ -129,11 +129,11 @@ class SolanaClient(solana.rpc.api.Client):
 
 def make_wsol(amount, solana_wallet, associated_address):
     tx = Transaction(fee_payer=solana_wallet)
-    tx.add(sp.transfer(sp.TransferParams(
-        from_pubkey=solana_wallet, 
-        to_pubkey=associated_address, 
-        lamports=amount),
-    ))
+    tx.add(
+        sp.transfer(
+            sp.TransferParams(from_pubkey=solana_wallet, to_pubkey=associated_address, lamports=amount),
+        )
+    )
 
     sync_native_instr = Instruction(
         accounts=[AccountMeta(pubkey=associated_address, is_signer=False, is_writable=True)],

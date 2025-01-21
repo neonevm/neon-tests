@@ -12,11 +12,10 @@ from utils.web3client import NeonChainWeb3Client
 @pytest.mark.neon_only
 class TestRpcEthMethods:
     def test_get_transaction_by_hash(
-            self,
-            accounts: EthAccounts,
-            web3_client: NeonChainWeb3Client,
-            json_rpc_client: JsonRPCSession,
-
+        self,
+        accounts: EthAccounts,
+        web3_client: NeonChainWeb3Client,
+        json_rpc_client: JsonRPCSession,
     ):
         sender = accounts[0]
         recipient = web3_client.create_account()
@@ -40,15 +39,14 @@ class TestRpcEthMethods:
         assert "error" not in response, response["error"]
         result = response.get("result")
         assert result is not None
-        assert int(result['maxFeePerGas'], 16) == max_fee_per_gas
-        assert int(result['maxPriorityFeePerGas'], 16) == max_priority_fee_per_gas
+        assert int(result["maxFeePerGas"], 16) == max_fee_per_gas
+        assert int(result["maxPriorityFeePerGas"], 16) == max_priority_fee_per_gas
 
     def test_get_transaction_by_block_hash_and_index(
-            self,
-            accounts: EthAccounts,
-            web3_client: NeonChainWeb3Client,
-            json_rpc_client: JsonRPCSession,
-
+        self,
+        accounts: EthAccounts,
+        web3_client: NeonChainWeb3Client,
+        json_rpc_client: JsonRPCSession,
     ):
         sender = accounts[0]
         recipient = web3_client.create_account()
@@ -73,14 +71,14 @@ class TestRpcEthMethods:
         assert "error" not in response, response["error"]
         result = response.get("result")
         assert result is not None
-        assert int(result['maxFeePerGas'], 16) == max_fee_per_gas
-        assert int(result['maxPriorityFeePerGas'], 16) == max_priority_fee_per_gas
+        assert int(result["maxFeePerGas"], 16) == max_fee_per_gas
+        assert int(result["maxPriorityFeePerGas"], 16) == max_priority_fee_per_gas
 
     def test_get_transaction_by_block_number_and_index(
-            self,
-            accounts: EthAccounts,
-            web3_client: NeonChainWeb3Client,
-            json_rpc_client: JsonRPCSession,
+        self,
+        accounts: EthAccounts,
+        web3_client: NeonChainWeb3Client,
+        json_rpc_client: JsonRPCSession,
     ):
         sender = accounts[0]
         recipient = web3_client.create_account()
@@ -106,8 +104,8 @@ class TestRpcEthMethods:
         assert "error" not in response, response["error"]
         result = response.get("result")
         assert result is not None
-        assert int(result['maxFeePerGas'], 16) == max_fee_per_gas
-        assert int(result['maxPriorityFeePerGas'], 16) == max_priority_fee_per_gas
+        assert int(result["maxFeePerGas"], 16) == max_fee_per_gas
+        assert int(result["maxPriorityFeePerGas"], 16) == max_priority_fee_per_gas
 
     @pytest.mark.neon_only
     @pytest.mark.parametrize(
@@ -115,11 +113,11 @@ class TestRpcEthMethods:
         argvalues=(True, False),
     )
     def test_get_block_by_hash(
-            self,
-            accounts: EthAccounts,
-            web3_client: NeonChainWeb3Client,
-            json_rpc_client: JsonRPCSession,
-            full_transaction_objects: bool,
+        self,
+        accounts: EthAccounts,
+        web3_client: NeonChainWeb3Client,
+        json_rpc_client: JsonRPCSession,
+        full_transaction_objects: bool,
     ):
         sender = accounts[0]
         recipient = web3_client.create_account()
@@ -146,7 +144,7 @@ class TestRpcEthMethods:
         result = response.get("result")
         assert result is not None
 
-        block_base_fee = int(result['baseFeePerGas'], 16)
+        block_base_fee = int(result["baseFeePerGas"], 16)
         assert block_base_fee <= base_fee_per_gas
 
     @pytest.mark.neon_only
@@ -155,11 +153,11 @@ class TestRpcEthMethods:
         argvalues=(True, False),
     )
     def test_get_block_by_number(
-            self,
-            accounts: EthAccounts,
-            web3_client: NeonChainWeb3Client,
-            json_rpc_client: JsonRPCSession,
-            full_transaction_objects: bool,
+        self,
+        accounts: EthAccounts,
+        web3_client: NeonChainWeb3Client,
+        json_rpc_client: JsonRPCSession,
+        full_transaction_objects: bool,
     ):
         sender = accounts[0]
         recipient = web3_client.create_account()
@@ -185,15 +183,15 @@ class TestRpcEthMethods:
         result = response.get("result")
         assert result is not None
 
-        block_base_fee = int(result['baseFeePerGas'], 16)
+        block_base_fee = int(result["baseFeePerGas"], 16)
 
         assert block_base_fee <= base_fee_per_gas
 
     def test_get_transaction_receipt(
-            self,
-            accounts: EthAccounts,
-            web3_client: NeonChainWeb3Client,
-            env_name: EnvName,
+        self,
+        accounts: EthAccounts,
+        web3_client: NeonChainWeb3Client,
+        env_name: EnvName,
     ):
         sender = accounts[0]
         recipient = web3_client.create_account()

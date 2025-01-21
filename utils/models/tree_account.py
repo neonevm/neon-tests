@@ -2,6 +2,7 @@ import json
 from typing import List, Dict, Any
 from dataclasses import dataclass
 
+
 @dataclass
 class TreeAccountTransaction:
     status: str
@@ -14,26 +15,27 @@ class TreeAccountTransaction:
     parent_count: int
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'TreeAccountTransaction':
+    def from_dict(cls, data: Dict[str, Any]) -> "TreeAccountTransaction":
         return cls(
-            status=data['status'],
-            result_hash=data['result_hash'],
-            transaction_hash=data['transaction_hash'],
-            gas_limit=data['gas_limit'],
-            value=data['value'],
-            child_transaction=data['child_transaction'],
-            success_execute_limit=data['success_execute_limit'],
-            parent_count=data['parent_count']
+            status=data["status"],
+            result_hash=data["result_hash"],
+            transaction_hash=data["transaction_hash"],
+            gas_limit=data["gas_limit"],
+            value=data["value"],
+            child_transaction=data["child_transaction"],
+            success_execute_limit=data["success_execute_limit"],
+            parent_count=data["parent_count"],
         )
 
     def is_successful(self) -> bool:
-        return self.status == 'Success'
+        return self.status == "Success"
 
     def is_failed(self) -> bool:
-        return self.status == 'Failed'
+        return self.status == "Failed"
 
     def is_skipped(self) -> bool:
-        return self.status == 'Skipped'
+        return self.status == "Skipped"
+
 
 @dataclass
 class TreeAccount:
@@ -50,25 +52,25 @@ class TreeAccount:
     transactions: List[TreeAccountTransaction]
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'TreeAccount':
-        transactions = [TreeAccountTransaction.from_dict(tx) for tx in data['value']['transactions']]
-        value = data['value']
+    def from_dict(cls, data: Dict[str, Any]) -> "TreeAccount":
+        transactions = [TreeAccountTransaction.from_dict(tx) for tx in data["value"]["transactions"]]
+        value = data["value"]
         return cls(
-            result=data['result'],
-            status=value['status'],
-            pubkey=value['pubkey'],
-            payer=value['payer'],
-            last_slot=value['last_slot'],
-            chain_id=value['chain_id'],
-            max_fee_per_gas=value['max_fee_per_gas'],
-            max_priority_fee_per_gas=value['max_priority_fee_per_gas'],
-            balance=int(value['balance'], 16),
-            last_index=value['last_index'],
-            transactions=transactions
+            result=data["result"],
+            status=value["status"],
+            pubkey=value["pubkey"],
+            payer=value["payer"],
+            last_slot=value["last_slot"],
+            chain_id=value["chain_id"],
+            max_fee_per_gas=value["max_fee_per_gas"],
+            max_priority_fee_per_gas=value["max_priority_fee_per_gas"],
+            balance=int(value["balance"], 16),
+            last_index=value["last_index"],
+            transactions=transactions,
         )
 
     def all_transactions_successful(self) -> bool:
-        return all(tx.status == 'Success' for tx in self.transactions)
+        return all(tx.status == "Success" for tx in self.transactions)
 
     def get_transaction_count(self) -> int:
         return len(self.transactions)

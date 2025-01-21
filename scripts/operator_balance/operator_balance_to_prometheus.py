@@ -42,7 +42,7 @@ def get_metric_names(prometheus_url) -> list[str]:
     logger.info("Get metric names")
     response = requests.get(f"{prometheus_url}/api/v1/label/__name__/values")
     response.raise_for_status()
-    metrics = response.json().get('data', [])
+    metrics = response.json().get("data", [])
     return metrics
 
 
@@ -52,7 +52,7 @@ def get_prometheus_last_slot(prometheus_url: str) -> int:
 
     for metric_name in metric_names:
         if "deposit_neon" in metric_name.lower():
-            response = requests.get(f"{prometheus_url}/api/v1/query", params={'query': metric_name})
+            response = requests.get(f"{prometheus_url}/api/v1/query", params={"query": metric_name})
             response.raise_for_status()
             result = response.json().get("data", {}).get("result", [])
             if result:
@@ -66,12 +66,12 @@ def get_prometheus_last_slot(prometheus_url: str) -> int:
 
 
 def push_to_prometheus(
-        df: pd.DataFrame,
-        metrics: list[str],
-        job: str,
-        gateway_url: str,
-        first_slot: int,
-        last_slot: int,
+    df: pd.DataFrame,
+    metrics: list[str],
+    job: str,
+    gateway_url: str,
+    first_slot: int,
+    last_slot: int,
 ):
     registry = CollectorRegistry()
 
@@ -114,7 +114,7 @@ def main():
 
     prometheus_last_slot = get_prometheus_last_slot(prometheus_url=args.prometheus_url)
     to_slot = db.get_latest_block_slot(finalized=True)
-    from_slot = prometheus_last_slot + 1 if prometheus_last_slot else to_slot - int(0.25 * 60 * 60 / .4)  # ~15 min.
+    from_slot = prometheus_last_slot + 1 if prometheus_last_slot else to_slot - int(0.25 * 60 * 60 / 0.4)  # ~15 min.
 
     # Start fetching and caching coin USD prices in the background
     first_block_time = db.get_solana_block_time(from_slot)
@@ -173,5 +173,5 @@ def main():
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

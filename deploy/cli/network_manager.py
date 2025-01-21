@@ -36,7 +36,6 @@ class NetworkManager:
                 else:
                     raise RuntimeError("DEVNET_SOLANA_URL is not set")
 
-
     def get_network_param(self, network, params=None):
         value = ""
         if network in self._networks:

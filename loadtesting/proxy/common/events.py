@@ -135,10 +135,7 @@ class LocustEventHandler:
             context={},
         )
         self._request_event.fire(**request_meta)
-        LOG.debug(
-            "- %s : %s - %sms"
-            % (event["request_type"], event["event_type"], total_time)
-        )
+        LOG.debug("- %s : %s - %sms" % (event["request_type"], event["event_type"], total_time))
 
 
 locust_events_handler = LocustEventHandler(events.request)
@@ -194,9 +191,7 @@ def save_transaction(transactions: tp.List[str]) -> tp.Callable:
                     transactions.append(f"{tx_id[0]}")
                 raise
             if isinstance(result, AttributeDict) or (
-                isinstance(result, tuple)
-                and len(result) == 2
-                and isinstance(result[1], AttributeDict)
+                isinstance(result, tuple) and len(result) == 2 and isinstance(result[1], AttributeDict)
             ):
                 if isinstance(result, tuple) and len(result) == 2:
                     tx = result[1]

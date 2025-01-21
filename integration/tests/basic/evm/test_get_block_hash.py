@@ -38,11 +38,11 @@ class TestGetBlockHash:
         count = int.from_bytes(account_info.data[:8], "little")
         for i in range(0, count):
             offset = 8 + 40 * i
-            slot = int.from_bytes(account_info.data[offset: (offset + 8)], "little")
+            slot = int.from_bytes(account_info.data[offset : (offset + 8)], "little")
             if slot != number:
                 continue
 
-            return HexBytes(account_info.data[(offset + 8): (offset + 40)])
+            return HexBytes(account_info.data[(offset + 8) : (offset + 40)])
 
         assert False, "Slot not found"
 

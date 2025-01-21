@@ -48,7 +48,9 @@ class TestTransactionStepFromAccount:
                 - resp_from_inst.value.transaction.meta.pre_balances[i]
             )
 
-    def test_deploy_contract(self, operator_keypair, holder_acc, treasury_pool, evm_loader, sender_with_tokens):
+    def test_deploy_contract(
+        self, operator_keypair, holder_acc, treasury_pool, evm_loader, sender_with_tokens
+    ):
         contract_filename = "small"
         contract = create_contract_address(sender_with_tokens, evm_loader)
 

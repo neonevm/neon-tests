@@ -34,6 +34,7 @@ class ErrorMessage(Enum):
     INCORRECT_PROGRAM_ID = "incorrect program id for instruction"
     INVALID_ACC_DATA = "invalid account data for instruction"
 
+
 class AssertMessage(Enum):
     WRONG_ID = "Id of the response does not correspond to id of the request"
     WRONG_TYPE = "The response type is error response"

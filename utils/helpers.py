@@ -19,7 +19,7 @@ import polling2
 from semantic_version import Version
 from solders.rpc.responses import GetTransactionResp
 
-T = tp.TypeVar('T')
+T = tp.TypeVar("T")
 
 
 @allure.step("Get contract abi")
@@ -31,11 +31,11 @@ def get_contract_abi(name, compiled):
 
 @allure.step("Get contract interface")
 def get_contract_interface(
-        contract: str,
-        version: str,
-        contract_name: tp.Optional[str] = None,
-        import_remapping: tp.Optional[dict] = None,
-        libraries: tp.Optional[dict] = None,
+    contract: str,
+    version: str,
+    contract_name: tp.Optional[str] = None,
+    import_remapping: tp.Optional[dict] = None,
+    libraries: tp.Optional[dict] = None,
 ):
     if not contract.endswith(".sol"):
         contract += ".sol"
@@ -95,19 +95,19 @@ def generate_text(min_len: int = 2, max_len: int = 200, simple: bool = True) -> 
 
 @allure.step("Wait condition")
 def wait_condition(
-        func_cond: tp.Callable[..., T],
-        timeout_sec: float = 15,
-        delay: float = 0.5,
-        args: tp.Tuple = (),
-        kwargs: tp.Optional[dict[str, tp.Any]] = None,
-        max_tries: tp.Optional[int] = None,
-        check_success: tp.Callable[[T], bool] = polling2.is_truthy,
-        step_function: tp.Callable[[float], float] = polling2.step_constant,
-        ignore_exceptions: tp.Tuple[Exception, ...] = (KeyError,),
-        poll_forever: bool = False,
-        collect_values: tp.Optional[Queue] = None,
-        log: int = logging.NOTSET,
-        log_error: int = logging.NOTSET
+    func_cond: tp.Callable[..., T],
+    timeout_sec: float = 15,
+    delay: float = 0.5,
+    args: tp.Tuple = (),
+    kwargs: tp.Optional[dict[str, tp.Any]] = None,
+    max_tries: tp.Optional[int] = None,
+    check_success: tp.Callable[[T], bool] = polling2.is_truthy,
+    step_function: tp.Callable[[float], float] = polling2.step_constant,
+    ignore_exceptions: tp.Tuple[Exception, ...] = (KeyError,),
+    poll_forever: bool = False,
+    collect_values: tp.Optional[Queue] = None,
+    log: int = logging.NOTSET,
+    log_error: int = logging.NOTSET,
 ):
     return polling2.poll(
         target=func_cond,
@@ -163,6 +163,7 @@ def get_event_signatures(abi: tp.List[tp.Dict]) -> tp.List[str]:
         signature = f"{event['name']}({input_types})"
         topics.append(f"0x{keccak(signature.encode()).hex()}")
     return topics
+
 
 @allure.step("Create non-existing account address")
 def create_invalid_address(length=20) -> str:
@@ -234,17 +235,17 @@ def serialize_instruction(program_id: Pubkey, instruction) -> bytes:
 
 
 def case_snake_to_camel(snake_str: str) -> str:
-    components = snake_str.split('_')
-    camel_case = components[0].lower() + ''.join(x.title() for x in components[1:])
+    components = snake_str.split("_")
+    camel_case = components[0].lower() + "".join(x.title() for x in components[1:])
     return camel_case
 
 
 def padhex(s, size):
-    return '0x' + s[2:].zfill(size)
+    return "0x" + s[2:].zfill(size)
 
 
 def split_into_tuples(collection: tp.Collection[T], length: int) -> tuple[tuple[T, ...], ...]:
-    return tuple(tuple(collection[i:i + length]) for i in range(0, len(collection), length))
+    return tuple(tuple(collection[i : i + length]) for i in range(0, len(collection), length))
 
 
 def get_key_index_from_solana_tx(tx: GetTransactionResp, key: Pubkey) -> int:

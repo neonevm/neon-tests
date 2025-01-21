@@ -45,13 +45,10 @@ To run OpenZeppelin tests just use the next command:
 
 ## Run neon evm tests
 
-To run neon evm tests:
-1. set environment variables: 
-   SOLANA_URL: by default http://solana:8899
-   NEON_CORE_API_URL: by default http://neon_api:8085/api
-2. run the next command:
+To run neon evm tests usd the next command:
+
 ```bash
-./clickfile.py run evm --numprocesses 6
+./clickfile.py run evm --network <your-stand> --numprocesses 6
 ```
 
 ## Run tests manually
@@ -70,7 +67,7 @@ To run tests with mark "mainnet"
 ./clickfile.py run basic -n mainnet
 ```
 
-This command collects 73 items and run it on our mainnet. 
+This command collects 73 items and run it on our mainnet.
 Bank accounts envs have to be set up:
 
 ```

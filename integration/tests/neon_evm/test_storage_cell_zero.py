@@ -18,17 +18,16 @@ from utils.types import Contract, Caller, TreasuryPool
     ],
 )
 class TestStorageCells:
-
     def test_save_zero(
-            self,
-            operator_keypair: Keypair,
-            user_account: Caller,
-            evm_loader: EvmLoader,
-            treasury_pool: TreasuryPool,
-            neon_api_client: NeonApiClient,
-            holder_acc: Pubkey,
-            sol_client: SolanaClient,
-            function_signature: str,
+        self,
+        operator_keypair: Keypair,
+        user_account: Caller,
+        evm_loader: EvmLoader,
+        treasury_pool: TreasuryPool,
+        neon_api_client: NeonApiClient,
+        holder_acc: Pubkey,
+        sol_client: SolanaClient,
+        function_signature: str
     ):
         # Deploy the contract
         contract: Contract = deploy_contract(
@@ -36,7 +35,9 @@ class TestStorageCells:
             user=user_account,
             contract_file_name="neon_evm/store_zeros.sol",
             evm_loader=evm_loader,
+            neon_api_client=neon_api_client,
             treasury_pool=treasury_pool,
+            solana_client=sol_client,
             contract_name="saveZeros",
             version="0.8.12",
         )
@@ -55,10 +56,7 @@ class TestStorageCells:
 
         # Actually execute the transaction
         signed_tx = make_contract_call_trx(
-            evm_loader=evm_loader,
-            user=user_account,
-            contract=contract,
-            function_signature=function_signature
+            evm_loader=evm_loader, user=user_account, contract=contract, function_signature=function_signature
         )
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 

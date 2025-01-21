@@ -32,9 +32,7 @@ class TestPrecompiledMetaplex:
     def test_create_metadata(self, metaplex_caller, sol_client, accounts):
         seed = bytes(Keypair().pubkey())
         tx = self.web3_client.make_raw_tx(accounts[1])
-        instruction_tx = metaplex_caller.functions.callCreateMetadata(
-            seed, NAME, SYMBOL, URI
-        ).build_transaction(tx)
+        instruction_tx = metaplex_caller.functions.callCreateMetadata(seed, NAME, SYMBOL, URI).build_transaction(tx)
         receipt = self.web3_client.send_transaction(accounts[1], instruction_tx)
         assert receipt["status"] == 1
 

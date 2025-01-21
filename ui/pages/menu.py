@@ -3,8 +3,8 @@ from selenium.webdriver.common.by import By
 from utils.base_page import BasePage
 from selenium.webdriver.support import expected_conditions as EC
 
-class Menu(BasePage):
 
+class Menu(BasePage):
     developers_link = (By.XPATH, "//div[@class='dropdown__link link'][contains(.,'Developers')]")
     link_on_github_in_menu = (By.XPATH, "(//span[contains(.,'GitHub')])[2]")
     ecosystem_link = (By.XPATH, "(//div[@class='dropdown__link link'][contains(.,'Ecosystem')]")

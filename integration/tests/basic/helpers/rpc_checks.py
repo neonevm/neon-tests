@@ -121,7 +121,6 @@ def assert_block_fields(
 
 
 def assert_log_field_in_neon_trx_receipt(response, events_count):
-
     expected_event_types = ["EnterCall"]
     for i in range(events_count):
         expected_event_types.append("Log")

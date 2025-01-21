@@ -41,35 +41,42 @@ def main_page(driver):
     page = MainPage(driver, website_url)
     return page
 
+
 @pytest.fixture(scope="function")
 def menu_page(driver):
     page = Menu(driver, website_url)
     return page
+
 
 @pytest.fixture(scope="function")
 def developers_page(driver):
     page = DeveloperPage(driver, website_url)
     return page
 
+
 @pytest.fixture(scope="function")
 def ecosystem_page(driver):
     page = EcosystemPage(driver, website_url)
     return page
+
 
 @pytest.fixture(scope="function")
 def google_forms_page(driver):
     page = GoogleFormsPage(driver, website_url)
     return page
 
+
 @pytest.fixture(scope="function")
 def quick_start_page(driver):
     page = QuickStartPage(driver, None)
     return page
 
+
 @pytest.fixture(scope="function")
 def github_page(driver):
     page = GithubPage(driver, None)
     return page
+
 
 @pytest.fixture(scope="function")
 def base_page(driver):

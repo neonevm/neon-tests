@@ -31,9 +31,7 @@ def validate_error_code(error_code: int):
 
 
 def validate_gas_price(gas_price: str):
-    assert (
-        int(gas_price, 16) > 0
-    ), f"gas price {gas_price} should be greater 0, got {int(gas_price, 16)}"
+    assert int(gas_price, 16) > 0, f"gas price {gas_price} should be greater 0, got {int(gas_price, 16)}"
     return gas_price
 
 

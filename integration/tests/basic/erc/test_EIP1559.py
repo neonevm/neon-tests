@@ -41,8 +41,8 @@ NEGATIVE_PARAMETERS = (
             r'Serialization failed because of field maxPriorityFeePerGas \("Cannot serialize negative integers"\)',
         ),
         (  # Large values (potential overflow)
-            2 ** 256,
-            2 ** 256,
+            2**256,
+            2**256,
             ValueError,
             "{'code': -32000, 'message': '.+'}",
         ),
@@ -70,12 +70,7 @@ NEGATIVE_PARAMETERS = (
             Exception,
             r"{'code': -32000, 'message': .*}",
         ),
-        (  # Zero base fee
-            0,
-            1000000000,
-            Exception,
-            None
-        ),
+        (0, 1000000000, Exception, None),  # Zero base fee
         (  # Missing max_priority_fee_per_gas
             None,
             1000000000,
@@ -93,9 +88,9 @@ NEGATIVE_PARAMETERS = (
 
 
 def validate_transfer_positive(
-        accounts: EthAccounts,
-        web3_client: NeonChainWeb3Client,
-        access_list: tp.Optional[list[web3.types.AccessListEntry]],
+    accounts: EthAccounts,
+    web3_client: NeonChainWeb3Client,
+    access_list: tp.Optional[list[web3.types.AccessListEntry]],
 ):
     sender = accounts[0]
     recipient = web3_client.create_account()
@@ -105,7 +100,7 @@ def validate_transfer_positive(
 
     latest_block: web3.types.BlockData = web3_client._web3.eth.get_block(block_identifier="latest")  # noqa
     base_fee_per_gas = latest_block.baseFeePerGas  # noqa
-    max_priority_fee_per_gas = web3_client._web3.eth._max_priority_fee() or 21283 # noqa
+    max_priority_fee_per_gas = web3_client._web3.eth._max_priority_fee() or 21283  # noqa
     base_fee_multiplier = 1.1
     max_fee_per_gas = int((base_fee_multiplier * base_fee_per_gas) + max_priority_fee_per_gas)
 
@@ -139,12 +134,11 @@ def validate_transfer_positive(
     expected_balance_sender_after = balance_sender_before - value - total_fee_paid
 
     # Validate the base fee
-    block = web3_client._web3.eth.get_block(receipt['blockNumber'])  # noqa
-    assert block['baseFeePerGas'] <= base_fee_per_gas * base_fee_multiplier
+    block = web3_client._web3.eth.get_block(receipt["blockNumber"])  # noqa
+    assert block["baseFeePerGas"] <= base_fee_per_gas * base_fee_multiplier
 
     assert balance_sender_after == expected_balance_sender_after, (
-        f"Expected sender balance: {expected_balance_sender_after}, "
-        f"Actual sender balance: {balance_sender_after}"
+        f"Expected sender balance: {expected_balance_sender_after}, " f"Actual sender balance: {balance_sender_after}"
     )
     assert balance_recipient_after == balance_recipient_before + value, (
         f"Expected recipient balance: {balance_recipient_before + value}, "
@@ -152,25 +146,23 @@ def validate_transfer_positive(
     )
 
     # Verify that the effective gas price does not exceed the max fee per gas
-    assert effective_gas_price <= max_fee_per_gas, (
-        f"Effective gas price: {effective_gas_price}, Max fee per gas: {max_fee_per_gas}"
-    )
+    assert (
+        effective_gas_price <= max_fee_per_gas
+    ), f"Effective gas price: {effective_gas_price}, Max fee per gas: {max_fee_per_gas}"
 
     # Validate gas used does not exceed the estimated gas
-    assert gas_used <= estimated_gas, (
-        f"Gas used: {gas_used}, Estimated gas: {estimated_gas}"
-    )
+    assert gas_used <= estimated_gas, f"Gas used: {gas_used}, Estimated gas: {estimated_gas}"
 
     # Validate cumulative gas used does not exceed block gas limit
-    assert cumulative_gas_used <= block_gas_limit, (
-        f"Cumulative gas used: {cumulative_gas_used}, Block gas limit: {block_gas_limit}"
-    )
+    assert (
+        cumulative_gas_used <= block_gas_limit
+    ), f"Cumulative gas used: {cumulative_gas_used}, Block gas limit: {block_gas_limit}"
 
 
 def validate_deploy_positive(
-        accounts: EthAccounts,
-        web3_client: NeonChainWeb3Client,
-        access_list: tp.Optional[list[web3.types.AccessListEntry]],
+    accounts: EthAccounts,
+    web3_client: NeonChainWeb3Client,
+    access_list: tp.Optional[list[web3.types.AccessListEntry]],
 ):
     account = accounts[0]
     balance_before = web3_client.get_balance(account.address)
@@ -214,22 +206,22 @@ def validate_deploy_positive(
     total_fee_paid = gas_used * effective_gas_price
 
     # Validate that sender's balance decreased by at least the gas fee
-    assert balance_before - balance_after <= total_fee_paid, f"Sender balance did not decrease by gas fee: {balance_before, balance_after, total_fee_paid}"
+    assert (
+        balance_before - balance_after <= total_fee_paid
+    ), f"Sender balance did not decrease by gas fee: {balance_before, balance_after, total_fee_paid}"
 
     # Verify that the effective gas price does not exceed the max fee per gas
-    assert effective_gas_price <= max_fee_per_gas, (
-        f"Effective gas price: {effective_gas_price}, Max fee per gas: {max_fee_per_gas}"
-    )
+    assert (
+        effective_gas_price <= max_fee_per_gas
+    ), f"Effective gas price: {effective_gas_price}, Max fee per gas: {max_fee_per_gas}"
 
     # Validate gas used does not exceed the estimated gas
-    assert gas_used <= estimated_gas, (
-        f"Gas used: {gas_used}, Estimated gas: {estimated_gas}"
-    )
+    assert gas_used <= estimated_gas, f"Gas used: {gas_used}, Estimated gas: {estimated_gas}"
 
     # Validate cumulative gas used does not exceed block gas limit
-    assert cumulative_gas_used <= block_gas_limit, (
-        f"Cumulative gas used: {cumulative_gas_used}, Block gas limit: {block_gas_limit}"
-    )
+    assert (
+        cumulative_gas_used <= block_gas_limit
+    ), f"Cumulative gas used: {cumulative_gas_used}, Block gas limit: {block_gas_limit}"
 
 
 @allure.feature("EIP Verifications")
@@ -248,8 +240,8 @@ class TestEIP1559:
 
     @pytest.mark.neon_only
     def test_transfer_invalid_chain_id_negative(
-            self,
-            json_rpc_client: JsonRPCSession,
+        self,
+        json_rpc_client: JsonRPCSession,
     ):
         sender = self.accounts[0]
         recipient = self.web3_client.create_account()
@@ -282,7 +274,7 @@ class TestEIP1559:
         )
 
     def test_contract_function_call_positive(
-            self,
+        self,
     ):
         account = self.accounts[0]
         contract_a, _ = self.web3_client.deploy_and_get_contract(
@@ -335,11 +327,11 @@ class TestEIP1559:
 
     @pytest.mark.parametrize(*NEGATIVE_PARAMETERS)
     def test_transfer_negative(
-            self,
-            max_priority_fee_per_gas,
-            max_fee_per_gas,
-            expected_exception,
-            exception_message_regex,
+        self,
+        max_priority_fee_per_gas,
+        max_fee_per_gas,
+        expected_exception,
+        exception_message_regex,
     ):
         sender = self.accounts[1]
         recipient = self.web3_client.create_account()
@@ -367,11 +359,11 @@ class TestEIP1559:
 
     @pytest.mark.parametrize(*NEGATIVE_PARAMETERS)
     def test_deploy_negative(
-            self,
-            max_priority_fee_per_gas,
-            max_fee_per_gas,
-            expected_exception,
-            exception_message_regex,
+        self,
+        max_priority_fee_per_gas,
+        max_fee_per_gas,
+        expected_exception,
+        exception_message_regex,
     ):
         account = self.accounts[3]
 
@@ -402,7 +394,7 @@ class TestEIP1559:
             )
 
     def test_insufficient_funds(
-            self,
+        self,
     ):
         sender = self.accounts[0]
         balance = self.web3_client.get_balance(sender.address)
@@ -426,8 +418,8 @@ class TestEIP1559:
             self.web3_client.send_transaction(account=sender, transaction=tx_params)
 
     def test_too_low_fee(
-            self,
-            faucet: Faucet,
+        self,
+        faucet: Faucet,
     ):
         sender = self.web3_client.create_account_with_balance(faucet=faucet)
         recipient = self.web3_client.create_account()
@@ -454,15 +446,14 @@ class TestEIP1559:
             self.web3_client.send_transaction(account=sender, transaction=tx_params, timeout=TX_TIMEOUT)
 
     @pytest.mark.neon_only
-    @pytest.mark.parametrize("base_fee_multiplier",
-                             [1.1, 1.5])
+    @pytest.mark.parametrize("base_fee_multiplier", [1.1, 1.5])
     def test_compute_unit_price(
         self,
-            accounts: EthAccounts,
-            web3_client: NeonChainWeb3Client,
-            json_rpc_client: JsonRPCSession,
-            sol_client: SolanaClient,
-            base_fee_multiplier
+        accounts: EthAccounts,
+        web3_client: NeonChainWeb3Client,
+        json_rpc_client: JsonRPCSession,
+        sol_client: SolanaClient,
+        base_fee_multiplier,
     ):
         sender = accounts[0]
         recipient = accounts[1]
@@ -510,14 +501,12 @@ class TestEIP1559:
 @allure.story("EIP-1559: Verify JSON-RPC method eth_maxPriorityFeePerGas")
 @pytest.mark.usefixtures("eip1559_setup")
 class TestRpcMaxPriorityFeePerGas:
-
     @pytest.mark.need_eip1559_blocks(10)
     def test_positive(
-            self,
-            json_rpc_client: JsonRPCSession,
-            web3_client: NeonChainWeb3Client,
+        self,
+        json_rpc_client: JsonRPCSession,
+        web3_client: NeonChainWeb3Client,
     ):
-
         response = json_rpc_client.send_rpc(method="eth_maxPriorityFeePerGas")
         assert "error" not in response, response["error"]
         max_priority_fee_per_gas = int(response["result"], 16)
@@ -552,29 +541,24 @@ class TestRpcFeeHistory:
 
     @pytest.fixture(scope="class")
     def first_block_number(
-            self,
-            web3_client: NeonChainWeb3Client,
+        self,
+        web3_client: NeonChainWeb3Client,
     ) -> int:
         block = web3_client._web3.eth.get_block(block_identifier="earliest")
         return block.number
 
     @pytest.mark.need_eip1559_blocks(1)
     def test_positive_first_block(
-            self,
-            json_rpc_client: JsonRPCSession,
-            first_block_number: int,
+        self,
+        json_rpc_client: JsonRPCSession,
+        first_block_number: int,
     ):
         block_count = 20
         newest_block = first_block_number
         reward_percentiles = [10, 50, 90]
 
         response = json_rpc_client.send_rpc(
-            method="eth_feeHistory",
-            params=[
-                hex(block_count),
-                hex(newest_block),
-                reward_percentiles
-            ]
+            method="eth_feeHistory", params=[hex(block_count), hex(newest_block), reward_percentiles]
         )
 
         assert "error" not in response, response["error"]
@@ -593,20 +577,15 @@ class TestRpcFeeHistory:
 
     @pytest.mark.neon_only
     def test_positive_zero_block_count(
-            self,
-            json_rpc_client: JsonRPCSession,
+        self,
+        json_rpc_client: JsonRPCSession,
     ):
         block_count = 0
         newest_block = "latest"
         reward_percentiles = [25, 50, 75]
 
         response = json_rpc_client.send_rpc(
-            method="eth_feeHistory",
-            params=[
-                hex(block_count),
-                newest_block,
-                reward_percentiles
-            ]
+            method="eth_feeHistory", params=[hex(block_count), newest_block, reward_percentiles]
         )
 
         assert "error" not in response, response["error"]
@@ -623,22 +602,14 @@ class TestRpcFeeHistory:
     @pytest.mark.need_eip1559_blocks(3)
     @pytest.mark.parametrize("reward_percentiles", ([], [50]))
     def test_positive_fewer_blocks_than_count(
-            self,
-            json_rpc_client: JsonRPCSession,
-            first_block_number: int,
-            reward_percentiles: list[int]
+        self, json_rpc_client: JsonRPCSession, first_block_number: int, reward_percentiles: list[int]
     ):
         expected_block_count = 3
         newest_block = first_block_number + expected_block_count - 1
         block_count = first_block_number + expected_block_count - 1 + 10
 
         response = json_rpc_client.send_rpc(
-            method="eth_feeHistory",
-            params=[
-                hex(block_count),
-                hex(newest_block),
-                reward_percentiles
-            ]
+            method="eth_feeHistory", params=[hex(block_count), hex(newest_block), reward_percentiles]
         )
 
         assert "error" not in response, response["error"]
@@ -657,21 +628,16 @@ class TestRpcFeeHistory:
 
     @pytest.mark.need_eip1559_blocks(1)
     def test_positive_earliest_block(
-            self,
-            json_rpc_client: JsonRPCSession,
-            first_block_number: int,
+        self,
+        json_rpc_client: JsonRPCSession,
+        first_block_number: int,
     ):
         block_count = 1
         newest_block = "earliest"
         reward_percentiles = [50]
 
         response = json_rpc_client.send_rpc(
-            method="eth_feeHistory",
-            params=[
-                hex(block_count),
-                newest_block,
-                reward_percentiles
-            ]
+            method="eth_feeHistory", params=[hex(block_count), newest_block, reward_percentiles]
         )
 
         assert "error" not in response, response["error"]
@@ -691,21 +657,16 @@ class TestRpcFeeHistory:
 
     @pytest.mark.need_eip1559_blocks(10)
     def test_positive_pending_block(
-            self,
-            json_rpc_client: JsonRPCSession,
-            web3_client: NeonChainWeb3Client,
+        self,
+        json_rpc_client: JsonRPCSession,
+        web3_client: NeonChainWeb3Client,
     ):
         block_count = 10
         newest_block = "pending"
         reward_percentiles = [5]
 
         response = json_rpc_client.send_rpc(
-            method="eth_feeHistory",
-            params=[
-                hex(block_count),
-                newest_block,
-                reward_percentiles
-            ]
+            method="eth_feeHistory", params=[hex(block_count), newest_block, reward_percentiles]
         )
 
         assert "error" not in response, response["error"]
@@ -733,11 +694,11 @@ class TestRpcFeeHistory:
     @pytest.mark.need_eip1559_blocks(10)
     @pytest.mark.parametrize("block_count", [1024, 1025])
     def test_positive_max_blocks(
-            self,
-            json_rpc_client: JsonRPCSession,
-            web3_client: NeonChainWeb3Client,
-            first_block_number: int,
-            block_count: int,
+        self,
+        json_rpc_client: JsonRPCSession,
+        web3_client: NeonChainWeb3Client,
+        first_block_number: int,
+        block_count: int,
     ):
         newest_block = "latest"
         reward_percentiles = [5, 25, 50, 75, 90]
@@ -746,12 +707,7 @@ class TestRpcFeeHistory:
         expected_block_count = min(1024, blocks_in_chain)
 
         response = json_rpc_client.send_rpc(
-            method="eth_feeHistory",
-            params=[
-                hex(block_count),
-                newest_block,
-                reward_percentiles
-            ]
+            method="eth_feeHistory", params=[hex(block_count), newest_block, reward_percentiles]
         )
 
         assert "error" not in response, response["error"]
@@ -780,25 +736,20 @@ class TestRpcFeeHistory:
     @pytest.mark.parametrize(
         argnames=("block_count", "newest_block", "reward_percentiles", "error_code"),
         argvalues=(
-                (1, "unknown", [], -32602),  # Invalid newest block
-                (100, "latest", [90, 50, 10], -32000),  # Non-monotonic reward percentiles
+            (1, "unknown", [], -32602),  # Invalid newest block
+            (100, "latest", [90, 50, 10], -32000),  # Non-monotonic reward percentiles
         ),
     )
     def test_negative_cases(
-            self,
-            json_rpc_client: JsonRPCSession,
-            block_count: int,
-            newest_block: str,
-            reward_percentiles: list[int],
-            error_code: int,
+        self,
+        json_rpc_client: JsonRPCSession,
+        block_count: int,
+        newest_block: str,
+        reward_percentiles: list[int],
+        error_code: int,
     ):
         response = json_rpc_client.send_rpc(
-            method="eth_feeHistory",
-            params=[
-                hex(block_count),
-                newest_block,
-                reward_percentiles
-            ]
+            method="eth_feeHistory", params=[hex(block_count), newest_block, reward_percentiles]
         )
         assert "result" not in response, response["result"]
         assert "error" in response
@@ -834,8 +785,8 @@ class TestAccessList:
         ]
 
     def test_transfer(
-            self,
-            access_list: list[web3.types.AccessListEntry],
+        self,
+        access_list: list[web3.types.AccessListEntry],
     ):
         validate_transfer_positive(
             accounts=self.accounts,
@@ -844,8 +795,8 @@ class TestAccessList:
         )
 
     def test_deploy(
-            self,
-            access_list: list[web3.types.AccessListEntry],
+        self,
+        access_list: list[web3.types.AccessListEntry],
     ):
         validate_deploy_positive(
             accounts=self.accounts,
@@ -858,15 +809,14 @@ class TestAccessList:
 @allure.story("EIP-1559: multiple tokens")
 @pytest.mark.neon_only
 class TestMultipleTokens:
-
     @pytest.mark.multipletokens
     def test_transfer_positive(
-            self,
-            web3_client: NeonChainWeb3Client,
-            web3_client_sol: Web3Client,
-            sol_client: SolanaClient,  # noqa
-            account_with_all_tokens: LocalAccount,
-            class_account_sol_chain: LocalAccount,
+        self,
+        web3_client: NeonChainWeb3Client,
+        web3_client_sol: Web3Client,
+        sol_client: SolanaClient,  # noqa
+        account_with_all_tokens: LocalAccount,
+        class_account_sol_chain: LocalAccount,
     ):
         alice_neon_balance_before = web3_client.get_balance(account_with_all_tokens)
         bob_neon_balance_before = web3_client.get_balance(class_account_sol_chain)

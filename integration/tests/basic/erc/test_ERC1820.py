@@ -9,12 +9,11 @@ from utils.web3client import NeonChainWeb3Client
 @allure.story("ERC-1820: Pseudo Introspection Registry Contract")
 class TestERC1820PseudoIntrospectionRegistryContract:
     def test_pseudo_introspection_registry(
-            self,
-            web3_client: NeonChainWeb3Client,
-            accounts: EthAccounts,
-            env_name: EnvName,
+        self,
+        web3_client: NeonChainWeb3Client,
+        accounts: EthAccounts,
+        env_name: EnvName,
     ):
-
         account = accounts[0]
 
         if env_name in (EnvName.DEVNET, EnvName.MAINNET):
@@ -23,7 +22,6 @@ class TestERC1820PseudoIntrospectionRegistryContract:
         else:
             registry, _ = web3_client.deploy_and_get_contract(
                 contract="EIPs/ERC1820PseudoIntrospectionRegistry.sol",
-
                 version="0.5.3",
                 account=account,
                 contract_name="ERC1820Registry",

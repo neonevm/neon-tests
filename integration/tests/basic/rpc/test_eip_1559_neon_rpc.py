@@ -10,12 +10,11 @@ from utils.web3client import NeonChainWeb3Client
 @allure.story("EIP-1559: Verify new fields in neon_ JSON-RPC methods")
 @pytest.mark.neon_only
 class TestRpcNeonMethods:
-
     def test_neon_get_transaction_by_sender_nonce(
-            self,
-            accounts: EthAccounts,
-            web3_client: NeonChainWeb3Client,
-            json_rpc_client: JsonRPCSession,
+        self,
+        accounts: EthAccounts,
+        web3_client: NeonChainWeb3Client,
+        json_rpc_client: JsonRPCSession,
     ):
         sender = accounts[0]
         recipient = accounts[1]
@@ -33,9 +32,7 @@ class TestRpcNeonMethods:
             max_priority_fee_per_gas=max_priority_fee_per_gas,
         )
 
-        response = json_rpc_client.send_rpc(
-            method="neon_getTransactionBySenderNonce", params=[sender.address, nonce]
-        )
+        response = json_rpc_client.send_rpc(method="neon_getTransactionBySenderNonce", params=[sender.address, nonce])
 
         assert "error" not in response, response["error"]
         max_priority_fee_per_gas_response = response["result"].get("maxPriorityFeePerGas")
@@ -47,10 +44,10 @@ class TestRpcNeonMethods:
         assert int(max_fee_per_gas_response, 16) == max_fee_per_gas
 
     def test_neon_get_solana_transaction_by_neon_transaction(
-            self,
-            accounts: EthAccounts,
-            web3_client: NeonChainWeb3Client,
-            json_rpc_client: JsonRPCSession,
+        self,
+        accounts: EthAccounts,
+        web3_client: NeonChainWeb3Client,
+        json_rpc_client: JsonRPCSession,
     ):
         sender = accounts[0]
         recipient = accounts[1]
@@ -68,10 +65,10 @@ class TestRpcNeonMethods:
         assert hash_solana
 
     def test_neon_get_transaction_receipt(
-            self,
-            accounts: EthAccounts,
-            web3_client: NeonChainWeb3Client,
-            json_rpc_client: JsonRPCSession,
+        self,
+        accounts: EthAccounts,
+        web3_client: NeonChainWeb3Client,
+        json_rpc_client: JsonRPCSession,
     ):
         sender = accounts[0]
         recipient = accounts[1]

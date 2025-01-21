@@ -1,6 +1,7 @@
 import typing
 from utils.web3client import NeonChainWeb3Client
 
+
 class StorageContract:
     web3_client: NeonChainWeb3Client
     storage_contract: typing.Any
@@ -23,7 +24,7 @@ class StorageContract:
         receipt = self._web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
         return instruction_tx, receipt
-    
+
     def retrieve_doubled_value(self, sender_account, value):
         tx = self._web3_client.make_raw_tx(sender_account)
         instruction_tx = self._storage_contract.functions.returnDoubledNumber(value).build_transaction(tx)
@@ -53,21 +54,21 @@ class StorageContract:
         else:
             request_value = receipt[request_type].hex()
         return tx_obj, request_value, receipt
-    
+
     def retrieve_block(self, sender_account):
         tx = self._web3_client.make_raw_tx(sender_account)
         instruction_tx = self._storage_contract.functions.storeBlock().build_transaction(tx)
         receipt = self._web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
         return receipt
-    
+
     def retrieve_block_timestamp(self, sender_account):
         tx = self._web3_client.make_raw_tx(sender_account)
         instruction_tx = self._storage_contract.functions.storeBlockTimestamp().build_transaction(tx)
         receipt = self._web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
         return receipt
-    
+
     def retrieve_block_info(self, sender_account):
         tx = self._web3_client.make_raw_tx(sender_account)
         instruction_tx = self._storage_contract.functions.storeBlockInfo().build_transaction(tx)

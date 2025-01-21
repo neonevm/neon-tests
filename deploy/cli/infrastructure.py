@@ -189,7 +189,7 @@ def get_solana_accounts_transactions_compute_units(eth_transaction):
             continue
 
         for message in log_messages[::-1]:
-            match = re.match(r'^.+consumed (\d+) of \d+ compute units$', message)
+            match = re.match(r"^.+consumed (\d+) of \d+ compute units$", message)
             if match:
                 compute_units += int(match.group(1))
                 break

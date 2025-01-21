@@ -69,4 +69,3 @@ def multiple_actions_erc20(web3_client_session, accounts, erc20_spl_mintable):
         constructor_args=[f"Test TTT", "TTT", 18],
     )
     return accounts[0], contract
-

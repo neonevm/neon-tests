@@ -2,7 +2,6 @@ import logging
 
 
 class Logger(logging.Logger):
-
     def setLevel(self, level):
         super().setLevel(level)
 

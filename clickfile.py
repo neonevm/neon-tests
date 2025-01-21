@@ -80,7 +80,7 @@ PROXY_GITHUB_URL = f"https://api.github.com/repos/{DOCKER_HUB_ORG_NAME}/neon-pro
 FAUCET_GITHUB_URL = f"https://api.github.com/repos/{DOCKER_HUB_ORG_NAME}/neon-faucet"
 EXTERNAL_CONTRACT_PATH = Path.cwd() / "contracts" / "external"
 VERSION_BRANCH_TEMPLATE = r"[vt]{1}\d{1,2}\.\d{1,2}\.x.*"
-GITHUB_TAG_PATTERN = re.compile(r'^[vt]\d{1,2}\.\d{1,2}\.\d{1,2}$')
+GITHUB_TAG_PATTERN = re.compile(r"^[vt]\d{1,2}\.\d{1,2}\.\d{1,2}$")
 
 TEST_GROUPS: tp.Tuple[TestGroup, ...] = tp.get_args(TestGroup)
 
@@ -530,8 +530,7 @@ def update_contracts(branch):
 
 
 @cli.command(help="Run any type of tests")
-@click.option("-n", "--network", type=click.Choice(EnvName),
-              help="In which stand run tests")
+@click.option("-n", "--network", type=click.Choice(EnvName), help="In which stand run tests")
 @click.option("-j", "--jobs", default=8, help="Number of parallel jobs (for openzeppelin)")
 @click.option("-p", "--numprocesses", help="Number of parallel jobs for basic tests")
 @click.option("-a", "--amount", default=20000, help="Requested amount from faucet")
@@ -546,10 +545,7 @@ def update_contracts(branch):
     help="Which UI test run",
 )
 @click.option(
-    "--keep-error-log",
-    is_flag=True,
-    default=False,
-    help=f"Don't clear {error_log.file_path.name} before run"
+    "--keep-error-log", is_flag=True, default=False, help=f"Don't clear {error_log.file_path.name} before run"
 )
 @click.argument(
     "name",
@@ -558,17 +554,17 @@ def update_contracts(branch):
 )
 @catch_traceback
 def run(
-        name: TestGroup,
-        jobs,
-        numprocesses,
-        ui_item,
-        amount,
-        users,
-        network: EnvName,
-        case,
-        keep_error_log: bool,
-        marker: str,
-        cost_reports_dir: str,
+    name: TestGroup,
+    jobs,
+    numprocesses,
+    ui_item,
+    amount,
+    users,
+    network: EnvName,
+    case,
+    keep_error_log: bool,
+    marker: str,
+    cost_reports_dir: str,
 ):
     if not network and name == "ui":
         network = "devnet"
@@ -646,8 +642,8 @@ def run(
 
 @cli.command(
     help="OZ actions:\n"
-         "report - summarize openzeppelin tests results\n"
-         "analyze - analyze openzeppelin tests results"
+    "report - summarize openzeppelin tests results\n"
+    "analyze - analyze openzeppelin tests results"
 )
 @click.argument(
     "name",
@@ -740,7 +736,7 @@ locust_run_time = click.option(
     "--run-time",
     type=int,
     help="Stop after the specified amount of time, e.g. (300s, 20m, 3h, 1h30m, etc.). "
-         "Only used together without Locust Web UI. [default: always run]",
+    "Only used together without Locust Web UI. [default: always run]",
 )
 
 locust_tags = click.option(
@@ -924,8 +920,9 @@ def generate_allure_report():
 @cli.command(help="Send notification to slack")
 @click.option("-u", "--url", help="slack app endpoint url.")
 @click.option("-b", "--build_url", help="github action test build url.")
-@click.option("-n", "--network", type=click.Choice(EnvName), default=EnvName.NIGHT_STAND.value,
-              help="In which stand run tests")
+@click.option(
+    "-n", "--network", type=click.Choice(EnvName), default=EnvName.NIGHT_STAND.value, help="In which stand run tests"
+)
 @click.option("--test-group", help="Name of the failed test group")
 def send_notification(url, build_url, network, test_group: str):
     slack_notification = SlackNotification()
@@ -975,12 +972,7 @@ def send_notification(url, build_url, network, test_group: str):
 @click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 def get_operator_balances(network: str):
     net = network_manager.get_network_object(network)
-    operator = Operator(
-        net["proxy_url"],
-        net["solana_url"],
-        net["spl_neon_mint"],
-        evm_loader=net["evm_loader"]
-    )
+    operator = Operator(net["proxy_url"], net["solana_url"], net["spl_neon_mint"], evm_loader=net["evm_loader"])
     neon_balance = operator.get_token_balance()
     sol_balance = operator.get_solana_balance()
     print(
@@ -999,7 +991,7 @@ def define_stand_env_by_branch(current_branch, head_branch, base_branch):
     # use feature branch or version tag as tag for proxy, evm and faucet images or use latest
     proxy_tag, evm_tag, faucet_tag = "", "", ""
 
-    if '/merge' not in current_branch and current_branch != "develop":
+    if "/merge" not in current_branch and current_branch != "develop":
         proxy_tag = current_branch if is_branch_exist(PROXY_GITHUB_URL, current_branch) else ""
         evm_tag = current_branch if is_branch_exist(NEON_EVM_GITHUB_URL, current_branch) else ""
         faucet_tag = current_branch if is_branch_exist(FAUCET_GITHUB_URL, current_branch) else ""
@@ -1030,19 +1022,24 @@ def define_stand_env_by_branch(current_branch, head_branch, base_branch):
     evm_branch = evm_tag if evm_tag != "latest" else "develop"
     proxy_branch = proxy_tag if proxy_tag != "latest" else "develop"
 
-    return {"evm_tag": evm_tag,
-            "proxy_tag": proxy_tag,
-            "faucet_tag": faucet_tag,
-            "evm_branch": evm_branch,
-            "proxy_branch": proxy_branch}
+    return {
+        "evm_tag": evm_tag,
+        "proxy_tag": proxy_tag,
+        "faucet_tag": faucet_tag,
+        "evm_branch": evm_branch,
+        "proxy_branch": proxy_branch,
+    }
 
 
 @infra.command("get-stand-param")
 @click.option("--current_branch", help="Branch of neon-tests repository")
 @click.option("--head_branch", default="", help="Feature branch name")
 @click.option("--base_branch", default="", help="Target branch of the pull request")
-@click.option("--param", default="", help="One of the stand param like evm_tag, "
-                                          "proxy_tag, faucet_tag, evm_branch, proxy_branch")
+@click.option(
+    "--param",
+    default="",
+    help="One of the stand param like evm_tag, " "proxy_tag, faucet_tag, evm_branch, proxy_branch",
+)
 def get_stand_param(current_branch, head_branch, base_branch, param):
     env = define_stand_env_by_branch(current_branch, head_branch, base_branch)
     print(env[param])
@@ -1060,13 +1057,15 @@ def deploy(current_branch, head_branch, base_branch, devnet_solana_url, use_real
     env = define_stand_env_by_branch(current_branch, head_branch, base_branch)
     use_real_price = True if use_real_price == "1" else False
 
-    infrastructure.deploy_infrastructure(env["evm_tag"],
-                                         env["proxy_tag"],
-                                         env["faucet_tag"],
-                                         env["evm_branch"],
-                                         env["proxy_branch"],
-                                         devnet_solana_url,
-                                         use_real_price)
+    infrastructure.deploy_infrastructure(
+        env["evm_tag"],
+        env["proxy_tag"],
+        env["faucet_tag"],
+        env["evm_branch"],
+        env["proxy_branch"],
+        devnet_solana_url,
+        use_real_price,
+    )
 
 
 @infra.command(name="destroy", help="Destroy test infrastructure")
@@ -1115,12 +1114,12 @@ def dapps():
 @click.option("--evm_commit_sha", required=True)
 @click.option("--proxy_commit_sha", required=True)
 def save_dapps_cost_report_to_db(
-        directory: str,
-        repo: RepoType,
-        evm_tag: str,
-        proxy_tag: str,
-        evm_commit_sha: str,
-        proxy_commit_sha: str,
+    directory: str,
+    repo: RepoType,
+    evm_tag: str,
+    proxy_tag: str,
+    evm_commit_sha: str,
+    proxy_commit_sha: str,
 ):
     tag = evm_tag if repo == "evm" else proxy_tag
 
@@ -1183,11 +1182,11 @@ def save_dapps_cost_report_to_md(directory: str):
 @click.option("--version_branch", required=True)
 @click.option("--history_depth_limit", type=int, help="How many runs to include into statistical analysis")
 def compare_dapp_results(
-        repo: RepoType,
-        evm_tag: str,
-        proxy_tag: str,
-        version_branch: str,
-        history_depth_limit: int,
+    repo: RepoType,
+    evm_tag: str,
+    proxy_tag: str,
+    version_branch: str,
+    history_depth_limit: int,
 ):
     """
     >>> compared_service_tag
@@ -1231,10 +1230,10 @@ def compare_dapp_results(
 
     # get commit sha for compared_service and other_service
     data_sample_row = historical_data[
-        (historical_data["repo"] == repo) &
-        (historical_data["neon_evm_tag"] == evm_tag) &
-        (historical_data["proxy_tag"] == proxy_tag)
-        ].iloc[0]
+        (historical_data["repo"] == repo)
+        & (historical_data["neon_evm_tag"] == evm_tag)
+        & (historical_data["proxy_tag"] == proxy_tag)
+    ].iloc[0]
 
     if repo == "evm":
         compared_service_commit_sha = data_sample_row["evm_commit_sha"]
@@ -1254,7 +1253,7 @@ def compare_dapp_results(
     test_results_handler.generate_and_save_plots_pdf(
         historical_data=historical_data,
         title_end=f"on {repo}:{compared_service_tag}{compared_service_sha_string}\n"
-                  f"with {other_service_name}:{other_service_tag}{other_service_sha_string}",
+        f"with {other_service_name}:{other_service_tag}{other_service_sha_string}",
         output_pdf="cost_reports.pdf",
     )
 
@@ -1283,8 +1282,8 @@ def k6(ctx):
 @click.option("-t", "--tag", default="05e0ce5", help="Eth plugin tag or commit sha to use")
 @catch_traceback
 def build(tag):
-    xk6_install = 'go install go.k6.io/xk6/cmd/xk6@latest'
-    xk6_build = f'xk6 build --with github.com/szkiba/xk6-prometheus --with github.com/neonlabsorg/xk6-ethereum@{tag}'
+    xk6_install = "go install go.k6.io/xk6/cmd/xk6@latest"
+    xk6_build = f"xk6 build --with github.com/szkiba/xk6-prometheus --with github.com/neonlabsorg/xk6-ethereum@{tag}"
 
     command_install = subprocess.run(xk6_install, shell=True)
 
@@ -1298,17 +1297,19 @@ def build(tag):
 
 @k6.command("run", help="Run k6 performance test.")
 @click.option("-n", "--network", required=True, default="local", help="Which network to use for envs assignment")
-@click.option("-s", "--script", required=True, default="./loadtesting/k6/tests/sendNeon.test.js",
-              help="Path to k6 script")
-@click.option("-u", "--users", default=None, required=True,
-              help="Number of users (have to be generated before load test run)")
+@click.option(
+    "-s", "--script", required=True, default="./loadtesting/k6/tests/sendNeon.test.js", help="Path to k6 script"
+)
+@click.option(
+    "-u", "--users", default=None, required=True, help="Number of users (have to be generated before load test run)"
+)
 @click.option("-b", "--balance", default=None, required=True, help="Initial balance of accounts in Neon")
 @click.option("-a", "--bank_account", default=None, required=False, help="Bank account address")
 @catch_traceback
 def run(network, script, users, balance, bank_account):
     network_object = network_manager.get_network_object(network)
     web3_client = NeonChainWeb3Client(proxy_url=network_object["proxy_url"])
-    faucet = Faucet(faucet_url=network_object['faucet_url'], web3_client=web3_client)
+    faucet = Faucet(faucet_url=network_object["faucet_url"], web3_client=web3_client)
     account_manager = EthAccounts(web3_client, faucet, bank_account)
 
     print("Compiling ERC20 contract...")

@@ -4,15 +4,11 @@ from utils.web3client import NeonChainWeb3Client
 
 web3_client = NeonChainWeb3Client("https://devnet.neonevm.org/solana")
 
-account = web3_client._web3.eth.account.from_key(
-    "0x3ca872d3ab8bf75ad97a0c066e05252e775e6f1422d14d819ed13233fe6593e7"
-)
+account = web3_client._web3.eth.account.from_key("0x3ca872d3ab8bf75ad97a0c066e05252e775e6f1422d14d819ed13233fe6593e7")
 
 
 def deploy_pyth():
-    contract, _ = web3_client.deploy_and_get_contract(
-        "./pyth/PythOracle", "0.8.0", account=account
-    )
+    contract, _ = web3_client.deploy_and_get_contract("./pyth/PythOracle", "0.8.0", account=account)
     print("Use Pyth deployed contract address for any pairs: ", contract.address)
     return contract
 
@@ -22,13 +18,9 @@ def deploy_chainlink():
         contract="./chainlink/ChainlinkOracle",
         version="0.8.15",
         account=account,
-        constructor_args=[
-            "0x502b9d5731648a1c61dcf689240e2d2c799393430d9f1d584e368ec4e5243c5f"
-        ],
+        constructor_args=["0x502b9d5731648a1c61dcf689240e2d2c799393430d9f1d584e368ec4e5243c5f"],
     )
-    print(
-        "Use Chainlink deployed contract address for BTC/USD pair: ", contract.address
-    )
+    print("Use Chainlink deployed contract address for BTC/USD pair: ", contract.address)
     return contract
 
 

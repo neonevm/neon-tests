@@ -170,8 +170,10 @@ def deploy_uniswap_contracts(environment: env.Environment, **kwargs):
 
     if "factory" in data and data["factory"]:
         uniswap2_factory = neon_client.get_deployed_contract(
-            data["factory"], str(uniswap_path / "contracts/v2-core/UniswapV2Factory.sol"), solc_version="0.5.16",
-            contract_name="UniswapV2Factory"
+            data["factory"],
+            str(uniswap_path / "contracts/v2-core/UniswapV2Factory.sol"),
+            solc_version="0.5.16",
+            contract_name="UniswapV2Factory",
         )
     else:
         uniswap2_factory, _ = neon_client.deploy_and_get_contract(
@@ -179,7 +181,7 @@ def deploy_uniswap_contracts(environment: env.Environment, **kwargs):
             account=eth_account,
             version="0.5.16",
             constructor_args=[eth_account.address],
-            contract_name='UniswapV2Factory'
+            contract_name="UniswapV2Factory",
         )
     LOG.info(f"Factory address: {uniswap2_factory.address}")
 

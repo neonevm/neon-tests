@@ -1,8 +1,5 @@
-import time
-
 from ui.tests.website_tests.conftest import google_forms_page, menu_page, developers_page, main_page, \
     ecosystem_page, quick_start_page
-
 
 class TestMainPage:
 

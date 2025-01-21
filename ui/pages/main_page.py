@@ -1,4 +1,3 @@
-from parso.python.tree import String
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from utils.base_page import BasePage

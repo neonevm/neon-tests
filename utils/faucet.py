@@ -39,9 +39,7 @@ class Faucet:
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
                 else:
-                    raise RuntimeError(
-                        "Failed to request neon after {} attempts: {}".format(max_retries, str(e))
-                    )
+                    raise RuntimeError("Failed to request neon after {} attempts: {}".format(max_retries, str(e)))
 
         wait_condition(lambda: self.web3_client.get_balance(address) > balance_before)
         return response

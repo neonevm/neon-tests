@@ -398,9 +398,9 @@ class TestRpcGetLogs:
 
     @pytest.mark.parametrize("method", [Method.NEON_GET_LOGS, Method.ETH_GET_LOGS])
     def test_filter_by_topics_with_null(
-            self,
-            json_rpc_client: JsonRPCSession,
-            method: Method,
+        self,
+        json_rpc_client: JsonRPCSession,
+        method: Method,
     ):
         sender_account = self.accounts[0]
         event_caller, _ = self.web3_client.deploy_and_get_contract(

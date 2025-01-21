@@ -14,11 +14,11 @@ class AsyncJsonRpcSession(httpx.AsyncClient):
         super().__init__(base_url=url, **kwargs)
 
     async def request_rpc(
-            self,
-            method: str,
-            params: tp.Any = None,
-            id_: int = 1,
-            semaphore: asyncio.Semaphore = asyncio.Semaphore(100),
+        self,
+        method: str,
+        params: tp.Any = None,
+        id_: int = 1,
+        semaphore: asyncio.Semaphore = asyncio.Semaphore(100),
     ) -> httpx.Response:
         json_rpc_payload = {
             "jsonrpc": "2.0",
@@ -32,9 +32,9 @@ class AsyncJsonRpcSession(httpx.AsyncClient):
         return response
 
     async def batch_request_rpc(
-            self,
-            requests: list[JsonRpcRequest],
-            semaphore: asyncio.Semaphore = asyncio.Semaphore(100),
+        self,
+        requests: list[JsonRpcRequest],
+        semaphore: asyncio.Semaphore = asyncio.Semaphore(100),
     ) -> httpx.Response:
         json_rpc_payloads = [
             {

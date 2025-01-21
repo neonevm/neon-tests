@@ -37,12 +37,12 @@ class TestQueryAccountLib:
         assert actual_owner_address == expected_owner_address
 
     def test_owner_through_transaction_positive(
-            self,
-            accounts: EthAccounts,
-            sol_client_session: SolanaClient,
-            solana_account: Keypair,
-            query_account_caller_contract: Contract,
-            web3_client: NeonChainWeb3Client,
+        self,
+        accounts: EthAccounts,
+        sol_client_session: SolanaClient,
+        solana_account: Keypair,
+        query_account_caller_contract: Contract,
+        web3_client: NeonChainWeb3Client,
     ):
         account = accounts[0]
         new_solana_account = sol_client_session.create_account(
@@ -271,12 +271,12 @@ class TestQueryAccountLib:
         assert actual_data == expected_data
 
     def test_data_through_transaction_positive(
-            self,
-            request: pytest.FixtureRequest,
-            query_account_caller_contract: Contract,
-            sol_client_session: SolanaClient,
-            web3_client: NeonChainWeb3Client,
-            accounts: EthAccounts,
+        self,
+        request: pytest.FixtureRequest,
+        query_account_caller_contract: Contract,
+        sol_client_session: SolanaClient,
+        web3_client: NeonChainWeb3Client,
+        accounts: EthAccounts,
     ):
         evm_loader_address_base58 = request.config.environment.evm_loader  # noqa
         evm_loader_address = base58.b58decode(evm_loader_address_base58)

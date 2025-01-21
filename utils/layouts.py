@@ -11,7 +11,7 @@ HOLDER_ACCOUNT_INFO_LAYOUT = Struct(
     # memory location after the Header with some padding.
     # But, since heap_offset is located strictly before the Buffer, we can
     # treat at as a part of the Header.
-    #"_padding" / Bytes(24),
+    # "_padding" / Bytes(24),
     "heap_offset" / Int64ul,
 )
 

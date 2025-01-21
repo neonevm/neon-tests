@@ -10,9 +10,9 @@ from matplotlib.backends.backend_pdf import PdfPages
 class TestResultsHandler:
     @staticmethod
     def generate_and_save_plots_pdf(
-            historical_data: pd.DataFrame,
-            title_end: str,
-            output_pdf: str,
+        historical_data: pd.DataFrame,
+        title_end: str,
+        output_pdf: str,
     ) -> str:
         historical_data["timestamp"] = pd.to_datetime(historical_data["timestamp"], errors="coerce")
         historical_data["acc_count"] = historical_data["acc_count"].apply(Decimal)
@@ -32,7 +32,7 @@ class TestResultsHandler:
         historical_data = historical_data.sort_values(by=["timestamp"])
 
         unique_timestamps = historical_data["timestamp"].unique().tolist()
-        x_tick_labels = historical_data.groupby('timestamp')['tag'].first().tolist()
+        x_tick_labels = historical_data.groupby("timestamp")["tag"].first().tolist()
 
         with PdfPages(output_pdf) as pdf:
             for dapp_name in dapp_names:
@@ -43,7 +43,9 @@ class TestResultsHandler:
                 num_rows = len(actions)
                 num_cols = len(metrics)
                 axes: plt.Axes
-                fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, figsize=(5 * num_cols, 3 * num_rows), sharex="col")
+                fig, axes = plt.subplots(
+                    nrows=num_rows, ncols=num_cols, figsize=(5 * num_cols, 3 * num_rows), sharex="col"
+                )
                 fig.suptitle(t=f'Cost report for "{dapp_name}" dApp\n{title_end}', fontsize=16, fontweight="bold")
 
                 for action_idx, action in enumerate(actions):
@@ -78,17 +80,19 @@ class TestResultsHandler:
                             for i, unique_timestamp in enumerate(unique_timestamps):
                                 if unique_timestamp not in data_subset["timestamp"].values:
                                     new_row = pd.DataFrame(
-                                        data=[{
-                                            "timestamp": unique_timestamp,
-                                            "tag": x_tick_labels[i],
-                                            "dapp_name": data_subset.iloc[0]["dapp_name"],
-                                            "action": data_subset.iloc[0]["action"],
-                                        }],
+                                        data=[
+                                            {
+                                                "timestamp": unique_timestamp,
+                                                "tag": x_tick_labels[i],
+                                                "dapp_name": data_subset.iloc[0]["dapp_name"],
+                                                "action": data_subset.iloc[0]["action"],
+                                            }
+                                        ],
                                         columns=data_subset.columns,
                                     )
                                     data_subset = pd.concat([data_subset, new_row], ignore_index=True)
 
-                        data_subset = data_subset.sort_values(by='timestamp').reset_index(drop=True)
+                        data_subset = data_subset.sort_values(by="timestamp").reset_index(drop=True)
 
                         if not data_subset.empty:
                             prev_value = None
@@ -177,7 +181,7 @@ class TestResultsHandler:
 
                             # add vertical grey dotted line before the last two dots
                             if len(data_subset[metric]) > 2:
-                                ax.axvline(x=len(data_subset[metric]) - 2.5, color='#a6a4a4', linestyle=':')
+                                ax.axvline(x=len(data_subset[metric]) - 2.5, color="#a6a4a4", linestyle=":")
 
                 plt.tight_layout()
                 plt.subplots_adjust(top=0.9)

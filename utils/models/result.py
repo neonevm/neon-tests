@@ -237,7 +237,6 @@ class ReceiptDetails(ForbidExtra):
     scheduledParentTransactionHashes: tp.Optional[List[HexString]] = None
     scheduledChildTransactionHashes: tp.Optional[List[HexString]] = None
 
-
     @model_validator(mode="before")
     @classmethod
     def check_status(cls, values):

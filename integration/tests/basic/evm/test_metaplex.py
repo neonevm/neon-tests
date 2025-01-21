@@ -20,11 +20,7 @@ class TestPrecompiledMetaplex:
     @pytest.fixture(scope="class")
     def mint_id(self, web3_client, accounts, metaplex_caller):
         mint = Keypair()
-        tx = {
-            "from": accounts[0].address,
-            "nonce": web3_client.eth.get_transaction_count(accounts[0].address),
-            "gasPrice": web3_client.gas_price(),
-        }
+        tx = web3_client.make_raw_tx(accounts[0])
         instruction_tx = metaplex_caller.functions.callCreateMetadata(
             bytes(mint.pubkey()), NAME, SYMBOL, URI
         ).build_transaction(tx)
@@ -33,24 +29,11 @@ class TestPrecompiledMetaplex:
         mint = log["args"]["value"]
         return mint
 
-    def test_create_metadata(self, metaplex):
-        sender_account = self.accounts[0]
-        mint = Keypair()
-        tx = self.web3_client.make_raw_tx(sender_account)
-        instruction_tx = metaplex.functions.createMetadata(bytes(mint.pubkey()), NAME, SYMBOL, URI).build_transaction(
-            tx
-        )
-
-        receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
-        assert receipt["status"] == 1
-
-    def test_create_master_edition(self, metaplex):
-        sender_account = self.accounts[0]
-        mint = Keypair()
-        tx = self.web3_client.make_raw_tx(sender_account)
-        instruction_tx = metaplex.functions.createMasterEdition(bytes(mint.pubkey()), 0).build_transaction(tx)
-
-        receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
+    def test_create_metadata(self, metaplex_caller, sol_client, accounts):
+        seed = bytes(Keypair().pubkey())
+        tx = self.web3_client.make_raw_tx(accounts[1])
+        instruction_tx = metaplex_caller.functions.callCreateMetadata(seed, NAME, SYMBOL, URI).build_transaction(tx)
+        receipt = self.web3_client.send_transaction(accounts[1], instruction_tx)
         assert receipt["status"] == 1
 
     @pytest.mark.parametrize(

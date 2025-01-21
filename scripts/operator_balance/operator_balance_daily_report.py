@@ -33,8 +33,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_coin_prices(
-        from_date: datetime.date,
-        to_date: datetime.date,
+    from_date: datetime.date,
+    to_date: datetime.date,
 ) -> dict[tp.Literal["neon", "solana"], dict[datetime.date, float]]:
     coin_prices: dict[tp.Literal["neon", "solana"], dict[datetime.date, float]] = {
         "neon": {},
@@ -69,17 +69,19 @@ def render_csv_report(df: pd.DataFrame, report_dir: Path, first_slot: int, last_
         total_deposit_neon = group["deposit_NEON"].sum()
         total_deposit_neon_usd = group["deposit_neon_USD"].sum()
         total_diff_sol_usd_neon_usd = group["diff_expense_sol_deposit_neon_USD"].sum()
-        total = pd.DataFrame({
-            "operator": [""],
-            "date": ["TOTAL"],
-            "expense_SOL": [total_expense_sol],
-            "sol_price_USD": [""],
-            "expense_sol_USD": [total_sol_diff_usd],
-            "deposit_NEON": [total_deposit_neon],
-            "neon_price_USD": [""],
-            "deposit_neon_USD": [total_deposit_neon_usd],
-            "diff_expense_sol_deposit_neon_USD": [total_diff_sol_usd_neon_usd],
-        })
+        total = pd.DataFrame(
+            {
+                "operator": [""],
+                "date": ["TOTAL"],
+                "expense_SOL": [total_expense_sol],
+                "sol_price_USD": [""],
+                "expense_sol_USD": [total_sol_diff_usd],
+                "deposit_NEON": [total_deposit_neon],
+                "neon_price_USD": [""],
+                "deposit_neon_USD": [total_deposit_neon_usd],
+                "diff_expense_sol_deposit_neon_USD": [total_diff_sol_usd_neon_usd],
+            }
+        )
 
         csv_df = pd.concat([group, total])
 
@@ -141,11 +143,16 @@ def main():
     last_slot = df["block_slot"].max()
 
     # Aggregate data to daily sums by Operator and date
-    daily_df = df.groupby(["operator", 'date']).agg({
-        'expense_SOL': 'sum',
-        'deposit_NEON': 'sum',
-
-    }).reset_index()
+    daily_df = (
+        df.groupby(["operator", "date"])
+        .agg(
+            {
+                "expense_SOL": "sum",
+                "deposit_NEON": "sum",
+            }
+        )
+        .reset_index()
+    )
 
     # Finish getting coin USD prices
     thread.join()
@@ -190,5 +197,5 @@ def main():
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -25,10 +25,7 @@ class NeonIterativeTasksSet(NeonProxyTasksSet):
     def task_run_iterative_tx(self):
         """Transferring funds to a random account"""
         tx = self.web3_client.make_raw_tx(self.account)
-        instruction_tx = self.contract.functions.moreInstruction(
-            0, 12000
-
-        ).build_transaction(tx)
+        instruction_tx = self.contract.functions.moreInstruction(0, 12000).build_transaction(tx)
         trx = self.web3_client.send_transaction(self.account, instruction_tx)
         LOG.info("Transaction sent: %s", trx)
 

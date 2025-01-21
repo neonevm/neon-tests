@@ -13,6 +13,16 @@ on:
         options:
           - terraform
           - night-stand
+      pytest_k:
+        type: string
+        default: "test_"
+        required: false
+        description: "Filter tests by name: pytest -k ..."
+      pytest_m:
+        type: string
+        default: ""
+        required: false
+        description: "Filter tests by mark: pytest -m ..."
 
 env:
   NETWORK: ${{ github.event.inputs.network || 'terraform' }}
@@ -94,7 +104,7 @@ jobs:
             /bin/bash
       - name: Run economy tests
         run: |
-          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py run economy --network ${{ env.NETWORK }}
+          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py run economy --network ${{ env.NETWORK }} --case "${{ github.event.inputs.pytest_k}}" --marker "${{ github.event.inputs.pytest_m}}"
       - name: "Generate allure report"
         uses: ./.github/actions/generate-allure-report
         if: always()

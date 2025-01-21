@@ -15,7 +15,8 @@ from utils.instructions import (
     make_WriteHolder,
     make_CreateAccountWithSeed,
     make_ExecuteTrxFromInstruction,
-    TransactionWithComputeBudget, make_CreateHolderAccount,
+    TransactionWithComputeBudget,
+    make_CreateHolderAccount,
 )
 from utils.layouts import HOLDER_ACCOUNT_INFO_LAYOUT
 
@@ -33,7 +34,7 @@ def transaction_from_holder(evm_loader: EvmLoader, key: Pubkey):
     data = evm_loader.get_account_info(key, commitment=Confirmed).value.data
     header = HOLDER_ACCOUNT_INFO_LAYOUT.parse(data)
 
-    return data[HOLDER_ACCOUNT_INFO_LAYOUT.sizeof():][: header.len]
+    return data[HOLDER_ACCOUNT_INFO_LAYOUT.sizeof() :][: header.len]
 
 
 def test_create_holder_account(operator_keypair, evm_loader):
@@ -187,12 +188,16 @@ def test_holder_write_integer_overflow(operator_keypair, holder_acc, evm_loader)
 def test_holder_write_account_size_overflow(operator_keypair, holder_acc, evm_loader):
     overflow_offset = int(0xFFFFFFFF)
     trx = Transaction()
-    trx.add(make_WriteHolder(operator_keypair.pubkey(), evm_loader.loader_id, holder_acc, b"\x00" * 32, overflow_offset, b"\x00" * 1))
+    trx.add(
+        make_WriteHolder(
+            operator_keypair.pubkey(), evm_loader.loader_id, holder_acc, b"\x00" * 32, overflow_offset, b"\x00" * 1
+        )
+    )
     with pytest.raises(SolanaRPCException, match=InstructionAsserts.HOLDER_INSUFFICIENT_SIZE):
         evm_loader.send_tx(trx, operator_keypair)
 
 
-def test_temporary_holder_acc_is_free(treasury_pool, sender_with_tokens, evm_loader):
+def test_temporary_holder_acc_is_free(treasury_pool, sender_with_tokens, evm_loader, sol_client):
     # Check that Solana DOES NOT charge any additional fees for the temporary holder account
     # This case is used by neonpass
     user_as_operator = sender_with_tokens.solana_account
@@ -205,7 +210,9 @@ def test_temporary_holder_acc_is_free(treasury_pool, sender_with_tokens, evm_loa
 
     trx = TransactionWithComputeBudget(user_as_operator)
     seed = str(randrange(1000000))
-    holder_pubkey = Pubkey(sha256(bytes(user_as_operator.pubkey()) + bytes(seed, "utf8") + bytes(evm_loader.loader_id)).digest())
+    holder_pubkey = Pubkey(
+        sha256(bytes(user_as_operator.pubkey()) + bytes(seed, "utf8") + bytes(evm_loader.loader_id)).digest()
+    )
     create_acc_with_seed_instr = sp.create_account_with_seed(
         sp.CreateAccountWithSeedParams(
             from_pubkey=user_as_operator.pubkey(),
@@ -217,7 +224,9 @@ def test_temporary_holder_acc_is_free(treasury_pool, sender_with_tokens, evm_loa
             owner=evm_loader.loader_id,
         )
     )
-    create_holder_instruction = make_CreateHolderAccount(holder_pubkey, user_as_operator.pubkey(), bytes(seed, 'utf8'), evm_loader.loader_id)
+    create_holder_instruction = make_CreateHolderAccount(
+        holder_pubkey, user_as_operator.pubkey(), bytes(seed, "utf8"), evm_loader.loader_id
+    )
     trx.add(create_acc_with_seed_instr)
     trx.add(create_holder_instruction)
     signed_tx = make_eth_transaction(evm_loader, sender_with_tokens.eth_address, None, sender_with_tokens, amount)
@@ -240,7 +249,7 @@ def test_temporary_holder_acc_is_free(treasury_pool, sender_with_tokens, evm_loa
         )
     )
     resp = evm_loader.send_tx(trx, user_as_operator)
-    check_transaction_logs_have_text(resp, "exit_status=0x11")
+    check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")
     operator_balance_after = evm_loader.get_solana_balance(user_as_operator.pubkey())
     operator_gas_paid_with_holder = operator_balance_before - operator_balance_after
 
@@ -260,7 +269,7 @@ def test_temporary_holder_acc_is_free(treasury_pool, sender_with_tokens, evm_loa
             sender_with_tokens.solana_account_address,
         ],
     )
-    check_transaction_logs_have_text(resp, "exit_status=0x11")
+    check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")
     operator_balance_after = evm_loader.get_solana_balance(user_as_operator.pubkey())
     operator_gas_paid_without_holder = operator_balance_before - operator_balance_after
 

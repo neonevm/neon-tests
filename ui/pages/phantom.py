@@ -24,7 +24,6 @@ class PhantomUnlockPage(BasePage):
 
 
 class PhantomWalletsPage(BasePage):
-
     _networks_menu: components.Menu = None
     _accounts_menu: components.Menu = None
 

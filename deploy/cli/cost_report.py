@@ -72,17 +72,17 @@ def prepare_report_data(directory: str) -> pd.DataFrame:
 
 def report_data_to_markdown(df: pd.DataFrame) -> str:
     report_content = ""
-    dapp_names = df['dapp_name'].unique()
+    dapp_names = df["dapp_name"].unique()
     df.columns = [col.upper() for col in df.columns]
-    df['GAS_USED_%'] = df['GAS_USED_%'].apply(lambda x: f"{x:.2f}")
+    df["GAS_USED_%"] = df["GAS_USED_%"].apply(lambda x: f"{x:.2f}")
 
     for dapp_name in dapp_names:
-        dapp_df = df[df['DAPP_NAME'] == dapp_name].drop(columns='DAPP_NAME')
+        dapp_df = df[df["DAPP_NAME"] == dapp_name].drop(columns="DAPP_NAME")
 
         # sort by ACTION (to mitigate [action 1, action 10, action 2, ...])
-        dapp_df[['ACTION_TEXT', 'ACTION_NUM']] = dapp_df['ACTION'].apply(split_action).apply(pd.Series)
-        dapp_df = dapp_df.sort_values(by=['ACTION_TEXT', 'ACTION_NUM'])
-        dapp_df = dapp_df.drop(columns=['ACTION_TEXT', 'ACTION_NUM'])
+        dapp_df[["ACTION_TEXT", "ACTION_NUM"]] = dapp_df["ACTION"].apply(split_action).apply(pd.Series)
+        dapp_df = dapp_df.sort_values(by=["ACTION_TEXT", "ACTION_NUM"])
+        dapp_df = dapp_df.drop(columns=["ACTION_TEXT", "ACTION_NUM"])
 
         report_content += f'\n## Cost Report for "{dapp_name.title()}" dApp\n\n'
         report_content += dapp_df.to_markdown(index=False) + "\n"

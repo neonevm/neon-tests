@@ -35,8 +35,19 @@ class ScheduledTransaction:
     }
 
     FIELD_NAMES = [
-        "payer", "sender", "nonce", "index", "intent", "intent_call_data", "target",
-        "call_data", "value", "chain_id", "gas_limit", "max_fee_per_gas", "max_priority_fee_per_gas"
+        "payer",
+        "sender",
+        "nonce",
+        "index",
+        "intent",
+        "intent_call_data",
+        "target",
+        "call_data",
+        "value",
+        "chain_id",
+        "gas_limit",
+        "max_fee_per_gas",
+        "max_priority_fee_per_gas",
     ]
 
     def __init__(self, payer: tp.Union[bytes, str], sender, nonce, index, target: tp.Union[bytes, str, None], **kwargs):
@@ -63,6 +74,7 @@ class ScheduledTransaction:
 
     def hash(self):
         return keccak(self.encode())
+
     def get_serialized_node(self, child_index, success_limit):
         """
         Serialize and return the node as bytes with the following layout:

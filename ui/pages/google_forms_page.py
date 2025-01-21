@@ -11,5 +11,3 @@ class GoogleFormsPage(BasePage):
     def assert_text_on_googleform_title(self):
         element = self.wait.until(EC.presence_of_element_located(GoogleFormsPage.check_google_forms_title))
         assert element.text == "Join our Ecosystem"
-
-

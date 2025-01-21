@@ -204,9 +204,9 @@ class TestPrecompiledSplToken:
 
         acc = Keypair()
         with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INCORRECT_PROGRAM_ID.value):
-            spl_token_caller.functions.initializeAccount(
-                sender_account.address, bytes(acc.pubkey())
-            ).build_transaction(tx)
+            spl_token_caller.functions.initializeAccount(sender_account.address, bytes(acc.pubkey())).build_transaction(
+                tx
+            )
         try:
             calldata = keccak(text="initializeAccount(address,bytes32)")[:4] + abi.encode(
                 ["address", "bytes32"],

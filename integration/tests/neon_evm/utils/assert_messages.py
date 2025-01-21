@@ -18,4 +18,3 @@ class InstructionAsserts:
     TRANSACTION_TREE_INVALID_DATA = "Transaction Tree - invalid transaction data"
     TRANSACTION_TREE_INVALID_SUCCESS_LIMIT = "Transaction Tree - transaction invalid success execute limit"
     TRANSACTION_TREE_NO_FEE = "Transaction Tree - transaction requires at least 1.1 GAlan for gas price"
-

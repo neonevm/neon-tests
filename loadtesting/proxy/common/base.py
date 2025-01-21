@@ -27,8 +27,7 @@ saved_transactions = []
 @events.test_stop.add_listener
 def save_transactions_list(environment: env.Environment, **kwargs):
     if "SAVE_TRANSACTIONS" in os.environ:
-        web3_client = NeonWeb3ClientExt(
-            environment.credentials["proxy_url"])
+        web3_client = NeonWeb3ClientExt(environment.credentials["proxy_url"])
 
         def get_solana_trx(tr):
             return tr, web3_client.get_solana_trx_by_neon(tr)
@@ -47,15 +46,14 @@ def save_transactions_list(environment: env.Environment, **kwargs):
                 print(f"Can't get solana trx from tx {tr}: {resp}")
                 continue
             trx[tr] = resp["result"]
-        with (open(f"transactions-{random.randint(0, 1000)}.json", "w+")) as f:
+        with open(f"transactions-{random.randint(0, 1000)}.json", "w+") as f:
             json.dump(trx, f)
         print("Results saved")
 
 
 def init_session(size: int = 1000) -> requests.Session:
     """init request session with extended connection pool size"""
-    adapter = requests.adapters.HTTPAdapter(
-        pool_connections=size, pool_maxsize=size, pool_block=True)
+    adapter = requests.adapters.HTTPAdapter(pool_connections=size, pool_maxsize=size, pool_block=True)
     session = requests.Session()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
@@ -108,11 +106,8 @@ class NeonProxyTasksSet(TaskSet):
         )
         self.credentials = self.user.environment.credentials
         LOG.info(f"Create web3 client to: {self.credentials['proxy_url']}")
-        self.web3_client = NeonWeb3ClientExt(
-            self.credentials["proxy_url"]
-        )
-        self.faucet = Faucet(
-            self.credentials["faucet_url"], self.web3_client, session=session)
+        self.web3_client = NeonWeb3ClientExt(self.credentials["proxy_url"])
+        self.faucet = Faucet(self.credentials["faucet_url"], self.web3_client, session=session)
 
     def task_block_number(self) -> None:
         """Check the number of the most recent block"""
@@ -131,8 +126,7 @@ class NeonProxyTasksSet(TaskSet):
                     continue
                 break
             else:
-                raise AssertionError(
-                    f"Account {account.address} balance didn't change after 15 seconds")
+                raise AssertionError(f"Account {account.address} balance didn't change after 15 seconds")
 
     def deploy_contract(
         self,
@@ -145,8 +139,7 @@ class NeonProxyTasksSet(TaskSet):
     ) -> "web3._utils.datatypes.Contract":
         """contract deployments"""
 
-        contract_interface = self._compile_contract_interface(
-            name, version, contract_name)
+        contract_interface = self._compile_contract_interface(name, version, contract_name)
         contract_deploy_tx = self.web3_client.deploy_contract(
             account,
             abi=contract_interface["abi"],

@@ -21,7 +21,7 @@ users = [
     "0xc65764b8fa57e60b42e78a5b03f4ea7a793efee60108f8715bb868076740c87a",
     "0x8f1c49fad44cb0fd4199cef422f2827295c52281957ce5e332cd91c68b70e5cd",
     "0xdef27a2b6bb58bf6cbfd58b4606ddee0b0fd2ffae70cf8953a75237557b6e623",
-    "0xb8ca5c2aecbf13df170b13724b8ce620067199e629aed1926a0a6e8d75ee21d0"
+    "0xb8ca5c2aecbf13df170b13724b8ce620067199e629aed1926a0a6e8d75ee21d0",
 ]
 
 
@@ -40,9 +40,7 @@ print("--- Deploy simple contracts by each account")
 for user in users:
     u = web_cli._web3.eth.account.from_key(user)
     contract, receipt = web_cli.deploy_and_get_contract(
-        random.choice(["Counter", "Fat", "IncreaseStorage"]),
-        version="0.8.10",
-        account=u
+        random.choice(["Counter", "Fat", "IncreaseStorage"]), version="0.8.10", account=u
     )
     print(f"Deployed contract address: {receipt['contractAddress']}")
 

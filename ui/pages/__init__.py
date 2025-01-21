@@ -20,4 +20,3 @@ class BasePage:
 
     def reload(self, timeout=0):
         return self.page.reload(timeout=timeout)
-

@@ -37,6 +37,10 @@ jobs:
   test:
     needs: dockerize
     runs-on: ubuntu-latest
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
 
     steps:
       - name: Checkout repository

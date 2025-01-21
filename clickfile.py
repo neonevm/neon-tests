@@ -47,13 +47,19 @@ try:
     from utils import cloud
     from utils.operator import Operator
     from utils.web3client import NeonChainWeb3Client
-    from utils.k6_helpers import k6_prepare_accounts, k6_set_envs, deploy_erc20_contract
-    from utils.k6_prepare_tracer import TracerLoadTestsDataProducer
     from utils.prices import get_sol_price_with_retry
     from utils.helpers import wait_condition
     from utils.apiclient import JsonRPCSession
 except ImportError:
     print("Please run ./clickfile.py requirements to install all requirements")
+    
+try:
+    from utils.k6_helpers import k6_prepare_accounts, k6_set_envs, deploy_erc20_contract
+    from utils.k6_prepare_tracer import TracerLoadTestsDataProducer
+except ImportError:
+    print("Please run ./clickfile.py requirements to install all requirements")
+    print("Tracer load test import error")
+    pass
 
 ALLURE_REPORT_URL = "allure_report.url"
 

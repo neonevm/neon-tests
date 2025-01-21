@@ -76,14 +76,15 @@ class EvmLoader(SolanaClient):
         chain_id = chain_id or self.chain_id
 
         account_pubkey = self.ether2balance(ether, chain_id)
-        contract_pubkey = Pubkey.from_string(self.ether2program(ether)[0])
-        trx = Transaction()
-        trx.add(
-            make_CreateBalanceAccount(
-                self.loader_id, sender.pubkey(), ether2bytes(ether), account_pubkey, contract_pubkey, chain_id
+        if not self.account_exists(account_pubkey):
+            contract_pubkey = Pubkey.from_string(self.ether2program(ether)[0])
+            trx = Transaction()
+            trx.add(
+                make_CreateBalanceAccount(
+                    self.loader_id, sender.pubkey(), ether2bytes(ether), account_pubkey, contract_pubkey, chain_id
+                )
             )
-        )
-        self.send_tx(trx, sender)
+            self.send_tx_and_check_status_ok(trx, sender)
         return account_pubkey
 
     def create_treasury_pool_address(self, pool_index):
@@ -650,7 +651,7 @@ class EvmLoader(SolanaClient):
         )
         self.send_tx_and_check_status_ok(tx, solana_account)
 
-    def deposit_wrapped_sol_from_solana_to_neon(self, solana_account, neon_account, chain_id, full_amount=None):
+    def deposit_wrapped_sol_from_solana_to_neon(self, solana_account, neon_account, full_amount=None):
         if not full_amount:
             full_amount = int(0.1 * LAMPORT_PER_SOL)
         mint_pubkey = wSOL["address_spl"]
@@ -662,7 +663,8 @@ class EvmLoader(SolanaClient):
         wrap_sol_tx = make_wSOL(full_amount, solana_account.pubkey(), ata_address)
         self.send_tx_and_check_status_ok(wrap_sol_tx, solana_account)
 
-        self.sent_token_from_solana_to_neon(solana_account, wSOL["address_spl"], neon_account, full_amount, chain_id)
+        self.sent_token_from_solana_to_neon(solana_account, wSOL["address_spl"], neon_account, full_amount,
+                                            self.sol_chain_id)
 
     def deposit_neon_like_tokens_from_solana_to_neon(
         self,
@@ -717,7 +719,6 @@ class EvmLoader(SolanaClient):
     ):
         if chain_id == "":
             chain_id = self.sol_chain_id
-
         if not payer_nonce:
             payer_nonce = self.get_neon_nonce(neon_user.neon_address, chain_id).to_bytes(8, "little")
         else:
@@ -739,7 +740,7 @@ class EvmLoader(SolanaClient):
                 self.loader_id,
             )
         )
-        self.send_tx(trx, neon_user.solana_account)
+        self.send_tx_and_check_status_ok(trx, neon_user.solana_account)
         return tree_account
 
     def start_scheduled_trx_from_account(
@@ -829,7 +830,7 @@ class EvmLoader(SolanaClient):
         trx = TransactionWithComputeBudget(operator, compute_unit_price=1000000)
         operator_balance = self.get_operator_balance_pubkey(operator, chain_id)
         trx.add(
-            make_ScheduledTransactionFinish(operator, operator_balance, self.loader_id, holder_account, tree_account)
+            make_ScheduledTransactionFinish(operator.pubkey(), operator_balance, self.loader_id, holder_account, tree_account)
         )
         return self.send_tx(trx, operator)
 
@@ -855,7 +856,7 @@ class EvmLoader(SolanaClient):
         return self.send_tx(trx, operator)
 
     def destroy_tree_account(
-        self, operator, neon_user: NeonUser, treasury, tree_account, chain_id: int | None = ""
+        self, neon_user: NeonUser, treasury, tree_account, chain_id: int | None = ""
     ) -> SignedTransaction:
         if chain_id == "":
             chain_id = self.sol_chain_id
@@ -864,12 +865,11 @@ class EvmLoader(SolanaClient):
 
         trx.add(
             make_ScheduledTransactionDestroy(
-                operator,
-                neon_user.solana_account,
+                neon_user.solana_account.pubkey(),
                 neon_user.get_balance_account(chain_id),
                 treasury,
                 tree_account,
                 self.loader_id,
             )
         )
-        return self.send_tx(trx, operator)
+        return self.send_tx(trx, neon_user.solana_account)

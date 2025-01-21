@@ -10,11 +10,13 @@ from integration.tests.neon_evm.utils.assert_messages import InstructionAsserts
 from integration.tests.neon_evm.utils.contract import deploy_contract
 from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
 from integration.tests.neon_evm.utils.storage import create_holder
+from utils.consts import LAMPORT_PER_SOL
 from utils.neon_user import NeonUser
 from utils.scheduled_trx import ScheduledTransaction
 
 
 class TestScheduledTrx:
+    # This tests can be run only with environment WITHOUT proxy service
     def test_execute_scheduled_trx_from_account(
         self,
         evm_loader,
@@ -50,7 +52,7 @@ class TestScheduledTrx:
             0, operator_keypair, holder_acc, tree_account, treasury_pool, additional_accounts, compute_unit_price=3929
         )
         evm_loader.finish_scheduled_trx(operator_keypair, tree_account, holder_acc)
-        evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
+        evm_loader.destroy_tree_account(neon_user, treasury_pool, tree_account)
         assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).get_transaction_count() == 0
 
     def test_execute_scheduled_trx_from_instruction(
@@ -97,7 +99,7 @@ class TestScheduledTrx:
         assert to_int(hexstr=result["result"]) == contract_data
 
         evm_loader.finish_scheduled_trx(operator_keypair, tree_account, holder_acc)
-        evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
+        evm_loader.destroy_tree_account(neon_user, treasury_pool, tree_account)
         assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).get_transaction_count() == 0
 
     def test_scheduled_trx_wrong_index(
@@ -219,6 +221,12 @@ class TestScheduledTrx:
             sol_client,
             chain_id=evm_loader.sol_chain_id,
         )
+
+        evm_loader.deposit_wrapped_sol_from_solana_to_neon(
+            neon_user.solana_account,
+            "0x" + neon_user.neon_address.hex(),
+            int(1 * LAMPORT_PER_SOL),
+        )
         holder_acc = create_holder(second_operator_keypair, evm_loader)
         nonce = evm_loader.get_neon_nonce(account=neon_user.neon_address, chain_id=evm_loader.sol_chain_id)
         data = abi.function_signature_to_4byte_selector("donate1000()")
@@ -272,10 +280,9 @@ class TestScheduledTrx:
         evm_loader.finish_scheduled_trx(second_operator_keypair, tree_account, holder_acc)
         user_balance_before_destroy = evm_loader.get_neon_balance(neon_user.neon_address, evm_loader.sol_chain_id)
 
-        evm_loader.destroy_tree_account(second_operator_keypair, neon_user, treasury_pool_new, tree_account)
-        user_balance_after_destroy = evm_loader.get_neon_balance(
-            account=neon_user.neon_address, chain_id=evm_loader.sol_chain_id
-        )
+        evm_loader.destroy_tree_account(neon_user, treasury_pool_new, tree_account)
+        user_balance_after_destroy = evm_loader.get_neon_balance(neon_user.neon_address, evm_loader.sol_chain_id)
+
         assert user_balance_after_destroy > user_balance_before_destroy
         operator_balance_after = evm_loader.get_operator_neon_balance(
             operator=second_operator_keypair, chain_id=evm_loader.sol_chain_id

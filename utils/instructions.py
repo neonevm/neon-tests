@@ -172,8 +172,6 @@ def make_ExecuteTrxFromAccountDataIterativeOrContinue(
     print("Operator: ", operator.pubkey())
     print("Treasury: ", treasury.account)
     print("Operator eth solana: ", operator_balance)
-    print("System program: ", sys_program_id)
-    print("Sys program type ", type(sys_program_id))
     accounts = [
         AccountMeta(pubkey=holder_address, is_signer=False, is_writable=True),
         AccountMeta(pubkey=operator.pubkey(), is_signer=True, is_writable=True),
@@ -467,26 +465,27 @@ def make_ScheduledTransactionStartFromInstruction(
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 
 
-def make_ScheduledTransactionDestroy(operator, signer, balance_account, treasury, tree_account, evm_loader_id):
+def make_ScheduledTransactionDestroy(
+    signer: Pubkey, balance_account: Pubkey, treasury: TreasuryPool, tree_account: Pubkey, evm_loader_id: Pubkey
+):
     data = InstructionTags.SCHEDULED_TRANSACTION_DESTROY + treasury.buffer
     accounts = [
-        AccountMeta(pubkey=operator.pubkey(), is_signer=True, is_writable=True),
+        AccountMeta(pubkey=signer, is_signer=True, is_writable=True),
         AccountMeta(pubkey=balance_account, is_signer=False, is_writable=True),
         AccountMeta(pubkey=treasury.account, is_signer=False, is_writable=True),
         AccountMeta(pubkey=tree_account, is_signer=False, is_writable=True),
-        AccountMeta(pubkey=signer.pubkey(), is_signer=False, is_writable=True),
     ]
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 
 
 def make_ScheduledTransactionFinish(
-    operator: Keypair, operator_balance: Pubkey, evm_loader_id: Pubkey, holder_address: Pubkey, tree_account: Pubkey
+    operator: Pubkey, operator_balance: Pubkey, evm_loader_id: Pubkey, holder_address: Pubkey, tree_account: Pubkey
 ):
     data = InstructionTags.SCHEDULED_TRANSACTION_FINISH
     accounts = [
         AccountMeta(pubkey=holder_address, is_signer=False, is_writable=True),
         AccountMeta(pubkey=tree_account, is_signer=False, is_writable=True),
-        AccountMeta(pubkey=operator.pubkey(), is_signer=True, is_writable=True),
+        AccountMeta(pubkey=operator, is_signer=True, is_writable=True),
         AccountMeta(pubkey=operator_balance, is_signer=False, is_writable=True),
     ]
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)

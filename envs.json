@@ -32,7 +32,8 @@
     "solana_url": "https://api.mainnet-beta.solana.com",
     "faucet_url": "",
     "network_ids": {
-      "neon": 245022934
+      "neon": 245022934,
+      "sol": 245022935
     },
     "neonpass_url": "https://neonpass.live/",
     "tracer_url": "https://thegraph.neonevm.org/neon-rpc",

@@ -111,7 +111,6 @@ def sender_with_wsol(evm_loader: EvmLoader, operator_keypair: Keypair) -> Caller
     evm_loader.deposit_wrapped_sol_from_solana_to_neon(
         solana_account=user.solana_account,
         neon_account="0x" + user.eth_address.hex(),
-        chain_id=evm_loader.sol_chain_id,
         full_amount=100000,
     )
 

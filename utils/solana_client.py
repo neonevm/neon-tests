@@ -88,7 +88,7 @@ class SolanaClient(solana.rpc.api.Client):
             dest=assoc_addr,
             mint_authority=owner,
             amount=1000000000000000,
-            opts=TxOpts(skip_confirmation=False),
+            opts=TxOpts(skip_confirmation=False, skip_preflight=True),
         )
 
         return token_mint, assoc_addr
@@ -98,7 +98,9 @@ class SolanaClient(solana.rpc.api.Client):
         sig = self.send_transaction(tx, *signers, opts=opts).value
         statuses_resp = self.confirm_transaction(sig, commitment=Confirmed)
         sig_status = json.loads(statuses_resp.to_json())
-        assert sig_status["result"]["value"][0]["status"] == {"Ok": None}, f"error:{sig_status}"
+        receipt = self.get_transaction(sig)
+        assert sig_status["result"]["value"][0]["status"] == {"Ok": None}, \
+            f"error:{sig_status}, receipt: {receipt}"
 
     def send_tx(self, trx: Transaction, *signers: Keypair, wait_status=Confirmed):
         result = self.send_transaction(
@@ -163,7 +165,7 @@ class SolanaClient(solana.rpc.api.Client):
         token.payer = authority
         token.mint_to(token_account, authority, amount)
 
-    def get_solana_balance(self, account):
+    def get_solana_balance(self, account: Pubkey):
         return self.get_balance(account, commitment=Confirmed).value
 
     def create_account(self, payer, size, owner, account=None, lamports=None):

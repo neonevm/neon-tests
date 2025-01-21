@@ -36,7 +36,17 @@ on:
         type: boolean
         default: false
         required: false
-        description: "Flag defining whether cost report should be generated"
+        description: "Create cost report"
+      pytest_k:
+        type: string
+        default: "test_"
+        required: false
+        description: "Filter tests by name: pytest -k ..."
+      pytest_m:
+        type: string
+        default: ""
+        required: false
+        description: "Filter tests by mark: pytest -m ..."
 env:
   NETWORK: ${{ github.event.inputs.network || 'terraform' }}
   NUMPROCESSES: ${{ github.event.inputs.numprocesses || 8 }}
@@ -150,12 +160,12 @@ jobs:
           curl -O https://raw.githubusercontent.com/${{ github.repository_owner }}/neon-evm/${{ steps.share.outputs.evm_branch }}/ci/docker-compose-ci.yml
           docker-compose -p ${{env.DOCKER_PROJECT_NAME}} -f docker-compose-ci.yml pull
           docker-compose -p ${{env.DOCKER_PROJECT_NAME}} -f docker-compose-ci.yml up -d
-          docker exec -i ${{env.DOCKER_PROJECT_NAME}}-tests-1 bash -c "python3 clickfile.py run evm --numprocesses 8 --network docker_net"
+          docker exec -i ${{env.DOCKER_PROJECT_NAME}}-tests-1 bash -c "python3 clickfile.py run evm --numprocesses 8 --network docker_net --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
       - name: Set failed test group to evm
         if: failure()
         run: echo "FAILED_TEST_GROUP=evm" >> $GITHUB_ENV
       - name: "Generate allure report"
-        if: always() && ${{ env.NETWORK != 'devnet' }}
+        if: always() && env.NETWORK != 'devnet'
         uses: ./.github/actions/generate-allure-report
         with:
           container: ${{env.DOCKER_PROJECT_NAME}}-tests-1
@@ -203,7 +213,7 @@ jobs:
       - name: Run basic proxy tests
         timeout-minutes: 60
         run: |
-          CMD="python3 ./clickfile.py run basic --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}"
+          CMD="python3 ./clickfile.py run basic --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }} --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
       
           if [[ "${{ env.GENERATE_COST_REPORT }}" == "true" ]]; then
             CMD="$CMD --cost_reports_dir reports/cost_reports"

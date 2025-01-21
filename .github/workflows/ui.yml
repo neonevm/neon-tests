@@ -6,31 +6,46 @@ on:
     - cron: "0 3 * * 0,1,2,3,4"
   workflow_dispatch:
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
+env:
+  BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+  IMAGE_NAME:  ${{ github.repository_owner }}/neon_tests
+  DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
+  CONTAINER_NAME: neon_tests
+  NETWORK: "devnet"
 
-    env:
-      IMAGE_NAME:  ${{ github.repository_owner }}/neon_tests
-      CHROME_EXT_PASSWORD: ${{ secrets.CHROME_EXT_PASSWORD }}
-      CONTAINER_NAME: neon_tests
-      NETWORK: "devnet"
+jobs:
+  dockerize:
+    name: Dockerize neon tests
+    if: ${{ github.ref_name != 'develop' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dockerize neon tests
+        uses: ./.github/actions/dockerize-neon-tests
+        with:
+          image_tag: ${{ github.sha }}
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
+          image_name: ${{ env.IMAGE_NAME }}
+          docker_hub_org_name: ${{ env.DOCKER_HUB_ORG_NAME }}
+      - name: "Define image tag"
+        id: image_tag
+        uses: ./.github/actions/define-image-tag
+    outputs:
+      tag: ${{ steps.image_tag.outputs.tag }}
+
+  test:
+    needs: dockerize
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set IMAGE_TAG
-        id: image-tag
-        run: |
-          GITHUB_REF="${{ github.ref }}"
-          IMAGE_TAG="${GITHUB_REF#refs/heads/}"
-          echo "IMAGE_TAG=$IMAGE_TAG" | tee -a $GITHUB_OUTPUT
-
       - name: Run tests container
         id: run-container
         run: |
-          IMAGE=${{ env.IMAGE_NAME }}:${{ steps.image-tag.outputs.IMAGE_TAG }}
+          IMAGE=${{ env.IMAGE_NAME }}:${{ needs.dockerize.outputs.tag }}
           docker run -d --name ${{ env.CONTAINER_NAME }} $IMAGE tail -f /dev/null
 
       - name: Install Chrome
@@ -46,7 +61,7 @@ jobs:
 
       - name: Run tests
         id: run-tests
-        run:
+        run: |
           docker exec -i ${{ env.CONTAINER_NAME }} bash -c "CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} python3 clickfile.py run ui --network ${{ env.NETWORK }}"
 
       - name: "Generate allure report"
@@ -58,3 +73,16 @@ jobs:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           tests_name: ui
+
+  notify:
+    name: Send notification on failure
+    needs: test
+    if: failure() && github.ref_name == 'develop'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Notify on failure"
+        run: |
+          docker exec -i ${{ env.CONTAINER_NAME }} \
+            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+            -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group ui

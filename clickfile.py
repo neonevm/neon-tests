@@ -47,10 +47,10 @@ try:
     from utils import cloud
     from utils.operator import Operator
     from utils.web3client import NeonChainWeb3Client
-    from utils.k6_helpers import k6_prepare_accounts, k6_set_envs, deploy_erc20_contract
     from utils.prices import get_sol_price_with_retry
     from utils.helpers import wait_condition
     from utils.apiclient import JsonRPCSession
+    from utils.k6_helpers import k6_prepare_accounts, k6_set_envs, deploy_erc20_contract
 except ImportError:
     print("Please run ./clickfile.py requirements to install all requirements")
 
@@ -1304,7 +1304,7 @@ def build(tag):
     "-u", "--users", default=None, required=True, help="Number of users (have to be generated before load test run)"
 )
 @click.option("-b", "--balance", default=None, required=True, help="Initial balance of accounts in Neon")
-@click.option("-a", "--bank_account", default=None, required=False, help="Bank account address")
+@click.option("-a", "--bank_account", default="", required=False, help="Eth bank account private key")
 @catch_traceback
 def run(network, script, users, balance, bank_account):
     network_object = network_manager.get_network_object(network)

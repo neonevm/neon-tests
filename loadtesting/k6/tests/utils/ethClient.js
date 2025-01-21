@@ -1,9 +1,10 @@
 import eth from 'k6/x/ethereum';
-import { proxyUrl, networkId, erc20Address } from './consts.js';
+import { proxyUrl, tracerUrl, networkId, erc20Address } from './consts.js';
 
 export function ethClient(privateKey) {
     const client = new eth.Client({
-        url: proxyUrl,
+        proxyUrl: proxyUrl,
+        tracerUrl: tracerUrl,
         chainID: networkId,
         privateKey: privateKey,
     });

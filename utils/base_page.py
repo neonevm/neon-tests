@@ -30,6 +30,10 @@ class BasePage(abc.ABC):
         )
         self.driver.switch_to.window(self.driver.window_handles[index])
 
+    def assert_windows_count(self, expected_windows_count: int):
+        assert len(self.driver.window_handles) == expected_windows_count, \
+            f"Expected {expected_windows_count} windows, but found {len(self.driver.window_handles)}"
+
     def close_current_tab(self):
         self.driver.close()
 
@@ -38,7 +42,3 @@ class BasePage(abc.ABC):
 
     def clear_local_storage(self):
         self.driver.execute_script("window.localStorage.clear();")
-
-    def assert_windows_count(self,expected_windows_count:int):
-        assert len(self.driver.window_handles) == expected_windows_count, \
-            f"Expected {expected_windows_count} windows, but found {len(self.driver.window_handles)}"

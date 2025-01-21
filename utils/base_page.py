@@ -1,6 +1,9 @@
 import pytest
 import abc
 import faker
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
@@ -28,8 +31,11 @@ class BasePage(abc.ABC):
     def switch_window(self,index:int):
         self.driver.switch_to.window(self.driver.window_handles[index])
 
-    def generate_email(self):
-        return faker.Faker().email()
-
     def close_current_tab(self):
         self.driver.close()
+
+    def reload_page(self):
+        self.driver.refresh()
+
+    def clear_local_storage(self):
+        self.driver.execute_script("window.localStorage.clear();")

@@ -1,3 +1,5 @@
+import time
+
 from ui.tests.website_tests.conftest import google_forms_page, menu_page, developers_page, main_page, \
     ecosystem_page, quick_start_page
 
@@ -77,3 +79,16 @@ class TestMainPage:
         main_page.click_social_network_icon(icon_name=main_page.linkedin_icon)
         main_page.switch_window(1)
         main_page.assert_page_url(url=main_page.linkedin_page)
+
+    def test_close_cookie_banner(self, main_page):
+        main_page.click_ask_me_later_button()
+        main_page.assert_cookie_banner_is_invisible()
+        main_page.clear_local_storage()
+        main_page.reload_page()
+        main_page.assert_cookie_banner_is_visible()
+
+    def test_accept_cookie(self, main_page):
+        main_page.assert_cookie_banner_is_visible()
+        main_page.click_accept_button()
+        main_page.reload_page()
+        main_page.assert_cookie_banner_is_invisible()

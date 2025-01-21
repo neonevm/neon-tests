@@ -30,6 +30,9 @@ class MainPage(BasePage):
     medium_icon = (By.XPATH, "//a[@title='medium']")
     telegram_icon = (By.XPATH, "//a[@title='telegram']")
     linkedin_icon = (By.XPATH, "//a[@title='linkedin']")
+    cookie_banner = (By.XPATH, "//h4[contains(text(), 'We use cookies')]")
+    ask_me_later_button = (By.XPATH, "//button[text()='ASK ME LATER']")
+    accept_button = (By.XPATH, "//button[text()='ACCEPT']")
 
 
     def click_on_logo_on_header(self):
@@ -54,7 +57,7 @@ class MainPage(BasePage):
         self.wait.until(EC.presence_of_element_located(MainPage.add_your_dapp_button)).click()
 
     def input_email(self):
-        email = self.generate_email()
+        email = "test@test.com"
         print(email)
         self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field)).send_keys(email)
 
@@ -63,3 +66,15 @@ class MainPage(BasePage):
 
     def click_social_network_icon(self, icon_name):
         self.wait.until(EC.visibility_of_element_located(icon_name)).click()
+
+    def click_ask_me_later_button(self):
+        self.wait.until(EC.visibility_of_element_located(MainPage.ask_me_later_button)).click()
+
+    def click_accept_button(self):
+        self.wait.until(EC.visibility_of_element_located(MainPage.accept_button)).click()
+
+    def assert_cookie_banner_is_invisible(self):
+        self.wait.until(EC.invisibility_of_element(MainPage.cookie_banner))
+
+    def assert_cookie_banner_is_visible(self):
+        self.wait.until(EC.visibility_of_element_located(MainPage.cookie_banner))

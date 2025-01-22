@@ -1,5 +1,7 @@
+import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+
 from utils.base_page import BasePage
 
 
@@ -23,6 +25,9 @@ class MainPage(BasePage):
     transaction_cost_arrow = (By.XPATH, "(//div[contains(@class,'arrow-down-icon-container')])[2]")
     email_input_field = (By.XPATH, "//input")
     subscribe_button = (By.XPATH, "//button/span[text()='subscribe']")
+    subscription_text = (By.XPATH, "//h4[contains(text(), 'You have been')]")
+    close_subscription_window = (By.XPATH, "//*[name()='svg'][contains(@class,'cursor-pointer')][2]")
+
     twitter_icon = (By.XPATH, "//a[@title='twitter']")
     githib_icon = (By.XPATH, "//a[@title='github']")
     discord_icon = (By.XPATH, "//a[@title='discord']")
@@ -56,12 +61,21 @@ class MainPage(BasePage):
         self.wait.until(EC.presence_of_element_located(MainPage.add_your_dapp_button)).click()
 
     def input_email(self):
-        email = "test@test.com"
-        print(email)
-        self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field)).send_keys(email)
+        generated_email = self.email()
+        email_field = self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field))
+        email_field.send_keys(generated_email)
 
     def click_subscribe_button(self):
         self.wait.until(EC.presence_of_element_located(MainPage.subscribe_button)).click()
+
+    def check_successfully_subscription_text(self):
+        self.wait.until(EC.presence_of_element_located(MainPage.subscription_text)).is_displayed()
+        time.sleep(3)
+
+    def close_subscription_text(self):
+        element = self.driver.find_element(By.XPATH, "//span[contains(.,'All rights')]")
+        self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
+        self.wait.until(EC.presence_of_element_located(MainPage.close_subscription_window)).click()
 
     def click_social_network_icon(self, icon_name):
         self.wait.until(EC.visibility_of_element_located(icon_name)).click()

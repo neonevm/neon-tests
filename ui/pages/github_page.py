@@ -2,6 +2,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from utils.base_page import BasePage
 
+
 class GithubPage(BasePage):
     _url = "https://github.com/neonevm/neon-evm"
 

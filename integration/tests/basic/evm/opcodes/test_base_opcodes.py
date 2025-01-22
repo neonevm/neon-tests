@@ -107,43 +107,35 @@ class TestOpCodes:
         result = contract.functions.read().call()
         assert result.hex() == ZERO_HASH
 
-    def test_base_fee_call(
-            self,
-            web3_client: NeonChainWeb3Client,
-            accounts: EthAccounts,
-            basefee_checker
-    ):
-        base_fee_contract = basefee_checker.functions.baseFee().call(
-            transaction={
-                "gasPrice": 1_234_456
-            })
+    def test_base_fee_call(self, web3_client: NeonChainWeb3Client, accounts: EthAccounts, basefee_checker):
+        base_fee_contract = basefee_checker.functions.baseFee().call(transaction={"gasPrice": 1_234_456})
         # put some random trivial gas_price
         assert base_fee_contract == 1_234_456
 
     def test_base_fee_trx_type_0(
-            self,
-            web3_client: NeonChainWeb3Client,
-            accounts: EthAccounts,
-            basefee_checker,
+        self,
+        web3_client: NeonChainWeb3Client,
+        accounts: EthAccounts,
+        basefee_checker,
     ):
         tx = web3_client.make_raw_tx(accounts[0])
         instruction_tx = basefee_checker.functions.baseFeeTrx().build_transaction(tx)
         resp = web3_client.send_transaction(accounts[0], instruction_tx)
-        base_fee_from_log = basefee_checker.events.Log().process_receipt(resp)[0]['args']['baseFee']
+        base_fee_from_log = basefee_checker.events.Log().process_receipt(resp)[0]["args"]["baseFee"]
         assert base_fee_from_log == web3_client.gas_price()
 
     def test_base_fee_trx_type_2(
-            self,
-            web3_client: NeonChainWeb3Client,
-            accounts: EthAccounts,
-            basefee_checker,
+        self,
+        web3_client: NeonChainWeb3Client,
+        accounts: EthAccounts,
+        basefee_checker,
     ):
         tx = web3_client.make_raw_tx(accounts[0], tx_type=TransactionType.EIP_1559)
         instruction_tx = basefee_checker.functions.baseFeeTrx().build_transaction(tx)
         instruction_tx["maxFeePerGas"] = 3000000000
         instruction_tx["maxPriorityFeePerGas"] = 2500000000
         resp = web3_client.send_transaction(accounts[0], instruction_tx)
-        base_fee_from_log = basefee_checker.events.Log().process_receipt(resp)[0]['args']['baseFee']
+        base_fee_from_log = basefee_checker.events.Log().process_receipt(resp)[0]["args"]["baseFee"]
         # Neon specific, it uses maxPriorityFee to pay an Operator
         #   it is just an adoption to Ethereum clients
         #   which use eth_maxPriorityFeePerGas() as a constant

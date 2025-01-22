@@ -5,16 +5,17 @@ from utils import web3client
 
 pytestconfig: Config
 
+
 class ERC20:
     def __init__(
-            self,
-            web3_client: web3client.NeonChainWeb3Client,
-            faucet,
-            owner=None,
-            name="Test Token",
-            symbol="TT",
-            amount=1000000,
-            bank_account=None,
+        self,
+        web3_client: web3client.NeonChainWeb3Client,
+        faucet,
+        owner=None,
+        name="Test Token",
+        symbol="TT",
+        amount=1000000,
+        bank_account=None,
     ):
         self.web3_client = web3_client
         self.owner = owner

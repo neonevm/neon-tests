@@ -9,7 +9,7 @@ class TestMainPage:
         main_page.click_on_logo_on_header()
         main_page.assert_page_url()
 
-    def test_logo_footer(self,main_page, menu_page, developers_page):
+    def test_logo_footer(self, main_page, menu_page, developers_page):
         menu_page.click_on_menu_developers_link()
         developers_page.assert_text_on_build_on_neon_block_link()
         main_page.click_on_logo_on_footer()

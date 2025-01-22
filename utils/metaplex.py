@@ -1,9 +1,16 @@
 from construct import (
     Struct,
-    Bytes, PascalString, PrefixedArray,
-    Const, Flag, Byte,
-    Int32ul, Int16ul, Int64ul,
-    Subconstruct, Enum
+    Bytes,
+    PascalString,
+    PrefixedArray,
+    Const,
+    Flag,
+    Byte,
+    Int32ul,
+    Int16ul,
+    Int64ul,
+    Subconstruct,
+    Enum,
 )
 
 from solders.pubkey import Pubkey
@@ -14,11 +21,11 @@ import enum
 from utils.helpers import wait_condition
 
 
-METADATA_PROGRAM_ID = Pubkey.from_string('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
-SYSTEM_PROGRAM_ID = Pubkey.from_string('11111111111111111111111111111111')
-SYSVAR_RENT_PUBKEY = Pubkey.from_string('SysvarRent111111111111111111111111111111111')
-ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID = Pubkey.from_string('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL')
-TOKEN_PROGRAM_ID = Pubkey.from_string('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
+METADATA_PROGRAM_ID = Pubkey.from_string("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s")
+SYSTEM_PROGRAM_ID = Pubkey.from_string("11111111111111111111111111111111")
+SYSVAR_RENT_PUBKEY = Pubkey.from_string("SysvarRent111111111111111111111111111111111")
+ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID = Pubkey.from_string("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL")
+TOKEN_PROGRAM_ID = Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
 
 
 class MetadataLimit(enum.IntEnum):
@@ -89,27 +96,13 @@ Utf8String = PascalString(Int32ul, "utf8")
 Address = Bytes(32)
 Base58Address = Utf8String  # TODO: deserialize as base58
 
-Creator = Struct(
-    "address" / Address,
-    "verified" / Flag,
-    "share" / Byte
-)
+Creator = Struct("address" / Address, "verified" / Flag, "share" / Byte)
 
-Collection = Struct(
-    "verified" / Flag,
-    "key" / Address
-)
+Collection = Struct("verified" / Flag, "key" / Address)
 
-Uses = Struct(
-    "use_method" / Enum(Byte, UseMethodType),
-    "remaining" / Int64ul,
-    "total" / Int64ul
-)
+Uses = Struct("use_method" / Enum(Byte, UseMethodType), "remaining" / Int64ul, "total" / Int64ul)
 
-CollectionDetails = Struct(
-    "ver" / Const(b'\x00'),
-    "size" / Int64ul
-)
+CollectionDetails = Struct("ver" / Const(b"\x00"), "size" / Int64ul)
 
 AssetData = Struct(
     "name" / Utf8String,
@@ -123,20 +116,17 @@ AssetData = Struct(
     "collection" / Option(Collection),
     "uses" / Option(Uses),
     "collection_details" / Option(CollectionDetails),
-    "rule_set" / Option(Base58Address)
+    "rule_set" / Option(Base58Address),
 )
 
-ProgrammableConfig = Struct(
-    "ver" / Const(b'\x00'),
-    "rule_set" / Option(Base58Address)
-)
+ProgrammableConfig = Struct("ver" / Const(b"\x00"), "rule_set" / Option(Base58Address))
 
 Data = Struct(
     "name" / Utf8String,
     "symbol" / Utf8String,
     "uri" / Utf8String,
     "seller_fee_basis_points" / Int16ul,
-    "creators" / Option(PrefixedArray(Int32ul, Creator))
+    "creators" / Option(PrefixedArray(Int32ul, Creator)),
 )
 
 DataV2 = Struct(
@@ -146,7 +136,7 @@ DataV2 = Struct(
     "seller_fee_basis_points" / Int16ul,
     "creators" / Option(PrefixedArray(Int32ul, Creator)),
     "collection" / Option(Collection),
-    "uses" / Option(Uses)
+    "uses" / Option(Uses),
 )
 
 MetadataAccount = Struct(
@@ -164,41 +154,29 @@ MetadataAccount = Struct(
     "programmable_config" / Option(ProgrammableConfig),
 )
 
-CreateMetadataV3Args = Struct(
-    "data" / DataV2,
-    "is_mutable" / Flag,
-    "collection_details" / Option(CollectionDetails)
-)
+CreateMetadataV3Args = Struct("data" / DataV2, "is_mutable" / Flag, "collection_details" / Option(CollectionDetails))
 
-CreateMetadataV3Instruction = Struct(
-    "instruction" / Const(b'\x21'),
-    "args" / CreateMetadataV3Args
-)
+CreateMetadataV3Instruction = Struct("instruction" / Const(b"\x21"), "args" / CreateMetadataV3Args)
 
 CreateArgs = Struct(
-    "ver" / Const(b'\x00'),
+    "ver" / Const(b"\x00"),
     "asset_data" / AssetData,
     "decimals" / Option(Byte),
-    "print_supply" / Option(Enum(Byte, PrintSupplyType))
+    "print_supply" / Option(Enum(Byte, PrintSupplyType)),
 )
 
-CreateInstruction = Struct(
-    "instruction" / Const(b'\x2a'),
-    "args" / CreateArgs
-)
+CreateInstruction = Struct("instruction" / Const(b"\x2a"), "args" / CreateArgs)
 
 
 def get_metadata_account(mint_key: Pubkey):
-    return Pubkey.find_program_address(
-        [b'metadata', bytes(METADATA_PROGRAM_ID), bytes(mint_key)],
-        METADATA_PROGRAM_ID
-    )[0]
+    return Pubkey.find_program_address([b"metadata", bytes(METADATA_PROGRAM_ID), bytes(mint_key)], METADATA_PROGRAM_ID)[
+        0
+    ]
 
 
 def get_edition(mint_key: Pubkey):
     return Pubkey.find_program_address(
-        [b'metadata', bytes(METADATA_PROGRAM_ID), bytes(mint_key), b"edition"],
-        METADATA_PROGRAM_ID
+        [b"metadata", bytes(METADATA_PROGRAM_ID), bytes(mint_key), b"edition"], METADATA_PROGRAM_ID
     )[0]
 
 
@@ -212,10 +190,10 @@ def create_associated_token_account_instruction(associated_token_account, payer,
         AccountMeta(pubkey=TOKEN_PROGRAM_ID, is_signer=False, is_writable=False),
         AccountMeta(pubkey=SYSVAR_RENT_PUBKEY, is_signer=False, is_writable=False),
     ]
-    return Instruction(accounts=keys, program_id=ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID, data=b'')
+    return Instruction(accounts=keys, program_id=ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID, data=b"")
 
 
-def create_metadata_instruction_data(name: str, symbol: str, uri='', fee=0):
+def create_metadata_instruction_data(name: str, symbol: str, uri="", fee=0):
     assert len(name) <= MetadataLimit.MaxNameLen
     assert len(symbol) <= MetadataLimit.MaxSymbolLen
     assert len(uri) <= MetadataLimit.MaxUriLen
@@ -240,21 +218,23 @@ def create_metadata_instruction_data(name: str, symbol: str, uri='', fee=0):
     #         print_supply=None
     #     )
     # ))
-    return CreateMetadataV3Instruction.build(dict(
-        args=dict(
-            data=dict(
-                name=name,
-                symbol=symbol,
-                uri=uri,
-                seller_fee_basis_points=fee,
-                creators=None,
-                collection=None,
-                uses=None,
-            ),
-            is_mutable=True,
-            collection_details=None
+    return CreateMetadataV3Instruction.build(
+        dict(
+            args=dict(
+                data=dict(
+                    name=name,
+                    symbol=symbol,
+                    uri=uri,
+                    seller_fee_basis_points=fee,
+                    creators=None,
+                    collection=None,
+                    uses=None,
+                ),
+                is_mutable=True,
+                collection_details=None,
+            )
         )
-    ))
+    )
 
 
 def create_metadata_instruction(data, update_authority, mint_key, mint_authority_key, payer):
@@ -283,15 +263,15 @@ def get_metadata(client, mint_key: Pubkey):
     def _strip_utf8(value) -> str:
         return value.strip("\x00")
 
-    metadata.mint = str(Pubkey(metadata.mint)).encode('utf-8')
+    metadata.mint = str(Pubkey(metadata.mint)).encode("utf-8")
 
     metadata.data.name = _strip_utf8(metadata.data.name)
     metadata.data.symbol = _strip_utf8(metadata.data.symbol)
     metadata.data.uri = _strip_utf8(metadata.data.uri)
 
-#    if metadata.data.creators:
-#        creators = [base58.b58encode(creator) for creator in metadata.data.creators]
-#        metadata.data.creators = creators
+    #    if metadata.data.creators:
+    #        creators = [base58.b58encode(creator) for creator in metadata.data.creators]
+    #        metadata.data.creators = creators
 
     return metadata
 

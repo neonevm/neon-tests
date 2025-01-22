@@ -15,19 +15,19 @@ INIT_TOKEN_AMOUNT = 1000000000000000
 
 class ERC20Wrapper:
     def __init__(
-            self,
-            web3_client: web3client.NeonChainWeb3Client,
-            faucet,
-            name,
-            symbol,
-            sol_client,
-            solana_account: Keypair,
-            decimals=9,
-            evm_loader_id=None,
-            account=None,
-            mintable=True,
-            contract_address=None,
-            bank_account=None,
+        self,
+        web3_client: web3client.NeonChainWeb3Client,
+        faucet,
+        name,
+        symbol,
+        sol_client,
+        solana_account: Keypair,
+        decimals=9,
+        evm_loader_id=None,
+        account=None,
+        mintable=True,
+        contract_address=None,
+        bank_account=None,
     ):
         self.solana_associated_token_acc = None
         self.token_mint = None
@@ -58,7 +58,6 @@ class ERC20Wrapper:
             self.contract_address = self.deploy_wrapper(mintable)
             self.contract = self.web3_client.get_deployed_contract(self.contract_address, "EIPs/ERC20/IERC20ForSpl")
 
-
     @property
     def address(self):
         """Compatibility with web3.eth.Contract"""
@@ -83,7 +82,8 @@ class ERC20Wrapper:
 
     def deploy_wrapper(self, mintable: bool):
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "neon-evm/erc20_for_spl_factory", "0.8.10", self.account, contract_name="ERC20ForSplFactory")
+            "neon-evm/erc20_for_spl_factory", "0.8.10", self.account, contract_name="ERC20ForSplFactory"
+        )
 
         assert contract_deploy_tx["status"] == 1, f"ERC20 Factory wasn't deployed: {contract_deploy_tx}"
 

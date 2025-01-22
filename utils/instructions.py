@@ -166,11 +166,14 @@ def make_ExecuteTrxFromAccountDataIterativeOrContinue(
     # 0x35 - TransactionStepFromAccount
     # 0x36 - TransactionStepFromAccountNoChainId
     data = tag.to_bytes(1, "little") + treasury.buffer + step_count.to_bytes(4, "little") + index.to_bytes(4, "little")
+
     print("make_ExecuteTrxFromAccountDataIterativeOrContinue accounts")
     print("Holder: ", holder_address)
     print("Operator: ", operator.pubkey())
     print("Treasury: ", treasury.account)
     print("Operator eth solana: ", operator_balance)
+    print("System program: ", sys_program_id)
+    print("Sys program type ", type(sys_program_id))
     accounts = [
         AccountMeta(pubkey=holder_address, is_signer=False, is_writable=True),
         AccountMeta(pubkey=operator.pubkey(), is_signer=True, is_writable=True),
@@ -490,7 +493,13 @@ def make_ScheduledTransactionFinish(
 
 
 def make_ScheduledTransactionSkipFromInstruction(
-    index: int, neon_trx: bytes, operator: Keypair, operator_balance: Pubkey, holder_address: Pubkey, tree_account: Pubkey, evm_loader_id: Pubkey
+    index: int,
+    neon_trx: bytes,
+    operator: Keypair,
+    operator_balance: Pubkey,
+    holder_address: Pubkey,
+    tree_account: Pubkey,
+    evm_loader_id: Pubkey,
 ):
     data = InstructionTags.SCHEDULED_TRANSACTION_SKIP_FROM_INSTRUCTION
     data += index.to_bytes(4, "little") + neon_trx
@@ -498,7 +507,7 @@ def make_ScheduledTransactionSkipFromInstruction(
         AccountMeta(pubkey=holder_address, is_signer=False, is_writable=True),
         AccountMeta(pubkey=tree_account, is_signer=False, is_writable=True),
         AccountMeta(pubkey=operator.pubkey(), is_signer=True, is_writable=True),
-        AccountMeta(pubkey=operator_balance, is_signer=False, is_writable=True)
+        AccountMeta(pubkey=operator_balance, is_signer=False, is_writable=True),
     ]
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 

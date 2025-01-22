@@ -80,7 +80,9 @@ class ERC721ForMetaplex:
         return resp
 
     @allure.step("Safe transfer from")
-    def safe_transfer_from(self, address_from, address_to, token_id, signer, data=None, gas_price=None, gas=None) -> TxReceipt:
+    def safe_transfer_from(
+        self, address_from, address_to, token_id, signer, data=None, gas_price=None, gas=None
+    ) -> TxReceipt:
         tx = self.make_tx_object(signer.address, gas_price, gas)
         if data is None:
             instruction_tx = self.contract.functions.safeTransferFrom(

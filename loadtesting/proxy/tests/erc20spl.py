@@ -64,9 +64,7 @@ class ERC20SPLTasksSet(NeonProxyTasksSet):
         """Send ERC20 tokens"""
         contract = self.user.environment.erc20_one["contract"]
         recipient = self.get_account()
-        LOG.info(
-            f"Send erc20spl token from {self.account.address[:8]} to {recipient.address[:8]}"
-        )
+        LOG.info(f"Send erc20spl token from {self.account.address[:8]} to {recipient.address[:8]}")
         receipt = contract.transfer(self.account, recipient, 1)
 
         receipt = dict(receipt)

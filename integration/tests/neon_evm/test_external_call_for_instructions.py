@@ -73,8 +73,8 @@ class TestExternalCall:
             None,
             sender_with_tokens,
             amount,
+            max_priority_fee_per_gas=max_priority_fee_per_gas,
             max_fee_per_gas=max_fee_per_gas,
-            max_priority_fee_per_gas=max_priority_fee_per_gas
         )
 
         accounts = [

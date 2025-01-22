@@ -162,7 +162,9 @@ class TestSolanaInteroperability:
             opts=TxOpts(skip_confirmation=False, skip_preflight=True),
         )
 
-        authority_pubkey: bytes = call_solana_caller.functions.getSolanaPDA(bytes(TRANSFER_TOKENS_ID), b"authority").call()
+        authority_pubkey: bytes = call_solana_caller.functions.getSolanaPDA(
+            bytes(TRANSFER_TOKENS_ID), b"authority"
+        ).call()
         mint.set_authority(
             from_token_account,
             from_wallet,

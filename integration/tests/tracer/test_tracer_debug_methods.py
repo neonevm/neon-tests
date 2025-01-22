@@ -39,13 +39,13 @@ class TestTracerDebugMethods:
         validator = Draft4Validator(schema)
         assert validator.is_valid(response["result"])
 
-   # NDEV-3009
+    # NDEV-3009
     def test_debug_trace_call_invalid_params(self):
         response = self.tracer_api.send_rpc(method="debug_traceCall", params=[{}, "0x0"])
         assert "error" in response, "No errors in response"
         assert response["error"]["code"] == -32603, "Invalid error code"
         assert response["error"]["message"] == "neon_api::trace failed"
-    
+
     def test_debug_trace_call_empty_params_valid_block(self):
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
@@ -91,7 +91,7 @@ class TestTracerDebugMethods:
         sender_account = self.accounts[0]
         store_value = random.randint(1, 100)
         _, _, receipt = storage_object.call_storage(sender_account, store_value, "blockNumber")
-       
+
         tx_info = self.web3_client.get_transaction_by_hash(receipt["transactionHash"].hex())
 
         params = [
@@ -117,7 +117,9 @@ class TestTracerDebugMethods:
         receipt = self.web3_client.send_neon(sender_account, recipient_account, 0.1)
         assert receipt["status"] == 1
 
-        response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", [receipt["transactionHash"].hex()])
+        response = self.tracer_api.send_rpc_and_wait_response(
+            "debug_traceTransaction", [receipt["transactionHash"].hex()]
+        )
         assert "error" not in response, "Error in response"
         self.validate_response_result(response)
 
@@ -126,7 +128,9 @@ class TestTracerDebugMethods:
         store_value = random.randint(1, 100)
         _, _, receipt = storage_object.call_storage(sender_account, store_value, "blockNumber")
 
-        response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", [receipt["transactionHash"].hex()])
+        response = self.tracer_api.send_rpc_and_wait_response(
+            "debug_traceTransaction", [receipt["transactionHash"].hex()]
+        )
 
         assert "error" not in response, "Error in response"
         assert response["result"]["returnValue"] == padhex(hex(store_value), 64)[2:]
@@ -138,7 +142,9 @@ class TestTracerDebugMethods:
         store_value = random.randint(1, 100)
         _, _, receipt = storage_object.call_storage(sender_account, store_value, "blockNumber")
 
-        response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", [receipt["transactionHash"].hex()[2:]])
+        response = self.tracer_api.send_rpc_and_wait_response(
+            "debug_traceTransaction", [receipt["transactionHash"].hex()[2:]]
+        )
 
         assert "error" not in response, "Error in response"
         assert response["result"]["returnValue"] == padhex(hex(store_value), 64)[2:]
@@ -324,8 +330,7 @@ class TestTracerDebugMethods:
         assert receipt["status"] == 1
 
         response = self.tracer_api.send_rpc_and_wait_response(
-            "debug_getModifiedAccountsByNumber", 
-            [hex(receipt["blockNumber"]), hex(receipt["blockNumber"])]
+            "debug_getModifiedAccountsByNumber", [hex(receipt["blockNumber"]), hex(receipt["blockNumber"])]
         )
         self.check_modified_accounts_response(response, [sender_account.address, recipient_account.address])
 
@@ -337,8 +342,7 @@ class TestTracerDebugMethods:
         assert receipt["status"] == 1
 
         response = self.tracer_api.send_rpc_and_wait_response(
-            "debug_getModifiedAccountsByNumber", 
-            [hex(receipt["blockNumber"])]
+            "debug_getModifiedAccountsByNumber", [hex(receipt["blockNumber"])]
         )
         self.check_modified_accounts_response(response, [sender_account.address, recipient_account.address])
 
@@ -354,8 +358,7 @@ class TestTracerDebugMethods:
         end_number = hex(receipt["blockNumber"])
 
         response = self.tracer_api.send_rpc_and_wait_response(
-            "debug_getModifiedAccountsByNumber", 
-            [start_number, end_number]
+            "debug_getModifiedAccountsByNumber", [start_number, end_number]
         )
         self.check_modified_accounts_response(response, [sender_account.address, recipient_account.address])
 
@@ -391,8 +394,7 @@ class TestTracerDebugMethods:
         assert receipt["status"] == 1
 
         response = self.tracer_api.send_rpc_and_wait_response(
-            "debug_getModifiedAccountsByHash",
-            [receipt["blockHash"].hex(), receipt["blockHash"].hex()]
+            "debug_getModifiedAccountsByHash", [receipt["blockHash"].hex(), receipt["blockHash"].hex()]
         )
         self.check_modified_accounts_response(response, [sender_account.address, recipient_account.address])
 
@@ -406,8 +408,7 @@ class TestTracerDebugMethods:
         assert receipt_end["status"] == 1
 
         response = self.tracer_api.send_rpc_and_wait_response(
-            "debug_getModifiedAccountsByHash",
-            [receipt_start["blockHash"].hex(), receipt_end["blockHash"].hex()]
+            "debug_getModifiedAccountsByHash", [receipt_start["blockHash"].hex(), receipt_end["blockHash"].hex()]
         )
         self.check_modified_accounts_response(response, [sender_account.address, recipient_account.address])
 
@@ -439,8 +440,10 @@ class TestTracerDebugMethods:
 
         receipt = self.web3_client.eth.wait_for_transaction_receipt(tx)
         assert receipt["status"] == 1
-        
-        response = self.tracer_api.send_rpc_and_wait_response("debug_getRawTransaction", [receipt["transactionHash"].hex()])
+
+        response = self.tracer_api.send_rpc_and_wait_response(
+            "debug_getRawTransaction", [receipt["transactionHash"].hex()]
+        )
         assert "error" not in response, "Error in response"
         assert "result" in response and response["result"] == signed_tx.rawTransaction.hex()
 

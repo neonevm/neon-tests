@@ -41,28 +41,30 @@ def fetch_data(
         all_rows.extend(rows)
         all_operator_names.extend([operator.name] * len(rows))
 
-    df = pd.DataFrame({
-        "operator": all_operator_names,
-        "sol_key": [row["operator"] for row in all_rows],
-        "sol_sig": [row["sol_sig"] for row in all_rows],
-        "block_slot": [row["block_slot"] for row in all_rows],
-        "block_time": [row["block_time"] for row in all_rows],
-        "sol_spent": [row["sol_spent"] for row in all_rows],
-        "gas_price": [int(row["gas_price"], 16) for row in all_rows],
-        "neon_gas_used": [row["neon_gas_used"] for row in all_rows],
-        "idx": [row["idx"] for row in all_rows],
-        "inner_idx": [row["inner_idx"] for row in all_rows],
-    })
+    df = pd.DataFrame(
+        {
+            "operator": all_operator_names,
+            "sol_key": [row["operator"] for row in all_rows],
+            "sol_sig": [row["sol_sig"] for row in all_rows],
+            "block_slot": [row["block_slot"] for row in all_rows],
+            "block_time": [row["block_time"] for row in all_rows],
+            "sol_spent": [row["sol_spent"] for row in all_rows],
+            "gas_price": [int(row["gas_price"], 16) for row in all_rows],
+            "neon_gas_used": [row["neon_gas_used"] for row in all_rows],
+            "idx": [row["idx"] for row in all_rows],
+            "inner_idx": [row["inner_idx"] for row in all_rows],
+        }
+    )
 
     # Validate the data set
     duplicates = (df[df.duplicated()].sort_values(by="sol_sig")).reset_index(drop=True)
     if not duplicates.empty:
         duplicates.to_csv(f"duplicates_{time.time()}.csv")
 
-    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+    with pd.option_context("display.max_rows", None, "display.max_columns", None):
         assert duplicates.empty, f"Data contains duplicates: {duplicates.head(100)}"
         msg = f"Data has missing values:\n{df[df.isna().any(axis=1)].head(100)}"
-        assert not df.drop(columns=['inner_idx']).isna().any().any(), msg
+        assert not df.drop(columns=["inner_idx"]).isna().any().any(), msg
 
     df = df.sort_values(by=["operator", "sol_key", "block_time"]).reset_index(drop=True)
 

@@ -190,17 +190,17 @@ class Web3Client:
 
     @allure.step("Make raw tx")
     def make_raw_tx(
-            self,
-            from_: tp.Union[str, eth_account.signers.local.LocalAccount],
-            to: tp.Optional[tp.Union[str, eth_account.signers.local.LocalAccount]] = None,
-            amount: tp.Optional[tp.Union[int, float, Decimal]] = None,
-            gas: tp.Optional[int] = None,
-            gas_price: tp.Optional[int] = None,
-            nonce: tp.Optional[int] = None,
-            chain_id: tp.Optional[int] = None,
-            data: tp.Optional[tp.Union[str, bytes]] = None,
-            estimate_gas=False,
-            tx_type: TransactionType = TransactionType.LEGACY,
+        self,
+        from_: tp.Union[str, eth_account.signers.local.LocalAccount],
+        to: tp.Optional[tp.Union[str, eth_account.signers.local.LocalAccount]] = None,
+        amount: tp.Optional[tp.Union[int, float, Decimal]] = None,
+        gas: tp.Optional[int] = None,
+        gas_price: tp.Optional[int] = None,
+        nonce: tp.Optional[int] = None,
+        chain_id: tp.Optional[int] = None,
+        data: tp.Optional[tp.Union[str, bytes]] = None,
+        estimate_gas=False,
+        tx_type: TransactionType = TransactionType.LEGACY,
     ) -> dict:
         if tx_type is TransactionType.LEGACY:
             if isinstance(from_, eth_account.signers.local.LocalAccount):
@@ -290,21 +290,20 @@ class Web3Client:
 
     @allure.step("Create raw transaction EIP-1559")
     def make_raw_tx_eip_1559(
-            self,
-            *,
-            chain_id: tp.Union[int, tp.Literal["auto"], None],
-            from_: tp.Union[str, eth_account.signers.local.LocalAccount],
-            to: tp.Optional[tp.Union[str, eth_account.signers.local.LocalAccount]],
-            value: tp.Union[int, float, Decimal, str, None],
-            nonce: tp.Union[int, tp.Literal["auto"], None],
-            data: tp.Union[str, bytes, None],
-            access_list: tp.Union[tp.List[web3.types.AccessListEntry], None],
-            gas: tp.Union[int, tp.Literal["auto"], None],
-            max_priority_fee_per_gas: tp.Union[int, tp.Literal["auto"], None],
-            max_fee_per_gas: tp.Union[int, tp.Literal["auto"], None],
-            base_fee_multiplier: float = 1.1,
+        self,
+        *,
+        chain_id: tp.Union[int, tp.Literal["auto"], None],
+        from_: tp.Union[str, eth_account.signers.local.LocalAccount],
+        to: tp.Optional[tp.Union[str, eth_account.signers.local.LocalAccount]],
+        value: tp.Union[int, float, Decimal, str, None],
+        nonce: tp.Union[int, tp.Literal["auto"], None],
+        data: tp.Union[str, bytes, None],
+        access_list: tp.Union[tp.List[web3.types.AccessListEntry], None],
+        gas: tp.Union[int, tp.Literal["auto"], None],
+        max_priority_fee_per_gas: tp.Union[int, tp.Literal["auto"], None],
+        max_fee_per_gas: tp.Union[int, tp.Literal["auto"], None],
+        base_fee_multiplier: float = 1.1,
     ) -> web3.types.TxParams:
-
         # Handle addresses
         if isinstance(from_, eth_account.signers.local.LocalAccount):
             from_ = from_.address
@@ -493,21 +492,20 @@ class Web3Client:
 
     @allure.step("Send tokens under EIP-1559")
     def send_tokens_eip_1559(
-            self,
-            *,
-            from_: eth_account.signers.local.LocalAccount,
-            to: tp.Union[str, eth_account.signers.local.LocalAccount],
-            value: tp.Union[int, float, Decimal, str, None],
-            chain_id: tp.Union[int, tp.Literal["auto"], None] = "auto",
-            nonce: tp.Union[int, tp.Literal["auto"], None] = "auto",
-            gas: tp.Union[int, tp.Literal["auto"], None] = "auto",
-            max_priority_fee_per_gas: tp.Union[int, tp.Literal["auto"], None] = "auto",
-            max_fee_per_gas: tp.Union[int, tp.Literal["auto"], None] = "auto",
-            base_fee_multiplier: float = 1.1,
-            access_list: tp.Optional[tp.List[web3.types.AccessListEntry]] = None,
-            timeout: int = 120,
+        self,
+        *,
+        from_: eth_account.signers.local.LocalAccount,
+        to: tp.Union[str, eth_account.signers.local.LocalAccount],
+        value: tp.Union[int, float, Decimal, str, None],
+        chain_id: tp.Union[int, tp.Literal["auto"], None] = "auto",
+        nonce: tp.Union[int, tp.Literal["auto"], None] = "auto",
+        gas: tp.Union[int, tp.Literal["auto"], None] = "auto",
+        max_priority_fee_per_gas: tp.Union[int, tp.Literal["auto"], None] = "auto",
+        max_fee_per_gas: tp.Union[int, tp.Literal["auto"], None] = "auto",
+        base_fee_multiplier: float = 1.1,
+        access_list: tp.Optional[tp.List[web3.types.AccessListEntry]] = None,
+        timeout: int = 120,
     ) -> web3.types.TxReceipt:
-
         tx_params = self.make_raw_tx_eip_1559(
             chain_id=chain_id,
             from_=from_.address,

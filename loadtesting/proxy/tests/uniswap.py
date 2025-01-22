@@ -150,7 +150,6 @@ def deploy_uniswap(environment: "locust.env.Environment", **kwargs):
     environment.uniswap.update(erc20_contracts)
 
 
-
 @tag("uniswap")
 class UniswapTransaction(NeonProxyTasksSet):
     def on_start(self) -> None:

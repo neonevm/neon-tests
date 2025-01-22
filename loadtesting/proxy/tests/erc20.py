@@ -51,9 +51,7 @@ class ERC20TasksSet(NeonProxyTasksSet):
         contract_address = random.choice(list(contracts.keys()))
         erc20 = contracts[contract_address]["contract"]
         if contracts[contract_address]["amount"] < 1:
-            self.log.info(
-                f"low balance on contract: {contracts[contract_address]}, skip transfer"
-            )
+            self.log.info(f"low balance on contract: {contracts[contract_address]}, skip transfer")
             del contracts[contract_address]
             return
 
@@ -74,24 +72,16 @@ class ERC20TasksSet(NeonProxyTasksSet):
             if not recipient_contract:
                 recipient_contract.update({"contract": erc20, "amount": 0})
             recipient_contract["amount"] += 1
-            self._buffer.setdefault(recipient.address, {}).update(
-                {erc20.contract.address: recipient_contract}
-            )
+            self._buffer.setdefault(recipient.address, {}).update({erc20.contract.address: recipient_contract})
             tx_receipt["contract"] = {"address": erc20.contract.address}
         return tx_receipt, self.web3_client.get_nonce(self.account)
 
 
 @events.test_start.add_listener
 def prepare_one_contract_for_erc20(environment: "locust.env.Environment", **kwargs):
-    if (
-        environment.parsed_options.exclude_tags
-        and "erc20one" in environment.parsed_options.exclude_tags
-    ):
+    if environment.parsed_options.exclude_tags and "erc20one" in environment.parsed_options.exclude_tags:
         return
-    if (
-        environment.parsed_options.tags
-        and "erc20one" not in environment.parsed_options.tags
-    ):
+    if environment.parsed_options.tags and "erc20one" not in environment.parsed_options.tags:
         return
 
     neon_client = NeonChainWeb3Client(environment.credentials["proxy_url"])
@@ -137,9 +127,7 @@ class ERC20OneContractTasksSet(NeonProxyTasksSet):
         """Send ERC20 tokens"""
         contract = self.user.environment.erc20_one["contract"]
         recipient = self.get_account()
-        LOG.info(
-            f"Send erc20 token from {self.account.address[:8]} to {recipient.address[:8]}"
-        )
+        LOG.info(f"Send erc20 token from {self.account.address[:8]} to {recipient.address[:8]}")
         contract.transfer(self.account, recipient, 1)
 
 

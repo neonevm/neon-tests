@@ -1,22 +1,30 @@
-from typing import Union
+from typing import Union, Optional
 
+import pytest
 from Crypto.Hash import keccak
 from solders.pubkey import Pubkey
 from web3.auto import w3
 
-from utils.evm_loader import CHAIN_ID, EvmLoader
+from conftest import EnvironmentConfig
+from utils.evm_loader import EvmLoader
+
 from utils.types import Caller, Contract
 from .eth_tx_utils import pack
 
 
-def create_contract_address(user: Union[Caller, bytes], evm_loader: EvmLoader, chain_id=CHAIN_ID) -> Contract:
+def create_contract_address(
+    user: Union[Caller, bytes],
+    evm_loader: EvmLoader,
+    chain_id: int | str | None = "",
+) -> Contract:
+    if chain_id == "":
+        chain_id = evm_loader.chain_id
+
     # Create contract address from (caller_address, nonce)
     if isinstance(user, Caller):
         user = user.eth_address
     user_nonce = evm_loader.get_neon_nonce(user, chain_id)
-    contract_eth_address = (
-        keccak.new(digest_bits=256).update(pack([user, user_nonce or None])).digest()[-20:]
-    )
+    contract_eth_address = keccak.new(digest_bits=256).update(pack([user, user_nonce or None])).digest()[-20:]
 
     contract_solana_address, _ = evm_loader.ether2program(contract_eth_address)
     contract_neon_address = evm_loader.ether2balance(contract_eth_address, chain_id)
@@ -32,14 +40,16 @@ def make_eth_transaction(
     data: Union[bytes, None],
     caller: Caller,
     value: int = 0,
-    chain_id=CHAIN_ID,
+    chain_id: int | str | None = "",
     gas=9999999999,
     max_priority_fee_per_gas=None,
     max_fee_per_gas=None,
     access_list=None,
     type_=None,
-    gas_price=0
+    gas_price=0,
 ):
+    if chain_id == "":
+        chain_id = evm_loader.chain_id
 
     nonce = evm_loader.get_neon_nonce(caller.eth_address)
     tx = {"to": to_addr, "value": value, "gas": gas, "gasPrice": gas_price, "nonce": nonce}

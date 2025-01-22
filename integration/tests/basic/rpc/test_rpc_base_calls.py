@@ -78,7 +78,6 @@ UNSUPPORTED_METHODS = [
 ]
 
 
-
 @allure.feature("JSON-RPC validation")
 @allure.story("Verify JSON-RPC proxy calls work")
 @pytest.mark.usefixtures("accounts", "web3_client")
@@ -251,9 +250,9 @@ class TestRpcBaseCalls:
     @pytest.mark.mainnet
     def test_eth_block_number_next_block_different(self, json_rpc_client):
         response = json_rpc_client.send_rpc(method="eth_blockNumber")
-        assert wait_condition(lambda: json_rpc_client.send_rpc(
-            method="eth_blockNumber")["result"] != response["result"], timeout_sec=10)
-
+        assert wait_condition(
+            lambda: json_rpc_client.send_rpc(method="eth_blockNumber")["result"] != response["result"], timeout_sec=10
+        )
 
     # Geth returns different error message for None NDEV-3169
     @pytest.mark.mainnet

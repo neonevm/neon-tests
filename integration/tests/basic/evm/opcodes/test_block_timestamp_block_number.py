@@ -19,9 +19,7 @@ class TestBlockTimestampAndNumber:
     def test_block_timestamp_call(self, block_timestamp_contract, json_rpc_client):
         contract, _ = block_timestamp_contract
         last_block = json_rpc_client.send_rpc("eth_blockNumber", [])["result"]
-        current_timestamp = json_rpc_client.send_rpc("eth_getBlockByNumber", [last_block, False])["result"][
-            "timestamp"
-        ]
+        current_timestamp = json_rpc_client.send_rpc("eth_getBlockByNumber", [last_block, False])["result"]["timestamp"]
         assert contract.functions.getBlockTimestamp().call() >= int(current_timestamp, 16)
 
     def test_block_timestamp_simple_trx(self, block_timestamp_contract, json_rpc_client):

@@ -50,7 +50,7 @@ class TestMainPage:
         main_page.input_email()
         main_page.click_subscribe_button()
         main_page.check_successfully_subscription_text()
-        main_page.close_subscription_window()
+        main_page.close_subscription_text()
         main_page.click_subscribe_button()
 
     def test_check_twitter_page(self, main_page):

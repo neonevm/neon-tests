@@ -26,7 +26,7 @@ class MainPage(BasePage):
     email_input_field = (By.XPATH, "//input")
     subscribe_button = (By.XPATH, "//button/span[text()='subscribe']")
     subscription_text = (By.XPATH, "//h4[contains(text(), 'You have been')]")
-    close_subscription_window = (By.XPATH, "//*[name()='svg'][contains(@class,'cursor-pointer')][2]")
+    close_subscription_window = (By.XPATH, "//*[@class='w-full']//*[name()='svg'][contains(@class,'cursor-pointer')]")
 
     twitter_icon = (By.XPATH, "//a[@title='twitter']")
     githib_icon = (By.XPATH, "//a[@title='github']")
@@ -70,12 +70,13 @@ class MainPage(BasePage):
 
     def check_successfully_subscription_text(self):
         self.wait.until(EC.presence_of_element_located(MainPage.subscription_text)).is_displayed()
-        time.sleep(3)
 
     def close_subscription_text(self):
-        element = self.driver.find_element(By.XPATH, "//span[contains(.,'All rights')]")
-        self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
-        self.wait.until(EC.presence_of_element_located(MainPage.close_subscription_window)).click()
+        #self.wait.until(EC.presence_of_element_located(MainPage.close_subscription_window)).click()
+        el = self.driver.find_element(By.XPATH, "//span[contains(.,'All rights')]")
+        self.driver.execute_script("arguments[0].scrollIntoView(true);", el)
+        element = self.wait.until(EC.presence_of_element_located(MainPage.close_subscription_window))
+        element.click()
 
     def click_social_network_icon(self, icon_name):
         self.wait.until(EC.visibility_of_element_located(icon_name)).click()

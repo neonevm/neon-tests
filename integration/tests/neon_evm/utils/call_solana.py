@@ -2,9 +2,7 @@ import eth_abi
 from eth_utils import keccak
 from solders.pubkey import Pubkey
 
-from integration.tests.conftest import environment
-from integration.tests.neon_evm.utils.contract import deploy_contract, make_contract_call_trx
-from integration.tests.neon_evm.utils.ethereum import make_eth_transaction
+from integration.tests.neon_evm.utils.ethereum import make_eth_transaction, make_contract_call_trx
 from integration.tests.neon_evm.utils.transaction_checks import check_transaction_logs_have_text
 from utils.consts import SOLANA_CALL_PRECOMPILED_ID
 from utils.helpers import bytes32_to_solana_pubkey, serialize_instruction
@@ -29,14 +27,12 @@ class SolanaCaller:
         self.holder_acc = holder_acc
         self.neon_api_client = neon_api_client
         self.solana_client = solana_client
-        self.contract = deploy_contract(
+        self.contract = evm_loader.deploy_contract(
             operator=operator_keypair,
             user=owner,
             contract_file_name="precompiled/CallSolanaCaller",
-            evm_loader=evm_loader,
             neon_api_client=neon_api_client,
             treasury_pool=treasury_pool,
-            solana_client=solana_client,
             version="0.8.10",
         )
 

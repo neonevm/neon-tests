@@ -7,7 +7,6 @@ from solders.pubkey import Pubkey
 from integration.tests.neon_evm.utils.assert_messages import InstructionAsserts
 from integration.tests.neon_evm.utils.contract import get_contract_bin
 from integration.tests.neon_evm.utils.ethereum import create_contract_address
-from integration.tests.neon_evm.utils.storage import create_holder
 
 from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData
 from utils.types import Contract
@@ -58,7 +57,7 @@ class TestMultipleScheduledTrx:
 
         evm_loader.finish_scheduled_trx(operator_keypair, tree_account, holder_acc)
 
-        holder_acc2 = create_holder(operator_keypair, evm_loader)
+        holder_acc2 = evm_loader.create_holder(operator_keypair)
         evm_loader.execute_scheduled_trx_from_instruction(
             tx1, operator_keypair, holder_acc2, tree_account, treasury_pool, additional_accounts
         )

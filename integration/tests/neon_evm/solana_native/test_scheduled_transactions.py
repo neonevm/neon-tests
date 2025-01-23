@@ -7,9 +7,7 @@ from solana.rpc.core import RPCException
 from solders.pubkey import Pubkey
 
 from integration.tests.neon_evm.utils.assert_messages import InstructionAsserts
-from integration.tests.neon_evm.utils.contract import deploy_contract
 from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
-from integration.tests.neon_evm.utils.storage import create_holder
 from utils.consts import LAMPORT_PER_SOL
 from utils.neon_user import NeonUser
 from utils.scheduled_trx import ScheduledTransaction
@@ -27,7 +25,7 @@ class TestScheduledTrx:
         operator_keypair,
         environment,
     ):
-        holder_acc = create_holder(operator_keypair, evm_loader)
+        holder_acc = evm_loader.create_holder(operator_keypair)
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, evm_loader.sol_chain_id)
         contract_data = 18
         data = abi.function_signature_to_4byte_selector("setNumber(uint256)") + eth_abi.encode(
@@ -65,7 +63,7 @@ class TestScheduledTrx:
         operator_keypair,
         environment,
     ):
-        holder_acc = create_holder(operator_keypair, evm_loader)
+        holder_acc = evm_loader.create_holder(operator_keypair)
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, environment.network_ids["sol"])
         contract_data = 18
         data = abi.function_signature_to_4byte_selector("setNumber(uint256)") + eth_abi.encode(
@@ -129,16 +127,13 @@ class TestScheduledTrx:
         operator_keypair,
         sender_with_wsol,
         environment,
-        sol_client,
     ):
-        contract = deploy_contract(
+        contract = evm_loader.deploy_contract(
             operator_keypair,
             sender_with_wsol,
             "transfers",
-            evm_loader,
             neon_api_client,
             treasury_pool,
-            sol_client,
             chain_id=evm_loader.sol_chain_id,
         )
 
@@ -168,17 +163,14 @@ class TestScheduledTrx:
         operator_keypair,
         sender_with_wsol,
         environment,
-        sol_client,
         neon_api_client,
     ):
-        contract = deploy_contract(
+        contract = evm_loader.deploy_contract(
             operator_keypair,
             sender_with_wsol,
             "transfers",
-            evm_loader,
             neon_api_client,
             treasury_pool,
-            sol_client,
             chain_id=evm_loader.sol_chain_id,
         )
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, evm_loader.sol_chain_id)
@@ -209,16 +201,13 @@ class TestScheduledTrx:
         second_operator_keypair,
         sender_with_wsol,
         environment,
-        sol_client,
     ):
-        contract = deploy_contract(
+        contract = evm_loader.deploy_contract(
             second_operator_keypair,
             sender_with_wsol,
             "transfers",
-            evm_loader,
             neon_api_client,
             treasury_pool_new,
-            sol_client,
             chain_id=evm_loader.sol_chain_id,
         )
 
@@ -227,7 +216,7 @@ class TestScheduledTrx:
             "0x" + neon_user.neon_address.hex(),
             int(1 * LAMPORT_PER_SOL),
         )
-        holder_acc = create_holder(second_operator_keypair, evm_loader)
+        holder_acc = evm_loader.create_holder(second_operator_keypair)
         nonce = evm_loader.get_neon_nonce(account=neon_user.neon_address, chain_id=evm_loader.sol_chain_id)
         data = abi.function_signature_to_4byte_selector("donate1000()")
         amount = 10000

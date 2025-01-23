@@ -8,8 +8,8 @@ from eth_utils import to_text
 
 from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from .utils.constants import TAG_FINALIZED_STATE
-from .utils.contract import make_deployment_transaction, make_contract_call_trx
-from .utils.ethereum import make_eth_transaction, create_contract_address
+from .utils.ethereum import make_eth_transaction, create_contract_address, make_contract_call_trx, \
+    make_deployment_transaction
 from .utils.transaction_checks import check_holder_account_tag, check_transaction_logs_have_text
 
 

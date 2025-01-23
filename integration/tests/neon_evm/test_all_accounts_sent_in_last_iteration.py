@@ -1,7 +1,7 @@
 from solders.pubkey import Pubkey
 
 from integration.tests.neon_evm.utils.constants import TAG_FINALIZED_STATE
-from integration.tests.neon_evm.utils.contract import make_contract_call_trx, deploy_contract
+from integration.tests.neon_evm.utils.ethereum import make_contract_call_trx
 from integration.tests.neon_evm.utils.transaction_checks import check_holder_account_tag, \
     check_transaction_logs_have_text
 from utils.evm_loader import EVM_STEPS
@@ -22,14 +22,12 @@ class TestAccInLastIteration:
         sol_client
     ):
 
-        contract: Contract = deploy_contract(
+        contract: Contract = evm_loader.deploy_contract(
             operator=operator_keypair,
             user=user_account,
             contract_file_name="neon_evm/out_of_contract_scope.sol",
-            evm_loader=evm_loader,
             neon_api_client=neon_api_client,
             treasury_pool=treasury_pool,
-            solana_client=sol_client,
             contract_name="SaveNumber",
             version="0.8.12"
         )

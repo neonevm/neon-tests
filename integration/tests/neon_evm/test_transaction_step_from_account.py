@@ -20,13 +20,9 @@ from utils.types import TreasuryPool
 
 from .utils.assert_messages import InstructionAsserts
 from .utils.constants import TAG_ACTIVE_STATE, TAG_FINALIZED_STATE
-from .utils.contract import (
-    deploy_contract,
-    make_contract_call_trx,
-    make_deployment_transaction,
-)
-from .utils.ethereum import create_contract_address, make_eth_transaction
-from .utils.storage import create_holder
+
+from .utils.ethereum import create_contract_address, make_eth_transaction, make_contract_call_trx, \
+    make_deployment_transaction
 from .utils.transaction_checks import (
     check_holder_account_tag,
     check_transaction_logs_have_text,
@@ -492,7 +488,6 @@ class TestTransactionStepFromAccount:
         evm_loader,
         calculator_contract,
         calculator_caller_contract,
-       sol_client,
     ):
         access_list = (
             {
@@ -521,12 +516,12 @@ class TestTransactionStepFromAccount:
         )
 
         check_holder_account_tag(
-            solana_client=sol_client,
+            solana_client=evm_loader,
             storage_account=holder_acc,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_FINALIZED_STATE,
         )
-        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x12")
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x12")
 
     @pytest.mark.parametrize("access_list", generate_access_lists())
     def test_access_list_structure(
@@ -758,7 +753,7 @@ class TestTransactionStepFromAccountParallelRuns:
         operator_keypair,
         treasury_pool,
         new_holder_acc,
-       sol_client,
+        sol_client,
     ):
         signed_tx = make_contract_call_trx(
             evm_loader, user_account, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1]
@@ -780,7 +775,7 @@ class TestTransactionStepFromAccountParallelRuns:
         send_transaction_steps(new_holder_acc, rw_lock_contract)
 
         signed_tx2 = make_contract_call_trx(evm_loader, user_account, string_setter_contract, "get()")
-        holder_acc2 = create_holder(operator_keypair, evm_loader)
+        holder_acc2 = evm_loader.create_holder(operator_keypair)
         evm_loader.write_transaction_to_holder_account(signed_tx2, holder_acc2, operator_keypair)
 
         send_transaction_steps(holder_acc2, string_setter_contract)
@@ -828,7 +823,7 @@ class TestTransactionStepFromAccountParallelRuns:
         signed_tx2 = make_contract_call_trx(
             evm_loader, session_user, rw_lock_contract, "unchange_storage(uint8,uint8)", [2, 2]
         )
-        holder_acc2 = create_holder(operator_keypair, evm_loader)
+        holder_acc2 = evm_loader.create_holder(operator_keypair)
         evm_loader.write_transaction_to_holder_account(signed_tx2, holder_acc2, operator_keypair)
 
         def send_transaction_steps(user, holder_acc):
@@ -866,30 +861,25 @@ class TestTransactionStepFromAccountParallelRuns:
         operator_keypair,
         treasury_pool,
         new_holder_acc,
-        sol_client,
         neon_api_client,
     ):
         constructor_args = eth_abi.encode(["address"], [rw_lock_contract.eth_address.hex()])
 
-        contract1 = deploy_contract(
+        contract1 = evm_loader.deploy_contract(
             operator_keypair,
             session_user,
             "rw_lock",
-            evm_loader,
             neon_api_client,
             treasury_pool,
-            sol_client,
             encoded_args=constructor_args,
             contract_name="rw_lock_caller",
         )
-        contract2 = deploy_contract(
+        contract2 = evm_loader.deploy_contract(
             operator_keypair,
             session_user,
             "rw_lock",
-            evm_loader,
             neon_api_client,
             treasury_pool,
-            sol_client,
             encoded_args=constructor_args,
             contract_name="rw_lock_caller",
         )
@@ -917,7 +907,7 @@ class TestTransactionStepFromAccountParallelRuns:
                 operator_keypair,
             )
 
-        holder_acc2 = create_holder(operator_keypair, evm_loader)
+        holder_acc2 = evm_loader.create_holder(operator_keypair)
         evm_loader.write_transaction_to_holder_account(signed_tx2, holder_acc2, operator_keypair)
 
         send_transaction_steps(user_account, new_holder_acc, contract1)
@@ -940,7 +930,7 @@ class TestTransactionStepFromAccountParallelRuns:
 
         for holder_acc in (new_holder_acc, holder_acc2):
             check_holder_account_tag(
-                solana_client=sol_client,
+                solana_client=evm_loader,
                 storage_account=holder_acc,
                 layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
                 expected_tag=TAG_FINALIZED_STATE,
@@ -1020,15 +1010,13 @@ class TestTransactionStepFromAccountParallelRuns:
         """
         This test repeats the proxy's logic of reemulation with account info overrides and block overrides.
         """
-        holder = create_holder(operator_keypair, evm_loader)
-        contract = deploy_contract(
+        holder = evm_loader.create_holder(operator_keypair)
+        contract = evm_loader.deploy_contract(
             operator_keypair,
             sender_with_tokens,
             "common/Block.sol",
-            evm_loader,
             neon_api_client,
             treasury_pool,
-            sol_client,
             contract_name=name,
             version="0.8.10",
         )

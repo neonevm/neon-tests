@@ -510,6 +510,16 @@ def make_ScheduledTransactionSkipFromInstruction(
     ]
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 
+def make_DeleteHolderAccount(signer:Pubkey, holder_account:Pubkey, evm_loader_id):
+    return Instruction(
+        program_id=evm_loader_id,
+        data=bytes.fromhex("25"),
+        accounts=[
+            AccountMeta(pubkey=holder_account, is_signer=False, is_writable=True),
+            AccountMeta(pubkey=signer, is_signer=True, is_writable=True),
+        ],
+    )
+
 
 def get_compute_unit_price_eip_1559(
     gas_price: int,

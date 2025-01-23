@@ -2,7 +2,7 @@ import pytest
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 
-from integration.tests.neon_evm.utils.contract import deploy_contract, make_contract_call_trx
+from integration.tests.neon_evm.utils.ethereum import make_contract_call_trx
 from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
 from utils.evm_loader import EvmLoader
 from utils.solana_client import SolanaClient
@@ -26,18 +26,15 @@ class TestStorageCells:
         treasury_pool: TreasuryPool,
         neon_api_client: NeonApiClient,
         holder_acc: Pubkey,
-        sol_client: SolanaClient,
         function_signature: str
     ):
         # Deploy the contract
-        contract: Contract = deploy_contract(
+        contract: Contract = evm_loader.deploy_contract(
             operator=operator_keypair,
             user=user_account,
             contract_file_name="neon_evm/store_zeros.sol",
-            evm_loader=evm_loader,
             neon_api_client=neon_api_client,
             treasury_pool=treasury_pool,
-            solana_client=sol_client,
             contract_name="saveZeros",
             version="0.8.12",
         )

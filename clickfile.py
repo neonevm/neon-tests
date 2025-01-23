@@ -84,8 +84,6 @@ GITHUB_TAG_PATTERN = re.compile(r"^[vt]\d{1,2}\.\d{1,2}\.\d{1,2}$")
 
 TEST_GROUPS: tp.Tuple[TestGroup, ...] = tp.get_args(TestGroup)
 
-network_manager = NetworkManager()
-
 
 class EnvName(str, enum.Enum):
     NIGHT_STAND = "night-stand"
@@ -149,6 +147,7 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> None:
+        network_manager = NetworkManager()
         network = network_manager.get_network_object(args[0])
         w3client = web3client.NeonChainWeb3Client(network["proxy_url"])
 
@@ -198,6 +197,7 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
 @check_profitability
 def run_openzeppelin_tests(network, jobs=8, amount=20000, users=8):
     print(f"Running OpenZeppelin tests in {jobs} jobs on {network}")
+    network_manager = NetworkManager()
     cwd = (Path().parent / "compatibility/openzeppelin-contracts").absolute()
     if not list(cwd.glob("*")):
         subprocess.check_call("git submodule init && git submodule update", shell=True, cwd=cwd)
@@ -363,6 +363,7 @@ def print_oz_balances():
 
 
 def wait_for_tracer_service(network: str):
+    network_manager = NetworkManager()
     settings = network_manager.get_network_object(network)
     web3_client = web3client.NeonChainWeb3Client(proxy_url=settings["proxy_url"])
     tracer_api = JsonRPCSession(settings["tracer_url"])
@@ -378,6 +379,7 @@ def wait_for_tracer_service(network: str):
 
 
 def generate_allure_environment(network_name: str):
+    network_manager = NetworkManager()
     network = network_manager.get_network_object(network_name)
     env = os.environ.copy()
 
@@ -971,6 +973,7 @@ def send_notification(url, build_url, network, test_group: str):
 @cli.command(name="get-balances", help="Get operator balances in NEON and SOL")
 @click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
 def get_operator_balances(network: str):
+    network_manager = NetworkManager()
     net = network_manager.get_network_object(network)
     operator = Operator(net["proxy_url"], net["solana_url"], net["spl_neon_mint"], evm_loader=net["evm_loader"])
     neon_balance = operator.get_token_balance()
@@ -1307,6 +1310,7 @@ def build(tag):
 @click.option("-a", "--bank_account", default="", required=False, help="Eth bank account private key")
 @catch_traceback
 def run(network, script, users, balance, bank_account):
+    network_manager = NetworkManager()
     network_object = network_manager.get_network_object(network)
     web3_client = NeonChainWeb3Client(proxy_url=network_object["proxy_url"])
     faucet = Faucet(faucet_url=network_object["faucet_url"], web3_client=web3_client)

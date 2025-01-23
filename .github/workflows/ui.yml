@@ -16,11 +16,11 @@ env:
 jobs:
   dockerize:
     name: Dockerize neon tests
-    if: ${{ github.ref_name != 'develop' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Dockerize neon tests
+        if: ${{ github.ref_name != 'develop' }}
         uses: ./.github/actions/dockerize-neon-tests
         with:
           image_tag: ${{ github.sha }}
@@ -37,10 +37,6 @@ jobs:
   test:
     needs: dockerize
     runs-on: ubuntu-latest
-    if: |
-      always() &&
-      !contains(needs.*.result, 'failure') &&
-      !contains(needs.*.result, 'cancelled')
 
     steps:
       - name: Checkout repository

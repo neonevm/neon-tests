@@ -75,14 +75,8 @@ class MainPage(BasePage):
         email_field = self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field))
         email_field.send_keys(MainPage.email)
 
-    def click_subscribe_button(self):
-        self.wait.until(EC.presence_of_element_located(MainPage.subscribe_button)).click()
-
     def check_already_subscribed_text(self):
         self.wait.until(EC.presence_of_element_located(MainPage.subscription_notification_text)).is_displayed()
-
-    def click_social_network_icon(self, icon_name):
-        self.wait.until(EC.visibility_of_element_located(icon_name)).click()
 
     def click_ask_me_later_button(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.ask_me_later_button)).click()
@@ -101,18 +95,6 @@ class MainPage(BasePage):
 
     def click_social_network_icon(self, icon_name):
         self.wait.until(EC.visibility_of_element_located(icon_name)).click()
-
-    def click_ask_me_later_button(self):
-        self.wait.until(EC.visibility_of_element_located(MainPage.ask_me_later_button)).click()
-
-    def click_accept_button(self):
-        self.wait.until(EC.visibility_of_element_located(MainPage.accept_button)).click()
-
-    def assert_cookie_banner_is_invisible(self):
-        self.wait.until(EC.invisibility_of_element(MainPage.cookie_banner))
-
-    def assert_cookie_banner_is_visible(self):
-        self.wait.until(EC.visibility_of_element_located(MainPage.cookie_banner)).is_displayed()
 
     def click_terms_of_use_link(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.terms_of_use_link)).click()

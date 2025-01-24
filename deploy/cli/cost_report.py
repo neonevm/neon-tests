@@ -7,13 +7,14 @@ from collections import Counter
 
 import pandas as pd
 
-from deploy.cli.dapps import NETWORK_MANAGER
 from deploy.cli.infrastructure import get_solana_accounts_transactions_compute_units
+from deploy.cli.network_manager import NetworkManager
 from utils.web3client import NeonChainWeb3Client
 
 
 def prepare_report_data(directory: str) -> pd.DataFrame:
-    proxy_url = NETWORK_MANAGER.get_network_param(os.environ.get("NETWORK"), "proxy_url")
+    network_manager = NetworkManager(os.environ.get("NETWORK"))
+    proxy_url = network_manager.get_network_param(os.environ.get("NETWORK"), "proxy_url")
     web3_client = NeonChainWeb3Client(proxy_url)
 
     reports = {}

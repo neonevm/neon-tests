@@ -15,11 +15,10 @@ from utils.consts import OPERATOR_KEYPAIR_PATH
 from utils.solana_client import SolanaClient
 from utils.evm_loader import EvmLoader
 from utils.types import Contract, Caller, TreasuryPool
+from .utils.ethereum import make_contract_call_trx
 
 from .utils.neon_api_client import NeonApiClient
-from .utils.contract import deploy_contract, make_contract_call_trx
 from .utils.neon_api_rpc_client import NeonApiRpcClient
-from .utils.storage import create_holder
 from .utils.transaction_checks import check_transaction_logs_have_text
 
 
@@ -111,7 +110,6 @@ def sender_with_wsol(evm_loader: EvmLoader, operator_keypair: Keypair) -> Caller
     evm_loader.deposit_wrapped_sol_from_solana_to_neon(
         solana_account=user.solana_account,
         neon_account="0x" + user.eth_address.hex(),
-        chain_id=evm_loader.sol_chain_id,
         full_amount=100000,
     )
 
@@ -120,12 +118,12 @@ def sender_with_wsol(evm_loader: EvmLoader, operator_keypair: Keypair) -> Caller
 
 @pytest.fixture(scope="session")
 def holder_acc(operator_keypair: Keypair, evm_loader: EvmLoader) -> Pubkey:
-    return create_holder(operator_keypair, evm_loader)
+    return evm_loader.create_holder(operator_keypair)
 
 
 @pytest.fixture(scope="function")
 def new_holder_acc(operator_keypair: Keypair, evm_loader: EvmLoader) -> Pubkey:
-    return create_holder(operator_keypair, evm_loader)
+    return evm_loader.create_holder(operator_keypair)
 
 
 @pytest.fixture(scope="function")
@@ -134,11 +132,10 @@ def rw_lock_contract(
     operator_keypair: Keypair,
     neon_api_client: NeonApiClient,
     session_user: Caller,
-    treasury_pool: TreasuryPool,
-    solana_client: SolanaClient,
+    treasury_pool: TreasuryPool
 ) -> Contract:
-    return deploy_contract(
-        operator_keypair, session_user, "rw_lock", evm_loader, neon_api_client, treasury_pool, solana_client
+    return evm_loader.deploy_contract(
+        operator_keypair, session_user, "rw_lock", neon_api_client, treasury_pool
     )
 
 
@@ -150,10 +147,9 @@ def store_zeros_contract(
     treasury_pool: TreasuryPool,
     rw_lock_contract: Contract,
     neon_api_client: NeonApiClient,
-    sol_client: SolanaClient,
 ) -> Contract:
-    return deploy_contract(
-        operator_keypair, session_user, "store_zeros", evm_loader, neon_api_client, treasury_pool, sol_client
+    return evm_loader.deploy_contract(
+        operator_keypair, session_user, "store_zeros", neon_api_client, treasury_pool
     )
 
 
@@ -164,18 +160,15 @@ def rw_lock_caller(
     session_user: Caller,
     treasury_pool: TreasuryPool,
     rw_lock_contract: Contract,
-    neon_api_client: NeonApiClient,
-    sol_client: SolanaClient,
+    neon_api_client: NeonApiClient
 ) -> Contract:
     constructor_args = eth_abi.encode(["address"], [rw_lock_contract.eth_address.hex()])
-    return deploy_contract(
+    return evm_loader.deploy_contract(
         operator_keypair,
         session_user,
         "rw_lock",
-        evm_loader,
         neon_api_client,
         treasury_pool,
-        sol_client,
         encoded_args=constructor_args,
         contract_name="rw_lock_caller",
     )
@@ -188,10 +181,9 @@ def string_setter_contract(
     session_user: Caller,
     treasury_pool: TreasuryPool,
     neon_api_client: NeonApiClient,
-    sol_client: SolanaClient,
 ) -> Contract:
-    return deploy_contract(
-        operator_keypair, session_user, "string_setter", evm_loader, neon_api_client, treasury_pool, sol_client
+    return evm_loader.deploy_contract(
+        operator_keypair, session_user, "string_setter", neon_api_client, treasury_pool
     )
 
 
@@ -201,33 +193,28 @@ def basic_contract(
     operator_keypair: Keypair,
     session_user: Caller,
     treasury_pool: TreasuryPool,
-    neon_api_client: NeonApiClient,
-    sol_client: SolanaClient,
+    neon_api_client: NeonApiClient
 ) -> Contract:
-    return deploy_contract(
+    return evm_loader.deploy_contract(
         operator_keypair,
         session_user,
         "common/Common",
-        evm_loader,
         neon_api_client,
         treasury_pool,
-        sol_client,
         version="0.8.12",
     )
 
 
 @pytest.fixture(scope="function")
 def spl_token_caller(
-    operator_keypair, evm_loader, sol_client, session_user, treasury_pool, neon_api_client
+    operator_keypair, evm_loader, session_user, treasury_pool, neon_api_client
 ) -> Contract:
-    return deploy_contract(
+    return evm_loader.deploy_contract(
         operator_keypair,
         session_user,
         "precompiled/SplTokenCaller",
-        evm_loader,
         neon_api_client,
         treasury_pool,
-        sol_client,
         version="0.8.12",
     )
 
@@ -238,17 +225,14 @@ def calculator_contract(
     neon_api_client: NeonApiClient,
     operator_keypair: Keypair,
     session_user: Caller,
-    treasury_pool: TreasuryPool,
-    solana_client: SolanaClient,
+    treasury_pool: TreasuryPool
 ) -> Contract:
-    return deploy_contract(
+    return evm_loader.deploy_contract(
         operator_keypair,
         session_user,
         "calculator",
-        evm_loader,
         neon_api_client,
-        treasury_pool,
-        solana_client=solana_client,
+        treasury_pool
     )
 
 
@@ -259,19 +243,16 @@ def calculator_caller_contract(
     session_user: Caller,
     treasury_pool,
     calculator_contract,
-    solana_client: SolanaClient,
     neon_api_client: NeonApiClient,
 ) -> Contract:
     constructor_args = eth_abi.encode(["address"], [calculator_contract.eth_address.hex()])
 
-    return deploy_contract(
+    return evm_loader.deploy_contract(
         operator_keypair,
         session_user,
         "calculator",
-        evm_loader,
         neon_api_client,
         treasury_pool,
-        solana_client=solana_client,
         encoded_args=constructor_args,
         contract_name="calculatorCaller",
     )
@@ -284,17 +265,14 @@ def erc20_for_spl_factory_contract(
     sender_with_tokens,
     treasury_pool,
     neon_api_client,
-    holder_acc,
-    solana_client: SolanaClient,
+    holder_acc
 ):
-    return deploy_contract(
+    return evm_loader.deploy_contract(
         operator_keypair,
         sender_with_tokens,
         "external/neon-evm/erc20_for_spl_factory",
-        evm_loader,
         neon_api_client,
         treasury_pool,
-        solana_client,
         contract_name="ERC20ForSplFactory",
         version="0.8.24",
     )

@@ -20,13 +20,9 @@ from utils.instructions import (
 )
 from utils.layouts import HOLDER_ACCOUNT_INFO_LAYOUT
 
-
 from .utils.assert_messages import InstructionAsserts
-from .utils.contract import make_deployment_transaction, make_contract_call_trx
-from .utils.ethereum import make_eth_transaction
+from .utils.ethereum import make_eth_transaction, make_contract_call_trx, make_deployment_transaction
 
-
-from .utils.storage import create_holder, delete_holder
 from .utils.transaction_checks import check_transaction_logs_have_text
 
 
@@ -38,7 +34,7 @@ def transaction_from_holder(evm_loader: EvmLoader, key: Pubkey):
 
 
 def test_create_holder_account(operator_keypair, evm_loader):
-    holder_acc = create_holder(operator_keypair, evm_loader)
+    holder_acc = evm_loader.create_holder(operator_keypair)
     info = evm_loader.get_account_info(holder_acc, commitment=Confirmed)
     assert info.value is not None, "Holder account is not created"
     assert info.value.lamports == 1000000000, "Account balance is not correct"
@@ -49,7 +45,7 @@ def test_create_the_same_holder_account_by_another_user(operator_keypair, sessio
     storage = Pubkey(
         sha256(bytes(operator_keypair.pubkey()) + bytes(seed, "utf8") + bytes(evm_loader.loader_id)).digest()
     )
-    create_holder(operator_keypair, evm_loader, seed=seed, storage=storage)
+    evm_loader.create_holder(operator_keypair, seed=seed, storage=storage)
 
     trx = Transaction()
     trx.add(
@@ -72,14 +68,14 @@ def test_create_the_same_holder_account_by_another_user(operator_keypair, sessio
 
 
 def test_write_tx_to_holder(operator_keypair, session_user, second_session_user, evm_loader):
-    holder_acc = create_holder(operator_keypair, evm_loader)
+    holder_acc = evm_loader.create_holder(operator_keypair)
     signed_tx = make_eth_transaction(evm_loader, second_session_user.eth_address, None, session_user, 10)
     evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
     assert signed_tx.rawTransaction == transaction_from_holder(evm_loader, holder_acc), "Account data is not correct"
 
 
 def test_write_tx_to_holder_in_parts(operator_keypair, session_user, evm_loader):
-    holder_acc = create_holder(operator_keypair, evm_loader)
+    holder_acc = evm_loader.create_holder(operator_keypair)
 
     signed_tx = make_deployment_transaction(
         evm_loader, session_user, "external/neon-evm/erc20_for_spl_factory", "ERC20ForSplFactory"
@@ -89,7 +85,7 @@ def test_write_tx_to_holder_in_parts(operator_keypair, session_user, evm_loader)
 
 
 def test_write_tx_to_holder_by_no_owner(operator_keypair, session_user, second_session_user, evm_loader):
-    holder_acc = create_holder(operator_keypair, evm_loader)
+    holder_acc = evm_loader.create_holder(operator_keypair)
 
     signed_tx = make_eth_transaction(evm_loader, second_session_user.eth_address, None, session_user, 10)
     with pytest.raises(SolanaRPCException, match="invalid owner"):
@@ -97,19 +93,19 @@ def test_write_tx_to_holder_by_no_owner(operator_keypair, session_user, second_s
 
 
 def test_delete_holder(operator_keypair, evm_loader):
-    holder_acc = create_holder(operator_keypair, evm_loader)
-    delete_holder(holder_acc, operator_keypair, operator_keypair, evm_loader)
+    holder_acc = evm_loader.create_holder(operator_keypair)
+    evm_loader.delete_holder(holder_acc, operator_keypair, operator_keypair)
     info = evm_loader.get_account_info(holder_acc, commitment=Confirmed)
     assert info.value is None, "Holder account isn't deleted"
 
 
 def test_success_refund_after_holder_deleting(operator_keypair, evm_loader):
-    holder_acc = create_holder(operator_keypair, evm_loader)
+    holder_acc = evm_loader.create_holder(operator_keypair)
 
     pre_storage = evm_loader.get_solana_balance(holder_acc)
     pre_acc = evm_loader.get_solana_balance(operator_keypair.pubkey())
 
-    delete_holder(holder_acc, operator_keypair, operator_keypair, evm_loader)
+    evm_loader.delete_holder(holder_acc, operator_keypair, operator_keypair)
 
     post_acc = evm_loader.get_solana_balance(operator_keypair.pubkey())
 
@@ -117,9 +113,9 @@ def test_success_refund_after_holder_deleting(operator_keypair, evm_loader):
 
 
 def test_delete_holder_by_no_owner(operator_keypair, user_account, evm_loader):
-    holder_acc = create_holder(operator_keypair, evm_loader)
+    holder_acc = evm_loader.create_holder(operator_keypair)
     with pytest.raises(SolanaRPCException, match="invalid owner"):
-        delete_holder(holder_acc, user_account.solana_account, user_account.solana_account, evm_loader)
+        evm_loader.delete_holder(holder_acc, user_account.solana_account, user_account.solana_account)
 
 
 def test_write_to_not_finalized_holder(
@@ -255,7 +251,7 @@ def test_temporary_holder_acc_is_free(treasury_pool, sender_with_tokens, evm_loa
 
     signed_tx = make_eth_transaction(evm_loader, sender_with_tokens.eth_address, None, sender_with_tokens, amount)
 
-    holder_acc = create_holder(sender_with_tokens.solana_account, evm_loader, seed=str(randrange(1000000)))
+    holder_acc = evm_loader.create_holder(sender_with_tokens.solana_account, seed=str(randrange(1000000)))
     operator_balance_before = evm_loader.get_solana_balance(user_as_operator.pubkey())
 
     resp = evm_loader.execute_trx_from_instruction(

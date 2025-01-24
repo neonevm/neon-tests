@@ -1,7 +1,17 @@
+from dataclasses import dataclass
+
 import rlp
 from eth_utils import keccak, to_bytes
 from rlp.sedes import big_endian_int, binary, Binary
 import typing as tp
+
+
+@dataclass
+class ScheduledTrxEstimateRequest:
+    from_address: str
+    to_address: str
+    data: bytes
+    value: int = 0
 
 
 class ScheduledTxRLP(rlp.Serializable):
@@ -63,14 +73,31 @@ class ScheduledTransaction:
         for field, default_value in self.DEFAULTS.items():
             setattr(self, field, kwargs.get(field, default_value))
 
+    @classmethod
+    def from_estimate_result(cls, index, estimate_obj: ScheduledTrxEstimateRequest, estimate_result: dict, **kwargs):
+        nonce = int(estimate_result["nonce"], 16)
+        chain_id = int(estimate_result["chainId"], 16)
+        max_fee_per_gas = int(estimate_result["maxFeePerGas"], 16)
+        max_priority_fee_per_gas = int(estimate_result["maxPriorityFeePerGas"], 16)
+        gas_limit = int(estimate_result["gasList"][index], 16)
+        return cls(estimate_obj.from_address,
+                   None,
+                   nonce,
+                   index,
+                   estimate_obj.to_address,
+                   chain_id=chain_id,
+                   gas_limit=gas_limit,
+                   max_fee_per_gas=max_fee_per_gas,
+                   max_priority_fee_per_gas=max_priority_fee_per_gas,
+                   call_data=estimate_obj.data,
+                   value=estimate_obj.value,
+                   **kwargs)
+
     def encode(self):
         tx_data = {field: getattr(self, field) for field in self.FIELD_NAMES}
         tx = ScheduledTxRLP(**tx_data)
         type_byte, sub_type_byte = 0x7F, 0x01
         return bytes([type_byte, sub_type_byte]) + rlp.encode(tx)
-
-    def to_dict(self):
-        return {field: getattr(self, field) for field in self.FIELD_NAMES}
 
     def hash(self):
         return keccak(self.encode())
@@ -96,6 +123,10 @@ class ScheduledTransaction:
 class CreateTreeAccMultipleData:
     def __init__(self, nonce, max_fee_per_gas=3000000000, max_priority_fee_per_gas=2500000000):
         self.nonce = nonce.to_bytes(8, byteorder="big")
+        if not isinstance(max_fee_per_gas, int):
+            max_fee_per_gas = int(max_fee_per_gas, 16)
+        if not isinstance(max_priority_fee_per_gas, int):
+            max_priority_fee_per_gas = int(max_priority_fee_per_gas, 16)
         self.max_fee_per_gas = max_fee_per_gas.to_bytes(32, byteorder="big")
         self.max_priority_fee_per_gas = max_priority_fee_per_gas.to_bytes(32, byteorder="big")
         self.data = self.nonce + self.max_fee_per_gas + self.max_priority_fee_per_gas

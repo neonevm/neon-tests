@@ -2,7 +2,7 @@ import base58
 import pytest
 from eth_utils import abi, to_text
 
-from .utils.contract import deploy_contract, get_contract_bin
+from .utils.contract import get_contract_bin
 
 
 def decode_pubkey(pubkey):
@@ -10,8 +10,8 @@ def decode_pubkey(pubkey):
 
 
 def test_get_storage_at(neon_api_client, operator_keypair, user_account, evm_loader, treasury_pool, sol_client):
-    contract = deploy_contract(
-        operator_keypair, user_account, "hello_world", evm_loader, neon_api_client, treasury_pool, sol_client
+    contract = evm_loader.deploy_contract(
+        operator_keypair, user_account, "hello_world", neon_api_client, treasury_pool
     )
     storage = neon_api_client.get_storage_at(contract.eth_address.hex())["value"]
     zero_array = [0 for _ in range(31)]
@@ -66,10 +66,10 @@ def test_emulate_contract_deploy(neon_api_client, user_account):
 
 
 def test_emulate_call_contract_function(
-    neon_api_client, operator_keypair, treasury_pool, evm_loader, user_account, sol_client
+    neon_api_client, operator_keypair, treasury_pool, evm_loader, user_account
 ):
-    contract = deploy_contract(
-        operator_keypair, user_account, "hello_world", evm_loader, neon_api_client, treasury_pool, sol_client
+    contract = evm_loader.deploy_contract(
+        operator_keypair, user_account, "hello_world", neon_api_client, treasury_pool
     )
     assert contract.eth_address
     data = abi.function_signature_to_4byte_selector("call_hello_world()")
@@ -93,17 +93,15 @@ def test_emulate_with_small_amount_of_steps(neon_api_client, evm_loader, user_ac
 
 @pytest.mark.parametrize("contract_name", ["BlockTimestamp", "BlockNumber"])
 def test_emulate_call_contract_with_block_timestamp_number(
-    contract_name, neon_api_client, operator_keypair, treasury_pool, evm_loader, sol_client
+    contract_name, neon_api_client, operator_keypair, treasury_pool, evm_loader
 ):
     user_account = evm_loader.make_new_user(operator_keypair)
-    contract = deploy_contract(
+    contract = evm_loader.deploy_contract(
         operator_keypair,
         user_account,
         "common/Block.sol",
-        evm_loader,
         neon_api_client,
         treasury_pool,
-        sol_client,
         contract_name=contract_name,
         version="0.8.10",
     )

@@ -1,5 +1,8 @@
 import json
+import pathlib
 import typing
+from hashlib import sha256
+from random import randrange
 from typing import Union
 
 import spl
@@ -18,7 +21,12 @@ from solana.transaction import Transaction
 from solders.rpc.responses import SendTransactionResp, GetTransactionResp
 from spl.token.instructions import get_associated_token_address, MintToParams, ApproveParams, approve
 from spl.token.constants import TOKEN_PROGRAM_ID
+from web3.auto import w3
 
+from integration.tests.neon_evm.utils.contract import get_contract_bin
+from integration.tests.neon_evm.utils.ethereum import create_contract_address, make_deployment_transaction
+from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
+from integration.tests.neon_evm.utils.transaction_checks import check_transaction_logs_have_text
 from utils.scheduled_trx import ScheduledTransaction
 from utils.neon_user import NeonUser
 from integration.tests.neon_evm.utils.constants import TREASURY_POOL_SEED
@@ -42,7 +50,8 @@ from utils.instructions import (
     make_ScheduledTransactionDestroy,
     make_ScheduledTransactionStartFromInstruction,
     make_ScheduledTransactionCreateMultiple,
-    make_ScheduledTransactionSkipFromInstruction,
+    make_ScheduledTransactionSkipFromInstruction, make_CreateAccountWithSeed, make_CreateHolderAccount,
+    make_DeleteHolderAccount,
 )
 from utils.layouts import (
     BALANCE_ACCOUNT_LAYOUT,
@@ -51,7 +60,7 @@ from utils.layouts import (
     OPERATOR_BALANCE_ACCOUNT_LAYOUT,
 )
 from utils.solana_client import SolanaClient
-from utils.types import Caller
+from utils.types import Caller, Contract, TreasuryPool
 
 EVM_STEPS = 500
 
@@ -76,14 +85,15 @@ class EvmLoader(SolanaClient):
         chain_id = chain_id or self.chain_id
 
         account_pubkey = self.ether2balance(ether, chain_id)
-        contract_pubkey = Pubkey.from_string(self.ether2program(ether)[0])
-        trx = Transaction()
-        trx.add(
-            make_CreateBalanceAccount(
-                self.loader_id, sender.pubkey(), ether2bytes(ether), account_pubkey, contract_pubkey, chain_id
+        if not self.account_exists(account_pubkey):
+            contract_pubkey = Pubkey.from_string(self.ether2program(ether)[0])
+            trx = Transaction()
+            trx.add(
+                make_CreateBalanceAccount(
+                    self.loader_id, sender.pubkey(), ether2bytes(ether), account_pubkey, contract_pubkey, chain_id
+                )
             )
-        )
-        self.send_tx(trx, sender)
+            self.send_tx_and_check_status_ok(trx, sender)
         return account_pubkey
 
     def create_treasury_pool_address(self, pool_index):
@@ -650,7 +660,7 @@ class EvmLoader(SolanaClient):
         )
         self.send_tx_and_check_status_ok(tx, solana_account)
 
-    def deposit_wrapped_sol_from_solana_to_neon(self, solana_account, neon_account, chain_id, full_amount=None):
+    def deposit_wrapped_sol_from_solana_to_neon(self, solana_account, neon_account, full_amount=None):
         if not full_amount:
             full_amount = int(0.1 * LAMPORT_PER_SOL)
         mint_pubkey = wSOL["address_spl"]
@@ -662,7 +672,8 @@ class EvmLoader(SolanaClient):
         wrap_sol_tx = make_wSOL(full_amount, solana_account.pubkey(), ata_address)
         self.send_tx_and_check_status_ok(wrap_sol_tx, solana_account)
 
-        self.sent_token_from_solana_to_neon(solana_account, wSOL["address_spl"], neon_account, full_amount, chain_id)
+        self.sent_token_from_solana_to_neon(solana_account, wSOL["address_spl"], neon_account, full_amount,
+                                            self.sol_chain_id)
 
     def deposit_neon_like_tokens_from_solana_to_neon(
         self,
@@ -717,7 +728,6 @@ class EvmLoader(SolanaClient):
     ):
         if chain_id == "":
             chain_id = self.sol_chain_id
-
         if not payer_nonce:
             payer_nonce = self.get_neon_nonce(neon_user.neon_address, chain_id).to_bytes(8, "little")
         else:
@@ -739,7 +749,7 @@ class EvmLoader(SolanaClient):
                 self.loader_id,
             )
         )
-        self.send_tx(trx, neon_user.solana_account)
+        self.send_tx_and_check_status_ok(trx, neon_user.solana_account)
         return tree_account
 
     def start_scheduled_trx_from_account(
@@ -829,7 +839,7 @@ class EvmLoader(SolanaClient):
         trx = TransactionWithComputeBudget(operator, compute_unit_price=1000000)
         operator_balance = self.get_operator_balance_pubkey(operator, chain_id)
         trx.add(
-            make_ScheduledTransactionFinish(operator, operator_balance, self.loader_id, holder_account, tree_account)
+            make_ScheduledTransactionFinish(operator.pubkey(), operator_balance, self.loader_id, holder_account, tree_account)
         )
         return self.send_tx(trx, operator)
 
@@ -855,7 +865,7 @@ class EvmLoader(SolanaClient):
         return self.send_tx(trx, operator)
 
     def destroy_tree_account(
-        self, operator, neon_user: NeonUser, treasury, tree_account, chain_id: int | None = ""
+        self, neon_user: NeonUser, treasury, tree_account, chain_id: int | None = ""
     ) -> SignedTransaction:
         if chain_id == "":
             chain_id = self.sol_chain_id
@@ -864,12 +874,98 @@ class EvmLoader(SolanaClient):
 
         trx.add(
             make_ScheduledTransactionDestroy(
-                operator,
-                neon_user.solana_account,
+                neon_user.solana_account.pubkey(),
                 neon_user.get_balance_account(chain_id),
                 treasury,
                 tree_account,
                 self.loader_id,
             )
         )
-        return self.send_tx(trx, operator)
+        return self.send_tx(trx, neon_user.solana_account)
+
+    def deploy_contract(
+        self,
+        operator: Keypair,
+        user: Caller,
+        contract_file_name: tp.Union[pathlib.Path, str],
+        neon_api_client: NeonApiClient,
+        treasury_pool: TreasuryPool,
+        chain_id: int | str | None = "",
+        value: int = 0,
+        encoded_args=None,
+        contract_name: tp.Optional[str] = None,
+        version: str = "0.7.6",
+    ) -> Contract:
+        if chain_id == "":
+            chain_id = self.chain_id
+
+        contract_code = get_contract_bin(contract_file_name, contract_name=contract_name, version=version)
+        if encoded_args is None:
+            encoded_args = b""
+
+        emulate_result = neon_api_client.emulate(
+            user.eth_address.hex(),
+            contract=None,
+            data=contract_code + encoded_args.hex(),
+            chain_id=chain_id,
+            value=hex(value),
+        )
+        additional_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
+
+        contract: Contract = create_contract_address(user, self, chain_id)
+        holder_acc = self.create_holder(operator)
+        signed_tx = make_deployment_transaction(
+            self,
+            user,
+            contract_file_name,
+            contract_name,
+            encoded_args=encoded_args,
+            value=value,
+            version=version,
+            chain_id=chain_id,
+        )
+        self.write_transaction_to_holder_account(signed_tx, holder_acc, operator)
+
+        resp = self.execute_transaction_steps_from_account(
+            operator, treasury_pool, holder_acc, additional_accounts, chain_id=chain_id
+        )
+        check_transaction_logs_have_text(solana_client=self, trx=resp, text="exit_status=0x12")
+        return contract
+
+    def create_holder(
+        self,
+        signer: Keypair,
+        seed: str = None,
+        size: int = None,
+        fund: int = None,
+        storage: Pubkey = None,
+    ) -> Pubkey:
+        if size is None:
+            size = 128 * 1024
+        if fund is None:
+            fund = 10**9
+        if seed is None:
+            seed = str(randrange(100000000000))
+        if storage is None:
+            storage = Pubkey.from_bytes(
+                sha256(bytes(signer.pubkey()) + bytes(seed, "utf8") + bytes(self.loader_id)).digest()
+            )
+
+        print(f"Create holder account with seed: {seed}")
+
+        if self.get_solana_balance(storage) == 0:
+            trx = Transaction()
+            trx.add(
+                make_CreateAccountWithSeed(signer.pubkey(), signer.pubkey(), seed, fund, size, self.loader_id),
+                make_CreateHolderAccount(storage, signer.pubkey(), bytes(seed, "utf8"), self.loader_id),
+            )
+            self.send_tx(trx, signer)
+            return storage
+        else:
+            self.create_holder(signer, seed, size, fund, storage)
+
+    def delete_holder(self, del_key: Pubkey, acc: Keypair, signer: Keypair):
+        trx = Transaction()
+        trx.add(make_DeleteHolderAccount(acc.pubkey(), del_key, self.loader_id))
+        return self.send_tx(trx, signer)
+

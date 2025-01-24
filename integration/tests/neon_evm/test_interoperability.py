@@ -19,11 +19,7 @@ from spl.token.instructions import create_associated_token_account, TransferPara
 from conftest import EnvironmentConfig
 from integration.tests.neon_evm.utils.call_solana import SolanaCaller
 
-
-# from integration.tests.neon_evm.utils.constants import NEON_TOKEN_MINT_ID
-from integration.tests.neon_evm.utils.contract import deploy_contract, make_contract_call_trx
-
-from integration.tests.neon_evm.utils.ethereum import make_eth_transaction
+from integration.tests.neon_evm.utils.ethereum import make_eth_transaction, make_contract_call_trx
 
 from utils.consts import (
     MEMO_PROGRAM_ID,
@@ -126,17 +122,14 @@ class TestInteroperability:
         operator_keypair,
         evm_loader,
         treasury_pool,
-        sol_client,
         holder_acc
     ):
-        contract = deploy_contract(
+        contract = evm_loader.deploy_contract(
             operator_keypair,
             sender_with_tokens,
             "precompiled/call_solana_test",
-            evm_loader,
             neon_api_client,
             treasury_pool,
-            sol_client,
             contract_name="Test",
         )
 
@@ -157,7 +150,7 @@ class TestInteroperability:
                 contract.solana_address,
             ],
         )
-        check_transaction_logs_have_text(sol_client, trx=resp, text="exit_status=0x11")
+        check_transaction_logs_have_text(evm_loader, trx=resp, text="exit_status=0x11")
 
     def test_execute_from_account_create_acc(
         self, sender_with_tokens, solana_caller, evm_loader, solana_client, environment
@@ -358,16 +351,13 @@ class TestInteroperability:
         treasury_pool,
         holder_acc,
         environment,
-        solana_client,
     ):
-        precompiled_caller = deploy_contract(
+        precompiled_caller = evm_loader.deploy_contract(
             operator_keypair,
             sender_with_tokens,
             "precompiled/CommonCaller",
-            evm_loader,
             neon_api_client,
             treasury_pool,
-            solana_client,
             contract_name="CommonCaller",
             version="0.8.3",
         )

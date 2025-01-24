@@ -11,24 +11,24 @@ import web3
 import web3.types
 from eth_abi import abi
 from eth_typing import BlockIdentifier
+from solders.pubkey import Pubkey
 from web3.exceptions import TransactionNotFound
 
-from utils.scheduled_trx import ScheduledTransaction
+from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateRequest
 from utils.types import TransactionType
 from utils import helpers
 from utils.consts import InputTestConstants, Unit
 from utils.helpers import decode_function_signature, case_snake_to_camel
-
 
 LOG = logging.getLogger(__name__)
 
 
 class Web3Client:
     def __init__(
-        self,
-        proxy_url: str,
-        tracer_url: tp.Optional[tp.Any] = None,
-        session: tp.Optional[tp.Any] = None,
+            self,
+            proxy_url: str,
+            tracer_url: tp.Optional[tp.Any] = None,
+            session: tp.Optional[tp.Any] = None,
     ):
         self._proxy_url = proxy_url
         self._tracer_url = tracer_url
@@ -124,6 +124,10 @@ class Web3Client:
         base_fee = latest_block.baseFeePerGas  # noqa
         return base_fee
 
+    def max_fee_per_gas(self) -> int:
+        max_priority_fee = self._web3.eth._max_priority_fee() # noqa
+        return (3 * self.base_fee_per_gas()) + max_priority_fee
+
     @allure.step("Get max priority fee per gas")
     def max_priority_fee_per_gas(self) -> int:
         return self._web3.eth.max_priority_fee
@@ -142,9 +146,9 @@ class Web3Client:
 
     @allure.step("Get nonce")
     def get_nonce(
-        self,
-        address: tp.Union[eth_account.signers.local.LocalAccount, str],
-        block: BlockIdentifier = "pending",
+            self,
+            address: tp.Union[eth_account.signers.local.LocalAccount, str],
+            block: BlockIdentifier = "pending",
     ):
         address = address if isinstance(address, str) else address.address
         return self._web3.eth.get_transaction_count(address, block)
@@ -155,15 +159,15 @@ class Web3Client:
 
     @allure.step("Get contract")
     def deploy_contract(
-        self,
-        from_: eth_account.signers.local.LocalAccount,
-        abi,
-        bytecode: str,
-        gas: tp.Optional[int] = 0,
-        gas_price: tp.Optional[int] = None,
-        constructor_args: tp.Optional[tp.List] = None,
-        value=0,
-        tx_type: TransactionType = 0,
+            self,
+            from_: eth_account.signers.local.LocalAccount,
+            abi,
+            bytecode: str,
+            gas: tp.Optional[int] = 0,
+            gas_price: tp.Optional[int] = None,
+            constructor_args: tp.Optional[tp.List] = None,
+            value=0,
+            tx_type: TransactionType = 0,
     ) -> web3.types.TxReceipt:
         """Proxy doesn't support send_transaction"""
         constructor_args = constructor_args or []
@@ -256,20 +260,21 @@ class Web3Client:
 
     @allure.step("Send transaction")
     def send_transaction(
-        self,
-        account: eth_account.signers.local.LocalAccount,
-        transaction: tp.Dict,
-        gas_multiplier: tp.Optional[float] = None,  # fix for some event depends transactions
-        timeout: int = 120,
+            self,
+            account: eth_account.signers.local.LocalAccount,
+            transaction: tp.Dict,
+            gas_multiplier: tp.Optional[float] = None,  # fix for some event depends transactions
+            timeout: int = 120,
     ) -> web3.types.TxReceipt:
         instruction_tx = self._web3.eth.account.sign_transaction(transaction, account.key)
         signature = self._web3.eth.send_raw_transaction(instruction_tx.rawTransaction)
         return self._web3.eth.wait_for_transaction_receipt(signature, timeout=timeout)
 
+    @allure.step("Send the scheduled transaction")
     def send_scheduled_transaction(
-        self,
-        trx: ScheduledTransaction,
-        check_result: bool = True,
+            self,
+            trx: ScheduledTransaction,
+            check_result: bool = True,
     ):
         resp = requests.post(
             self._proxy_url,
@@ -284,6 +289,7 @@ class Web3Client:
             assert "result" in resp, f"Failed to send scheduled transaction: {resp}"
         return resp
 
+    @allure.step("Send list of scheduled transaction")
     def send_all_scheduled_transactions(self, raw_transactions: tp.List[ScheduledTransaction]):
         for trx in raw_transactions:
             self.send_scheduled_transaction(trx)
@@ -359,17 +365,17 @@ class Web3Client:
 
     @allure.step("Deploy and get contract")
     def deploy_and_get_contract(
-        self,
-        contract: str,
-        version: str,
-        account: eth_account.signers.local.LocalAccount,
-        contract_name: tp.Optional[str] = None,
-        constructor_args: tp.Optional[tp.Any] = None,
-        import_remapping: tp.Optional[dict] = None,
-        libraries: tp.Optional[dict] = None,
-        gas: tp.Optional[int] = 0,
-        value=0,
-        tx_type: TransactionType = TransactionType.LEGACY,
+            self,
+            contract: str,
+            version: str,
+            account: eth_account.signers.local.LocalAccount,
+            contract_name: tp.Optional[str] = None,
+            constructor_args: tp.Optional[tp.Any] = None,
+            import_remapping: tp.Optional[dict] = None,
+            libraries: tp.Optional[dict] = None,
+            gas: tp.Optional[int] = 0,
+            value=0,
+            tx_type: TransactionType = TransactionType.LEGACY,
     ) -> tp.Tuple[tp.Any, web3.types.TxReceipt]:
         contract_interface = helpers.get_contract_interface(
             contract,
@@ -427,9 +433,9 @@ class Web3Client:
 
     @allure.step("Get balance")
     def get_balance(
-        self,
-        address: tp.Union[str, eth_account.signers.local.LocalAccount],
-        unit=Unit.WEI,
+            self,
+            address: tp.Union[str, eth_account.signers.local.LocalAccount],
+            unit=Unit.WEI,
     ):
         if not isinstance(address, str):
             address = address.address
@@ -440,12 +446,12 @@ class Web3Client:
 
     @allure.step("Get deployed contract")
     def get_deployed_contract(
-        self,
-        address,
-        contract_file,
-        contract_name=None,
-        solc_version="0.8.12",
-        import_remapping: tp.Optional[dict] = None,
+            self,
+            address,
+            contract_file,
+            contract_name=None,
+            solc_version="0.8.12",
+            import_remapping: tp.Optional[dict] = None,
     ):
         contract_interface = helpers.get_contract_interface(
             contract_file, solc_version, contract_name, import_remapping=import_remapping
@@ -455,14 +461,14 @@ class Web3Client:
 
     @allure.step("Send tokens")
     def send_tokens(
-        self,
-        from_: eth_account.signers.local.LocalAccount,
-        to: tp.Union[str, eth_account.signers.local.LocalAccount],
-        value: int,
-        gas: tp.Optional[int] = None,
-        gas_price: tp.Optional[int] = None,
-        nonce: int = None,
-        tx_type: TransactionType = TransactionType.LEGACY,
+            self,
+            from_: eth_account.signers.local.LocalAccount,
+            to: tp.Union[str, eth_account.signers.local.LocalAccount],
+            value: int,
+            gas: tp.Optional[int] = None,
+            gas_price: tp.Optional[int] = None,
+            nonce: int = None,
+            tx_type: TransactionType = TransactionType.LEGACY,
     ) -> web3.types.TxReceipt:
         if tx_type is TransactionType.LEGACY:
             transaction = self.make_raw_tx(
@@ -525,12 +531,12 @@ class Web3Client:
 
     @allure.step("Send all neons from one account to another")
     def send_all_neons(
-        self,
-        from_: eth_account.signers.local.LocalAccount,
-        to: tp.Union[str, eth_account.signers.local.LocalAccount],
-        gas: tp.Optional[int] = None,
-        gas_price: tp.Optional[int] = None,
-        nonce: int = None,
+            self,
+            from_: eth_account.signers.local.LocalAccount,
+            to: tp.Union[str, eth_account.signers.local.LocalAccount],
+            gas: tp.Optional[int] = None,
+            gas_price: tp.Optional[int] = None,
+            nonce: int = None,
     ) -> web3.types.TxReceipt:
         value = self.get_balance(from_.address)
         transaction = self.make_raw_tx(
@@ -595,6 +601,7 @@ class Web3Client:
         ).json()
         return len(resp["result"]) > 1
 
+    @allure.step("Get pending transactions")
     def get_pending_transactions(self, user_address: str) -> str:
         resp = requests.post(
             self._proxy_url,
@@ -608,25 +615,49 @@ class Web3Client:
         assert "result" in resp, f"Failed to get pending transactions: {resp}"
         return resp["result"]
 
+    @allure.step("Estimate list of scheduled transactions")
+    def estimate_scheduled(self, solana_payer: Pubkey, trx_list: tp.List[ScheduledTrxEstimateRequest]) -> dict:
+        transactions = []
+        for trx in trx_list:
+            trx = {"fromAddress": trx.from_address,
+                   "toAddress": trx.to_address,
+                   "data": trx.data.hex(),
+                   "value": trx.value}
+            transactions.append(trx)
+        params = {"scheduledSolanaPayer": str(solana_payer), "transactions": transactions}
+        json = {
+            "jsonrpc": "2.0",
+            "method": "neon_estimateScheduledGas",
+            "params": [params],
+            "id": 0,
+        }
+        resp = requests.post(
+            self._proxy_url,
+            json=json,
+        ).json()
+        assert "result" in resp, f"Failed to estimate transactions: {resp}"
+        return resp["result"]
+
 
 class NeonChainWeb3Client(Web3Client):
     def __init__(
-        self,
-        proxy_url: str,
-        tracer_url: tp.Optional[tp.Any] = None,
-        session: tp.Optional[tp.Any] = None,
+            self,
+            proxy_url: str,
+            tracer_url: tp.Optional[tp.Any] = None,
+            session: tp.Optional[tp.Any] = None,
     ):
         super().__init__(proxy_url, tracer_url, session)
 
     @allure.step("Create account with balance")
     def create_account_with_balance(
-        self,
-        faucet,
-        amount: int = InputTestConstants.NEW_USER_REQUEST_AMOUNT.value,
-        bank_account=None,
+            self,
+            faucet,
+            amount: int = InputTestConstants.NEW_USER_REQUEST_AMOUNT.value,
+            bank_account=None,
     ) -> eth_account.signers.local.LocalAccount:
         """Creates a new account with balance"""
         account = self.create_account()
+
         if bank_account is not None:
             self.send_neon(bank_account, account, amount)
         else:
@@ -635,13 +666,13 @@ class NeonChainWeb3Client(Web3Client):
 
     @allure.step("Send neon")
     def send_neon(
-        self,
-        from_: eth_account.signers.local.LocalAccount,
-        to: tp.Union[str, eth_account.signers.local.LocalAccount],
-        amount: tp.Union[int, float, Decimal],
-        gas: tp.Optional[int] = None,
-        gas_price: tp.Optional[int] = None,
-        nonce: int = None,
+            self,
+            from_: eth_account.signers.local.LocalAccount,
+            to: tp.Union[str, eth_account.signers.local.LocalAccount],
+            amount: tp.Union[int, float, Decimal],
+            gas: tp.Optional[int] = None,
+            gas_price: tp.Optional[int] = None,
+            nonce: int = None,
     ) -> web3.types.TxReceipt:
         value = web3.Web3.to_wei(amount, "ether")
         return self.send_tokens(from_, to, value, gas, gas_price, nonce)

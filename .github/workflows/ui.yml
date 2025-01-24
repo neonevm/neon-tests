@@ -16,11 +16,11 @@ env:
 jobs:
   dockerize:
     name: Dockerize neon tests
-    if: ${{ github.ref_name != 'develop' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Dockerize neon tests
+        if: ${{ github.ref_name != 'develop' }}
         uses: ./.github/actions/dockerize-neon-tests
         with:
           image_tag: ${{ github.sha }}
@@ -74,15 +74,19 @@ jobs:
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           tests_name: ui
 
+      - name: Remove docker container
+        if: always()
+        run: docker rm -f ${{ env.CONTAINER_NAME }}
   notify:
     name: Send notification on failure
     needs: test
     if: failure() && github.ref_name == 'develop'
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "k8s-prod"]
     steps:
       - uses: actions/checkout@v4
-      - name: "Notify on failure"
+      - name: Install python requirements
+        uses: ./.github/actions/python-requirements
+      - name: Notify on failure
         run: |
-          docker exec -i ${{ env.CONTAINER_NAME }} \
-            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
-            -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group ui
+          python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+          -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group ui

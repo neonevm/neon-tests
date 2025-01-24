@@ -281,15 +281,17 @@ jobs:
           ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
   send-notification:
     name: Send notification on failure
+    if: failure() && github.ref_name == 'develop'
     needs:
       - run-proxy-tests
       - run-evm-tests
     runs-on: ["self-hosted", "k8s-prod"]
     steps:
       - uses: actions/checkout@v4
-      - name: "Notify on failure."
-        if: failure() && github.ref_name == 'develop'
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+      - name: Notify on failure
         run: |
-          docker exec -i ${{ env.CONTAINER }} \
-            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+          python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
           -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group ${{ env.FAILED_TEST_GROUP }}

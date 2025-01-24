@@ -1,10 +1,6 @@
 import os
 import typing as tp
 
-from deploy.cli.network_manager import NetworkManager
-
-NETWORK_MANAGER = NetworkManager()
-
 
 def set_github_env(envs: tp.Dict, upper=True) -> None:
     """Set environment for GitHub action"""

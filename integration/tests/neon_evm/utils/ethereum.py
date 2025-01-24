@@ -1,20 +1,21 @@
-from typing import Union, Optional
+import pathlib
+import typing as tp
+import eth_abi
+from eth_utils import abi
 
-import pytest
 from Crypto.Hash import keccak
+from eth_account.datastructures import SignedTransaction
 from solders.pubkey import Pubkey
 from web3.auto import w3
 
-from conftest import EnvironmentConfig
-from utils.evm_loader import EvmLoader
-
 from utils.types import Caller, Contract
+from .contract import get_contract_bin
 from .eth_tx_utils import pack
 
 
 def create_contract_address(
-    user: Union[Caller, bytes],
-    evm_loader: EvmLoader,
+    user: tp.Union[Caller, bytes],
+    evm_loader,
     chain_id: int | str | None = "",
 ) -> Contract:
     if chain_id == "":
@@ -34,10 +35,50 @@ def create_contract_address(
     return Contract(contract_eth_address, Pubkey.from_string(contract_solana_address), contract_neon_address)
 
 
+def make_deployment_transaction(
+    evm_loader,
+    user: Caller,
+    contract_file_name: tp.Union[pathlib.Path, str],
+    contract_name: tp.Optional[str] = None,
+    encoded_args=None,
+    value: int = 0,
+    gas: int = 999999999,
+    chain_id: int | str | None = "",
+    access_list=None,
+    max_priority_fee_per_gas=None,
+    max_fee_per_gas=None,
+    version: str = "0.7.6",
+) -> SignedTransaction:
+    if chain_id == "":
+        chain_id = evm_loader.chain_id
+    data = get_contract_bin(contract_file_name, contract_name, version)
+    if encoded_args is not None:
+        data = data + encoded_args.hex()
+
+    nonce = evm_loader.get_neon_nonce(user.eth_address, chain_id)
+
+    tx = {"to": None, "value": 0, "gas": gas, "gasPrice": 0, "nonce": nonce, "data": data}
+    if chain_id:
+        tx["chainId"] = chain_id
+
+    if access_list:
+        tx["accessList"] = access_list
+        tx["type"] = 1
+    if value:
+        tx["value"] = value
+    if max_priority_fee_per_gas:
+        tx["maxPriorityFeePerGas"] = max_priority_fee_per_gas
+    if max_fee_per_gas:
+        tx["maxFeePerGas"] = max_fee_per_gas
+        tx.pop("gasPrice")
+
+    return w3.eth.account.sign_transaction(tx, user.solana_account.secret()[:32])
+
+
 def make_eth_transaction(
-    evm_loader: EvmLoader,
+    evm_loader,
     to_addr: bytes,
-    data: Union[bytes, None],
+    data: tp.Union[bytes, None],
     caller: Caller,
     value: int = 0,
     chain_id: int | str | None = "",
@@ -73,3 +114,50 @@ def make_eth_transaction(
     if type_ is not None:
         tx["type"] = type_
     return w3.eth.account.sign_transaction(tx, caller.solana_account.secret()[:32])
+
+
+def make_contract_call_trx(
+    evm_loader,
+    user,
+    contract,
+    function_signature,
+    params=None,
+    value=0,
+    chain_id: int | str | None = "",
+    access_list=None,
+    gas=999999999,
+    gas_price=0,
+    max_priority_fee_per_gas=None,
+    max_fee_per_gas=None,
+    trx_type=None,
+) -> SignedTransaction:
+    if chain_id == "":
+        chain_id = evm_loader.chain_id
+
+    # does not work for tuple in params
+    data = abi.function_signature_to_4byte_selector(function_signature)
+
+    if params is not None:
+        types = function_signature.split("(")[1].split(")")[0].split(",")
+        data += eth_abi.encode(types, params)
+
+    if isinstance(contract, Contract):
+        contract_addr = contract.eth_address
+    else:
+        contract_addr = contract
+    signed_tx = make_eth_transaction(
+        evm_loader,
+        contract_addr,
+        data,
+        user,
+        value=value,
+        chain_id=chain_id,
+        gas=gas,
+        max_priority_fee_per_gas=max_priority_fee_per_gas,
+        max_fee_per_gas=max_fee_per_gas,
+        access_list=access_list,
+        type_=trx_type,
+        gas_price=gas_price,
+    )
+
+    return signed_tx

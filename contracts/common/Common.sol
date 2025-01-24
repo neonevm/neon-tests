@@ -38,6 +38,10 @@ contract CommonCaller {
     function getNumber() public view returns (uint256) {
          return myCommon.getNumber();
     }
+
+    function setNumber(uint256 _number) public {
+        myCommon.setNumber(_number);
+    }
 }
 
 contract BunchActions {

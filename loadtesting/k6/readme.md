@@ -1,4 +1,4 @@
-# How to build a k6 bin
+# How to: proxy and tracer load scenarios
 
 Make sure your Golang version >= 1.19.
 
@@ -7,8 +7,9 @@ Make sure you have Golang bin path in PATH, otherwise
 export PATH=$PATH:$(go env GOPATH)/bin
 ```
 
+##
+## Run performance test using clickfile:
 
-### Run performance test using clickfile:
 First of all you need to run infra for monitoring:
 go to the ./loadtesting/k6/monitoring folder and run
 ```bash
@@ -60,8 +61,8 @@ Run test scenario:
 ```bash
 ./k6 run -o 'prometheus=namespace=k6' -e K6_USERS_NUMBER=100 -e K6_INITIAL_BALANCE=200 ./loadtesting/k6/tests/sendNeon.test.js
 ```
-
-### Local test run with local version of the xk6-ethereum plugin
+##
+## Local test run with local version of the xk6-ethereum plugin
 It is common approach to do some changes in the plugin and test it locally before pushing changes to github.
 Pass the xk6-ethereum plugin repository path (on your local machine) as a parameter to the build command:
 ```bash
@@ -72,12 +73,15 @@ Use an executable file builded with command above to run test scenario (see 'Run
 ./clickfile.py k6 run --network local --script ./loadtesting/k6/tests/sendErc20.test.js --users 10 --balance 200
 ```
 
+##
 ## Scenario options
-Send Neon scenario settings:
+Standard single scenario settings:
 ```js
-export const sendTokenOptions = {
+import { usersNumber } from "../tests/utils/consts.js";
+
+export const standardScenarioOptions = {
     scenarios: {
-        sendToken: {
+        standardScenario: {
             executor: 'ramping-vus',
             startVUs: 0,
             stages: [
@@ -99,3 +103,29 @@ export const sendTokenOptions = {
 ```gracefulRampDown: '60s'``` - time to wait for an already started iteration to finish before stopping it during a ramp down 
 
 ```noConnectionReuse: true``` - determines whether a connection is reused throughout different actions of the same virtual user and in the same iteration
+
+##
+## Tracer load test data preparation and run
+To prepare data you have to use a script from ```./scripts/tracer_load_preparation/tracer_data_producer.py```.
+Set envs before run
+```
+NETWORK
+BANK_ACCOUNT_PRIVATE_KEY (if needed)
+TRANSFERS
+CONTRACT_CALLS
+ITERATIVE_TXS 
+```
+
+```bash
+python3 -m tracer_data_producer.py
+```
+
+
+This script will generate data for the tracer load test and put it to a ```loadtesting/k6/data/tracer_data.json``` file.
+
+To run the standard tracer load scenario the clickfile run k6 command can be used:
+```bash
+./clickfile.py k6 run --network local --script loadtesting/k6/scenarios/tracerStandardLoad.js --users 10 --balance 200
+```
+
+A combined standard tracer scenario: ```loadtesting/k6/scenarios/tracerStandardLoad.js```.

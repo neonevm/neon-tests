@@ -1,6 +1,4 @@
-from .utils.contract import make_deployment_transaction
-from .utils.ethereum import make_eth_transaction, create_contract_address
-from .utils.storage import create_holder
+from .utils.ethereum import make_eth_transaction, create_contract_address, make_deployment_transaction
 
 
 class TestTransactionStepFromAccount:
@@ -69,7 +67,7 @@ class TestTransactionStepFromAccount:
             ],
         )
         signed_tx = make_deployment_transaction(evm_loader, sender_with_tokens, contract_filename)
-        holder_acc = create_holder(operator_keypair, evm_loader)
+        holder_acc = evm_loader.create_holder(operator_keypair)
         contract = create_contract_address(sender_with_tokens, evm_loader)
 
         resp_from_inst = evm_loader.execute_transaction_steps_from_instruction(

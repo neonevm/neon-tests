@@ -6,8 +6,7 @@ from utils.evm_loader import EVM_STEPS
 from utils.instructions import make_Cancel
 from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from .utils.constants import TAG_FINALIZED_STATE
-from .utils.contract import make_contract_call_trx
-from .utils.storage import create_holder
+from .utils.ethereum import make_contract_call_trx
 from .utils.transaction_checks import check_holder_account_tag
 
 
@@ -20,7 +19,7 @@ class TestCancelTrx:
             evm_loader, user_account, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1]
         )
 
-        storage_account = create_holder(operator_keypair, evm_loader)
+        storage_account = evm_loader.create_holder(operator_keypair)
         user_nonce_before_first_step = evm_loader.get_neon_nonce(user_account.eth_address)
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
 
@@ -92,7 +91,7 @@ class TestCancelTrx:
             gas_price=1,
         )
 
-        storage_account = create_holder(operator_keypair, evm_loader)
+        storage_account = evm_loader.create_holder(operator_keypair)
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
         user_neon_balance_before = evm_loader.get_neon_balance(sender_with_tokens.eth_address)
 

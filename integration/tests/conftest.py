@@ -106,6 +106,8 @@ def bank_account(pytestconfig: Config) -> tp.Generator[Keypair, tp.Any, tp.Any] 
             private_key = os.environ.get("BANK_PRIVATE_KEY")
         elif pytestconfig.getoption("--network") == "mainnet":
             private_key = os.environ.get("BANK_PRIVATE_KEY_MAINNET")
+        else:
+            raise ValueError("set BANK_PRIVATE_KEY or BANK_PRIVATE_KEY_MAINNET env variable")
         key = base58.b58decode(private_key)
         account = Keypair.from_bytes(key)
     yield account
@@ -161,17 +163,10 @@ def new_solana_account(
 
 
 @pytest.fixture(scope="class")
-def accounts(request, accounts_session, web3_client_session, pytestconfig: Config, eth_bank_account) -> None:
+def accounts(request, accounts_session, web3_client_session, pytestconfig: Config, eth_bank_account) -> EthAccounts:
     if inspect.isclass(request.cls):
         request.cls.accounts = accounts_session
-    yield accounts_session
-
-    if pytestconfig.getoption("--network") == "mainnet":
-        if len(accounts_session.accounts_collector) > 0:
-            for item in accounts_session.accounts_collector:
-                with allure.step(f"Restoring eth account balance from {item.key.hex()} account"):
-                    web3_client_session.send_all_neons(item, eth_bank_account)
-    accounts_session._accounts = []
+    return accounts_session
 
 
 @pytest.fixture(scope="session")
@@ -253,7 +248,6 @@ def class_account_sol_chain(
     evm_loader,
     solana_account,
     web3_client,
-    web3_client_sol,
     faucet,
     eth_bank_account,
     bank_account,
@@ -268,7 +262,6 @@ def class_account_sol_chain(
     evm_loader.deposit_wrapped_sol_from_solana_to_neon(
         solana_account,
         account,
-        web3_client_sol.eth.chain_id,
         int(1 * LAMPORT_PER_SOL),
     )
     return account
@@ -311,7 +304,6 @@ def account_with_all_tokens(
         evm_loader.deposit_wrapped_sol_from_solana_to_neon(
             solana_account,
             neon_account,
-            web3_client_sol.eth.chain_id,
             lamports,
         )
     for client in [web3_client_usdt, web3_client_eth]:
@@ -346,15 +338,29 @@ def withdraw_contract(web3_client, faucet, accounts) -> Contract:
 
 
 @pytest.fixture(scope="class")
-def common_contract(web3_client, accounts) -> Contract:
+def common_contract(web3_client, accounts, pytestconfig) -> Contract:
+    if pytestconfig.getoption("--network") == "mainnet":
+        address = os.environ.get("MAINNET_COMMON_CONTRACT_ADDRESS")
+        contract = web3_client.get_deployed_contract(address, "common/Common", contract_name="Common")
+    else:
+        contract, tx = web3_client.deploy_and_get_contract(
+            contract="common/Common",
+            version="0.8.12",
+            contract_name="Common",
+            account=accounts[0],
+        )
+    yield contract
+
+@pytest.fixture(scope="class")
+def common_caller_contract(web3_client, accounts, common_contract) -> Contract:
     contract, tx = web3_client.deploy_and_get_contract(
         contract="common/Common",
         version="0.8.12",
-        contract_name="Common",
+        contract_name="CommonCaller",
         account=accounts[0],
+        constructor_args=[common_contract.address],
     )
     yield contract
-
 
 @pytest.fixture(scope="class")
 def meta_proxy_contract(web3_client, accounts):

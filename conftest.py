@@ -7,7 +7,6 @@ import sys
 from dataclasses import dataclass, field
 from typing import Optional, Dict
 
-from pygments.lexer import default
 from solders.pubkey import Pubkey
 
 import allure
@@ -23,6 +22,7 @@ from web3.middleware import geth_poa_middleware
 
 from clickfile import TEST_GROUPS, EnvName
 from utils.consts import LAMPORT_PER_SOL
+from utils.evm_loader import EvmLoader
 from utils.neon_user import NeonUser
 from utils.types import TestGroup, TreasuryPool
 from utils.error_log import error_log
@@ -31,13 +31,11 @@ from utils.faucet import Faucet
 from utils.accounts import EthAccounts
 from utils.web3client import NeonChainWeb3Client
 from utils.solana_client import SolanaClient
+from spl.token.constants import WRAPPED_SOL_MINT
 
 
 pytest_plugins = ["ui.plugins.browser"]
 COST_REPORT_DIR: pathlib.Path = pathlib.Path()
-
-
-from spl.token.constants import WRAPPED_SOL_MINT
 
 
 @dataclass
@@ -66,7 +64,7 @@ def pytest_addoption(parser: Parser):
         "--network",
         action="store",
         choices=[env.value for env in EnvName],  # noqa
-        default="night-stand",
+        default="devnet",
         help="Which stand use",
     )
     parser.addoption(
@@ -255,25 +253,39 @@ def faucet(environment: EnvironmentConfig, web3_client_session: NeonChainWeb3Cli
 
 @pytest.fixture(scope="session")
 def accounts_session(pytestconfig: Config, web3_client_session, faucet, eth_bank_account):
-    return EthAccounts(web3_client_session, faucet, eth_bank_account)
+    accounts = EthAccounts(web3_client_session, faucet, eth_bank_account)
+    yield accounts
+    if pytestconfig.getoption("--network") == "mainnet":
+        if len(accounts.accounts_collector) > 0:
+            for item in accounts.accounts_collector:
+                with allure.step(f"Restoring eth account balance from {item.key.hex()} account"):
+                    web3_client_session.send_all_neons(item, eth_bank_account)
+    accounts_session._accounts = []
 
 
 @pytest.fixture(scope="function")
-def neon_user(evm_loader, environment: EnvironmentConfig) -> NeonUser:
-    user = NeonUser(evm_loader=environment.evm_loader, neon_chain_id=environment.network_ids["neon"])
-    evm_loader.request_airdrop(user.solana_account.pubkey(), 1000 * 10**9, commitment=Confirmed)
-    evm_loader.deposit_wrapped_sol_from_solana_to_neon(
-        user.solana_account, "0x" + user.neon_address.hex(), environment.network_ids["sol"], int(1 * LAMPORT_PER_SOL)
-    )
+def neon_user(evm_loader: EvmLoader, pytestconfig, bank_account, faucet, environment) -> NeonUser:
+    user = NeonUser(environment.evm_loader, bank_account)
+    balance = evm_loader.get_solana_balance(user.solana_account.pubkey())
+    if pytestconfig.getoption("--network") != "mainnet":
+        if balance < 5 * LAMPORT_PER_SOL:
+            evm_loader.request_airdrop(user.solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=Confirmed)
     return user
 
 
 @pytest.fixture(scope="session")
-def treasury_pool(evm_loader) -> TreasuryPool:
+def treasury_pool(evm_loader, pytestconfig) -> TreasuryPool:
     index = 2
-    address = evm_loader.create_treasury_pool_address(index)
+    evm_loader.create_treasury_pool_address(index)
+    if pytestconfig.getoption("--network") == "mainnet":
+        address = Pubkey.from_string(os.environ.get("MAINNET_TREASURY_POOL_ADDRESS"))
+    else:
+        address = evm_loader.create_treasury_pool_address(index)
     index_buf = index.to_bytes(4, "little")
-    evm_loader.request_airdrop(address, 10000 * 10**9, commitment=Confirmed)
+    balance = evm_loader.get_solana_balance(address)
+    if pytestconfig.getoption("--network") != "mainnet":
+        if balance < 5 * LAMPORT_PER_SOL:
+            evm_loader.request_airdrop(address, 5 * LAMPORT_PER_SOL, commitment=Confirmed)
     return TreasuryPool(index, address, index_buf)
 
 

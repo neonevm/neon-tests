@@ -15,9 +15,7 @@ from spl.token.instructions import get_associated_token_address
 from utils.types import Caller, Contract
 from .utils.assert_messages import InstructionAsserts
 
-from .utils.contract import make_contract_call_trx
-from .utils.ethereum import make_eth_transaction
-from .utils.storage import create_holder
+from .utils.ethereum import make_eth_transaction, make_contract_call_trx
 from .utils.transaction_checks import check_transaction_logs_have_text
 
 
@@ -383,7 +381,7 @@ class TestExecuteTrxFromInstruction:
         # check any user can send transactions through "execute transaction from instruction" instruction with own holder
 
         signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
-        holder_acc = create_holder(sender_with_tokens.solana_account, evm_loader)
+        holder_acc = evm_loader.create_holder(sender_with_tokens.solana_account)
 
         resp = evm_loader.execute_trx_from_instruction(
             sender_with_tokens.solana_account,

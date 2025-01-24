@@ -19,10 +19,9 @@ from utils.types import TreasuryPool
 from .utils.assert_messages import InstructionAsserts
 
 from .utils.constants import TAG_FINALIZED_STATE, TAG_ACTIVE_STATE
-from .utils.contract import make_deployment_transaction, make_contract_call_trx, deploy_contract
 
-from .utils.ethereum import make_eth_transaction, create_contract_address
-from .utils.storage import create_holder
+from .utils.ethereum import make_eth_transaction, create_contract_address, make_contract_call_trx, \
+    make_deployment_transaction
 from .utils.transaction_checks import check_transaction_logs_have_text, check_holder_account_tag
 
 
@@ -262,7 +261,7 @@ class TestTransactionStepFromInstruction:
                 sender_with_tokens.balance_account_address,
             ],
         )
-        new_holder_acc = create_holder(operator_keypair, evm_loader)
+        new_holder_acc = evm_loader.create_holder(operator_keypair)
         with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.INVALID_NONCE):
             evm_loader.execute_transaction_steps_from_instruction(
                 operator_keypair,
@@ -788,7 +787,7 @@ class TestTransactionStepFromInstructionParallelRuns:
         send_transaction_steps(new_holder_acc, rw_lock_contract, signed_tx)
 
         signed_tx2 = make_contract_call_trx(evm_loader, user_account, string_setter_contract, "get()")
-        holder_acc2 = create_holder(operator_keypair, evm_loader)
+        holder_acc2 = evm_loader.create_holder(operator_keypair)
 
         send_transaction_steps(holder_acc2, string_setter_contract, signed_tx2)
         send_transaction_steps(new_holder_acc, rw_lock_contract, signed_tx)
@@ -847,7 +846,7 @@ class TestTransactionStepFromInstructionParallelRuns:
         send_transaction_steps(user_account, new_holder_acc, signed_tx)
 
         signed_tx2 = make_contract_call_trx(evm_loader, session_user, rw_lock_contract, "get_text()")
-        holder_acc2 = create_holder(operator_keypair, evm_loader)
+        holder_acc2 = evm_loader.create_holder(operator_keypair)
         send_transaction_steps(session_user, holder_acc2, signed_tx2)
         send_transaction_steps(user_account, new_holder_acc, signed_tx)
         send_transaction_steps(session_user, holder_acc2, signed_tx2)
@@ -870,30 +869,25 @@ class TestTransactionStepFromInstructionParallelRuns:
         operator_keypair,
         treasury_pool,
         new_holder_acc,
-        neon_api_client,
-        sol_client
+        neon_api_client
     ):
         constructor_args = eth_abi.encode(["address"], [rw_lock_contract.eth_address.hex()])
 
-        contract1 = deploy_contract(
+        contract1 = evm_loader.deploy_contract(
             operator_keypair,
             session_user,
             "rw_lock",
-            evm_loader,
             neon_api_client,
             treasury_pool,
-            sol_client,
             encoded_args=constructor_args,
             contract_name="rw_lock_caller",
         )
-        contract2 = deploy_contract(
+        contract2 = evm_loader.deploy_contract(
             operator_keypair,
             session_user,
             "rw_lock",
-            evm_loader,
             neon_api_client,
             treasury_pool,
-            sol_client,
             encoded_args=constructor_args,
             contract_name="rw_lock_caller",
         )
@@ -902,7 +896,7 @@ class TestTransactionStepFromInstructionParallelRuns:
             evm_loader, user_account, contract1, "unchange_storage(uint8,uint8)", [1, 1]
         )
         signed_tx2 = make_contract_call_trx(evm_loader, session_user, contract2, "get_text()")
-        holder_acc2 = create_holder(operator_keypair, evm_loader)
+        holder_acc2 = evm_loader.create_holder(operator_keypair)
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
 
         def send_transaction_steps(user, holder_acc, contract, trx):
@@ -930,7 +924,7 @@ class TestTransactionStepFromInstructionParallelRuns:
         send_transaction_steps(session_user, holder_acc2, contract2, signed_tx2)
         for holder in (new_holder_acc, holder_acc2):
             check_holder_account_tag(
-                solana_client=sol_client,
+                solana_client=evm_loader,
                 storage_account=holder,
                 layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
                 expected_tag=TAG_FINALIZED_STATE,

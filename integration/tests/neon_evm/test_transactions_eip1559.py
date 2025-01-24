@@ -2,8 +2,8 @@ import pytest
 import solana
 
 from integration.tests.neon_evm.utils.constants import TAG_FINALIZED_STATE
-from integration.tests.neon_evm.utils.contract import make_contract_call_trx, make_deployment_transaction
-from integration.tests.neon_evm.utils.ethereum import create_contract_address, make_eth_transaction
+from integration.tests.neon_evm.utils.ethereum import create_contract_address, make_eth_transaction, \
+    make_contract_call_trx, make_deployment_transaction
 from integration.tests.neon_evm.utils.transaction_checks import (
     check_holder_account_tag,
     check_transaction_logs_have_text,

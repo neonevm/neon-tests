@@ -2,6 +2,7 @@ pragma solidity ^0.8.10;
 
 contract Counter {
     uint public count = 0;
+    uint256 public totalReceived;
     event LogUint(uint value);
 
     // Function to get the current count
@@ -49,6 +50,15 @@ contract Counter {
     function bigString(string memory text) public {
         bytes memory _baseBytes = bytes(text);
     }
+
+    // Функция для получения ETH и увеличения счетчика
+    function receiveEthAndIncrement() public payable {
+        // Обновляем общее количество полученных ETH
+        totalReceived += msg.value;
+
+        // Увеличиваем счетчик
+        count += 1;
+    }
 }
 
 
@@ -62,5 +72,28 @@ mapping(address => uint256) map;
 
     function get() public view returns (uint256) {
         return map[msg.sender];
+    }
+}
+
+contract CounterWithLogging{
+    uint256 public count;
+    uint256 public totalReceived;
+
+    event LogTotalReceived(uint256 totalReceived);
+
+    // Function to increment count by 1
+    function incWithSenderAddr() public returns(address){
+        count += 1;
+        return msg.sender;
+    }
+
+    function receiveAndIncrement() public payable {
+        totalReceived += msg.value;
+        count += 1;
+    }
+
+    function getTotalReceived() public  returns(uint256) {
+        emit LogTotalReceived(totalReceived);
+        return totalReceived;
     }
 }

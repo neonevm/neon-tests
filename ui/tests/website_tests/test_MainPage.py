@@ -49,9 +49,7 @@ class TestMainPage:
     def test_check_subscription(self, main_page):
         main_page.input_email()
         main_page.click_subscribe_button()
-        main_page.check_successfully_subscription_text()
-        main_page.close_subscription_text()
-        main_page.click_subscribe_button()
+        main_page.check_already_subscribed_text()
 
     def test_check_twitter_page(self, main_page):
         main_page.click_social_network_icon(icon_name=main_page.twitter_icon)
@@ -95,3 +93,23 @@ class TestMainPage:
         main_page.click_accept_button()
         main_page.reload_page()
         main_page.assert_cookie_banner_is_invisible()
+
+    def test_check_terms_of_use_page(self, main_page):
+        main_page.click_terms_of_use_link()
+        main_page.assert_page_url(url=main_page.terms_page)
+        main_page.check_page_title(main_page.terms_of_use_page_title)
+
+    def test_check_disclaimer_page(self, main_page):
+        main_page.click_disclaimer_link()
+        main_page.assert_page_url(url=main_page.disclaimer_page)
+        main_page.check_page_title(main_page.disclaimer_page_title)
+
+    def test_check_privacy_policy_page(self, main_page):
+        main_page.click_privacy_policy_link()
+        main_page.assert_page_url(url=main_page.privacy_page)
+        main_page.check_page_title(main_page.privacy_policy_page_title)
+
+    def test_check_cookie_page(self, main_page):
+        main_page.click_cookie_policy_link()
+        main_page.assert_page_url(url=main_page.cookie_page)
+        main_page.check_page_title(main_page.cookie_policy_page_title)

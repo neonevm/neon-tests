@@ -1,15 +1,13 @@
-from uuid import uuid4
-
-from faker import Faker
 import pytest
 import abc
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
 
+
 @pytest.mark.usefixtures("setup")
 class BasePage(abc.ABC):
-    _url:str
+    _url: str
 
     def __init__(self, driver, url=None):
         self.driver = driver
@@ -54,8 +52,3 @@ class BasePage(abc.ABC):
         assert (
             len(self.driver.window_handles) == expected_windows_count
         ), f"Expected {expected_windows_count} windows, but found {len(self.driver.window_handles)}"
-
-    def email(self):
-        generated_email = "test-{}@gmail.com".format(uuid4().hex)
-        return generated_email
-

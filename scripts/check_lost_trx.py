@@ -37,7 +37,7 @@ def check_neon_tx(tx, web3_client: NeonChainWeb3Client):
     try:
         web3_client._web3.eth.get_transaction_receipt(tx)
         return True
-    except Exception as e:
+    except Exception:
         print(f"TX: {tx} is not found")
         return False
 

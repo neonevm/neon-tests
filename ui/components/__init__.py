@@ -116,7 +116,7 @@ class Combobox:
         if self.is_open():
             self._component.click()
 
-    def get_items(self) -> tp.List["ElementHandle"]:
+    def get_items(self) -> tp.List:  # add correct element types
         if not self.is_open():
             self.open()
         return self.page.query_selector_all('//div[contains(@class, "style__option")]/span')

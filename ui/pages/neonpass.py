@@ -13,7 +13,6 @@ from playwright.sync_api import expect
 
 from ui import components
 from ui.pages import phantom, metamask
-from utils.consts import Time
 from . import BasePage
 from ..libs import Platform, Token, PriorityFee, TransactionFee
 

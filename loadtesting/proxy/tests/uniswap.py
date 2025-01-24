@@ -1,10 +1,30 @@
+import random
+import os
+import pathlib
+import subprocess
+import shutil
+
+import web3
+from locust import events, task, tag
+from locust.env import Environment
+import logging
+
+from loadtesting.proxy.common.base import NeonProxyTasksSet
+from loadtesting.proxy.common.events import statistics_collector
+from utils import helpers
+from utils.faucet import Faucet
+from utils.web3client import NeonChainWeb3Client
+
+
 UNISWAP_REPO_URL = "https://github.com/gigimon/Uniswap-V2-NEON.git"
 UNISWAP_TMP_DIR = "/tmp/uniswap-neon"
 MAX_UINT_256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 
+LOG = logging.getLogger(__name__)
+
 
 @events.test_start.add_listener
-def deploy_uniswap(environment: "locust.env.Environment", **kwargs):
+def deploy_uniswap(environment: Environment, **kwargs):
     # 1. git clone repo with uniswap
     # 2. deploy 3 erc20 contracts
     # 3. deploy uniswap and create pairs

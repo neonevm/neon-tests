@@ -58,7 +58,7 @@ class TestTracerDebugMethods:
         response = self.tracer_api.send_rpc_and_wait_response("debug_traceCall", [{}, hex(tx_info["blockNumber"])])
 
         assert "error" not in response, "Error in response"
-        assert response["result"]["failed"] == False
+        assert response["result"]["failed"] is False
         assert response["result"]["returnValue"] == ""
 
     def test_debug_trace_call_zero_eth_call(self):

@@ -1,6 +1,9 @@
 from integration.tests.neon_evm.utils.constants import TAG_HOLDER
-from integration.tests.neon_evm.utils.ethereum import make_eth_transaction, create_contract_address, \
-    make_deployment_transaction
+from integration.tests.neon_evm.utils.ethereum import (
+    make_eth_transaction,
+    create_contract_address,
+    make_deployment_transaction,
+)
 from integration.tests.neon_evm.utils.transaction_checks import (
     check_transaction_logs_have_text,
     check_holder_account_tag,
@@ -55,7 +58,7 @@ class TestExecuteTrxFromAccount:
         treasury_pool,
         evm_loader,
         sender_with_tokens,
-        neon_api_client
+        neon_api_client,
     ):
         contract = create_contract_address(sender_with_tokens, evm_loader)
 

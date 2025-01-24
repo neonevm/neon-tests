@@ -1,6 +1,5 @@
 import math
 import random
-import re
 import typing as tp
 
 import pytest

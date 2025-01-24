@@ -9,13 +9,14 @@ from functools import lru_cache
 import web3.types
 import requests
 import gevent
-from eth_account.signers.local import LocalAccount
+
 from gevent.pool import Pool
 from locust import TaskSet, events, env
 
 from utils import helpers
 from utils.faucet import Faucet
 from utils.web3client import NeonChainWeb3Client
+from eth_account.signers.local import LocalAccount
 
 from .events import statistics_collector, save_transaction
 
@@ -113,7 +114,7 @@ class NeonProxyTasksSet(TaskSet):
         """Check the number of the most recent block"""
         self.web3_client.get_block_number()
 
-    def check_balance(self, account: tp.Optional["eth_account.signers.local.LocalAccount"] = None) -> None:
+    def check_balance(self, account: tp.Optional[LocalAccount] = None) -> None:
         """Keeps account balance not empty"""
         account = account or self.account
         balance_before = self.web3_client.get_balance(account.address)

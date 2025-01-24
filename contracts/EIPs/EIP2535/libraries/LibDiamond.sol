@@ -67,7 +67,7 @@ library LibDiamond {
     function enforceIsContractOwner() internal view {
         if(msg.sender != diamondStorage().contractOwner) {
             revert NotContractOwner(msg.sender, diamondStorage().contractOwner);
-        }        
+        }
     }
 
     event DiamondCut(IDiamondCut.FacetCut[] _diamondCut, address _init, bytes _calldata);
@@ -99,19 +99,19 @@ library LibDiamond {
         initializeDiamondCut(_init, _calldata);
     }
 
-    function addFunctions(address _facetAddress, bytes4[] memory _functionSelectors) internal {        
+    function addFunctions(address _facetAddress, bytes4[] memory _functionSelectors) internal {
         if(_facetAddress == address(0)) {
             revert CannotAddSelectorsToZeroAddress(_functionSelectors);
         }
         DiamondStorage storage ds = diamondStorage();
-        uint16 selectorCount = uint16(ds.selectors.length);                
+        uint16 selectorCount = uint16(ds.selectors.length);
         enforceHasContractCode(_facetAddress, "LibDiamondCut: Add facet has no code");
         for (uint256 selectorIndex; selectorIndex < _functionSelectors.length; selectorIndex++) {
             bytes4 selector = _functionSelectors[selectorIndex];
             address oldFacetAddress = ds.facetAddressAndSelectorPosition[selector].facetAddress;
             if(oldFacetAddress != address(0)) {
                 revert CannotAddFunctionToDiamondThatAlreadyExists(selector);
-            }            
+            }
             ds.facetAddressAndSelectorPosition[selector] = FacetAddressAndSelectorPosition(_facetAddress, selectorCount);
             ds.selectors.push(selector);
             emit Log(selector);
@@ -119,7 +119,7 @@ library LibDiamond {
         }
     }
 
-    function replaceFunctions(address _facetAddress, bytes4[] memory _functionSelectors) internal {        
+    function replaceFunctions(address _facetAddress, bytes4[] memory _functionSelectors) internal {
         DiamondStorage storage ds = diamondStorage();
         if(_facetAddress == address(0)) {
             revert CannotReplaceFunctionsFromFacetWithZeroAddress(_functionSelectors);
@@ -143,20 +143,20 @@ library LibDiamond {
         }
     }
 
-    function removeFunctions(address _facetAddress, bytes4[] memory _functionSelectors) internal {        
+    function removeFunctions(address _facetAddress, bytes4[] memory _functionSelectors) internal {
         DiamondStorage storage ds = diamondStorage();
         uint256 selectorCount = ds.selectors.length;
         if(_facetAddress != address(0)) {
             revert RemoveFacetAddressMustBeZeroAddress(_facetAddress);
-        }        
+        }
         for (uint256 selectorIndex; selectorIndex < _functionSelectors.length; selectorIndex++) {
             bytes4 selector = _functionSelectors[selectorIndex];
             FacetAddressAndSelectorPosition memory oldFacetAddressAndSelectorPosition = ds.facetAddressAndSelectorPosition[selector];
             if(oldFacetAddressAndSelectorPosition.facetAddress == address(0)) {
                 revert CannotRemoveFunctionThatDoesNotExist(selector);
             }
-            
-            
+
+
             // can't remove immutable functions -- functions defined directly in the diamond
             if(oldFacetAddressAndSelectorPosition.facetAddress == address(this)) {
                 revert CannotRemoveImmutableFunction(selector);
@@ -178,7 +178,7 @@ library LibDiamond {
         if (_init == address(0)) {
             return;
         }
-        enforceHasContractCode(_init, "LibDiamondCut: _init address has no code");        
+        enforceHasContractCode(_init, "LibDiamondCut: _init address has no code");
         (bool success, bytes memory error) = _init.delegatecall(_calldata);
         if (!success) {
             if (error.length > 0) {
@@ -191,7 +191,7 @@ library LibDiamond {
             } else {
                 revert InitializationFunctionReverted(_init, _calldata);
             }
-        }        
+        }
     }
 
     function enforceHasContractCode(address _contract, string memory _errorMessage) internal view {
@@ -201,6 +201,6 @@ library LibDiamond {
         }
         if(contractSize == 0) {
             revert NoBytecodeAtAddress(_contract, _errorMessage);
-        }        
+        }
     }
 }

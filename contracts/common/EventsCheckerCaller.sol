@@ -16,7 +16,7 @@ contract ChildContractWithNewContractInConstructor {
 
     constructor() {
         emit EventChildContractWithNewContractInConstructor("Emit Child Contract Event");
-        childAddr = address(new 
+        childAddr = address(new
         ChildContract());
     }
 }

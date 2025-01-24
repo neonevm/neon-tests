@@ -239,7 +239,7 @@ def create_metadata_instruction_data(name: str, symbol: str, uri="", fee=0):
 
 def create_metadata_instruction(data, update_authority, mint_key, mint_authority_key, payer):
     metadata_account = get_metadata_account(mint_key)
-    master_edition_account = get_edition(mint_key)
+    # master_edition_account = get_edition(mint_key)
     keys = [
         AccountMeta(pubkey=metadata_account, is_signer=False, is_writable=True),
         # AccountMeta(pubkey=master_edition_account, is_signer=False, is_writable=True),
@@ -248,7 +248,7 @@ def create_metadata_instruction(data, update_authority, mint_key, mint_authority
         AccountMeta(pubkey=payer, is_signer=True, is_writable=False),
         AccountMeta(pubkey=update_authority, is_signer=False, is_writable=False),
         AccountMeta(pubkey=SYSTEM_PROGRAM_ID, is_signer=False, is_writable=False),
-        AccountMeta(pubkey=SYSVAR_RENT_PUBKEY, is_signer=False, is_writable=False)
+        AccountMeta(pubkey=SYSVAR_RENT_PUBKEY, is_signer=False, is_writable=False),
         # AccountMeta(pubkey=TOKEN_PROGRAM_ID, is_signer=False, is_writable=False)
     ]
     return Instruction(accounts=keys, program_id=METADATA_PROGRAM_ID, data=data)

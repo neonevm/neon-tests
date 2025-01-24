@@ -1,4 +1,3 @@
-import time
 import typing as tp
 
 import base58
@@ -441,7 +440,7 @@ class TestEIP1559:
             access_list=None,
         )
 
-        error_msg_regex = rf".+ not in the chain after \d+ seconds"
+        error_msg_regex = r".+ not in the chain after \d+ seconds"
         with pytest.raises(expected_exception=TimeExhausted, match=error_msg_regex):
             self.web3_client.send_transaction(account=sender, transaction=tx_params, timeout=TX_TIMEOUT)
 

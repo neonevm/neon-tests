@@ -132,7 +132,7 @@ def assert_log_field_in_neon_trx_receipt(response, events_count):
         expected_int_fields = ["solanaBlockSlot", "solanaLamportExpense"]
         assert_fields_are_specified_type(int, trx, expected_int_fields)
 
-        assert trx["solanaTransactionIsSuccess"] == True
+        assert trx["solanaTransactionIsSuccess"]
         instructions = trx["solanaInstructions"]
         assert instructions != []
         for instruction in instructions:
@@ -190,25 +190,25 @@ def assert_equal_fields(result, comparable_object, comparable_fields, keys_mappi
     :return:
     """
     for field in comparable_fields:
-        l = result[field]
+        result_value = result[field]
         if keys_mappings and keys_mappings.get(field):
-            r = comparable_object[keys_mappings.get(field)]
+            comparable_obj_value = comparable_object[keys_mappings.get(field)]
         else:
-            r = comparable_object[field]
-        if isinstance(r, int):
-            r = hex(r)
-        if isinstance(r, HexBytes):
-            r = r.hex()
+            comparable_obj_value = comparable_object[field]
+        if isinstance(comparable_obj_value, int):
+            comparable_obj_value = hex(comparable_obj_value)
+        if isinstance(comparable_obj_value, HexBytes):
+            comparable_obj_value = comparable_obj_value.hex()
 
-        if is_hex(r):
+        if is_hex(comparable_obj_value):
             # Ethereum is case-insensitive to addresses and block hashes
             # Geth sometimes returns the same hash with a few characters in different register (upper or lower)
-            l = l.lower()
-            r = r.lower()
+            result_value = result_value.lower()
+            comparable_obj_value = comparable_obj_value.lower()
 
         assert (
-            l.lower() == r.lower()
-        ), f"The field '{field}' {l} from response  is not equal to {field} from receipt {r}"
+            result_value.lower() == comparable_obj_value.lower()
+        ), f"The field '{field}' {result_value} from response  is not equal to {field} from receipt {comparable_obj_value}"
 
 
 def count_events(

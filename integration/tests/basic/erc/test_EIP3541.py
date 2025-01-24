@@ -11,9 +11,9 @@ from utils.accounts import EthAccounts
 BAD_CALLDATA = ["0x60ef60005360016000f3"]
 GOOD_CALLDATA = ["0x60fe60005360016000f3"]
 
-EIP_3541_ERROR_MESSAGE = (
-    BAD_START_CONTRACT_CODE_EIP354
-) = r"execution reverted: New contract code starting with the 0xEF byte \(EIP-3541\), contract = (\w+)"
+EIP_3541_ERROR_MESSAGE = BAD_START_CONTRACT_CODE_EIP354 = (
+    r"execution reverted: New contract code starting with the 0xEF byte \(EIP-3541\), contract = (\w+)"
+)
 
 
 @allure.feature("EIP Verifications")

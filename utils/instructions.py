@@ -510,7 +510,8 @@ def make_ScheduledTransactionSkipFromInstruction(
     ]
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 
-def make_DeleteHolderAccount(signer:Pubkey, holder_account:Pubkey, evm_loader_id):
+
+def make_DeleteHolderAccount(signer: Pubkey, holder_account: Pubkey, evm_loader_id):
     return Instruction(
         program_id=evm_loader_id,
         data=bytes.fromhex("25"),

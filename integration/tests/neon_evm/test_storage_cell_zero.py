@@ -5,7 +5,6 @@ from solders.pubkey import Pubkey
 from integration.tests.neon_evm.utils.ethereum import make_contract_call_trx
 from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
 from utils.evm_loader import EvmLoader
-from utils.solana_client import SolanaClient
 from utils.types import Contract, Caller, TreasuryPool
 
 
@@ -26,7 +25,7 @@ class TestStorageCells:
         treasury_pool: TreasuryPool,
         neon_api_client: NeonApiClient,
         holder_acc: Pubkey,
-        function_signature: str
+        function_signature: str,
     ):
         # Deploy the contract
         contract: Contract = evm_loader.deploy_contract(

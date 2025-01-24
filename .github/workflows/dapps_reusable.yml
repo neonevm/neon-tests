@@ -275,7 +275,7 @@ jobs:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: ${{ github.repository_owner }}/aave_tests:latest
         run: |
-          docker pull ${{ env.IMAGE }} 
+          docker pull ${{ env.IMAGE }}
           docker run -i -d --name=aave-v2-${{ github.run_number }} ${{ env.IMAGE }} /bin/bash
           docker exec -i -e NEON_PROXY_URL=${{env.PROXY_URL}} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} -e NEON_CHAIN_ID=${{ env.NETWORK_ID }} aave-v2-${{ github.run_number }} npm run neonlabs:deploy --network=neonlabs
           docker cp aave-v2-${{ github.run_number }}:/app/report.json aave-v2-report.json
@@ -321,7 +321,7 @@ jobs:
           ACCOUNTS: ${{ env.ACCOUNTS }}
           IMAGE: ${{ github.repository_owner }}/aave-v3-core:latest
         run: |
-          docker pull ${{ env.IMAGE }} 
+          docker pull ${{ env.IMAGE }}
           docker run -i -d --name=aave-v3-${{ github.run_number }} ${{ env.IMAGE }} /bin/bash
           docker exec -i -e NEON_PROXY_URL=${{env.PROXY_URL}} -e NEON_ACCOUNTS=${{ env.ACCOUNTS }} -e NEON_CHAIN_ID=${{ env.NETWORK_ID }} aave-v3-${{ github.run_number }} ./run-neon-tests.sh
           docker cp aave-v3-${{ github.run_number }}:/app/aave-v3-core-report.json aave-v3-core-report.json
@@ -712,8 +712,8 @@ jobs:
       - name: "Define if reports should be compared and set to outputs.compare"
         id: set-do-compare-reports
         run: |
-          if [[ 
-              ('${{ inputs.repo }}' == 'proxy' && '${{ inputs.proxy_tag }}' != 'latest' && ! '${{ inputs.proxy_tag }}' =~ ^[vt][0-9]+\.[0-9]+\.x$) || 
+          if [[
+              ('${{ inputs.repo }}' == 'proxy' && '${{ inputs.proxy_tag }}' != 'latest' && ! '${{ inputs.proxy_tag }}' =~ ^[vt][0-9]+\.[0-9]+\.x$) ||
               ('${{ inputs.repo }}' == 'evm' && '${{ inputs.evm_tag }}' != 'latest' && ! '${{ inputs.evm_tag }}' =~ ^[vt][0-9]+\.[0-9]+\.x$)
             ]]; then
             echo "compare=true" >> "$GITHUB_OUTPUT"
@@ -744,16 +744,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GHTOKEN }}
         run: |
           ARTIFACT_NAME="cost_reports"
-          
+
           ARTIFACT_INFO=$(gh api -X GET "/repos/${{ github.repository }}/actions/artifacts" | jq -r ".artifacts[] | select(.name==\"${ARTIFACT_NAME}\") | {id: .id, run_id: .workflow_run.id}")
           echo "ARTIFACT_INFO: ${ARTIFACT_INFO}"
-          
+
           ARTIFACT_ID=$(echo "${ARTIFACT_INFO}" | jq -r '.id' | head -n 1)
           echo "ARTIFACT_ID: ${ARTIFACT_ID}"
-          
+
           RUN_ID=$(echo "${ARTIFACT_INFO}" | jq -r '.run_id' | head -n 1)
           echo "RUN_ID: ${RUN_ID}"
-          
+
           ARTIFACT_URL="https://github.com/${{ github.repository }}/actions/runs/${RUN_ID}/artifacts/${ARTIFACT_ID}"
           echo "🔗[Cost report](${ARTIFACT_URL})" > cost_reports.md
       - name: "Save Cost Reports as markdown tables to cost_reports.md if Cost Reports were not compared"

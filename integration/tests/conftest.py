@@ -139,8 +139,8 @@ def solana_account(
         balance = sol_client_session.get_balance(account.pubkey(), commitment=commitment.Confirmed).value
         try:
             sol_client_session.send_sol(account, bank_account.pubkey(), balance - 5000)
-        except:
-            pass
+        except Exception as e:
+            log.info(f"Failed to send sol to bank: {e}")
 
 
 @pytest.fixture(scope="function")
@@ -158,8 +158,8 @@ def new_solana_account(
         balance = sol_client_session.get_balance(account.pubkey(), commitment=commitment.Confirmed).value
         try:
             sol_client_session.send_sol(account, bank_account.pubkey(), balance - 5000)
-        except:
-            pass
+        except Exception as e:
+            log.info(f"Failed to send sol to bank: {e}")
 
 
 @pytest.fixture(scope="class")
@@ -351,6 +351,7 @@ def common_contract(web3_client, accounts, pytestconfig) -> Contract:
         )
     yield contract
 
+
 @pytest.fixture(scope="class")
 def common_caller_contract(web3_client, accounts, common_contract) -> Contract:
     contract, tx = web3_client.deploy_and_get_contract(
@@ -361,6 +362,7 @@ def common_caller_contract(web3_client, accounts, common_contract) -> Contract:
         constructor_args=[common_contract.address],
     )
     yield contract
+
 
 @pytest.fixture(scope="class")
 def meta_proxy_contract(web3_client, accounts):

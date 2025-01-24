@@ -3,11 +3,10 @@ import sys
 import time
 from datetime import datetime, timezone
 from solana.rpc.core import RPCException
+from utils.solana_client import SolanaClient
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-
-from utils.solana_client import SolanaClient
 
 sol_client = SolanaClient("https://solana-api.instantnodes.io/token-OjVeh8exYGMeFh7QKIRLsF93T4xratD6")
 

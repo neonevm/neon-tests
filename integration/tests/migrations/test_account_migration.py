@@ -1,5 +1,6 @@
 """Tests to check old accounts continue work after structure changes
 Environment variables ACCOUNTS, ERC20_ADDRESS, ERC721_ADDRESS should be set"""
+
 import os
 import time
 

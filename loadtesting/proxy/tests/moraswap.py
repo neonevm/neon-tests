@@ -1,10 +1,10 @@
-import random
 import logging
 import time
 
 import web3
 import requests
 from locust import tag, task, User, events
+from locust.env import Environment
 
 from utils.web3client import NeonChainWeb3Client
 from utils.faucet import Faucet
@@ -20,7 +20,7 @@ ROUTER_ADDRESS = "0xafa9ba8282db9ee8c89a63c99b093a9843436767"
 
 
 @events.test_start.add_listener
-def prepare_moraswap_contracts(environment: "locust.env.Environment", **kwargs):
+def prepare_moraswap_contracts(environment: Environment, **kwargs):
     LOG.info("Prepare moraswap contracts")
     if environment.parsed_options.exclude_tags and "moraswap" in environment.parsed_options.exclude_tags:
         return

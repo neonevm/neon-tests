@@ -1,7 +1,6 @@
 import math
 import allure
 import pytest
-import requests
 
 from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts

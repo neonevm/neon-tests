@@ -1,19 +1,19 @@
 ## Requirements
-Python 3.6 or later, if you dont already have it. 
+Python 3.6 or later, if you dont already have it.
 [Locust](https://docs.locust.io/en/stable/index.html) 2.8.3 or later.
 
 ## Quick Start
 
 ```bash
 
-1. cd /Users/user_name/NeonLabs/neon-tests/ 
-   pip install -U locust==2.8.3 
-   or 
+1. cd /Users/user_name/NeonLabs/neon-tests/
+   pip install -U locust==2.8.3
+   or
    pip install -U -r ./deploy/requirements/click.txt -r ./deploy/requirements/prod.txt
    or
    ./clickfile.py requirements
-2. export NEON_CRED=envs.json 
-   or --credentials=envs.json as locust command line argument 
+2. export NEON_CRED=envs.json
+   or --credentials=envs.json as locust command line argument
 3. locust -f ./loadtesting/locustfile.py --headless --host=night-stand -t 60 -u 10 -r 10 --logfile run.log
 ```
 
@@ -22,15 +22,15 @@ Python 3.6 or later, if you dont already have it.
 Test configuration via environment variables settings:
 
 - `NEON_TRACING_URL`
-  Endpoint to Neon-RPC. Neon-RPC is a single RPC entrypoint to Neon-EVM (specified for tracing tests). 
-  The function of this service is so route requests between Tracer API and Neon Proxy services. 
+  Endpoint to Neon-RPC. Neon-RPC is a single RPC entrypoint to Neon-EVM (specified for tracing tests).
+  The function of this service is so route requests between Tracer API and Neon Proxy services.
   Used only in tracer API cases.
 -  `SAVE_TRANSACTIONS` Save all neon transactions and their solana transactions to "transactions-{id}.json" files
 
 
-## Running the test and analyzing the results in the console without using the web interface 
+## Running the test and analyzing the results in the console without using the web interface
 
-##### Instant load method without locust web interface 
+##### Instant load method without locust web interface
 ```bash
 locust -f ./loadtesting/{test_group}/locustfile.py --headless --host=night-stand -u 10 -r 10
 ```
@@ -123,7 +123,7 @@ for more options use --help
 
 ##### Running test without Web UI (headless mode)
 ```bash
-./clickfile.py locust --headless | -w 
+./clickfile.py locust --headless | -w
 Test will start immediately. Use -u and -t to control user count and run time
 
 for exit press Ctrl+C
@@ -131,7 +131,7 @@ for exit press Ctrl+C
 for more options use --help
 ```
 
-##### Statistics metrics 
+##### Statistics metrics
 ```bash
 
  Name                                   # reqs      # fails  |     Avg     Min     Max  Median  |   req/s failures/s

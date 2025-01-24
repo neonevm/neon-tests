@@ -3,6 +3,7 @@ import logging
 
 import web3
 from locust import tag, task, User, events
+from locust.env import Environment
 
 from utils.erc20 import ERC20
 from utils.web3client import NeonChainWeb3Client
@@ -32,7 +33,7 @@ class ERC20TasksSet(NeonProxyTasksSet):
     @task(1)
     def task_deploy_contract(self):
         """Deploy ERC20 contract"""
-        self.log.info(f"Deploy ERC20 contract.")
+        self.log.info("Deploy ERC20 contract.")
         amount_range = pow(10, 15)
         amount = random.randint(amount_range, amount_range + pow(10, 3))
         erc20 = ERC20(self.web3_client, self.faucet, owner=self.account, amount=amount)
@@ -78,7 +79,7 @@ class ERC20TasksSet(NeonProxyTasksSet):
 
 
 @events.test_start.add_listener
-def prepare_one_contract_for_erc20(environment: "locust.env.Environment", **kwargs):
+def prepare_one_contract_for_erc20(environment: Environment, **kwargs):
     if environment.parsed_options.exclude_tags and "erc20one" in environment.parsed_options.exclude_tags:
         return
     if environment.parsed_options.tags and "erc20one" not in environment.parsed_options.tags:

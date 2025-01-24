@@ -2,8 +2,6 @@ import eth_abi
 import pytest
 import solana
 from eth_utils import abi, to_int
-from solana.rpc.commitment import Confirmed
-from solana.rpc.core import RPCException
 from solders.pubkey import Pubkey
 
 from integration.tests.neon_evm.utils.assert_messages import InstructionAsserts

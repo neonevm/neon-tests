@@ -30,7 +30,7 @@ class IndexerPostgresClient:
             LIMIT 1
         """
         with self.conn.cursor(name="fetch_latest_block_slot", cursor_factory=DictCursor) as cursor:
-            self.logger.info(f"Fetch latest block_slot")
+            self.logger.info("Fetch latest block_slot")
             cursor.execute(query, (finalized,))
             block_slot = cursor.fetchall()[0]["block_slot"]
         return block_slot
@@ -55,28 +55,28 @@ class IndexerPostgresClient:
         operator_name: str,
     ) -> list[DictRow]:
         select_query = """
-            SELECT DISTINCT 
-                c.operator, 
-                c.sol_sig, 
-                b.block_slot, 
-                b.block_time, 
-                c.sol_spent, 
-                n.gas_price, 
+            SELECT DISTINCT
+                c.operator,
+                c.sol_sig,
+                b.block_slot,
+                b.block_time,
+                c.sol_spent,
+                n.gas_price,
                 s.neon_gas_used,
                 s.idx,
                 s.inner_idx
-            FROM 
+            FROM
                 solana_transaction_costs c
-            INNER JOIN 
-                neon_transactions n 
+            INNER JOIN
+                neon_transactions n
                 ON n.sol_sig = c.sol_sig
-            INNER JOIN 
-                solana_neon_transactions s 
+            INNER JOIN
+                solana_neon_transactions s
                 ON s.neon_sig = n.neon_sig
-            INNER JOIN 
-                solana_blocks b 
+            INNER JOIN
+                solana_blocks b
                 ON c.block_slot = b.block_slot
-            WHERE 
+            WHERE
                 c.operator = ANY(%s)
                 AND c.block_slot BETWEEN %s AND %s
                 AND b.is_finalized = TRUE

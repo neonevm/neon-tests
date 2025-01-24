@@ -76,7 +76,7 @@ class TestCancelTrx:
         evm_loader,
         neon_api_client,
         gas_limit,
-        solana_client
+        solana_client,
     ):
         """If after some iterations there is not enough neon to cancel, the cancel
         instruction can still be executed, and as many neons as possible will be charged

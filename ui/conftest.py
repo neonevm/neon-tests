@@ -6,7 +6,6 @@ import uuid
 import allure
 import pytest
 from _pytest.config import Config
-from playwright.sync_api import Page
 
 from ui import libs
 
@@ -115,7 +114,7 @@ def use_persistent_context() -> bool:
 def pytest_exception_interact(node, call, report):
     """Attach allure screenshot"""
     context = False
-    if hasattr(node, "funcargs") and type(node.funcargs) == dict and node.funcargs.get("context"):
+    if hasattr(node, "funcargs") and type(node.funcargs) is dict and node.funcargs.get("context"):
         context = node.funcargs.get("context")
 
     if report.failed and context and context.pages:

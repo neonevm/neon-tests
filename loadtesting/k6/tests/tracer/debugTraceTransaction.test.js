@@ -58,7 +58,7 @@ export default function DebugTraceTransactionTest() {
         method: "debug_traceTransaction",
         params: [txInfoStorage.tx_hash, {"blockHash": txInfoStorage.blockHash}]
     }
-    
+
     doRequest(client, requestParamsBlockHashStorage, checkExpectedValueStorage, txInfoStorage.store_value);
 
     // call event caller contract
@@ -78,7 +78,7 @@ export default function DebugTraceTransactionTest() {
         method: "debug_traceTransaction",
         params: [txInfoEvent.tx_hash, tracer_config]
     }
-    
+
     doRequest(client, requestParamsBlockHashEvent, checkExpectedValueEvent, [1, 2]);
 
     // call iterative tx contract
@@ -97,16 +97,16 @@ export default function DebugTraceTransactionTest() {
         method: "debug_traceTransaction",
         params: [txInfoIterative.tx_hash, tracer_config]
     }
-    
-    doRequest(client, requestParamsBlockHashIterative, checkExpectedValueIterative, 1001);                    
+
+    doRequest(client, requestParamsBlockHashIterative, checkExpectedValueIterative, 1001);
 }
 
 function doRequest(client, requestParams, checkExpectedValueFunction, args) {
     const startTime = new Date();
     try {
         const responseBody = client.callTracer(
-            JSON.stringify(requestParams.requestType), 
-            JSON.stringify(requestParams.method), 
+            JSON.stringify(requestParams.requestType),
+            JSON.stringify(requestParams.method),
             JSON.stringify(requestParams.params)
         );
         const response = JSON.parse(responseBody);
@@ -126,7 +126,7 @@ function doRequest(client, requestParams, checkExpectedValueFunction, args) {
 
 function checkExpectedValueStorage(response, expectedValue) {
     return check(response, {
-        'response result is not expected value': (r) => { 
+        'response result is not expected value': (r) => {
             return (parseInt(r.result.returnValue, 16) == expectedValue)
         }
     });
@@ -134,7 +134,7 @@ function checkExpectedValueStorage(response, expectedValue) {
 
 function checkExpectedValueEvent(response, expectedValue) {
     return check(response, {
-        'response result is not expected value': (r) => { 
+        'response result is not expected value': (r) => {
             return ((r.result.calls[0].logs.length == expectedValue[0]) && (r.result.logs.length == expectedValue[1]))
         }
     });
@@ -142,7 +142,7 @@ function checkExpectedValueEvent(response, expectedValue) {
 
 function checkExpectedValueIterative(response, expectedValue) {
     return check(response, {
-        'response result is not expected value': (r) => { 
+        'response result is not expected value': (r) => {
             return (r.result.logs.length == expectedValue)
         }
     });

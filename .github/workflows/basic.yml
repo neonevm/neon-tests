@@ -57,10 +57,25 @@ env:
   DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
   GENERATE_COST_REPORT: ${{ github.event.inputs.generate_cost_report || 'false' }}
 jobs:
+
+  pre-commit-check:
+    name: Pre-commit hook validation
+    runs-on: ["self-hosted", "k8s-prod"]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - uses: pre-commit/action@v3.0.1
+        timeout-minutes: 3
+
   dockerize:
     name: Dockerize neon tests
     if: ${{ github.ref_name != 'develop'}}
     runs-on: ["self-hosted", "k8s-prod"]
+    needs: pre-commit-check
     steps:
       - uses: actions/checkout@v4
       - name: Dockerize neon tests
@@ -79,6 +94,7 @@ jobs:
   prepare-env-proxy:
     name: Prepare environment for proxy tests
     runs-on: ["self-hosted", "k8s-prod"]
+    needs: pre-commit-check
     if: always()
     steps:
       - uses: hashicorp/setup-terraform@v3
@@ -139,13 +155,13 @@ jobs:
             --head_branch "${{ github.head_ref }}" \
             --base_branch "${{ github.base_ref }}" \
             --param "evm_tag")
-      
+
           evm_branch=$(python3 ./clickfile.py infra get-stand-param \
             --current_branch "${{ github.ref_name }}" \
             --head_branch "${{ github.head_ref }}" \
             --base_branch "${{ github.base_ref }}" \
             --param "evm_branch")
-      
+
           echo "evm_tag=$env_tag"
           echo "evm_tag=$env_tag" >> $GITHUB_OUTPUT
           echo "evm_branch=$evm_branch"
@@ -214,11 +230,11 @@ jobs:
         timeout-minutes: 60
         run: |
           CMD="python3 ./clickfile.py run basic --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }} --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
-      
+
           if [[ "${{ env.GENERATE_COST_REPORT }}" == "true" ]]; then
             CMD="$CMD --cost_reports_dir reports/cost_reports"
           fi
-      
+
           docker exec -i ${{ env.CONTAINER }} /bin/bash -c "export DEVNET_FAUCET_URL=${{ env.FAUCET_URL }} && $CMD"
 
       - name: Set failed test group to basic

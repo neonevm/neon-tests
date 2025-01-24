@@ -20,7 +20,7 @@ class TestAccountRevision:
         rw_lock_contract,
         session_user,
         evm_loader,
-        neon_api_client
+        neon_api_client,
     ):
         trx_count = 4
         data_storage_acc_count = 3

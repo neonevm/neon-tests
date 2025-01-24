@@ -52,7 +52,7 @@ export default function EthGetBalanceTest() {
         method: "eth_getBalance",
         params: [txInfo.sender, {"blockHash": txInfo.blockHash}]
     }
-    
+
     doRequest(client, requestParamsBlockHash, txInfo.sender_balance_after);
 }
 
@@ -60,8 +60,8 @@ function doRequest(client, requestParams, expectedValue) {
     const startTime = new Date();
     try {
         const responseBody = client.callTracer(
-            JSON.stringify(requestParams.requestType), 
-            JSON.stringify(requestParams.method), 
+            JSON.stringify(requestParams.requestType),
+            JSON.stringify(requestParams.method),
             JSON.stringify(requestParams.params)
         );
         const response = JSON.parse(responseBody);

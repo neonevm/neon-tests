@@ -11,7 +11,6 @@ from eth_utils import abi, to_text, to_int
 from hexbytes import HexBytes
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
-from solana.rpc.commitment import Confirmed
 from solana.rpc.core import RPCException
 
 from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
@@ -20,8 +19,12 @@ from .utils.assert_messages import InstructionAsserts
 
 from .utils.constants import TAG_FINALIZED_STATE, TAG_ACTIVE_STATE
 
-from .utils.ethereum import make_eth_transaction, create_contract_address, make_contract_call_trx, \
-    make_deployment_transaction
+from .utils.ethereum import (
+    make_eth_transaction,
+    create_contract_address,
+    make_contract_call_trx,
+    make_deployment_transaction,
+)
 from .utils.transaction_checks import check_transaction_logs_have_text, check_holder_account_tag
 
 
@@ -155,7 +158,7 @@ class TestTransactionStepFromInstruction:
         holder_acc,
         string_setter_contract,
         neon_api_client,
-        sol_client
+        sol_client,
     ):
         transfer_amount = random.randint(1, 1000)
 
@@ -377,9 +380,7 @@ class TestTransactionStepFromInstruction:
                 [session_user.solana_account_address, session_user.balance_account_address],
             )
 
-    def test_incorrect_treasure_pool(
-        self, operator_keypair, sender_with_tokens, evm_loader, session_user, holder_acc
-    ):
+    def test_incorrect_treasure_pool(self, operator_keypair, sender_with_tokens, evm_loader, session_user, holder_acc):
         signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
         index = 2
         treasury = TreasuryPool(index, Keypair().pubkey(), index.to_bytes(4, "little"))
@@ -399,9 +400,7 @@ class TestTransactionStepFromInstruction:
                 ],
             )
 
-    def test_incorrect_treasure_index(
-        self, operator_keypair, sender_with_tokens, evm_loader, session_user, holder_acc
-    ):
+    def test_incorrect_treasure_index(self, operator_keypair, sender_with_tokens, evm_loader, session_user, holder_acc):
         signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
         index = 2
         treasury = TreasuryPool(
@@ -423,9 +422,7 @@ class TestTransactionStepFromInstruction:
                 ],
             )
 
-    def test_incorrect_operator_account(
-        self, sender_with_tokens, evm_loader, treasury_pool, session_user, holder_acc
-    ):
+    def test_incorrect_operator_account(self, sender_with_tokens, evm_loader, treasury_pool, session_user, holder_acc):
         signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
         fake_operator = Keypair()
         with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.ACC_NOT_FOUND):
@@ -521,7 +518,7 @@ class TestTransactionStepFromInstruction:
         holder_acc,
         string_setter_contract,
         value,
-        sol_client
+        sol_client,
     ):
         access_list = (
             {
@@ -610,7 +607,7 @@ class TestInstructionStepContractCallContractInteractions:
         treasury_pool,
         holder_acc,
         rw_lock_caller,
-        sol_client
+        sol_client,
     ):
         signed_tx = make_contract_call_trx(
             evm_loader, session_user, rw_lock_caller, "unchange_storage(uint8,uint8)", [1, 1]
@@ -646,7 +643,7 @@ class TestInstructionStepContractCallContractInteractions:
         holder_acc,
         rw_lock_caller,
         neon_api_client,
-        sol_client
+        sol_client,
     ):
         signed_tx = make_contract_call_trx(
             evm_loader, session_user, rw_lock_caller, "update_storage_str(string)", ["hello"]
@@ -686,7 +683,7 @@ class TestInstructionStepContractCallContractInteractions:
         treasury_pool,
         holder_acc,
         rw_lock_caller,
-        sol_client
+        sol_client,
     ):
         signed_tx = make_contract_call_trx(evm_loader, session_user, rw_lock_caller, "get_text()")
         resp = evm_loader.execute_transaction_steps_from_instruction(
@@ -720,7 +717,7 @@ class TestInstructionStepContractCallContractInteractions:
         treasury_pool,
         holder_acc,
         neon_api_client,
-        sol_client
+        sol_client,
     ):
         signed_tx = make_contract_call_trx(evm_loader, session_user, rw_lock_caller, "update_storage_map(uint256)", [3])
 
@@ -824,7 +821,7 @@ class TestTransactionStepFromInstructionParallelRuns:
         operator_keypair,
         treasury_pool,
         new_holder_acc,
-        sol_client
+        sol_client,
     ):
         signed_tx = make_contract_call_trx(
             evm_loader, user_account, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1]
@@ -869,7 +866,7 @@ class TestTransactionStepFromInstructionParallelRuns:
         operator_keypair,
         treasury_pool,
         new_holder_acc,
-        neon_api_client
+        neon_api_client,
     ):
         constructor_args = eth_abi.encode(["address"], [rw_lock_contract.eth_address.hex()])
 
@@ -998,13 +995,7 @@ class TestStepFromInstructionChangingOperatorsDuringTrxRun:
 
 class TestStepFromInstructionWithChangedRLPTrx:
     def test_add_waste_to_trx(
-        self,
-        sender_with_tokens,
-        operator_keypair,
-        treasury_pool,
-        evm_loader,
-        holder_acc,
-        string_setter_contract
+        self, sender_with_tokens, operator_keypair, treasury_pool, evm_loader, holder_acc, string_setter_contract
     ):
         text = "".join(random.choice(string.ascii_letters) for _ in range(10))
         signed_tx = make_contract_call_trx(
@@ -1035,13 +1026,7 @@ class TestStepFromInstructionWithChangedRLPTrx:
             )
 
     def test_add_waste_to_trx_without_decoding(
-        self,
-        sender_with_tokens,
-        operator_keypair,
-        treasury_pool,
-        evm_loader,
-        holder_acc,
-        string_setter_contract
+        self, sender_with_tokens, operator_keypair, treasury_pool, evm_loader, holder_acc, string_setter_contract
     ):
         text = "".join(random.choice(string.ascii_letters) for _ in range(10))
         signed_tx = make_contract_call_trx(

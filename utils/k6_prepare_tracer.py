@@ -1,7 +1,6 @@
 import web3
 import json
 import random
-import base58
 
 from utils.consts import InputTestConstants
 from utils.storage_contract import StorageContract
@@ -26,12 +25,14 @@ class TracerLoadTestsDataProducer:
             solana_url,
             account_seed_version,
         )
-        self.historical_data = {"neon_transfers": [], 
-                                "erc20_transfers": [], 
-                                "erc20spl_transfers": [], 
-                                "storage_contract_calls": [], 
-                                "event_caller_contract_calls": [], 
-                                "iterative_tx_contract_calls": []}
+        self.historical_data = {
+            "neon_transfers": [],
+            "erc20_transfers": [],
+            "erc20spl_transfers": [],
+            "storage_contract_calls": [],
+            "event_caller_contract_calls": [],
+            "iterative_tx_contract_calls": [],
+        }
 
     def prepare_tracer(self, transfers_number, contracts_calls_number, iterative_txs_number):
         try:
@@ -45,7 +46,6 @@ class TracerLoadTestsDataProducer:
             print(f"Error in prepare_tracer: {e}")
         finally:
             self.dump_data()
-        
 
     def erc20_transfer_data(self, transfers_number):
         print("ERC20 contract deployment...")
@@ -55,7 +55,7 @@ class TracerLoadTestsDataProducer:
             owner=self.get_account(),
             amount=web3.Web3.to_wei(10000000000, "ether"),
         )
-        
+
         print("ERC20 transfers...")
         for i in range(transfers_number):
             try:
@@ -63,12 +63,13 @@ class TracerLoadTestsDataProducer:
                 account_receiver = self.get_account(balance=0)
                 sender_balance_before = erc20_contract.get_balance(erc20_contract.owner)
                 recipient_balance_before = erc20_contract.get_balance(account_receiver)
-                
+
                 receipt = erc20_contract.transfer(erc20_contract.owner, account_receiver, transfer_amount)
                 assert receipt["status"] == 1
-                
+
                 print(f"ERC20 transfer {i}, receipt status: ", receipt["status"])
-                self.historical_data["erc20_transfers"].append({
+                self.historical_data["erc20_transfers"].append(
+                    {
                         "blockHash": receipt["blockHash"].hex(),
                         "blockNumber": hex(receipt["blockNumber"]),
                         "erc20_contract_address": erc20_contract.contract.address,
@@ -79,26 +80,28 @@ class TracerLoadTestsDataProducer:
                         "sender_nonce": f"{self.web3_client.get_nonce(erc20_contract.owner)}",
                         "recipient_balance_before": f"{recipient_balance_before}",
                         "recipient_balance_after": f"{erc20_contract.get_balance(account_receiver)}",
-                        "amount": transfer_amount
-                    })
+                        "amount": transfer_amount,
+                    }
+                )
             except Exception as e:
-                print(f"Error in erc20_transfer_data: {e}") 
+                print(f"Error in erc20_transfer_data: {e}")
 
     def neon_transfer_data(self, transfers_number):
         print("Neon transfers...")
-        for i in range(transfers_number):       
+        for i in range(transfers_number):
             try:
                 transfer_amount = random.random()
                 sender_account = self.get_account()
                 recipient_account = self.get_account(balance=0)
                 sender_balance_before = self.web3_client.get_balance(sender_account)
                 recipient_balance_before = self.web3_client.get_balance(recipient_account)
-                
+
                 receipt = self.web3_client.send_neon(sender_account, recipient_account, transfer_amount)
                 assert receipt["status"] == 1
 
                 print(f"Neon transfer {i}, receipt status: ", receipt["status"])
-                self.historical_data["neon_transfers"].append({
+                self.historical_data["neon_transfers"].append(
+                    {
                         "blockHash": receipt["blockHash"].hex(),
                         "blockNumber": hex(receipt["blockNumber"]),
                         "sender": sender_account.address,
@@ -108,14 +111,15 @@ class TracerLoadTestsDataProducer:
                         "sender_nonce": f"{self.web3_client.get_nonce(sender_account)}",
                         "recipient_balance_before": f"{recipient_balance_before}",
                         "recipient_balance_after": f"{self.web3_client.get_balance(recipient_account)}",
-                        "amount": transfer_amount
-                    })
+                        "amount": transfer_amount,
+                    }
+                )
             except Exception as e:
-                print(f"Error in neon_transfer_data: {e}") 
+                print(f"Error in neon_transfer_data: {e}")
 
     def erc20_wrapped_transfer_data(self, transfers_number):
         account_owner = self.get_account(balance=1000)
-        
+
         erc20_wrapper = ERC20Wrapper(
             self.web3_client,
             self.faucet,
@@ -129,7 +133,7 @@ class TracerLoadTestsDataProducer:
         print("ERC20 wrapped contract deployment...")
         erc20_wrapper.deploy_wrapper(True)
         erc20_wrapper.mint_tokens(account_owner, account_owner.address, 18446744073709551615)
-        
+
         print("ERC20 wrapped transfers...")
         for i in range(transfers_number):
             try:
@@ -137,12 +141,13 @@ class TracerLoadTestsDataProducer:
                 account_receiver = self.get_account(balance=0)
                 sender_balance_before = erc20_wrapper.get_balance(erc20_wrapper.account)
                 recipient_balance_before = erc20_wrapper.get_balance(account_receiver)
-                
+
                 receipt = erc20_wrapper.transfer(erc20_wrapper.account, account_receiver, transfer_amount)
                 assert receipt["status"] == 1
-                
+
                 print(f"ERC20 wrapped transfer {i}, receipt status: ", receipt["status"])
-                self.historical_data["erc20spl_transfers"].append({
+                self.historical_data["erc20spl_transfers"].append(
+                    {
                         "blockHash": receipt["blockHash"].hex(),
                         "blockNumber": hex(receipt["blockNumber"]),
                         "erc20spl_contract_address": erc20_wrapper.contract_address,
@@ -153,21 +158,22 @@ class TracerLoadTestsDataProducer:
                         "sender_nonce": f"{self.web3_client.get_nonce(erc20_wrapper.account)}",
                         "recipient_balance_before": f"{recipient_balance_before}",
                         "recipient_balance_after": f"{erc20_wrapper.get_balance(account_receiver)}",
-                        "amount": transfer_amount
-                    })
+                        "amount": transfer_amount,
+                    }
+                )
             except Exception as e:
-                print(f"Error in erc20_transfer_data: {e}") 
+                print(f"Error in erc20_transfer_data: {e}")
 
     def storage_contract_data(self, calls_number):
         print("Storage contract deployment...")
         contract, _ = self.web3_client.deploy_and_get_contract(
-        "common/StorageSoliditySource",
+            "common/StorageSoliditySource",
             "0.8.8",
             self.get_account(),
             contract_name="Storage",
-            constructor_args=[],    
+            constructor_args=[],
         )
-        
+
         storage_contract = StorageContract(self.web3_client, contract)
 
         print("Storage contract calls...")
@@ -175,84 +181,91 @@ class TracerLoadTestsDataProducer:
             try:
                 sender_account = self.get_account()
                 store_value = random.randint(0, 100)
-                
+
                 tx_obj, _, receipt = storage_contract.call_storage(sender_account, store_value, "blockNumber")
                 assert receipt["status"] == 1
-                
+
                 print(f"Storage contract call {i}, receipt status: ", receipt["status"])
-                self.historical_data["storage_contract_calls"].append({
+                self.historical_data["storage_contract_calls"].append(
+                    {
                         "blockHash": receipt["blockHash"].hex(),
                         "blockNumber": hex(receipt["blockNumber"]),
                         "storage_contract_address": storage_contract.contract_address,
                         "sender": sender_account.address,
                         "store_value": store_value,
                         "retreive_function_tx": tx_obj,
-                        "tx_hash": receipt["transactionHash"].hex()
-                    })
+                        "tx_hash": receipt["transactionHash"].hex(),
+                    }
+                )
             except Exception as e:
-                print(f"Error in call storage contract functions: {e}") 
+                print(f"Error in call storage contract functions: {e}")
 
     def event_caller_contract_data(self, calls_number):
         account_owner = self.get_account()
-        
+
         print("Events caller/callee contracts deployment...")
-        contract, _ = self.web3_client.deploy_and_get_contract("common/EventsCheckerCaller", 
-                                                               "0.8.15", 
-                                                               account=account_owner)
-        _, contract_deploy_tx = self.web3_client.deploy_and_get_contract("common/EventsCheckerCallee", 
-                                                                         "0.8.15", 
-                                                                         account=account_owner)
+        contract, _ = self.web3_client.deploy_and_get_contract(
+            "common/EventsCheckerCaller", "0.8.15", account=account_owner
+        )
+        _, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
+            "common/EventsCheckerCallee", "0.8.15", account=account_owner
+        )
         for i in range(calls_number):
             try:
                 sender_account = self.get_account()
                 tx = self.web3_client.make_raw_tx(from_=sender_account)
                 instruction_tx = contract.functions.emitAllEventsAndCallContractCalleeWithEvent(
-                    contract_deploy_tx["contractAddress"]).build_transaction(tx)
-                
+                    contract_deploy_tx["contractAddress"]
+                ).build_transaction(tx)
+
                 receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
                 assert receipt["status"] == 1
-                
+
                 print(f"Event caller contract call {i}, receipt status: ", receipt["status"])
-                self.historical_data["event_caller_contract_calls"].append({
+                self.historical_data["event_caller_contract_calls"].append(
+                    {
                         "blockHash": receipt["blockHash"].hex(),
                         "blockNumber": hex(receipt["blockNumber"]),
                         "event_contract_address": contract.address,
                         "event_call_tx": instruction_tx,
-                        "tx_hash": receipt["transactionHash"].hex()
-                    })
+                        "tx_hash": receipt["transactionHash"].hex(),
+                    }
+                )
             except Exception as e:
-                print(f"Error in call event caller contract functions: {e}")    
+                print(f"Error in call event caller contract functions: {e}")
 
     def iterative_tx_contract_data(self, calls_number):
         account_owner = self.get_account()
-        
+
         print("Iterative tx contract deployment...")
         contract, _ = self.web3_client.deploy_and_get_contract("common/Counter", "0.8.10", account=account_owner)
-        
+
         print("Iterative tx contract calls...")
         for i in range(calls_number):
             try:
                 sender_account = self.get_account()
                 tx = self.web3_client.make_raw_tx(sender_account)
                 instruction_tx = contract.functions.moreInstructionWithLogs(0, 1000).build_transaction(tx)
-                
+
                 receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
                 assert receipt["status"] == 1
-                
+
                 print(f"Iterative tx contract call {i}, receipt status: ", receipt["status"])
-                self.historical_data["iterative_tx_contract_calls"].append({
+                self.historical_data["iterative_tx_contract_calls"].append(
+                    {
                         "blockHash": receipt["blockHash"].hex(),
                         "blockNumber": hex(receipt["blockNumber"]),
                         "iterative_tx_contract_contract_address": contract.address,
                         "iterative_tx": instruction_tx,
-                        "tx_hash": receipt["transactionHash"].hex()
-                    })
+                        "tx_hash": receipt["transactionHash"].hex(),
+                    }
+                )
             except Exception as e:
-                print(f"Error in call iterative tx contract functions: {e}") 
+                print(f"Error in call iterative tx contract functions: {e}")
 
     def dump_data(self):
-       with open('./loadtesting/k6/data/tracer_data.json', 'w+') as f:
-           json.dump(self.historical_data, f)
-    
+        with open("./loadtesting/k6/data/tracer_data.json", "w+") as f:
+            json.dump(self.historical_data, f)
+
     def get_account(self, balance=InputTestConstants.NEW_USER_REQUEST_AMOUNT.value):
         return self.account_manager.create_account(balance=balance)

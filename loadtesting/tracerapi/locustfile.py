@@ -17,7 +17,6 @@ import requests
 import web3
 from locust import User, TaskSet, task, events, tag
 
-from loadtesting.proxy.common import env
 from utils import apiclient
 from utils.web3client import NeonChainWeb3Client
 
@@ -64,7 +63,7 @@ def load_transaction_history(environment, **kwargs):
 class LocustEventHandler(object):
     """Implements custom Locust events handler"""
 
-    def __init__(self, request_event: "EventHook") -> None:
+    def __init__(self, request_event) -> None:  # Deleted EventHook type - Need to impelement correct Type
         self.buffer: tp.Dict[str, tp.Any] = dict()
         self._request_event = request_event
 
@@ -154,7 +153,6 @@ class ExtJsonRPCSession(apiclient.JsonRPCSession):
 
 
 class BaseEthRPCATasksSet(TaskSet):
-
     """Implements base behavior for task set measured by the maximum request rates
     for EIP-1898 methods implemented inside Tracer API"""
 
@@ -375,7 +373,7 @@ class EthCall(BaseEthRPCATasksSet):
         )
         self.log.info(f"Contract deployed {contract}.")
         if not contract:
-            self.log.error(f"contract deployment failed.")
+            self.log.error("contract deployment failed.")
             EthCall._deploy_contract_done = False
             return
         EthCall._contract = contract

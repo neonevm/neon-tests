@@ -8,6 +8,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 
 class TestResultsHandler:
+
     @staticmethod
     def generate_and_save_plots_pdf(
         historical_data: pd.DataFrame,
@@ -144,7 +145,7 @@ class TestResultsHandler:
                                             # if the previous data point had the same value as the preceding one
                                             ax.annotate(
                                                 f"{prev_value}",
-                                                (prev_x, prev_y),
+                                                (prev_x, prev_y),  # noqa: F821
                                                 textcoords="offset points",
                                                 xytext=(15, 5),
                                                 ha="center",
@@ -157,7 +158,7 @@ class TestResultsHandler:
                                         prev_is_valid = True
 
                                     prev_value = y
-                                    prev_x, prev_y = x, y
+                                    prev_x, prev_y = x, y  # noqa: F841
 
                             # Set x-axis ticks and labels
                             ax.set_xticks(range(len(x_tick_labels)))

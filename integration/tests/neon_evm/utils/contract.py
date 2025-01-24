@@ -40,4 +40,3 @@ def get_contract_bin(
             break
 
     return contract_abi["bin"]
-

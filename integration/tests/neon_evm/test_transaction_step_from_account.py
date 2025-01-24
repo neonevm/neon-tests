@@ -21,8 +21,12 @@ from utils.types import TreasuryPool
 from .utils.assert_messages import InstructionAsserts
 from .utils.constants import TAG_ACTIVE_STATE, TAG_FINALIZED_STATE
 
-from .utils.ethereum import create_contract_address, make_eth_transaction, make_contract_call_trx, \
-    make_deployment_transaction
+from .utils.ethereum import (
+    create_contract_address,
+    make_eth_transaction,
+    make_contract_call_trx,
+    make_deployment_transaction,
+)
 from .utils.transaction_checks import (
     check_holder_account_tag,
     check_transaction_logs_have_text,
@@ -383,9 +387,7 @@ class TestTransactionStepFromAccount:
                 [sender_with_tokens.solana_account_address, sender_with_tokens.balance_account_address],
             )
 
-    def test_incorrect_treasure_pool(
-        self, operator_keypair, sender_with_tokens, evm_loader, session_user, holder_acc
-    ):
+    def test_incorrect_treasure_pool(self, operator_keypair, sender_with_tokens, evm_loader, session_user, holder_acc):
         signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
         index = 2
@@ -395,9 +397,7 @@ class TestTransactionStepFromAccount:
         with pytest.raises(SolanaRPCException, match=error):
             evm_loader.execute_transaction_steps_from_account(operator_keypair, treasury, holder_acc, [])
 
-    def test_incorrect_treasure_index(
-        self, operator_keypair, sender_with_tokens, evm_loader, session_user, holder_acc
-    ):
+    def test_incorrect_treasure_index(self, operator_keypair, sender_with_tokens, evm_loader, session_user, holder_acc):
         signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 
@@ -535,7 +535,6 @@ class TestTransactionStepFromAccount:
         access_list,
         neon_api_client,
         sol_client,
-
     ):
         text = "".join(random.choice(string.ascii_letters) for _ in range(10))
 
@@ -585,7 +584,6 @@ class TestAccountStepContractCallContractInteractions:
         treasury_pool,
         holder_acc,
         sol_client,
-
     ):
         signed_tx = make_contract_call_trx(
             evm_loader, session_user, rw_lock_caller, "unchange_storage(uint8,uint8)", [1, 1]
@@ -622,7 +620,6 @@ class TestAccountStepContractCallContractInteractions:
         rw_lock_caller,
         neon_api_client,
         sol_client,
-
     ):
         # Signed eth transaction is created
         signed_tx = make_contract_call_trx(
@@ -672,7 +669,6 @@ class TestAccountStepContractCallContractInteractions:
         holder_acc,
         rw_lock_caller,
         sol_client,
-
     ):
         signed_tx = make_contract_call_trx(evm_loader, session_user, rw_lock_caller, "get_text()")
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
@@ -707,7 +703,7 @@ class TestAccountStepContractCallContractInteractions:
         treasury_pool,
         holder_acc,
         neon_api_client,
-       sol_client,
+        sol_client,
     ):
         signed_tx = make_contract_call_trx(evm_loader, session_user, rw_lock_caller, "update_storage_map(uint256)", [3])
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
@@ -814,7 +810,7 @@ class TestTransactionStepFromAccountParallelRuns:
         operator_keypair,
         treasury_pool,
         new_holder_acc,
-       sol_client,
+        sol_client,
     ):
         signed_tx = make_contract_call_trx(
             evm_loader, user_account, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1]
@@ -946,7 +942,7 @@ class TestTransactionStepFromAccountParallelRuns:
         treasury_pool,
         holder_acc,
         neon_api_client,
-        sol_client
+        sol_client,
     ):
         emulate_result = neon_api_client.emulate_contract_call(
             session_user.eth_address.hex(), rw_lock_contract.eth_address.hex(), "update_storage_map(uint256)", [3]
@@ -998,14 +994,7 @@ class TestTransactionStepFromAccountParallelRuns:
 
     @pytest.mark.parametrize("name", ["BlockTimestamp", "BlockNumber"])
     def test_trx_steps_with_number_timestamp(
-        self,
-        name,
-        operator_keypair,
-        treasury_pool,
-        neon_api_client,
-        evm_loader,
-        sender_with_tokens,
-        sol_client
+        self, name, operator_keypair, treasury_pool, neon_api_client, evm_loader, sender_with_tokens, sol_client
     ):
         """
         This test repeats the proxy's logic of reemulation with account info overrides and block overrides.
@@ -1096,7 +1085,7 @@ class TestStepFromAccountChangingOperatorsDuringTrxRun:
         second_operator_keypair,
         treasury_pool,
         new_holder_acc,
-       sol_client,
+        sol_client,
     ):
         signed_tx = make_contract_call_trx(
             evm_loader, user_account, rw_lock_contract, "update_storage_str(string)", ["text"]

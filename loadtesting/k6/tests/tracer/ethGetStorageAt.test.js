@@ -51,7 +51,7 @@ export default function EthGetStorageAtTest() {
         method: "eth_getStorageAt",
         params: [txInfo.storage_contract_address, "0x0", {"blockHash": txInfo.blockHash}]
     }
-    
+
     doRequest(client, requestParamsBlockHash);
 }
 
@@ -59,8 +59,8 @@ function doRequest(client, requestParams) {
     const startTime = new Date();
     try {
         const responseBody = client.callTracer(
-            JSON.stringify(requestParams.requestType), 
-            JSON.stringify(requestParams.method), 
+            JSON.stringify(requestParams.requestType),
+            JSON.stringify(requestParams.method),
             JSON.stringify(requestParams.params)
         );
         const response = JSON.parse(responseBody);

@@ -81,13 +81,13 @@ def web3_client_usdt(environment: EnvironmentConfig) -> tp.Union[Web3Client, Non
         return Web3Client(f"{environment.proxy_url}/usdt")
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def web3_client_eth(environment: EnvironmentConfig) -> tp.Union[Web3Client, None]:
     if "eth" in environment.network_ids:
         return Web3Client(f"{environment.proxy_url}/eth")
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def operator(environment: EnvironmentConfig, web3_client_session: NeonChainWeb3Client) -> Operator:
     return Operator(
         environment.proxy_url,

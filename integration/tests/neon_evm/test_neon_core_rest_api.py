@@ -10,9 +10,7 @@ def decode_pubkey(pubkey):
 
 
 def test_get_storage_at(neon_api_client, operator_keypair, user_account, evm_loader, treasury_pool, sol_client):
-    contract = evm_loader.deploy_contract(
-        operator_keypair, user_account, "hello_world", neon_api_client, treasury_pool
-    )
+    contract = evm_loader.deploy_contract(operator_keypair, user_account, "hello_world", neon_api_client, treasury_pool)
     storage = neon_api_client.get_storage_at(contract.eth_address.hex())["value"]
     zero_array = [0 for _ in range(31)]
     assert storage == zero_array + [5]
@@ -65,12 +63,8 @@ def test_emulate_contract_deploy(neon_api_client, user_account):
     assert result["used_gas"] > 0, f"Used gas is less than 0. Result: {result}"
 
 
-def test_emulate_call_contract_function(
-    neon_api_client, operator_keypair, treasury_pool, evm_loader, user_account
-):
-    contract = evm_loader.deploy_contract(
-        operator_keypair, user_account, "hello_world", neon_api_client, treasury_pool
-    )
+def test_emulate_call_contract_function(neon_api_client, operator_keypair, treasury_pool, evm_loader, user_account):
+    contract = evm_loader.deploy_contract(operator_keypair, user_account, "hello_world", neon_api_client, treasury_pool)
     assert contract.eth_address
     data = abi.function_signature_to_4byte_selector("call_hello_world()")
 

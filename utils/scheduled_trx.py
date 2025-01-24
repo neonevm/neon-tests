@@ -80,18 +80,20 @@ class ScheduledTransaction:
         max_fee_per_gas = int(estimate_result["maxFeePerGas"], 16)
         max_priority_fee_per_gas = int(estimate_result["maxPriorityFeePerGas"], 16)
         gas_limit = int(estimate_result["gasList"][index], 16)
-        return cls(estimate_obj.from_address,
-                   None,
-                   nonce,
-                   index,
-                   estimate_obj.to_address,
-                   chain_id=chain_id,
-                   gas_limit=gas_limit,
-                   max_fee_per_gas=max_fee_per_gas,
-                   max_priority_fee_per_gas=max_priority_fee_per_gas,
-                   call_data=estimate_obj.data,
-                   value=estimate_obj.value,
-                   **kwargs)
+        return cls(
+            estimate_obj.from_address,
+            None,
+            nonce,
+            index,
+            estimate_obj.to_address,
+            chain_id=chain_id,
+            gas_limit=gas_limit,
+            max_fee_per_gas=max_fee_per_gas,
+            max_priority_fee_per_gas=max_priority_fee_per_gas,
+            call_data=estimate_obj.data,
+            value=estimate_obj.value,
+            **kwargs,
+        )
 
     def encode(self):
         tx_data = {field: getattr(self, field) for field in self.FIELD_NAMES}

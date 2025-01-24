@@ -3,7 +3,6 @@ from typing import Dict
 import eth_abi
 import requests
 from eth_utils import abi
-from requests import Response
 from solders.pubkey import Pubkey
 
 from utils.models.tree_account import TreeAccount

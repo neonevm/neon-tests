@@ -205,7 +205,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-  
+
   proxy-bestarch:
     image: phoenex/neon-proxy:${BESTARCH_BUILD_VERSION}
     container_name: proxy-bestarch

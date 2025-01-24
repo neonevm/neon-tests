@@ -216,14 +216,14 @@ interface IERC3475 {
 }
 
 contract ERC3475 is IERC3475 {
-    /** 
+    /**
      * @notice this Struct is representing the Nonce properties as an object
      *
      */
     struct Nonce {
         // stores the values corresponding to the dates (issuance and maturity date).
         mapping(uint256 => IERC3475.Values) _values;
-        // storing the issuance of the issued bonds with their balances. 
+        // storing the issuance of the issued bonds with their balances.
         mapping(address => uint256) _balances;
         // defines the mapping for amount of bonds that can be delegated by Owner => operator address.
         mapping(address => mapping(address => uint256)) _allowances;
@@ -273,7 +273,7 @@ contract ERC3475 is IERC3475 {
         _classes[0]._nonceMetadata[0].title = "maturity";
         _classes[0]._nonceMetadata[0]._type = "int";
         _classes[0]._nonceMetadata[0].description = "maturity date in integer";
-        
+
         _classes[1]._nonceMetadata[0].title = "maturity";
         _classes[1]._nonceMetadata[0]._type = "int";
         _classes[1]._nonceMetadata[0].description = "maturity date in integer";
@@ -346,7 +346,7 @@ contract ERC3475 is IERC3475 {
                 "ERC3475: can't issue to the zero address"
             );
             _issue(_to, _transactions[i]);
-        }        
+        }
         emit Issue(msg.sender, _to, _transactions);
     }
 
@@ -415,7 +415,7 @@ contract ERC3475 is IERC3475 {
         emit ApprovalFor(msg.sender, operator, approved);
     }
 
-    // READABLES 
+    // READABLES
     function totalSupply(uint256 classId, uint256 nonceId)
     public
     view
@@ -510,8 +510,8 @@ contract ERC3475 is IERC3475 {
     returns (uint256 progressAchieved, uint256 progressRemaining){
         uint256 issuanceDate = _classes[classId].nonces[nonceId]._values[0].uintValue;
         uint256 maturityDate = issuanceDate + _classes[classId].nonces[nonceId]._values[5].uintValue;
-        
-        // check whether the bond is being already initialized: 
+
+        // check whether the bond is being already initialized:
         progressAchieved = block.timestamp - issuanceDate;
         progressRemaining = block.timestamp < maturityDate
         ? maturityDate - block.timestamp
@@ -538,7 +538,7 @@ contract ERC3475 is IERC3475 {
     ) public view virtual override returns (bool) {
         return operatorApprovals[_owner][operator];
     }
-    
+
     // INTERNALS
     function _transferFrom(
         address _from,
@@ -550,7 +550,7 @@ contract ERC3475 is IERC3475 {
             nonce._balances[_from] >= _transaction._amount,
             "ERC3475: not enough bond to transfer"
         );
-        
+
         //transfer balance
         nonce._balances[_from] -= _transaction._amount;
         nonce._balances[_to] += _transaction._amount;
@@ -580,7 +580,7 @@ contract ERC3475 is IERC3475 {
         IERC3475.Transaction calldata _transaction
     ) private {
         Nonce storage nonce = _classes[_transaction.classId].nonces[_transaction.nonceId];
-                
+
         //transfer balance
         nonce._balances[_to] += _transaction._amount;
         nonce._activeSupply += _transaction._amount;
@@ -598,7 +598,7 @@ contract ERC3475 is IERC3475 {
             nonce._balances[_from] >= _transaction._amount,
             "ERC3475: not enough bond to transfer"
         );
-        
+
         //transfer balance
         nonce._balances[_from] -= _transaction._amount;
         nonce._activeSupply -= _transaction._amount;
@@ -616,7 +616,7 @@ contract ERC3475 is IERC3475 {
             nonce._balances[_from] >= _transaction._amount,
             "ERC3475: not enough bond to transfer"
         );
-        
+
         //transfer balance
         nonce._balances[_from] -= _transaction._amount;
         nonce._activeSupply -= _transaction._amount;

@@ -1,7 +1,6 @@
 import json
 import random
 import string
-import typing
 from types import SimpleNamespace
 
 import allure
@@ -275,7 +274,7 @@ class TestSubscriber:
 
         data1, data2 = Subscribe(params1), Subscribe(params2)
 
-        async with (websockets.connect(ws_subscriber_url) as ws1, websockets.connect(ws_subscriber_url) as ws2):
+        async with websockets.connect(ws_subscriber_url) as ws1, websockets.connect(ws_subscriber_url) as ws2:
             await ws1.send(json.dumps(data1.__dict__))
             r1 = await ws1.recv()
             response1 = json.loads(r1, object_hook=lambda d: SimpleNamespace(**d))
@@ -312,7 +311,7 @@ class TestSubscriber:
     @pytest.mark.only_devnet
     @pytest.mark.parametrize("subscription_type", ["newHeads", "logs"])
     async def test_another_user_cant_unsubscribe(self, subscription_type: string, ws_subscriber_url):
-        async with (websockets.connect(ws_subscriber_url) as ws1, websockets.connect(ws_subscriber_url) as ws2):
+        async with websockets.connect(ws_subscriber_url) as ws1, websockets.connect(ws_subscriber_url) as ws2:
             data = Subscribe([subscription_type])
             await ws1.send(json.dumps(data.__dict__))
             r = await ws1.recv()

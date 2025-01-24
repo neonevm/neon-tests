@@ -1,7 +1,7 @@
 # List of supported ERC
 
 1. ERC-20 - Token standard
-2. ERC-173 - Contract ownership 
+2. ERC-173 - Contract ownership
 3. ERC-721 - Non-Fungible token standard
 4. ERC-3475 - Abstract storage bonds
 5. ERC-2981 - Royalty for NFT

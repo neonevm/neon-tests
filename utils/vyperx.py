@@ -7,7 +7,7 @@ from pkg_resources import parse_version
 
 
 def get_installable_vyper_versions():
-    url = f"https://pypi.org/pypi/vyper/json"
+    url = "https://pypi.org/pypi/vyper/json"
     for _ in range(5):
         res = requests.get(url, timeout=5)
         if res.status_code != 200:
@@ -18,7 +18,7 @@ def get_installable_vyper_versions():
             versions = data["releases"]
             return sorted(versions, key=parse_version, reverse=True)
 
-    raise RuntimeError(f"Failed to request available vyper versions")
+    raise RuntimeError("Failed to request available vyper versions")
 
 
 def install(version):

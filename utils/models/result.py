@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field, model_validator
 
 from utils.models.mixins import ForbidExtra
 from integration.tests.basic.helpers.basic import NeonEventType
-from integration.tests.basic.helpers.basic import NeonEventType, SolanaInstruction
 from utils.models.model_types import (
     BalanceString,
     EstimateGasPriceString,

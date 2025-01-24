@@ -1,5 +1,4 @@
 import os
-from solders.pubkey import Pubkey
 
 
 TREASURY_POOL_SEED = os.environ.get("NEON_TREASURY_POOL_SEED", "treasury_pool")

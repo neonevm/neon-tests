@@ -127,7 +127,7 @@ class TestNonce:
             sender_account, recipient_account, nonce=nonce, gas_price=gas - 1000, estimate_gas=True
         )
         signed_tx2 = self.web3_client.eth.account.sign_transaction(tx2, sender_account.key)
-        resp1 = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx1.rawTransaction.hex()])
+        json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx1.rawTransaction.hex()])
         response = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx2.rawTransaction.hex()])
 
         assert "error" in response, f"Response doesn't has an error: {response}"

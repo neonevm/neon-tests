@@ -1,9 +1,7 @@
-import time
 import typing as tp
 
 import pytest
 import web3
-from eth_utils import keccak
 
 import allure
 from integration.tests.basic.helpers import rpc_checks

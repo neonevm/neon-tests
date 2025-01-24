@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
 library TestLib {
 
   bytes32 constant DIAMOND_STORAGE_POSITION = keccak256("diamond.standard.test.storage");
-  
+
   struct TestState {
       address myAddress;
       uint256 myNum;

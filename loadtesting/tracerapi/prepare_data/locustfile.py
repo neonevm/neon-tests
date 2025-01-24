@@ -115,7 +115,7 @@ class EthGetStorageAtPreparationStage(head.NeonTasksSet):
             tx_receipt = dict(self.web3_client.send_transaction(self.account, tx))
             tx_receipt.update({"contract": {"address": contract.address, "abi": contract.abi}})
             return tx_receipt, {}
-        self.log.info(f"no `storage` contracts found, data store canceled.")
+        self.log.info("no `storage` contracts found, data store canceled.")
 
 
 @tag("neon")

@@ -99,6 +99,7 @@ class TestExtCodeHashOpcode:
         event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt, errors=DISCARD)
         assert event_logs[0]["args"]["hash"].hex() != ZERO_HASH
 
+    @pytest.mark.xfail(reason="NDEV-3512")
     def test_extcodehash_for_reverted_destroyed_contract(self, eip1052_checker, json_rpc_client, destroyable_contract):
         # Check the EXTCODEHASH of an account that selfdestructed and later the selfdestruct has been reverted.
         sender_account = self.accounts[0]
@@ -119,10 +120,9 @@ class TestExtCodeHashOpcode:
             params=[receipt["transactionHash"].hex(), "neon"],
         )["result"]["logs"]
         data = [log["data"] for log in neon_logs if log["neonEventType"] == "Log"]
-        # TODO fix checking
-        # assert data[0] != ZERO_HASH
-        # assert len(data) == 3
-        # assert all(x == data[0] for x in data)
+        assert data[0] != ZERO_HASH
+        assert len(data) == 3
+        assert all(x == data[0] for x in data)
 
     @pytest.mark.only_stands
     def test_extcodehash_for_precompiled_contract(self, eip1052_checker):

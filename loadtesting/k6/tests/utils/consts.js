@@ -37,7 +37,7 @@ if (!faucetUri.includes("request_neon")) {
 } else {
     faucetUrlObject = faucetUri;
 }
-export const faucetUrl = faucetUrlObject;  
+export const faucetUrl = faucetUrlObject;
 
 // Accounts data
 export const initialAccountBalance = parseInt(__ENV.K6_INITIAL_BALANCE);

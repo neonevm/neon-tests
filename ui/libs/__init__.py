@@ -81,7 +81,8 @@ def open_safe(context: BrowserContext, url: str, retry_count: int = 3) -> Page:
             page = context.new_page()
             page.goto(url)
             return page
-        except:
+        except Exception as e:
+            LOG.error(f"Failed to open page {url}: {e} retrying")
             retry_count -= 1
             if retry_count == 0:
                 raise TimeoutError

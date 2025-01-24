@@ -67,7 +67,7 @@ def deploy_infrastructure(
     print(f"code: {return_code}")
     print(f"stdout: {stdout}")
     print(f"stderr: {stderr}")
-    with open(f"terraform.log", "w") as file:
+    with open("terraform.log", "w") as file:
         file.write(stdout)
         file.write(stderr)
     if return_code != 0:

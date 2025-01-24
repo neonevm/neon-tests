@@ -43,7 +43,7 @@ resource "hcloud_server" "proxy" {
     host        = hcloud_server.proxy.ipv4_address
     private_key = file("/tmp/ci-stands")
   }
-  
+
   }
 
   labels = {

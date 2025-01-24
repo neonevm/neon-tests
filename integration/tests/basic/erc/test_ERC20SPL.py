@@ -11,7 +11,7 @@ from solders.pubkey import Pubkey
 from spl.token import instructions
 from spl.token.constants import TOKEN_PROGRAM_ID
 
-from utils import metaplex, stats_collector
+from utils import metaplex
 from utils.consts import ZERO_ADDRESS
 from utils.erc20wrapper import ERC20Wrapper
 from utils.helpers import gen_hash_of_block, wait_condition, create_invalid_address

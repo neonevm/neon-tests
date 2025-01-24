@@ -93,7 +93,7 @@ class TestAbstractStorageBonds:
         instr = bond_contract.functions.setApprovalFor(operator.address, True).build_transaction(tx)
         self.web3_client.send_transaction(lender, instr)
 
-        assert bond_contract.functions.isApprovedFor(lender.address, operator.address).call() == True
+        assert bond_contract.functions.isApprovedFor(lender.address, operator.address).call()
 
         tx = self.web3_client.make_raw_tx(operator)
         instr = bond_contract.functions.transferFrom(

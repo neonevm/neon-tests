@@ -132,11 +132,9 @@ def rw_lock_contract(
     operator_keypair: Keypair,
     neon_api_client: NeonApiClient,
     session_user: Caller,
-    treasury_pool: TreasuryPool
+    treasury_pool: TreasuryPool,
 ) -> Contract:
-    return evm_loader.deploy_contract(
-        operator_keypair, session_user, "rw_lock", neon_api_client, treasury_pool
-    )
+    return evm_loader.deploy_contract(operator_keypair, session_user, "rw_lock", neon_api_client, treasury_pool)
 
 
 @pytest.fixture(scope="function")
@@ -148,9 +146,7 @@ def store_zeros_contract(
     rw_lock_contract: Contract,
     neon_api_client: NeonApiClient,
 ) -> Contract:
-    return evm_loader.deploy_contract(
-        operator_keypair, session_user, "store_zeros", neon_api_client, treasury_pool
-    )
+    return evm_loader.deploy_contract(operator_keypair, session_user, "store_zeros", neon_api_client, treasury_pool)
 
 
 @pytest.fixture(scope="function")
@@ -160,7 +156,7 @@ def rw_lock_caller(
     session_user: Caller,
     treasury_pool: TreasuryPool,
     rw_lock_contract: Contract,
-    neon_api_client: NeonApiClient
+    neon_api_client: NeonApiClient,
 ) -> Contract:
     constructor_args = eth_abi.encode(["address"], [rw_lock_contract.eth_address.hex()])
     return evm_loader.deploy_contract(
@@ -182,9 +178,7 @@ def string_setter_contract(
     treasury_pool: TreasuryPool,
     neon_api_client: NeonApiClient,
 ) -> Contract:
-    return evm_loader.deploy_contract(
-        operator_keypair, session_user, "string_setter", neon_api_client, treasury_pool
-    )
+    return evm_loader.deploy_contract(operator_keypair, session_user, "string_setter", neon_api_client, treasury_pool)
 
 
 @pytest.fixture(scope="function")
@@ -193,7 +187,7 @@ def basic_contract(
     operator_keypair: Keypair,
     session_user: Caller,
     treasury_pool: TreasuryPool,
-    neon_api_client: NeonApiClient
+    neon_api_client: NeonApiClient,
 ) -> Contract:
     return evm_loader.deploy_contract(
         operator_keypair,
@@ -206,9 +200,7 @@ def basic_contract(
 
 
 @pytest.fixture(scope="function")
-def spl_token_caller(
-    operator_keypair, evm_loader, session_user, treasury_pool, neon_api_client
-) -> Contract:
+def spl_token_caller(operator_keypair, evm_loader, session_user, treasury_pool, neon_api_client) -> Contract:
     return evm_loader.deploy_contract(
         operator_keypair,
         session_user,
@@ -225,15 +217,9 @@ def calculator_contract(
     neon_api_client: NeonApiClient,
     operator_keypair: Keypair,
     session_user: Caller,
-    treasury_pool: TreasuryPool
+    treasury_pool: TreasuryPool,
 ) -> Contract:
-    return evm_loader.deploy_contract(
-        operator_keypair,
-        session_user,
-        "calculator",
-        neon_api_client,
-        treasury_pool
-    )
+    return evm_loader.deploy_contract(operator_keypair, session_user, "calculator", neon_api_client, treasury_pool)
 
 
 @pytest.fixture(scope="session")
@@ -260,12 +246,7 @@ def calculator_caller_contract(
 
 @pytest.fixture(scope="session")
 def erc20_for_spl_factory_contract(
-    operator_keypair,
-    evm_loader,
-    sender_with_tokens,
-    treasury_pool,
-    neon_api_client,
-    holder_acc
+    operator_keypair, evm_loader, sender_with_tokens, treasury_pool, neon_api_client, holder_acc
 ):
     return evm_loader.deploy_contract(
         operator_keypair,

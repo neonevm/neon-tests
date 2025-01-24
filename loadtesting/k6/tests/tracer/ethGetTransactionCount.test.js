@@ -30,7 +30,7 @@ export default function EthGetTransactionCountTest() {
     const vuID = exec.vu.idInTest
     const index = vuID % usersArray.length;
 
-    const mixedData = (historicalData.neon_transfers).concat(historicalData.erc20_transfers, 
+    const mixedData = (historicalData.neon_transfers).concat(historicalData.erc20_transfers,
         historicalData.erc20spl_transfers);
     const dataIndex = randomIntBetween(0, mixedData.length - 1);
     const txInfo = mixedData[dataIndex];
@@ -53,7 +53,7 @@ export default function EthGetTransactionCountTest() {
         method: "eth_getTransactionCount",
         params: [txInfo.sender, {"blockHash": txInfo.blockHash}]
     }
-    
+
     doRequest(client, requestParamsBlockHash, txInfo.sender_nonce);
 }
 
@@ -61,8 +61,8 @@ function doRequest(client, requestParams, expectedValue) {
     const startTime = new Date();
     try {
         const responseBody = client.callTracer(
-            JSON.stringify(requestParams.requestType), 
-            JSON.stringify(requestParams.method), 
+            JSON.stringify(requestParams.requestType),
+            JSON.stringify(requestParams.method),
             JSON.stringify(requestParams.params)
         );
         const response = JSON.parse(responseBody);

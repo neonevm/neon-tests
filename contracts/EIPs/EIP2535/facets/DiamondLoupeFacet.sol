@@ -41,7 +41,7 @@ contract DiamondLoupeFacet is IDiamondLoupe, IERC165 {
             // find the functionSelectors array for selector and add selector to it
             for (uint256 facetIndex; facetIndex < numFacets; facetIndex++) {
                 if (facets_[facetIndex].facetAddress == facetAddress_) {
-                    facets_[facetIndex].functionSelectors[numFacetSelectors[facetIndex]] = selector;                                   
+                    facets_[facetIndex].functionSelectors[numFacetSelectors[facetIndex]] = selector;
                     numFacetSelectors[facetIndex]++;
                     continueLoop = true;
                     break;

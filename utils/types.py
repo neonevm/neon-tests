@@ -29,13 +29,6 @@ class Contract:
     balance_account_address: Pubkey
 
 
-@dataclass
-class TreasuryPool:
-    index: int
-    account: Pubkey
-    buffer: bytes
-
-
 TestGroup = tp.Literal[
     "economy",
     "basic",

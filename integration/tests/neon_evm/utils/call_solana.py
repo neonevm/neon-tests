@@ -66,9 +66,7 @@ class SolanaCaller:
         addr = self.neon_api_client.call_contract_get_function(sender, self.contract, "getExtAuthority(bytes32)", args)
         return bytes32_to_solana_pubkey(addr)
 
-    def execute(
-        self, program_id, instruction, lamports=0, holder_acc=None, sender=None, additional_accounts=None
-    ):
+    def execute(self, program_id, instruction, lamports=0, holder_acc=None, sender=None, additional_accounts=None):
         sender = self.owner if sender is None else sender
         holder_acc = self.holder_acc if holder_acc is None else holder_acc
         serialized_instructions = serialize_instruction(program_id, instruction)

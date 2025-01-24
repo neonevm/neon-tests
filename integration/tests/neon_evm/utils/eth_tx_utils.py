@@ -12,31 +12,31 @@ def unpack(data):
     elif ch == 0x80:
         return None, data[1:]
     elif ch <= 0xB7:
-        l = ch - 0x80
-        return data[1 : 1 + l].tobytes(), data[1 + l :]
+        pointer = ch - 0x80
+        return data[1 : 1 + pointer].tobytes(), data[1 + pointer :]
     elif ch <= 0xBF:
         lLen = ch - 0xB7
-        l = int.from_bytes(data[1 : 1 + lLen], byteorder="big")
-        return data[1 + lLen : 1 + lLen + l].tobytes(), data[1 + lLen + l :]
+        pointer = int.from_bytes(data[1 : 1 + lLen], byteorder="big")
+        return data[1 + lLen : 1 + lLen + pointer].tobytes(), data[1 + lLen + pointer :]
     elif ch == 0xC0:
         return (), data[1:]
     elif ch <= 0xF7:
-        l = ch - 0xC0
+        pointer = ch - 0xC0
         lst = list()
-        sub = data[1 : 1 + l]
+        sub = data[1 : 1 + pointer]
         while len(sub):
             (item, sub) = unpack(sub)
             lst.append(item)
-        return lst, data[1 + l :]
+        return lst, data[1 + pointer :]
     else:
         lLen = ch - 0xF7
-        l = int.from_bytes(data[1 : 1 + lLen], byteorder="big")
+        pointer = int.from_bytes(data[1 : 1 + lLen], byteorder="big")
         lst = list()
-        sub = data[1 + lLen : 1 + lLen + l]
+        sub = data[1 + lLen : 1 + lLen + pointer]
         while len(sub):
             (item, sub) = unpack(sub)
             lst.append(item)
-        return lst, data[1 + lLen + l :]
+        return lst, data[1 + lLen + pointer :]
 
 
 def pack(data):
@@ -48,15 +48,15 @@ def pack(data):
         if len(data) <= 55:
             return (len(data) + 0x80).to_bytes(1, "big") + data
         else:
-            l = len(data)
-            lLen = (l.bit_length() + 7) // 8
-            return (0xB7 + lLen).to_bytes(1, "big") + l.to_bytes(lLen, "big") + data
+            length = len(data)
+            lLen = (length.bit_length() + 7) // 8
+            return (0xB7 + lLen).to_bytes(1, "big") + length.to_bytes(lLen, "big") + data
     elif isinstance(data, int):
         if data < 0x80:
             return data.to_bytes(1, "big")
         else:
-            l = (data.bit_length() + 7) // 8
-            return (l + 0x80).to_bytes(1, "big") + data.to_bytes(l, "big")
+            length = (data.bit_length() + 7) // 8
+            return (length + 0x80).to_bytes(1, "big") + data.to_bytes(length, "big")
         pass
     elif isinstance(data, list) or isinstance(data, tuple):
         if len(data) == 0:
@@ -65,12 +65,12 @@ def pack(data):
             res = bytearray()
             for d in data:
                 res += pack(d)
-            l = len(res)
-            if l <= 55:
-                return (l + 0xC0).to_bytes(1, "big") + res
+            response_length = len(res)
+            if response_length <= 55:
+                return (response_length + 0xC0).to_bytes(1, "big") + res
             else:
-                lLen = (l.bit_length() + 7) // 8
-                return (lLen + 0xF7).to_bytes(1, "big") + l.to_bytes(lLen, "big") + res
+                lLen = (response_length.bit_length() + 7) // 8
+                return (lLen + 0xF7).to_bytes(1, "big") + response_length.to_bytes(lLen, "big") + res
     else:
         raise Exception("Unknown type {} of data".format(str(type(data))))
 

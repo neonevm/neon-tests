@@ -10,7 +10,7 @@ class WithDrawTasksSet(NeonProxyTasksSet):
     """Implements withdraw tokens to Solana tasks"""
 
     _contract_name: str = "NeonToken"
-    _version: str = NEON_TOKEN_VERSION
+    # _version: str = NEON_TOKEN_VERSION or os.getenv("NEON_TOKEN_VERSION")
 
     @task
     @execute_before("task_block_number", "task_keeps_balance")
@@ -35,4 +35,4 @@ class WithDrawTasksSet(NeonProxyTasksSet):
             if not (result and result.get("status")):
                 self.log.error(f"withdrawing tokens is failed, transaction result: {result}")
             return
-        self.log.error(f"No Neon erc20wrapper address in passed credentials, can't generate contract.")
+        self.log.error("No Neon erc20wrapper address in passed credentials, can't generate contract.")

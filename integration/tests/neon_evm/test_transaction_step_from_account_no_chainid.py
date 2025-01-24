@@ -8,8 +8,12 @@ from eth_utils import to_text
 
 from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from .utils.constants import TAG_FINALIZED_STATE
-from .utils.ethereum import make_eth_transaction, create_contract_address, make_contract_call_trx, \
-    make_deployment_transaction
+from .utils.ethereum import (
+    make_eth_transaction,
+    create_contract_address,
+    make_contract_call_trx,
+    make_deployment_transaction,
+)
 from .utils.transaction_checks import check_holder_account_tag, check_transaction_logs_have_text
 
 
@@ -153,7 +157,7 @@ class TestTransactionStepFromAccountNoChainId:
         calculator_contract,
         calculator_caller_contract,
         holder_acc,
-        evm_loader
+        evm_loader,
     ):
         access_list = (
             {

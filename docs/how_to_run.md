@@ -16,7 +16,8 @@ After this, you can use from the project root directory:
 
 This file contains a lot of utilities to work with this repository, such as:
 1. update deps
-2. download test contracts
+2. install pre-commit-hook
+3. download test contracts
 3. run different tests
 4. prepare data and stand for run tests
 
@@ -26,6 +27,14 @@ This file contains a lot of utilities to work with this repository, such as:
 Please use clickfile.py to install deps because our web3 has conflicts with solana package, and this problem is resolved in:
 ```bash
 ./clickfile.py requirements
+```
+
+
+## Install Pre-commit hooks
+
+Please install pre-commit hooks to run linter and formatter in auto pre-commit mode
+```bash
+pre-commit install
 ```
 
 ## Download test contracts

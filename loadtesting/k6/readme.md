@@ -51,7 +51,7 @@ Build a k6 binary file with the following command, BUILD_TAG can be a fixed vers
  ```bash
 xk6 build --with github.com/szkiba/xk6-prometheus --with github.com/neonlabsorg/xk6-ethereum@${BUILD_TAG}
 ```
-where: 
+where:
 
 - github.com/szkiba/xk6-prometheus - a plugin for working with metrics
 
@@ -66,7 +66,7 @@ Run test scenario:
 It is common approach to do some changes in the plugin and test it locally before pushing changes to github.
 Pass the xk6-ethereum plugin repository path (on your local machine) as a parameter to the build command:
 ```bash
-xk6 build --with github.com/szkiba/xk6-prometheus --with github.com/neonlabsorg/xk6-ethereum="<path_to_xk6_ethereum_plugin_repository>" 
+xk6 build --with github.com/szkiba/xk6-prometheus --with github.com/neonlabsorg/xk6-ethereum="<path_to_xk6_ethereum_plugin_repository>"
 ```
 Use an executable file builded with command above to run test scenario (see 'Run performance test using clickfile' or 'Native commands to build and run k6' sections).
 ```bash
@@ -100,7 +100,7 @@ export const standardScenarioOptions = {
 
 ```stages``` - an array of objects that specify the target number of VUs to ramp up or down to, in our case: number of VUs is increased from 0 to `usersNumber` value during 30 seconds, then `usersNumber` VUs execute the scenario during 1200 seconds
 
-```gracefulRampDown: '60s'``` - time to wait for an already started iteration to finish before stopping it during a ramp down 
+```gracefulRampDown: '60s'``` - time to wait for an already started iteration to finish before stopping it during a ramp down
 
 ```noConnectionReuse: true``` - determines whether a connection is reused throughout different actions of the same virtual user and in the same iteration
 
@@ -113,7 +113,7 @@ NETWORK
 BANK_ACCOUNT_PRIVATE_KEY (if needed)
 TRANSFERS
 CONTRACT_CALLS
-ITERATIVE_TXS 
+ITERATIVE_TXS
 ```
 
 ```bash

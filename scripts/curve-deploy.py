@@ -1,4 +1,5 @@
 """Script to deploy Curve contracts from: https://github.com/curvefi/curve-factory/blob/simple-dev/data.json"""
+
 import json
 import os
 import random
@@ -9,12 +10,13 @@ import requests
 import sys
 from pathlib import Path  # if you haven't already done so
 
+from utils.web3client import NeonChainWeb3Client
+from utils.faucet import Faucet
+
+
 file = Path(__file__).resolve()
 parent, root = file.parent, file.parents[1]
 sys.path.append(str(root))
-
-from utils.web3client import NeonChainWeb3Client
-from utils.faucet import Faucet
 
 FAUCET_URL = os.environ.get("FAUCET_URL")
 PROXY_URL = os.environ.get("PROXY_URL")

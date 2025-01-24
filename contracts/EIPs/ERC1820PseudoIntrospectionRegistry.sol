@@ -286,5 +286,5 @@ contract ContractManager {
         bytes32 interfaceHash = keccak256(abi.encodePacked("sayHello"));
         registry.setInterfaceImplementer(contractAAddress, interfaceHash, contractAAddress);
     }
-    
+
 }

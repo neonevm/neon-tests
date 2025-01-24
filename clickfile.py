@@ -39,7 +39,6 @@ except ImportError:
 try:
     from deploy.cli.github_api_client import GithubClient
     from deploy.cli.network_manager import NetworkManager
-    from deploy.cli import dapps as dapps_cli
 
     from utils import create_allure_environment_opts, time_measure
     from deploy.cli import infrastructure
@@ -495,10 +494,10 @@ def download_evm_contracts(branch):
     click.echo(f"Contracts would be downloaded from {neon_evm_branch} neon-evm branch")
     Path(EXTERNAL_CONTRACT_PATH / "neon-evm").mkdir(parents=True, exist_ok=True)
 
-    click.echo(f"Check contract availability in neon-evm repo")
+    click.echo("Check contract availability in neon-evm repo")
     response = requests.get(f"{NEON_EVM_GITHUB_URL}/contents/solidity?ref={neon_evm_branch}")
     if response.status_code != 200:
-        click.echo(f"Repository doesn't has solidity directory, check old structure")
+        click.echo("Repository doesn't has solidity directory, check old structure")
         response = requests.get(f"{NEON_EVM_GITHUB_URL}/contents/evm_loader/solidity?ref={neon_evm_branch}")
         if response.status_code != 200:
             raise click.ClickException(f"Can't get contracts from neon-evm repo: {response.text}")
@@ -785,7 +784,7 @@ def locust(ctx):
     help="NEON RPC entry point.",
     show_default=True,
 )
-def run(credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile, neon_rpc):
+def run_load(credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile, neon_rpc):
     """Run `Neon` pipeline performance test
 
     path it's sub-folder and file name  `loadtesting/locustfile.py`.
@@ -806,7 +805,7 @@ def run(credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile,
     if tag:
         command += f" --tags {' '.join(tag)}"
     if not web_ui:
-        command += f" --headless"
+        command += " --headless"
 
     cmd = subprocess.run(command, shell=True)
 
@@ -835,11 +834,11 @@ def prepare(credentials, host, users, spawn_rate, run_time, tag):
     if run_time:
         command += f" --run-time={run_time}"
     else:
-        command += f" --run-time=120"
+        command += " --run-time=120"
     if tag:
         command += f" --tags {' '.join(tag)}"
     else:
-        command += f" --tags prepare"
+        command += " --tags prepare"
 
     cmd = subprocess.run(command, shell=True)
 
@@ -1309,7 +1308,7 @@ def build(tag):
 @click.option("-b", "--balance", default=None, required=True, help="Initial balance of accounts in Neon")
 @click.option("-a", "--bank_account", default="", required=False, help="Eth bank account private key")
 @catch_traceback
-def run(network, script, users, balance, bank_account):
+def run_load_k6(network, script, users, balance, bank_account):
     network_manager = NetworkManager()
     network_object = network_manager.get_network_object(network)
     web3_client = NeonChainWeb3Client(proxy_url=network_object["proxy_url"])
@@ -1317,7 +1316,7 @@ def run(network, script, users, balance, bank_account):
     account_manager = EthAccounts(web3_client, faucet, bank_account)
 
     print("Compiling ERC20 contract...")
-    command_erc20 = f"solc --abi ./contracts/EIPs/ERC20/ERC20.sol -o ./loadtesting/k6/contracts/ERC20 --overwrite"
+    command_erc20 = "solc --abi ./contracts/EIPs/ERC20/ERC20.sol -o ./loadtesting/k6/contracts/ERC20 --overwrite"
     command_erc20_run = subprocess.run(command_erc20, shell=True)
     if command_erc20_run.returncode != 0:
         sys.exit(command_erc20_run.returncode)

@@ -67,7 +67,7 @@ class TestBatchOperations:
 
         for index, result in enumerate(results):
             assert "error" not in result
-            assert result["id"] == index + 1, f"Batch response response sequence invalid"
+            assert result["id"] == index + 1, "Batch response response sequence invalid"
 
             result_hex = result["result"]
             actual_function_return = int(result_hex, 16)

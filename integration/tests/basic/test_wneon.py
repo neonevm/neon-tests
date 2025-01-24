@@ -76,7 +76,6 @@ class TestWNeon:
     @pytest.mark.mainnet
     def test_withdraw(self, wneon):
         deposit_amount = 4
-        sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
         self.deposit(wneon, deposit_amount, recipient_account)
         neon_balance_before, wneon_balance_before = self.get_balances(wneon, recipient_account.address)

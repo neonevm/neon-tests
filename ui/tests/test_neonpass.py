@@ -148,9 +148,11 @@ class TestNeonPass:
         with allure.step("Assert the balance in the wallet changed"):
             metamask_page.page.bring_to_front()
             libs.try_until(
-                lambda: init_balance < metamask_page.get_balance(token)
-                if platform == Platform.solana
-                else init_balance > metamask_page.get_balance(token),
+                lambda: (
+                    init_balance < metamask_page.get_balance(token)
+                    if platform == Platform.solana
+                    else init_balance > metamask_page.get_balance(token)
+                ),
                 timeout=60,
                 interval=5,
                 error_msg=f"{token.name} balance was not changed after tokens transfer",

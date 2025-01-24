@@ -58,5 +58,5 @@ contract Caller {
     function deployContract() public {
         new FailingContract(true);
     }
-    
+
 }

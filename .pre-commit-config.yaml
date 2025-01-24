@@ -1,0 +1,24 @@
+repos:
+  # Get rid of trailing whitespaces + checks yaml files for
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: check-yaml
+        args: [ --allow-multiple-documents ]
+
+  # Formatter
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+    -   id: black
+
+  # Linter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: ruff
+
+  # TODO
+  # Add .lock file
+  # Add detect-private-key (now it has one)

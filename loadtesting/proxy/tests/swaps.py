@@ -50,7 +50,7 @@ def deploy_uniswap_contracts(environment: env.Environment, **kwargs):
         with open("uniswap_contracts.json", "r") as f:
             try:
                 data = json.load(f)
-            except:
+            except json.decoder.JSONDecodeError:
                 data = {}
 
     LOG.info("Start deploy Uniswap")
@@ -377,8 +377,8 @@ class SwapUser(User):
         if str(user_count) in self.environment.users:
             try:
                 self.user = self.neon_client.eth.account.from_key(self.environment.users[str(user_count)])
-            except:
-                LOG.info(f"Can't load private key for user {user_count}, create new user")
+            except Exception as e:
+                LOG.info(f"Can't load private key for user {user_count}, create new user. Exception: {e}")
                 self.user = self.neon_client.create_account()
                 self.environment.users[str(user_count)] = self.user
         else:

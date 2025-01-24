@@ -246,7 +246,7 @@ def sol_client_session(environment: EnvironmentConfig) -> SolanaClient:
     return SolanaClient(environment.solana_url, environment.account_seed_version)
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def faucet(environment: EnvironmentConfig, web3_client_session: NeonChainWeb3Client) -> Faucet:
     return Faucet(environment.faucet_url, web3_client_session)
 

@@ -131,3 +131,16 @@ class TestMainPage:
         main_page.click_proxy_technical_docs_link()
         main_page.switch_window(1)
         main_page.assert_page_url(url=main_page.proxy_page)
+
+    def test_accrodion_element_is_hiding(self, main_page):
+        main_page.click_accordion_element()
+        main_page.check_accordion_element_text_is_visible()
+        main_page.click_accordion_element()
+        main_page.check_accordion_element_text_is_invisible()
+
+    def test_click_link_on_accrodion_element(self, main_page):
+        main_page.click_accordion_element()
+        main_page.check_accordion_element_text_is_visible()
+        main_page.explore_architecture_button_click()
+        main_page.switch_window(1)
+        main_page.assert_page_url(url=main_page.neon_architecture_page)

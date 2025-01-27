@@ -21,6 +21,7 @@ class MainPage(BasePage):
     privacy_page = "https://neonevm.org/privacy-policy"
     audit_page = "https://neonevm.org/docs/about/why_neon#public-and-audited"
     proxy_page = "https://neonevm.org/docs/operating/operator-introduction"
+    neon_architecture_page = "https://neonevm.org/docs/architecture/neon_evm_arch"
 
     logo_on_header = (By.XPATH, "//*[@id='header']/div[2]/div[1]")
     logo_on_footer = (By.XPATH, "(//a[@aria-label='Go to home'])[3]")
@@ -46,6 +47,8 @@ class MainPage(BasePage):
     access_security_audits_link = (By.XPATH, "//div[@role='tabpanel']//a")
     become_an_operator_tab = (By.XPATH, "//button/span[text()='Become an Operator']")
     proxy_page_link = (By.XPATH, "//div[@role='tabpanel']//a")
+    accordion_element = (By.XPATH, "//div[@class='accordion-item']//span[text()='Modularity']")
+    button_explore_architecture = (By.XPATH, "//span[text()='EXPLORE ARCHITECTURE']")
 
     twitter_icon = (By.XPATH, "//a[@title='twitter']")
     githib_icon = (By.XPATH, "//a[@title='github']")
@@ -98,7 +101,7 @@ class MainPage(BasePage):
         self.wait.until(EC.invisibility_of_element(MainPage.cookie_banner))
 
     def assert_cookie_banner_is_visible(self):
-        self.wait.until(EC.visibility_of_element_located(MainPage.cookie_banner))
+        self.wait.until(EC.visibility_of_element_located(MainPage.cookie_banner)).is_displayed()
 
     def click_subscribe_button(self):
         self.wait.until(EC.presence_of_element_located(MainPage.subscribe_button)).click()
@@ -119,7 +122,7 @@ class MainPage(BasePage):
         self.wait.until(EC.visibility_of_element_located(MainPage.privacy_policy_link)).click()
 
     def check_page_title(self, page_title):
-        self.wait.until(EC.visibility_of_element_located(page_title))
+        self.wait.until(EC.visibility_of_element_located(page_title)).is_displayed()
 
     def check_news_section(self):
         news_count = len(self.wait.until(EC.visibility_of_all_elements_located(MainPage.news_section)))
@@ -132,7 +135,7 @@ class MainPage(BasePage):
         self.wait.until(EC.visibility_of_element_located(MainPage.security_audit_tab)).click()
 
     def check_security_audit_title(self):
-        self.wait.until(EC.visibility_of_element_located(MainPage.security_audit_title))
+        self.wait.until(EC.visibility_of_element_located(MainPage.security_audit_title)).is_displayed()
 
     def click_access_audit_link(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.access_security_audits_link)).click()
@@ -141,7 +144,19 @@ class MainPage(BasePage):
         self.wait.until(EC.visibility_of_element_located(MainPage.become_an_operator_tab)).click()
 
     def check_become_an_operator_title(self):
-        self.wait.until(EC.visibility_of_element_located(MainPage.become_an_operator_title))
+        self.wait.until(EC.visibility_of_element_located(MainPage.become_an_operator_title)).is_displayed()
 
     def click_proxy_technical_docs_link(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.proxy_page_link)).click()
+
+    def click_accordion_element(self):
+        self.wait.until(EC.visibility_of_element_located(MainPage.accordion_element)).click()
+
+    def check_accordion_element_text_is_visible(self):
+        self.wait.until(EC.visibility_of_element_located(MainPage.button_explore_architecture)).is_displayed()
+
+    def check_accordion_element_text_is_invisible(self):
+        self.wait.until(EC.invisibility_of_element(MainPage.button_explore_architecture))
+
+    def explore_architecture_button_click(self):
+        self.wait.until(EC.visibility_of_element_located(MainPage.button_explore_architecture)).click()

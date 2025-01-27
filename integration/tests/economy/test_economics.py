@@ -19,6 +19,7 @@ from spl.token.instructions import (
 )
 from web3.contract import Contract
 
+from utils import helpers
 from utils.accounts import EthAccounts
 from utils.consts import LAMPORT_PER_SOL, Time
 from utils.erc20 import ERC20
@@ -424,19 +425,37 @@ class TestEconomics:
                 account=acc2,
                 tx_type=tx_type,
             )
-        w3_client.send_tokens(
-            from_=account_with_all_tokens,
-            to=acc2,
-            value=int(w3_client.get_balance(account_with_all_tokens) // 10),
-            tx_type=tx_type,
-        )
-        contract, contract_deploy_tx = w3_client.deploy_and_get_contract(
+
+        # estimate required amount for deployment
+        contract_interface = helpers.get_contract_interface(
             contract="common/Counter",
             version="0.8.10",
-            account=acc2,
+        )
+
+        transaction = w3_client.make_raw_tx(
+            from_=acc2,
+            data=contract_interface["bin"],
+            estimate_gas=True,
             tx_type=tx_type,
         )
 
+        gas = transaction["gas"]
+        gas_price = transaction["gasPrice"] if tx_type == TransactionType.LEGACY else transaction["maxFeePerGas"]
+        value = int(gas * gas_price) + 1000
+
+        # transfer the required amount to acc2
+        w3_client.send_tokens(
+            from_=account_with_all_tokens,
+            to=acc2,
+            value=value,
+            tx_type=tx_type,
+        )
+
+        # deploy the contract
+        receipt = w3_client.send_transaction(acc2, transaction)
+        assert receipt["status"] == 1
+
+        # validate results
         sol_balance_after = operator.get_solana_balance()
         token_balance_after = operator.get_token_balance(w3_client)
 
@@ -447,7 +466,7 @@ class TestEconomics:
         assert_profit(
             sol_balance_before - sol_balance_after, sol_price, token_diff, token_price, w3_client.native_token_name
         )
-        get_gas_used_percent(w3_client, contract_deploy_tx)
+        get_gas_used_percent(w3_client, receipt)
 
     def test_contract_get_is_free(self, counter_contract, client_and_price, account_with_all_tokens, operator):
         """Verify that get contract calls is free"""

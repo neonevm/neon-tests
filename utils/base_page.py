@@ -1,5 +1,6 @@
 import pytest
 import abc
+
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
@@ -42,3 +43,6 @@ class BasePage(abc.ABC):
 
     def clear_local_storage(self):
         self.driver.execute_script("window.localStorage.clear();")
+
+    def assert_partial_matching_url(self, url=None):
+        self.wait.until(EC.url_contains(url))

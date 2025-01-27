@@ -38,6 +38,8 @@ class MainPage(BasePage):
     cookie_policy_link = (By.XPATH, "//a[contains(text(),'Cookie Policy')]")
     disclaimer_link = (By.XPATH, "//a[contains(text(),'Disclaimer')]")
     privacy_policy_link = (By.XPATH, "//a[contains(text(),'Privacy')]")
+    news_section = (By.XPATH, "//div[contains(@class,'grid-plate')]/div[contains(@class,'flex-row')]/a")
+    first_news = (By.XPATH, "//div[contains(@class,'grid-plate')]/div[contains(@class,'flex-row')]/a[1]")
 
     twitter_icon = (By.XPATH, "//a[@title='twitter']")
     githib_icon = (By.XPATH, "//a[@title='github']")
@@ -110,3 +112,10 @@ class MainPage(BasePage):
 
     def check_page_title(self, page_title):
         self.wait.until(EC.visibility_of_element_located(page_title))
+
+    def check_news_section(self):
+        news_count = len(self.wait.until(EC.visibility_of_all_elements_located(MainPage.news_section)))
+        assert news_count == 3, f"Number of news is {news_count}"
+
+    def redirect_to_news_page(self):
+        self.wait.until(EC.visibility_of_element_located(MainPage.first_news)).click()

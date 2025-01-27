@@ -116,3 +116,18 @@ class TestMainPage:
         main_page.redirect_to_news_page()
         main_page.assert_partial_matching_url(url="/blog/")
         blog_page.assert_post_not_empty()
+
+    def test_security_audits_tab(self, main_page):
+        main_page.security_audit_tab_click()
+        main_page.check_security_audit_title()
+        main_page.click_access_audit_link()
+        main_page.switch_window(1)
+        main_page.assert_page_url(url=main_page.audit_page)
+
+    def test_become_an_operator_tab(self, main_page):
+        main_page.security_audit_tab_click()
+        main_page.become_an_operator_tab_click()
+        main_page.check_become_an_operator_title()
+        main_page.click_proxy_technical_docs_link()
+        main_page.switch_window(1)
+        main_page.assert_page_url(url=main_page.proxy_page)

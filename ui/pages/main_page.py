@@ -19,6 +19,8 @@ class MainPage(BasePage):
     cookie_page = "https://neonevm.org/cookie-policy"
     disclaimer_page = "https://neonevm.org/disclaimer"
     privacy_page = "https://neonevm.org/privacy-policy"
+    audit_page = "https://neonevm.org/docs/about/why_neon#public-and-audited"
+    proxy_page = "https://neonevm.org/docs/operating/operator-introduction"
 
     logo_on_header = (By.XPATH, "//*[@id='header']/div[2]/div[1]")
     logo_on_footer = (By.XPATH, "(//a[@aria-label='Go to home'])[3]")
@@ -40,6 +42,10 @@ class MainPage(BasePage):
     privacy_policy_link = (By.XPATH, "//a[contains(text(),'Privacy')]")
     news_section = (By.XPATH, "//div[contains(@class,'grid-plate')]/div[contains(@class,'flex-row')]/a")
     first_news = (By.XPATH, "//div[contains(@class,'grid-plate')]/div[contains(@class,'flex-row')]/a[1]")
+    security_audit_tab = (By.XPATH, "//button/span[text()='Security Audits']")
+    access_security_audits_link = (By.XPATH, "//div[@role='tabpanel']//a")
+    become_an_operator_tab = (By.XPATH, "//button/span[text()='Become an Operator']")
+    proxy_page_link = (By.XPATH, "//div[@role='tabpanel']//a")
 
     twitter_icon = (By.XPATH, "//a[@title='twitter']")
     githib_icon = (By.XPATH, "//a[@title='github']")
@@ -51,6 +57,8 @@ class MainPage(BasePage):
     disclaimer_page_title = (By.XPATH, "//h1[contains(text(),'Disclaimer')]")
     privacy_policy_page_title = (By.XPATH, "//h1[contains(text(),'Privacy')]")
     cookie_policy_page_title = (By.XPATH, "//h1[contains(text(),'Cookie Policy')]")
+    security_audit_title = (By.XPATH, "//div[@role='tabpanel']//h4[text()='Security Audits']")
+    become_an_operator_title = (By.XPATH, "//div[@role='tabpanel']//h4[text()='Become an Operator']")
 
     def click_on_logo_on_header(self):
         self.wait.until(EC.presence_of_element_located(MainPage.logo_on_header)).click()
@@ -119,3 +127,21 @@ class MainPage(BasePage):
 
     def redirect_to_news_page(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.first_news)).click()
+
+    def security_audit_tab_click(self):
+        self.wait.until(EC.visibility_of_element_located(MainPage.security_audit_tab)).click()
+
+    def check_security_audit_title(self):
+        self.wait.until(EC.visibility_of_element_located(MainPage.security_audit_title))
+
+    def click_access_audit_link(self):
+        self.wait.until(EC.visibility_of_element_located(MainPage.access_security_audits_link)).click()
+
+    def become_an_operator_tab_click(self):
+        self.wait.until(EC.visibility_of_element_located(MainPage.become_an_operator_tab)).click()
+
+    def check_become_an_operator_title(self):
+        self.wait.until(EC.visibility_of_element_located(MainPage.become_an_operator_title))
+
+    def click_proxy_technical_docs_link(self):
+        self.wait.until(EC.visibility_of_element_located(MainPage.proxy_page_link)).click()

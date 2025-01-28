@@ -73,12 +73,12 @@ jobs:
 
   dockerize:
     name: Dockerize neon tests
-    if: ${{ github.ref_name != 'develop'}}
     runs-on: ["self-hosted", "k8s-prod"]
     needs: pre-commit-check
     steps:
       - uses: actions/checkout@v4
       - name: Dockerize neon tests
+        if: ${{ github.ref_name != 'develop'}}
         uses: ./.github/actions/dockerize-neon-tests
         with:
           image_tag: ${{ github.sha }}

@@ -1,5 +1,7 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.common.exceptions import TimeoutException
 
 from utils.base_page import BasePage
 
@@ -49,6 +51,7 @@ class MainPage(BasePage):
     proxy_page_link = (By.XPATH, "//div[@role='tabpanel']//a")
     accordion_element = (By.XPATH, "//div[@class='accordion-item']//span[text()='Modularity']")
     button_explore_architecture = (By.XPATH, "//span[text()='EXPLORE ARCHITECTURE']")
+    transaction_data_info = (By.XPATH, "//span[text()='Transaction Cost']")
 
     twitter_icon = (By.XPATH, "//a[@title='twitter']")
     githib_icon = (By.XPATH, "//a[@title='github']")
@@ -69,8 +72,18 @@ class MainPage(BasePage):
     def click_on_logo_on_footer(self):
         self.wait.until(EC.presence_of_element_located(MainPage.logo_on_footer)).click()
 
-    def click_on_build_on_neon_button(self):
-        self.wait.until(EC.presence_of_element_located(MainPage.build_on_neon_button)).click()
+    def click_on_build_on_neon_button(self, max_attempts=3):
+        attempts = 0
+        while attempts < max_attempts:
+
+            self.wait.until(EC.visibility_of_element_located(MainPage.build_on_neon_button)).click()
+
+            try:
+                WebDriverWait(self.driver, 5).until(lambda driver: len(driver.window_handles) > 1)
+                return
+            except TimeoutException:
+                attempts += 1
+        raise Exception("Can't open new tab")
 
     def click_start_building_button(self):
         self.wait.until(EC.presence_of_element_located(MainPage.start_building_button)).click()
@@ -89,7 +102,7 @@ class MainPage(BasePage):
         email_field.send_keys(MainPage.email)
 
     def check_already_subscribed_text(self):
-        self.wait.until(EC.presence_of_element_located(MainPage.subscription_notification_text)).is_displayed()
+        self.wait.until(EC.visibility_of_element_located(MainPage.subscription_notification_text)).is_displayed()
 
     def click_ask_me_later_button(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.ask_me_later_button)).click()
@@ -104,7 +117,7 @@ class MainPage(BasePage):
         self.wait.until(EC.visibility_of_element_located(MainPage.cookie_banner)).is_displayed()
 
     def click_subscribe_button(self):
-        self.wait.until(EC.presence_of_element_located(MainPage.subscribe_button)).click()
+        self.wait.until(EC.visibility_of_element_located(MainPage.subscribe_button)).click()
 
     def click_social_network_icon(self, icon_name):
         self.wait.until(EC.visibility_of_element_located(icon_name)).click()
@@ -160,3 +173,17 @@ class MainPage(BasePage):
 
     def explore_architecture_button_click(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.button_explore_architecture)).click()
+
+    def transaction_element_change_color(self):
+        element = self.driver.find_element_by_css(MainPage.transaction_cost_arrow)
+        original_color = element.value_of_css_property("8888")
+        # actions = ActionChains(self.driver)
+        self.driver.actions.move_to_element(element).perform()
+        hover_color = element.value_of_css_property("color")
+        assert original_color != hover_color, "Цвет элемента не изменился при наведении!"
+        #
+        # WebElement element = MainPage.transaction_cost_arrow
+        # element.getCssValue("")
+        # self.driver.findElement(MainPage.transaction_cost_arrow).getCssValue("background-color")
+        # MainPage.transaction_cost_arrow.ge
+        # self.wait.until(MainPage.transaction_cost_arrow)

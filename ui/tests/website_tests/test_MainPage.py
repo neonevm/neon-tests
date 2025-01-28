@@ -144,3 +144,6 @@ class TestMainPage:
         main_page.explore_architecture_button_click()
         main_page.switch_window(1)
         main_page.assert_page_url(url=main_page.neon_architecture_page)
+
+    def test_check_transaction_data(self, main_page):
+        main_page.transaction_element_change_color()

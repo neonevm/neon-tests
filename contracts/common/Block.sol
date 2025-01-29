@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
+import "../libraries/CarefulMath.sol";
 
 
-contract BlockTimestamp {
+contract BlockTimestamp is CarefulMath {
     event Result(uint256 block_timestamp);
     uint256 public a;
-    uint256 public initial_block_timestamp;
+    uint public accrualBlockTimestamp;
+    uint public accrualBlockNumber;
 
     struct Data {
         uint256 value1;
@@ -15,7 +17,8 @@ contract BlockTimestamp {
     event DataAdded(uint256 timestamp, uint256 value1, uint256 value2);
 
     constructor() {
-        initial_block_timestamp = block.timestamp;
+        accrualBlockNumber = block.number;
+        accrualBlockTimestamp = block.timestamp;
     }
 
     function getBlockTimestamp() public view returns (uint256) {
@@ -38,6 +41,15 @@ contract BlockTimestamp {
 
     }
 
+    function accrueInterest() public {
+        uint currentBlockTimestamp = block.timestamp;
+        uint accrualBlockTimestampPrior = accrualBlockTimestamp;
+
+        (MathError mathErr, uint blockDelta) = subUInt(currentBlockTimestamp, accrualBlockTimestampPrior);
+        require(mathErr == MathError.NO_ERROR, "calc block delta error");
+
+        accrualBlockNumber = currentBlockTimestamp;
+    }
     function addDataToMapping(uint256 _value1, uint256 _value2) public {
         uint256 currentTimestamp = block.timestamp % 1000000;
         for (uint256 i = 0; i < 20; i++) {
@@ -69,12 +81,13 @@ contract BlockTimestampDeployer {
 }
 
 
-contract BlockNumber {
+contract BlockNumber is CarefulMath {
     event Log(address indexed sender, string message);
     event Result(uint256 block_number);
+    bytes32[64] public b;
 
 
-    uint256 public initial_block_number;
+    uint256 public accrualBlockNumber;
 
     struct Data {
         uint256 value1;
@@ -86,7 +99,7 @@ contract BlockNumber {
     event DataAdded(uint256 number, uint256 value1, uint256 value2);
 
     constructor() payable {
-        initial_block_number = block.number;
+        accrualBlockNumber = block.number;
     }
 
 
@@ -123,5 +136,16 @@ contract BlockNumber {
     function getDataFromMapping(uint256 _number) public view returns (uint256, uint256) {
         Data memory retrievedData = dataByNumber[_number];
         return (retrievedData.value1, retrievedData.value2);
+    }
+
+
+    function accrueInterest() public {
+        uint currentBlockNumber = block.number;
+        uint accrualBlockNumberPrior = accrualBlockNumber;
+
+        (MathError mathErr, uint blockDelta) = subUInt(currentBlockNumber, accrualBlockNumberPrior);
+        require(mathErr == MathError.NO_ERROR, "calc block delta error");
+
+        accrualBlockNumber = currentBlockNumber;
     }
 }

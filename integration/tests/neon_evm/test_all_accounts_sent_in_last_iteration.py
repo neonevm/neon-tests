@@ -44,7 +44,6 @@ class TestAccInLastIteration:
         # First iteration
         for i in range(2):
             evm_loader.send_transaction_step_from_account(
-                index=i,
                 operator=operator_keypair,
                 operator_balance_pubkey=operator_balance,
                 treasury=treasury_pool,
@@ -55,7 +54,6 @@ class TestAccInLastIteration:
             )
 
         evm_loader.send_transaction_step_from_account(
-            index=2,
             operator=operator_keypair,
             operator_balance_pubkey=operator_balance,
             treasury=treasury_pool,
@@ -66,7 +64,6 @@ class TestAccInLastIteration:
         )
 
         trx_final = evm_loader.send_transaction_step_from_account(
-            index=3,
             operator=operator_keypair,
             operator_balance_pubkey=operator_balance,
             treasury=treasury_pool,

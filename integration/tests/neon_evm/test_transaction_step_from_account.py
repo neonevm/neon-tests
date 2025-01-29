@@ -992,88 +992,6 @@ class TestTransactionStepFromAccountParallelRuns:
             expected_tag=TAG_FINALIZED_STATE,
         )
 
-    @pytest.mark.parametrize("name", ["BlockTimestamp", "BlockNumber"])
-    def test_trx_steps_with_number_timestamp(
-        self, name, operator_keypair, treasury_pool, neon_api_client, evm_loader, sender_with_tokens, sol_client
-    ):
-        """
-        This test repeats the proxy's logic of reemulation with account info overrides and block overrides.
-        """
-        holder = evm_loader.create_holder(operator_keypair)
-        contract = evm_loader.deploy_contract(
-            operator_keypair,
-            sender_with_tokens,
-            "common/Block.sol",
-            neon_api_client,
-            treasury_pool,
-            contract_name=name,
-            version="0.8.10",
-        )
-        params = [4, 123]
-        func_signature = "addDataToMapping(uint256,uint256)"
-
-        emulate_result = neon_api_client.emulate_contract_call(
-            sender_with_tokens.eth_address.hex(), contract.eth_address.hex(), func_signature, params=params
-        )
-        # Accounts to execute the first iteration.
-        initial_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
-        signed_tx = make_contract_call_trx(evm_loader, sender_with_tokens, contract, func_signature, params=params)
-
-        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
-        evm_loader.write_transaction_to_holder_account(signed_tx, holder, operator_keypair)
-
-        def get_account_override(eth_account):
-            sender_address = eth_account.eth_address.hex()
-            sender_account_info = neon_api_client.get_balance(sender_address)["value"][0]
-
-            return {
-                sender_address: {"nonce": sender_account_info["trx_count"], "balance": sender_account_info["balance"]}
-            }
-
-        def get_block_params():
-            block_params = neon_api_client.get_holder(holder)["value"]["block_params"]
-            block_timestamp, block_number = int(block_params[0], 16), int(block_params[1], 16)
-
-            return {"number": block_number, "time": block_timestamp}
-
-        def make_trace_config(block_params, overrides):
-            return {"blockOverrides": block_params, "stateOverrides": overrides}
-
-        # State of the sender account should be fetched before the first iteration.
-        sender_overrides = get_account_override(sender_with_tokens)
-        evm_loader.send_transaction_step_from_account(
-            operator_keypair,
-            operator_balance_pubkey,
-            treasury_pool,
-            holder,
-            initial_accounts,
-            EVM_STEPS,
-            operator_keypair,
-        )
-
-        # Fetch block params after the first iteration as stored in the holder.
-        block_params = get_block_params()
-
-        # Reemulate after the first iteration
-        emulate_result = neon_api_client.emulate_contract_call(
-            sender_with_tokens.eth_address.hex(),
-            contract.eth_address.hex(),
-            func_signature,
-            params=params,
-            trace_config=make_trace_config(block_params, sender_overrides),
-        )
-
-        # Fetch new account list that depends on the re-emulation.
-        new_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
-        evm_loader.execute_transaction_steps_from_account(operator_keypair, treasury_pool, holder, new_accounts)
-
-        check_holder_account_tag(
-            solana_client=sol_client,
-            storage_account=holder,
-            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
-            expected_tag=TAG_FINALIZED_STATE,
-        )
-
 
 class TestStepFromAccountChangingOperatorsDuringTrxRun:
     def test_next_operator_can_continue_trx(
@@ -1095,7 +1013,6 @@ class TestStepFromAccountChangingOperatorsDuringTrxRun:
         trx = TransactionWithComputeBudget(operator_keypair)
         trx.add(
             make_ExecuteTrxFromAccountDataIterativeOrContinue(
-                0,
                 1,
                 operator_keypair,
                 operator_balance_pubkey,

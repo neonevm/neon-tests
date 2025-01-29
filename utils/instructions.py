@@ -152,7 +152,6 @@ def make_ExecuteTrxFromAccount(
 
 
 def make_ExecuteTrxFromAccountDataIterativeOrContinue(
-    index: int,
     step_count: int,
     operator: Keypair,
     operator_balance: Pubkey,
@@ -165,7 +164,7 @@ def make_ExecuteTrxFromAccountDataIterativeOrContinue(
 ):
     # 0x35 - TransactionStepFromAccount
     # 0x36 - TransactionStepFromAccountNoChainId
-    data = tag.to_bytes(1, "little") + treasury.buffer + step_count.to_bytes(4, "little") + index.to_bytes(4, "little")
+    data = tag.to_bytes(1, "little") + treasury.buffer + step_count.to_bytes(4, "little")
 
     print("make_ExecuteTrxFromAccountDataIterativeOrContinue accounts")
     print("Holder: ", holder_address)

@@ -147,3 +147,5 @@ class TestMainPage:
 
     def test_check_transaction_data(self, main_page):
         main_page.transaction_element_change_color()
+        main_page.click_transaction_element()
+        main_page.assert_transaction_text()

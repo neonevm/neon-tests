@@ -1,6 +1,7 @@
 import pytest
 import abc
 
+from selenium.webdriver import ActionChains
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
@@ -46,3 +47,10 @@ class BasePage(abc.ABC):
 
     def assert_partial_matching_url(self, url=None):
         self.wait.until(EC.url_contains(url))
+
+    def scroll_page_to_element(self, element):
+        self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+
+    def hover_element(self, element):
+        actions = ActionChains(self.driver)
+        actions.move_to_element(element).perform()

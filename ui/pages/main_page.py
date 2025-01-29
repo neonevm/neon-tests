@@ -33,6 +33,7 @@ class MainPage(BasePage):
     explore_developer_hub_button = (By.XPATH, "//span[@class='button__content'][contains(.,'Explore developer hub')]")
     add_your_dapp_button = (By.XPATH, "//span[@class='button__content'][contains(.,'add your dapp')]")
     transaction_cost_arrow = (By.XPATH, "(//div[contains(@class,'arrow-down-icon-container')])[2]")
+    transaction_cost_info = (By.XPATH, "//span/p[contains(text(),'Sending ERC20')]")
     email_input_field = (By.XPATH, "//input")
     subscribe_button = (By.XPATH, "//button/span[text()='subscribe']")
     subscription_notification_text = (By.XPATH, "//div[contains(text(), 'already subscribed')]")
@@ -51,7 +52,6 @@ class MainPage(BasePage):
     proxy_page_link = (By.XPATH, "//div[@role='tabpanel']//a")
     accordion_element = (By.XPATH, "//div[@class='accordion-item']//span[text()='Modularity']")
     button_explore_architecture = (By.XPATH, "//span[text()='EXPLORE ARCHITECTURE']")
-    transaction_data_info = (By.XPATH, "//span[text()='Transaction Cost']")
 
     twitter_icon = (By.XPATH, "//a[@title='twitter']")
     githib_icon = (By.XPATH, "//a[@title='github']")
@@ -174,16 +174,26 @@ class MainPage(BasePage):
     def explore_architecture_button_click(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.button_explore_architecture)).click()
 
-    def transaction_element_change_color(self):
-        element = self.driver.find_element_by_css(MainPage.transaction_cost_arrow)
-        original_color = element.value_of_css_property("8888")
-        # actions = ActionChains(self.driver)
-        self.driver.actions.move_to_element(element).perform()
-        hover_color = element.value_of_css_property("color")
-        assert original_color != hover_color, "Цвет элемента не изменился при наведении!"
-        #
-        # WebElement element = MainPage.transaction_cost_arrow
-        # element.getCssValue("")
-        # self.driver.findElement(MainPage.transaction_cost_arrow).getCssValue("background-color")
-        # MainPage.transaction_cost_arrow.ge
-        # self.wait.until(MainPage.transaction_cost_arrow)
+    def transaction_element_change_color(self, max_attempts=3):
+        element = self.wait.until(EC.visibility_of_element_located(MainPage.transaction_cost_arrow))
+        original_color = element.value_of_css_property("color")
+        self.scroll_page_to_element(element)
+
+        for attempt in range(max_attempts):
+            self.hover_element(element)
+
+            try:
+                WebDriverWait(self.driver, 2).until(
+                    lambda driver: element.value_of_css_property("color") != original_color
+                )
+                return
+            except TimeoutException:
+                continue
+        raise Exception("Color stays the same")
+
+    def click_transaction_element(self):
+        self.wait.until(EC.visibility_of_element_located(MainPage.transaction_cost_arrow)).click()
+
+    def assert_transaction_text(self):
+        element = self.wait.until(EC.presence_of_element_located(MainPage.transaction_cost_info))
+        assert "Smart contract" in element.text, "Text 'Smart contract' not found"

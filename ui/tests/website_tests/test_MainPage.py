@@ -149,3 +149,20 @@ class TestMainPage:
         main_page.transaction_element_change_color()
         main_page.click_transaction_element()
         main_page.assert_transaction_text()
+
+    def test_menu_link_to_pdf_docs(self, menu_page):
+        menu_page.click_on_menu_developers_link()
+        menu_page.click_on_solana_link()
+        menu_page.switch_window(1)
+        menu_page.assert_page_url(url=menu_page.solana_pdf)
+
+    def test_menu_link_to_external_pages(self, menu_page):
+        menu_page.click_on_menu_ecosystem_link()
+        menu_page.click_on_neonpass_link()
+        menu_page.switch_window(1)
+        menu_page.assert_page_url(url=menu_page.neonpass)
+
+    def test_menu_link_to_internal_pages(self, menu_page):
+        menu_page.click_on_menu_news_link()
+        menu_page.click_on_events_link()
+        menu_page.assert_page_url(url=menu_page.events)

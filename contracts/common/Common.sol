@@ -3,6 +3,7 @@ pragma solidity ^0.8.12;
 contract Common {
     string public text = "hello";
     uint256 public number = 55;
+    uint256 public totalReceived;
 
 
     function getText() public view returns (string memory) {
@@ -25,7 +26,15 @@ contract Common {
         return a * b;
     }
 
+    function setTextReturnSenderAddr(string memory _text)  public returns (address){
+        text = _text;
+        return msg.sender;
+    }
 
+    function setTextAndReceiveValue(string memory _text) public payable {
+        totalReceived += msg.value;
+        text = _text;
+    }
 }
 
 contract CommonCaller {
@@ -36,7 +45,7 @@ contract CommonCaller {
     }
 
     function getNumber() public view returns (uint256) {
-         return myCommon.getNumber();
+        return myCommon.getNumber();
     }
 
     function setNumber(uint256 _number) public {
@@ -48,7 +57,7 @@ contract BunchActions {
 
     function setNumber(address[] memory addresses, uint256[] memory _numbers) public {
         for (uint256 i = 0; i < addresses.length; ++i) {
-             Common(addresses[i]).setNumber(_numbers[i]);
+            Common(addresses[i]).setNumber(_numbers[i]);
         }
     }
 }

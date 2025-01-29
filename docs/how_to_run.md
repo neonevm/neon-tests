@@ -45,6 +45,13 @@ To download test contracts from the Neon EVM repo, you need to use:
 ./clickfile.py update-contracts
 ```
 
+## Set environment variables for tests
+
+To set variable DOCKER_HUB_ORG_NAME text to terminal
+```
+export DOCKER_HUB_ORG_NAME=neonlabsorg
+```
+
 ## Run OpenZeppelin tests
 
 To run OpenZeppelin tests just use the next command:

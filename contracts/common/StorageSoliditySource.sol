@@ -23,7 +23,7 @@ contract Storage {
         return msg.sender.balance;
     }
 
-   function storeSumOfNumbers(uint256 num1, uint256 num2) public view returns (uint256) {
+    function storeSumOfNumbers(uint256 num1, uint256 num2) public view returns (uint256) {
         if (number == 101) {
             num1 = 0;
         }

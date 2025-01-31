@@ -553,16 +553,16 @@ def multiple_actions_erc721(web3_client, accounts):
     return accounts[0], contract
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def call_solana_caller(accounts, web3_client):
     contract, _ = web3_client.deploy_and_get_contract("precompiled/CallSolanaCaller.sol", "0.8.10", accounts[0])
     return contract
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def counter_resource_address(call_solana_caller, accounts, web3_client) -> bytes:
     tx = web3_client.make_raw_tx(accounts[0].address)
-    salt = web3_client.text_to_bytes32("1")
+    salt = web3_client.text_to_bytes32("".join(random.choices(string.ascii_letters, k=5)))
     instruction_tx = call_solana_caller.functions.createResource(salt, 8, 100000, bytes(COUNTER_ID)).build_transaction(
         tx
     )

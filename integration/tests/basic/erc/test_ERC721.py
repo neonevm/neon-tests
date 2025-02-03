@@ -7,8 +7,8 @@ import base58
 import pytest
 import web3
 import web3.exceptions
+from solana.rpc.commitment import Confirmed
 from solders.pubkey import Pubkey
-from solana.rpc.types import TokenAccountOpts, TxOpts
 from solana.transaction import Transaction
 from spl.token.instructions import (
     create_associated_token_account,
@@ -20,7 +20,7 @@ from utils import metaplex
 from utils.accounts import EthAccounts
 from utils.consts import ZERO_ADDRESS
 from utils.erc721ForMetaplex import ERC721ForMetaplex
-from utils.helpers import gen_hash_of_block, generate_text, wait_condition
+from utils.helpers import gen_hash_of_block, generate_text
 from utils.solana_client import SolanaClient
 from utils.web3client import NeonChainWeb3Client
 
@@ -435,31 +435,19 @@ class TestERC721:
         ):
             erc721.contract.functions.getApproved(token_id).call()
 
-    @pytest.mark.xfail(reason="NDEV-1333")
     def test_transferSolanaFrom(self, erc721, token_id, sol_client, solana_account):
         acc = solana_account
         token_mint = Pubkey(token_id.to_bytes(32, "big"))
         trx = Transaction()
         trx.add(create_associated_token_account(acc.pubkey(), acc.pubkey(), token_mint))
-        opts = TxOpts(skip_preflight=False, skip_confirmation=False)
-        sol_client.send_transaction(trx, acc, opts=opts)
-        solana_address = bytes(get_associated_token_address(acc.pubkey(), token_mint))
+        sol_client.send_tx_and_check_status_ok(trx, acc)
+        solana_address = get_associated_token_address(acc.pubkey(), token_mint)
 
-        erc721.transfer_solana_from(erc721.account.address, solana_address, token_id, erc721.account)
-        opts = TokenAccountOpts(token_mint)
+        erc721.transfer_solana_from(erc721.account.address, bytes(solana_address), token_id, erc721.account)
+        acc_balance = sol_client.get_token_account_balance(solana_address, commitment=Confirmed).value
 
-        wait_condition(
-            lambda: int(
-                sol_client.get_token_accounts_by_owner_json_parsed(acc.pubkey(), opts)
-                .value[0]
-                .account.data.parsed["info"]["tokenAmount"]["amount"]
-            )
-            > 0
-        )
-        token_data = sol_client.get_token_accounts_by_owner_json_parsed(acc.pubkey(), opts).value[0]
-        token_amount = token_data.account.data.parsed["info"]["tokenAmount"]
-        assert int(token_amount["amount"]) == 1
-        assert int(token_amount["decimals"]) == 0
+        assert int(acc_balance.amount) == 1
+        assert int(acc_balance.decimals) == 0
 
 
 @allure.feature("ERC Verifications")

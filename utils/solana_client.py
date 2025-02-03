@@ -125,6 +125,7 @@ class SolanaClient(solana.rpc.api.Client):
             return None
         return self.get_transaction(Signature.from_string(tx), max_supported_transaction_version=0)
 
+    @allure.step("Check if account exists")
     def account_exists(self, account_address: Pubkey) -> bool:
         try:
             account_info = self.get_account_info(account_address, commitment=Confirmed)

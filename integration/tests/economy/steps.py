@@ -3,6 +3,7 @@ import time
 from decimal import Decimal
 
 import allure
+from solana.rpc.commitment import Confirmed
 from solana.rpc.core import RPCException
 from solders.rpc.responses import GetTransactionResp
 from solders.signature import Signature
@@ -100,16 +101,14 @@ def get_sol_trx_with_alt(web3_client, sol_client, web3_transaction_receipt):
 
     wait_condition(
         lambda: sol_client.get_transaction(
-            Signature.from_string(solana_trx["result"][0]),
-            max_supported_transaction_version=0,
+            Signature.from_string(solana_trx["result"][0]), max_supported_transaction_version=0, commitment=Confirmed
         )
         != GetTransactionResp(None)
     )
 
     for trx in solana_trx["result"]:
         trx_sol = sol_client.get_transaction(
-            Signature.from_string(trx),
-            max_supported_transaction_version=0,
+            Signature.from_string(trx), max_supported_transaction_version=0, commitment=Confirmed
         )
         if (
             hasattr_recursive(trx_sol, "value.transaction.transaction.message.address_table_lookups")

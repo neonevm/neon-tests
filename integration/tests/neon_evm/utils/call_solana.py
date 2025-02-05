@@ -18,7 +18,6 @@ class SolanaCaller:
         treasury_pool,
         holder_acc,
         neon_api_client,
-        solana_client,
     ) -> None:
         self.operator_keypair = operator_keypair
         self.owner = owner
@@ -26,7 +25,6 @@ class SolanaCaller:
         self.treasury_pool = treasury_pool
         self.holder_acc = holder_acc
         self.neon_api_client = neon_api_client
-        self.solana_client = solana_client
         self.contract = evm_loader.deploy_contract(
             operator=operator_keypair,
             user=owner,
@@ -204,7 +202,7 @@ class SolanaCaller:
                 SYSTEM_PROGRAM_ID,
             ],
         )
-        check_transaction_logs_have_text(solana_client=self.solana_client, trx=resp, text="exit_status=0x12")
+        check_transaction_logs_have_text(solana_client=self.evm_loader, trx=resp, text="exit_status=0x12")
         return resource_address_pubkey
 
     @staticmethod

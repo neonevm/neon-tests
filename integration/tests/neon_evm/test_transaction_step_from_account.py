@@ -456,7 +456,7 @@ class TestTransactionStepFromAccount:
         fake_sys_program_id = Keypair().pubkey()
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 
-        error = str.format(InstructionAsserts.NOT_SYSTEM_PROGRAM, fake_sys_program_id)
+        error = str.format(InstructionAsserts.INVALID_PUBLIC_KEY, fake_sys_program_id)
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
         with pytest.raises(SolanaRPCException, match=error):
             evm_loader.send_transaction_step_from_account(

@@ -513,7 +513,6 @@ class EvmLoader(SolanaClient):
 
         if check_invalid_revision and not is_invalid_revision:
             raise AssertionError("INVALID_REVISION not in logs")
-
         return receipt
 
     def execute_transaction_steps_from_account_no_chain_id(

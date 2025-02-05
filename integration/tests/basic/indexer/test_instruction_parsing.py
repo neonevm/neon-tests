@@ -78,9 +78,9 @@ class TestInstruction:
         serialized = serialize_instruction(COUNTER_ID, instruction)
 
         tx = self.web3_client.make_raw_tx(sender.address)
-        instruction_tx = call_solana_caller.functions.execute_with_get_return_data(
-            lamports, serialized
-        ).build_transaction(tx)
+        instruction_tx = call_solana_caller.functions.executeWithGetReturnData(lamports, serialized).build_transaction(
+            tx
+        )
         resp = self.web3_client.send_transaction(sender, instruction_tx)
 
         response = json_rpc_client.get_neon_trx_receipt(resp["transactionHash"])

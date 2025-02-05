@@ -127,6 +127,11 @@ def new_holder_acc(operator_keypair: Keypair, evm_loader: EvmLoader) -> Pubkey:
 
 
 @pytest.fixture(scope="function")
+def new_holder_acc_2(operator_keypair: Keypair, evm_loader: EvmLoader) -> Pubkey:
+    return evm_loader.create_holder(operator_keypair)
+
+
+@pytest.fixture(scope="function")
 def rw_lock_contract(
     evm_loader: EvmLoader,
     operator_keypair: Keypair,

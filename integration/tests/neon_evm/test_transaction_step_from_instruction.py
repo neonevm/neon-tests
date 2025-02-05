@@ -464,7 +464,7 @@ class TestTransactionStepFromInstruction:
         fake_sys_program_id = Keypair().pubkey()
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
         with pytest.raises(
-            solana.rpc.core.RPCException, match=str.format(InstructionAsserts.NOT_SYSTEM_PROGRAM, fake_sys_program_id)
+            solana.rpc.core.RPCException, match=str.format(InstructionAsserts.INVALID_PUBLIC_KEY, fake_sys_program_id)
         ):
             evm_loader.send_transaction_step_from_instruction(
                 operator_keypair,

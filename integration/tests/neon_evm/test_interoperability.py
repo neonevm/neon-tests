@@ -18,9 +18,13 @@ from spl.token.instructions import TransferParams, transfer
 
 from conftest import EnvironmentConfig
 from integration.tests.neon_evm.utils.call_solana import SolanaCaller
+from .utils.transaction_checks import check_holder_account_tag, check_transaction_logs_have_text, decode_logs
 
 from integration.tests.neon_evm.utils.ethereum import make_eth_transaction, make_contract_call_trx
 
+from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
+from .utils.constants import TAG_FINALIZED_STATE, TAG_ACTIVE_STATE
+from utils.evm_loader import EVM_STEPS
 from utils.consts import (
     MEMO_PROGRAM_ID,
     COMPUTE_BUDGET_ID,
@@ -30,7 +34,6 @@ from utils.consts import (
     TRANSFER_TOKENS_ID,
 )
 
-from integration.tests.neon_evm.utils.transaction_checks import check_transaction_logs_have_text, decode_logs
 from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
 from utils.evm_loader import EvmLoader
 from utils.helpers import serialize_instruction
@@ -63,7 +66,7 @@ def _create_mint_and_accounts(evm_loader, from_wallet, to_wallet, amount) -> tup
 
 
 class TestInteroperability:
-    @pytest.fixture(scope="function")
+    @pytest.fixture(scope="class")
     def solana_caller(
         self,
         evm_loader: EvmLoader,
@@ -75,9 +78,7 @@ class TestInteroperability:
         environment: EnvironmentConfig,
         solana_client: SolanaClient,
     ) -> SolanaCaller:
-        return SolanaCaller(
-            operator_keypair, session_user, evm_loader, treasury_pool, holder_acc, neon_api_client, solana_client
-        )
+        return SolanaCaller(operator_keypair, session_user, evm_loader, treasury_pool, holder_acc, neon_api_client)
 
     def test_get_solana_address_by_neon_address(self, sender_with_tokens, solana_caller):
         sol_addr = solana_caller.get_solana_address_by_neon_address(sender_with_tokens.eth_address.hex())
@@ -160,7 +161,7 @@ class TestInteroperability:
 
     def test_execute_several_instr_in_one_trx(self, sender_with_tokens, solana_caller, evm_loader, solana_client):
         instruction_count = 10
-        resource_addr = solana_caller.create_resource(sender_with_tokens, b"123", 8, 1000000000, COUNTER_ID)
+        resource_addr = solana_caller.create_resource(sender_with_tokens, b"1234", 8, 1000000000, COUNTER_ID)
 
         instruction = Instruction(
             program_id=COUNTER_ID,
@@ -182,7 +183,7 @@ class TestInteroperability:
 
     def test_limit_of_simple_instr_in_one_trx(self, sender_with_tokens, solana_caller):
         instruction_count = 24
-        resource_addr = solana_caller.create_resource(sender_with_tokens, b"123", 8, 1000000000, COUNTER_ID)
+        resource_addr = solana_caller.create_resource(sender_with_tokens, b"dss", 8, 1000000000, COUNTER_ID)
 
         instruction = Instruction(
             program_id=COUNTER_ID,
@@ -348,7 +349,7 @@ class TestInteroperability:
             version="0.8.3",
         )
 
-        resource_addr = solana_caller.create_resource(sender_with_tokens, b"123", 8, 1000000000, COUNTER_ID)
+        resource_addr = solana_caller.create_resource(sender_with_tokens, b"12ss3", 8, 1000000000, COUNTER_ID)
 
         instruction = Instruction(
             program_id=COUNTER_ID,
@@ -436,3 +437,82 @@ class TestInteroperability:
             assert "Program not allowed to call itself" in decode_logs(err.args[0].data.logs)
         else:
             assert False, f"Expected error but got {resp}"
+
+    def test_iterative_transaction_revision_2_txs_from_1_sender(
+        self,
+        sender_with_tokens,
+        solana_caller,
+        evm_loader,
+        new_holder_acc_2,
+        new_holder_acc,
+        neon_api_client,
+        operator_keypair,
+        treasury_pool,
+    ):
+        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
+
+        resource_addr = solana_caller.create_resource(sender_with_tokens, b"qqww", 8, 1000000000, COUNTER_ID)
+        matrix_size = 6
+        matrix = [[random.randint(1, 100) for _ in range(matrix_size)] for _ in range(matrix_size)]
+
+        instruction = Instruction(
+            program_id=COUNTER_ID,
+            accounts=[
+                AccountMeta(resource_addr, is_signer=False, is_writable=True),
+            ],
+            data=bytes([0x1]),
+        )
+        serialized_instruction = serialize_instruction(COUNTER_ID, instruction)
+
+        signed_tx = make_contract_call_trx(
+            evm_loader,
+            sender_with_tokens,
+            solana_caller.contract,
+            "solanaCallInsideActionWithMatrix(uint256[][],uint64,bytes)",
+            [matrix, 0, serialized_instruction],
+        )
+
+        emulate_result = neon_api_client.emulate_contract_call(
+            sender_with_tokens.eth_address.hex(),
+            solana_caller.contract.eth_address.hex(),
+            "solanaCallInsideActionWithMatrix(uint256[][],uint64,bytes)",
+            [matrix, 0, serialized_instruction],
+        )
+        accounts_from_emulation = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
+
+        evm_loader.write_transaction_to_holder_account(signed_tx, new_holder_acc_2, operator_keypair)
+
+        for _ in range(11):
+            evm_loader.send_transaction_step_from_account(
+                operator_keypair,
+                operator_balance_pubkey,
+                treasury_pool,
+                new_holder_acc_2,
+                accounts_from_emulation,
+                EVM_STEPS,
+                operator_keypair,
+            )
+
+        resp = solana_caller.execute(
+            program_id=COUNTER_ID, instruction=instruction, sender=sender_with_tokens, holder_acc=new_holder_acc
+        )
+        check_transaction_logs_have_text(evm_loader, trx=resp, text="exit_status=0x11")
+
+        check_holder_account_tag(
+            solana_client=evm_loader,
+            storage_account=new_holder_acc_2,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_ACTIVE_STATE,
+        )
+
+        evm_loader.execute_transaction_steps_from_account(
+            operator_keypair, treasury_pool, new_holder_acc_2, accounts_from_emulation, check_invalid_revision=True
+        )
+
+        check_holder_account_tag(
+            solana_client=evm_loader,
+            storage_account=new_holder_acc_2,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE,
+        )
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")

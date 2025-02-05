@@ -1,3 +1,4 @@
+import allure
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from utils.base_page import BasePage
@@ -6,8 +7,10 @@ from utils.base_page import BasePage
 class GithubPage(BasePage):
     _url = "https://github.com/neonevm/neon-evm"
 
+    github_title = "neonevm"
     section_header = (By.XPATH, "//div[@xpath='1']")
 
+    @allure.step("Check title contains text 'neonevm'")
     def assert_text_on_github_page_title(self):
         element = self.wait.until(EC.presence_of_element_located(GithubPage.section_header))
-        assert element.text == "neonevm"
+        assert element.text == GithubPage.github_title

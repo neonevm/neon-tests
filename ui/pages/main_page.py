@@ -1,3 +1,4 @@
+import allure
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
@@ -144,36 +145,47 @@ class MainPage(BasePage):
     def redirect_to_news_page(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.first_news)).click()
 
+    @allure.step("Click 'Security audits' tab")
     def security_audit_tab_click(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.security_audit_tab)).click()
 
+    @allure.step("Check 'Security audits' title is visible")
     def check_security_audit_title(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.security_audit_title)).is_displayed()
 
+    @allure.step("Click 'Access security audits' button")
     def click_access_audit_link(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.access_security_audits_link)).click()
 
+    @allure.step("Click 'Become an Operator' tab")
     def become_an_operator_tab_click(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.become_an_operator_tab)).click()
 
+    @allure.step("Check 'Become an Operator' title is visible")
     def check_become_an_operator_title(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.become_an_operator_title)).is_displayed()
 
+    @allure.step("Click 'Proxy technical docs' button")
     def click_proxy_technical_docs_link(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.proxy_page_link)).click()
 
+    @allure.step("Click accordion element 'Modularity'")
     def click_accordion_element(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.accordion_element)).click()
 
+    @allure.step("Check 'Explore Architecture' button is visible")
     def check_accordion_element_text_is_visible(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.button_explore_architecture)).is_displayed()
 
+    @allure.step("Check 'Explore Architecture' button is invisible")
     def check_accordion_element_text_is_invisible(self):
         self.wait.until(EC.invisibility_of_element(MainPage.button_explore_architecture))
 
+    @allure.step("Click 'Explore Architecture' button")
     def explore_architecture_button_click(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.button_explore_architecture)).click()
 
+    @allure.step("Check transaction cost arrow chandes color while hover")
     def transaction_element_change_color(self, max_attempts=3):
         element = self.wait.until(EC.visibility_of_element_located(MainPage.transaction_cost_arrow))
         original_color = element.value_of_css_property("color")
@@ -191,9 +203,11 @@ class MainPage(BasePage):
                 continue
         raise Exception("Color stays the same")
 
+    @allure.step("Click transaction cost arrow")
     def click_transaction_element(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.transaction_cost_arrow)).click()
 
+    @allure.step("Check transaction cost dropdown contains text 'Smart contract'")
     def assert_transaction_text(self):
         element = self.wait.until(EC.presence_of_element_located(MainPage.transaction_cost_info))
         assert "Smart contract" in element.text, "Text 'Smart contract' not found"

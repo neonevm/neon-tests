@@ -1,3 +1,6 @@
+import pytest
+
+
 class TestMainPage:
 
     def test_logo_header(self, main_page, menu_page, developers_page):
@@ -19,6 +22,7 @@ class TestMainPage:
         developers_page.assert_page_url()
         developers_page.assert_text_on_build_on_neon_block_link()
 
+    @pytest.mark.skip("https://neonlabs.atlassian.net/browse/FRONT-430")
     def test_click_start_building_button(self, main_page, quick_start_page):
         main_page.click_start_building_button()
         main_page.switch_window(1)

@@ -11,6 +11,7 @@ class MainPage(BasePage):
     _url = "https://neonevm.org/"
 
     email = "test@test.com"
+    smart_contract_text = "Smart contract"
 
     twitter_page = "https://x.com/Neon_EVM?mx=2"
     github_page = "https://github.com/neonevm/neon-evm"
@@ -67,12 +68,15 @@ class MainPage(BasePage):
     security_audit_title = (By.XPATH, "//div[@role='tabpanel']//h4[text()='Security Audits']")
     become_an_operator_title = (By.XPATH, "//div[@role='tabpanel']//h4[text()='Become an Operator']")
 
+    @allure.step("Click on the logotype on header")
     def click_on_logo_on_header(self):
         self.wait.until(EC.presence_of_element_located(MainPage.logo_on_header)).click()
 
+    @allure.step("Click on the logotype on footer")
     def click_on_logo_on_footer(self):
         self.wait.until(EC.presence_of_element_located(MainPage.logo_on_footer)).click()
 
+    @allure.step("Click 'Build on Neon' button")
     def click_on_build_on_neon_button(self, max_attempts=3):
         attempts = 0
         while attempts < max_attempts:
@@ -86,62 +90,81 @@ class MainPage(BasePage):
                 attempts += 1
         raise Exception("Can't open new tab")
 
+    @allure.step("Click 'Start Building' button")
     def click_start_building_button(self):
         self.wait.until(EC.presence_of_element_located(MainPage.start_building_button)).click()
 
+    @allure.step("Click 'Explore Ecosystem' button")
     def click_explore_ecosystem_button(self):
         self.wait.until(EC.presence_of_element_located(MainPage.explore_ecosystem_button)).click()
 
+    @allure.step("Click 'Explore developer hub' button")
     def click_explore_developer_hub_button(self):
         self.wait.until(EC.presence_of_element_located(MainPage.explore_developer_hub_button)).click()
 
+    @allure.step("Click 'Add your dapp' button")
     def click_add_your_dapp_button(self):
         self.wait.until(EC.presence_of_element_located(MainPage.add_your_dapp_button)).click()
 
+    @allure.step("Input email")
     def input_email(self):
         email_field = self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field))
         email_field.send_keys(MainPage.email)
 
+    @allure.step("Check message, that user already subscribed, is visible")
     def check_already_subscribed_text(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.subscription_notification_text)).is_displayed()
 
+    @allure.step("Click 'Ask me later' button")
     def click_ask_me_later_button(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.ask_me_later_button)).click()
 
+    @allure.step("Click 'Accept' button")
     def click_accept_button(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.accept_button)).click()
 
+    @allure.step("Check the banner with cookies info is not exists")
     def assert_cookie_banner_is_invisible(self):
         self.wait.until(EC.invisibility_of_element(MainPage.cookie_banner))
 
+    @allure.step("Check the banner with cookies info exists")
     def assert_cookie_banner_is_visible(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.cookie_banner)).is_displayed()
 
+    @allure.step("Click on the 'Subscribe' button")
     def click_subscribe_button(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.subscribe_button)).click()
 
+    @allure.step("Click on the social network icon")
     def click_social_network_icon(self, icon_name):
         self.wait.until(EC.visibility_of_element_located(icon_name)).click()
 
+    @allure.step("Click on the Terms of use link")
     def click_terms_of_use_link(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.terms_of_use_link)).click()
 
+    @allure.step("Click on the Disclaimer link")
     def click_disclaimer_link(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.disclaimer_link)).click()
 
+    @allure.step("Click on the Cookie Policy link")
     def click_cookie_policy_link(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.cookie_policy_link)).click()
 
+    @allure.step("Click on the Privacy Policy link")
     def click_privacy_policy_link(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.privacy_policy_link)).click()
 
+    @allure.step("Check page title")
     def check_page_title(self, page_title):
         self.wait.until(EC.visibility_of_element_located(page_title)).is_displayed()
 
-    def check_news_section(self):
+    @allure.step("Check count of news on the page")
+    def check_news_section(self, count: int):
         news_count = len(self.wait.until(EC.visibility_of_all_elements_located(MainPage.news_section)))
-        assert news_count == 3, f"Number of news is {news_count}"
+        assert news_count == count, f"Number of news is {news_count}"
 
+    @allure.step("Click on the first news in the list")
     def redirect_to_news_page(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.first_news)).click()
 
@@ -210,4 +233,4 @@ class MainPage(BasePage):
     @allure.step("Check transaction cost dropdown contains text 'Smart contract'")
     def assert_transaction_text(self):
         element = self.wait.until(EC.presence_of_element_located(MainPage.transaction_cost_info))
-        assert "Smart contract" in element.text, "Text 'Smart contract' not found"
+        assert MainPage.smart_contract_text in element.text, f"Text {MainPage.smart_contract_text} not found"

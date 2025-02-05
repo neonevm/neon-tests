@@ -209,22 +209,18 @@ class MainPage(BasePage):
         self.wait.until(EC.visibility_of_element_located(MainPage.button_explore_architecture)).click()
 
     @allure.step("Check transaction cost arrow chandes color while hover")
-    def transaction_element_change_color(self, max_attempts=3):
+    def transaction_element_change_color(self):
         element = self.wait.until(EC.visibility_of_element_located(MainPage.transaction_cost_arrow))
         original_color = element.value_of_css_property("color")
         self.scroll_page_to_element(element)
-
-        for attempt in range(max_attempts):
-            self.hover_element(element)
-
-            try:
-                WebDriverWait(self.driver, 2).until(
-                    lambda driver: element.value_of_css_property("color") != original_color
-                )
-                return
-            except TimeoutException:
-                continue
-        raise Exception("Color stays the same")
+        self.hover_element(element)
+        try:
+            WebDriverWait(self.driver, 10).until(
+                lambda driver: element.value_of_css_property("color") != original_color
+            )
+            return
+        except TimeoutException:
+            raise Exception("Color stays the same")
 
     @allure.step("Click transaction cost arrow")
     def click_transaction_element(self):

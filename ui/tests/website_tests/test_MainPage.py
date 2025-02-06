@@ -116,7 +116,7 @@ class TestMainPage:
         main_page.check_page_title(main_page.cookie_policy_page_title)
 
     def test_check_news_section(self, main_page, blog_page):
-        main_page.check_news_section()
+        main_page.check_news_section(3)
         main_page.redirect_to_news_page()
         main_page.assert_partial_matching_url(url="/blog/")
         blog_page.assert_post_not_empty()

@@ -77,18 +77,16 @@ class MainPage(BasePage):
         self.wait.until(EC.presence_of_element_located(MainPage.logo_on_footer)).click()
 
     @allure.step("Click 'Build on Neon' button")
-    def click_on_build_on_neon_button(self, max_attempts=3):
-        attempts = 0
-        while attempts < max_attempts:
-
-            self.wait.until(EC.visibility_of_element_located(MainPage.build_on_neon_button)).click()
-
-            try:
-                WebDriverWait(self.driver, 5).until(lambda driver: len(driver.window_handles) > 1)
-                return
-            except TimeoutException:
-                attempts += 1
-        raise Exception("Can't open new tab")
+    def click_on_build_on_neon_button(self):
+        button = self.wait.until(EC.presence_of_element_located(MainPage.build_on_neon_button))
+        overlay = self.driver.find_elements(By.CSS_SELECTOR, ".loading-overlay")
+        if overlay:
+            print("Overlay detected! Waiting for it to disappear...")
+            WebDriverWait(self.driver, 10).until(
+                EC.invisibility_of_element_located((By.CSS_SELECTOR, ".loading-overlay"))
+            )
+        self.driver.execute_script("arguments[0].click();", button)
+        WebDriverWait(self.driver, 5).until(lambda driver: len(driver.window_handles) > 1)
 
     @allure.step("Click 'Start Building' button")
     def click_start_building_button(self):

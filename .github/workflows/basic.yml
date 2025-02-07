@@ -138,6 +138,8 @@ jobs:
       - dockerize
     env:
       DOCKER_PROJECT_NAME: "evm-tests-${{ github.run_number }}-${{ github.run_attempt }}"
+    outputs:
+      test-group : ${{ steps.step_fail.outputs.FAILED_TEST_GROUP  }}
     steps:
       - uses: actions/checkout@v4
         if: ${{ env.NETWORK != 'devnet' }}
@@ -178,8 +180,9 @@ jobs:
           docker-compose -p ${{env.DOCKER_PROJECT_NAME}} -f docker-compose-ci.yml up -d
           docker exec -i ${{env.DOCKER_PROJECT_NAME}}-tests-1 bash -c "python3 clickfile.py run evm --numprocesses 8 --network docker_net --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
       - name: Set failed test group to evm
+        id: step_fail
         if: failure()
-        run: echo "FAILED_TEST_GROUP=evm" >> $GITHUB_ENV
+        run: echo "FAILED_TEST_GROUP=evm" >> $GITHUB_OUTPUT
       - name: "Generate allure report"
         if: always() && env.NETWORK != 'devnet'
         uses: ./.github/actions/generate-allure-report
@@ -214,6 +217,8 @@ jobs:
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
+    outputs:
+      test-group: ${{ steps.step_fail.outputs.FAILED_TEST_GROUP  }}
     steps:
       - uses: actions/checkout@v4
       - name: Run docker container
@@ -234,12 +239,11 @@ jobs:
           if [[ "${{ env.GENERATE_COST_REPORT }}" == "true" ]]; then
             CMD="$CMD --cost_reports_dir reports/cost_reports"
           fi
-
           docker exec -i ${{ env.CONTAINER }} /bin/bash -c "export DEVNET_FAUCET_URL=${{ env.FAUCET_URL }} && $CMD"
-
       - name: Set failed test group to basic
         if: failure()
-        run: echo "FAILED_TEST_GROUP=basic" >> $GITHUB_ENV
+        id: step_fail
+        run: echo "FAILED_TEST_GROUP=basic" >> $GITHUB_OUTPUT
       - name: Copy cost reports from container
         if: ${{ env.GENERATE_COST_REPORT == 'true' }}
         run: |
@@ -309,5 +313,8 @@ jobs:
         uses: ./.github/actions/python-requirements
       - name: Notify on failure
         run: |
+          proxy_tests="${{ needs.run-proxy-tests.outputs.test-group }}"
+          evm_tests="${{ needs.run-evm-tests.outputs.test-group }}"
+          FAILED_TEST_GROUP="${proxy_tests:-evm_tests}"
           python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
-          -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group ${{ env.FAILED_TEST_GROUP }}
+          -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group $FAILED_TEST_GROUP

@@ -112,6 +112,8 @@ class MainPage(BasePage):
 
     @allure.step("Check message, that user already subscribed, is visible")
     def check_already_subscribed_text(self):
+        email_field = self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field))
+        self.scroll_page_to_element(email_field)
         self.wait.until(EC.presence_of_element_located(MainPage.subscription_notification_text)).is_displayed()
 
     @allure.step("Click 'Ask me later' button")

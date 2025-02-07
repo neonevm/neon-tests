@@ -34,6 +34,7 @@ class MainPage(BasePage):
     explore_ecosystem_button = (By.XPATH, "//span[@class='button__content'][contains(.,'Explore ecosystem')]")
     explore_developer_hub_button = (By.XPATH, "//span[@class='button__content'][contains(.,'Explore developer hub')]")
     add_your_dapp_button = (By.XPATH, "//span[@class='button__content'][contains(.,'add your dapp')]")
+    transaction_info_block = (By.XPATH, "(//div[contains(@class,'metric-wrapper')])[3]")
     transaction_cost_arrow = (By.XPATH, "(//div[contains(@class,'arrow-down-icon-container')])[2]")
     transaction_cost_info = (By.XPATH, "//span/p[contains(text(),'Sending ERC20')]")
     email_input_field = (By.XPATH, "//input")
@@ -208,13 +209,16 @@ class MainPage(BasePage):
 
     @allure.step("Check transaction cost arrow chandes color while hover")
     def transaction_element_change_color(self):
-        element = self.wait.until(EC.visibility_of_element_located(MainPage.transaction_cost_arrow))
-        original_color = element.value_of_css_property("color")
-        self.scroll_page_to_element(element)
-        self.hover_element(element)
+        transaction_block = self.wait.until(EC.visibility_of_element_located(MainPage.transaction_info_block))
+        transaction_arrow = self.wait.until(EC.visibility_of_element_located(MainPage.transaction_cost_arrow))
+        original_color = transaction_arrow.value_of_css_property("color")
+        self.scroll_page_to_element(transaction_block)
+        self.scroll_page_to_element(transaction_arrow)
+        self.hover_element(transaction_block)
+        self.hover_element(transaction_arrow)
         try:
             WebDriverWait(self.driver, 10).until(
-                lambda driver: element.value_of_css_property("color") != original_color
+                lambda driver: transaction_arrow.value_of_css_property("color") != original_color
             )
         except TimeoutException:
             raise Exception("Color stays the same")

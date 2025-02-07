@@ -12,7 +12,7 @@ class BlogPage(BasePage):
     author_icon = (By.XPATH, "//div[contains(@class,'120px')][1]//img")
 
     @allure.step("Check text on the page title")
-    def assert_text_on_blog_page_title(self, text):
+    def assert_text_on_blog_page_title(self):
         element = self.wait.until(EC.presence_of_element_located(BlogPage.section_header))
         assert element.text == BlogPage.header_text
 

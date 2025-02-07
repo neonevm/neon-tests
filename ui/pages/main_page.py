@@ -105,9 +105,9 @@ class MainPage(BasePage):
         self.wait.until(EC.presence_of_element_located(MainPage.add_your_dapp_button)).click()
 
     @allure.step("Input email")
-    def input_email(self):
+    def input_email(self, email):
         email_field = self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field))
-        email_field.send_keys(MainPage.email)
+        email_field.send_keys(email)
 
     @allure.step("Check message, that user already subscribed, is visible")
     def check_already_subscribed_text(self):
@@ -216,7 +216,6 @@ class MainPage(BasePage):
             WebDriverWait(self.driver, 10).until(
                 lambda driver: element.value_of_css_property("color") != original_color
             )
-            return
         except TimeoutException:
             raise Exception("Color stays the same")
 

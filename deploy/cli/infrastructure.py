@@ -6,9 +6,9 @@ import typing as tp
 import pathlib
 import logging
 
-import click
 from paramiko.client import SSHClient
 from scp import SCPClient
+from solana.rpc.commitment import Confirmed
 
 from deploy.cli.network_manager import NetworkManager
 
@@ -170,7 +170,9 @@ def get_solana_accounts_transactions_compute_units(eth_transaction):
     print(f"minimum_ledger_slot={sol_client.get_minimum_ledger_slot()}")
     print(f"first_available_block={sol_client.get_first_available_block()}")
     print(f"get_slot={sol_client.get_slot()}")
-    tr = sol_client.get_transaction(Signature.from_string(trx["result"][0]), max_supported_transaction_version=0)
+    tr = sol_client.get_transaction(
+        Signature.from_string(trx["result"][0]), max_supported_transaction_version=0, commitment=Confirmed
+    )
     print(f"get_transaction({trx}): {tr}")
 
     solana_transaction_hashes = trx["result"]
@@ -180,19 +182,9 @@ def get_solana_accounts_transactions_compute_units(eth_transaction):
         solana_transaction = sol_client.get_transaction(
             tx_sig=Signature.from_string(solana_transaction_hash),
             max_supported_transaction_version=0,
+            commitment=Confirmed,
         )
-
-        try:
-            log_messages = solana_transaction.value.transaction.meta.log_messages
-        except AttributeError:
-            click.echo(f"WARNING: no log messages in transaction {solana_transaction_hash}: {solana_transaction}")
-            continue
-
-        for message in log_messages[::-1]:
-            match = re.match(r"^.+consumed (\d+) of \d+ compute units$", message)
-            if match:
-                compute_units += int(match.group(1))
-                break
+        compute_units += int(solana_transaction.value.transaction.meta.compute_units_consumed)
 
     if tr.value.transaction.transaction.message.address_table_lookups:
         alt = tr.value.transaction.transaction.message.address_table_lookups

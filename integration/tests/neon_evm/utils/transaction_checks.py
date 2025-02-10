@@ -12,7 +12,7 @@ def check_transaction_logs_have_text(
     if isinstance(trx, GetTransactionResp):
         receipt = trx
     else:
-        receipt = solana_client.get_transaction(trx)
+        receipt = solana_client.get_transaction(trx, commitment=Confirmed)
     logs = decode_logs(receipt.value.transaction.meta.log_messages)
     assert text in logs, f"Transaction logs don't contain '{text}'. Logs: {logs}"
 

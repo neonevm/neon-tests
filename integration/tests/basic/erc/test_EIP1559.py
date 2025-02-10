@@ -6,6 +6,7 @@ import allure
 import pytest
 import web3
 import web3.types
+from solana.rpc.commitment import Confirmed
 from solders.signature import Signature
 from eth_account.signers.local import LocalAccount
 from web3._utils.fee_utils import _fee_history_priority_fee_estimate  # noqa
@@ -480,7 +481,9 @@ class TestEIP1559:
         receipt = web3_client.send_transaction(account=sender, transaction=tx_params)
         assert receipt.type == 2
         solana_transaction_hash = web3_client.get_solana_trx_by_neon(receipt["transactionHash"].hex())["result"][0]
-        solana_transaction = sol_client.get_transaction_with_wait(Signature.from_string(solana_transaction_hash))
+        solana_transaction = sol_client.get_transaction(
+            Signature.from_string(solana_transaction_hash), commitment=Confirmed
+        )
 
         data_list = [instr.data for instr in solana_transaction.value.transaction.transaction.message.instructions]
 

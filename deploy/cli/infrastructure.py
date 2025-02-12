@@ -58,7 +58,7 @@ def deploy_infrastructure(
     os.environ["TF_VAR_proxy_model_commit"] = proxy_branch
     os.environ["TF_VAR_dockerhub_org_name"] = os.environ.get("GITHUB_REPOSITORY_OWNER")
     os.environ["TF_VAR_devnet_solana_url"] = devnet_solana_url
-    os.environ["TF_LOG"] = "DEBUG"
+#    os.environ["TF_LOG"] = "DEBUG"
 
     if use_real_price:
         os.environ["TF_VAR_use_real_price"] = "1"

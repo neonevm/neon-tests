@@ -5,6 +5,7 @@ import sys
 import typing as tp
 import pathlib
 import logging
+import time
 
 from paramiko.client import SSHClient
 from scp import SCPClient
@@ -62,17 +63,39 @@ def deploy_infrastructure(
     if use_real_price:
         os.environ["TF_VAR_use_real_price"] = "1"
 
+    instance_types = ["cpx51", "cx52", "cpx41", "cx42"]
+    locations = ["hel1", "nbg1", "fsn1"]
+    instances = [{"server_type": i, "location": j} for i in instance_types for j in locations]
+    print("Possible instance options: ", instances)
+
+    retry_amount = 10
+    retry_amount = len(instances) if len(instances) > retry_amount else retry_amount # Verify that we can try all regions and locations
+
     terraform.init(backend_config=TF_BACKEND_CONFIG)
-    return_code, stdout, stderr = terraform.apply(skip_plan=True)
-    print(f"code: {return_code}")
-    print(f"stdout: {stdout}")
-    print(f"stderr: {stderr}")
-    with open("terraform.log", "w") as file:
-        file.write(stdout)
-        file.write(stderr)
-    if return_code != 0:
+
+    instance_iterator = 0
+    retry_iterator = 0
+    while (retry_iterator < retry_amount):
+        return_code, stdout, stderr = terraform.apply(skip_plan=True, capture_output=True, var={'server_type':instances[instance_iterator]["server_type"], 'location':instances[instance_iterator]["location"]})
+        print(f"code: {return_code}")
+        print(f"stdout: {stdout}")
+        print(f"stderr: {stderr}")
+        if return_code == 0:
+            break
+        elif return_code != 0:
+            retry_iterator += 1
+            if "(resource_unavailable)" in stderr:
+                instance_iterator += 1
+                print("Resource_unavailable; ",instances[instance_iterator] ," Trying to recreate instances with another region / another instance type...")
+            else:
+                print("Retry because ", stderr, "; Retries left: ", retry_amount - retry_iterator)
+            time.sleep(3)
+    if retry_iterator >= retry_amount:
+        print("Retries left: ", retry_amount - retry_iterator)
+        print("Terraform apply failed:", stderr)
         print("Terraform infrastructure is not built correctly")
         sys.exit(1)
+    
     output = terraform.output(json=True)
     print(f"output: {output}")
     proxy_ip = output["proxy_ip"]["value"]

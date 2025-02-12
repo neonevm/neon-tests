@@ -21,12 +21,12 @@ resource "hcloud_server" "proxy" {
     content     = data.template_file.proxy_init.rendered
     destination = "/tmp/proxy_init.sh"
 
-  connection {
-    type        = "ssh"
-    user        = "root"
-    host        = hcloud_server.proxy.ipv4_address
-    private_key = file("/tmp/ci-stands")
-  }
+    connection {
+      type        = "ssh"
+      user        = "root"
+      host        = hcloud_server.proxy.ipv4_address
+      private_key = file("/tmp/ci-stands")
+    }
 
   }
 
@@ -37,18 +37,18 @@ resource "hcloud_server" "proxy" {
       "chmod a+x /tmp/proxy_init.sh",
       "sudo /tmp/proxy_init.sh"
     ]
-  connection {
-    type        = "ssh"
-    user        = "root"
-    host        = hcloud_server.proxy.ipv4_address
-    private_key = file("/tmp/ci-stands")
-  }
+    connection {
+      type        = "ssh"
+      user        = "root"
+      host        = hcloud_server.proxy.ipv4_address
+      private_key = file("/tmp/ci-stands")
+    }
 
   }
 
   labels = {
     environment = "ci"
-    purpose    = "ci-oz-full-tests"
+    purpose     = "ci-oz-full-tests"
   }
   depends_on = [
     hcloud_server.solana

@@ -16,6 +16,6 @@ variable "dockerhub_org_name" {
 }
 
 variable "use_real_price" {
-  type = number
+  type    = number
   default = 0
 }

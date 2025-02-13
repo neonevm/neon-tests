@@ -62,7 +62,7 @@ class TestDebugTraceIterativeTransaction:
 
     def test_trace_iterative_tx_eip_1559(self, counter_contract):
         sender_account = self.accounts[0]
-        tx = self.web3_client.make_raw_tx(from_=sender_account, type=TransactionType.EIP_1559)
+        tx = self.web3_client.make_raw_tx(from_=sender_account, tx_type=TransactionType.EIP_1559)
 
         instruction_tx = counter_contract.functions.moreInstruction(0, 3000).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)

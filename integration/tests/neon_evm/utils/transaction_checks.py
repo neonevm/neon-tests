@@ -1,9 +1,8 @@
-import base64
-
 from solana.rpc.commitment import Confirmed
 from solders.rpc.responses import GetTransactionResp, SendTransactionResp
 
 from utils.solana_client import SolanaClient
+from utils.solana_logs_helper import decode_logs
 
 
 def check_transaction_logs_have_text(
@@ -15,21 +14,6 @@ def check_transaction_logs_have_text(
         receipt = solana_client.get_transaction(trx, commitment=Confirmed)
     logs = decode_logs(receipt.value.transaction.meta.log_messages)
     assert text in logs, f"Transaction logs don't contain '{text}'. Logs: {logs}"
-
-
-def decode_logs(log_messages: list) -> list:
-    decoded_logs = ""
-
-    for log in log_messages:
-        if "Program data:" in log:
-            decoded_logs += "Program data: "
-            encoded_part = log.replace("Program data: ", "")
-            for item in encoded_part.split(" "):
-                decoded_logs += " " + str(base64.b64decode(item))
-        else:
-            decoded_logs += log
-        decoded_logs += " "
-    return decoded_logs
 
 
 def check_holder_account_tag(solana_client: SolanaClient, storage_account, layout, expected_tag):

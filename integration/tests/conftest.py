@@ -502,6 +502,12 @@ def counter_contract(web3_client, accounts):
 
 
 @pytest.fixture(scope="class")
+def counter_contract_sol_chain(web3_client_sol, account_with_all_tokens) -> tp.Any:
+    contract, _ = web3_client_sol.deploy_and_get_contract("common/Counter", "0.8.10", account_with_all_tokens)
+    yield contract
+
+
+@pytest.fixture(scope="class")
 def nested_call_contracts(accounts, web3_client):
     contract_a, _ = web3_client.deploy_and_get_contract(
         "common/NestedCallsChecker", "0.8.12", accounts[0], contract_name="A"

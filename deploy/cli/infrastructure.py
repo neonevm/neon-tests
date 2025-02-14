@@ -62,7 +62,7 @@ def deploy_infrastructure(
     if use_real_price:
         os.environ["TF_VAR_use_real_price"] = "1"
 
-    instance_types = ["cpx51", "cx52", "cpx41", "cx42"]
+    instance_types = ["cpx51", "cx52", "cpx41", "cx42", "ccx33", "ccx43"]
     locations = ["hel1", "nbg1", "fsn1"]
     instances = [{"server_type": i, "location": j} for i in instance_types for j in locations]
     print("Possible instance options: ", instances)

@@ -18,7 +18,8 @@ from spl.token.instructions import TransferParams, transfer
 
 from conftest import EnvironmentConfig
 from integration.tests.neon_evm.utils.call_solana import SolanaCaller
-from .utils.transaction_checks import check_holder_account_tag, check_transaction_logs_have_text, decode_logs
+from utils.solana_logs_helper import decode_logs
+from .utils.transaction_checks import check_holder_account_tag, check_transaction_logs_have_text
 
 from integration.tests.neon_evm.utils.ethereum import make_eth_transaction, make_contract_call_trx
 

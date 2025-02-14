@@ -115,6 +115,22 @@ contract MultipleActionsERC20 {
         erc20.transfer(transfer_to, transfer_amount);
     }
 
+
+    function transferReadBalanceTransfer(
+        uint256 transfer_amount,
+        address transfer_to
+    ) public {
+        uint current_balance;
+        uint balance_before = erc20.balanceOf(address(this));
+        uint expected_balance = balance_before - transfer_amount;
+        erc20.transfer(transfer_to, transfer_amount);
+        for (uint256 i = 0; i < 50; i++) {
+            current_balance = erc20.balanceOf(address(this));
+            require(current_balance == expected_balance, "balance not updated");
+        }
+        erc20.transfer(transfer_to, transfer_amount);
+    }
+
     function mintMint(
         uint256 mint_amount1,
         uint256 mint_amount2

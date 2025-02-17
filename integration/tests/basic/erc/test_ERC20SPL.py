@@ -11,8 +11,9 @@ from solders.pubkey import Pubkey
 from spl.token import instructions
 from spl.token.constants import TOKEN_PROGRAM_ID
 
+from integration.tests.basic.helpers.rpc_checks import assert_solana_address_was_not_used_in_trx
 from utils import metaplex
-from utils.consts import ZERO_ADDRESS
+from utils.consts import ZERO_ADDRESS, METAPLEX_ADDRESS, SPL_TOKEN_ADDRESS, CALL_SOLANA_ADDRESS, SOLANA_NATIVE_ADDRESS
 from utils.erc20wrapper import ERC20Wrapper
 from utils.helpers import gen_hash_of_block, wait_condition, create_invalid_address
 from utils.web3client import NeonChainWeb3Client
@@ -212,6 +213,17 @@ class TestERC20SPL:
         assert balance_acc1_after == balance_acc1_before - amount
         assert balance_acc2_after == balance_acc2_before + amount
         assert total_before == total_after
+
+    def test_transfer_and_check_sol_account_list_is_correct(self, erc20_contract, restore_balance, evm_loader):
+        new_account = self.accounts.create_account()
+
+        receipt = erc20_contract.transfer(erc20_contract.account, new_account.address, 100)
+        precompiled_addresses = [METAPLEX_ADDRESS, SPL_TOKEN_ADDRESS, CALL_SOLANA_ADDRESS, SOLANA_NATIVE_ADDRESS]
+        for precompiled_address in precompiled_addresses:
+            program_address = evm_loader.ether2program(precompiled_address[2:])[0]
+            assert_solana_address_was_not_used_in_trx(
+                receipt["transactionHash"].hex(), program_address, self.web3_client, evm_loader
+            )
 
     @pytest.mark.parametrize(
         "block_len, expected_exception, msg",

@@ -30,6 +30,7 @@ from utils.consts import COUNTER_ID, LAMPORT_PER_SOL, MULTITOKEN_MINTS
 from utils.erc20 import ERC20
 from utils.erc20wrapper import ERC20Wrapper
 from utils.evm_loader import EvmLoader
+from utils.helpers import decode_function_signature, get_selectors
 from utils.operator import Operator
 from utils.solana_client import SolanaClient
 from utils.prices import get_sol_price_with_retry
@@ -553,13 +554,13 @@ def multiple_actions_erc721(web3_client, accounts):
     return accounts[0], contract
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def call_solana_caller(accounts, web3_client):
     contract, _ = web3_client.deploy_and_get_contract("precompiled/CallSolanaCaller.sol", "0.8.10", accounts[0])
     return contract
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def counter_resource_address(call_solana_caller, accounts, web3_client) -> bytes:
     tx = web3_client.make_raw_tx(accounts[0].address)
     salt = web3_client.text_to_bytes32("".join(random.choices(string.ascii_letters, k=5)))
@@ -645,3 +646,69 @@ def eip1559_setup(
         pause = min_pause - (time.time() - start)
         if pause > 0:
             time.sleep(pause)
+
+
+@pytest.fixture(scope="class")
+def diamond_init(web3_client_session, accounts):
+    contract, _ = web3_client_session.deploy_and_get_contract(
+        "EIPs/EIP2535/upgradeInitializers/DiamondInit.sol",
+        "0.8.10",
+        accounts[0],
+        contract_name="DiamondInit",
+    )
+    return contract
+
+
+@pytest.fixture(scope="class")
+def facet_cuts(diamond_cut_facet, diamond_loupe_facet, ownership_facet):
+    facet_cuts = []
+    for facet in [diamond_cut_facet, diamond_loupe_facet, ownership_facet]:
+        facet_cuts.append((facet.address, 0, get_selectors(facet.abi)))
+    return facet_cuts
+
+
+@pytest.fixture(scope="class")
+def diamond_cut_facet(web3_client_session, accounts):
+    contract, _ = web3_client_session.deploy_and_get_contract(
+        "EIPs/EIP2535/facets/DiamondCutFacet",
+        "0.8.10",
+        accounts[0],
+        contract_name="DiamondCutFacet",
+    )
+    return contract
+
+
+@pytest.fixture(scope="class")
+def diamond_loupe_facet(web3_client_session, accounts):
+    contract, _ = web3_client_session.deploy_and_get_contract(
+        "EIPs/EIP2535/facets/DiamondLoupeFacet.sol",
+        "0.8.10",
+        accounts[0],
+        contract_name="DiamondLoupeFacet",
+    )
+    return contract
+
+
+@pytest.fixture(scope="class")
+def ownership_facet(web3_client_session, accounts):
+    contract, _ = web3_client_session.deploy_and_get_contract(
+        "EIPs/EIP2535/facets/OwnershipFacet",
+        "0.8.10",
+        accounts[0],
+        contract_name="OwnershipFacet",
+    )
+    return contract
+
+
+@pytest.fixture(scope="class")
+def diamond(web3_client_session, diamond_init, facet_cuts, accounts):
+    calldata = decode_function_signature("init()")
+    diamond_args = [accounts[0].address, diamond_init.address, calldata]
+    contract, tx = web3_client_session.deploy_and_get_contract(
+        "EIPs/EIP2535/Diamond",
+        "0.8.10",
+        accounts[0],
+        contract_name="Diamond",
+        constructor_args=[facet_cuts, diamond_args],
+    )
+    return contract

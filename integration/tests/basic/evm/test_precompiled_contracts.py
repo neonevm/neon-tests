@@ -126,13 +126,7 @@ class TestPrecompiledContracts:
     @pytest.mark.xdist_group("precompiled_contract_balance")
     @pytest.mark.parametrize(**parametrized_data)
     def test_call_via_send_trx(
-        self,
-        web3_client: NeonChainWeb3Client,
-        address,
-        input_data,
-        expected,
-        request,
-        pytestconfig,
+        self, web3_client: NeonChainWeb3Client, address, input_data, request, pytestconfig, expected, evm_loader
     ):
         if request.node.callspec.id == "blake2f-vector 8":
             pytest.skip("NDEV-1961")
@@ -155,6 +149,7 @@ class TestPrecompiledContracts:
         ]:
             receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
             assert receipt["status"] == 1
+
             if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
                 assert self.web3_client.get_balance(address) - balance_before == amount
         else:

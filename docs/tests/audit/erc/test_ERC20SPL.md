@@ -37,6 +37,7 @@ tokens
 | TestERC20wrapperContract::test_allowance_incorrect_address                     | Check allowance method with incorrect address                               |         |
 | TestERC20wrapperContract::test_allowance_for_new_account                       | Check allowance method for new account                                      |         |
 | TestERC20wrapperContract::test_transfer                                        | Verify transfer                                                             |         |
+| TestERC20wrapperContract::test_transfer_and_check_sol_account_list_is_correct  | Check account list doesn't contain program address of precompiled contract  |         |
 | TestERC20wrapperContract::test_transfer_incorrect_address                      | Verify transfer for incorrect address                                       |         |
 | TestERC20wrapperContract::test_transfer_more_than_balance                      | Expect error on transfer more than balance                                  |         |
 | TestERC20wrapperContract::test_transfer_no_enough_gas                          | Expect error with not enough gas                                            |         |
@@ -61,4 +62,3 @@ tokens
 | TestMultipleActionsForERC20::test_burn_transfer_burn_transfer                  | Verify burn -> transfer -> burn in one transaction                          |         |
 | TestMultipleActionsForERC20::test_burn_mint_transfer                           | Verify burn -> mint -> transfer in one transaction                          |         |
 | TestMultipleActionsForERC20::test_parallel_trxs_transfer_read_balance_transfer | Verify spl balance isn't cashed                                             |         |
-

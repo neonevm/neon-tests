@@ -103,7 +103,7 @@ class TestExtCodeHashOpcode:
     def test_extcodehash_for_reverted_destroyed_contract(self, eip1052_checker, json_rpc_client, destroyable_contract):
         # Check the EXTCODEHASH of an account that selfdestructed and later the selfdestruct has been reverted.
         sender_account = self.accounts[0]
-        destroyCaller, _ = self.web3_client.deploy_and_get_contract(
+        destroy_caller, _ = self.web3_client.deploy_and_get_contract(
             "EIPs/EIP1052Extcodehash",
             "0.8.10",
             sender_account,
@@ -112,7 +112,7 @@ class TestExtCodeHashOpcode:
 
         tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = eip1052_checker.functions.getHashForDestroyedContractAfterRevert(
-            destroyable_contract.address, destroyCaller.address
+            destroyable_contract.address, destroy_caller.address
         ).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         neon_logs = json_rpc_client.send_rpc(
@@ -125,23 +125,37 @@ class TestExtCodeHashOpcode:
         assert all(x == data[0] for x in data)
 
     @pytest.mark.only_stands
-    def test_extcodehash_for_precompiled_contract(self, eip1052_checker):
-        # Check the EXTCODEHASH of a precompiled contract.
-        precompiled_acc = AccountData(address="0xFf00000000000000000000000000000000000004")
+    @pytest.mark.parametrize(
+        "address,expected_hash",
+        [
+            ("0x0000000000000000000000000000000000000004", ZERO_HASH),
+            ("0xFf00000000000000000000000000000000000004", keccak(hexstr="0xFE").hex()),
+        ],
+    )
+    def test_extcodehash_for_precompiled_contract(self, eip1052_checker, address, expected_hash):
+        # Check the EXTCODEHASH of a ethereum precompiled contract.
+        precompiled_acc = AccountData(address=address)
         contract_hash = eip1052_checker.functions.getContractHash(precompiled_acc.address).call()
-        assert contract_hash.hex() == ZERO_HASH
+        assert contract_hash.hex() == expected_hash
 
     @pytest.mark.only_stands
-    def test_extcodehash_with_send_tx_for_precompiled_contract(self, eip1052_checker):
+    @pytest.mark.parametrize(
+        "address,expected_hash",
+        [
+            ("0x0000000000000000000000000000000000000004", ZERO_HASH),
+            ("0xFf00000000000000000000000000000000000004", keccak(hexstr="0xFE").hex()),
+        ],
+    )
+    def test_extcodehash_with_send_tx_for_precompiled_contract(self, eip1052_checker, address, expected_hash):
         # Check the EXTCODEHASH of a precompiled contract with send_tx.
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account)
-        precompiled_acc = AccountData(address="0xFf00000000000000000000000000000000000004")
+        precompiled_acc = AccountData(address=address)
         instruction_tx = eip1052_checker.functions.getContractHashWithLog(precompiled_acc.address).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         event_logs = eip1052_checker.events.ReceivedHash().process_receipt(receipt)
         contract_hash = event_logs[0]["args"]["hash"]
-        assert contract_hash.hex() == ZERO_HASH
+        assert contract_hash.hex() == expected_hash
 
     @pytest.mark.only_stands
     def test_extcodehash_for_new_account_with_changed_balance(self, eip1052_checker, common_contract):

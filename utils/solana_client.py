@@ -101,7 +101,7 @@ class SolanaClient(solana.rpc.api.Client):
         receipt = self.get_transaction(sig)
         assert sig_status["result"]["value"][0]["status"] == {"Ok": None}, f"error:{sig_status}, receipt: {receipt}"
 
-    def send_tx(self, trx: Transaction, *signers: Keypair, wait_status=Confirmed):
+    def send_tx(self, trx: Transaction, *signers: Keypair, wait_status=Confirmed) -> GetTransactionResp:
         result = self.send_transaction(
             trx, *signers, opts=TxOpts(skip_confirmation=True, preflight_commitment=wait_status)
         )

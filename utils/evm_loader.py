@@ -240,7 +240,7 @@ class EvmLoader(SolanaClient):
         signer: Keypair = None,
         system_program=sp.ID,
         compute_unit_price=None,
-    ) -> SendTransactionResp:
+    ) -> GetTransactionResp:
         signer = operator if signer is None else signer
         trx = TransactionWithComputeBudget(operator, compute_unit_price=compute_unit_price)
         operator_balance = self.get_operator_balance_pubkey(operator)
@@ -270,7 +270,7 @@ class EvmLoader(SolanaClient):
         additional_accounts,
         signer: Keypair,
         system_program=sp.ID,
-    ) -> SendTransactionResp:
+    ) -> GetTransactionResp:
         operator_balance = self.get_operator_balance_pubkey(operator)
 
         print(f"operator_balance: {operator_balance=}")
@@ -871,7 +871,7 @@ class EvmLoader(SolanaClient):
 
     def destroy_tree_account(
         self, neon_user: NeonUser, treasury, tree_account, chain_id: int | None = ""
-    ) -> SignedTransaction:
+    ) -> GetTransactionResp:
         if chain_id == "":
             chain_id = self.sol_chain_id
 

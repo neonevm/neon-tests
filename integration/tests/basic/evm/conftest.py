@@ -3,11 +3,9 @@ from solders.pubkey import Pubkey
 from web3.contract import Contract
 from utils import helpers
 from utils.accounts import EthAccounts
+from utils.consts import SPL_TOKEN_ADDRESS, METAPLEX_ADDRESS
 from utils.solana_client import SolanaClient
 from utils.web3client import Web3Client
-
-SPL_TOKEN_ADDRESS = "0xFf00000000000000000000000000000000000004"
-METAPLEX_ADDRESS = "0xff00000000000000000000000000000000000005"
 
 
 @pytest.fixture(scope="class")

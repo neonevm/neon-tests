@@ -213,3 +213,8 @@ class SolanaClient(solana.rpc.api.Client):
                 return True
         else:
             return False
+
+    @allure.step("Get account keys for solana transaction")
+    def get_account_keys_for_transaction(self, sol_trx: str):
+        resp = self.get_transaction(Signature.from_string(sol_trx), commitment=Confirmed)
+        return resp.value.transaction.transaction.message.account_keys

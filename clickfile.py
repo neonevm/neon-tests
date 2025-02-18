@@ -1306,7 +1306,7 @@ def build(tag):
     "-u", "--users", default=None, required=True, help="Number of users (have to be generated before load test run)"
 )
 @click.option("-b", "--balance", default=None, required=True, help="Initial balance of accounts in Neon")
-@click.option("-a", "--bank_account", default="", required=False, help="Eth bank account private key")
+@click.option("-a", "--bank_account", default=None, required=False, help="Eth bank account private key")
 @catch_traceback
 def run_load_k6(network, script, users, balance, bank_account):
     network_manager = NetworkManager()

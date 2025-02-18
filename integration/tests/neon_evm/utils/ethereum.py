@@ -88,7 +88,7 @@ def make_eth_transaction(
     access_list=None,
     type_=None,
     gas_price=0,
-):
+) -> SignedTransaction:
     if chain_id == "":
         chain_id = evm_loader.chain_id
 
@@ -120,8 +120,8 @@ def make_contract_call_trx(
     evm_loader,
     user,
     contract,
-    function_signature,
-    params=None,
+    function_signature: str,
+    params: tp.Iterable[tp.Any] | None = None,
     value=0,
     chain_id: int | str | None = "",
     access_list=None,

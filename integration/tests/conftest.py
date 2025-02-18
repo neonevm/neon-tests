@@ -497,7 +497,7 @@ def events_checker_contract(web3_client, accounts) -> tp.Any:
 
 
 @pytest.fixture(scope="class")
-def counter_contract(web3_client, accounts):
+def counter_contract(web3_client, accounts) -> Contract:
     contract, _ = web3_client.deploy_and_get_contract("common/Counter", "0.8.10", account=accounts[0])
     return contract
 

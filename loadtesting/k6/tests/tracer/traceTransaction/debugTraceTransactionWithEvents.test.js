@@ -6,6 +6,7 @@ import { SharedArray } from 'k6/data';
 import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 import exec from 'k6/execution';
 import { check } from 'k6';
+import {readUsersFromFile} from '../utils/accounts.js'
 
 const debugTraceTransactionRequests = new Counter('debug_trace_transaction_with_events_requests');
 const debugTraceTransactionRequestErrorCounter = new Counter('debug_trace_transaction_with_events_request_errors');
@@ -16,14 +17,7 @@ export const options = standardScenarioOptions;
 
 const historicalData = JSON.parse(open("../../../data/tracer_data.json"));
 
-const usersArray = new SharedArray('Users accounts', function () {
-    const accounts = JSON.parse(open("../../../data/accounts.json"));
-    let data = [];
-    for (let i = 0; i < Object.keys(accounts).length; i++) {
-        data[i] = accounts[i];
-    }
-    return data;
-});
+const usersArray = readUsersFromFile()
 
 
 export default function DebugTraceTransactionWithEventsTest() {

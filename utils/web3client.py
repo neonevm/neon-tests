@@ -660,7 +660,7 @@ class NeonChainWeb3Client(Web3Client):
         """Creates a new account with balance"""
         account = self.create_account()
 
-        if bank_account is not None:
+        if bank_account:
             self.send_neon(bank_account, account, amount)
         else:
             faucet.request_neon(account.address, amount=amount)

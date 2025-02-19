@@ -3,16 +3,15 @@ import enum
 import functools
 import glob
 import json
-import time
-from collections import defaultdict
-from multiprocessing.dummy import Pool
-
 import os
 import re
 import shutil
 import subprocess
 import sys
+import time
 import typing as tp
+from collections import defaultdict
+from multiprocessing.dummy import Pool
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -21,11 +20,11 @@ import pytest
 from deploy.cli.cost_report import prepare_report_data, report_data_to_markdown
 from deploy.test_results_db.db_handler import PostgresTestResultsHandler
 from deploy.test_results_db.test_results_handler import TestResultsHandler
+from utils.accounts import EthAccounts
 from utils.error_log import error_log
 from utils.faucet import Faucet
 from utils.slack_notification import SlackNotification
 from utils.types import TestGroup, RepoType
-from utils.accounts import EthAccounts
 
 try:
     import click
@@ -49,7 +48,7 @@ try:
     from utils.prices import get_sol_price_with_retry
     from utils.helpers import wait_condition
     from utils.apiclient import JsonRPCSession
-    from utils.k6_helpers import k6_prepare_accounts, k6_set_envs, deploy_erc20_contract
+    from utils.k6_helpers import k6_prepare_accounts, k6_set_envs, deploy_erc20_contract, deploy_block_number_contract
 except ImportError:
     print("Please run ./clickfile.py requirements to install all requirements")
 
@@ -1325,8 +1324,11 @@ def run_load_k6(network, script, users, balance, bank_account):
     erc20 = deploy_erc20_contract(web3_client, faucet, account_manager.create_account(balance=int(balance)))
     print(f"ERC20 contract deployed at {erc20.contract.address} with owner {erc20.owner.address}")
 
+    block_contract = deploy_block_number_contract(account_manager)
+
     k6_prepare_accounts(erc20, account_manager, users, balance, 100)
     k6_set_envs(network, erc20, users, balance, bank_account)
+    os.environ["K6_BLOCK_ADDRESS"] = block_contract.address
 
     command = f"./k6 run {script} -o 'prometheus=namespace=k6'"
     command_run = subprocess.run(command, shell=True)

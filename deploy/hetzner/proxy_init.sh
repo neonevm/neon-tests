@@ -128,7 +128,7 @@ docker-compose -f docker-compose-ci.yml -f docker-compose-ci.override.yml up -d
 PROXY_URL="http://localhost:9090/solana"
 PROXY_DATA='{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["latest", false],"id":1}'
 PROXY_RESULT='"number"'
-wait_service "proxy" $PROXY_URL $PROXY_DATA $PROXY_RESULT
+wait_service "proxy" $PROXY_URL "$PROXY_DATA" $PROXY_RESULT
 
 
 docker rm -f solana

@@ -27,11 +27,12 @@ class MainPage(BasePage):
     proxy_page = "https://neonevm.org/docs/operating/operator-introduction"
     neon_architecture_page = "https://neonevm.org/docs/architecture/neon_evm_arch"
 
-    logo_on_header = (By.XPATH, "//*[@id='header']/div[2]/div[1]")
+    logo_on_header = (By.XPATH, "//header//a[@aria-label='Go to home']")
     logo_on_footer = (By.XPATH, "(//a[@aria-label='Go to home'])[3]")
     build_on_neon_button = (By.XPATH, "//span[contains(text(),'build on neon')]")
-    start_building_button = (By.XPATH, "//a[@href='https://neonevm.org/docs/'][contains(.,'Start Building')]")
-    explore_ecosystem_button = (By.XPATH, "//span[@class='button__content'][contains(.,'Explore ecosystem')]")
+    technical_docs_button = (By.XPATH, "//a[normalize-space()='technical docs']")
+    start_building_button = (By.XPATH, "//button/span[normalize-space()='Start Building']")
+    explore_ecosystem_button = (By.XPATH, "(//a/span[normalize-space()='explore ecosystem'])[1]")
     explore_developer_hub_button = (By.XPATH, "//span[@class='button__content'][contains(.,'Explore developer hub')]")
     add_your_dapp_button = (By.XPATH, "//span[@class='button__content'][contains(.,'add your dapp')]")
     transaction_info_block = (By.XPATH, "(//div[contains(@class,'metric-wrapper')])[3]")
@@ -71,7 +72,7 @@ class MainPage(BasePage):
 
     @allure.step("Click on the logotype on header")
     def click_on_logo_on_header(self):
-        self.wait.until(EC.presence_of_element_located(MainPage.logo_on_header)).click()
+        self.wait.until(EC.visibility_of_element_located(MainPage.logo_on_header)).click()
 
     @allure.step("Click on the logotype on footer")
     def click_on_logo_on_footer(self):
@@ -92,6 +93,10 @@ class MainPage(BasePage):
     @allure.step("Click 'Start Building' button")
     def click_start_building_button(self):
         self.wait.until(EC.presence_of_element_located(MainPage.start_building_button)).click()
+
+    @allure.step("Click 'Technical docs' button")
+    def click_technical_docs_button(self):
+        self.wait.until(EC.presence_of_element_located(MainPage.technical_docs_button)).click()
 
     @allure.step("Click 'Explore Ecosystem' button")
     def click_explore_ecosystem_button(self):

@@ -6,6 +6,10 @@ from selenium.webdriver.support import expected_conditions as EC
 
 class Menu(BasePage):
 
+    start_building_link = (
+        By.XPATH,
+        "//div[@class='dropdown__link link'][contains(.,'Developers')]/../div[@class='dropdown__list--left dropdown__list']//a[contains(.,'Start Building')]",
+    )
     developers_link = (By.XPATH, "//div[@class='dropdown__link link'][contains(.,'Developers')]")
     link_on_github_in_menu = (By.XPATH, "(//span[contains(.,'GitHub')])[2]")
     news_link = (By.XPATH, "//div[@class='dropdown__link link'][contains(.,'News & Community')]")
@@ -20,6 +24,11 @@ class Menu(BasePage):
     solana_pdf = "https://neonevm.org/Solana_Native.pdf"
     neonpass = "https://neonpass.live/"
     events = "https://neonevm.org/events"
+
+    @allure.step("Click on the menu item 'Developers/Start building'")
+    def click_on_menu_developers_start_building_link(self):
+        self.wait.until(EC.presence_of_element_located(Menu.developers_link)).click()
+        self.wait.until(EC.presence_of_element_located(Menu.start_building_link)).click()
 
     @allure.step("Click on the menu item 'Developers'")
     def click_on_menu_developers_link(self):

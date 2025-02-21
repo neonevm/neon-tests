@@ -39,8 +39,6 @@ from utils.web3client import NeonChainWeb3Client, Web3Client
 
 log = logging.getLogger(__name__)
 
-NEON_AIRDROP_AMOUNT = 1_000
-
 
 @pytest.fixture(scope="session")
 def ws_subscriber_url(environment: EnvironmentConfig) -> tp.Optional[str]:
@@ -362,7 +360,7 @@ def account_with_all_tokens(
 ) -> LocalAccount:
     neon_account = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account, amount=500)
     if web3_client_sol:
-        lamports = 10 * LAMPORT_PER_SOL
+        lamports = 2 * LAMPORT_PER_SOL
         if environment.use_bank:
             evm_loader.send_sol(bank_account, solana_account.pubkey(), lamports)
         else:

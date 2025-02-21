@@ -317,6 +317,45 @@ class TestScheduledTrx:
         receipt = web3_client_sol.wait_for_transaction_receipt(tx0.hash())
         assert receipt["status"] == 0
 
+    def test_long_chain_iterative_scheduled_trx(
+        self, web3_client_sol, neon_user, treasury_pool, evm_loader, json_rpc_client, counter_contract
+    ):
+        nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
+        total_trx_count = 8
+
+        call_data_counter = abi.function_signature_to_4byte_selector(
+            "moreInstructionWithLogs(uint256,uint256)"
+        ) + eth_abi.encode(["uint256", "uint256"], [0, 1000])
+
+        trx_estimate_obj_list = []
+        for _ in range(total_trx_count):
+            trx_estimate_obj_list.append(
+                ScheduledTrxEstimateRequest(neon_user.checksum_address, counter_contract.address, call_data_counter)
+            )
+        estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), trx_estimate_obj_list)
+        trxs = []
+        for i in range(total_trx_count):
+            trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
+
+        tree_acc_data = CreateTreeAccMultipleData(
+            nonce=nonce,
+            max_fee_per_gas=estimate_result["maxFeePerGas"],
+            max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
+        )
+        tree_acc_data.add_trx(trxs[0], 1, 0)
+        if total_trx_count > 2:
+            for i in range(1, total_trx_count - 1):
+                tree_acc_data.add_trx(trxs[i], i + 1, 1)
+        tree_acc_data.add_trx(trxs[total_trx_count - 1], 0xFFFF, 1)
+        evm_loader.create_tree_account_multiple(
+            neon_user, treasury_pool, tree_acc_data.data, wSOL["address_spl"], chain_id=web3_client_sol.chain_id
+        )
+        web3_client_sol.send_all_scheduled_transactions(trxs)
+
+        for trx in trxs:
+            receipt = web3_client_sol.wait_for_transaction_receipt(trx.hash())
+            assert receipt["status"] == 1, f"Trx failed: receipt - {receipt}"
+
 
 @allure.feature("Solana native")
 @allure.story("Test sending scheduled transaction ERC20ForSplNew")

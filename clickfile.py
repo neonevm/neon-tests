@@ -523,10 +523,12 @@ def update_contracts(branch):
     update_contracts_from_git(HOODIES_CHAINLINK_GITHUB_URL, "hoodies_chainlink", "main")
 
     # uncomment for new version of erc20ForSpl
-    # update_contracts_from_git(
-    #     f"https://github.com/{DOCKER_HUB_ORG_NAME}/neon-contracts.git", "neon-contracts", "main", update_npm=False
-    # )
-    # subprocess.check_call(f'npm ci --prefix {EXTERNAL_CONTRACT_PATH / "neon-contracts" / "ERC20ForSPL"}', shell=True)
+    update_contracts_from_git(
+        "https://github.com/neonevm/neon-contracts.git",
+        "neon-contracts",
+        "update/erc20forspl-solana-native",
+        update_npm=True,
+    )
 
 
 @cli.command(help="Run any type of tests")
@@ -574,6 +576,18 @@ def run(
     if name == "economy":
         command = "py.test integration/tests/economy/test_economics.py"
     elif name == "basic":
+        # run basic excluding tests for ERC20SPLNew contract
+        if network == "mainnet":
+            command = (
+                "py.test integration/tests/basic -m mainnet --ignore=integration/tests/basic/erc/test_ERC20SPLnew.py"
+            )
+        else:
+            command = "py.test integration/tests/basic --ignore=integration/tests/basic/erc/test_ERC20SPLnew.py"
+        if numprocesses:
+            command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
+
+    elif name == "basic_extended":
+        # run basic excluding tests for ERC20SPLNew contract
         if network == "mainnet":
             command = "py.test integration/tests/basic -m mainnet"
         else:

@@ -6,6 +6,7 @@ repos:
       - id: trailing-whitespace
       - id: check-yaml
         args: [ --allow-multiple-documents ]
+      - id: detect-private-key
 
   # Formatter
   - repo: https://github.com/psf/black
@@ -21,4 +22,3 @@ repos:
 
   # TODO
   # Add .lock file
-  # Add detect-private-key (now it has one)

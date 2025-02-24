@@ -15,7 +15,6 @@ from _pytest.config import Config
 from _pytest.config.argparsing import Parser
 from _pytest.nodes import Item
 from _pytest.runner import runtestprotocol
-from allure_commons.types import AttachmentType
 from solana.rpc.commitment import Confirmed
 from solders.keypair import Keypair
 from web3.middleware import geth_poa_middleware
@@ -121,11 +120,6 @@ def pytest_runtest_protocol(item: Item, nextitem):
                     error_log.add_failure(test_group=test_group, test_name=item.nodeid)
                 else:
                     error_log.add_error(test_group=test_group, test_name=item.nodeid)
-
-                if test_group == "ui":
-                    driver = request.getfixturevalue("driver")
-                    allure.attach(driver.get_screenshot_as_png(), attachment_type=AttachmentType.PNG)
-
     return True
 
 

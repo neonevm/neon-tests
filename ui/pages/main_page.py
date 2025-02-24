@@ -113,13 +113,13 @@ class MainPage(BasePage):
 
     @allure.step("Input email")
     def input_email(self, email):
+        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         email_field = self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field))
         email_field.send_keys(email)
 
     @allure.step("Check message, that user already subscribed, is visible")
     def check_already_subscribed_text(self):
-        email_field = self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field))
-        self.scroll_page_to_element(email_field)
+        self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field))
         try:
             self.wait.until(
                 EC.any_of(

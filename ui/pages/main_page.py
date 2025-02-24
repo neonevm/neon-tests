@@ -41,6 +41,7 @@ class MainPage(BasePage):
     email_input_field = (By.XPATH, "//input")
     subscribe_button = (By.XPATH, "//button/span[text()='subscribe']")
     subscription_notification_text = (By.XPATH, "//div[contains(text(), 'already subscribed')]")
+    problem_with_subscription_text = (By.XPATH, "//div[contains(text(), 'try again later')]")
     cookie_banner = (By.XPATH, "//h4[contains(text(), 'We use cookies')]")
     ask_me_later_button = (By.XPATH, "//button[text()='ASK ME LATER']")
     accept_button = (By.XPATH, "//button[text()='ACCEPT']")
@@ -119,7 +120,18 @@ class MainPage(BasePage):
     def check_already_subscribed_text(self):
         email_field = self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field))
         self.scroll_page_to_element(email_field)
-        self.wait.until(EC.presence_of_element_located(MainPage.subscription_notification_text)).is_displayed()
+        try:
+            self.wait.until(
+                EC.any_of(
+                    EC.visibility_of_element_located(MainPage.subscription_notification_text),
+                    EC.visibility_of_element_located(MainPage.problem_with_subscription_text),
+                )
+            )
+        except TimeoutException:
+            self.driver.save_screenshot("screenshot_email_subscription.png")
+            raise Exception(
+                "No notification found: neither subscription_notification_text nor problem_with_subscription_text is visible"
+            )
 
     @allure.step("Click 'Ask me later' button")
     def click_ask_me_later_button(self):

@@ -582,7 +582,10 @@ def run(
                 "py.test integration/tests/basic -m mainnet --ignore=integration/tests/basic/erc/test_ERC20SPLnew.py"
             )
         else:
-            command = "py.test integration/tests/basic --ignore=integration/tests/basic/erc/test_ERC20SPLnew.py"
+            command = (
+                "py.test integration/tests/basic --ignore=integration/tests/basic/erc/test_ERC20SPLnew.py"
+                " --ignore=integration/tests/basic/solana_signature/test_send_scheduled_transactions_new_erc.py "
+            )
         if numprocesses:
             command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
 

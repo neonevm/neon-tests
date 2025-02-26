@@ -22,6 +22,8 @@ from utils.helpers import decode_function_signature, case_snake_to_camel
 
 LOG = logging.getLogger(__name__)
 
+BASE_MAX_PRIORITY_FEE = 2_500_000_000
+
 
 class Web3Client:
     def __init__(
@@ -124,9 +126,8 @@ class Web3Client:
         base_fee = latest_block.baseFeePerGas  # noqa
         return base_fee
 
-    def max_fee_per_gas(self) -> int:
-        max_priority_fee = self._web3.eth._max_priority_fee()  # noqa
-        return (3 * self.base_fee_per_gas()) + max_priority_fee
+    def get_max_fee_per_gas(self, max_priority_fee_per_gas=BASE_MAX_PRIORITY_FEE) -> int:
+        return (2 * self.base_fee_per_gas()) + max_priority_fee_per_gas
 
     @allure.step("Get max priority fee per gas")
     def max_priority_fee_per_gas(self) -> int:

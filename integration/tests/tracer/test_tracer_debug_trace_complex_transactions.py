@@ -54,11 +54,12 @@ class TestDebugTraceIterativeTransaction:
         )
 
         params = [receipt["transactionHash"].hex(), tracer_params]
-        print(params)
         response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", params)
 
-        assert response["result"]["from"] == receipt["from"]
-        assert response["result"]["to"] == receipt["to"]
+        assert response["result"]["from"].lower() == receipt["from"].lower()
+        assert response["result"]["to"].lower() == receipt["to"].lower()
+        assert response["result"]["input"].lower() == instruction_tx["data"].lower()
+        assert response["result"]["type"] == "CALL"
 
     def test_trace_iterative_tx_eip_1559(self, counter_contract):
         sender_account = self.accounts[0]
@@ -75,8 +76,10 @@ class TestDebugTraceIterativeTransaction:
         params = [receipt["transactionHash"].hex(), tracer_params]
         response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", params)
 
-        assert response["result"]["from"] == receipt["from"]
-        assert response["result"]["to"] == receipt["to"]
+        assert response["result"]["from"].lower() == receipt["from"].lower()
+        assert response["result"]["to"].lower() == receipt["to"].lower()
+        assert response["result"]["input"].lower() == instruction_tx["data"].lower()
+        assert response["result"]["type"] == "CALL"
 
     def test_trace_iterative_tx_sol_chain(self, web3_client_sol, class_account_sol_chain, counter_contract_sol_chain):
         sender_account = class_account_sol_chain
@@ -92,10 +95,12 @@ class TestDebugTraceIterativeTransaction:
 
         params = [receipt["transactionHash"].hex(), tracer_params]
         response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", params)
-        assert response["result"]["from"] == receipt["from"]
-        assert response["result"]["to"] == receipt["to"]
+        assert response["result"]["from"].lower() == receipt["from"].lower()
+        assert response["result"]["to"].lower() == receipt["to"].lower()
+        assert response["result"]["input"].lower() == instruction_tx["data"].lower()
+        assert response["result"]["type"] == "CALL"
 
-    def test_trace_block_timestamp_iterative(self, block_timestamp_contract, json_rpc_client):
+    def test_trace_iterative_tx_block_timestamp(self, block_timestamp_contract, json_rpc_client):
         contract, _ = block_timestamp_contract
         sender_account = self.accounts[0]
 
@@ -114,8 +119,10 @@ class TestDebugTraceIterativeTransaction:
 
         params = [receipt["transactionHash"].hex(), tracer_params]
         response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", params)
-        assert response["result"]["from"] == receipt["from"]
-        assert response["result"]["to"] == receipt["to"]
+        assert response["result"]["from"].lower() == receipt["from"].lower()
+        assert response["result"]["to"].lower() == receipt["to"].lower()
+        assert response["result"]["input"].lower() == instruction_tx["data"].lower()
+        assert response["result"]["type"] == "CALL"
 
     def test_trace_scheduled_tx(self, web3_client_sol, neon_user, common_contract, evm_loader, treasury_pool):
         contract_data = 18
@@ -138,5 +145,5 @@ class TestDebugTraceIterativeTransaction:
 
         params = [receipt["transactionHash"].hex(), tracer_params]
         response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", params)
-        assert response["result"]["from"] == receipt["from"]
-        assert response["result"]["to"] == receipt["to"]
+        assert response["result"]["from"].lower() == receipt["from"].lower()
+        assert response["result"]["to"].lower() == receipt["to"].lower()

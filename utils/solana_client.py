@@ -163,7 +163,8 @@ class SolanaClient(solana.rpc.api.Client):
 
         token = spl.token.client.Token(self, mint, TOKEN_PROGRAM_ID, authority)
         token.payer = authority
-        token.mint_to(token_account, authority, amount)
+        opts = TxOpts(skip_preflight=True, skip_confirmation=False)
+        token.mint_to(token_account, authority, amount, opts=opts)
 
     def get_solana_balance(self, account: Pubkey):
         return self.get_balance(account, commitment=Confirmed).value

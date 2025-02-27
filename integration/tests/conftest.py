@@ -378,7 +378,11 @@ def account_with_all_tokens(
                 mint = MULTITOKEN_MINTS["ETH"]
             token_mint = Pubkey.from_string(mint)
 
-            evm_loader.mint_spl_to(token_mint, solana_account, 1000000000000000)
+            evm_loader.mint_spl_to(
+                token_mint,
+                solana_account,
+                1000000000000000,
+            )
 
             evm_loader.sent_token_from_solana_to_neon(
                 solana_account,

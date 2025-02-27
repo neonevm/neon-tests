@@ -232,9 +232,13 @@ jobs:
             -e SOLANA_IP -e PROXY_IP \
             --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ needs.dockerize.outputs.tag }} /bin/bash
       - name: Run basic proxy tests
-        timeout-minutes: 60
+        timeout-minutes: 120
         run: |
-          CMD="python3 ./clickfile.py run basic --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }} --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
+          if [ "${{ github.event.schedule }}" == "0 1 * * 0,1,2,3,4" ]; then
+            CMD="python3 ./clickfile.py run basic_extended --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }} --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
+          else
+            CMD="python3 ./clickfile.py run basic --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }} --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
+          fi
 
           if [[ "${{ env.GENERATE_COST_REPORT }}" == "true" ]]; then
             CMD="$CMD --cost_reports_dir reports/cost_reports"

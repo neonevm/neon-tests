@@ -16,7 +16,6 @@ from eth_utils import keccak
 from solders.pubkey import Pubkey
 from solcx import link_code
 import polling2
-from semantic_version import Version
 from solders.rpc.responses import GetTransactionResp
 
 T = tp.TypeVar("T")
@@ -58,7 +57,7 @@ def get_contract_interface(
     compiled = solcx.compile_files(
         [contract_path],
         output_values=["abi", "bin"],
-        solc_version=Version(version),
+        solc_version=version,
         import_remappings=import_remapping,
         allow_paths=["."],
         optimize=True,

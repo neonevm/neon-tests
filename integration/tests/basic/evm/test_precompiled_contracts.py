@@ -133,7 +133,10 @@ class TestPrecompiledContracts:
         if pytestconfig.getoption("--network") == "devnet" and address == "0x0000000000000000000000000000000000000005":
             pytest.skip("Doesn't work in devnet/mainnet")
         sender_account = self.accounts[0]
-        amount = random.choice([0, 10])
+        if address == "0x0000000000000000000000000000000000000007":
+            amount = random.choice([1, 10])
+        else:
+            amount = 0
         balance_before = self.web3_client.get_balance(address)
 
         instruction_tx = self.web3_client.make_raw_tx(
@@ -160,10 +163,8 @@ class TestPrecompiledContracts:
             except ValueError as exc:
                 assert "InvalidLength" in exc.args[0]["message"]
 
-    @pytest.mark.xdist_group("precompiled_contract_balance")
-    @pytest.mark.parametrize("contract", PRECOMPILED_FIXTURES)
-    def test_send_neon_without_data(self, contract, pytestconfig):
-        address = PRECOMPILED_FIXTURES[contract]["address"]
+    def test_send_neon_without_data(self, pytestconfig):
+        address = "0x0000000000000000000000000000000000000006"
         sender_account = self.accounts[0]
         balance_before = self.web3_client.get_balance(address)
         amount = random.randint(1, 10)

@@ -32,6 +32,7 @@ class Contract:
 TestGroup = tp.Literal[
     "economy",
     "basic",
+    "basic_extended",
     "tracer",
     "services",
     "oz",

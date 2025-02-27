@@ -1,10 +1,10 @@
 pragma solidity >=0.7.0;
 
-import {ERC20ForSplMintable} from "../../external/neon-evm/erc20_for_spl.sol";
+import {ERC20ForSplMintable} from "../../external/neon-contracts/contracts/token/ERC20ForSpl/erc20_for_spl.sol";
 
 pragma abicoder v2;
 
-contract MultipleActionsERC20 {
+contract MultipleActionsERC20New {
     uint256 data;
     ERC20ForSplMintable erc20;
 

@@ -26,7 +26,8 @@ class Menu(BasePage):
 
     @allure.step("Click on the menu item 'Developers/Start building'")
     def click_on_menu_developers_start_building_link(self):
-        self.wait.until(EC.visibility_of_element_located(Menu.developers_link)).click()
+        developers_menu = self.wait.until(EC.visibility_of_element_located(Menu.developers_link))
+        self.hover_element(developers_menu)
         self.wait.until(EC.visibility_of_element_located(Menu.start_building_link)).click()
 
     @allure.step("Click on the menu item 'Developers'")
@@ -56,6 +57,7 @@ class Menu(BasePage):
 
     @allure.step("Click on the menu item 'Events'")
     def click_on_events_link(self):
+        self.wait.until(EC.visibility_of_element_located(Menu.community_link)).click()
         self.wait.until(EC.visibility_of_element_located(Menu.link_on_events)).click()
 
     @allure.step("Click on the footer menu item 'FAQ'")

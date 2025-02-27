@@ -97,7 +97,7 @@ class MainPage(BasePage):
 
     @allure.step("Click 'Start Building' button")
     def click_start_building_button(self):
-        self.wait.until(EC.presence_of_element_located(MainPage.start_building_button)).click()
+        self.wait.until(EC.visibility_of_element_located(MainPage.start_building_button)).click()
 
     @allure.step("Click 'Technical docs' button")
     def click_technical_docs_button(self):

@@ -140,7 +140,6 @@ class TestMainPage:
         menu_page.assert_page_url(url=menu_page.neonpass)
 
     def test_menu_link_to_internal_pages(self, menu_page):
-        menu_page.click_on_menu_news_link()
         menu_page.click_on_events_link()
         menu_page.assert_page_url(url=menu_page.events)
 

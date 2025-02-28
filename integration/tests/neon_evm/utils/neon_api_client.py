@@ -68,6 +68,13 @@ class NeonApiClient:
         body = {"account": [{"address": ether, "chain_id": chain_id}]}
         return requests.post(url=f"{self.url}/balance", json=body, headers=self.headers).json()
 
+    def simulate_solana(self, blockhash: str, transactions: list[str]) -> requests.Response:
+        body = {
+            "blockhash": blockhash,
+            "transactions": transactions,
+        }
+        return requests.post(url=f"{self.url}/simulate_solana", json=body, headers=self.headers)
+
     def call_contract_get_function(self, sender, contract, function_signature: str, args=None):
         data = abi.function_signature_to_4byte_selector(function_signature)
         if args is not None:

@@ -4,19 +4,17 @@ from typing import Tuple, Any
 
 import eth_abi
 import pytest
-
-from solders.keypair import Keypair
 from eth_keys import keys as eth_keys
-from solders.pubkey import Pubkey
 from solana.rpc.commitment import Confirmed
+from solders.keypair import Keypair
+from solders.pubkey import Pubkey
 
 from conftest import EnvironmentConfig
 from utils.consts import OPERATOR_KEYPAIR_PATH
-from utils.solana_client import SolanaClient
 from utils.evm_loader import EvmLoader
+from utils.solana_client import SolanaClient
 from utils.types import Contract, Caller, TreasuryPool
 from .utils.ethereum import make_contract_call_trx
-
 from .utils.neon_api_client import NeonApiClient
 from .utils.neon_api_rpc_client import NeonApiRpcClient
 from .utils.transaction_checks import check_transaction_logs_have_text
@@ -265,6 +263,28 @@ def erc20_for_spl_factory_contract(
 
 
 @pytest.fixture(scope="session")
+def multiple_actions_erc20(
+    operator_keypair: Keypair,
+    evm_loader: EvmLoader,
+    sender_with_tokens: Caller,
+    treasury_pool: TreasuryPool,
+    neon_api_client: NeonApiClient,
+    holder_acc: Pubkey,
+) -> Contract:
+    encoded_args = eth_abi.encode(["string", "string", "uint256"], ["Test TTT", "TTT", 18])
+    return evm_loader.deploy_contract(
+        operator=operator_keypair,
+        user=sender_with_tokens,
+        contract_file_name="EIPs/ERC20/MultipleActions",
+        neon_api_client=neon_api_client,
+        treasury_pool=treasury_pool,
+        contract_name="MultipleActionsERC20",
+        version="0.8.24",
+        encoded_args=encoded_args,
+    )
+
+
+@pytest.fixture(scope="session")
 def neon_rpc_client(environment: EnvironmentConfig) -> NeonApiRpcClient:
     return NeonApiRpcClient(url=environment.neon_core_api_rpc_url, chain_id=environment.network_ids["neon"])
 
@@ -275,6 +295,21 @@ def neon_api_client(environment: EnvironmentConfig) -> NeonApiClient:
         url=environment.neon_core_api_url,
         chain_id=environment.network_ids["neon"],
         sol_chain_id=environment.network_ids["sol"],
+    )
+
+
+@pytest.fixture(scope="session")
+def query_account_caller_contract(
+    operator_keypair, evm_loader, sender_with_tokens, treasury_pool, neon_api_client, holder_acc
+):
+    return evm_loader.deploy_contract(
+        operator=operator_keypair,
+        user=sender_with_tokens,
+        contract_file_name="precompiled/QueryAccountCaller.sol",
+        neon_api_client=neon_api_client,
+        treasury_pool=treasury_pool,
+        contract_name="QueryAccountCaller",
+        version="0.8.10",
     )
 
 

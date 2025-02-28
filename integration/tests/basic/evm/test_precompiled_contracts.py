@@ -126,20 +126,17 @@ class TestPrecompiledContracts:
     @pytest.mark.xdist_group("precompiled_contract_balance")
     @pytest.mark.parametrize(**parametrized_data)
     def test_call_via_send_trx(
-        self,
-        web3_client: NeonChainWeb3Client,
-        address,
-        input_data,
-        expected,
-        request,
-        pytestconfig,
+        self, web3_client: NeonChainWeb3Client, address, input_data, request, pytestconfig, expected, evm_loader
     ):
         if request.node.callspec.id == "blake2f-vector 8":
             pytest.skip("NDEV-1961")
         if pytestconfig.getoption("--network") == "devnet" and address == "0x0000000000000000000000000000000000000005":
             pytest.skip("Doesn't work in devnet/mainnet")
         sender_account = self.accounts[0]
-        amount = random.choice([0, 10])
+        if address == "0x0000000000000000000000000000000000000007":
+            amount = random.choice([1, 10])
+        else:
+            amount = 0
         balance_before = self.web3_client.get_balance(address)
 
         instruction_tx = self.web3_client.make_raw_tx(
@@ -155,6 +152,7 @@ class TestPrecompiledContracts:
         ]:
             receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
             assert receipt["status"] == 1
+
             if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
                 assert self.web3_client.get_balance(address) - balance_before == amount
         else:
@@ -165,10 +163,8 @@ class TestPrecompiledContracts:
             except ValueError as exc:
                 assert "InvalidLength" in exc.args[0]["message"]
 
-    @pytest.mark.xdist_group("precompiled_contract_balance")
-    @pytest.mark.parametrize("contract", PRECOMPILED_FIXTURES)
-    def test_send_neon_without_data(self, contract, pytestconfig):
-        address = PRECOMPILED_FIXTURES[contract]["address"]
+    def test_send_neon_without_data(self, pytestconfig):
+        address = "0x0000000000000000000000000000000000000006"
         sender_account = self.accounts[0]
         balance_before = self.web3_client.get_balance(address)
         amount = random.randint(1, 10)

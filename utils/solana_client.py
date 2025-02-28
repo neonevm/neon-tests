@@ -101,7 +101,7 @@ class SolanaClient(solana.rpc.api.Client):
         receipt = self.get_transaction(sig)
         assert sig_status["result"]["value"][0]["status"] == {"Ok": None}, f"error:{sig_status}, receipt: {receipt}"
 
-    def send_tx(self, trx: Transaction, *signers: Keypair, wait_status=Confirmed):
+    def send_tx(self, trx: Transaction, *signers: Keypair, wait_status=Confirmed) -> GetTransactionResp:
         result = self.send_transaction(
             trx, *signers, opts=TxOpts(skip_confirmation=True, preflight_commitment=wait_status)
         )
@@ -163,7 +163,8 @@ class SolanaClient(solana.rpc.api.Client):
 
         token = spl.token.client.Token(self, mint, TOKEN_PROGRAM_ID, authority)
         token.payer = authority
-        token.mint_to(token_account, authority, amount)
+        opts = TxOpts(skip_preflight=True, skip_confirmation=False)
+        token.mint_to(token_account, authority, amount, opts=opts)
 
     def get_solana_balance(self, account: Pubkey):
         return self.get_balance(account, commitment=Confirmed).value
@@ -213,3 +214,8 @@ class SolanaClient(solana.rpc.api.Client):
                 return True
         else:
             return False
+
+    @allure.step("Get account keys for solana transaction")
+    def get_account_keys_for_transaction(self, sol_trx: str):
+        resp = self.get_transaction(Signature.from_string(sol_trx), commitment=Confirmed)
+        return resp.value.transaction.transaction.message.account_keys

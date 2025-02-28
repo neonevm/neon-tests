@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
+
 import "../libraries/CarefulMath.sol";
 
 
 contract BlockTimestamp is CarefulMath {
     event Result(uint256 block_timestamp);
+
     uint256 public a;
     uint public accrualBlockTimestamp;
     uint public accrualBlockNumber;
@@ -13,7 +15,9 @@ contract BlockTimestamp is CarefulMath {
         uint256 value1;
         uint256 value2;
     }
+
     mapping(uint256 => Data) public dataByTimestamp;
+
     event DataAdded(uint256 timestamp, uint256 value1, uint256 value2);
 
     constructor() {
@@ -50,6 +54,7 @@ contract BlockTimestamp is CarefulMath {
 
         accrualBlockNumber = currentBlockTimestamp;
     }
+
     function addDataToMapping(uint256 _value1, uint256 _value2) public {
         uint256 currentTimestamp = block.timestamp % 1000000;
         for (uint256 i = 0; i < 20; i++) {
@@ -72,6 +77,7 @@ contract BlockTimestamp is CarefulMath {
 
 contract BlockTimestampDeployer {
     BlockTimestamp public blockTimestamp;
+
     event Log(address indexed addr);
 
     constructor() {
@@ -84,6 +90,7 @@ contract BlockTimestampDeployer {
 contract BlockNumber is CarefulMath {
     event Log(address indexed sender, string message);
     event Result(uint256 block_number);
+
     bytes32[64] public b;
 
 
@@ -93,6 +100,7 @@ contract BlockNumber is CarefulMath {
         uint256 value1;
         uint256 value2;
     }
+
     mapping(uint256 => Data) public dataByNumber;
     uint256 public a;
 
@@ -142,6 +150,22 @@ contract BlockNumber is CarefulMath {
     function accrueInterest() public {
         uint currentBlockNumber = block.number;
         uint accrualBlockNumberPrior = accrualBlockNumber;
+
+        (MathError mathErr, uint blockDelta) = subUInt(currentBlockNumber, accrualBlockNumberPrior);
+        require(mathErr == MathError.NO_ERROR, "calc block delta error");
+
+        accrualBlockNumber = currentBlockNumber;
+    }
+
+
+    function accrueInterestIterative() public {
+        uint currentBlockNumber = block.number;
+        uint accrualBlockNumberPrior = accrualBlockNumber;
+
+        bytes memory result = new bytes(1000);
+        for (uint256 i = 0; i < 1000; i++) {
+            result[i] = "a";
+        }
 
         (MathError mathErr, uint blockDelta) = subUInt(currentBlockNumber, accrualBlockNumberPrior);
         require(mathErr == MathError.NO_ERROR, "calc block delta error");

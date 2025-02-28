@@ -26,7 +26,7 @@ from utils.instructions import make_wSOL
 from utils.web3client import NeonChainWeb3Client
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def get_counter_value() -> tp.Iterator[int]:
     def gen_increment_counter():
         count = 0
@@ -371,7 +371,7 @@ class TestSolanaInteroperability:
         sender = self.accounts[0]
         call_params = []
 
-        for _ in range(24):
+        for _ in range(26):
             instruction = Instruction(
                 program_id=COUNTER_ID,
                 accounts=[
@@ -423,8 +423,8 @@ class TestSolanaInteroperability:
     ):
         sender = self.accounts[0]
         lamports = 0
-        matrix_lenght = 6
-        matrix = [[random.randint(1, 100) for _ in range(matrix_lenght)] for _ in range(matrix_lenght)]
+        matrix_length = 6
+        matrix = [[random.randint(1, 100) for _ in range(matrix_length)] for _ in range(matrix_length)]
 
         instruction = Instruction(
             program_id=COUNTER_ID,
@@ -457,8 +457,8 @@ class TestSolanaInteroperability:
     ):
         sender = self.accounts[0]
         lamports = 0
-        matrix_lenght = 50
-        matrix = [[random.randint(1, 100) for _ in range(matrix_lenght)] for _ in range(matrix_lenght)]
+        matrix_length = 50
+        matrix = [[random.randint(1, 100) for _ in range(matrix_length)] for _ in range(matrix_length)]
 
         instruction = Instruction(
             program_id=COUNTER_ID,
@@ -505,7 +505,7 @@ class TestSolanaInteroperability:
     def test_solana_call_after_iterative_actions_exceed_accounts_limit(
         self, counter_resource_address: bytes, call_solana_caller
     ):
-        iterations = 53
+        loop_count = 54
         sender = self.accounts[0]
         lamports = 0
 
@@ -524,15 +524,15 @@ class TestSolanaInteroperability:
             web3.exceptions.ContractLogicError,
             match="too many accounts: 65 > 64",
         ):
-            call_solana_caller.functions.executeInIterativeMode(iterations, lamports, serialized).build_transaction(tx)
+            call_solana_caller.functions.executeInIterativeMode(loop_count, lamports, serialized).build_transaction(tx)
 
     def test_solana_call_inside_iterative_actions(
         self, counter_resource_address: bytes, call_solana_caller, get_counter_value
     ):
         sender = self.accounts[0]
         lamports = 0
-        matrix_lenght = 8
-        matrix = [[random.randint(1, 100) for _ in range(matrix_lenght)] for _ in range(matrix_lenght)]
+        matrix_length = 8
+        matrix = [[random.randint(1, 100) for _ in range(matrix_length)] for _ in range(matrix_length)]
 
         instruction = Instruction(
             program_id=COUNTER_ID,
@@ -551,7 +551,14 @@ class TestSolanaInteroperability:
         assert resp["status"] == 1
 
         event_logs_bytes = call_solana_caller.events.LogBytes().process_receipt(resp)
-        assert int.from_bytes(event_logs_bytes[0].args.value, byteorder="little") == next(get_counter_value)
+        for i in range(matrix_length - 1):
+            next(get_counter_value)
+
+        all_logs_value = [
+            int.from_bytes(event_logs_byte.args.value, byteorder="little") for event_logs_byte in event_logs_bytes
+        ]
+
+        assert max(all_logs_value) == next(get_counter_value)
 
         event_logs_int = call_solana_caller.events.LogInt().process_receipt(resp)
         assert event_logs_int[0].args.value == sum(sum(row) for row in matrix)

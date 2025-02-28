@@ -60,6 +60,7 @@ class ScheduledTransaction:
         "max_priority_fee_per_gas",
     ]
 
+    # TODO fix sender param in __init__ method. Make b'' by default
     def __init__(self, payer: tp.Union[bytes, str], sender, nonce, index, target: tp.Union[bytes, str, None], **kwargs):
         self.payer = payer if isinstance(payer, bytes) else to_bytes(hexstr=payer[2:])
 

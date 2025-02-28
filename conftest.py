@@ -267,7 +267,7 @@ def accounts_session(pytestconfig: Config, web3_client_session, faucet, eth_bank
 def neon_user(evm_loader: EvmLoader, pytestconfig, bank_account, faucet, environment) -> NeonUser:
     user = NeonUser(environment.evm_loader, bank_account)
     balance = evm_loader.get_solana_balance(user.solana_account.pubkey())
-    if pytestconfig.getoption("--network") != "mainnet":
+    if pytestconfig.getoption("--network") not in ["mainnet", "devnet"]:
         if balance < 5 * LAMPORT_PER_SOL:
             evm_loader.request_airdrop(user.solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=Confirmed)
     return user

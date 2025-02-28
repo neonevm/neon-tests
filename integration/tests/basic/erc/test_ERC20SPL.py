@@ -11,8 +11,9 @@ from solders.pubkey import Pubkey
 from spl.token import instructions
 from spl.token.constants import TOKEN_PROGRAM_ID
 
+from integration.tests.basic.helpers.rpc_checks import assert_solana_address_was_not_used_in_trx
 from utils import metaplex
-from utils.consts import ZERO_ADDRESS
+from utils.consts import ZERO_ADDRESS, METAPLEX_ADDRESS, SPL_TOKEN_ADDRESS, CALL_SOLANA_ADDRESS, SOLANA_NATIVE_ADDRESS
 from utils.erc20wrapper import ERC20Wrapper
 from utils.helpers import gen_hash_of_block, wait_condition, create_invalid_address
 from utils.web3client import NeonChainWeb3Client
@@ -212,6 +213,17 @@ class TestERC20SPL:
         assert balance_acc1_after == balance_acc1_before - amount
         assert balance_acc2_after == balance_acc2_before + amount
         assert total_before == total_after
+
+    def test_transfer_and_check_sol_account_list_is_correct(self, erc20_contract, restore_balance, evm_loader):
+        new_account = self.accounts.create_account()
+
+        receipt = erc20_contract.transfer(erc20_contract.account, new_account.address, 100)
+        precompiled_addresses = [METAPLEX_ADDRESS, SPL_TOKEN_ADDRESS, CALL_SOLANA_ADDRESS, SOLANA_NATIVE_ADDRESS]
+        for precompiled_address in precompiled_addresses:
+            program_address = evm_loader.ether2program(precompiled_address[2:])[0]
+            assert_solana_address_was_not_used_in_trx(
+                receipt["transactionHash"].hex(), program_address, self.web3_client, evm_loader
+            )
 
     @pytest.mark.parametrize(
         "block_len, expected_exception, msg",
@@ -977,6 +989,31 @@ class TestMultipleActionsForERC20:
             contract_balance == mint_amount_1 + mint_amount_2 - transfer_amount - burn_amount + contract_balance_before
         ), "Contract balance is not correct"
         assert user_balance == transfer_amount + user_balance_before, "User balance is not correct"
+
+    def test_parallel_trxs_transfer_read_balance_transfer(self, multiple_actions_erc20, faucet, solana_account):
+        sender_account = self.accounts[0]
+        receiver_account = self.accounts[1]
+        acc, contract = multiple_actions_erc20
+        trx_amount = 10
+        transfer_amount = 100
+
+        tx = self.web3_client.make_raw_tx(sender_account)
+        instruction_tx = contract.functions.mint(transfer_amount * trx_amount * 2).build_transaction(tx)
+        self.web3_client.send_transaction(sender_account, instruction_tx)
+
+        hashes = []
+        nonce = self.web3_client.get_nonce(sender_account.address)
+        for i in range(trx_amount):
+            tx = self.web3_client.make_raw_tx(sender_account, nonce=nonce + i)
+            transaction = contract.functions.transferReadBalanceTransfer(
+                transfer_amount, receiver_account.address
+            ).build_transaction(tx)
+            instruction_tx = self.web3_client._web3.eth.account.sign_transaction(transaction, sender_account.key)
+            signature = self.web3_client._web3.eth.send_raw_transaction(instruction_tx.rawTransaction)
+            hashes.append(signature.hex())
+        for tx_hash in hashes:
+            resp = self.web3_client.wait_for_transaction_receipt(tx_hash)
+            assert resp.status == 1, f"Transaction {tx_hash} failed"
 
 
 @pytest.fixture(scope="class")

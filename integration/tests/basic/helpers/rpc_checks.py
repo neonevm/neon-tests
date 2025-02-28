@@ -2,13 +2,17 @@ import typing as tp
 from collections import Counter
 from types import SimpleNamespace
 
+import allure
 from hexbytes import HexBytes
+from solders.pubkey import Pubkey
 from web3 import types
 
 from clickfile import EnvName
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import NeonEventType, SolanaInstruction
 from utils.models.result import NeonGetTransactionResult, SolanaByNeonTransaction
+from utils.solana_client import SolanaClient
+from utils.web3client import Web3Client
 
 NoneType = type(None)
 
@@ -420,3 +424,12 @@ def assert_solana_trxs_in_neon_receipt(rpc_client, trx_hash, neon_receipt: NeonG
 
     solana_trxs_by_neon = [trx.solanaTransactionSignature for trx in neon_receipt.result.solanaTransactions]
     assert set(solana_transactions.result) == set(solana_trxs_by_neon)
+
+
+@allure.step("Assert that {solana_address} was not used in the transaction")
+def assert_solana_address_was_not_used_in_trx(
+    neon_trx: str, solana_address: str, web3_client: Web3Client, sol_client: SolanaClient
+):
+    sol_trx = web3_client.get_solana_trx_by_neon(neon_trx)["result"][0]
+    sol_accounts = sol_client.get_account_keys_for_transaction(sol_trx)
+    assert Pubkey.from_string(solana_address) not in sol_accounts, f"Address {solana_address} is in the account list"

@@ -3,16 +3,15 @@ import enum
 import functools
 import glob
 import json
-import time
-from collections import defaultdict
-from multiprocessing.dummy import Pool
-
 import os
 import re
 import shutil
 import subprocess
 import sys
+import time
 import typing as tp
+from collections import defaultdict
+from multiprocessing.dummy import Pool
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -21,11 +20,11 @@ import pytest
 from deploy.cli.cost_report import prepare_report_data, report_data_to_markdown
 from deploy.test_results_db.db_handler import PostgresTestResultsHandler
 from deploy.test_results_db.test_results_handler import TestResultsHandler
+from utils.accounts import EthAccounts
 from utils.error_log import error_log
 from utils.faucet import Faucet
 from utils.slack_notification import SlackNotification
 from utils.types import TestGroup, RepoType
-from utils.accounts import EthAccounts
 
 try:
     import click
@@ -49,7 +48,7 @@ try:
     from utils.prices import get_sol_price_with_retry
     from utils.helpers import wait_condition
     from utils.apiclient import JsonRPCSession
-    from utils.k6_helpers import k6_prepare_accounts, k6_set_envs, deploy_erc20_contract
+    from utils.k6_helpers import k6_prepare_accounts, k6_set_envs, deploy_erc20_contract, deploy_block_number_contract
 except ImportError:
     print("Please run ./clickfile.py requirements to install all requirements")
 
@@ -524,10 +523,12 @@ def update_contracts(branch):
     update_contracts_from_git(HOODIES_CHAINLINK_GITHUB_URL, "hoodies_chainlink", "main")
 
     # uncomment for new version of erc20ForSpl
-    # update_contracts_from_git(
-    #     f"https://github.com/{DOCKER_HUB_ORG_NAME}/neon-contracts.git", "neon-contracts", "main", update_npm=False
-    # )
-    # subprocess.check_call(f'npm ci --prefix {EXTERNAL_CONTRACT_PATH / "neon-contracts" / "ERC20ForSPL"}', shell=True)
+    update_contracts_from_git(
+        "https://github.com/neonevm/neon-contracts.git",
+        "neon-contracts",
+        "update/erc20forspl-solana-native",
+        update_npm=True,
+    )
 
 
 @cli.command(help="Run any type of tests")
@@ -575,6 +576,21 @@ def run(
     if name == "economy":
         command = "py.test integration/tests/economy/test_economics.py"
     elif name == "basic":
+        # run basic excluding tests for ERC20SPLNew contract
+        if network == "mainnet":
+            command = (
+                "py.test integration/tests/basic -m mainnet --ignore=integration/tests/basic/erc/test_ERC20SPLnew.py"
+            )
+        else:
+            command = (
+                "py.test integration/tests/basic --ignore=integration/tests/basic/erc/test_ERC20SPLnew.py"
+                " --ignore=integration/tests/basic/solana_signature/test_send_scheduled_transactions_new_erc.py "
+            )
+        if numprocesses:
+            command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
+
+    elif name == "basic_extended":
+        # run basic excluding tests for ERC20SPLNew contract
         if network == "mainnet":
             command = "py.test integration/tests/basic -m mainnet"
         else:
@@ -1306,7 +1322,7 @@ def build(tag):
     "-u", "--users", default=None, required=True, help="Number of users (have to be generated before load test run)"
 )
 @click.option("-b", "--balance", default=None, required=True, help="Initial balance of accounts in Neon")
-@click.option("-a", "--bank_account", default="", required=False, help="Eth bank account private key")
+@click.option("-a", "--bank_account", default=None, required=False, help="Eth bank account private key")
 @catch_traceback
 def run_load_k6(network, script, users, balance, bank_account):
     network_manager = NetworkManager()
@@ -1325,8 +1341,11 @@ def run_load_k6(network, script, users, balance, bank_account):
     erc20 = deploy_erc20_contract(web3_client, faucet, account_manager.create_account(balance=int(balance)))
     print(f"ERC20 contract deployed at {erc20.contract.address} with owner {erc20.owner.address}")
 
+    block_contract = deploy_block_number_contract(account_manager)
+
     k6_prepare_accounts(erc20, account_manager, users, balance, 100)
     k6_set_envs(network, erc20, users, balance, bank_account)
+    os.environ["K6_BLOCK_ADDRESS"] = block_contract.address
 
     command = f"./k6 run {script} -o 'prometheus=namespace=k6'"
     command_run = subprocess.run(command, shell=True)

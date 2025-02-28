@@ -5,6 +5,7 @@ import base58
 import os
 import argparse
 
+from pybip39 import Mnemonic, Seed
 from solders.keypair import Keypair
 from utils.erc20wrapper import ERC20NewWrapper
 from utils.faucet import Faucet
@@ -53,13 +54,18 @@ if network != "local" and environment["use_bank"]:
     bank_account = Keypair.from_bytes(key)
 
 # create solana account
-solana_account = Keypair()
-eth_account = web3_client.create_account_with_balance(faucet, bank_account=bank_account)
+mnemonic = Mnemonic()
+passphrase = "42"
+seed = Seed(mnemonic, passphrase)
+solana_account = Keypair.from_seed(bytes(seed)[:32])
+
 if network != "local" and environment["use_bank"]:
     evm_loader.send_sol(bank_account, solana_account.pubkey(), int(1 * LAMPORT_PER_SOL))
 else:
     evm_loader.request_airdrop(solana_account.pubkey(), 1 * LAMPORT_PER_SOL)
 
+# create owner
+eth_account = web3_client.create_account_with_balance(faucet, bank_account=bank_account)
 
 # deploy a new erc20 contract
 symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
@@ -81,6 +87,8 @@ contract_info = {
     "owner_key": web3_client.to_hex(eth_account.key),
     "owner_address": eth_account.address,
     "symbol": symbol,
+    "solana_account_mnemonic": str(mnemonic),
+    "solana_account_passphrase": passphrase,
 }
 
 with open("./loadtesting/proxy/data/contract_info.json", "w+") as f:

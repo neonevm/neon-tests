@@ -16,6 +16,7 @@ from functools import lru_cache
 from eth_account.signers.local import LocalAccount
 from solders.keypair import Keypair
 from solana.rpc import commitment
+from pybip39 import Mnemonic, Seed
 
 from utils import helpers
 from utils.faucet import Faucet
@@ -211,13 +212,10 @@ class NeonProxyTasksSet(TaskSet):
             self.bank_account = bank_account
             LOG.info(f"Create bank account: {bank_account.pubkey()}")
 
-        solana_account = Keypair()
-        if self.network != "local" and self.credentials["use_bank"]:
-            self.sol_client.send_sol(bank_account, solana_account.pubkey(), int(0.5 * LAMPORT_PER_SOL))
-        else:
-            self.sol_client.request_airdrop(solana_account.pubkey(), 1 * LAMPORT_PER_SOL)
-        self.solana_account = solana_account
-        LOG.info(f"Create solana account: {solana_account.pubkey()}")
+        sol_account_mnemonic = Mnemonic.from_phrase(self.erc20_info["solana_account_mnemonic"])
+        seed = Seed(sol_account_mnemonic, self.erc20_info["solana_account_passphrase"])
+        self.solana_account = Keypair.from_seed(bytes(seed)[:32])
+        LOG.info(f"Create solana account: {self.solana_account.pubkey()}")
 
         index = 2
         self.evm_loader.create_treasury_pool_address(index)

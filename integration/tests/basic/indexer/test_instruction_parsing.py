@@ -1,5 +1,6 @@
 import pytest
 from eth_utils import keccak
+from eth_abi import abi
 from solana.transaction import AccountMeta, Instruction
 
 import allure
@@ -127,7 +128,6 @@ class TestInstruction:
 
     def test_step_from_account(self, json_rpc_client, diamond):
         sender_account = self.accounts[0]
-        from eth_abi import abi
 
         new_facet, _ = self.web3_client.deploy_and_get_contract(
             "EIPs/EIP2535/facets/Test1Facet",

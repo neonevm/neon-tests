@@ -37,6 +37,7 @@ class TestScheduledTrx:
             target=basic_contract.eth_address,
             value=0,
             call_data=data,
+            chain_id=evm_loader.sol_chain_id,
         )
         tree_account = evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode(), environment.sol_mint_id)
         transaction_tree_data = neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce)
@@ -75,6 +76,7 @@ class TestScheduledTrx:
             target=basic_contract.eth_address,
             value=0,
             call_data=data,
+            chain_id=evm_loader.sol_chain_id,
         )
 
         tree_account = evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode(), environment.sol_mint_id)
@@ -102,7 +104,7 @@ class TestScheduledTrx:
         self, evm_loader, neon_user: NeonUser, treasury_pool, basic_contract, operator_keypair, holder_acc, environment
     ):
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, environment.network_ids["sol"])
-
+        data = abi.function_signature_to_4byte_selector("getNumber()")
         index = 1
         tx = ScheduledTransaction(
             neon_user.neon_address,
@@ -111,6 +113,8 @@ class TestScheduledTrx:
             index,
             target=basic_contract.eth_address,
             value=0,
+            chain_id=evm_loader.sol_chain_id,
+            call_data=data,
         )
 
         with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.TRANSACTION_TREE_INVALID_DATA):
@@ -149,6 +153,7 @@ class TestScheduledTrx:
             gas_limit=25000,
             max_fee_per_gas=0,
             max_priority_fee_per_gas=0,
+            chain_id=evm_loader.sol_chain_id,
         )
         with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.TRANSACTION_TREE_NO_FEE):
             evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode(), environment.sol_mint_id)
@@ -183,6 +188,7 @@ class TestScheduledTrx:
             value=amount,
             call_data=data,
             gas_limit=20000,
+            chain_id=evm_loader.sol_chain_id,
         )
 
         with pytest.raises(solana.rpc.core.RPCException, match="transaction requires at least 25'000 gas limit"):
@@ -226,6 +232,7 @@ class TestScheduledTrx:
             target=contract.eth_address,
             value=amount,
             call_data=data,
+            chain_id=evm_loader.sol_chain_id,
         )
         operator_balance_before = evm_loader.get_operator_neon_balance(second_operator_keypair, evm_loader.sol_chain_id)
         user_balance_before = evm_loader.get_neon_balance(neon_user.neon_address, evm_loader.sol_chain_id)

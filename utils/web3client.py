@@ -623,7 +623,7 @@ class Web3Client:
             trx = {
                 "fromAddress": trx.from_address,
                 "toAddress": trx.to_address,
-                "data": trx.data.hex(),
+                "data": trx.data,
                 "value": trx.value,
             }
             transactions.append(trx)

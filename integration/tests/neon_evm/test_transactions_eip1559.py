@@ -16,6 +16,7 @@ from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from utils.types import Caller
 
 
+@pytest.mark.eip_1559
 class TestEIP1559Transactions:
     def test_contract_interaction_iterative_transactions(
         self,

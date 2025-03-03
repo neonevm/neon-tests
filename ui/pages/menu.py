@@ -28,7 +28,9 @@ class Menu(BasePage):
     def click_on_menu_developers_start_building_link(self):
         developers_menu = self.wait.until(EC.visibility_of_element_located(Menu.developers_link))
         self.hover_element(developers_menu)
-        self.wait.until(EC.visibility_of_element_located(Menu.start_building_link)).click()
+        start_building_menu = self.wait.until(EC.visibility_of_element_located(Menu.start_building_link))
+        self.hover_element(start_building_menu)
+        start_building_menu.click()
 
     @allure.step("Click on the menu item 'Developers'")
     def click_on_menu_developers_link(self):

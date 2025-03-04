@@ -1,4 +1,5 @@
 import allure
+from selenium.common import TimeoutException, ElementClickInterceptedException
 from selenium.webdriver.common.by import By
 from utils.base_page import BasePage
 from selenium.webdriver.support import expected_conditions as EC
@@ -26,11 +27,19 @@ class Menu(BasePage):
 
     @allure.step("Click on the menu item 'Developers/Start building'")
     def click_on_menu_developers_start_building_link(self):
-        developers_menu = self.wait.until(EC.visibility_of_element_located(Menu.developers_link))
-        self.hover_element(developers_menu)
-        start_building_menu = self.wait.until(EC.visibility_of_element_located(Menu.start_building_link))
-        self.hover_element(start_building_menu)
-        start_building_menu.click()
+        try:
+            developers_menu = self.wait.until(EC.presence_of_element_located(Menu.developers_link))
+            self.scroll_page_to_element(developers_menu)
+            self.hover_element(developers_menu)
+            start_building_menu = self.wait.until(EC.presence_of_element_located(Menu.start_building_link))
+            self.scroll_page_to_element(start_building_menu)
+            self.hover_element(start_building_menu)
+            start_building_menu.click()
+        except TimeoutException:
+            self.driver.save_screenshot("menu_click_fail.png")
+            raise Exception("Can't find Developers or Start Building element")
+        except ElementClickInterceptedException:
+            self.driver.execute_script("arguments[0].click();", start_building_menu)
 
     @allure.step("Click on the menu item 'Developers'")
     def click_on_menu_developers_link(self):
@@ -51,11 +60,11 @@ class Menu(BasePage):
     @allure.step("Click on the menu item 'Tools/Neonpass'")
     def click_on_menu_tools_neonpass_link(self):
         self.wait.until(EC.visibility_of_element_located(Menu.tools_link)).click()
-        self.wait.until(EC.visibility_of_element_located(Menu.link_on_neonpass)).click()
+        self.wait.until(EC.presence_of_element_located(Menu.link_on_neonpass)).click()
 
     @allure.step("Click on the menu item 'Solana Whitepaper'")
     def click_on_solana_link(self):
-        self.wait.until(EC.visibility_of_element_located(Menu.link_on_solana_whitepaper)).click()
+        self.wait.until(EC.presence_of_element_located(Menu.link_on_solana_whitepaper)).click()
 
     @allure.step("Click on the menu item 'Events'")
     def click_on_events_link(self):

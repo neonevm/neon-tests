@@ -259,6 +259,15 @@ class SolanaInstruction(ForbidExtra):
     solanaProgram: str
     solanaInstructionIndex: int
     solanaInnerInstructionIndex: Union[int, None]
+
+
+class SolanaAddressLookupTableInstruction(SolanaInstruction):
+    lookupTableAddress: str
+    lookupTableInstructionCode: int
+    lookupTableInstructionName: str
+
+
+class SolanaNeonProgramInstruction(SolanaInstruction):
     svmHeapSizeLimit: int
     svmCyclesLimit: int
     svmCyclesUsed: int
@@ -279,7 +288,7 @@ class SolanaTransaction(ForbidExtra):
     solanaBlockSlot: int
     solanaLamportExpense: int
     neonOperatorAddress: str
-    solanaInstructions: List[SolanaInstruction]
+    solanaInstructions: List[Union[SolanaAddressLookupTableInstruction, SolanaNeonProgramInstruction]]
 
 
 class NeonCostsDetails(ForbidExtra):

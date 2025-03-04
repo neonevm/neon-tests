@@ -36,10 +36,22 @@ class TestMultipleScheduledTrx:
             ["uint256"], [contract_data]
         )
         tx0 = ScheduledTransaction(
-            neon_user.neon_address, None, nonce, index=0, target=basic_contract.eth_address, call_data=data
+            neon_user.neon_address,
+            None,
+            nonce,
+            index=0,
+            target=basic_contract.eth_address,
+            call_data=data,
+            chain_id=evm_loader.sol_chain_id,
         )
         tx1 = ScheduledTransaction(
-            neon_user.neon_address, None, nonce, index=1, target=basic_contract.eth_address, call_data=data
+            neon_user.neon_address,
+            None,
+            nonce,
+            index=1,
+            target=basic_contract.eth_address,
+            call_data=data,
+            chain_id=evm_loader.sol_chain_id,
         )
         tree_acc_data = CreateTreeAccMultipleData(nonce=nonce)
         tree_acc_data.add_trx(tx0, 1, 0)
@@ -88,10 +100,24 @@ class TestMultipleScheduledTrx:
             ["uint256"], [contract_data]
         )
         tx0 = ScheduledTransaction(
-            neon_user.neon_address, None, nonce, index=0, target=basic_contract.eth_address, value=0
+            neon_user.neon_address,
+            None,
+            nonce,
+            index=0,
+            target=basic_contract.eth_address,
+            value=0,
+            call_data=b"",
+            chain_id=evm_loader.sol_chain_id,
         )
         tx1 = ScheduledTransaction(
-            neon_user.neon_address, None, nonce, index=1, target=basic_contract.eth_address, value=0, call_data=data
+            neon_user.neon_address,
+            None,
+            nonce,
+            index=1,
+            target=basic_contract.eth_address,
+            value=0,
+            call_data=data,
+            chain_id=evm_loader.sol_chain_id,
         )
         tree_acc_data = CreateTreeAccMultipleData(nonce=nonce)
         tree_acc_data.add_trx(tx0, 1, 0)
@@ -165,6 +191,7 @@ class TestMultipleScheduledTrx:
                     target=basic_contract.eth_address,
                     value=0,
                     call_data=data,
+                    chain_id=evm_loader.sol_chain_id,
                 )
             )
 
@@ -223,9 +250,16 @@ class TestMultipleScheduledTrx:
             call_data=bytes.fromhex(contract_code),
             target=None,
             gas_limit=193807600,
+            chain_id=evm_loader.sol_chain_id,
         )
         tx1 = ScheduledTransaction(
-            neon_user.neon_address, None, nonce, index=1, target=caller_contract.eth_address, call_data=data_call
+            neon_user.neon_address,
+            None,
+            nonce,
+            index=1,
+            target=caller_contract.eth_address,
+            call_data=data_call,
+            chain_id=evm_loader.sol_chain_id,
         )
 
         tree_acc_data = CreateTreeAccMultipleData(nonce=nonce)
@@ -292,7 +326,14 @@ class TestMultipleScheduledTrx:
         ), "Precompiled program address is in the list of accounts"
 
         tx0 = ScheduledTransaction(
-            neon_user.neon_address, None, nonce, target=spl_token_caller.eth_address, index=0, value=0, call_data=data
+            neon_user.neon_address,
+            None,
+            nonce,
+            target=spl_token_caller.eth_address,
+            index=0,
+            value=0,
+            call_data=data,
+            chain_id=evm_loader.sol_chain_id,
         )
 
         tree_acc_data = CreateTreeAccMultipleData(nonce=nonce)

@@ -10,7 +10,7 @@ import typing as tp
 class ScheduledTrxEstimateRequest:
     from_address: str
     to_address: str
-    data: bytes
+    data: str
     value: int = 0
 
 
@@ -36,9 +36,7 @@ class ScheduledTransaction:
     DEFAULTS = {
         "intent": b"",
         "intent_call_data": b"",
-        "call_data": b"",
         "value": 0,
-        "chain_id": 112,
         "gas_limit": 3000000,
         "max_fee_per_gas": 3000000000,
         "max_priority_fee_per_gas": 2500000000,
@@ -61,26 +59,47 @@ class ScheduledTransaction:
     ]
 
     # TODO fix sender param in __init__ method. Make b'' by default
-    def __init__(self, payer: tp.Union[bytes, str], sender, nonce, index, target: tp.Union[bytes, str, None], **kwargs):
+    def __init__(
+        self,
+        payer: tp.Union[bytes, str],
+        sender,
+        nonce,
+        index,
+        target: tp.Union[bytes, str, None],
+        call_data,
+        chain_id,
+        **kwargs,
+    ):
         self.payer = payer if isinstance(payer, bytes) else to_bytes(hexstr=payer[2:])
 
         self.sender = sender or b""
         self.nonce = nonce
         self.index = index
+        self.chain_id = chain_id
         if target:
             self.target = target if isinstance(target, bytes) else to_bytes(hexstr=target[2:])
         else:
             self.target = b""
+        self.call_data = call_data if isinstance(call_data, bytes) else to_bytes(hexstr=call_data[2:])
         for field, default_value in self.DEFAULTS.items():
             setattr(self, field, kwargs.get(field, default_value))
 
     @classmethod
-    def from_estimate_result(cls, index, estimate_obj: ScheduledTrxEstimateRequest, estimate_result: dict, **kwargs):
+    def from_estimate_result(
+        cls,
+        index,
+        estimate_obj: ScheduledTrxEstimateRequest,
+        estimate_result: dict,
+        gas_limit_multiplier=None,
+        **kwargs,
+    ):
         nonce = int(estimate_result["nonce"], 16)
         chain_id = int(estimate_result["chainId"], 16)
         max_fee_per_gas = int(estimate_result["maxFeePerGas"], 16)
         max_priority_fee_per_gas = int(estimate_result["maxPriorityFeePerGas"], 16)
         gas_limit = int(estimate_result["gasList"][index], 16)
+        if gas_limit_multiplier:
+            gas_limit *= gas_limit_multiplier
         return cls(
             estimate_obj.from_address,
             None,

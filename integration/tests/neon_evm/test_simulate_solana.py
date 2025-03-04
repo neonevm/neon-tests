@@ -504,17 +504,17 @@ class TestSimulateSolana:
             target=basic_contract.eth_address,
             value=0,
             call_data=data,
+            chain_id=evm_loader.sol_chain_id,
         )
         tree_account = evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode(), environment.sol_mint_id)
         evm_loader.write_transaction_to_holder_account(tx.encode(), holder_acc, operator_keypair)
-        sol_chain_id = environment.network_ids["sol"]
-        neon_user_balance_account = neon_user.get_balance_account(sol_chain_id)
+        neon_user_balance_account = neon_user.get_balance_account(evm_loader.sol_chain_id)
         additional_accounts = [basic_contract.solana_address, neon_user_balance_account]
 
         simulated_compute_units = actual_compute_units = 0
 
         # Start scheduled transaction (simulation and execution)
-        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair, sol_chain_id)
+        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair, evm_loader.sol_chain_id)
 
         start_scheduled_transaction_tx = instructions.TransactionWithComputeBudget(
             operator_keypair,

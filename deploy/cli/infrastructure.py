@@ -62,7 +62,13 @@ def deploy_infrastructure(
     if use_real_price:
         os.environ["TF_VAR_use_real_price"] = "1"
 
-    instance_types = ["cpx51", "cx52", "cpx41", "cx42", "ccx33", "ccx43"]
+    instance_types_str = os.getenv("HETZNER_INSTANCE_TYPES")
+    if instance_types_str:
+        instance_types = instance_types_str.split(",")
+    else:
+        print("variable HETZNER_INSTANCE_TYPES is not set, use default values")
+        instance_types = ["cpx51", "cx52", "cpx41", "cx42", "ccx33", "ccx43"]
+
     locations = ["nbg1", "hel1", "fsn1"]
     instances = [{"server_type": i, "location": j} for i in instance_types for j in locations]
     print("Possible instance options: ", instances)

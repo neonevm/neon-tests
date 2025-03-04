@@ -67,6 +67,7 @@ class TestEconomics:
         assert sol_balance_after == sol_balance_before
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_send_neon_to_non_existent_account(
         self,
         account_with_all_tokens: LocalAccount,
@@ -94,6 +95,7 @@ class TestEconomics:
         get_gas_used_percent(w3_client, receipt)
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_send_tokens_to_exist_account(
         self,
         account_with_all_tokens: LocalAccount,
@@ -149,6 +151,7 @@ class TestEconomics:
         assert_profit(sol_diff, sol_price, token_diff, neon_price, web3_client.native_token_name)
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_send_when_not_enough_tokens_to_gas(
         self,
         client_and_price: tuple[Web3Client, float],
@@ -215,6 +218,7 @@ class TestEconomics:
         assert_profit(sol_diff, sol_price, token_diff, token_price, w3_client.native_token_name)
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_withdraw_neon_unexisting_ata(
         self,
         pytestconfig: Config,
@@ -272,6 +276,7 @@ class TestEconomics:
         get_gas_used_percent(web3_client, receipt)
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_withdraw_neon_existing_ata(
         self,
         pytestconfig: Config,
@@ -358,6 +363,7 @@ class TestEconomics:
         get_gas_used_percent(w3_client, transfer_tx)
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_deploy_small_contract_less_100tx(
         self,
         account_with_all_tokens: LocalAccount,
@@ -403,6 +409,7 @@ class TestEconomics:
         get_gas_used_percent(w3_client, receipt)
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_deploy_to_lost_contract_account(
         self,
         account_with_all_tokens: LocalAccount,
@@ -486,6 +493,7 @@ class TestEconomics:
 
     @pytest.mark.xfail(reason="https://neonlabs.atlassian.net/browse/NDEV-699")
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_cost_resize_account(
         self,
         neon_price: float,
@@ -531,6 +539,7 @@ class TestEconomics:
         get_gas_used_percent(web3_client, instruction_receipt)
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_contract_interact_1000_steps(
         self,
         counter_contract: Contract,
@@ -562,6 +571,7 @@ class TestEconomics:
         get_gas_used_percent(w3_client, instruction_receipt)
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_contract_interact_500000_steps(
         self,
         counter_contract: Contract,
@@ -597,6 +607,7 @@ class TestEconomics:
         get_gas_used_percent(w3_client, instruction_receipt)
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_send_transaction_with_gas_limit_reached(
         self,
         counter_contract: Contract,
@@ -624,6 +635,7 @@ class TestEconomics:
         assert token_balance_after == token_balance_before, "TOKEN Balance incorrect"
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_send_transaction_with_insufficient_funds(
         self,
         counter_contract: Contract,
@@ -653,6 +665,7 @@ class TestEconomics:
         assert token_balance_after == token_balance_before, "TOKEN Balance incorrect"
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_tx_interact_more_1kb(
         self,
         counter_contract: Contract,
@@ -686,6 +699,7 @@ class TestEconomics:
         get_gas_used_percent(w3_client, instruction_receipt)
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_deploy_contract_more_1kb(
         self,
         client_and_price: tuple[Web3Client, float],
@@ -722,6 +736,7 @@ class TestEconomics:
         get_gas_used_percent(w3_client, contract_deploy_tx)
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_deploy_contract_to_payed(
         self,
         client_and_price: tuple[Web3Client, float],
@@ -768,6 +783,7 @@ class TestEconomics:
         get_gas_used_percent(w3_client, contract_deploy_tx)
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_deploy_contract_to_exist_unpayed(
         self,
         client_and_price: tuple[Web3Client, float],
@@ -822,6 +838,7 @@ class TestEconomics:
     @pytest.mark.slow
     @pytest.mark.timeout(16 * Time.MINUTE)
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_deploy_contract_alt_on(
         self,
         sol_client: SolanaClient,
@@ -870,6 +887,7 @@ class TestEconomics:
         get_gas_used_percent(web3_client, receipt)
 
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_deploy_contract_alt_off(
         self,
         sol_client: SolanaClient,
@@ -932,6 +950,7 @@ class TestEconomics:
         get_gas_used_percent(w3_client, receipt)
 
     # @pytest.mark.skip(reason="work incorrect very often")
+    @pytest.mark.eip_1559
     def test_deploy_big_contract_with_structures_eip_1559(
         self,
         web3_client: NeonChainWeb3Client,
@@ -964,6 +983,7 @@ class TestEconomics:
     @pytest.mark.slow
     @pytest.mark.parametrize("value", [20, 30])
     @pytest.mark.parametrize("tx_type", TransactionType)
+    @pytest.mark.eip_1559
     def test_call_contract_with_mapping_updating(
         self,
         client_and_price: tuple[Web3Client, float],
@@ -1006,6 +1026,7 @@ class TestEconomics:
         )
 
     @pytest.mark.skip(reason="work incorrect very often")
+    @pytest.mark.eip_1559
     def test_eip_1559_zero_priority_fee(
         self,
         client_and_price: tuple[Web3Client, float],
@@ -1044,6 +1065,7 @@ class TestEconomics:
         assert_profit(sol_diff, sol_price, token_diff, token_price, w3_client.native_token_name)
         get_gas_used_percent(w3_client, receipt)
 
+    @pytest.mark.eip_1559
     def test_eip_1559_profit(
         self,
         client_and_price: tuple[Web3Client, float],
@@ -1083,7 +1105,7 @@ class TestEconomics:
         latest_block: web3.types.BlockData = w3_client._web3.eth.get_block(block_identifier="latest")  # noqa
         base_fee_per_gas = latest_block.baseFeePerGas  # noqa
         max_priority_fee_per_gas = w3_client._web3.eth._max_priority_fee()  # noqa
-        max_fee_per_gas = (5 * base_fee_per_gas) + max_priority_fee_per_gas
+        max_fee_per_gas = (2 * base_fee_per_gas) + max_priority_fee_per_gas
         recipient_2 = w3_client.create_account()
 
         w3_client.send_tokens_eip_1559(

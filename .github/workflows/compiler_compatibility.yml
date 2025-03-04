@@ -75,6 +75,7 @@ jobs:
         uses: ./.github/actions/create-tf-stand
         with:
           ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
+          hetzner_instance_types: ${{vars.HETZNER_INSTANCE_TYPES}}
 
     outputs:
       proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}

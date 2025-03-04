@@ -9,9 +9,11 @@ from eth_utils import abi
 
 from solana.rpc.commitment import Confirmed
 from solders.pubkey import Pubkey
+from solders.keypair import Keypair
 from spl.token.instructions import get_associated_token_address
 
 from utils.consts import wSOL
+from utils.neon_user import NeonUser
 from utils.erc20wrapper import ERC20NewWrapper
 from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData, ScheduledTrxEstimateRequest
 
@@ -52,7 +54,9 @@ class ScheduledTxTasksSet(NeonProxyTasksSet):
         return random.choice(self.user.environment.shared.accounts)
 
     def get_neon_user(self):
-        return random.choice(self.user.environment.shared.neon_users)
+        item = random.choice(self.erc20_info["neon_users"])
+        account = bytes(item, encoding="raw_unicode_escape")
+        return NeonUser(evm_loader_id=self.evm_loader.loader_id, keypair=Keypair.from_bytes(account))
 
     @task
     def task_send_scheduled_tx(self):
@@ -67,21 +71,17 @@ class ScheduledTxTasksSet(NeonProxyTasksSet):
         my_ata = get_associated_token_address(neon_user.solana_account.pubkey(), token_mint)
         nonce = self.web3_client_sol.get_nonce(neon_user.checksum_address)
 
-        self.erc20.pop_up_balance(
-            self.evm_loader, recipient=neon_user, pda_amount=amount_to_transfer, ata_amount=amount_to_transfer
-        )
-
         assert (
             int(self.evm_loader.get_token_account_balance(my_ata, commitment=Confirmed).value.amount)
-            == amount_to_transfer
+            >= amount_to_transfer
         )
         assert (
             int(self.evm_loader.get_token_account_balance(my_pda, commitment=Confirmed).value.amount)
-            == amount_to_transfer
+            >= amount_to_transfer
         )
 
-        transfer_amount = 200
-        burn_amount = 100
+        transfer_amount = 100
+        burn_amount = 50
         approve_amount = 1000
         trx_count = 4
         data_0 = abi.function_signature_to_4byte_selector("approve(address,uint256)") + eth_abi.encode(
@@ -136,7 +136,8 @@ class ScheduledTxTasksSet(NeonProxyTasksSet):
         balance_pda = self.erc20.contract.functions.balanceOfPDA(neon_user.checksum_address).call()
         balance_ata = self.erc20.contract.functions.balanceOfATA(neon_user.checksum_address).call()
 
-        assert self.erc20.get_balance(recipient.checksum_address) == transfer_amount * 2
+        recipient_balance = self.erc20.get_balance(recipient.checksum_address)
+        assert recipient_balance == transfer_amount * 2
         assert balance_pda == amount_to_transfer - transfer_amount * 2 - burn_amount
         assert balance_ata == amount_to_transfer
 

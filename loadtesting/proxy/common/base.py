@@ -16,7 +16,6 @@ from functools import lru_cache
 from eth_account.signers.local import LocalAccount
 from solders.keypair import Keypair
 from solana.rpc import commitment
-from pybip39 import Mnemonic, Seed
 
 from utils import helpers
 from utils.faucet import Faucet
@@ -25,7 +24,6 @@ from utils.solana_client import SolanaClient
 from gevent.pool import Pool
 
 from utils.evm_loader import EvmLoader
-from utils.neon_user import NeonUser
 from utils.types import TreasuryPool
 from utils.consts import LAMPORT_PER_SOL
 from .events import statistics_collector, save_transaction
@@ -92,7 +90,6 @@ class NeonWeb3ClientExt(NeonChainWeb3Client):
 @dataclass
 class NeonGlobalEnv:
     accounts = []
-    neon_users = []
     counter_contracts = []
     erc20_contracts = {}
     erc20_wrapper_contracts = {}
@@ -154,16 +151,6 @@ class NeonProxyTasksSet(TaskSet):
         self.user.environment.shared.accounts.append(self.account)
         LOG.info(f"New account {self.account.address} created")
 
-        self.neon_user = NeonUser(self.evm_loader.loader_id)
-        balance = self.evm_loader.get_solana_balance(self.neon_user.solana_account.pubkey())
-        if self.network not in ["devnet"]:
-            if balance < 5 * LAMPORT_PER_SOL:
-                self.evm_loader.request_airdrop(
-                    self.neon_user.solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed
-                )
-        self.user.environment.shared.neon_users.append(self.neon_user)
-        LOG.info(f"New neon user account {self.account.address} created")
-
     def prepare_account(self) -> None:
         """Prepare data requirements"""
         # create new account for each simulating user
@@ -212,9 +199,9 @@ class NeonProxyTasksSet(TaskSet):
             self.bank_account = bank_account
             LOG.info(f"Create bank account: {bank_account.pubkey()}")
 
-        sol_account_mnemonic = Mnemonic.from_phrase(self.erc20_info["solana_account_mnemonic"])
-        seed = Seed(sol_account_mnemonic, self.erc20_info["solana_account_passphrase"])
-        self.solana_account = Keypair.from_seed(bytes(seed)[:32])
+        solana_account_bytes = bytes(self.erc20_info["solana_account"], encoding="raw_unicode_escape")
+        self.solana_account = Keypair.from_bytes(solana_account_bytes)
+
         LOG.info(f"Create solana account: {self.solana_account.pubkey()}")
 
         index = 2

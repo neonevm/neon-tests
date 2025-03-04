@@ -1,15 +1,12 @@
 import builtins
-import os
 import json
-import shutil
+import os
 import pathlib
+import shutil
 import sys
 from dataclasses import dataclass, field
 from typing import Optional, Dict
 
-from solders.pubkey import Pubkey
-
-import allure
 import pytest
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
@@ -18,21 +15,22 @@ from _pytest.runner import runtestprotocol
 from allure_commons.types import AttachmentType
 from solana.rpc.commitment import Confirmed
 from solders.keypair import Keypair
+from solders.pubkey import Pubkey
+from spl.token.constants import WRAPPED_SOL_MINT
 from web3.middleware import geth_poa_middleware
 
+import allure
 from clickfile import TEST_GROUPS, EnvName
-from utils.consts import LAMPORT_PER_SOL
-from utils.evm_loader import EvmLoader
-from utils.neon_user import NeonUser
-from utils.types import TestGroup, TreasuryPool
-from utils.error_log import error_log
 from utils import create_allure_environment_opts, setup_logging
-from utils.faucet import Faucet
 from utils.accounts import EthAccounts
-from utils.web3client import NeonChainWeb3Client
+from utils.consts import LAMPORT_PER_SOL
+from utils.error_log import error_log
+from utils.evm_loader import EvmLoader
+from utils.faucet import Faucet
+from utils.neon_user import NeonUser
 from utils.solana_client import SolanaClient
-from spl.token.constants import WRAPPED_SOL_MINT
-
+from utils.types import TestGroup, TreasuryPool
+from utils.web3client import NeonChainWeb3Client
 
 pytest_plugins = ["ui.plugins.browser"]
 COST_REPORT_DIR: pathlib.Path = pathlib.Path()
@@ -264,17 +262,25 @@ def accounts_session(pytestconfig: Config, web3_client_session, faucet, eth_bank
 
 
 @pytest.fixture(scope="function")
-def neon_user(evm_loader: EvmLoader, pytestconfig, bank_account, faucet, environment) -> NeonUser:
+def neon_user(evm_loader: EvmLoader, bank_account, environment: EnvironmentConfig) -> NeonUser:
     user = NeonUser(environment.evm_loader, bank_account)
-    balance = evm_loader.get_solana_balance(user.solana_account.pubkey())
-    if pytestconfig.getoption("--network") not in ["mainnet", "devnet"]:
-        if balance < 5 * LAMPORT_PER_SOL:
-            evm_loader.request_airdrop(user.solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=Confirmed)
+    lamports = 2 * LAMPORT_PER_SOL
+
+    if environment.use_bank:
+        balance = evm_loader.get_solana_balance(user.solana_account.pubkey())
+        if balance < lamports:
+            evm_loader.send_sol(bank_account, user.solana_account.pubkey(), lamports)
+    else:
+        evm_loader.request_airdrop(
+            pubkey=user.solana_account.pubkey(),
+            lamports=lamports,
+            commitment=Confirmed,
+        )
     return user
 
 
 @pytest.fixture(scope="session")
-def treasury_pool(evm_loader, pytestconfig) -> TreasuryPool:
+def treasury_pool(evm_loader: EvmLoader, pytestconfig) -> TreasuryPool:
     index = 2
     evm_loader.create_treasury_pool_address(index)
     if pytestconfig.getoption("--network") == "mainnet":

@@ -58,6 +58,7 @@ class TestExternalCall:
         assert sender_initial_balance == evm_loader.get_neon_balance(sender_with_tokens.eth_address) + amount
         assert receiver_initial_balance == evm_loader.get_neon_balance(session_user.eth_address) - amount
 
+    @pytest.mark.eip_1559
     def test_execute_from_instruction_eip_1559(
         self, operator_keypair, evm_loader, treasury_pool, sender_with_tokens, session_user, holder_acc
     ):

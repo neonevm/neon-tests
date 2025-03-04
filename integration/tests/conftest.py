@@ -620,6 +620,18 @@ def expected_error_checker(accounts, web3_client):
 
 
 @pytest.fixture(scope="class")
+def multiple_actions_erc20(web3_client_session, accounts, erc20_spl_mintable):
+    contract, contract_deploy_tx = web3_client_session.deploy_and_get_contract(
+        "EIPs/ERC20/MultipleActions",
+        "0.8.24",
+        accounts[0],
+        contract_name="MultipleActionsERC20",
+        constructor_args=["Test TTT", "TTT", 18],
+    )
+    return accounts[0], contract
+
+
+@pytest.fixture(scope="class")
 def multiple_actions_erc721(web3_client, accounts):
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
         "EIPs/ERC721/MultipleActions", "0.8.10", accounts[0], contract_name="MultipleActionsERC721"

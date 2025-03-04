@@ -1,9 +1,8 @@
 pragma solidity >=0.8.10 <0.9.0;
 
-    error NumberTooHigh(uint256 from, uint256 number);
+error NumberTooHigh(uint256 from, uint256 number);
 
 contract TrivialRevert {
-
     function doStringBasedRevert() public pure {
         require(false, "Predefined revert happened");
     }
@@ -20,16 +19,14 @@ contract TrivialRevert {
         assert(false);
     }
 
-    function deposit() payable external {}
+    function deposit() external payable {}
 }
-
 
 contract FailingContract {
     constructor(bool shouldFail) {
         require(!shouldFail, "Constructor intentionally failed.");
     }
 }
-
 
 contract Caller {
     TrivialRevert public myRevert;
@@ -39,7 +36,23 @@ contract Caller {
         myRevert = TrivialRevert(_address);
     }
 
-    function doTrivialRevert() public  view {
+    function doTrivialRevert() public view {
+        return myRevert.doTrivialRevert();
+    }
+
+    function doTrivialRevertAferIterativeActions() public view {
+        uint x = 0;
+        uint y = 3000;
+        uint z = x;
+        while (x < y) {
+            z++;
+            x = z;
+        }
+
+        if (y - z == 1) {
+            z++;
+        }
+
         return myRevert.doTrivialRevert();
     }
 
@@ -58,5 +71,4 @@ contract Caller {
     function deployContract() public {
         new FailingContract(true);
     }
-
 }

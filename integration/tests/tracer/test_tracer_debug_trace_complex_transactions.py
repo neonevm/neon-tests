@@ -1,3 +1,4 @@
+import random
 import allure
 import pytest
 import eth_abi
@@ -41,6 +42,7 @@ class TestDebugTraceIterativeTransaction:
         params = [receipt["transactionHash"].hex()]
         response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", params)
         validate_response_result(response)
+        # TODO: create a template of the response and compare fileds and structure
 
     def test_trace_iterative_tx(self, counter_contract):
         sender_account = self.accounts[0]
@@ -61,6 +63,61 @@ class TestDebugTraceIterativeTransaction:
         assert response["result"]["to"].lower() == receipt["to"].lower()
         assert response["result"]["input"].lower() == instruction_tx["data"].lower()
         assert response["result"]["type"] == "CALL"
+        assert "error" not in response["result"]
+
+    def test_trace_iterative_tx_failed_status(self, revert_contract_caller):
+        sender_account = self.accounts[0]
+        tx = self.web3_client.make_raw_tx(sender_account, gas=10000000)
+        instruction_tx = revert_contract_caller.functions.doTrivialRevertAferIterativeActions().build_transaction(tx)
+        receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
+        assert receipt["status"] == 0
+
+        wait_condition(
+            lambda: self.web3_client.is_trx_iterative(receipt["transactionHash"].hex()) is True,
+            timeout_sec=120,
+        )
+
+        params = [receipt["transactionHash"].hex(), tracer_params]
+        response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", params)
+
+        assert response["result"]["from"].lower() == receipt["from"].lower()
+        assert response["result"]["to"].lower() == receipt["to"].lower()
+        assert response["result"]["input"].lower() == instruction_tx["data"].lower()
+        assert response["result"]["type"] == "CALL"
+        assert response["result"]["error"] == "execution reverted"
+
+    def test_trace_iterative_tx_with_erc20_for_spl(self, multiple_actions_erc20):
+        sender_account = self.accounts[0]
+        acc, contract = multiple_actions_erc20
+        mint_amount1 = random.randint(10, 100000000)
+        mint_amount2 = random.randint(10, 100000000)
+        contract_balance_before = contract.functions.contractBalance().call()
+        user_balance_before = contract.functions.balance(acc.address).call()
+
+        tx = self.web3_client.make_raw_tx(sender_account)
+        instruction_tx = contract.functions.mintMintTransferTransferMintMintTransferTransfer(
+            mint_amount1, mint_amount2, acc.address
+        ).build_transaction(tx)
+        receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
+
+        contract_balance = contract.functions.contractBalance().call()
+        user_balance = contract.functions.balance(acc.address).call()
+        assert user_balance == user_balance_before + 2 * mint_amount1 + 2 * mint_amount2, "User balance is not correct"
+        assert contract_balance == contract_balance_before, "Contract balance is not correct"
+
+        wait_condition(
+            lambda: self.web3_client.is_trx_iterative(receipt["transactionHash"].hex()) is True,
+            timeout_sec=120,
+        )
+
+        params = [receipt["transactionHash"].hex(), tracer_params]
+        response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", params)
+
+        assert response["result"]["from"].lower() == receipt["from"].lower()
+        assert response["result"]["to"].lower() == receipt["to"].lower()
+        assert response["result"]["input"].lower() == instruction_tx["data"].lower()
+        assert response["result"]["type"] == "CALL"
+        assert "error" not in response["result"]
 
     def test_trace_iterative_tx_eip_1559(self, counter_contract):
         sender_account = self.accounts[0]
@@ -81,6 +138,7 @@ class TestDebugTraceIterativeTransaction:
         assert response["result"]["to"].lower() == receipt["to"].lower()
         assert response["result"]["input"].lower() == instruction_tx["data"].lower()
         assert response["result"]["type"] == "CALL"
+        assert "error" not in response["result"]
 
     def test_trace_iterative_tx_sol_chain(self, web3_client_sol, class_account_sol_chain, counter_contract_sol_chain):
         sender_account = class_account_sol_chain
@@ -100,6 +158,7 @@ class TestDebugTraceIterativeTransaction:
         assert response["result"]["to"].lower() == receipt["to"].lower()
         assert response["result"]["input"].lower() == instruction_tx["data"].lower()
         assert response["result"]["type"] == "CALL"
+        assert "error" not in response["result"]
 
     def test_trace_iterative_tx_block_timestamp(self, block_timestamp_contract, json_rpc_client):
         contract, _ = block_timestamp_contract
@@ -124,6 +183,7 @@ class TestDebugTraceIterativeTransaction:
         assert response["result"]["to"].lower() == receipt["to"].lower()
         assert response["result"]["input"].lower() == instruction_tx["data"].lower()
         assert response["result"]["type"] == "CALL"
+        assert "error" not in response["result"]
 
     @pytest.mark.skip(reason="NDEV-3591")
     def test_trace_scheduled_tx(self, web3_client_sol, neon_user, common_contract, evm_loader, treasury_pool):
@@ -149,3 +209,5 @@ class TestDebugTraceIterativeTransaction:
         response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", params)
         assert response["result"]["from"].lower() == receipt["from"].lower()
         assert response["result"]["to"].lower() == receipt["to"].lower()
+        assert response["result"]["type"] == "CALL"
+        assert "error" not in response["result"]

@@ -87,7 +87,7 @@ env:
 
 jobs:
   uniswap-v2:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'uniswap-v2')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -139,7 +139,7 @@ jobs:
           path: uniswap-v2-report.json
 
   uniswap-v3:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'uniswap-v3')
     env:
       SOLANA_IP: ${{ inputs.solana_ip }}
@@ -190,7 +190,7 @@ jobs:
           path: uniswap-v3-report.json
 
   saddle:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'saddle')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -242,7 +242,7 @@ jobs:
           name: saddle-report
           path: saddle-report.json
   aave-v2:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'aave-v2')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -288,7 +288,7 @@ jobs:
           name: aave-v2-report
           path: aave-v2-report.json
   aave-v3:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'aave-v3')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -334,7 +334,7 @@ jobs:
           name: aave-v3-core-report
           path: aave-v3-core-report.json
   curve:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'curve')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -385,7 +385,7 @@ jobs:
           name: curve-report
           path: curve-report.json
   curve-factory:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: false #contains( inputs.dapps, 'curve-factory') # skipped because of NDEV-2905
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -417,7 +417,7 @@ jobs:
           path: curve-factory-report.json
 
   compound:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'compound')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -469,7 +469,7 @@ jobs:
           path: compound-report.json
 
   robonomics:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'robonomics')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -519,7 +519,7 @@ jobs:
           path: robonomics-report.json
   yearn:
     if: contains( inputs.dapps, 'yearn')
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
       PROXY_URL: ${{ inputs.proxy_url }}
@@ -570,7 +570,7 @@ jobs:
           path: yearn-report.json
 
   pancake:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'pancake')
     env:
       SOLANA_IP: ${{ inputs.solana_ip }}
@@ -621,8 +621,8 @@ jobs:
           path: pancake-report.json
 
   swap-report:
-    runs-on: ["self-hosted", "k8s-prod"]
-    needs: [uniswap-v2, uniswap-v3, saddle, aave-v2, aave-v3, curve, robonomics, yearn, compound, curve-factory, pancake]
+    runs-on: [ "self-hosted", "k8s-prod" ]
+    needs: [ uniswap-v2, uniswap-v3, saddle, aave-v2, aave-v3, curve, robonomics, yearn, compound, curve-factory, pancake ]
     if: always()
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -637,7 +637,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository_owner }}/neon-tests
-          ref: develop
+          ref: NDEV-3543-cost-report-validation
       - name: Setup gh cli
         uses: ksivamuthu/actions-setup-gh-cli@v3
       - name: Install python requirements
@@ -766,10 +766,41 @@ jobs:
         if: ${{ steps.dump-cost-reports-to-markdown.outcome == 'success' || steps.save-cost-reports-zip-url.outcome == 'success'  }}
         run: |
           cat cost_reports.md >> $GITHUB_STEP_SUMMARY
-      - name: "Add PR comment"
+      - name: "Add PR comment with cost report data"
         if: ${{ inputs.pr_url_for_report != '' }}
         run: |
           python3 ./clickfile.py dapps add_pr_comment \
           --pr_url_for_report="${{ inputs.pr_url_for_report }}" \
           --token="${{ secrets.GHTOKEN }}" \
-          --md_file cost_reports.md
+          --md_file cost_reports.md \
+          --title "Dapps report"
+      - name: "Validate cost report data and save failures to file"
+        id: validate-cost-report
+        if: ${{ steps.set-do-compare-reports.outputs.compare == 'true' && steps.save-cost-report-to-db.outcome == 'success' }}
+        run: |
+          python3 ./clickfile.py dapps validate_cost_reports \
+            --repo "${{ inputs.repo }}" \
+            --evm_tag="${{ inputs.evm_tag }}" \
+            --proxy_tag="${{ inputs.proxy_tag }}" \
+            --version_branch "${{ inputs.repo == 'evm' && inputs.evm_pr_version_branch || inputs.proxy_pr_version_branch }}" \
+            --acc_count 0 \
+            --trx_count 0 \
+            --gas_estimated 10000 \
+            --gas_used 10000 \
+            --compute_units 1000000 \
+            --output cost_report_validation_issues.md
+
+          if [ -f "cost_report_validation_issues.md" ]; then
+            echo "has_errors=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_errors=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: "Add PR comment if cost report validation has any issues"
+        if: ${{ steps.validate-cost-report.outputs.has_errors == 'true' }}
+        run: |
+          python3 ./clickfile.py dapps add_pr_comment \
+            --pr_url_for_report="${{ inputs.pr_url_for_report }}" \
+            --token="${{ secrets.GHTOKEN }}" \
+            --md_file cost_report_validation_issues.md \
+            --title "<strong>⚠️ Cost Report Validation Failed ⚠️</strong>"

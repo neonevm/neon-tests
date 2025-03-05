@@ -20,6 +20,7 @@ from web3.types import TxReceipt
 
 from clickfile import EnvName
 from conftest import EnvironmentConfig
+from integration.tests.basic.helpers.chains import make_nonce_the_biggest_for_chain
 from utils.accounts import EthAccounts
 from utils.apiclient import JsonRPCSession
 from utils.consts import COUNTER_ID, LAMPORT_PER_SOL, MULTITOKEN_MINTS
@@ -439,7 +440,8 @@ def event_caller_contract(web3_client, accounts) -> tp.Any:
 
 
 @pytest.fixture(scope="class")
-def event_caller_sol_chain(web3_client_sol, account_with_all_tokens) -> tp.Any:
+def event_caller_sol_chain(web3_client_sol, account_with_all_tokens, web3_client) -> tp.Any:
+    make_nonce_the_biggest_for_chain(account_with_all_tokens, web3_client_sol, [web3_client])
     event_caller, _ = web3_client_sol.deploy_and_get_contract("common/EventCaller", "0.8.12", account_with_all_tokens)
     yield event_caller
 

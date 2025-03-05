@@ -15,6 +15,7 @@ from multiprocessing.dummy import Pool
 from pathlib import Path
 from urllib.parse import urlparse
 
+import pandas as pd
 import pytest
 
 from deploy.cli.cost_report import prepare_report_data, report_data_to_markdown
@@ -417,6 +418,44 @@ def install_ui_requirements():
     # download the Playwright package and install browser binaries for Chromium, Firefox and WebKit.
     click.echo(green("Install browser binaries for Chromium."))
     subprocess.check_call("playwright install chromium", shell=True)
+
+
+def get_service_tags_for_cost_reports(
+    evm_tag: str,
+    proxy_tag: str,
+    repo: RepoType,
+    db: PostgresTestResultsHandler,
+    limit: int,
+    version_branch: str,
+) -> tuple[str, str, list[str]]:
+    """
+    :param evm_tag:
+    :param proxy_tag:
+    :param repo:
+    :param db:
+    :param limit: number of previous tags. E.g. if you want to compare 5 reports - you need 4 previous tags
+    :param version_branch:
+    :return:
+    """
+    compared_service_tag = evm_tag if repo == "evm" else proxy_tag
+    other_service_tag = evm_tag if repo == "proxy" else proxy_tag
+
+    # define the tags against which the comparison will be done
+    previous_tags: list[str]
+
+    if re.fullmatch(GITHUB_TAG_PATTERN, compared_service_tag):
+        previous_tags = db.get_previous_tags(
+            repo=repo,
+            tag=compared_service_tag,
+            limit=limit,
+        )
+    else:
+        if version_branch:
+            previous_tags = [version_branch]
+        else:
+            previous_tags = ["latest"]
+
+    return compared_service_tag, other_service_tag, previous_tags
 
 
 @click.group()
@@ -1217,26 +1256,15 @@ def compare_dapp_results(
     latest - develop branch
     """
     click.echo(f"compare_dapp_results: {locals()}")
-
-    compared_service_tag = evm_tag if repo == "evm" else proxy_tag
-    other_service_tag = evm_tag if repo == "proxy" else proxy_tag
     db = PostgresTestResultsHandler()
-
-    # define the tags against which the comparison will be done
-    previous_tags: list[str]
-
-    if re.fullmatch(GITHUB_TAG_PATTERN, compared_service_tag):
-        previous_tags = db.get_previous_tags(
-            repo=repo,
-            tag=compared_service_tag,
-            limit=history_depth_limit,
-        )
-    else:
-        if version_branch:
-            previous_tags = [version_branch]
-        else:
-            previous_tags = ["latest"]
-
+    compared_service_tag, other_service_tag, previous_tags = get_service_tags_for_cost_reports(
+        evm_tag=evm_tag,
+        proxy_tag=proxy_tag,
+        repo=repo,
+        db=db,
+        limit=history_depth_limit - 1,
+        version_branch=version_branch,
+    )
     click.echo(f"previous_tags: {previous_tags}")
 
     historical_data = db.get_historical_data(
@@ -1276,18 +1304,116 @@ def compare_dapp_results(
     )
 
 
+@dapps.command("validate_cost_reports", help="Validate cost reports data")
+@click.option("--repo", type=click.Choice(tp.get_args(RepoType)), required=True)
+@click.option("--evm_tag", required=True)
+@click.option("--proxy_tag", required=True)
+@click.option("--version_branch", required=True)
+@click.option("--acc_count", type=int, help="Allowed absolute number of acceptable increase")
+@click.option("--trx_count", type=int, help="Allowed absolute number of acceptable increase")
+@click.option("--gas_estimated", type=int, help="Allowed absolute number of acceptable increase")
+@click.option("--gas_used", type=int, help="Allowed absolute number of acceptable increase")
+@click.option("--compute_units", type=int, help="Allowed absolute number of acceptable increase")
+@click.option("--output", type=str, help="Path to the JSON file where detected failures are saved")
+def validate_cost_reports(
+    repo: RepoType,
+    evm_tag: str,
+    proxy_tag: str,
+    version_branch: str,
+    acc_count: int,
+    trx_count: int,
+    gas_estimated: int,
+    gas_used: int,
+    compute_units: int,
+    output: str,
+):
+    """
+    Compares the cost report data for <repo>:<evm_tag|proxy_tag|version_branch>
+    with previous report data based on acceptable absolute increases in metrics.
+    Any detected increases exceeding the allowed thresholds are saved to the <output> file.
+
+    :param repo: Repository name.
+    :param evm_tag: EVM tag of the report data.
+    :param proxy_tag: Proxy tag of the report data.
+    :param version_branch: Maximum acceptable absolute increase in the metric version_branch.
+    :param acc_count: Maximum acceptable absolute increase in the metric acc_count.
+    :param trx_count: Maximum acceptable absolute increase in the metric trx_count.
+    :param gas_estimated: Maximum acceptable absolute increase in the metric gas_estimated.
+    :param gas_used: Maximum acceptable absolute increase in the metric gas_used.
+    :param compute_units: Maximum acceptable absolute increase in the metric compute_units.
+    :param output: Path to the JSON file where detected failures are saved.
+    """
+    db = PostgresTestResultsHandler()
+    compared_service_tag, other_service_tag, previous_tags = get_service_tags_for_cost_reports(
+        evm_tag=evm_tag,
+        proxy_tag=proxy_tag,
+        repo=repo,
+        db=db,
+        limit=1,
+        version_branch=version_branch,
+    )
+    click.echo(f"previous_tags: {previous_tags}")
+
+    historical_data = db.get_historical_data(
+        depth=2,
+        repo=repo,
+        latest_tag=compared_service_tag,
+        previous_tags=previous_tags,
+    )
+
+    all_metric_names = "acc_count", "trx_count", "gas_estimated", "gas_used", "compute_units"
+    dapp_names = historical_data["dapp_name"].unique()
+
+    failure = tp.TypedDict("failure", {"dapp": str, "action": str, "metric": str, "increase": int})
+    failures: list[failure] = []
+
+    for dapp_name in dapp_names:
+        data_for_dapp = historical_data[historical_data["dapp_name"] == dapp_name]
+        actions = data_for_dapp["action"].unique()
+
+        for action in actions:
+            data_for_dapp_action = data_for_dapp[data_for_dapp["action"] == action]
+            metric_names = [col_name for col_name in data_for_dapp_action.columns if col_name in all_metric_names]
+
+            for metric_name in metric_names:
+                metric_values = data_for_dapp_action[metric_name]
+                historical_value = metric_values.iloc[0]
+                latest_value = metric_values.iloc[-1]
+
+                if not pd.isna(historical_value) and not pd.isna(latest_value):
+                    actual_change = latest_value - historical_value
+                    max_acceptable_change = locals()[metric_name]
+
+                    if actual_change > max_acceptable_change:
+                        failure_dict: failure = {
+                            "dapp": dapp_name,
+                            "action": action,
+                            "metric": metric_name,
+                            "increase": actual_change,
+                        }
+                        failures.append(failure_dict)
+
+    if failures:
+        df = pd.DataFrame(failures)
+        md = df.to_markdown(index=False)
+
+        with open(output, "w") as f:
+            json.dump(md, f)
+
+
 @dapps.command("add_pr_comment", help="Add PR comment with dApp cost reports")
 @click.option("--pr_url_for_report", default="", help="Url to send the report as comment for PR")
 @click.option("--token", default="", help="github token")
 @click.option("--md_file", help="File with markdown for the comment")
-def add_pr_comment(pr_url_for_report: str, token: str, md_file: str):
+@click.option("--title", default="", help="Comment title")
+def add_pr_comment(pr_url_for_report: str, token: str, md_file: str, title: str):
     gh_client = GithubClient(token=token)
-    gh_client.delete_last_comment(pr_url_for_report)
+    gh_client.delete_last_comment(pr_url=pr_url_for_report, title=title)
 
     with open(md_file) as f:
         markdown = f.read()
 
-    gh_client.add_comment_to_pr(pr_url_for_report, markdown)
+    gh_client.add_comment_to_pr(url=pr_url_for_report, msg=markdown, title=title)
 
 
 @cli.group()

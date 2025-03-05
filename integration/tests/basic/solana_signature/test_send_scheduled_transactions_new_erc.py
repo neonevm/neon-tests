@@ -47,18 +47,6 @@ class TestScheduledTrxERC20new:
         assert int(evm_loader.get_token_account_balance(my_pda, commitment=Confirmed).value.amount) == 0
         assert int(evm_loader.get_token_account_balance(my_ata, commitment=Confirmed).value.amount) == 1000
 
-    @pytest.mark.xfail(reason="NDEV-3605")
-    def test_estimation_of_scheduled_trx_no_pda_balance_uses_ata(
-        self, web3_client_sol, neon_user, erc20_spl_mintable_new, evm_loader, treasury_pool
-    ):
-        recipient = NeonUser(evm_loader.loader_id)
-        erc20_spl_mintable_new.pop_up_balance(evm_loader, recipient=neon_user, pda_amount=1000, ata_amount=1000)
-
-        data = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, 2000])
-
-        trx_estimate_obj = ScheduledTrxEstimateRequest(neon_user.checksum_address, erc20_spl_mintable_new.address, data)
-        web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), [trx_estimate_obj])
-
     def test_scheduled_trx_no_pda_balance_uses_ata(
         self, web3_client_sol, neon_user, erc20_spl_mintable_new, evm_loader, treasury_pool
     ):
@@ -72,23 +60,10 @@ class TestScheduledTrxERC20new:
 
         data = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, 2000])
 
-        max_priority_fee_per_gas = BASE_MAX_PRIORITY_FEE
-        max_fee_per_gas = web3_client_sol.get_max_fee_per_gas()
-        gas_limit = 30000000
-        nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
+        trx_estimate_obj = ScheduledTrxEstimateRequest(neon_user.checksum_address, erc20_spl_mintable_new.address, data)
+        estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), [trx_estimate_obj])
 
-        tx0 = ScheduledTransaction(
-            nonce=nonce,
-            index=0,
-            target=erc20_spl_mintable_new.address,
-            call_data=data,
-            max_fee_per_gas=max_fee_per_gas,
-            max_priority_fee_per_gas=max_priority_fee_per_gas,
-            gas_limit=gas_limit,
-            payer=neon_user.checksum_address,
-            sender=None,
-            chain_id=evm_loader.sol_chain_id,
-        )
+        tx0 = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
         evm_loader.create_tree_account(
             neon_user, treasury_pool, tx0.encode(), wSOL["address_spl"], chain_id=evm_loader.sol_chain_id
@@ -113,23 +88,10 @@ class TestScheduledTrxERC20new:
 
         data = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, 2000])
 
-        max_priority_fee_per_gas = BASE_MAX_PRIORITY_FEE
-        max_fee_per_gas = web3_client_sol.get_max_fee_per_gas()
-        gas_limit = 30000000
-        nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
+        trx_estimate_obj = ScheduledTrxEstimateRequest(neon_user.checksum_address, erc20_spl_mintable_new.address, data)
+        estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), [trx_estimate_obj])
 
-        tx0 = ScheduledTransaction(
-            nonce=nonce,
-            index=0,
-            target=erc20_spl_mintable_new.address,
-            call_data=data,
-            max_fee_per_gas=max_fee_per_gas,
-            max_priority_fee_per_gas=max_priority_fee_per_gas,
-            gas_limit=gas_limit,
-            payer=neon_user.checksum_address,
-            sender=None,
-            chain_id=evm_loader.sol_chain_id,
-        )
+        tx0 = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
         evm_loader.create_tree_account(
             neon_user, treasury_pool, tx0.encode(), wSOL["address_spl"], chain_id=evm_loader.sol_chain_id
@@ -262,31 +224,28 @@ class TestScheduledTrxERC20new:
             "transfer(address,uint256)", [recipient.checksum_address, amount_to_recipient]
         )
 
-        call_data_list: list = [data_0, data_1, data_2, data_3]
+        trx_estimate_0 = ScheduledTrxEstimateRequest(
+            neon_user.checksum_address, erc20_spl_mintable_new.address, data_0, child_transaction=hex(2)
+        )
+        trx_estimate_1 = ScheduledTrxEstimateRequest(
+            neon_user.checksum_address, erc20_spl_mintable_new.address, data_1, child_transaction=hex(3)
+        )
+        trx_estimate_2 = ScheduledTrxEstimateRequest(
+            neon_user.checksum_address, erc20_spl_mintable_new.address, data_2, child_transaction="0xFFFF"
+        )
+        trx_estimate_3 = ScheduledTrxEstimateRequest(
+            neon_user.checksum_address, erc20_spl_mintable_new.address, data_3, child_transaction="0xFFFF"
+        )
+        trx_estimate_obj_list = [trx_estimate_0, trx_estimate_1, trx_estimate_2, trx_estimate_3]
 
-        trx_estimate_obj_list: list[ScheduledTrxEstimateRequest] = []
-        for call_data in call_data_list:
-            trx_estimate_obj_list.append(
-                ScheduledTrxEstimateRequest(
-                    neon_user.checksum_address, erc20_spl_mintable_new.address, call_data, value=0
-                )
-            )
         estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), trx_estimate_obj_list)
 
-        trx_count = 4
-
-        nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
-
         trxs = []
-        for i in range(trx_count):
-            trxs.append(
-                ScheduledTransaction.from_estimate_result(
-                    i, trx_estimate_obj_list[i], estimate_result, gas_limit_multiplier=100
-                )
-            )
+        for i in range(len(trx_estimate_obj_list)):
+            trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
 
         tree_acc_data = CreateTreeAccMultipleData(
-            nonce=nonce,
+            nonce=estimate_result["nonce"],
             max_fee_per_gas=estimate_result["maxFeePerGas"],
             max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
         )
@@ -319,7 +278,6 @@ class TestScheduledTrxERC20new:
     ):
         recipient = NeonUser(evm_loader.loader_id)
         amount_to_transfer = 1_000
-        nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
 
         erc20_spl_mintable_new.pop_up_balance(
             evm_loader, recipient=neon_user, pda_amount=amount_to_transfer, ata_amount=amount_to_transfer
@@ -340,20 +298,18 @@ class TestScheduledTrxERC20new:
         trx_estimate_obj_list: list[ScheduledTrxEstimateRequest] = []
         for i in range(trx_count):
             trx_estimate_obj_list.append(
-                ScheduledTrxEstimateRequest(neon_user.checksum_address, erc20_spl_mintable_new.address, call_data[i])
+                ScheduledTrxEstimateRequest(
+                    neon_user.checksum_address, erc20_spl_mintable_new.address, call_data[i], child_transaction="0xFFFF"
+                )
             )
         estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), trx_estimate_obj_list)
 
         trxs = []
         for i in range(trx_count):
-            trxs.append(
-                ScheduledTransaction.from_estimate_result(
-                    i, trx_estimate_obj_list[i], estimate_result, gas_limit_multiplier=100
-                )
-            )
+            trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
 
         tree_acc_data = CreateTreeAccMultipleData(
-            nonce=nonce,
+            nonce=estimate_result["nonce"],
             max_fee_per_gas=estimate_result["maxFeePerGas"],
             max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
         )

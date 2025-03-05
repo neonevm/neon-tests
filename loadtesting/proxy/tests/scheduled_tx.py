@@ -83,6 +83,13 @@ class ScheduledTxTasksSet(NeonProxyTasksSet):
             neon_user.solana_account.pubkey(), trx_estimate_obj_list
         )
 
+        gas_list_new = []
+        for i in estimate_result["gasList"]:
+            new_value = 10 * int(i, 16)
+            gas_list_new.append(hex(new_value))
+
+        estimate_result["gasList"] = gas_list_new
+
         trxs = []
         for i in range(trx_count):
             trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))

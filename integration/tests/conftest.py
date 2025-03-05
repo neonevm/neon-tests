@@ -31,6 +31,7 @@ from utils.operator import Operator
 from utils.prices import get_sol_price_with_retry
 from utils.solana_client import SolanaClient
 from utils.web3client import NeonChainWeb3Client, Web3Client
+from basic.helpers.chains import make_nonce_the_biggest_for_chain
 
 log = logging.getLogger(__name__)
 
@@ -565,6 +566,7 @@ def counter_contract(web3_client, accounts) -> Contract:
 
 @pytest.fixture(scope="class")
 def counter_contract_sol_chain(web3_client_sol, account_with_all_tokens) -> tp.Any:
+    make_nonce_the_biggest_for_chain(account_with_all_tokens, web3_client_sol, [web3_client])
     contract, _ = web3_client_sol.deploy_and_get_contract("common/Counter", "0.8.10", account_with_all_tokens)
     yield contract
 

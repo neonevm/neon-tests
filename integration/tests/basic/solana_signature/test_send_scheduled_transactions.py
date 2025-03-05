@@ -31,25 +31,27 @@ class TestScheduledTrx:
         assert common_contract.functions.getNumber().call() == contract_data
 
     def test_multiple_scheduled_trx(self, web3_client_sol, neon_user, common_contract, evm_loader, treasury_pool):
-        nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
         data = decode_function_signature("setNumber(uint256)", [10])
 
         trx_estimate_obj_list = []
-        for i in range(4):
+        for i in range(3):
             trx_estimate_obj_list.append(
-                ScheduledTrxEstimateRequest(neon_user.checksum_address, common_contract.address, data)
+                ScheduledTrxEstimateRequest(
+                    neon_user.checksum_address, common_contract.address, data, child_transaction=hex(3)
+                )
             )
+        trx_estimate_obj_list.append(
+            ScheduledTrxEstimateRequest(
+                neon_user.checksum_address, common_contract.address, data, child_transaction="0xFFFF"
+            )
+        )
         estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), trx_estimate_obj_list)
         trxs = []
         for i in range(4):
-            trxs.append(
-                ScheduledTransaction.from_estimate_result(
-                    i, trx_estimate_obj_list[i], estimate_result, gas_limit_multiplier=3
-                )
-            )
+            trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
 
         tree_acc_data = CreateTreeAccMultipleData(
-            nonce=nonce,
+            nonce=estimate_result["nonce"],
             max_fee_per_gas=estimate_result["maxFeePerGas"],
             max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
         )
@@ -70,8 +72,8 @@ class TestScheduledTrx:
             check_trx_is_success(web3_client_sol, evm_loader, trx.hash().hex(), timeout=180)
         pending_trx = web3_client_sol.get_pending_transactions(neon_user.checksum_address)
         assert len(pending_trx) >= 1
-        assert pending_trx[hex(nonce)][0]["status"] == "Done"
-        assert pending_trx[hex(nonce)][0]["hash"][2:] == trxs[0].hash().hex()
+        assert pending_trx[hex(trxs[0].nonce)][0]["status"] == "Done"
+        assert pending_trx[hex(trxs[0].nonce)][0]["hash"][2:] == trxs[0].hash().hex()
 
     def test_multiple_scheduled_trx_with_failed_trx(
         self, web3_client_sol, neon_user, treasury_pool, revert_contract_caller, event_caller_contract, evm_loader
@@ -244,7 +246,7 @@ class TestScheduledTrx:
         # for i in range(trx_count):
         #     trxs.append(
         #         ScheduledTransaction.from_estimate_result(
-        #             i, trx_estimate_obj_list[i], estimate_result, gas_limit_multiplier=100
+        #             i, trx_estimate_obj_list[i], estimate_result
         #         )
         #     )
         max_priority_fee_per_gas = BASE_MAX_PRIORITY_FEE
@@ -328,7 +330,6 @@ class TestScheduledTrx:
     def test_long_chain_iterative_scheduled_trx(
         self, web3_client_sol, neon_user, treasury_pool, evm_loader, json_rpc_client, counter_contract
     ):
-        nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
         total_trx_count = 8
 
         call_data_counter = decode_function_signature("moreInstructionWithLogs(uint256,uint256)", [0, 1000])
@@ -343,7 +344,7 @@ class TestScheduledTrx:
             trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
 
         tree_acc_data = CreateTreeAccMultipleData(
-            nonce=nonce,
+            nonce=estimate_result["nonce"],
             max_fee_per_gas=estimate_result["maxFeePerGas"],
             max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
         )

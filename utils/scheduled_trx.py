@@ -12,6 +12,7 @@ class ScheduledTrxEstimateRequest:
     to_address: str
     data: str
     value: int = 0
+    child_transaction: tp.Union[None, str] = None
 
 
 class ScheduledTxRLP(rlp.Serializable):
@@ -90,7 +91,6 @@ class ScheduledTransaction:
         index,
         estimate_obj: ScheduledTrxEstimateRequest,
         estimate_result: dict,
-        gas_limit_multiplier=None,
         **kwargs,
     ):
         nonce = int(estimate_result["nonce"], 16)
@@ -98,8 +98,6 @@ class ScheduledTransaction:
         max_fee_per_gas = int(estimate_result["maxFeePerGas"], 16)
         max_priority_fee_per_gas = int(estimate_result["maxPriorityFeePerGas"], 16)
         gas_limit = int(estimate_result["gasList"][index], 16)
-        if gas_limit_multiplier:
-            gas_limit *= gas_limit_multiplier
         return cls(
             estimate_obj.from_address,
             None,
@@ -144,6 +142,8 @@ class ScheduledTransaction:
 
 class CreateTreeAccMultipleData:
     def __init__(self, nonce, max_fee_per_gas=3000000000, max_priority_fee_per_gas=2500000000):
+        if isinstance(nonce, str):
+            nonce = int(nonce, 16)
         self.nonce = nonce.to_bytes(8, byteorder="big")
         if not isinstance(max_fee_per_gas, int):
             max_fee_per_gas = int(max_fee_per_gas, 16)

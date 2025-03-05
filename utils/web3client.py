@@ -629,6 +629,7 @@ class Web3Client:
                 "toAddress": trx.to_address,
                 "data": trx.data,
                 "value": trx.value,
+                "childTransaction": trx.child_transaction,
             }
             transactions.append(trx)
         params = {"scheduledSolanaPayer": str(solana_payer), "transactions": transactions}

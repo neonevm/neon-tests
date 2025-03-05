@@ -1,21 +1,17 @@
 import logging
 import random
 import typing as tp
-import eth_abi
 
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
-from eth_utils import abi
-
-from solana.rpc.commitment import Confirmed
-from solders.pubkey import Pubkey
 from solders.keypair import Keypair
-from spl.token.instructions import get_associated_token_address
 
 from utils.consts import wSOL
+from utils.helpers import decode_function_signature
 from utils.neon_user import NeonUser
 from utils.erc20wrapper import ERC20NewWrapper
 from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData, ScheduledTrxEstimateRequest
+from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 
 from locust import User, tag, task
 from loadtesting.proxy.common.base import NeonProxyTasksSet
@@ -64,43 +60,24 @@ class ScheduledTxTasksSet(NeonProxyTasksSet):
         neon_user = self.get_neon_user()
         recipient = self.get_neon_user()
 
-        amount_to_transfer = 1_000
-
-        my_pda = Pubkey(self.erc20.contract.functions.solanaAccount(neon_user.checksum_address).call())
-        token_mint = Pubkey(self.erc20.contract.functions.tokenMint().call())
-        my_ata = get_associated_token_address(neon_user.solana_account.pubkey(), token_mint)
-        nonce = self.web3_client_sol.get_nonce(neon_user.checksum_address)
-
-        assert (
-            int(self.evm_loader.get_token_account_balance(my_ata, commitment=Confirmed).value.amount)
-            >= amount_to_transfer
-        )
-        assert (
-            int(self.evm_loader.get_token_account_balance(my_pda, commitment=Confirmed).value.amount)
-            >= amount_to_transfer
-        )
-
         transfer_amount = 100
         burn_amount = 50
         approve_amount = 1000
         trx_count = 4
-        data_0 = abi.function_signature_to_4byte_selector("approve(address,uint256)") + eth_abi.encode(
-            ["address", "uint256"], [neon_user.checksum_address, approve_amount]
-        )
-        data_1 = abi.function_signature_to_4byte_selector("transfer(address,uint256)") + eth_abi.encode(
-            ["address", "uint256"], [recipient.checksum_address, transfer_amount]
-        )
-        data_2 = abi.function_signature_to_4byte_selector("burn(uint256)") + eth_abi.encode(["uint256"], [burn_amount])
-        data_3 = abi.function_signature_to_4byte_selector("transfer(address,uint256)") + eth_abi.encode(
-            ["address", "uint256"], [recipient.checksum_address, transfer_amount]
-        )
+
+        data_0 = decode_function_signature("approve(address,uint256)", [neon_user.checksum_address, approve_amount])
+        data_1 = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, transfer_amount])
+        data_2 = decode_function_signature("burn(uint256)", [burn_amount])
+        data_3 = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, transfer_amount])
+
         call_data: list = [data_0, data_1, data_2, data_3]
 
-        # TODO Use estimate result method to count transaction fees. Waiting for developers to fix it.
         trx_estimate_obj_list: list[ScheduledTrxEstimateRequest] = []
         for i in range(trx_count):
             trx_estimate_obj_list.append(
-                ScheduledTrxEstimateRequest(neon_user.checksum_address, self.erc20.address, call_data[i])
+                ScheduledTrxEstimateRequest(
+                    neon_user.checksum_address, self.erc20.address, call_data[i], child_transaction="0xFFFF"
+                )
             )
         estimate_result = self.web3_client_sol.estimate_scheduled(
             neon_user.solana_account.pubkey(), trx_estimate_obj_list
@@ -109,8 +86,9 @@ class ScheduledTxTasksSet(NeonProxyTasksSet):
         trxs = []
         for i in range(trx_count):
             trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
+
         tree_acc_data = CreateTreeAccMultipleData(
-            nonce=nonce,
+            nonce=estimate_result["nonce"],
             max_fee_per_gas=estimate_result["maxFeePerGas"],
             max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
         )
@@ -120,26 +98,11 @@ class ScheduledTxTasksSet(NeonProxyTasksSet):
         tree_acc_data.add_trx(trxs[3], 0xFFFF, 0)
 
         self.evm_loader.create_tree_account_multiple(
-            neon_user,
-            self.treasury_pool,
-            tree_acc_data.data,
-            wSOL["address_spl"],
-            chain_id=self.web3_client_sol.chain_id,
+            neon_user, self.treasury_pool, tree_acc_data.data, wSOL["address_spl"]
         )
         self.web3_client_sol.send_all_scheduled_transactions(trxs)
-
         for trx in trxs:
-            assert (
-                self.web3_client_sol.wait_for_transaction_receipt(trx.hash(), timeout=180)["status"] == 1
-            ), f"transaction_{trx.index} failed"
-
-        balance_pda = self.erc20.contract.functions.balanceOfPDA(neon_user.checksum_address).call()
-        balance_ata = self.erc20.contract.functions.balanceOfATA(neon_user.checksum_address).call()
-
-        recipient_balance = self.erc20.get_balance(recipient.checksum_address)
-        assert recipient_balance == transfer_amount * 2
-        assert balance_pda == amount_to_transfer - transfer_amount * 2 - burn_amount
-        assert balance_ata == amount_to_transfer
+            check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex())
 
 
 class ScheduledTxUser(User):

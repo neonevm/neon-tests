@@ -89,6 +89,7 @@ class NeonWeb3ClientExt(NeonChainWeb3Client):
 
 @dataclass
 class NeonGlobalEnv:
+    id = 0
     accounts = []
     counter_contracts = []
     erc20_contracts = {}

@@ -50,7 +50,10 @@ class ScheduledTxTasksSet(NeonProxyTasksSet):
         return random.choice(self.user.environment.shared.accounts)
 
     def get_neon_user(self):
-        item = random.choice(self.erc20_info["neon_users"])
+        id = self.user.environment.shared.id
+        index = id % len(self.erc20_info["neon_users"])
+        item = self.erc20_info["neon_users"][index]
+        self.user.environment.shared.id = id + 1
         account = bytes(item, encoding="raw_unicode_escape")
         return NeonUser(evm_loader_id=self.evm_loader.loader_id, keypair=Keypair.from_bytes(account))
 
@@ -58,7 +61,7 @@ class ScheduledTxTasksSet(NeonProxyTasksSet):
     def task_send_scheduled_tx(self):
         """Send scheduled transactions"""
         neon_user = self.get_neon_user()
-        recipient = self.get_neon_user()
+        recipient = NeonUser(self.evm_loader.loader_id)
 
         transfer_amount = 50
         burn_amount = 25

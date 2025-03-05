@@ -32,6 +32,7 @@ with open("envs.json", "r") as f:
 
 network = config["network"]
 neon_users_number = int(config["neon_users"])
+neon_user_balance = 80_000
 environment = credentials[network]
 
 
@@ -97,7 +98,7 @@ for i in range(neon_users_number):
                 neon_user.solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed
             )
     print(f"Pop up {i} neon user balance...")
-    erc20.pop_up_balance(evm_loader, recipient=neon_user, pda_amount=10_000, ata_amount=10_000)
+    erc20.pop_up_balance(evm_loader, recipient=neon_user, pda_amount=neon_user_balance, ata_amount=neon_user_balance)
 
 contract_info = {
     "address": erc20.contract.address,

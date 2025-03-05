@@ -60,8 +60,8 @@ class ScheduledTxTasksSet(NeonProxyTasksSet):
         neon_user = self.get_neon_user()
         recipient = self.get_neon_user()
 
-        transfer_amount = 100
-        burn_amount = 50
+        transfer_amount = 50
+        burn_amount = 25
         approve_amount = 1000
         trx_count = 4
 

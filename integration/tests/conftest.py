@@ -31,7 +31,7 @@ from utils.operator import Operator
 from utils.prices import get_sol_price_with_retry
 from utils.solana_client import SolanaClient
 from utils.web3client import NeonChainWeb3Client, Web3Client
-from basic.helpers.chains import make_nonce_the_biggest_for_chain
+from .basic.helpers.chains import make_nonce_the_biggest_for_chain
 
 log = logging.getLogger(__name__)
 

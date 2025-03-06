@@ -4,6 +4,7 @@ import pytest
 
 import allure
 
+from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 from utils.accounts import EthAccounts
 from utils.models.result import EthGetBlockByHashResult
 from utils.web3client import NeonChainWeb3Client
@@ -59,7 +60,7 @@ class TestBlockTimestampAndNumber:
 
         assert contract.functions.accrualBlockTimestamp().call() <= int(tx_block_timestamp, 16)
 
-    def test_block_timestamp_in_mapping(self, block_timestamp_contract, json_rpc_client):
+    def test_block_timestamp_in_mapping(self, block_timestamp_contract, json_rpc_client, sol_client):
         contract, _ = block_timestamp_contract
         sender_account = self.accounts[0]
 
@@ -67,9 +68,10 @@ class TestBlockTimestampAndNumber:
         v2 = random.randint(1, 100)
         tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = contract.functions.addDataToMapping(v1, v2).build_transaction(tx)
+        instruction_tx["gas"] *= 3  # to avoid out of gas
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert self.web3_client.is_trx_iterative(receipt["transactionHash"].hex())
-        assert receipt["status"] == 1
+        check_trx_is_success(self.web3_client, sol_client, receipt["transactionHash"].hex())
         response = json_rpc_client.send_rpc(method="eth_getBlockByHash", params=[receipt["blockHash"].hex(), False])
         tx_block_timestamp = EthGetBlockByHashResult(**response).result.timestamp
 

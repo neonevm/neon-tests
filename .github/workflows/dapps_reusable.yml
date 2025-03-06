@@ -767,7 +767,7 @@ jobs:
         run: |
           cat cost_reports.md >> $GITHUB_STEP_SUMMARY
       - name: "Add PR comment with cost report data"
-        if: ${{ inputs.pr_url_for_report != '' }}
+        if: ${{ inputs.pr_url_for_report != '' && inputs.pr_url_for_report !='/comments' }}
         run: |
           python3 ./clickfile.py dapps add_pr_comment \
           --pr_url_for_report="${{ inputs.pr_url_for_report }}" \

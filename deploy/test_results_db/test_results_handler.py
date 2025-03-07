@@ -1,14 +1,13 @@
 import textwrap
 from decimal import Decimal, ROUND_HALF_UP
 
-import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 
 
 class TestResultsHandler:
-
     @staticmethod
     def generate_and_save_plots_pdf(
         historical_data: pd.DataFrame,
@@ -30,7 +29,7 @@ class TestResultsHandler:
         latest_report_data = historical_data[historical_data["timestamp"] == latest_timestamp]
         dapp_names = latest_report_data["dapp_name"].unique()
         metrics = ["acc_count", "trx_count", "gas_estimated", "gas_used", "gas_used_%", "compute_units"]
-        historical_data = historical_data.sort_values(by=["timestamp"])
+        historical_data = historical_data.sort_values(by=["tag_natural_sorting", "timestamp"])
 
         unique_timestamps = historical_data["timestamp"].unique().tolist()
         x_tick_labels = historical_data.groupby("timestamp")["tag"].first().tolist()
@@ -93,7 +92,9 @@ class TestResultsHandler:
                                     )
                                     data_subset = pd.concat([data_subset, new_row], ignore_index=True)
 
-                        data_subset = data_subset.sort_values(by="timestamp").reset_index(drop=True)
+                        data_subset = data_subset.sort_values(
+                            by=["tag_natural_sorting", "timestamp"],
+                        ).reset_index(drop=True)
 
                         if not data_subset.empty:
                             prev_value = None

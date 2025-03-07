@@ -1,5 +1,4 @@
 import logging
-import random
 import typing as tp
 
 from eth_account import Account
@@ -43,9 +42,6 @@ class ScheduledTxTasksSet(NeonProxyTasksSet):
             contract_address=self.erc20_info["address"],
             account=account,
         )
-
-    def get_account(self):
-        return random.choice(self.user.environment.shared.accounts)
 
     def get_neon_user(self):
         id = self.user.environment.shared.id

@@ -34,7 +34,7 @@ To prepare data for the scenario you should run a script from `loadtesting/proxy
 ./clickfile.py locust prepare-scheduled --network local --neon_users 10
 ```
 
-To run the scenario:
+To run the scenario via locust native command:
 ```bash
 locust -f ./loadtesting/proxy/tests/scheduled_tx.py --host=local -t 300 -u 2 -r 1 --logfile load_run.log
 ```

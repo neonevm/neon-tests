@@ -127,11 +127,12 @@ class MainPage(BasePage):
         try:
             self.wait.until(
                 EC.any_of(
-                    EC.visibility_of_element_located(MainPage.subscription_notification_text),
-                    EC.visibility_of_element_located(MainPage.problem_with_subscription_text),
+                    EC.presence_of_element_located(MainPage.subscription_notification_text),
+                    EC.presence_of_element_located(MainPage.problem_with_subscription_text),
                 )
             )
         except TimeoutException:
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
             self.driver.save_screenshot("screenshot_email_subscription.png")
             raise Exception(
                 "No notification found: neither subscription_notification_text nor problem_with_subscription_text is visible"

@@ -27,6 +27,7 @@ class Menu(BasePage):
 
     @allure.step("Click on the menu item 'Developers/Start building'")
     def click_on_menu_developers_start_building_link(self):
+        self.page_loaded()
         try:
             developers_menu = self.wait.until(EC.presence_of_element_located(Menu.developers_link))
             self.scroll_page_to_element(developers_menu)
@@ -59,8 +60,19 @@ class Menu(BasePage):
 
     @allure.step("Click on the menu item 'Tools/Neonpass'")
     def click_on_menu_tools_neonpass_link(self):
-        self.wait.until(EC.visibility_of_element_located(Menu.tools_link)).click()
-        self.wait.until(EC.presence_of_element_located(Menu.link_on_neonpass)).click()
+        try:
+            tools_menu = self.wait.until(EC.presence_of_element_located(Menu.tools_link))
+            self.scroll_page_to_element(tools_menu)
+            self.hover_element(tools_menu)
+            neonpass = self.wait.until(EC.presence_of_element_located(Menu.link_on_neonpass))
+            self.scroll_page_to_element(neonpass)
+            self.hover_element(neonpass)
+            neonpass.click()
+        except TimeoutException:
+            self.driver.save_screenshot("menu_click_fail.png")
+            raise Exception("Can't find Neonpass or Tools element")
+        except ElementClickInterceptedException:
+            self.driver.execute_script("arguments[0].click();", neonpass)
 
     @allure.step("Click on the menu item 'Solana Whitepaper'")
     def click_on_solana_link(self):

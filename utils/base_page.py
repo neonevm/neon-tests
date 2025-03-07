@@ -17,6 +17,10 @@ class BasePage(abc.ABC):
         self.wait = WebDriverWait(self.driver, 10)
         self.url = url or self._url
 
+    def page_loaded(self):
+        page_state = self.driver.execute_script("return document.readyState;")
+        return page_state == "complete"
+
     def select_option_by_text(self, locator, text):
         sel = Select(locator)
         sel.select_by_visible_text(text)

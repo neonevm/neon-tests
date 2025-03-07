@@ -31,7 +31,7 @@ Test configuration via environment variables settings:
 ## Run load test for scheduled txs
 To prepare data for the scenario you should run a script from `loadtesting/proxy/deploy_contract_scripts/erc20_deploy.py`. Network and neon users number shoud be passed as arguments:
 ```bash
-python3.10 erc20_deploy.py -n local -u 300
+./clickfile.py locust prepare-scheduled --network local --neon_users 10
 ```
 
 To run the scenario:

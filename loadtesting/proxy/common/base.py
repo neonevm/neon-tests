@@ -263,7 +263,7 @@ class NeonProxyTasksSet(TaskSet):
         return helpers.get_contract_interface(name, version, contract_name=contract_name)
 
     def get_erc20_info(self):
-        path = pathlib.Path().absolute() / "loadtesting/proxy/data/contract_info.json"
+        path = pathlib.Path().absolute() / "loadtesting/proxy/data/scheduled_test_info.json"
         with open(path, "r") as fp:
             f = json.load(fp)
         return f

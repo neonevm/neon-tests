@@ -35,7 +35,7 @@ class ScheduledTxTasksSet(NeonProxyTasksSet):
             self.faucet,
             f"Test {symbol}",
             symbol,
-            self.sol_client,
+            self.evm_loader,
             solana_account=self.solana_account,
             mintable=True,
             bank_account=self.bank_account,

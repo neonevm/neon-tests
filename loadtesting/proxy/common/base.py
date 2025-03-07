@@ -20,9 +20,7 @@ from solana.rpc import commitment
 from utils import helpers
 from utils.faucet import Faucet
 from utils.web3client import NeonChainWeb3Client
-from utils.solana_client import SolanaClient
 from gevent.pool import Pool
-
 from utils.evm_loader import EvmLoader
 from utils.types import TreasuryPool
 from utils.consts import LAMPORT_PER_SOL
@@ -137,7 +135,6 @@ class NeonProxyTasksSet(TaskSet):
     solana_account: tp.Optional[Keypair] = None
     web3_client: tp.Optional[NeonWeb3ClientExt] = None
     web3_client_sol: tp.Optional[NeonWeb3ClientExt] = None
-    sol_client: tp.Optional[SolanaClient] = None
     evm_loader: tp.Optional[EvmLoader] = None
     treasury_pool: tp.Optional[TreasuryPool] = None
     erc20_info: tp.Optional[dict] = {}
@@ -176,9 +173,6 @@ class NeonProxyTasksSet(TaskSet):
 
         LOG.info(f"Create web3 sol client to: {self.credentials['proxy_url']}")
         self.web3_client_sol = NeonWeb3ClientExt(self.credentials["proxy_url"] + "/sol")
-
-        LOG.info(f"Create solana client to: {self.credentials['solana_url']}")
-        self.sol_client = SolanaClient(self.credentials["solana_url"])
 
         self.faucet = Faucet(self.credentials["faucet_url"], self.web3_client, session=session)
         self.evm_loader = EvmLoader(
@@ -277,9 +271,9 @@ class NeonProxyTasksSet(TaskSet):
     @events.test_stop.add_listener
     def refund_to_bank(self):
         if self.network != "local" and self.credentials["use_bank"]:
-            balance = self.sol_client.get_balance(self.solana_account.pubkey(), commitment=commitment.Confirmed).value
+            balance = self.evm_loader.get_balance(self.solana_account.pubkey(), commitment=commitment.Confirmed).value
             try:
-                self.sol_client.send_sol(self.solana_account, self.bank_account.pubkey(), balance - 5000)
+                self.evm_loader.send_sol(self.solana_account, self.bank_account.pubkey(), balance - 5000)
             except Exception as e:
                 LOG.info(f"Failed to send sol to bank: {e}")
                 LOG.info(f"Bank account private key: {self.bank_account.private_key}")

@@ -20,7 +20,6 @@ from web3.types import TxReceipt
 
 from clickfile import EnvName
 from conftest import EnvironmentConfig
-from integration.tests.basic.helpers.chains import make_nonce_the_biggest_for_chain
 from utils.accounts import EthAccounts
 from utils.apiclient import JsonRPCSession
 from utils.consts import COUNTER_ID, LAMPORT_PER_SOL, MULTITOKEN_MINTS
@@ -32,6 +31,7 @@ from utils.operator import Operator
 from utils.prices import get_sol_price_with_retry
 from utils.solana_client import SolanaClient
 from utils.web3client import NeonChainWeb3Client, Web3Client
+from .basic.helpers.chains import make_nonce_the_biggest_for_chain
 
 log = logging.getLogger(__name__)
 
@@ -566,6 +566,13 @@ def counter_contract(web3_client, accounts) -> Contract:
 
 
 @pytest.fixture(scope="class")
+def counter_contract_sol_chain(web3_client_sol, account_with_all_tokens, web3_client) -> tp.Any:
+    make_nonce_the_biggest_for_chain(account_with_all_tokens, web3_client_sol, [web3_client])
+    contract, _ = web3_client_sol.deploy_and_get_contract("common/Counter", "0.8.10", account_with_all_tokens)
+    yield contract
+
+
+@pytest.fixture(scope="class")
 def nested_call_contracts(accounts, web3_client) -> tp.Generator[tuple[Contract, Contract, Contract], None, None]:
     contract_a, _ = web3_client.deploy_and_get_contract(
         "common/NestedCallsChecker", "0.8.12", accounts[0], contract_name="A"
@@ -607,6 +614,18 @@ def expected_error_checker(accounts, web3_client) -> tp.Generator[Contract, None
         "common/ExpectedErrorsChecker", "0.8.12", accounts[0], contract_name="A"
     )
     yield contract
+
+
+@pytest.fixture(scope="class")
+def multiple_actions_erc20(web3_client_session, accounts, erc20_spl_mintable):
+    contract, contract_deploy_tx = web3_client_session.deploy_and_get_contract(
+        "EIPs/ERC20/MultipleActions",
+        "0.8.24",
+        accounts[0],
+        contract_name="MultipleActionsERC20",
+        constructor_args=["Test TTT", "TTT", 18],
+    )
+    return accounts[0], contract
 
 
 @pytest.fixture(scope="class")

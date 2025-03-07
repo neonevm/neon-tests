@@ -90,18 +90,6 @@ def invalid_nft_receiver(web3_client_session, faucet, accounts):
 
 
 @pytest.fixture(scope="class")
-def multiple_actions_erc20(web3_client_session, accounts, erc20_spl_mintable):
-    contract, contract_deploy_tx = web3_client_session.deploy_and_get_contract(
-        "EIPs/ERC20/MultipleActions",
-        "0.8.24",
-        accounts[0],
-        contract_name="MultipleActionsERC20",
-        constructor_args=["Test TTT", "TTT", 18],
-    )
-    return accounts[0], contract
-
-
-@pytest.fixture(scope="class")
 def multiple_actions_erc20_new(web3_client_session, accounts, erc20_spl_mintable_new):
     contract, contract_deploy_tx = web3_client_session.deploy_and_get_contract(
         "EIPs/ERC20/MultipleActionsNew",

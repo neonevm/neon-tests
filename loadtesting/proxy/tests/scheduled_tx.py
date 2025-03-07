@@ -44,8 +44,6 @@ class ScheduledTxTasksSet(NeonProxyTasksSet):
             account=account,
         )
 
-        self.erc20.mint_tokens(self.erc20.account, self.erc20.account.address)
-
     def get_account(self):
         return random.choice(self.user.environment.shared.accounts)
 
@@ -112,7 +110,7 @@ class ScheduledTxTasksSet(NeonProxyTasksSet):
         )
         self.web3_client_sol.send_all_scheduled_transactions(trxs)
         for trx in trxs:
-            check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex())
+            check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex(), timeout=240)
 
 
 class ScheduledTxUser(User):

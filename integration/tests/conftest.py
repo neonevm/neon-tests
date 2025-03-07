@@ -20,7 +20,6 @@ from web3.types import TxReceipt
 
 from clickfile import EnvName
 from conftest import EnvironmentConfig
-from integration.tests.basic.helpers.chains import make_nonce_the_biggest_for_chain
 from utils.accounts import EthAccounts
 from utils.apiclient import JsonRPCSession
 from utils.consts import COUNTER_ID, LAMPORT_PER_SOL, MULTITOKEN_MINTS

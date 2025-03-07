@@ -24,7 +24,7 @@ class TestDebugTraceIterativeTransaction:
     accounts: EthAccounts
     tracer_api: TracerClient
 
-    @pytest.mark.skip(reason="NDEV-3595")
+    @pytest.mark.skip(reason="NDEV-3595, take NDEV-3611 after the fix")
     def test_trace_iterative_tx_struct_opcode_tracer(self, counter_contract):
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(from_=sender_account)
@@ -171,7 +171,7 @@ class TestDebugTraceIterativeTransaction:
         assert response["result"]["type"] == "CALL"
         assert "error" not in response["result"]
 
-    @pytest.mark.skip(reason="NDEV-3591")
+    @pytest.mark.skip(reason="NDEV-3591, take NDEV-3610 after the fix")
     def test_trace_scheduled_tx(self, web3_client_sol, neon_user, common_contract, evm_loader, treasury_pool):
         contract_data = 18
         data = decode_function_signature("setNumber(uint256)", [contract_data])

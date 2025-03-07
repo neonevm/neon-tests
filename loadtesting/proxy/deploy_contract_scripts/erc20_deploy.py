@@ -10,9 +10,9 @@ from solana.rpc import commitment
 from utils.erc20wrapper import ERC20NewWrapper
 from utils.faucet import Faucet
 from utils.web3client import NeonChainWeb3Client
-from utils.solana_client import SolanaClient
 from utils.evm_loader import EvmLoader
 from utils.neon_user import NeonUser
+from deploy.cli.network_manager import NetworkManager
 from utils.consts import LAMPORT_PER_SOL
 from clickfile import EXTERNAL_CONTRACT_PATH
 
@@ -27,17 +27,14 @@ parser.add_argument("-u", "--neon_users", help="number of neon users that are ne
 args = parser.parse_args()
 config = vars(args)
 
-with open("envs.json", "r") as f:
-    credentials = json.load(f)
 
-network = config["network"]
 neon_users_number = int(config["neon_users"])
 neon_user_balance = 80_000
-environment = credentials[network]
+network_manager = NetworkManager()
+environment = network_manager.get_network_object(config["network"])
 contract_info = {}
 
 
-sol_client = SolanaClient(environment["solana_url"])
 web3_client = NeonChainWeb3Client(environment["proxy_url"])
 faucet = Faucet(environment["faucet_url"], web3_client)
 
@@ -51,8 +48,8 @@ evm_loader = EvmLoader(
 
 # set bank account if needed
 bank_account = None
-if network != "local" and environment["use_bank"]:
-    if network == "devnet":
+if config["network"] != "local" and environment["use_bank"]:
+    if config["network"] == "devnet":
         private_key = os.environ.get("BANK_PRIVATE_KEY")
     else:
         raise ValueError("set BANK_PRIVATE_KEY env variable")
@@ -62,14 +59,13 @@ if network != "local" and environment["use_bank"]:
 # create solana account
 solana_account = Keypair()
 
-if network != "local" and environment["use_bank"]:
+if config["network"] != "local" and environment["use_bank"]:
     evm_loader.send_sol(bank_account, solana_account.pubkey(), int(1 * LAMPORT_PER_SOL))
 else:
     evm_loader.request_airdrop(solana_account.pubkey(), 1 * LAMPORT_PER_SOL)
 contract_info["solana_account"] = bytes(solana_account).decode(encoding="raw_unicode_escape")
 # create owner
 eth_account = web3_client.create_account_with_balance(faucet, bank_account=bank_account)
-
 
 try:
     # deploy a new erc20 contract
@@ -80,7 +76,7 @@ try:
         faucet,
         f"Test {symbol}",
         symbol,
-        sol_client,
+        evm_loader,
         solana_account=solana_account,
         mintable=True,
         bank_account=bank_account,
@@ -91,7 +87,6 @@ try:
     contract_info["address"] = erc20.contract.address
     contract_info["owner_key"] = web3_client.to_hex(eth_account.key)
     contract_info["owner_address"] = eth_account.address
-    contract_info["address"] = erc20.contract.address
     contract_info["symbol"] = symbol
 
     neon_users_info = []
@@ -101,7 +96,7 @@ try:
         print(f"Creating {i} neon user...")
         neon_user = NeonUser(evm_loader.loader_id, keypair=neon_solana_account)
         balance = evm_loader.get_solana_balance(neon_user.solana_account.pubkey())
-        if network not in ["devnet"]:
+        if config["network"] not in ["devnet"]:
             if balance < 5 * LAMPORT_PER_SOL:
                 evm_loader.request_airdrop(
                     neon_user.solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed
@@ -113,7 +108,7 @@ try:
 
     contract_info["neon_users"] = neon_users_info
 except Exception as e:
-    print(f"Error in erc20 contract and neon users preparstion: {e}")
+    print(f"Error in erc20 contract and neon users preparation: {e}")
 finally:
     with open("./loadtesting/proxy/data/contract_info.json", "w+") as f:
         json.dump(contract_info, f)

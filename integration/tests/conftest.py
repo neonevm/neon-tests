@@ -565,7 +565,7 @@ def counter_contract(web3_client, accounts) -> Contract:
 
 
 @pytest.fixture(scope="class")
-def counter_contract_sol_chain(web3_client_sol, account_with_all_tokens) -> tp.Any:
+def counter_contract_sol_chain(web3_client_sol, account_with_all_tokens, web3_client) -> tp.Any:
     make_nonce_the_biggest_for_chain(account_with_all_tokens, web3_client_sol, [web3_client])
     contract, _ = web3_client_sol.deploy_and_get_contract("common/Counter", "0.8.10", account_with_all_tokens)
     yield contract

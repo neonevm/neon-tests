@@ -11,31 +11,6 @@ data "hcloud_ssh_key" "ci-ssh-key" {
   name = "hcloud-ci-stands"
 }
 
-variable "branch" {
-  type = string
-}
-
-
-variable "proxy_model_commit" {
-  type = string
-}
-
-variable "proxy_image_tag" {
-  type = string
-}
-
-variable "neon_evm_commit" {
-  type = string
-}
-
-variable "devnet_solana_url" {
-  type = string
-}
-
-variable "faucet_model_commit" {
-  type = string
-}
-
 data "template_file" "solana_init" {
   template = file("solana_init.sh")
 
@@ -62,5 +37,6 @@ data "template_file" "proxy_init" {
     faucet_model_commit = var.faucet_model_commit
     dockerhub_org_name  = var.dockerhub_org_name
     use_real_price      = var.use_real_price
+    devnet_solana_url   = var.devnet_solana_url
   }
 }

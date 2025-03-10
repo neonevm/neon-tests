@@ -12,6 +12,7 @@ from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import NeonEventType, SolanaInstruction
 from utils.models.result import NeonGetTransactionResult, SolanaByNeonTransaction
 from utils.solana_client import SolanaClient
+from utils.solana_logs_helper import get_solana_trx_cancel_reason
 from utils.web3client import Web3Client
 
 NoneType = type(None)
@@ -433,3 +434,11 @@ def assert_solana_address_was_not_used_in_trx(
     sol_trx = web3_client.get_solana_trx_by_neon(neon_trx)["result"][0]
     sol_accounts = sol_client.get_account_keys_for_transaction(sol_trx)
     assert Pubkey.from_string(solana_address) not in sol_accounts, f"Address {solana_address} is in the account list"
+
+
+@allure.step("Check the transaction is success")
+def check_trx_is_success(web3_client: Web3Client, sol_client: SolanaClient, tx_hash, timeout=120):
+    assert web3_client.wait_for_transaction_receipt(tx_hash, timeout=timeout)["status"] == 1, (
+        f"transaction {tx_hash} failed, "
+        f"Trx cancel reason: {get_solana_trx_cancel_reason(web3_client, sol_client, tx_hash)}"
+    )

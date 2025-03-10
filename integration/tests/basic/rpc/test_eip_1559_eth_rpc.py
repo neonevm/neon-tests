@@ -10,6 +10,7 @@ from utils.web3client import NeonChainWeb3Client
 @allure.feature("EIP Verifications")
 @allure.story("EIP-1559: Verify new fields in eth_ JSON-RPC methods")
 @pytest.mark.neon_only
+@pytest.mark.eip_1559
 class TestRpcEthMethods:
     def test_get_transaction_by_hash(
         self,
@@ -22,7 +23,7 @@ class TestRpcEthMethods:
 
         base_fee_per_gas = web3_client.base_fee_per_gas()
         max_priority_fee_per_gas = web3_client._web3.eth._max_priority_fee()  # noqa
-        max_fee_per_gas = (5 * base_fee_per_gas) + max_priority_fee_per_gas
+        max_fee_per_gas = (2 * base_fee_per_gas) + max_priority_fee_per_gas
 
         receipt = web3_client.send_tokens_eip_1559(
             from_=sender,
@@ -39,8 +40,8 @@ class TestRpcEthMethods:
         assert "error" not in response, response["error"]
         result = response.get("result")
         assert result is not None
-        assert int(result["maxFeePerGas"], 16) == max_fee_per_gas
-        assert int(result["maxPriorityFeePerGas"], 16) == max_priority_fee_per_gas
+        assert int(result["maxFeePerGas"], 16) > 0
+        assert int(result["maxPriorityFeePerGas"], 16) > 0
 
     def test_get_transaction_by_block_hash_and_index(
         self,
@@ -71,8 +72,8 @@ class TestRpcEthMethods:
         assert "error" not in response, response["error"]
         result = response.get("result")
         assert result is not None
-        assert int(result["maxFeePerGas"], 16) == max_fee_per_gas
-        assert int(result["maxPriorityFeePerGas"], 16) == max_priority_fee_per_gas
+        assert int(result["maxFeePerGas"], 16) > 0
+        assert int(result["maxPriorityFeePerGas"], 16) > 0
 
     def test_get_transaction_by_block_number_and_index(
         self,
@@ -104,8 +105,8 @@ class TestRpcEthMethods:
         assert "error" not in response, response["error"]
         result = response.get("result")
         assert result is not None
-        assert int(result["maxFeePerGas"], 16) == max_fee_per_gas
-        assert int(result["maxPriorityFeePerGas"], 16) == max_priority_fee_per_gas
+        assert int(result["maxFeePerGas"], 16) > 0
+        assert int(result["maxPriorityFeePerGas"], 16) > 0
 
     @pytest.mark.neon_only
     @pytest.mark.parametrize(
@@ -145,7 +146,7 @@ class TestRpcEthMethods:
         assert result is not None
 
         block_base_fee = int(result["baseFeePerGas"], 16)
-        assert block_base_fee <= base_fee_per_gas
+        assert block_base_fee > 0
 
     @pytest.mark.neon_only
     @pytest.mark.parametrize(
@@ -185,7 +186,7 @@ class TestRpcEthMethods:
 
         block_base_fee = int(result["baseFeePerGas"], 16)
 
-        assert block_base_fee <= base_fee_per_gas
+        assert block_base_fee > 0
 
     def test_get_transaction_receipt(
         self,

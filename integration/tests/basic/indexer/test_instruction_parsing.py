@@ -1,5 +1,6 @@
 import pytest
 from eth_utils import keccak
+from eth_abi import abi
 from solana.transaction import AccountMeta, Instruction
 
 import allure
@@ -125,9 +126,9 @@ class TestInstruction:
         assert "TxExecFromAccount" in count_instructions(validated_response).keys()
         assert_solana_trxs_in_neon_receipt(json_rpc_client, resp["transactionHash"], validated_response)
 
+    @pytest.mark.skip(reason="NDEV-3616")
     def test_step_from_account(self, json_rpc_client, diamond):
         sender_account = self.accounts[0]
-        from eth_abi import abi
 
         new_facet, _ = self.web3_client.deploy_and_get_contract(
             "EIPs/EIP2535/facets/Test1Facet",

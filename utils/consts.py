@@ -13,10 +13,10 @@ MAX_UINT_64 = 2**64
 COMPUTE_BUDGET_ID: Pubkey = Pubkey.from_string("ComputeBudget111111111111111111111111111111")
 MEMO_PROGRAM_ID: Pubkey = Pubkey.from_string("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr")
 SOLANA_CALL_PRECOMPILED_ID: Pubkey = Pubkey.from_string("83fAnx3LLG612mHbEh4HzXEpYwvSB5fqpwUS3sZkRuUB")
-COUNTER_ID: Pubkey = Pubkey.from_string("4RJAXLPq1HrXWP4zFrMhvB5drrzqrRFwaRVNUnALcaeh")
+COUNTER_ID: Pubkey = Pubkey.from_string("FUVnLFCgK48arAUgngmyYkSSKKD2PpjsneNTyigbe4oh")
 TRANSFER_SOL_ID: Pubkey = Pubkey.from_string("6x9dAYQehxXLh16EHAKXevnQADTZPKP6ZT4t8BfNDxtB")
 TRANSFER_TOKENS_ID: Pubkey = Pubkey.from_string("BFsGPJUwgE1rz4eoL322HaKZYNZ5wDLafwYtKwomv2XF")
-TEST_INVOKE_ID: Pubkey = Pubkey.from_string("AkAMQQTRE1sf4gKCgJy1qqQ7FVA17HZkQxMm5mGK4yQS")
+TEST_INVOKE_ID: Pubkey = Pubkey.from_string("2Uax3YiG6wiAcCdDCAZwKSuzi47w3cidMRQQnteMJJCT")
 QUERY_ACCOUNT_ID: Pubkey = Pubkey.from_string("Fbc3Hf6FK7wCQjQHq9qS2phvhujfkfMQQWLsyA5s4oSu")
 
 SPL_TOKEN_ADDRESS = "0xFf00000000000000000000000000000000000004"
@@ -64,10 +64,7 @@ wSOL = {
     "logo_uri": "",
 }
 
-MULTITOKEN_MINTS = {
-    "USDT": "2duuuuhNJHUYqcnZ7LKfeufeeTBgSJdftf2zM3cZV6ym",
-    "ETH": "EwJYd3UAFAgzodVeHprB2gMQ68r4ZEbbvpoVzCZ1dGq5",
-}
+MULTITOKEN_MINTS_USDT = "2duuuuhNJHUYqcnZ7LKfeufeeTBgSJdftf2zM3cZV6ym"
 
 
 class InstructionTags(bytes, Enum):
@@ -96,3 +93,5 @@ class InstructionTags(bytes, Enum):
     SCHEDULED_TRANSACTION_CREATE = b"\x4A"
     SCHEDULED_TRANSACTION_CREATE_MULTIPLE = b"\x4B"
     SCHEDULED_TRANSACTION_DESTROY = b"\x4C"
+    SET_COMPUTE_UNIT_PRICE = b"\x03"
+    SET_COMPUTE_UNIT_LIMIT = b"\x02"

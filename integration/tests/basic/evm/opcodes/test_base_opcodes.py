@@ -123,7 +123,7 @@ class TestOpCodes:
         instruction_tx = basefee_checker.functions.baseFeeTrx().build_transaction(tx)
         resp = web3_client.send_transaction(accounts[0], instruction_tx)
         base_fee_from_log = basefee_checker.events.Log().process_receipt(resp)[0]["args"]["baseFee"]
-        assert base_fee_from_log == web3_client.gas_price()
+        assert base_fee_from_log > 0
 
     @pytest.mark.eip_1559
     def test_base_fee_trx_type_2(

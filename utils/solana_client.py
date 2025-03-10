@@ -178,7 +178,7 @@ class SolanaClient(solana.rpc.api.Client):
                 from_pubkey=payer.pubkey(), to_pubkey=account.pubkey(), lamports=lamports, space=size, owner=owner
             )
         )
-        self.send_tx(trx.add(instr), payer, account)
+        self.send_tx_and_check_status_ok(trx.add(instr), payer, account)
         return account
 
     def transaction_contains_call_to_program(

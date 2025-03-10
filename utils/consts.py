@@ -64,10 +64,7 @@ wSOL = {
     "logo_uri": "",
 }
 
-MULTITOKEN_MINTS = {
-    "USDT": "2duuuuhNJHUYqcnZ7LKfeufeeTBgSJdftf2zM3cZV6ym",
-    "ETH": "EwJYd3UAFAgzodVeHprB2gMQ68r4ZEbbvpoVzCZ1dGq5",
-}
+MULTITOKEN_MINTS_USDT = "2duuuuhNJHUYqcnZ7LKfeufeeTBgSJdftf2zM3cZV6ym"
 
 
 class InstructionTags(bytes, Enum):

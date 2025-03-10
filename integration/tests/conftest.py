@@ -22,7 +22,7 @@ from clickfile import EnvName
 from conftest import EnvironmentConfig
 from utils.accounts import EthAccounts
 from utils.apiclient import JsonRPCSession
-from utils.consts import COUNTER_ID, LAMPORT_PER_SOL, MULTITOKEN_MINTS
+from utils.consts import COUNTER_ID, LAMPORT_PER_SOL, MULTITOKEN_MINTS_USDT
 from utils.erc20 import ERC20
 from utils.erc20wrapper import ERC20Wrapper, ERC20NewWrapper
 from utils.evm_loader import EvmLoader
@@ -75,12 +75,6 @@ def web3_client_sol(environment: EnvironmentConfig) -> tp.Union[Web3Client, None
 def web3_client_usdt(environment: EnvironmentConfig) -> tp.Union[Web3Client, None]:
     if "usdt" in environment.network_ids:
         return Web3Client(f"{environment.proxy_url}/usdt")
-
-
-@pytest.fixture(scope="session")
-def web3_client_eth(environment: EnvironmentConfig) -> tp.Union[Web3Client, None]:
-    if "eth" in environment.network_ids:
-        return Web3Client(f"{environment.proxy_url}/eth")
 
 
 @pytest.fixture(scope="session")
@@ -342,7 +336,6 @@ def account_with_all_tokens(
     solana_account,
     web3_client_session,
     web3_client_usdt,
-    web3_client_eth,
     web3_client_sol,
     environment: EnvironmentConfig,
     faucet,
@@ -365,27 +358,21 @@ def account_with_all_tokens(
             neon_account,
             lamports,
         )
-    for client in [web3_client_usdt, web3_client_eth]:
-        if client:
-            if client == web3_client_usdt:
-                mint = MULTITOKEN_MINTS["USDT"]
-            else:
-                mint = MULTITOKEN_MINTS["ETH"]
-            token_mint = Pubkey.from_string(mint)
+    token_mint = Pubkey.from_string(MULTITOKEN_MINTS_USDT)
 
-            evm_loader.mint_spl_to(
-                token_mint,
-                solana_account,
-                1000000000000000,
-            )
+    evm_loader.mint_spl_to(
+        token_mint,
+        solana_account,
+        1000000000000000,
+    )
 
-            evm_loader.sent_token_from_solana_to_neon(
-                solana_account,
-                token_mint,
-                neon_account,
-                100000000,
-                client.eth.chain_id,
-            )
+    evm_loader.sent_token_from_solana_to_neon(
+        solana_account,
+        token_mint,
+        neon_account,
+        100000000,
+        web3_client_usdt.chain_id,
+    )
     return neon_account
 
 

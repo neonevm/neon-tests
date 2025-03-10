@@ -1,6 +1,5 @@
 import allure
 import pytest
-import base64
 from allure_commons.types import AttachmentType
 from selenium import webdriver
 from selenium.common import WebDriverException
@@ -93,19 +92,6 @@ def base_page(driver):
     return page
 
 
-def capture_full_page_screenshot(driver):
-    try:
-        screenshot = driver.execute_cdp_cmd("Page.captureScreenshot", {"format": "png", "captureBeyondViewport": True})
-        allure.attach(
-            base64.b64decode(screenshot["data"]),
-            name="full_page_screenshot_on_failure",
-            attachment_type=AttachmentType.PNG,
-        )
-
-    except WebDriverException as e:
-        print(f"Can't make a screen {e}")
-
-
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield
@@ -116,6 +102,8 @@ def pytest_runtest_makereport(item, call):
         if driver is not None:
             try:
                 if driver.session_id:
-                    capture_full_page_screenshot(driver)
+                    allure.attach(
+                        driver.get_screenshot_as_png(), name="screenshot_on_failure", attachment_type=AttachmentType.PNG
+                    )
             except WebDriverException:
                 pass

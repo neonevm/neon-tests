@@ -51,7 +51,6 @@ def prepare_locust(network, neon_users):
         evm_loader.send_sol(bank_account, solana_account.pubkey(), int(1 * LAMPORT_PER_SOL))
     else:
         evm_loader.request_airdrop(solana_account.pubkey(), 1 * LAMPORT_PER_SOL)
-    contract_info["solana_account"] = bytes(solana_account).decode(encoding="raw_unicode_escape")
 
     # create owner
     eth_account = account_manager.create_account()
@@ -73,10 +72,7 @@ def prepare_locust(network, neon_users):
         )
         erc20.mint_tokens(erc20.account, erc20.account.address)
 
-        contract_info["address"] = erc20.contract.address
-        contract_info["owner_key"] = web3_client.to_hex(eth_account.key)
-        contract_info["owner_address"] = eth_account.address
-        contract_info["symbol"] = symbol
+        contract_info["erc20_address"] = erc20.contract.address
 
         neon_users_info = []
         for i in range(neon_users):

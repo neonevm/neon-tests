@@ -1,14 +1,10 @@
 import logging
-import typing as tp
 
-from eth_account import Account
-from eth_account.signers.local import LocalAccount
 from solders.keypair import Keypair
 
 from utils.consts import wSOL
 from utils.helpers import decode_function_signature
 from utils.neon_user import NeonUser
-from utils.erc20wrapper import ERC20NewWrapper
 from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData, ScheduledTrxEstimateRequest
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 
@@ -22,26 +18,10 @@ LOG = logging.getLogger(__name__)
 class ScheduledTxTasksSet(NeonProxyTasksSet):
     """Implements Scheduled tx pipeline tasks"""
 
-    erc20: tp.Optional[ERC20NewWrapper] = None
-
     def on_start(self) -> None:
         super().on_start()
         super().setup()
         self.log = logging.getLogger("neon-consumer[%s]" % self.account.address[-8:])
-        symbol = self.erc20_info["symbol"]
-        account: LocalAccount = Account.from_key(self.erc20_info["owner_key"])
-        self.erc20 = ERC20NewWrapper(
-            self.web3_client,
-            self.faucet,
-            f"Test {symbol}",
-            symbol,
-            self.evm_loader,
-            solana_account=self.solana_account,
-            mintable=True,
-            bank_account=self.bank_account,
-            contract_address=self.erc20_info["address"],
-            account=account,
-        )
 
     def get_neon_user(self):
         id = self.user.environment.shared.id
@@ -73,7 +53,10 @@ class ScheduledTxTasksSet(NeonProxyTasksSet):
         for i in range(trx_count):
             trx_estimate_obj_list.append(
                 ScheduledTrxEstimateRequest(
-                    neon_user.checksum_address, self.erc20.address, call_data[i], child_transaction="0xFFFF"
+                    neon_user.checksum_address,
+                    self.erc20_info["erc20_address"],
+                    call_data[i],
+                    child_transaction="0xFFFF",
                 )
             )
         estimate_result = self.web3_client_sol.estimate_scheduled(

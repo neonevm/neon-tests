@@ -3,7 +3,6 @@ import json
 import logging
 import time
 import random
-import base58
 import pathlib
 import typing as tp
 import web3.types
@@ -14,7 +13,6 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 from eth_account.signers.local import LocalAccount
-from solders.keypair import Keypair
 from solana.rpc import commitment
 
 from utils import helpers
@@ -129,10 +127,8 @@ def load_credentials(environment: env.Environment, **kwargs):
 class NeonProxyTasksSet(TaskSet):
     """Implements base initialization, creates data requirements and helpers"""
 
-    faucet: tp.Optional[Faucet] = None
     bank_account = None
     account: tp.Optional[LocalAccount] = None
-    solana_account: tp.Optional[Keypair] = None
     web3_client: tp.Optional[NeonWeb3ClientExt] = None
     web3_client_sol: tp.Optional[NeonWeb3ClientExt] = None
     evm_loader: tp.Optional[EvmLoader] = None
@@ -182,22 +178,6 @@ class NeonProxyTasksSet(TaskSet):
             sol_chain_id=self.credentials["network_ids"]["sol"],
             neon_token_mint_str=self.credentials["spl_neon_mint"],
         )
-
-        if self.network != "local" and self.credentials["use_bank"]:
-            LOG.info("Setup bank account")
-            if self.network == "devnet":
-                private_key = os.environ.get("BANK_PRIVATE_KEY")
-            else:
-                raise ValueError("set BANK_PRIVATE_KEY or BANK_PRIVATE_KEY_MAINNET env variable")
-            key = base58.b58decode(private_key)
-            bank_account = Keypair.from_bytes(key)
-            self.bank_account = bank_account
-            LOG.info(f"Create bank account: {bank_account.pubkey()}")
-
-        solana_account_bytes = bytes(self.erc20_info["solana_account"], encoding="raw_unicode_escape")
-        self.solana_account = Keypair.from_bytes(solana_account_bytes)
-
-        LOG.info(f"Create solana account: {self.solana_account.pubkey()}")
 
         index = 2
         self.evm_loader.create_treasury_pool_address(index)
@@ -267,14 +247,3 @@ class NeonProxyTasksSet(TaskSet):
         with open(path, "r") as fp:
             f = json.load(fp)
         return f
-
-    @events.test_stop.add_listener
-    def refund_to_bank(self):
-        if self.network != "local" and self.credentials["use_bank"]:
-            balance = self.evm_loader.get_balance(self.solana_account.pubkey(), commitment=commitment.Confirmed).value
-            try:
-                self.evm_loader.send_sol(self.solana_account, self.bank_account.pubkey(), balance - 5000)
-            except Exception as e:
-                LOG.info(f"Failed to send sol to bank: {e}")
-                LOG.info(f"Bank account private key: {self.bank_account.private_key}")
-                LOG.info(f"Solana account public key: {self.solana_account.pubkey()}")

@@ -9,14 +9,13 @@ from spl.token.instructions import get_associated_token_address, create_associat
 from web3.types import TxReceipt
 from spl.token.constants import TOKEN_PROGRAM_ID
 
-from clickfile import EXTERNAL_CONTRACT_PATH
 from . import web3client, stats_collector
 from .evm_loader import EvmLoader
 from .metaplex import create_metadata_instruction_data, create_metadata_instruction
 from .neon_user import NeonUser
+from .consts import REMAPPING_ZEPPELIN
 
 INIT_TOKEN_AMOUNT = 1000000000000000
-REMAPPING_ZEPPELIN = {"@openzeppelin": str(EXTERNAL_CONTRACT_PATH / "neon-contracts/node_modules/@openzeppelin")}
 
 
 class ERC20Wrapper:

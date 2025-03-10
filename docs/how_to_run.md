@@ -37,19 +37,19 @@ Please install pre-commit hooks to run linter and formatter in auto pre-commit m
 pre-commit install
 ```
 
-## Download test contracts
-
-To download test contracts from the Neon EVM repo, you need to use:
-
-```bash
-./clickfile.py update-contracts
-```
-
 ## Set environment variables for tests
 
 To set variable DOCKER_HUB_ORG_NAME text to terminal
 ```
 export DOCKER_HUB_ORG_NAME=neonlabsorg
+```
+
+## Download test contracts
+The variable DOCKER_HUB_ORG_NAME has to be set.
+To download test contracts from the Neon EVM repo, you need to use:
+
+```bash
+./clickfile.py update-contracts
 ```
 
 ## Run OpenZeppelin tests

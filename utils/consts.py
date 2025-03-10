@@ -1,6 +1,14 @@
-from enum import Enum
+from pathlib import Path
+import typing as tp
 
+from enum import Enum
+from utils.types import TestGroup
 from solders.pubkey import Pubkey
+
+
+EXTERNAL_CONTRACT_PATH = Path.cwd() / "contracts" / "external"
+REMAPPING_ZEPPELIN = {"@openzeppelin": str(EXTERNAL_CONTRACT_PATH / "neon-contracts/node_modules/@openzeppelin")}
+TEST_GROUPS: tp.Tuple[TestGroup, ...] = tp.get_args(TestGroup)
 
 OPERATOR_KEYPAIR_PATH = "deploy/operator-keypairs"
 LAMPORT_PER_SOL = 1_000_000_000
@@ -45,6 +53,20 @@ class Unit(Enum):
 
     def lower(self):
         return self.value
+
+
+class EnvName(str, Enum):
+    NIGHT_STAND = "night-stand"
+    RELEASE_STAND = "release-stand"
+    MAINNET = "mainnet"
+    DEVNET = "devnet"
+    TESTNET = "testnet"
+    LOCAL = "local"
+    TERRAFORM = "terraform"
+    GETH = "geth"
+    TRACER_CI = "tracer_ci"
+    CUSTOM = "custom"
+    DOCKER_NET = "docker_net"
 
 
 class InputTestConstants(Enum):

@@ -97,6 +97,7 @@ class MainPage(BasePage):
 
     @allure.step("Click 'Start Building' button")
     def click_start_building_button(self):
+        self.page_loaded()
         self.wait.until(EC.visibility_of_element_located(MainPage.start_building_button)).click()
 
     @allure.step("Click 'Technical docs' button")
@@ -123,6 +124,7 @@ class MainPage(BasePage):
 
     @allure.step("Check message, that user already subscribed, is visible")
     def check_already_subscribed_text(self):
+        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
         self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field))
         try:
             self.wait.until(
@@ -132,7 +134,6 @@ class MainPage(BasePage):
                 )
             )
         except TimeoutException:
-            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
             self.driver.save_screenshot("screenshot_email_subscription.png")
             raise Exception(
                 "No notification found: neither subscription_notification_text nor problem_with_subscription_text is visible"

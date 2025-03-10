@@ -98,7 +98,7 @@ class Menu(BasePage):
             community_menu = self.wait.until(EC.presence_of_element_located(Menu.community_link))
             self.scroll_page_to_element(community_menu)
             self.hover_element(community_menu)
-            events = self.wait.until(EC.presence_of_element_located(Menu.events))
+            events = self.wait.until(EC.presence_of_element_located(Menu.link_on_events))
             self.scroll_page_to_element(events)
             self.hover_element(events)
             events.click()

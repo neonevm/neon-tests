@@ -1,9 +1,6 @@
-import json
-import pathlib
 import random
 import re
 
-from jsonschema import Draft4Validator
 from rlp import decode
 from rlp.sedes import List, big_endian_int, binary
 
@@ -15,6 +12,7 @@ from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts
 from utils.tracer_client import TracerClient
 from utils.helpers import padhex
+from tracer_helper import validate_response_result
 
 
 SCHEMAS = "./integration/tests/tracer/schemas/"
@@ -28,16 +26,6 @@ class TestTracerDebugMethods:
     web3_client: NeonChainWeb3Client
     accounts: EthAccounts
     tracer_api: TracerClient
-
-    def get_schema(self, file_name):
-        with open(pathlib.Path(SCHEMAS, file_name)) as f:
-            d = json.load(f)
-            return d
-
-    def validate_response_result(self, response):
-        schema = self.get_schema("debug_traceCall.json")
-        validator = Draft4Validator(schema)
-        assert validator.is_valid(response["result"])
 
     # NDEV-3009
     def test_debug_trace_call_invalid_params(self):
@@ -85,7 +73,7 @@ class TestTracerDebugMethods:
         assert "error" not in response, "Error in response"
         assert "result" in response
         assert response["result"]["returnValue"] == ""
-        self.validate_response_result(response)
+        validate_response_result(response)
 
     def test_debug_trace_call_non_zero_eth_call(self, storage_object):
         sender_account = self.accounts[0]
@@ -109,7 +97,7 @@ class TestTracerDebugMethods:
 
         assert "error" not in response, "Error in response"
         assert response["result"]["returnValue"] == padhex(hex(store_value), 64)[2:]
-        self.validate_response_result(response)
+        validate_response_result(response)
 
     def test_debug_trace_transaction(self):
         sender_account = self.accounts[0]
@@ -121,7 +109,7 @@ class TestTracerDebugMethods:
             "debug_traceTransaction", [receipt["transactionHash"].hex()]
         )
         assert "error" not in response, "Error in response"
-        self.validate_response_result(response)
+        validate_response_result(response)
 
     def test_debug_trace_transaction_non_zero_trace(self, storage_object):
         sender_account = self.accounts[0]
@@ -134,7 +122,7 @@ class TestTracerDebugMethods:
 
         assert "error" not in response, "Error in response"
         assert response["result"]["returnValue"] == padhex(hex(store_value), 64)[2:]
-        self.validate_response_result(response)
+        validate_response_result(response)
 
     # GETH: NDEV-3251
     def test_debug_trace_transaction_hash_without_prefix(self, storage_object):
@@ -148,7 +136,7 @@ class TestTracerDebugMethods:
 
         assert "error" not in response, "Error in response"
         assert response["result"]["returnValue"] == padhex(hex(store_value), 64)[2:]
-        self.validate_response_result(response)
+        validate_response_result(response)
 
     @pytest.mark.parametrize("hash", [6, "0x0", "", "f23e554"])
     # GETH: NDEV-3250
@@ -168,7 +156,7 @@ class TestTracerDebugMethods:
         response = self.tracer_api.send_rpc_and_wait_response("debug_traceBlockByNumber", [hex(receipt["blockNumber"])])
         assert "error" not in response, "Error in response"
         assert tx_hash in map(lambda v: v["txHash"], response["result"])
-        self.validate_response_result(response["result"][0])
+        validate_response_result(response["result"][0])
 
     @pytest.mark.parametrize("number", [190, "", "3f08", "num", "0x"])
     # GETH: NDEV-3250
@@ -223,7 +211,7 @@ class TestTracerDebugMethods:
         assert "error" not in response, "Error in response"
         assert tx_hash in map(lambda v: v["txHash"], response["result"])
 
-        self.validate_response_result(response["result"][0])
+        validate_response_result(response["result"][0])
 
     @pytest.mark.parametrize("hash", [190, "0x0", "", "0x2ee1", "num", "f0918e"])
     # GETH: NDEV-3250

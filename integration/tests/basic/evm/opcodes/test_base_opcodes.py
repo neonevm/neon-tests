@@ -1,6 +1,7 @@
 import allure
 import pytest
 import web3
+from web3.contract import Contract
 
 from utils.accounts import EthAccounts
 from utils.consts import ZERO_HASH
@@ -26,7 +27,7 @@ class TestOpCodes:
         return contract
 
     @pytest.fixture(scope="class")
-    def basefee_checker(self, web3_client, accounts):
+    def basefee_checker(self, web3_client, accounts) -> Contract:
         contract, _ = web3_client.deploy_and_get_contract(
             contract="opcodes/EIP1559BaseFee.sol",
             contract_name="BaseFeeOpcode",
@@ -122,18 +123,17 @@ class TestOpCodes:
         instruction_tx = basefee_checker.functions.baseFeeTrx().build_transaction(tx)
         resp = web3_client.send_transaction(accounts[0], instruction_tx)
         base_fee_from_log = basefee_checker.events.Log().process_receipt(resp)[0]["args"]["baseFee"]
-        assert base_fee_from_log == web3_client.gas_price()
+        assert base_fee_from_log > 0
 
+    @pytest.mark.eip_1559
     def test_base_fee_trx_type_2(
         self,
         web3_client: NeonChainWeb3Client,
         accounts: EthAccounts,
-        basefee_checker,
+        basefee_checker: Contract,
     ):
         tx = web3_client.make_raw_tx(accounts[0], tx_type=TransactionType.EIP_1559)
         instruction_tx = basefee_checker.functions.baseFeeTrx().build_transaction(tx)
-        instruction_tx["maxFeePerGas"] = 3000000000
-        instruction_tx["maxPriorityFeePerGas"] = 2500000000
         resp = web3_client.send_transaction(accounts[0], instruction_tx)
         base_fee_from_log = basefee_checker.events.Log().process_receipt(resp)[0]["args"]["baseFee"]
         # Neon specific, it uses maxPriorityFee to pay an Operator

@@ -12,7 +12,7 @@ from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import create_associated_token_account, get_associated_token_address
 from web3 import exceptions as web3_exceptions
 
-from utils.consts import LAMPORT_PER_SOL, wSOL, MULTITOKEN_MINTS
+from utils.consts import LAMPORT_PER_SOL, wSOL, MULTITOKEN_MINTS_USDT
 from utils.instructions import make_wSOL
 from utils.helpers import wait_condition
 from utils.web3client import NeonChainWeb3Client
@@ -64,14 +64,13 @@ class TestDeposit:
     ):
         amount = 5000
         new_sol_account = Keypair()
-        token_mint = Pubkey.from_string(MULTITOKEN_MINTS["USDT"])
-        evm_loader.request_airdrop(new_sol_account.pubkey(), 1 * LAMPORT_PER_SOL)
+        token_mint = Pubkey.from_string(MULTITOKEN_MINTS_USDT)
+        evm_loader.send_sol(solana_account, new_sol_account.pubkey(), int(0.01 * LAMPORT_PER_SOL))
         new_account = self.accounts.create_account()
 
         evm_loader.deposit_neon_like_tokens_from_solana_to_neon(
             token_mint, new_sol_account, new_account, web3_client_usdt.chain_id, operator_keypair, amount
         )
-
         usdt_balance_after = web3_client_usdt.get_balance(new_account)
         assert usdt_balance_after == amount * 1000000000000
 

@@ -4,6 +4,7 @@ import allure
 import pytest
 import web3
 from _pytest.config import Config
+from solana.rpc.commitment import Confirmed
 from solana.rpc.types import TokenAccountOpts, TxOpts
 from solana.transaction import Transaction
 from solders.keypair import Keypair
@@ -619,7 +620,11 @@ class TestERC20SPLMintable:
             lambda: len(sol_client.get_token_accounts_by_delegate_json_parsed(acc.pubkey(), opts).value) > 0,
             timeout_sec=30,
         )
-        token_account = sol_client.get_token_accounts_by_delegate_json_parsed(acc.pubkey(), opts).value[0].account
+        token_account = (
+            sol_client.get_token_accounts_by_delegate_json_parsed(acc.pubkey(), opts, commitment=Confirmed)
+            .value[0]
+            .account
+        )
         assert int(token_account.data.parsed["info"]["delegatedAmount"]["amount"]) == amount
         assert int(token_account.data.parsed["info"]["delegatedAmount"]["decimals"]) == erc20_contract.decimals
 

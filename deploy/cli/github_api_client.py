@@ -3,15 +3,15 @@ import re
 import click
 import requests
 
-DAPPS_REPORT_COMMENT_TITLE = "<summary>Dapps report</summary>"
+COMMENT_TITLE = "<summary>{title}</summary>"
 
 
 class GithubClient:
     def __init__(self, token):
         self.headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
 
-    def add_comment_to_pr(self, url, msg):
-        data = {"body": f"<details>{DAPPS_REPORT_COMMENT_TITLE}\n\n{msg}\n\n"}
+    def add_comment_to_pr(self, url, msg, title: str):
+        data = {"body": f"<details>{COMMENT_TITLE.format(title=title)}\n\n{msg}\n\n"}
         click.echo(f"Sent data: {data}")
         click.echo(f"Headers: {self.headers}")
         response = requests.post(url, json=data, headers=self.headers)
@@ -19,11 +19,11 @@ class GithubClient:
         if response.status_code != 201:
             raise RuntimeError(f"Attempt to leave a comment on a PR failed: {response.text}")
 
-    def delete_last_comment(self, pr_url):
+    def delete_last_comment(self, pr_url, title: str):
         response = requests.get(pr_url, headers=self.headers).json()
         old_comment_id = None
         for item in response:
-            if DAPPS_REPORT_COMMENT_TITLE in item["body"]:
+            if COMMENT_TITLE.format(title=title) in item["body"]:
                 old_comment_id = item["id"]
                 break
         if old_comment_id:

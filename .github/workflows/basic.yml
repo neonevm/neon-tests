@@ -49,7 +49,8 @@ on:
         description: "Filter tests by mark: pytest -m ..."
 env:
   NETWORK: ${{ github.event.inputs.network || 'terraform' }}
-  NUMPROCESSES: ${{ github.event.inputs.numprocesses || 8 }}
+  NUMPROCESSES_LOCAL: ${{ github.event.inputs.numprocesses || 12 }}
+  NUMPROCESSES_DEVNET: ${{ github.event.inputs.numprocesses || 4 }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   DEVNET_SOLANA_URL: "${{ secrets.SOLANA_URL }}"
   FAUCET_URL: "${{ secrets.DEVNET_FAUCET_URL }}"
@@ -70,7 +71,21 @@ jobs:
           python-version: '3.10'
       - uses: pre-commit/action@v3.0.1
         timeout-minutes: 3
-
+  set-network:
+    name: Set network
+    runs-on: ["self-hosted", "k8s-prod"]
+    steps:
+      - name: Setup `terraform` by cron schedule
+        id: setup_terraform_stand
+        if: github.event.schedule=='0 1 * * 0,1,2,3,4'
+        run: |
+          echo "NETWORK=terraform" >> $GITHUB_ENV
+      - name: Setup `devnet` by cron schedule
+        if: github.event.schedule=='0 2 * * 0,1,2,3,4'
+        run: |
+          echo "NETWORK=devnet" >> $GITHUB_ENV
+    outputs:
+      network: ${{ env.NETWORK }}
   dockerize:
     name: Dockerize neon tests
     runs-on: ["self-hosted", "k8s-prod"]
@@ -94,22 +109,15 @@ jobs:
   prepare-env-proxy:
     name: Prepare environment for proxy tests
     runs-on: ["self-hosted", "k8s-prod"]
-    needs: pre-commit-check
+    needs: [pre-commit-check, set-network]
     if: always()
+    env:
+      NETWORK: ${{ needs.set-network.outputs.network }}
     steps:
       - uses: hashicorp/setup-terraform@v3
       - uses: actions/setup-node@v4
         with:
           node-version: 16
-      - name: Setup `terraform` by cron schedule
-        id: setup_terraform_stand
-        if: github.event.schedule=='0 1 * * 0,1,2,3,4'
-        run: |
-          echo "NETWORK=terraform" >> $GITHUB_ENV
-      - name: Setup `devnet` by cron schedule
-        if: github.event.schedule=='0 2 * * 0,1,2,3,4'
-        run: |
-          echo "NETWORK=devnet" >> $GITHUB_ENV
       - uses: actions/checkout@v4
 
       - name: "Prepare terraform stand"
@@ -127,17 +135,19 @@ jobs:
         uses: ./.github/actions/create-tf-stand
         with:
           ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
+          hetzner_instance_types: ${{vars.HETZNER_INSTANCE_TYPES}}
     outputs:
       proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
       solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
-      network: ${{ env.NETWORK }}
   run-evm-tests:
     name: Run EVM tests
     runs-on: ["self-hosted", "k8s-prod"]
     needs:
       - dockerize
+      - set-network
     env:
       DOCKER_PROJECT_NAME: "evm-tests-${{ github.run_number }}-${{ github.run_attempt }}"
+      NETWORK: ${{ needs.set-network.outputs.network }}
     outputs:
       test-group : ${{ steps.step_fail.outputs.FAILED_TEST_GROUP  }}
     steps:
@@ -207,11 +217,12 @@ jobs:
     needs:
       - dockerize
       - prepare-env-proxy
+      - set-network
     runs-on: ["self-hosted", "k8s-prod"]
     env:
       SOLANA_IP: ${{ needs.prepare-env-proxy.outputs.solana_ip }}
       PROXY_IP: ${{ needs.prepare-env-proxy.outputs.proxy_ip }}
-      NETWORK: ${{ needs.prepare-env-proxy.outputs.network }}
+      NETWORK: ${{ needs.set-network.outputs.network }}
       CONTAINER: basic-tests-${{ github.run_id }}
     if: |
       always() &&
@@ -235,9 +246,9 @@ jobs:
         timeout-minutes: 120
         run: |
           if [ "${{ github.event.schedule }}" == "0 1 * * 0,1,2,3,4" ]; then
-            CMD="python3 ./clickfile.py run basic_extended --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }} --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
+            CMD="python3 ./clickfile.py run basic_extended --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES_LOCAL }} --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
           else
-            CMD="python3 ./clickfile.py run basic --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }} --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
+            CMD="python3 ./clickfile.py run basic --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES_DEVNET }} --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
           fi
 
           if [[ "${{ env.GENERATE_COST_REPORT }}" == "true" ]]; then
@@ -281,8 +292,8 @@ jobs:
   destroy:
     name: Destroy stand
     runs-on: ["self-hosted", "k8s-prod"]
-    needs: [ prepare-env-proxy, run-proxy-tests]
-    if: always() && needs.prepare-env-proxy.outputs.network == 'terraform'
+    needs: [ prepare-env-proxy, run-proxy-tests, set-network ]
+    if: always() && needs.set-network.outputs.network == 'terraform'
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -309,6 +320,9 @@ jobs:
     needs:
       - run-proxy-tests
       - run-evm-tests
+      - set-network
+    env:
+      NETWORK: ${{ needs.set-network.outputs.network }}
     runs-on: ["self-hosted", "k8s-prod"]
     steps:
       - uses: actions/checkout@v4

@@ -76,12 +76,40 @@ class Menu(BasePage):
 
     @allure.step("Click on the menu item 'Solana Whitepaper'")
     def click_on_solana_link(self):
-        self.wait.until(EC.presence_of_element_located(Menu.link_on_solana_whitepaper)).click()
+        # self.wait.until(EC.presence_of_element_located(Menu.link_on_solana_whitepaper)).click()
+        self.page_loaded()
+        try:
+            developers_menu = self.wait.until(EC.presence_of_element_located(Menu.developers_link))
+            self.scroll_page_to_element(developers_menu)
+            self.hover_element(developers_menu)
+            solana_link = self.wait.until(EC.presence_of_element_located(Menu.link_on_solana_whitepaper))
+            self.scroll_page_to_element(solana_link)
+            self.hover_element(solana_link)
+            solana_link.click()
+        except TimeoutException:
+            self.driver.save_screenshot("menu_click_fail.png")
+            raise Exception("Can't find Solana PDF link or Developers menu element")
+        except ElementClickInterceptedException:
+            self.driver.execute_script("arguments[0].click();", solana_link)
 
-    @allure.step("Click on the menu item 'Events'")
+    @allure.step("Click on the menu item 'Community/Events'")
     def click_on_events_link(self):
-        self.wait.until(EC.visibility_of_element_located(Menu.community_link)).click()
-        self.wait.until(EC.visibility_of_element_located(Menu.link_on_events)).click()
+        try:
+            community_menu = self.wait.until(EC.presence_of_element_located(Menu.community_link))
+            self.scroll_page_to_element(community_menu)
+            self.hover_element(community_menu)
+            events = self.wait.until(EC.presence_of_element_located(Menu.events))
+            self.scroll_page_to_element(events)
+            self.hover_element(events)
+            events.click()
+        except TimeoutException:
+            self.driver.save_screenshot("menu_click_fail.png")
+            raise Exception("Can't find Events or Community element")
+        except ElementClickInterceptedException:
+            self.driver.execute_script("arguments[0].click();", events)
+
+        # self.wait.until(EC.visibility_of_element_located(Menu.community_link)).click()
+        # self.wait.until(EC.visibility_of_element_located(Menu.link_on_events)).click()
 
     @allure.step("Click on the footer menu item 'FAQ'")
     def click_on_faq_link(self):

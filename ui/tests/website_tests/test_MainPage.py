@@ -129,7 +129,6 @@ class TestMainPage:
         main_page.assert_page_url(url=main_page.proxy_page)
 
     def test_menu_link_to_pdf_docs(self, menu_page):
-        menu_page.click_on_menu_developers_link()
         menu_page.click_on_solana_link()
         menu_page.switch_window(1)
         menu_page.assert_page_url(url=menu_page.solana_pdf)

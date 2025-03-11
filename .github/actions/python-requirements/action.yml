@@ -1,6 +1,12 @@
 name: "Prepare Click"
 description: "Install python and Click"
 
+inputs:
+  working-directory:
+    description: 'Working directory for the commands'
+    required: false
+    default: '.'
+
 runs:
   using: composite
   steps:
@@ -10,5 +16,5 @@ runs:
         python-version: "3.10"
     - name: "Install python requirements"
       run: |
-        pip3 install --upgrade -r deploy/requirements/click.txt
+        pip3 install --upgrade -r ${{ inputs.working-directory }}/deploy/requirements/click.txt
       shell: bash

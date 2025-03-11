@@ -19,10 +19,9 @@ from spl.token.constants import WRAPPED_SOL_MINT
 from web3.middleware import geth_poa_middleware
 
 import allure
-from clickfile import TEST_GROUPS, EnvName
 from utils import create_allure_environment_opts, setup_logging
 from utils.accounts import EthAccounts
-from utils.consts import LAMPORT_PER_SOL
+from utils.consts import LAMPORT_PER_SOL, EnvName, TEST_GROUPS
 from utils.error_log import error_log
 from utils.evm_loader import EvmLoader
 from utils.faucet import Faucet

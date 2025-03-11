@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import enum
 import functools
 import glob
 import json
@@ -25,7 +24,9 @@ from utils.accounts import EthAccounts
 from utils.error_log import error_log
 from utils.faucet import Faucet
 from utils.slack_notification import SlackNotification
-from utils.types import TestGroup, RepoType
+from utils.types import RepoType, TestGroup
+from utils.consts import EnvName, TEST_GROUPS, EXTERNAL_CONTRACT_PATH
+
 
 try:
     import click
@@ -50,6 +51,7 @@ try:
     from utils.helpers import wait_condition
     from utils.apiclient import JsonRPCSession
     from utils.k6_helpers import k6_prepare_accounts, k6_set_envs, deploy_erc20_contract, deploy_block_number_contract
+    from utils.locust_prepare import prepare_locust
 except ImportError:
     print("Please run ./clickfile.py requirements to install all requirements")
 
@@ -77,25 +79,8 @@ NEON_EVM_GITHUB_URL = f"https://api.github.com/repos/{DOCKER_HUB_ORG_NAME}/neon-
 HOODIES_CHAINLINK_GITHUB_URL = "https://github.com/hoodieshq/chainlink-neon"
 PROXY_GITHUB_URL = f"https://api.github.com/repos/{DOCKER_HUB_ORG_NAME}/neon-proxy.py"
 FAUCET_GITHUB_URL = f"https://api.github.com/repos/{DOCKER_HUB_ORG_NAME}/neon-faucet"
-EXTERNAL_CONTRACT_PATH = Path.cwd() / "contracts" / "external"
 VERSION_BRANCH_TEMPLATE = r"[vt]{1}\d{1,2}\.\d{1,2}\.x.*"
 GITHUB_TAG_PATTERN = re.compile(r"^[vt]\d{1,2}\.\d{1,2}\.\d{1,2}$")
-
-TEST_GROUPS: tp.Tuple[TestGroup, ...] = tp.get_args(TestGroup)
-
-
-class EnvName(str, enum.Enum):
-    NIGHT_STAND = "night-stand"
-    RELEASE_STAND = "release-stand"
-    MAINNET = "mainnet"
-    DEVNET = "devnet"
-    TESTNET = "testnet"
-    LOCAL = "local"
-    TERRAFORM = "terraform"
-    GETH = "geth"
-    TRACER_CI = "tracer_ci"
-    CUSTOM = "custom"
-    DOCKER_NET = "docker_net"
 
 
 def green(s):
@@ -899,6 +884,14 @@ def prepare(credentials, host, users, spawn_rate, run_time, tag):
 
     if cmd.returncode != 0:
         sys.exit(cmd.returncode)
+
+
+@locust.command("prepare-scheduled", help="Run preparation stage for `scheduled txs` performance test")
+@click.option("-n", "--network", default="local", required=True, help="Network name")
+@click.option("-u", "--neon_users", default=50, required=True, help="Number of neon users to prepare for the load test")
+def prepare_erc20_and_neon_users(network, neon_users):
+    """Run `Preparation stage` for scheduled txs performance test"""
+    prepare_locust(network, neon_users)
 
 
 @cli.group("allure")

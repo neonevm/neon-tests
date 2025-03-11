@@ -108,9 +108,6 @@ class Menu(BasePage):
         except ElementClickInterceptedException:
             self.driver.execute_script("arguments[0].click();", events)
 
-        # self.wait.until(EC.visibility_of_element_located(Menu.community_link)).click()
-        # self.wait.until(EC.visibility_of_element_located(Menu.link_on_events)).click()
-
     @allure.step("Click on the footer menu item 'FAQ'")
     def click_on_faq_link(self):
         self.wait.until(EC.visibility_of_element_located(Menu.faq_link)).click()

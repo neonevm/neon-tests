@@ -203,6 +203,7 @@ class NeonGetLogsDetails(ForbidExtra):
     neonEventOrder: int
     neonIsHidden: bool
     neonIsReverted: bool
+    neonDataMessage: str | None
 
 
 class NeonGetLogs(EthResult):
@@ -297,6 +298,26 @@ class NeonCostsDetails(ForbidExtra):
     neonAlanIncome: int
 
 
+class NeonCancelDetails(ForbidExtra):
+    solanaTransactionSignature: str
+    solanaInstructionIndex: int
+    solanaInnerInstructionIndex: int | None
+    source: str
+    address: str
+    code: str
+    data: str
+    message: str
+
+
+class NeonRevertDetails(ForbidExtra):
+    solanaTransactionSignature: str
+    solanaInstructionIndex: int
+    solanaInnerInstructionIndex: int | None
+    address: str
+    data: str
+    message: str | None
+
+
 class NeonReceiptDetails(ForbidExtra):
     transactionHash: HexString
     transactionIndex: HexString
@@ -318,8 +339,9 @@ class NeonReceiptDetails(ForbidExtra):
     solanaCompleteInstructionIndex: int
     solanaCompleteInnerInstructionIndex: Union[int, None]
     neonRawTransaction: HexString
-    neonIsCompleted: bool
     neonIsCanceled: bool
+    neonCancelData: NeonCancelDetails | None
+    neonRevertData: NeonRevertDetails | None
     solanaTransactions: List[SolanaTransaction]
     neonCosts: List[NeonCostsDetails]
     scheduledParentTransactionHashes: List[HexString]

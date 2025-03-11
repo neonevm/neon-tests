@@ -1,9 +1,7 @@
 import allure
-import pytest
 from solana.rpc.commitment import Confirmed
-from solana.transaction import Transaction
 from solders.pubkey import Pubkey
-from spl.token.instructions import get_associated_token_address, create_associated_token_account
+from spl.token.instructions import get_associated_token_address
 
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 from utils.consts import wSOL
@@ -139,51 +137,41 @@ class TestScheduledTrxERC20new:
 
         assert resp["status"] == 0, resp
 
-    @pytest.mark.xfail(reason="NDEV-3575")
     def test_multiple_transactions_with_transfer_from_solana(
         self, web3_client_sol, neon_user, erc20_spl_mintable_new, evm_loader, treasury_pool
     ):
-
         token_mint = Pubkey(erc20_spl_mintable_new.contract.functions.tokenMint().call())
         my_ata = get_associated_token_address(neon_user.solana_account.pubkey(), token_mint)
-
-        trx = Transaction()
-        trx.add(
-            create_associated_token_account(
-                neon_user.solana_account.pubkey(), neon_user.solana_account.pubkey(), token_mint
-            )
+        transfer_amount = 1000
+        start_balance = 1
+        erc20_spl_mintable_new.pop_up_balance(
+            evm_loader,
+            recipient=neon_user,
+            pda_amount=0,
+            ata_amount=start_balance,
+            approve_ata_amount=transfer_amount + start_balance,
         )
-        evm_loader.send_tx_and_check_status_ok(trx, neon_user.solana_account)
-        amount = 1000
 
-        erc20_spl_mintable_new.approve(erc20_spl_mintable_new.account, neon_user.checksum_address, amount)
-
+        erc20_spl_mintable_new.approve(erc20_spl_mintable_new.account, neon_user.checksum_address, transfer_amount)
+        balance_before = erc20_spl_mintable_new.get_balance(neon_user.checksum_address)
+        if balance_before == 0:
+            balance_before = start_balance
         call_data = decode_function_signature(
-            "transferSolanaFrom(address,bytes,uint256)", [erc20_spl_mintable_new.account.address, bytes(my_ata), amount]
+            "transferSolanaFrom(address,bytes32,uint64)",
+            [erc20_spl_mintable_new.account.address, bytes(my_ata), transfer_amount],
         )
 
-        max_priority_fee_per_gas = BASE_MAX_PRIORITY_FEE
-        max_fee_per_gas = web3_client_sol.get_max_fee_per_gas()
-        gas_limit = 30000000
-        nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
-
-        tx = ScheduledTransaction(
-            nonce=nonce,
-            index=0,
-            target=erc20_spl_mintable_new.address,
-            call_data=call_data,
-            max_fee_per_gas=max_fee_per_gas,
-            max_priority_fee_per_gas=max_priority_fee_per_gas,
-            gas_limit=gas_limit,
-            payer=neon_user.checksum_address,
-            sender=None,
-            chain_id=evm_loader.sol_chain_id,
+        trx_estimate_obj = ScheduledTrxEstimateRequest(
+            neon_user.checksum_address, erc20_spl_mintable_new.address, call_data
         )
+        estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), [trx_estimate_obj])
+
+        tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
         tree_acc_data = CreateTreeAccMultipleData(
-            nonce=nonce,
-            max_fee_per_gas=max_fee_per_gas,
-            max_priority_fee_per_gas=max_priority_fee_per_gas,
+            nonce=estimate_result["nonce"],
+            max_fee_per_gas=estimate_result["maxFeePerGas"],
+            max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
         )
 
         tree_acc_data.add_trx(tx, 0xFFFF, 0)
@@ -191,7 +179,10 @@ class TestScheduledTrxERC20new:
         evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data, wSOL["address_spl"])
         web3_client_sol.send_scheduled_transaction(tx)
 
-        check_trx_is_success(web3_client_sol, evm_loader, tx.hash().hex())
+        check_trx_is_success(web3_client_sol, evm_loader, tx.hash().hex(), timeout=180)
+        balance_after = erc20_spl_mintable_new.get_balance(neon_user.checksum_address)
+
+        assert balance_after == balance_before + transfer_amount
 
     def test_multiple_transactions_with_tree_actions_dependent_trx(
         self,

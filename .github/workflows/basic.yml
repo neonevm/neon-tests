@@ -245,7 +245,7 @@ jobs:
       - name: Run basic proxy tests
         timeout-minutes: 120
         run: |
-          if ["${{ env.NETWORK }}" == "devnet"]; then
+          if [ "${{ env.NETWORK }}" == "devnet" ]; then
             NUMPROCESSES=${{ env.NUMPROCESSES_DEVNET }}
           else
             NUMPROCESSES=${{ env.NUMPROCESSES_LOCAL }}

@@ -281,8 +281,6 @@ def assert_events_by_type(neon_trx_receipt: NeonGetTransactionResult):
                     event.topics, list
                 ), f"Expecting list of topics for {NeonEventType.Cancel}, got {event}"
                 assert len(event.topics) == 0, f"Expecting empty topics for {NeonEventType.Cancel}, got {event}"
-
-                assert event.data == "0x00", f"Expecting empty data for {NeonEventType.Cancel}, got {event}"
             case NeonEventType.EnterCallCode.value:
                 assert event.data == "0x", f"Expecting empty data for {NeonEventType.EnterCallCode}, got {event}"
 

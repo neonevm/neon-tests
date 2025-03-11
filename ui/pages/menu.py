@@ -76,7 +76,6 @@ class Menu(BasePage):
 
     @allure.step("Click on the menu item 'Solana Whitepaper'")
     def click_on_solana_link(self):
-        # self.wait.until(EC.presence_of_element_located(Menu.link_on_solana_whitepaper)).click()
         self.page_loaded()
         try:
             developers_menu = self.wait.until(EC.presence_of_element_located(Menu.developers_link))

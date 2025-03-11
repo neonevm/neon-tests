@@ -245,11 +245,19 @@ jobs:
       - name: Run basic proxy tests
         timeout-minutes: 120
         run: |
-          if [ "${{ github.event.schedule }}" == "0 1 * * 0,1,2,3,4" ]; then
-            CMD="python3 ./clickfile.py run basic_extended --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES_LOCAL }} --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
+          if ["${{ env.NETWORK }}" == "devnet"]; then
+            NUMPROCESSES=${{ env.NUMPROCESSES_DEVNET }}
           else
-            CMD="python3 ./clickfile.py run basic --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES_DEVNET }} --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
+            NUMPROCESSES=${{ env.NUMPROCESSES_LOCAL }}
           fi
+
+          if [ "${{ github.event.schedule }}" == "0 1 * * 0,1,2,3,4" ]; then
+            TEST_SCOPE="basic_extended"
+          else
+            TEST_SCOPE="basic"
+          fi
+
+          CMD="python3 ./clickfile.py run $TEST_SCOPE --network ${{ env.NETWORK }} --numprocesses $NUMPROCESSES --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
 
           if [[ "${{ env.GENERATE_COST_REPORT }}" == "true" ]]; then
             CMD="$CMD --cost_reports_dir reports/cost_reports"

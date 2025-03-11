@@ -4,7 +4,7 @@ import allure
 import pytest
 import requests
 
-from clickfile import EXTERNAL_CONTRACT_PATH
+from utils.consts import EXTERNAL_CONTRACT_PATH
 from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts
 

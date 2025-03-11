@@ -11,7 +11,7 @@ from spl.token.instructions import (
     get_associated_token_address,
 )
 
-from utils.erc20wrapper import REMAPPING_ZEPPELIN
+from utils.consts import REMAPPING_ZEPPELIN
 from utils.erc721ForMetaplex import ERC721ForMetaplex
 from utils.web3client import NeonChainWeb3Client
 

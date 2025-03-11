@@ -1,26 +1,26 @@
 class TestMainPage:
 
     def test_logo_header(self, main_page, menu_page, developers_page):
-        menu_page.click_on_menu_developers_link()
+        menu_page.click_on_menu_developers_start_building_link()
         developers_page.assert_text_on_build_on_neon_block_link()
         main_page.click_on_logo_on_header()
         main_page.assert_page_url()
 
     def test_logo_footer(self, main_page, menu_page, developers_page):
-        menu_page.click_on_menu_developers_link()
+        menu_page.click_on_menu_developers_start_building_link()
         developers_page.assert_text_on_build_on_neon_block_link()
         main_page.click_on_logo_on_footer()
         main_page.assert_page_url()
 
-    def test_click_build_on_neon_button(self, main_page, menu_page, developers_page):
-        main_page.click_on_build_on_neon_button()
+    def test_click_start_building_button(self, main_page, menu_page, developers_page):
+        main_page.click_start_building_button()
         main_page.switch_window(1)
         main_page.assert_windows_count(2)
         developers_page.assert_page_url()
         developers_page.assert_text_on_build_on_neon_block_link()
 
-    def test_click_start_building_button(self, main_page, quick_start_page):
-        main_page.click_start_building_button()
+    def test_click_technical_docs_button(self, main_page, quick_start_page):
+        main_page.click_technical_docs_button()
         main_page.switch_window(1)
         main_page.assert_windows_count(2)
         quick_start_page.assert_page_url()
@@ -36,12 +36,10 @@ class TestMainPage:
         developers_page.assert_page_url()
         developers_page.assert_text_on_build_on_neon_block_link()
 
-    def test_add_your_dapp_button(self, main_page, google_forms_page):
-        main_page.click_add_your_dapp_button()
+    def test_modular_design_section(self, main_page):
+        main_page.click_learn_more_link()
         main_page.switch_window(1)
-        main_page.assert_windows_count(2)
-        google_forms_page.assert_page_url()
-        google_forms_page.assert_text_on_googleform_title()
+        main_page.assert_page_url(url=main_page.neon_architecture_page)
 
     def test_check_subscription(self, main_page):
         email = "test@test.com"
@@ -118,52 +116,33 @@ class TestMainPage:
         main_page.assert_partial_matching_url(url="/blog/")
         blog_page.assert_post_not_empty()
 
-    def test_security_audits_tab(self, main_page):
-        main_page.security_audit_tab_click()
+    def test_security_audits_section(self, main_page):
         main_page.check_security_audit_title()
         main_page.click_access_audit_link()
         main_page.switch_window(1)
         main_page.assert_page_url(url=main_page.audit_page)
 
-    def test_become_an_operator_tab(self, main_page):
-        main_page.security_audit_tab_click()
-        main_page.become_an_operator_tab_click()
+    def test_become_an_operator_section(self, main_page):
         main_page.check_become_an_operator_title()
         main_page.click_proxy_technical_docs_link()
         main_page.switch_window(1)
         main_page.assert_page_url(url=main_page.proxy_page)
 
-    def test_accrodion_element_is_hiding(self, main_page):
-        main_page.click_accordion_element()
-        main_page.check_accordion_element_text_is_visible()
-        main_page.click_accordion_element()
-        main_page.check_accordion_element_text_is_invisible()
-
-    def test_click_link_on_accrodion_element(self, main_page):
-        main_page.click_accordion_element()
-        main_page.check_accordion_element_text_is_visible()
-        main_page.explore_architecture_button_click()
-        main_page.switch_window(1)
-        main_page.assert_page_url(url=main_page.neon_architecture_page)
-
-    def test_check_transaction_data(self, main_page):
-        main_page.transaction_element_change_color()
-        main_page.click_transaction_element()
-        main_page.assert_transaction_text()
-
     def test_menu_link_to_pdf_docs(self, menu_page):
-        menu_page.click_on_menu_developers_link()
         menu_page.click_on_solana_link()
         menu_page.switch_window(1)
         menu_page.assert_page_url(url=menu_page.solana_pdf)
 
     def test_menu_link_to_external_pages(self, menu_page):
-        menu_page.click_on_menu_ecosystem_link()
-        menu_page.click_on_neonpass_link()
+        menu_page.click_on_menu_tools_neonpass_link()
         menu_page.switch_window(1)
         menu_page.assert_page_url(url=menu_page.neonpass)
 
     def test_menu_link_to_internal_pages(self, menu_page):
-        menu_page.click_on_menu_news_link()
         menu_page.click_on_events_link()
         menu_page.assert_page_url(url=menu_page.events)
+
+    def test_footer_link_to_faq(self, menu_page, main_page):
+        menu_page.click_on_faq_link()
+        main_page.assert_partial_matching_url(url="/faq")
+        main_page.assert_faq_first_question_title()

@@ -9,7 +9,7 @@ class BlogPage(BasePage):
 
     section_header = (By.XPATH, "//h1")
     header_text = "Blog"
-    author_icon = (By.XPATH, "//div[contains(@class,'120px')][1]//img")
+    copy_link = (By.XPATH, "//button/span[text()='Copy link']")
 
     @allure.step("Check text on the page title")
     def assert_text_on_blog_page_title(self):
@@ -18,4 +18,4 @@ class BlogPage(BasePage):
 
     @allure.step("Check post author icon is visible")
     def assert_post_not_empty(self):
-        self.wait.until(EC.visibility_of_element_located(BlogPage.author_icon))
+        self.wait.until(EC.visibility_of_element_located(BlogPage.copy_link))

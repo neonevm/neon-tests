@@ -1,5 +1,8 @@
+import allure
 import pytest
+from allure_commons.types import AttachmentType
 from selenium import webdriver
+from selenium.common import WebDriverException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
@@ -87,3 +90,20 @@ def blog_page(driver):
 def base_page(driver):
     page = BasePage(driver, website_url)
     return page
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    rep = outcome.get_result()
+
+    if rep.when == "call" and rep.failed:
+        driver = item.funcargs.get("driver", None)
+        if driver is not None:
+            try:
+                if driver.session_id:
+                    allure.attach(
+                        driver.get_screenshot_as_png(), name="screenshot_on_failure", attachment_type=AttachmentType.PNG
+                    )
+            except WebDriverException:
+                pass

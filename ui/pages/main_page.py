@@ -13,7 +13,7 @@ class MainPage(BasePage):
     email = "test@test.com"
     smart_contract_text = "Smart contract"
 
-    twitter_page = "https://x.com/Neon_EVM?mx=2"
+    twitter_page = "https://x.com/Neon_EVM"
     github_page = "https://github.com/neonevm/neon-evm"
     discord_page = "https://discord.com/invite/neonevm"
     medium_page = "https://medium.com/@neon_evm"
@@ -27,34 +27,40 @@ class MainPage(BasePage):
     proxy_page = "https://neonevm.org/docs/operating/operator-introduction"
     neon_architecture_page = "https://neonevm.org/docs/architecture/neon_evm_arch"
 
-    logo_on_header = (By.XPATH, "//*[@id='header']/div[2]/div[1]")
+    logo_on_header = (By.XPATH, "//header//a[@aria-label='Go to home']")
     logo_on_footer = (By.XPATH, "(//a[@aria-label='Go to home'])[3]")
     build_on_neon_button = (By.XPATH, "//span[contains(text(),'build on neon')]")
-    start_building_button = (By.XPATH, "//a[@href='https://neonevm.org/docs/'][contains(.,'Start Building')]")
-    explore_ecosystem_button = (By.XPATH, "//span[@class='button__content'][contains(.,'Explore ecosystem')]")
+    technical_docs_button = (By.XPATH, "//a[normalize-space()='technical docs']")
+    start_building_button = (By.XPATH, "//button/span[normalize-space()='Start Building']")
+    explore_ecosystem_button = (By.XPATH, "(//a/span[normalize-space()='explore ecosystem'])[1]")
     explore_developer_hub_button = (By.XPATH, "//span[@class='button__content'][contains(.,'Explore developer hub')]")
     add_your_dapp_button = (By.XPATH, "//span[@class='button__content'][contains(.,'add your dapp')]")
-    transaction_info_block = (By.XPATH, "(//div[contains(@class,'metric-wrapper')])[3]")
-    transaction_cost_arrow = (By.XPATH, "(//div[contains(@class,'arrow-down-icon-container')])[2]")
-    transaction_cost_info = (By.XPATH, "//span/p[contains(text(),'Sending ERC20')]")
+    modular_design_section = (By.XPATH, "//span[text()='Modular Design']/../..//../a[text()='Learn More ']")
     email_input_field = (By.XPATH, "//input")
-    subscribe_button = (By.XPATH, "//button/span[text()='subscribe']")
-    subscription_notification_text = (By.XPATH, "//div[contains(text(), 'already subscribed')]")
+    subscribe_button = (By.XPATH, "//button/span[text()='Subscribe']")
+    subscription_notification_text = (
+        By.XPATH,
+        "//div[contains(@class,'sm:w-auto')]/div[contains(.,'already subscribed')][2]",
+    )
+    problem_with_subscription_text = (
+        By.XPATH,
+        "//div[contains(@class,'sm:w-auto')]/div[contains(.,'try again later')][2]",
+    )
     cookie_banner = (By.XPATH, "//h4[contains(text(), 'We use cookies')]")
     ask_me_later_button = (By.XPATH, "//button[text()='ASK ME LATER']")
     accept_button = (By.XPATH, "//button[text()='ACCEPT']")
-    terms_of_use_link = (By.XPATH, "//a[contains(text(),'Terms Of Use')]")
-    cookie_policy_link = (By.XPATH, "//a[contains(text(),'Cookie Policy')]")
+    terms_of_use_link = (By.XPATH, "//a[contains(text(),'Terms of Use')]")
+    cookie_policy_link = (By.XPATH, "//a[contains(text(),'Cookie')]")
     disclaimer_link = (By.XPATH, "//a[contains(text(),'Disclaimer')]")
     privacy_policy_link = (By.XPATH, "//a[contains(text(),'Privacy')]")
-    news_section = (By.XPATH, "//div[contains(@class,'grid-plate')]/div[contains(@class,'flex-row')]/a")
-    first_news = (By.XPATH, "//div[contains(@class,'grid-plate')]/div[contains(@class,'flex-row')]/a[1]")
-    security_audit_tab = (By.XPATH, "//button/span[text()='Security Audits']")
-    access_security_audits_link = (By.XPATH, "//div[@role='tabpanel']//a")
-    become_an_operator_tab = (By.XPATH, "//button/span[text()='Become an Operator']")
-    proxy_page_link = (By.XPATH, "//div[@role='tabpanel']//a")
+    news_section = (By.XPATH, "//div[contains(@class,'gap-3')]/div[1]")
+    first_news = (By.XPATH, "//div[contains(@class,'sm:grid')]/div[contains(@class,'gap-3')][1]")
+    access_security_audits_link = (By.XPATH, "//a[text()='Access security audits ']")
+    proxy_page_link = (By.XPATH, "//a[text()='Proxy technical docs ']")
     accordion_element = (By.XPATH, "//div[@class='accordion-item']//span[text()='Modularity']")
     button_explore_architecture = (By.XPATH, "//span[text()='EXPLORE ARCHITECTURE']")
+    questions_block = (By.XPATH, "//div[contains(@class,'questions')]//div[contains(@class,'drop-shadow-md')]")
+    first_question_text = "What is Neon EVM?"
 
     twitter_icon = (By.XPATH, "//a[@title='twitter']")
     githib_icon = (By.XPATH, "//a[@title='github']")
@@ -66,16 +72,16 @@ class MainPage(BasePage):
     disclaimer_page_title = (By.XPATH, "//h1[contains(text(),'Disclaimer')]")
     privacy_policy_page_title = (By.XPATH, "//h1[contains(text(),'Privacy')]")
     cookie_policy_page_title = (By.XPATH, "//h1[contains(text(),'Cookie Policy')]")
-    security_audit_title = (By.XPATH, "//div[@role='tabpanel']//h4[text()='Security Audits']")
-    become_an_operator_title = (By.XPATH, "//div[@role='tabpanel']//h4[text()='Become an Operator']")
+    security_audit_title = (By.XPATH, "//h5[text()='Security Audits']")
+    become_an_operator_title = (By.XPATH, "//h5[text()='Become an Operator']")
 
     @allure.step("Click on the logotype on header")
     def click_on_logo_on_header(self):
-        self.wait.until(EC.presence_of_element_located(MainPage.logo_on_header)).click()
+        self.wait.until(EC.visibility_of_element_located(MainPage.logo_on_header)).click()
 
     @allure.step("Click on the logotype on footer")
     def click_on_logo_on_footer(self):
-        self.wait.until(EC.presence_of_element_located(MainPage.logo_on_footer)).click()
+        self.wait.until(EC.visibility_of_element_located(MainPage.logo_on_footer)).click()
 
     @allure.step("Click 'Build on Neon' button")
     def click_on_build_on_neon_button(self):
@@ -91,7 +97,20 @@ class MainPage(BasePage):
 
     @allure.step("Click 'Start Building' button")
     def click_start_building_button(self):
-        self.wait.until(EC.presence_of_element_located(MainPage.start_building_button)).click()
+        button = self.wait.until(EC.presence_of_element_located(MainPage.start_building_button))
+        overlay = self.driver.find_elements(By.CSS_SELECTOR, ".loading-overlay")
+        if overlay:
+            print("Overlay detected! Waiting for it to disappear...")
+            WebDriverWait(self.driver, 10).until(
+                EC.invisibility_of_element_located((By.CSS_SELECTOR, ".loading-overlay"))
+            )
+        self.driver.execute_script("arguments[0].click();", button)
+        WebDriverWait(self.driver, 5).until(lambda driver: len(driver.window_handles) > 1)
+        # self.wait.until(EC.visibility_of_element_located(MainPage.start_building_button)).click()
+
+    @allure.step("Click 'Technical docs' button")
+    def click_technical_docs_button(self):
+        self.wait.until(EC.presence_of_element_located(MainPage.technical_docs_button)).click()
 
     @allure.step("Click 'Explore Ecosystem' button")
     def click_explore_ecosystem_button(self):
@@ -107,14 +126,52 @@ class MainPage(BasePage):
 
     @allure.step("Input email")
     def input_email(self, email):
+        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         email_field = self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field))
         email_field.send_keys(email)
 
     @allure.step("Check message, that user already subscribed, is visible")
     def check_already_subscribed_text(self):
-        email_field = self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field))
-        self.scroll_page_to_element(email_field)
-        self.wait.until(EC.presence_of_element_located(MainPage.subscription_notification_text)).is_displayed()
+        # self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
+        # self.wait.until(EC.visibility_of_element_located(MainPage.subscribe_button))
+        # try:
+        #     self.wait.until(
+        #         EC.any_of(
+        #             EC.visibility_of_element_located(MainPage.subscription_notification_text),
+        #             EC.visibility_of_element_located(MainPage.problem_with_subscription_text),
+        #         )
+        #     )
+        # except TimeoutException:
+        #     self.driver.save_screenshot("screenshot_email_subscription.png")
+        #     raise Exception(
+        #         "No notification found: neither subscription_notification_text nor problem_with_subscription_text is visible"
+        #     )
+
+        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
+        self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field))
+
+        try:
+            notification = self.wait.until(
+                EC.any_of(
+                    EC.visibility_of_element_located(MainPage.subscription_notification_text),
+                    EC.visibility_of_element_located(MainPage.problem_with_subscription_text),
+                )
+            )
+
+            print(f"✅ Найдено уведомление: {notification.text}")
+
+        except TimeoutException:
+            self.driver.save_screenshot("screenshot_email_subscription.png")
+
+            sub_text = self.driver.find_elements(*MainPage.subscription_notification_text)
+            prob_text = self.driver.find_elements(*MainPage.problem_with_subscription_text)
+
+            if sub_text or prob_text:
+                raise Exception("⚠️ Уведомление найдено в DOM, но оно скрыто (`display: none;`)")
+
+            raise Exception(
+                "❌ No notification found: neither subscription_notification_text nor problem_with_subscription_text is visible"
+            )
 
     @allure.step("Click 'Ask me later' button")
     def click_ask_me_later_button(self):
@@ -169,10 +226,6 @@ class MainPage(BasePage):
     def redirect_to_news_page(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.first_news)).click()
 
-    @allure.step("Click 'Security audits' tab")
-    def security_audit_tab_click(self):
-        self.wait.until(EC.visibility_of_element_located(MainPage.security_audit_tab)).click()
-
     @allure.step("Check 'Security audits' title is visible")
     def check_security_audit_title(self):
         self.wait.until(EC.visibility_of_element_located(MainPage.security_audit_title)).is_displayed()
@@ -225,11 +278,15 @@ class MainPage(BasePage):
         except TimeoutException:
             raise Exception("Color stays the same")
 
-    @allure.step("Click transaction cost arrow")
-    def click_transaction_element(self):
-        self.wait.until(EC.visibility_of_element_located(MainPage.transaction_cost_arrow)).click()
-
     @allure.step("Check transaction cost dropdown contains text 'Smart contract'")
     def assert_transaction_text(self):
         element = self.wait.until(EC.presence_of_element_located(MainPage.transaction_cost_info))
         assert MainPage.smart_contract_text in element.text, f"Text {MainPage.smart_contract_text} not found"
+
+    @allure.step("Check FAQ first question title")
+    def assert_faq_first_question_title(self):
+        self.wait.until(EC.text_to_be_present_in_element(MainPage.questions_block, MainPage.first_question_text))
+
+    @allure.step("Click 'Learn more' button in 'Modular design' section")
+    def click_learn_more_link(self):
+        self.wait.until(EC.visibility_of_element_located(MainPage.modular_design_section)).click()

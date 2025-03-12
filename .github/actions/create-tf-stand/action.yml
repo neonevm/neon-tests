@@ -35,7 +35,7 @@ runs:
         node-version: 16
     - name: Install python requirements
       id: requirements
-      uses: neonlabsorg/neon-tests/.github/actions/python-requirements@NDEV-3568-neon-js-test-on-hetzner
+      uses: neonlabsorg/neon-tests/.github/actions/python-requirements@develop
       with:
         working-directory: ${{ inputs.working-directory }}
     - name: Deploy stand with terraform

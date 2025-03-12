@@ -18,7 +18,7 @@ runs:
     - name: Install python requirements
       if: always()
       id: requirements
-      uses: neonlabsorg/neon-tests/.github/actions/python-requirements@NDEV-3568-neon-js-test-on-hetzner
+      uses: neonlabsorg/neon-tests/.github/actions/python-requirements@develop
       with:
         working-directory: ${{ inputs.working-directory }}
     - name: Prepare server for destroy terraform stand

@@ -119,7 +119,9 @@
     "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
     "proxy_url": "http://proxy:9090/solana",
     "network_ids": {
-      "neon": 111
+      "neon": 111,
+      "sol": 112,
+      "usdt": 113
     },
     "solana_url": "http://solana:8899/",
     "faucet_url": "http://faucet:3333/request_neon",

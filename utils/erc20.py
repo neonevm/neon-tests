@@ -31,14 +31,6 @@ class ERC20:
         self.initial_balance = amount
         self.contract = self.deploy(name, symbol)
 
-    def _make_tx_object(self, from_address):
-        tx = {
-            "from": from_address,
-            "nonce": self.web3_client.get_nonce(from_address),
-            "gasPrice": self.web3_client.gas_price(),
-        }
-        return tx
-
     def deploy(self, name, symbol):
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
             "EIPs/ERC20/ERC20",
@@ -54,7 +46,7 @@ class ERC20:
         return self.contract.functions.balanceOf(address).call()
 
     def transfer(self, signer, address_to, amount):
-        tx = self._make_tx_object(signer.address)
+        tx = self.web3_client.make_raw_tx(signer)
         if isinstance(address_to, LocalAccount):
             address_to = address_to.address
         instruction_tx = self.contract.functions.transfer(address_to, amount).build_transaction(tx)

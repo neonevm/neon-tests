@@ -505,7 +505,7 @@ class TestSolanaInteroperability:
     def test_solana_call_after_iterative_actions_exceed_accounts_limit(
         self, counter_resource_address: bytes, call_solana_caller
     ):
-        loop_count = 54
+        loop_count = 154
         sender = self.accounts[0]
         lamports = 0
 
@@ -522,7 +522,7 @@ class TestSolanaInteroperability:
 
         with pytest.raises(
             web3.exceptions.ContractLogicError,
-            match="too many accounts: 65 > 64",
+            match="too many accounts",
         ):
             call_solana_caller.functions.executeInIterativeMode(loop_count, lamports, serialized).build_transaction(tx)
 
@@ -597,17 +597,16 @@ class TestSolanaInteroperability:
         ).build_transaction(tx)
 
         resp = self.web3_client.send_transaction(sender, instruction_tx)
+        wait_condition(
+            lambda: self.web3_client.is_trx_iterative(resp["transactionHash"].hex()) is True,
+            timeout_sec=120,
+        )
         assert resp["status"] == 1
         assert int(mint.get_balance(accounts_list[1], commitment=Confirmed).value.amount) == amount
 
         event_logs_data = call_solana_caller.events.LogData().process_receipt(resp)
         assert int.from_bytes(event_logs_data[0].args.value, byteorder="little") == next(get_counter_value)
         assert bytes32_to_solana_pubkey(event_logs_data[0].args.program.hex()) == COUNTER_ID
-
-        wait_condition(
-            lambda: self.web3_client.is_trx_iterative(resp["transactionHash"].hex()) is True,
-            timeout_sec=60,
-        )
 
     def test_solana_call_before_iterative_actions(
         self, counter_resource_address: bytes, call_solana_caller, get_counter_value

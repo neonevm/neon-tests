@@ -457,6 +457,7 @@ class TestERC20SPL:
         assert contract_balance_before - contract_balance_after == amount, "Contract balance is not correct"
         assert sol_balance_after == sol_balance_before, "Sol balance is changed"
 
+    @pytest.mark.only_stands  #  This doesn't work on devnet because GetTokenAccountsByDelegate doesn't work
     def test_approveSolana(
         self,
         erc20_contract,
@@ -688,6 +689,7 @@ class TestERC20SPLMintable:
         assert contract_balance_before - contract_balance_after == amount, "Contract balance is not correct"
         assert sol_balance_after == sol_balance_before, "Sol balance is changed"
 
+    @pytest.mark.only_stands  #  This doesn't work on devnet because GetTokenAccountsByDelegate doesn't work
     def test_approveSolana(
         self,
         erc20_contract,

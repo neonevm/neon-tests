@@ -270,6 +270,7 @@ class Web3Client:
     ) -> web3.types.TxReceipt:
         signed_tx = self._web3.eth.account.sign_transaction(transaction, account.key)
         transaction_hash = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        allure.attach(f"Transaction hash: {transaction_hash.hex()}", "Transaction hash", allure.attachment_type.TEXT)
         return self._web3.eth.wait_for_transaction_receipt(transaction_hash, timeout=timeout)
 
     @allure.step("Send the scheduled transaction")

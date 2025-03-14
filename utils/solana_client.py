@@ -8,7 +8,7 @@ import allure
 import requests
 import solana.rpc.api
 import spl.token.client
-from solana.rpc.commitment import Commitment, Finalized, Confirmed
+from solana.rpc.commitment import Commitment, Confirmed
 from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
 from solders.keypair import Keypair
@@ -41,8 +41,9 @@ class SolanaClient(solana.rpc.api.Client):
         commitment: tp.Optional[Commitment] = None,
     ) -> RequestAirdropResp:
         airdrop_resp = None
+        balance_before = self.get_balance(pubkey).value
         for _ in range(5):
-            airdrop_resp = super().request_airdrop(pubkey, lamports, commitment=Finalized)
+            airdrop_resp = super().request_airdrop(pubkey, lamports, commitment=commitment)
             if isinstance(airdrop_resp, InternalErrorMessage):
                 time.sleep(10)
                 print(f"Get error from solana airdrop: {airdrop_resp}")
@@ -50,7 +51,7 @@ class SolanaClient(solana.rpc.api.Client):
                 break
         else:
             raise AssertionError(f"Can't get airdrop from solana: {airdrop_resp}")
-        wait_condition(lambda: self.get_balance(pubkey).value >= lamports, timeout_sec=30)
+        wait_condition(lambda: self.get_balance(pubkey).value >= lamports + balance_before, timeout_sec=30)
         return airdrop_resp
 
     def send_sol(self, from_: Keypair, to: Pubkey, amount_lamports: int):

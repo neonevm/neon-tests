@@ -345,7 +345,7 @@ def account_with_all_tokens(
     evm_loader_keypair,
     bank_account: Keypair | None,
 ) -> LocalAccount:
-    neon_account = web3_client_session.create_account_with_balance(faucet, bank_account=eth_bank_account, amount=500)
+    neon_account = web3_client_session.create_account_with_balance(faucet, bank_account=eth_bank_account)
     if web3_client_sol:
         lamports = 2 * LAMPORT_PER_SOL
         if environment.use_bank:

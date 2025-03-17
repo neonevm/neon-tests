@@ -73,6 +73,7 @@ def prepare_locust(network, neon_users):
         erc20.mint_tokens(erc20.account, erc20.account.address)
 
         contract_info["erc20_address"] = erc20.contract.address
+        contract_info["erc20_owner_address"] = erc20.account.address
 
         neon_users_info = []
         for i in range(neon_users):
@@ -90,10 +91,14 @@ def prepare_locust(network, neon_users):
             erc20.pop_up_balance(
                 evm_loader, recipient=neon_user, pda_amount=neon_user_balance, ata_amount=neon_user_balance
             )
+            erc20.approve(erc20.account, neon_user.checksum_address, neon_user_balance)
 
         contract_info["neon_users"] = neon_users_info
     except Exception as e:
         print(f"Error in erc20 contract and neon users preparstion: {e}")
     finally:
-        with open("./loadtesting/proxy/data/scheduled_test_info.json", "w+") as f:
+        directory_path = "./loadtesting/proxy/data/"
+        if not os.path.exists(directory_path):
+            os.makedirs(directory_path)
+        with open(directory_path + "scheduled_test_info.json", "w+") as f:
             json.dump(contract_info, f)

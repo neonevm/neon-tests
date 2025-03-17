@@ -14,12 +14,14 @@ from functools import lru_cache
 
 from eth_account.signers.local import LocalAccount
 from solana.rpc import commitment
+from solders.keypair import Keypair
 
 from utils import helpers
 from utils.faucet import Faucet
 from utils.web3client import NeonChainWeb3Client
 from gevent.pool import Pool
 from utils.evm_loader import EvmLoader
+from utils.neon_user import NeonUser
 from utils.types import TreasuryPool
 from utils.consts import LAMPORT_PER_SOL
 from .events import statistics_collector, save_transaction
@@ -247,3 +249,11 @@ class NeonProxyTasksSet(TaskSet):
         with open(path, "r") as fp:
             f = json.load(fp)
         return f
+
+    def get_neon_user(self):
+        id = self.user.environment.shared.id
+        index = id % len(self.erc20_info["neon_users"])
+        item = self.erc20_info["neon_users"][index]
+        self.user.environment.shared.id = id + 1
+        account = bytes(item, encoding="raw_unicode_escape")
+        return NeonUser(evm_loader_id=self.evm_loader.loader_id, keypair=Keypair.from_bytes(account))

@@ -403,7 +403,7 @@ class TestTransactionStepFromAccount:
 
         index = 2
         treasury = TreasuryPool(
-            index, evm_loader.create_treasury_pool_address(index), (index + 1).to_bytes(4, "little")
+            index, evm_loader.create_treasury_pool_address(index), (index + 99).to_bytes(4, "little")
         )
 
         error = str.format(InstructionAsserts.INVALID_ACCOUNT, treasury.account)

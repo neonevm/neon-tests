@@ -46,6 +46,12 @@ def json_rpc_client(environment: EnvironmentConfig) -> JsonRPCSession:
     return JsonRPCSession(environment.proxy_url)
 
 
+@pytest.fixture(scope="session")
+def json_sol_rpc_client(environment: EnvironmentConfig) -> JsonRPCSession:
+    if "sol" in environment.network_ids:
+        return JsonRPCSession(f"{environment.proxy_url}/sol")
+
+
 @pytest.fixture(scope="class")
 def web3_client(request, web3_client_session) -> tp.Generator[NeonChainWeb3Client, None, None]:
     if inspect.isclass(request.cls):

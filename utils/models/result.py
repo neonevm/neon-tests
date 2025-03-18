@@ -108,6 +108,31 @@ class Transaction(BaseModel):
     type: HexString
 
 
+class ScheduledTransaction(BaseModel):
+    blockHash: HexString
+    blockNumber: HexString
+    from_: HexString = Field(alias="from")
+    gas: HexString
+    gasPrice: HexString
+    hash: HexString
+    input: HexString
+    nonce: HexString
+    to: Union[HexString, None]
+    transactionIndex: HexString
+    value: HexString
+    chainId: HexString
+    v: None
+    r: None
+    s: None
+    type: HexString
+    scheduledPayer: HexString
+    scheduledSolanaPayer: str
+    scheduledIndex: HexString
+    scheduledSolanaSignature: str
+    maxPriorityFeePerGas: HexString
+    maxFeePerGas: HexString
+
+
 class EthGetBlockByHashDetails(ForbidExtra):
     number: Union[HexString, None]
     hash: Union[HexString, None]
@@ -160,12 +185,56 @@ class EthGetBlockByHashFullDetails(ForbidExtra):
     mixHash: HexString
 
 
+class EthGetScheduledTxBlockByHashFullDetails(ForbidExtra):
+    number: Union[HexString, None]
+    hash: Union[HexString, None]
+    parentHash: HexString
+    nonce: Union[HexString, None]
+    sha3Uncles: HexString
+    logsBloom: HexString
+    transactionsRoot: HexString
+    stateRoot: HexString
+    receiptsRoot: HexString
+    miner: tp.Optional[HexString]
+    baseFeePerGas: tp.Optional[HexString] = None
+    withdrawals: tp.Optional[List[HexString]] = None
+    withdrawalsRoot: tp.Optional[HexString] = None
+    difficulty: HexString
+    totalDifficulty: Union[HexString, None]
+    extraData: HexString
+    size: HexString
+    gasLimit: HexString
+    gasUsed: HexString
+    timestamp: HexString
+    transactions: List[ScheduledTransaction]
+    uncles: List[HexString]
+    mixHash: HexString
+
+
 class EthGetBlockByHashResult(EthResult):
     result: Union[EthGetBlockByHashDetails, None]
 
 
 class EthGetBlockByHashFullResult(EthResult):
     result: Union[EthGetBlockByHashFullDetails, None]
+
+
+class EthGetScheduledTxBlockByHashFullResult(EthResult):
+    result: Union[EthGetScheduledTxBlockByHashFullDetails, None]
+
+
+class EstimateScheduledGasDetails(ForbidExtra):
+    chainId: HexString
+    maxFeePerGas: HexString
+    maxPriorityFeePerGas: HexString
+    nonce: HexString
+    treasuryIndex: HexString
+    gasList: tp.Optional[List[HexString]] = None
+    accountList: tp.Optional[List[str]] = None
+
+
+class EstimateScheduledGas(EthResult):
+    result: Union[EstimateScheduledGasDetails, None]
 
 
 class EthGetLogsDetails(ForbidExtra):
@@ -254,6 +323,10 @@ class EthGetTransactionReceiptResult(EthResult):
 
 class EthGetTransactionByHashResult(EthResult):
     result: Transaction
+
+
+class EthEthGetScheduledTransactionByHashResult(EthResult):
+    result: ScheduledTransaction
 
 
 class SolanaInstruction(ForbidExtra):

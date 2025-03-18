@@ -92,7 +92,7 @@ class ScheduledTxsDependentTasksSet(NeonProxyTasksSet):
         self.log = logging.getLogger("neon-consumer[%s]" % self.account.address[-8:])
 
     @task
-    def task_send_scheduled_tx(self):
+    def task_send_dependent_scheduled_tx(self):
         """Send independent scheduled transactions"""
         neon_user = self.get_neon_user()
         recipient = NeonUser(self.evm_loader.loader_id)
@@ -157,8 +157,67 @@ class ScheduledTxsDependentTasksSet(NeonProxyTasksSet):
             check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex(), timeout=180)
 
 
+@tag("scheduled_tx: use pda and ata")
+class ScheduledTxsPdaAndAtaUsedTasksSet(NeonProxyTasksSet):
+    """Implements Scheduled txs with pda and ata used pipeline tasks"""
+
+    def on_start(self) -> None:
+        super().on_start()
+        super().setup()
+        self.log = logging.getLogger("neon-consumer[%s]" % self.account.address[-8:])
+
+    @task
+    def task_send_scheduled_tx_pda_and_ata_used(self):
+        """Send scheduled transactions pda and ata used, two recipients"""
+        neon_user = self.get_neon_user()
+        recipient_0 = NeonUser(self.evm_loader.loader_id)
+        recipient_1 = NeonUser(self.evm_loader.loader_id)
+
+        data_0 = decode_function_signature("transfer(address,uint256)", [recipient_0.checksum_address, 100])
+        data_1 = decode_function_signature("transfer(address,uint256)", [recipient_1.checksum_address, 100])
+
+        trx_estimate_0 = ScheduledTrxEstimateRequest(
+            neon_user.checksum_address, self.erc20_info["erc20_address"], data_0
+        )
+        trx_estimate_1 = ScheduledTrxEstimateRequest(
+            neon_user.checksum_address, self.erc20_info["erc20_address"], data_1
+        )
+        trx_estimate_obj_list = [trx_estimate_0, trx_estimate_1]
+        estimate_result = self.web3_client_sol.estimate_scheduled(
+            neon_user.solana_account.pubkey(), trx_estimate_obj_list
+        )
+
+        gas_list_new = []
+        for i in estimate_result["gasList"]:
+            new_value = 50 * int(i, 16)
+            gas_list_new.append(hex(new_value))
+
+        estimate_result["gasList"] = gas_list_new
+
+        trxs = []
+        for i in range(len(trx_estimate_obj_list)):
+            trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
+
+        tree_acc_data = CreateTreeAccMultipleData(
+            nonce=estimate_result["nonce"],
+            max_fee_per_gas=estimate_result["maxFeePerGas"],
+            max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
+        )
+
+        tree_acc_data.add_trx(trxs[0], 0xFFFF, 0)
+        tree_acc_data.add_trx(trxs[1], 0xFFFF, 0)
+
+        self.evm_loader.create_tree_account_multiple(
+            neon_user, self.treasury_pool, tree_acc_data.data, wSOL["address_spl"]
+        )
+        self.web3_client_sol.send_all_scheduled_transactions(trxs)
+        for trx in trxs:
+            check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex(), timeout=240)
+
+
 class ScheduledTxUser(User):
     tasks = {
         ScheduledTxsIndependentTasksSet: 1,
         ScheduledTxsDependentTasksSet: 1,
+        ScheduledTxsPdaAndAtaUsedTasksSet: 1,
     }

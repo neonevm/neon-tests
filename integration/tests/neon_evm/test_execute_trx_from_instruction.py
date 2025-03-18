@@ -300,7 +300,7 @@ class TestExecuteTrxFromInstruction:
         self, operator_keypair, treasury_pool, sender_with_tokens: Caller, session_user: Caller, evm_loader, holder_acc
     ):
         signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
-        treasury_buffer = b"\x03\x00\x00\x00"
+        treasury_buffer = b"\x93\x00\x00\x00"
 
         error = str.format(InstructionAsserts.INVALID_ACCOUNT, treasury_pool.account)
         with pytest.raises(SolanaRPCException, match=error):

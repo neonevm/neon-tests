@@ -106,7 +106,6 @@ class MainPage(BasePage):
             )
         self.driver.execute_script("arguments[0].click();", button)
         WebDriverWait(self.driver, 5).until(lambda driver: len(driver.window_handles) > 1)
-        # self.wait.until(EC.visibility_of_element_located(MainPage.start_building_button)).click()
 
     @allure.step("Click 'Technical docs' button")
     def click_technical_docs_button(self):
@@ -132,21 +131,6 @@ class MainPage(BasePage):
 
     @allure.step("Check message, that user already subscribed, is visible")
     def check_already_subscribed_text(self):
-        # self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
-        # self.wait.until(EC.visibility_of_element_located(MainPage.subscribe_button))
-        # try:
-        #     self.wait.until(
-        #         EC.any_of(
-        #             EC.visibility_of_element_located(MainPage.subscription_notification_text),
-        #             EC.visibility_of_element_located(MainPage.problem_with_subscription_text),
-        #         )
-        #     )
-        # except TimeoutException:
-        #     self.driver.save_screenshot("screenshot_email_subscription.png")
-        #     raise Exception(
-        #         "No notification found: neither subscription_notification_text nor problem_with_subscription_text is visible"
-        #     )
-
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
         self.wait.until(EC.visibility_of_element_located(MainPage.email_input_field))
 
@@ -158,7 +142,7 @@ class MainPage(BasePage):
                 )
             )
 
-            print(f"✅ Найдено уведомление: {notification.text}")
+            print(f"✅ found notification: {notification.text}")
 
         except TimeoutException:
             self.driver.save_screenshot("screenshot_email_subscription.png")
@@ -167,7 +151,7 @@ class MainPage(BasePage):
             prob_text = self.driver.find_elements(*MainPage.problem_with_subscription_text)
 
             if sub_text or prob_text:
-                raise Exception("⚠️ Уведомление найдено в DOM, но оно скрыто (`display: none;`)")
+                raise Exception("Notification exists in DOM, but hidden (`display: none;`)")
 
             raise Exception(
                 "❌ No notification found: neither subscription_notification_text nor problem_with_subscription_text is visible"

@@ -46,6 +46,12 @@ def json_rpc_client(environment: EnvironmentConfig) -> JsonRPCSession:
     return JsonRPCSession(environment.proxy_url)
 
 
+@pytest.fixture(scope="session")
+def json_sol_rpc_client(environment: EnvironmentConfig) -> JsonRPCSession:
+    if "sol" in environment.network_ids:
+        return JsonRPCSession(f"{environment.proxy_url}/sol")
+
+
 @pytest.fixture(scope="class")
 def web3_client(request, web3_client_session) -> tp.Generator[NeonChainWeb3Client, None, None]:
     if inspect.isclass(request.cls):
@@ -345,7 +351,7 @@ def account_with_all_tokens(
     evm_loader_keypair,
     bank_account: Keypair | None,
 ) -> LocalAccount:
-    neon_account = web3_client_session.create_account_with_balance(faucet, bank_account=eth_bank_account, amount=500)
+    neon_account = web3_client_session.create_account_with_balance(faucet, bank_account=eth_bank_account)
     if web3_client_sol:
         lamports = 2 * LAMPORT_PER_SOL
         if environment.use_bank:

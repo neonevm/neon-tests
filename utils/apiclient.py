@@ -2,6 +2,7 @@ import time
 import typing as tp
 import random
 
+import allure
 from requests import Session
 
 
@@ -10,6 +11,7 @@ class JsonRPCSession(Session):
         super(JsonRPCSession, self).__init__()
         self.url = url
 
+    @allure.step("Send rpc request")
     def send_rpc(
         self,
         method: str,

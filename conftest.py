@@ -2,6 +2,7 @@ import builtins
 import json
 import os
 import pathlib
+import re
 import shutil
 import sys
 from dataclasses import dataclass, field
@@ -272,9 +273,15 @@ def neon_user(evm_loader: EvmLoader, bank_account, environment: EnvironmentConfi
     return user
 
 
+@pytest.fixture(scope="function")
+def neon_user_no_sols(pytestconfig, bank_account, faucet, environment) -> NeonUser:
+    user = NeonUser(environment.evm_loader, bank_account)
+    return user
+
+
 @pytest.fixture(scope="session")
-def treasury_pool(evm_loader: EvmLoader, pytestconfig) -> TreasuryPool:
-    index = 2
+def treasury_pool(evm_loader: EvmLoader, pytestconfig, index_of_process) -> TreasuryPool:
+    index = index_of_process
     evm_loader.create_treasury_pool_address(index)
     if pytestconfig.getoption("--network") == "mainnet":
         address = Pubkey.from_string(os.environ.get("MAINNET_TREASURY_POOL_ADDRESS"))
@@ -295,3 +302,11 @@ def treasury_pool_new(evm_loader) -> TreasuryPool:
     index_buf = index.to_bytes(4, "little")
     evm_loader.request_airdrop(address, 10000 * 10**9, commitment=Confirmed)
     return TreasuryPool(index, address, index_buf)
+
+
+@pytest.fixture(scope="session")
+def index_of_process(worker_id):
+    if worker_id in ("master", "gw1"):
+        return 1
+    match = re.search(r"gw(\d+)", worker_id)
+    return int(match.group(1)) if match else None

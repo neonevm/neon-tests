@@ -257,3 +257,9 @@ class NeonProxyTasksSet(TaskSet):
         self.user.environment.shared.id = id + 1
         account = bytes(item, encoding="raw_unicode_escape")
         return NeonUser(evm_loader_id=self.evm_loader.loader_id, keypair=Keypair.from_bytes(account))
+
+    def get_random_neon_user(self, exclude_user):
+        exclude_item = (bytes(exclude_user.solana_account)).decode(encoding="raw_unicode_escape")
+        item = random.choice([x for x in self.erc20_info["neon_users"] if x != exclude_item])
+        account = bytes(item, encoding="raw_unicode_escape")
+        return NeonUser(evm_loader_id=self.evm_loader.loader_id, keypair=Keypair.from_bytes(account))

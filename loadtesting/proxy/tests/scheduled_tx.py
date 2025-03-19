@@ -2,7 +2,6 @@ import logging
 
 from utils.consts import wSOL
 from utils.helpers import decode_function_signature
-from utils.neon_user import NeonUser
 from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData, ScheduledTrxEstimateRequest
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 
@@ -14,7 +13,7 @@ LOG = logging.getLogger(__name__)
 
 @tag("scheduled_tx independent")
 class ScheduledTxsIndependentTasksSet(NeonProxyTasksSet):
-    """Implements Independent Scheduled txs pipeline tasks"""
+    """Implements independent scheduled txs sending pipeline tasks"""
 
     def on_start(self) -> None:
         super().on_start()
@@ -25,7 +24,7 @@ class ScheduledTxsIndependentTasksSet(NeonProxyTasksSet):
     def task_send_independent_scheduled_tx(self):
         """Send independent scheduled transactions"""
         neon_user = self.get_neon_user()
-        recipient = NeonUser(self.evm_loader.loader_id)
+        recipient = self.get_random_neon_user(exclude_user=neon_user)
 
         transfer_amount = 50
         burn_amount = 25
@@ -84,7 +83,7 @@ class ScheduledTxsIndependentTasksSet(NeonProxyTasksSet):
 
 @tag("scheduled_tx dependent")
 class ScheduledTxsDependentTasksSet(NeonProxyTasksSet):
-    """Implements Dependent Scheduled txs pipeline tasks"""
+    """Implements dependent scheduled txs sending pipeline tasks"""
 
     def on_start(self) -> None:
         super().on_start()
@@ -93,9 +92,9 @@ class ScheduledTxsDependentTasksSet(NeonProxyTasksSet):
 
     @task
     def task_send_dependent_scheduled_tx(self):
-        """Send independent scheduled transactions"""
+        """Send dependent scheduled transactions"""
         neon_user = self.get_neon_user()
-        recipient = NeonUser(self.evm_loader.loader_id)
+        recipient = self.get_random_neon_user(exclude_user=neon_user)
 
         top_up_in_trx = 100
         amount_to_recipient = 100
@@ -157,9 +156,9 @@ class ScheduledTxsDependentTasksSet(NeonProxyTasksSet):
             check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex(), timeout=180)
 
 
-@tag("scheduled_tx: use pda and ata")
-class ScheduledTxsPdaAndAtaUsedTasksSet(NeonProxyTasksSet):
-    """Implements Scheduled txs with pda and ata used pipeline tasks"""
+@tag("scheduled_tx: transfer tokens to two users")
+class ScheduledTxsTransferToDifferentUsersTasksSet(NeonProxyTasksSet):
+    """Implements transfer to different users via scheduled txs pipeline tasks"""
 
     def on_start(self) -> None:
         super().on_start()
@@ -168,10 +167,10 @@ class ScheduledTxsPdaAndAtaUsedTasksSet(NeonProxyTasksSet):
 
     @task
     def task_send_scheduled_tx_pda_and_ata_used(self):
-        """Send scheduled transactions pda and ata used, two recipients"""
+        """Send scheduled transactions: transfer tokens to recipients"""
         neon_user = self.get_neon_user()
-        recipient_0 = NeonUser(self.evm_loader.loader_id)
-        recipient_1 = NeonUser(self.evm_loader.loader_id)
+        recipient_0 = self.get_random_neon_user(exclude_user=neon_user)
+        recipient_1 = self.get_random_neon_user(exclude_user=neon_user)
 
         data_0 = decode_function_signature("transfer(address,uint256)", [recipient_0.checksum_address, 100])
         data_1 = decode_function_signature("transfer(address,uint256)", [recipient_1.checksum_address, 100])
@@ -219,5 +218,5 @@ class ScheduledTxUser(User):
     tasks = {
         ScheduledTxsIndependentTasksSet: 1,
         ScheduledTxsDependentTasksSet: 1,
-        ScheduledTxsPdaAndAtaUsedTasksSet: 1,
+        ScheduledTxsTransferToDifferentUsersTasksSet: 1,
     }

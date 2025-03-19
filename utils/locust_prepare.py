@@ -34,7 +34,7 @@ def prepare_locust(network, neon_users):
 
     account_manager = EthAccounts(web3_client, faucet, bank_account)
 
-    neon_user_balance = 80_000
+    neon_user_balance = int(10**10 / neon_users)
     contract_info = {}
 
     evm_loader = EvmLoader(

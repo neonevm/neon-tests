@@ -336,7 +336,7 @@ class TestNeonRPCEstimateScheduledGas:
             [trx_estimate_obj1, trx_estimate_obj2],
             preparatory_solana_trxs=trx.instructions,
         )
-        assert len(resp["gasList"]) == 2, f"Amount of transactions must be 1, but actual amount = {2}"
+        assert len(resp["gasList"]) == 2, "Amount of transactions must be 2"
 
         nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
         assert resp["nonce"] == hex(nonce)

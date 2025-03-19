@@ -799,7 +799,7 @@ jobs:
           fi
 
       - name: "Add PR comment if cost report validation has any issues"
-        if: ${{ steps.validate-cost-report.outputs.has_errors == 'true' }}
+        if: ${{ steps.validate-cost-report.outputs.has_errors == 'true' && inputs.pr_url_for_report != '' && inputs.pr_url_for_report !='/comments' }}
         run: |
           python3 ./clickfile.py dapps add_pr_comment \
             --pr_url_for_report="${{ inputs.pr_url_for_report }}" \

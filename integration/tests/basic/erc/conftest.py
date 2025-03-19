@@ -20,7 +20,7 @@ from utils.web3client import NeonChainWeb3Client
 def solana_associated_token_mintable_erc20(
     erc20_spl_mintable, sol_client, solana_account: Keypair
 ) -> Generator[Keypair, None, None]:
-    token_mint = Pubkey(erc20_spl_mintable.contract.functions.tokenMint().call())
+    token_mint = erc20_spl_mintable.token_mint_pubkey
     trx = Transaction()
     trx.add(create_associated_token_account(solana_account.pubkey(), solana_account.pubkey(), token_mint))
     opts = TxOpts(skip_preflight=True, skip_confirmation=False)
@@ -33,7 +33,7 @@ def solana_associated_token_mintable_erc20(
 def solana_associated_token_mintable_erc20_new(
     erc20_spl_mintable_new, sol_client, solana_account: Keypair
 ) -> Generator[tuple[Keypair, Pubkey, Pubkey], None, None]:
-    token_mint = Pubkey(erc20_spl_mintable_new.contract.functions.tokenMint().call())
+    token_mint = erc20_spl_mintable_new.token_mint_pubkey
     trx = Transaction()
     trx.add(create_associated_token_account(solana_account.pubkey(), solana_account.pubkey(), token_mint))
     opts = TxOpts(skip_preflight=True, skip_confirmation=False)

@@ -20,7 +20,7 @@ class TestScheduledTrxERC20new:
         recipient = NeonUser(evm_loader.loader_id)
 
         my_pda = Pubkey(erc20_spl_mintable_new.contract.functions.solanaAccount(neon_user.checksum_address).call())
-        token_mint = Pubkey(erc20_spl_mintable_new.contract.functions.tokenMint().call())
+        token_mint = erc20_spl_mintable_new.token_mint_pubkey
 
         my_ata = get_associated_token_address(neon_user.solana_account.pubkey(), token_mint)
 
@@ -51,7 +51,7 @@ class TestScheduledTrxERC20new:
         recipient = NeonUser(evm_loader.loader_id)
 
         my_pda = Pubkey(erc20_spl_mintable_new.contract.functions.solanaAccount(neon_user.checksum_address).call())
-        token_mint = Pubkey(erc20_spl_mintable_new.contract.functions.tokenMint().call())
+        token_mint = erc20_spl_mintable_new.token_mint_pubkey
         my_ata = get_associated_token_address(neon_user.solana_account.pubkey(), token_mint)
 
         erc20_spl_mintable_new.pop_up_balance(evm_loader, recipient=neon_user, pda_amount=1000, ata_amount=1000)
@@ -106,7 +106,7 @@ class TestScheduledTrxERC20new:
         self, web3_client_sol, neon_user, erc20_spl_mintable_new, evm_loader, treasury_pool
     ):
 
-        token_mint = Pubkey(erc20_spl_mintable_new.contract.functions.tokenMint().call())
+        token_mint = erc20_spl_mintable_new.token_mint_pubkey
 
         erc20_spl_mintable_new.pop_up_balance(evm_loader, recipient=neon_user, pda_amount=5, ata_amount=2000)
         my_ata = get_associated_token_address(neon_user.solana_account.pubkey(), token_mint)
@@ -140,7 +140,7 @@ class TestScheduledTrxERC20new:
     def test_multiple_transactions_with_transfer_from_solana(
         self, web3_client_sol, neon_user, erc20_spl_mintable_new, evm_loader, treasury_pool
     ):
-        token_mint = Pubkey(erc20_spl_mintable_new.contract.functions.tokenMint().call())
+        token_mint = erc20_spl_mintable_new.token_mint_pubkey
         my_ata = get_associated_token_address(neon_user.solana_account.pubkey(), token_mint)
         transfer_amount = 1000
         start_balance = 1

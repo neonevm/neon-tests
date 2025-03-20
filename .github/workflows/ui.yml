@@ -42,6 +42,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Install pytest-rerunfailures
+        run: |
+          docker exec -i neon_tests bash -c "pip install pytest-rerunfailures"
+
       - name: Run tests container
         id: run-container
         run: |

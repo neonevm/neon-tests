@@ -59,6 +59,9 @@ jobs:
           "
           docker exec -i ${{ env.CONTAINER_NAME }} bash -c "$CMD"
 
+      - name: Install rerun
+        run: pip install pytest pytest-rerunfailures
+
       - name: Run tests
         id: run-tests
         run: |

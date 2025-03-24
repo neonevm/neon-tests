@@ -16,6 +16,20 @@ sudo apt-get -y install pbzip2
 sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
+# Optional docker login to avoid docker hub pull limits
+# Check if both variables are set
+if [[ -n "$DOCKER_USERNAME" && -n "$DOCKER_PASSWORD" ]]; then
+
+  # Log in to Docker using masked credentials
+  if echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin; then
+    echo "Docker login succeeded!"
+  else
+    echo "Docker login failed! Check your credentials."
+  fi
+else
+  echo "DOCKER_USERNAME and/or DOCKER_PASSWORD are not set!"
+fi
+
 
 # Get docker-compose file
 cd /opt

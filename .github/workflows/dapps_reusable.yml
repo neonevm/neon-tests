@@ -103,6 +103,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -155,6 +160,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -206,6 +216,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -258,6 +273,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -304,6 +324,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -350,6 +375,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -435,6 +465,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -487,6 +522,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -536,6 +576,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -588,6 +633,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements

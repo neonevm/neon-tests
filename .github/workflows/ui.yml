@@ -63,10 +63,9 @@ jobs:
         run: |
           docker exec -i neon_tests bash -c "pip install pytest-rerunfailures"
 
-      - name: Run tests
-        id: run-tests
+      - name: Run tests directly
         run: |
-          docker exec -i ${{ env.CONTAINER_NAME }} bash -c "CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} PYTEST_ADDOPTS='--reruns 2 --reruns-delay 2' python3 clickfile.py run ui --network ${{ env.NETWORK }}"
+          docker exec -i ${{ env.CONTAINER_NAME }} bash -c "CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} pytest ui/tests/website_tests --reruns 2 --reruns-delay 2"
 
       - name: "Generate allure report"
         if: always()

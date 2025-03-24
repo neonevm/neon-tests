@@ -648,10 +648,6 @@ def run(
         command = "py.test ui/tests/website_tests"
         if ui_item != "all":
             command = command + f"/test_{ui_item}.py"
-        known_args = ["run", "ui", ui_item, "--network", network]
-        extra_args = " ".join(arg for arg in sys.argv[1:] if arg not in known_args)
-        if extra_args:
-            command += f" {extra_args}"
     else:
         raise click.ClickException("Unknown test name")
 

@@ -289,18 +289,19 @@ def treasury_pool(evm_loader: EvmLoader, pytestconfig, index_of_process) -> Trea
         address = evm_loader.create_treasury_pool_address(index)
     index_buf = index.to_bytes(4, "little")
     balance = evm_loader.get_solana_balance(address)
-    if pytestconfig.getoption("--network") != "mainnet":
+    if pytestconfig.getoption("--network") not in ["mainnet", "devnet"]:
         if balance < 5 * LAMPORT_PER_SOL:
             evm_loader.request_airdrop(address, 5 * LAMPORT_PER_SOL, commitment=Confirmed)
     return TreasuryPool(index, address, index_buf)
 
 
 @pytest.fixture(scope="session")
-def treasury_pool_new(evm_loader) -> TreasuryPool:
+def treasury_pool_new(evm_loader, pytestconfig) -> TreasuryPool:
     index = 3
     address = evm_loader.create_treasury_pool_address(index)
     index_buf = index.to_bytes(4, "little")
-    evm_loader.request_airdrop(address, 10000 * 10**9, commitment=Confirmed)
+    if pytestconfig.getoption("--network") not in ["mainnet", "devnet"]:
+        evm_loader.request_airdrop(address, 10000 * 10**9, commitment=Confirmed)
     return TreasuryPool(index, address, index_buf)
 
 

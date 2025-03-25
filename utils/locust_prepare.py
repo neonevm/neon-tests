@@ -34,7 +34,7 @@ def prepare_locust(network, neon_users):
 
     account_manager = EthAccounts(web3_client, faucet, bank_account)
 
-    neon_user_balance = int(10**10 / neon_users)
+    neon_user_balance = int(10**12 / neon_users)
     contract_info = {}
 
     evm_loader = EvmLoader(
@@ -70,11 +70,14 @@ def prepare_locust(network, neon_users):
             bank_account=bank_account,
             account=eth_account,
         )
-        erc20.mint_tokens(erc20.account, erc20.account.address)
+
+        print("Mint tokens...")
+        erc20.mint_tokens(signer=erc20.account, to_address=erc20.account.address, amount=10**18)
 
         contract_info["erc20_address"] = erc20.contract.address
         contract_info["erc20_owner_address"] = erc20.account.address
 
+        print("Create neon users...")
         neon_users_info = []
         for i in range(neon_users):
             neon_solana_account = Keypair()
@@ -95,7 +98,7 @@ def prepare_locust(network, neon_users):
 
         contract_info["neon_users"] = neon_users_info
     except Exception as e:
-        print(f"Error in erc20 contract and neon users preparstion: {e}")
+        print(f"Error in erc20 contract and neon users preparation: {e}")
     finally:
         directory_path = "./loadtesting/proxy/data/"
         if not os.path.exists(directory_path):

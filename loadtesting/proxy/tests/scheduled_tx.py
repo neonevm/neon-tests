@@ -24,11 +24,12 @@ class ScheduledTxsIndependentTasksSet(NeonProxyTasksSet):
     def task_send_independent_scheduled_tx(self):
         """Send independent scheduled transactions"""
         neon_user = self.get_neon_user()
+        self.check_neon_user_balance(neon_user.solana_account)
         recipient = self.get_random_neon_user(exclude_user=neon_user)
 
-        transfer_amount = 50
-        burn_amount = 25
-        approve_amount = 1000
+        transfer_amount = 10
+        burn_amount = 10
+        approve_amount = 100
         trx_count = 4
 
         data_0 = decode_function_signature("approve(address,uint256)", [neon_user.checksum_address, approve_amount])
@@ -94,10 +95,11 @@ class ScheduledTxsDependentTasksSet(NeonProxyTasksSet):
     def task_send_dependent_scheduled_tx(self):
         """Send dependent scheduled transactions"""
         neon_user = self.get_neon_user()
+        self.check_neon_user_balance(neon_user.solana_account)
         recipient = self.get_random_neon_user(exclude_user=neon_user)
 
-        top_up_in_trx = 100
-        amount_to_recipient = 100
+        top_up_in_trx = 10
+        amount_to_recipient = 10
 
         data_0 = data_1 = decode_function_signature(
             "transferFrom(address,address,uint256)",
@@ -169,11 +171,12 @@ class ScheduledTxsTransferToDifferentUsersTasksSet(NeonProxyTasksSet):
     def task_send_scheduled_tx_pda_and_ata_used(self):
         """Send scheduled transactions: transfer tokens to recipients"""
         neon_user = self.get_neon_user()
+        self.check_neon_user_balance(neon_user.solana_account)
         recipient_0 = self.get_random_neon_user(exclude_user=neon_user)
         recipient_1 = self.get_random_neon_user(exclude_user=neon_user)
 
-        data_0 = decode_function_signature("transfer(address,uint256)", [recipient_0.checksum_address, 100])
-        data_1 = decode_function_signature("transfer(address,uint256)", [recipient_1.checksum_address, 100])
+        data_0 = decode_function_signature("transfer(address,uint256)", [recipient_0.checksum_address, 10])
+        data_1 = decode_function_signature("transfer(address,uint256)", [recipient_1.checksum_address, 10])
 
         trx_estimate_0 = ScheduledTrxEstimateRequest(
             neon_user.checksum_address, self.erc20_info["erc20_address"], data_0

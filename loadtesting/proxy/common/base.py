@@ -263,3 +263,12 @@ class NeonProxyTasksSet(TaskSet):
         item = random.choice([x for x in self.erc20_info["neon_users"] if x != exclude_item])
         account = bytes(item, encoding="raw_unicode_escape")
         return NeonUser(evm_loader_id=self.evm_loader.loader_id, keypair=Keypair.from_bytes(account))
+
+    def check_neon_user_balance(self, solana_account):
+        balance = self.evm_loader.get_solana_balance(solana_account.pubkey())
+        if self.network not in ["devnet"]:
+            if balance < 0.5 * LAMPORT_PER_SOL:
+                print("Fund account")
+                self.evm_loader.request_airdrop(
+                    solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed
+                )

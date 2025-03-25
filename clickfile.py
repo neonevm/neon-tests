@@ -645,7 +645,7 @@ def run(
             raise click.ClickException(
                 red("Please set the `CHROME_EXT_PASSWORD` environment variable (password for wallets).")
             )
-        command = "pytest ui/tests/website_tests"
+        command = "pytest ui/tests/website_tests --reruns 3 --reruns-delay 2"
         if ui_item != "all":
             command = command + f"/test_{ui_item}.py"
     else:

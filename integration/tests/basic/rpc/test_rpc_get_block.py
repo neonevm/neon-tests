@@ -13,7 +13,6 @@ from utils.models.error import EthError32602
 from utils.models.result import (
     EthGetBlockByHashResult,
     EthGetBlockByHashFullResult,
-    EthGetScheduledTxBlockByHashFullResult,
     EthResult,
 )
 from utils.scheduled_trx import ScheduledTrxEstimateRequest, ScheduledTransaction
@@ -222,17 +221,16 @@ class TestRpcGetBlock:
         wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=120, delay=2)
 
         if full_trx:
-            scheduled_trxs = list(filter(lambda obj: obj["type"] == "0x80", resp["result"]["transactions"]))
-            resp["result"]["transactions"] = scheduled_trxs
-            EthGetScheduledTxBlockByHashFullResult(**resp)
+            EthGetBlockByHashFullResult(**resp)
+            scheduled_trx_from_resp = next(
+                (trx for trx in resp["result"]["transactions"] if trx["hash"][2:] == tx.hash().hex()), None
+            )
+            assert scheduled_trx_from_resp["type"] == "0x80"
+            assert scheduled_trx_from_resp["scheduledIndex"] == "0x0"
+            assert scheduled_trx_from_resp["scheduledPayer"] == neon_user.checksum_address
+            assert scheduled_trx_from_resp["scheduledSolanaPayer"] == str(neon_user.solana_account.pubkey())
 
-            transaction = list(filter(lambda obj: obj["input"] == trx_estimate_obj.data, scheduled_trxs))[0]
-            assert transaction["type"] == "0x80"
-            assert transaction["scheduledIndex"] == "0x0"
-            assert transaction["scheduledPayer"] == neon_user.checksum_address
-            assert transaction["scheduledSolanaPayer"] == str(neon_user.solana_account.pubkey())
-
-            transactions_with_sig = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
-            assert transaction["scheduledSolanaSignature"] in transactions_with_sig["result"]
+            sol_sig_list = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
+            assert scheduled_trx_from_resp["scheduledSolanaSignature"] in sol_sig_list["result"]
         else:
             EthGetBlockByHashResult(**resp)

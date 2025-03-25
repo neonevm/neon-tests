@@ -23,6 +23,12 @@ inputs:
     description: 'list of Hcloud instaces used(one by one) to try to set up infra e.g. ccx33,ccx43,ccx53,cx42,ccx63'
     default: cpx51,cx52,cpx41,cx42,ccx33,ccx43
     required: false
+  docker_username:
+    description: 'docker hub username'
+    required: true
+  docker_password:
+    description: 'docker hub password'
+    required: true
 
 
 runs:
@@ -74,26 +80,32 @@ runs:
         echo "solana_ip=${{ env.SOLANA_IP }}" >> $GITHUB_OUTPUT
     - name: Run Solana docker compose
       uses: appleboy/ssh-action@v1.2.1
+      env:
+        DOCKER_USERNAME: ${{ inputs.docker_username }}
+        DOCKER_PASSWORD: ${{ inputs.docker_password }}
       with:
         host: ${{ env.SOLANA_IP }}
         username: root
         key: ${{ inputs.ci_stands_key_hcloud  }}
+        envs: DOCKER_USERNAME,DOCKER_PASSWORD
         script: |
           cd ${{ inputs.working-directory }}
           chmod a+x /tmp/solana_init.sh
-          sudo /tmp/solana_init.sh
+          sudo -E /tmp/solana_init.sh
 
     - name: Run Poxy docker compose
       uses: appleboy/ssh-action@v1.2.1
       env:
         SOLANA_IP: ${{ env.SOLANA_IP }}
+        DOCKER_USERNAME: ${{ inputs.docker_username }}
+        DOCKER_PASSWORD: ${{ inputs.docker_password }}
       with:
         host: ${{ env.PROXY_IP }}
         username: root
         key: ${{ inputs.ci_stands_key_hcloud  }}
-        envs: SOLANA_IP
+        envs: SOLANA_IP,DOCKER_USERNAME,DOCKER_PASSWORD
         script: |
           cd ${{ inputs.working-directory }}
           echo $SOLANA_IP > /tmp/solana_host
           chmod a+x /tmp/proxy_init.sh
-          sudo /tmp/proxy_init.sh
+          sudo -E /tmp/proxy_init.sh

@@ -180,6 +180,7 @@ def assert_log_field_in_neon_trx_receipt(response, events_count):
                 assert event_types == expected_event_types, f"Actual: {event_types}; Expected: {expected_event_types}"
 
 
+@allure.step("Assert that fields in the object are hex")
 def assert_fields_are_hex(obj, expected_hex_fields):
     if isinstance(obj, SimpleNamespace):
         for field in expected_hex_fields:

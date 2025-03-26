@@ -94,10 +94,10 @@ class Menu(BasePage):
     @allure.step("Click on the menu item 'Community/Events'")
     def click_on_events_link(self):
         try:
-            community_menu = self.wait.until(EC.visibility_of_element_located(Menu.community_link))
+            community_menu = self.wait.until(EC.presence_of_element_located(Menu.community_link))
             self.scroll_page_to_element(community_menu)
             self.hover_element(community_menu)
-            events = self.wait.until(EC.visibility_of_element_located(Menu.link_on_events))
+            events = self.wait.until(EC.presence_of_element_located(Menu.link_on_events))
             self.scroll_page_to_element(events)
             self.hover_element(events)
             events.click()

@@ -44,7 +44,7 @@
   },
   "devnet": {
     "evm_loader": "eeLSJgWzzxrqKv1UxtRVVH8FX3qCQWUs9QuAjJpETGU",
-    "proxy_url": "http://proxy-svc.neon-proxy-devnet.svc.cluster.local.:9090",
+    "proxy_url": "https://devnet.neonevm.org/",
     "network_ids": {
       "neon": 245022926,
       "sol": 245022927,

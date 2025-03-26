@@ -27,6 +27,8 @@ class NetworkManager:
                 self._networks.update(environments)
 
             if self.network_name in ["devnet", "tracer_ci"]:
+                if "DEVNET_PROXY_URL" in os.environ and os.environ["DEVNET_PROXY_URL"]:
+                    self._networks[self.network_name]["proxy_url"] = os.environ.get("DEVNET_PROXY_URL")
                 if "DEVNET_FAUCET_URL" in os.environ and os.environ["DEVNET_FAUCET_URL"]:
                     self._networks[self.network_name]["faucet_url"] = os.environ.get("DEVNET_FAUCET_URL")
                 else:

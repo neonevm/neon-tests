@@ -6,7 +6,6 @@ concurrency:
 on:
   schedule:
     - cron: "0 1 * * 0,1,2,3,4"
-    - cron: "0 2 * * 0,1,2,3,4"
   pull_request:
     types: [ opened, reopened, synchronize ]
   workflow_dispatch:
@@ -18,9 +17,7 @@ on:
         description: "Stand name"
         options:
           - terraform
-          - night-stand
           - devnet
-          - mainnet
       numprocesses:
         type: choice
         default: 8
@@ -49,11 +46,11 @@ on:
         description: "Filter tests by mark: pytest -m ..."
 env:
   NETWORK: ${{ github.event.inputs.network || 'terraform' }}
-  NUMPROCESSES_LOCAL: ${{ github.event.inputs.numprocesses || 12 }}
-  NUMPROCESSES_DEVNET: ${{ github.event.inputs.numprocesses || 4 }}
+  NUMPROCESSES: ${{ github.event.inputs.numprocesses || 12 }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   DEVNET_SOLANA_URL: "${{ secrets.SOLANA_URL }}"
-  FAUCET_URL: "${{ secrets.DEVNET_FAUCET_URL }}"
+  DEVNET_PROXY_URL: "${{ secrets.DEVNET_PROXY_URL }}"
+  DEVNET_FAUCET_URL: "${{ secrets.FAUCET_URL }}"
   IMAGE:  ${{ github.repository_owner }}/neon_tests
   DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
   GENERATE_COST_REPORT: ${{ github.event.inputs.generate_cost_report || 'false' }}
@@ -71,21 +68,6 @@ jobs:
           python-version: '3.10'
       - uses: pre-commit/action@v3.0.1
         timeout-minutes: 3
-  set-network:
-    name: Set network
-    runs-on: ["self-hosted", "k8s-prod"]
-    steps:
-      - name: Setup `terraform` by cron schedule
-        id: setup_terraform_stand
-        if: github.event.schedule=='0 1 * * 0,1,2,3,4'
-        run: |
-          echo "NETWORK=terraform" >> $GITHUB_ENV
-      - name: Setup `devnet` by cron schedule
-        if: github.event.schedule=='0 2 * * 0,1,2,3,4'
-        run: |
-          echo "NETWORK=devnet" >> $GITHUB_ENV
-    outputs:
-      network: ${{ env.NETWORK }}
   dockerize:
     name: Dockerize neon tests
     runs-on: ["self-hosted", "k8s-prod"]
@@ -93,7 +75,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Dockerize neon tests
-        if: ${{ github.ref_name != 'develop'}}
         uses: ./.github/actions/dockerize-neon-tests
         with:
           image_tag: ${{ github.sha }}
@@ -109,13 +90,10 @@ jobs:
   prepare-env-proxy:
     name: Prepare environment for proxy tests
     runs-on: ["self-hosted", "k8s-prod"]
-    needs: [pre-commit-check, set-network]
+    needs: pre-commit-check
     if: always()
-    env:
-      NETWORK: ${{ needs.set-network.outputs.network }}
     steps:
       - uses: actions/checkout@v4
-
       - name: "Prepare terraform stand"
         id: prepare_terraform
         if: ${{ env.NETWORK == 'terraform' }}
@@ -142,10 +120,8 @@ jobs:
     runs-on: ["self-hosted", "k8s-prod"]
     needs:
       - dockerize
-      - set-network
     env:
       DOCKER_PROJECT_NAME: "evm-tests-${{ github.run_number }}-${{ github.run_attempt }}"
-      NETWORK: ${{ needs.set-network.outputs.network }}
     outputs:
       test-group : ${{ steps.step_fail.outputs.FAILED_TEST_GROUP  }}
     steps:
@@ -221,12 +197,10 @@ jobs:
     needs:
       - dockerize
       - prepare-env-proxy
-      - set-network
     runs-on: ["self-hosted", "k8s-prod"]
     env:
       SOLANA_IP: ${{ needs.prepare-env-proxy.outputs.solana_ip }}
       PROXY_IP: ${{ needs.prepare-env-proxy.outputs.proxy_ip }}
-      NETWORK: ${{ needs.set-network.outputs.network }}
       CONTAINER: basic-tests-${{ github.run_id }}
     if: |
       always() &&
@@ -249,29 +223,25 @@ jobs:
             -e BANK_PRIVATE_KEY_MAINNET=${{ secrets.BANK_PRIVATE_KEY_MAINNET }} \
             -e BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }} \
             -e DEVNET_SOLANA_URL \
+            -e DEVNET_FAUCET_URL \
+            -e DEVNET_PROXY_URL \
             -e SOLANA_IP -e PROXY_IP \
             --name=${{ env.CONTAINER }} ${{ env.IMAGE }}:${{ needs.dockerize.outputs.tag }} /bin/bash
       - name: Run basic proxy tests
         timeout-minutes: 120
         run: |
-          if [ "${{ env.NETWORK }}" == "devnet" ]; then
-            NUMPROCESSES=${{ env.NUMPROCESSES_DEVNET }}
-          else
-            NUMPROCESSES=${{ env.NUMPROCESSES_LOCAL }}
-          fi
-
           if [ "${{ github.event.schedule }}" == "0 1 * * 0,1,2,3,4" ]; then
             TEST_SCOPE="basic_extended"
           else
             TEST_SCOPE="basic"
           fi
 
-          CMD="python3 ./clickfile.py run $TEST_SCOPE --network ${{ env.NETWORK }} --numprocesses $NUMPROCESSES --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
+          CMD="python3 ./clickfile.py run $TEST_SCOPE --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }} --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
 
           if [[ "${{ env.GENERATE_COST_REPORT }}" == "true" ]]; then
             CMD="$CMD --cost_reports_dir reports/cost_reports"
           fi
-          docker exec -i ${{ env.CONTAINER }} /bin/bash -c "export DEVNET_FAUCET_URL=${{ env.FAUCET_URL }} && $CMD"
+          docker exec -i ${{ env.CONTAINER }} /bin/bash -c "$CMD"
       - name: Set failed test group to basic
         if: failure()
         id: step_fail
@@ -309,11 +279,12 @@ jobs:
   destroy:
     name: Destroy stand
     runs-on: ["self-hosted", "k8s-prod"]
-    needs: [ prepare-env-proxy, run-proxy-tests, set-network ]
-    if: always() && needs.set-network.outputs.network == 'terraform'
+    needs: [ prepare-env-proxy, run-proxy-tests ]
+    if: always()
     steps:
       - uses: actions/checkout@v4
       - name: "Destroy stand"
+        if: env.NETWORK == 'terraform'
         env:
           AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
           AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
@@ -333,9 +304,6 @@ jobs:
     needs:
       - run-proxy-tests
       - run-evm-tests
-      - set-network
-    env:
-      NETWORK: ${{ needs.set-network.outputs.network }}
     runs-on: ["self-hosted", "k8s-prod"]
     steps:
       - uses: actions/checkout@v4

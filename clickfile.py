@@ -362,16 +362,6 @@ def wait_for_tracer_service(network: str):
     return True
 
 
-def generate_allure_environment(network_name: str):
-    network_manager = NetworkManager()
-    network = network_manager.get_network_object(network_name)
-    env = os.environ.copy()
-
-    env["NETWORK_ID"] = str(network["network_ids"]["neon"])
-    env["PROXY_URL"] = network["proxy_url"]
-    return env
-
-
 def install_python_requirements():
     command = (
         "uv pip install --upgrade "
@@ -1470,6 +1460,18 @@ def run_load_k6(network, script, users, balance, bank_account):
     command_run = subprocess.run(command, shell=True)
     if command_run.returncode != 0:
         sys.exit(command_run.returncode)
+
+
+@cli.command(help="Get proxy version for the specified network")
+@click.option("-n", "--network", type=click.Choice(EnvName), help="Network name")
+def get_stand_proxy_version(network: EnvName):
+    network_manager = NetworkManager()
+    settings = network_manager.get_network_object(network.value)
+    web3_client = web3client.NeonChainWeb3Client(settings["proxy_url"])
+    response = web3_client.get_proxy_version()
+
+    match = re.search(r"v\d+\.\d+\.\d+", response["result"])
+    print(match.group(0))
 
 
 if __name__ == "__main__":

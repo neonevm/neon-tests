@@ -1,16 +1,18 @@
 import logging
 import random
 import string
+import threading
 
 from locust import User, events, tag, task, env
 from solders.keypair import Keypair
 
 from loadtesting.proxy.common.base import NeonProxyTasksSet
-from utils.erc20wrapper import ERC20Wrapper
+from utils.erc20wrapper import ERC20NewWrapper
 from utils.faucet import Faucet
 from utils.web3client import NeonChainWeb3Client
 
 LOG = logging.getLogger(__name__)
+USER_LOCK = threading.Lock()
 
 
 @events.test_start.add_listener
@@ -25,7 +27,7 @@ def prepare_one_contract_for_erc20(environment: env.Environment, **kwargs):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
     name = f"Test {symbol}"
 
-    erc20_wrapper = ERC20Wrapper(
+    erc20_wrapper = ERC20NewWrapper(
         neon_client,
         faucet,
         name,
@@ -38,10 +40,13 @@ def prepare_one_contract_for_erc20(environment: env.Environment, **kwargs):
     erc20_wrapper.deploy_wrapper(True)
     erc20_wrapper.mint_tokens(eth_account, eth_account.address, 18446744073709551615)
 
-    environment.erc20_one = {
-        "user": eth_account,
-        "contract": erc20_wrapper,
-    }
+    environment.erc20_one = {"contract": erc20_wrapper, "accounts": []}
+
+    for _ in range(environment.parsed_options.num_users):
+        print(f"Creating {_} eth like account...")
+        acc = neon_client.create_account()
+        erc20_wrapper.transfer(eth_account, acc, 10_000)
+        environment.erc20_one["accounts"].append(acc)
 
 
 @tag("erc20spl")
@@ -52,9 +57,18 @@ class ERC20SPLTasksSet(NeonProxyTasksSet):
         super().on_start()
         super().setup()
         self.log = logging.getLogger("neon-consumer[%s]" % self.account.address[-8:])
-        contract = self.user.environment.erc20_one["contract"]
-        contract.web3_client = self.web3_client
-        contract.transfer(self.user.environment.erc20_one["user"], self.account, 1000)
+
+        with USER_LOCK:
+            if not self.user.environment.erc20_one["accounts"]:
+                raise RuntimeError("Too little users")
+            self.account = self.user.environment.erc20_one["accounts"].pop(0)
+            self.check_balance(self.account)
+
+    def on_stop(self):
+        if self.account is not None:
+            with USER_LOCK:
+                self.user.environment.erc20_one["accounts"].append(self.account)
+                LOG.info(f"Returned user: {self.account.address}")
 
     def get_account(self):
         return random.choice(self.user.environment.shared.accounts)
@@ -63,14 +77,12 @@ class ERC20SPLTasksSet(NeonProxyTasksSet):
     def task_send_erc20_spl(self):
         """Send ERC20 tokens"""
         contract = self.user.environment.erc20_one["contract"]
+        contract.web3_client = self.web3_client
         recipient = self.get_account()
         LOG.info(f"Send erc20spl token from {self.account.address[:8]} to {recipient.address[:8]}")
         receipt = contract.transfer(self.account, recipient, 1)
-
-        receipt = dict(receipt)
-        receipt["contract"] = {"address": contract.contract.address}
-
-        return receipt, self.web3_client.get_nonce(self.account)
+        LOG.info(dict(receipt))
+        assert receipt["status"] == 1, receipt
 
 
 class ERC20User(User):

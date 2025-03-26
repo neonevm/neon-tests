@@ -14,12 +14,14 @@ from functools import lru_cache
 
 from eth_account.signers.local import LocalAccount
 from solana.rpc import commitment
+from solders.keypair import Keypair
 
 from utils import helpers
 from utils.faucet import Faucet
 from utils.web3client import NeonChainWeb3Client
 from gevent.pool import Pool
 from utils.evm_loader import EvmLoader
+from utils.neon_user import NeonUser
 from utils.types import TreasuryPool
 from utils.consts import LAMPORT_PER_SOL
 from .events import statistics_collector, save_transaction
@@ -247,3 +249,26 @@ class NeonProxyTasksSet(TaskSet):
         with open(path, "r") as fp:
             f = json.load(fp)
         return f
+
+    def get_neon_user(self):
+        id = self.user.environment.shared.id
+        index = id % len(self.erc20_info["neon_users"])
+        item = self.erc20_info["neon_users"][index]
+        self.user.environment.shared.id = id + 1
+        account = bytes(item, encoding="raw_unicode_escape")
+        return NeonUser(evm_loader_id=self.evm_loader.loader_id, keypair=Keypair.from_bytes(account))
+
+    def get_random_neon_user(self, exclude_user):
+        exclude_item = (bytes(exclude_user.solana_account)).decode(encoding="raw_unicode_escape")
+        item = random.choice([x for x in self.erc20_info["neon_users"] if x != exclude_item])
+        account = bytes(item, encoding="raw_unicode_escape")
+        return NeonUser(evm_loader_id=self.evm_loader.loader_id, keypair=Keypair.from_bytes(account))
+
+    def check_neon_user_balance(self, solana_account):
+        balance = self.evm_loader.get_solana_balance(solana_account.pubkey())
+        if self.network not in ["devnet"]:
+            if balance < 0.5 * LAMPORT_PER_SOL:
+                print("Fund account")
+                self.evm_loader.request_airdrop(
+                    solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed
+                )

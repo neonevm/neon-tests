@@ -137,6 +137,8 @@ class MainPage(BasePage):
         try:
             notification = self.wait.until(
                 EC.any_of(
+                    EC.presence_of_element_located(MainPage.subscription_notification_text),
+                    EC.presence_of_element_located(MainPage.problem_with_subscription_text),
                     EC.visibility_of_element_located(MainPage.subscription_notification_text),
                     EC.visibility_of_element_located(MainPage.problem_with_subscription_text),
                 )

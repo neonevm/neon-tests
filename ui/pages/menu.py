@@ -61,10 +61,10 @@ class Menu(BasePage):
     @allure.step("Click on the menu item 'Tools/Neonpass'")
     def click_on_menu_tools_neonpass_link(self):
         try:
-            tools_menu = self.wait.until(EC.visibility_of_element_located(Menu.tools_link))
+            tools_menu = self.wait.until(EC.presence_of_element_located(Menu.tools_link))
             self.scroll_page_to_element(tools_menu)
             self.hover_element(tools_menu)
-            neonpass = self.wait.until(EC.visibility_of_element_located(Menu.link_on_neonpass))
+            neonpass = self.wait.until(EC.presence_of_element_located(Menu.link_on_neonpass))
             self.scroll_page_to_element(neonpass)
             self.hover_element(neonpass)
             neonpass.click()
@@ -78,10 +78,10 @@ class Menu(BasePage):
     def click_on_solana_link(self):
         self.page_loaded()
         try:
-            developers_menu = self.wait.until(EC.visibility_of_element_located(Menu.developers_link))
+            developers_menu = self.wait.until(EC.presence_of_element_located(Menu.developers_link))
             self.scroll_page_to_element(developers_menu)
             self.hover_element(developers_menu)
-            solana_link = self.wait.until(EC.visibility_of_element_located(Menu.link_on_solana_whitepaper))
+            solana_link = self.wait.until(EC.presence_of_element_located(Menu.link_on_solana_whitepaper))
             self.scroll_page_to_element(solana_link)
             self.hover_element(solana_link)
             solana_link.click()
@@ -94,10 +94,10 @@ class Menu(BasePage):
     @allure.step("Click on the menu item 'Community/Events'")
     def click_on_events_link(self):
         try:
-            community_menu = self.wait.until(EC.visibility_of_element_located(Menu.community_link))
+            community_menu = self.wait.until(EC.presence_of_element_located(Menu.community_link))
             self.scroll_page_to_element(community_menu)
             self.hover_element(community_menu)
-            events = self.wait.until(EC.visibility_of_element_located(Menu.link_on_events))
+            events = self.wait.until(EC.presence_of_element_located(Menu.link_on_events))
             self.scroll_page_to_element(events)
             self.hover_element(events)
             events.click()

@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.mark.flaky(reruns=3, reruns_delay=2)
+@pytest.mark.flaky(retries=3, retriy_delay=2)
 class TestMainPage:
 
     def test_logo_header(self, main_page, menu_page, developers_page):

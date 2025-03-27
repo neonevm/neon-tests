@@ -140,8 +140,8 @@ def pytest_configure(config: Config):
     if network_name in ["devnet", "tracer_ci"]:
         if "DEVNET_SOLANA_URL" in os.environ and os.environ["DEVNET_SOLANA_URL"]:
             env["solana_url"] = os.environ.get("DEVNET_SOLANA_URL")
-        if "PROXY_URL" in os.environ and os.environ["PROXY_URL"]:
-            env["proxy_url"] = os.environ.get("PROXY_URL")
+        if "DEVNET_PROXY_URL" in os.environ and os.environ["DEVNET_PROXY_URL"]:
+            env["proxy_url"] = os.environ.get("DEVNET_PROXY_URL")
         if "DEVNET_FAUCET_URL" in os.environ and os.environ["DEVNET_FAUCET_URL"]:
             env["faucet_url"] = os.environ.get("DEVNET_FAUCET_URL")
     if "use_bank" not in env:

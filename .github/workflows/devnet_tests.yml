@@ -53,12 +53,12 @@ jobs:
         run: |
           test_image_tag=`python ./clickfile.py get-stand-proxy-version -n ${{ env.NETWORK }}`
           echo "Test image tag: $test_image_tag"
-          echo "value=$test_image_tag" >> $GITHUB_ENV
+          echo "value=$test_image_tag" >> $GITHUB_OUTPUT
       - name: Run docker container
         run: |
           docker pull ${{ env.IMAGE }}:${{ steps.test_image_tag.outputs.value }}
           docker run -i -d -e CI -e GITHUB_RUN_ID -e GITHUB_WORKFLOW \
-            -e BANK_PRIVATE_KEY \
+            -e BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }} \
             -e DEVNET_SOLANA_URL \
             -e DEVNET_PROXY_URL \
             -e DEVNET_FAUCET_URL \

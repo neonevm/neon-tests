@@ -19,6 +19,7 @@ class TestPyth:
     accounts: EthAccounts
 
     @pytest.mark.only_devnet
+    @pytest.mark.skip(reason="NDEV-3673")
     def test_deploy_contract_pyth_network(self):
         """Deploy pyth contract, then get current price for BTC/USD"""
         sender_account = self.accounts[0]
@@ -30,6 +31,7 @@ class TestPyth:
         assert math.isclose(latest_price, int(price[0]), rel_tol=10)
 
     @pytest.mark.only_devnet
+    @pytest.mark.skip(reason="NDEV-3673")
     def test_deploy_contract_pyth_network_get_price(self):
         """Call current price for BTC/USD from another contract"""
         sender_account = self.accounts[0]

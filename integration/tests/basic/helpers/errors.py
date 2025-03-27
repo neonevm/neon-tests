@@ -22,6 +22,7 @@ class Error32000:
     CODE = -32000
     UNKNOWN_TRANSACTION_HASH = "unknown transaction hash"
     WRONG_CHAIN_ID = "wrong chain id"
+    SOLANA_SIMULATOR_ERROR = "Solana Simulator error"
 
 
 class Error32603:

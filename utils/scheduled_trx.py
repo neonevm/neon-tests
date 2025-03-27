@@ -12,7 +12,7 @@ class ScheduledTrxEstimateRequest:
     to_address: str
     data: str
     value: int = 0
-    child_transaction: tp.Union[None, str] = None
+    child_transaction: tp.Union[None, str, int] = None
 
 
 class ScheduledTxRLP(rlp.Serializable):

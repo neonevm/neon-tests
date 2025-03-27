@@ -4,6 +4,7 @@ import glob
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -621,7 +622,7 @@ def run(
     if cost_reports_dir:
         command += f" --cost_reports_dir {cost_reports_dir}"
 
-    args = command.split()[1:]
+    args = shlex.split(command)[1:]
     exit_code = int(pytest.main(args=args))
     if name != "ui":
         shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)

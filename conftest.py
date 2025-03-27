@@ -6,7 +6,7 @@ import re
 import shutil
 import sys
 from dataclasses import dataclass, field
-from typing import Optional, Dict
+from typing import Optional, Dict, Generator
 
 import pytest
 from _pytest.config import Config
@@ -256,21 +256,28 @@ def accounts_session(pytestconfig: Config, web3_client_session, faucet, eth_bank
 
 
 @pytest.fixture(scope="function")
-def neon_user(evm_loader: EvmLoader, bank_account, environment: EnvironmentConfig) -> NeonUser:
-    user = NeonUser(environment.evm_loader, bank_account)
+def neon_user(
+    evm_loader: EvmLoader,
+    bank_account,
+    environment: EnvironmentConfig,
+    sol_client_session: SolanaClient,
+) -> Generator[NeonUser, None, None]:
+    user = NeonUser(evm_loader_id=environment.evm_loader)
     lamports = 2 * LAMPORT_PER_SOL
 
     if environment.use_bank:
-        balance = evm_loader.get_solana_balance(user.solana_account.pubkey())
-        if balance < lamports:
-            evm_loader.send_sol(bank_account, user.solana_account.pubkey(), lamports)
+        evm_loader.send_sol(bank_account, user.solana_account.pubkey(), lamports)
     else:
         evm_loader.request_airdrop(
             pubkey=user.solana_account.pubkey(),
             lamports=lamports,
             commitment=Confirmed,
         )
-    return user
+
+    yield user
+
+    if environment.use_bank:
+        sol_client_session.drain_sol(from_=user.solana_account, to=bank_account.pubkey())
 
 
 @pytest.fixture(scope="function")

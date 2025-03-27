@@ -121,7 +121,9 @@ def eth_bank_account(pytestconfig: Config, web3_client_session) -> tp.Generator[
 
 @pytest.fixture(scope="session")
 def solana_account(
-    bank_account, environment: EnvironmentConfig, sol_client_session
+    bank_account,
+    environment: EnvironmentConfig,
+    sol_client_session: SolanaClient,
 ) -> tp.Generator[Keypair, None, None]:
     account = Keypair()
 
@@ -132,11 +134,7 @@ def solana_account(
     yield account
 
     if environment.use_bank:
-        balance = sol_client_session.get_balance(account.pubkey(), commitment=commitment.Confirmed).value
-        try:
-            sol_client_session.send_sol(account, bank_account.pubkey(), balance - 5000)
-        except Exception as e:
-            log.info(f"Failed to send sol to bank: {e}")
+        sol_client_session.drain_sol(from_=account, to=bank_account.pubkey())
 
 
 @pytest.fixture(scope="function")
@@ -304,13 +302,14 @@ def erc20_spl_mintable_new(
 @pytest.fixture(scope="class")
 def class_account_sol_chain(
     evm_loader,
-    solana_account,
+    solana_account: Keypair,
     web3_client,
     faucet,
     eth_bank_account,
-    bank_account,
+    bank_account: Keypair,
     environment: EnvironmentConfig,
-) -> LocalAccount:
+    web3_client_sol: Web3Client,
+) -> tp.Generator[LocalAccount, None, None]:
     account = web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
     if environment.use_bank:
         evm_loader.send_sol(bank_account, solana_account.pubkey(), int(1 * LAMPORT_PER_SOL))
@@ -322,7 +321,8 @@ def class_account_sol_chain(
         account,
         int(1 * LAMPORT_PER_SOL),
     )
-    return account
+
+    yield account
 
 
 @pytest.fixture(scope="session")
@@ -338,8 +338,8 @@ def evm_loader(environment: EnvironmentConfig) -> EvmLoader:
 
 @pytest.fixture(scope="session")
 def account_with_all_tokens(
-    evm_loader,
-    solana_account,
+    evm_loader: EvmLoader,
+    solana_account: Keypair,
     web3_client_session,
     web3_client_usdt,
     web3_client_sol,
@@ -350,7 +350,7 @@ def account_with_all_tokens(
     operator_keypair,
     evm_loader_keypair,
     bank_account: Keypair | None,
-) -> LocalAccount:
+) -> tp.Generator[LocalAccount, None, None]:
     neon_account = web3_client_session.create_account_with_balance(faucet, bank_account=eth_bank_account)
     if web3_client_sol:
         lamports = 2 * LAMPORT_PER_SOL
@@ -379,7 +379,8 @@ def account_with_all_tokens(
         100000000,
         web3_client_usdt.chain_id,
     )
-    return neon_account
+
+    yield neon_account
 
 
 @pytest.fixture(scope="session")

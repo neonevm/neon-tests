@@ -23,6 +23,7 @@ from spl.token.client import Token
 from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address, create_associated_token_account
 
+from integration.tests.economy.const import TX_COST
 from utils.helpers import wait_condition
 
 
@@ -169,7 +170,7 @@ class SolanaClient(solana.rpc.api.Client):
     def get_solana_balance(self, account: Pubkey):
         return self.get_balance(account, commitment=Confirmed).value
 
-    def create_account(self, payer, size, owner, account=None, lamports=None):
+    def create_account(self, payer: Keypair, size: int, owner: Pubkey, account=None, lamports=None):
         account = account or Keypair()
         lamports = lamports or self.get_minimum_balance_for_rent_exemption(size).value
         trx = Transaction()
@@ -219,3 +220,15 @@ class SolanaClient(solana.rpc.api.Client):
     def get_account_keys_for_transaction(self, sol_trx: str):
         resp = self.get_transaction(Signature.from_string(sol_trx), commitment=Confirmed)
         return resp.value.transaction.transaction.message.account_keys
+
+    @allure.step("Drain SOL")
+    def drain_sol(self, from_: Keypair, to: Pubkey):
+        balance = self.get_solana_balance(from_.pubkey())
+        amount_lamports = max(0, balance - TX_COST)
+
+        if amount_lamports > 0:
+            self.send_sol(
+                from_=from_,
+                to=to,
+                amount_lamports=amount_lamports,
+            )

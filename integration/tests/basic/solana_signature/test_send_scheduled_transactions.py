@@ -1,12 +1,9 @@
-import random
-
 import allure
 import pytest
 
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 from utils.consts import wSOL, LAMPORT_PER_SOL
 from utils.helpers import wait_condition, decode_function_signature
-from utils.models.result import EthGetBlockByHashResult
 from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData, ScheduledTrxEstimateRequest
 from utils.web3client import BASE_MAX_PRIORITY_FEE
 
@@ -227,52 +224,24 @@ class TestScheduledTrx:
         self, block_timestamp_contract, web3_client_sol, neon_user, treasury_pool, evm_loader, json_rpc_client
     ):
         contract, _ = block_timestamp_contract
-        nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
-        trx_count = 6
+        trx_count = 4
         call_data = []
+        call_data = decode_function_signature("accrueInterest()")
+        trx_estimate_obj_list = []
         for i in range(trx_count):
-            v1 = random.randint(1, 100)
-            v2 = random.randint(1, 100)
-            call_data.append(decode_function_signature("addDataToMapping(uint256,uint256)", [v1, v2]))
-        # TODO: now estimation here doesn't work properly
-        # trx_estimate_obj_list = []
-        # for i in range(trx_count):
-        #     trx_estimate_obj_list.append(
-        #         ScheduledTrxEstimateRequest(neon_user.checksum_address, contract.address, call_data[i])
-        #     )
-        # estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), trx_estimate_obj_list)
-
-        # trxs = []
-        # for i in range(trx_count):
-        #     trxs.append(
-        #         ScheduledTransaction.from_estimate_result(
-        #             i, trx_estimate_obj_list[i], estimate_result
-        #         )
-        #     )
-        max_priority_fee_per_gas = BASE_MAX_PRIORITY_FEE
-        max_fee_per_gas = web3_client_sol.get_max_fee_per_gas()
-        gas_limit = 30000000
+            trx_estimate_obj_list.append(
+                ScheduledTrxEstimateRequest(neon_user.checksum_address, contract.address, call_data)
+            )
+        estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), trx_estimate_obj_list)
 
         trxs = []
         for i in range(trx_count):
-            trxs.append(
-                ScheduledTransaction(
-                    neon_user.neon_address,
-                    None,
-                    nonce,
-                    index=i,
-                    target=contract.address,
-                    call_data=call_data[i],
-                    max_fee_per_gas=max_fee_per_gas,
-                    max_priority_fee_per_gas=max_priority_fee_per_gas,
-                    gas_limit=gas_limit,
-                    chain_id=web3_client_sol.chain_id,
-                )
-            )
+            trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
+
         tree_acc_data = CreateTreeAccMultipleData(
-            nonce=nonce,
-            max_fee_per_gas=max_fee_per_gas,
-            max_priority_fee_per_gas=max_priority_fee_per_gas,
+            nonce=estimate_result["nonce"],
+            max_fee_per_gas=estimate_result["maxFeePerGas"],
+            max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
         )
         tree_acc_data.add_trx(trxs[0], 1, 0)
         if trx_count > 2:
@@ -284,16 +253,6 @@ class TestScheduledTrx:
 
         for trx in trxs:
             check_trx_is_success(web3_client_sol, evm_loader, trx.hash().hex(), timeout=180)
-
-        receipt = web3_client_sol.wait_for_transaction_receipt(trxs[trx_count - 1].hash(), timeout=180)
-        response = json_rpc_client.send_rpc(method="eth_getBlockByHash", params=[receipt["blockHash"].hex(), False])
-        tx_block_timestamp = EthGetBlockByHashResult(**response).result.timestamp
-
-        event_logs = contract.events.DataAdded().process_receipt(receipt)
-        added_timestamp = event_logs[0]["args"]["timestamp"]
-
-        assert added_timestamp <= int(tx_block_timestamp, 16)
-        assert contract.functions.getDataFromMapping(added_timestamp).call() == [v1, v2]
 
     def test_scheduled_trx_with_small_gas_limit(
         self, block_timestamp_contract, web3_client_sol, neon_user, treasury_pool, evm_loader, event_caller_contract

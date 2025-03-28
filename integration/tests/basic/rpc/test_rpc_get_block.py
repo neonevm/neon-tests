@@ -26,25 +26,25 @@ class TestRpcGetBlock:
     web3_client: NeonChainWeb3Client
     accounts: EthAccounts
 
+    @pytest.fixture(scope="class")
+    def send_neon_transaction(self):
+        sender_account = self.accounts[0]
+        recipient_account = self.accounts[1]
+        return self.web3_client.send_neon(sender_account, recipient_account, 1)
+
     @pytest.mark.mainnet
     @pytest.mark.parametrize("full_trx", [False, True])
     def test_eth_get_block_by_hash(
-        self,
-        full_trx: bool,
-        json_rpc_client: JsonRPCSession,
-        env_name: EnvName,
+        self, full_trx: bool, json_rpc_client: JsonRPCSession, env_name: EnvName, send_neon_transaction
     ):
         """Verify implemented rpc calls work eth_getBlockByHash"""
-        sender_account = self.accounts[0]
-        recipient_account = self.accounts[1]
-        tx_receipt = self.web3_client.send_neon(sender_account, recipient_account, 1)
-        params = [tx_receipt.blockHash.hex(), full_trx]
+        params = [send_neon_transaction.blockHash.hex(), full_trx]
         response = json_rpc_client.send_rpc(method="eth_getBlockByHash", params=params)
         rpc_checks.assert_block_fields(
             env_name=env_name,
             response=response,
             full_trx=full_trx,
-            tx_receipt=tx_receipt,
+            tx_receipt=send_neon_transaction,
         )
         if full_trx:
             EthGetBlockByHashFullResult(**response)
@@ -75,24 +75,18 @@ class TestRpcGetBlock:
     @pytest.mark.mainnet
     @pytest.mark.parametrize("full_trx", [False, True])
     def test_eth_get_block_by_number_via_numbers(
-        self,
-        full_trx: bool,
-        json_rpc_client: JsonRPCSession,
-        env_name: EnvName,
+        self, full_trx: bool, json_rpc_client: JsonRPCSession, env_name: EnvName, send_neon_transaction
     ):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
-        sender_account = self.accounts[0]
-        recipient_account = self.accounts[1]
-        tx_receipt = self.web3_client.send_neon(sender_account, recipient_account, 1)
         response = json_rpc_client.send_rpc(
             method="eth_getBlockByNumber",
-            params=[hex(tx_receipt.blockNumber), full_trx],
+            params=[hex(send_neon_transaction.blockNumber), full_trx],
         )
         rpc_checks.assert_block_fields(
             env_name=env_name,
             response=response,
             full_trx=full_trx,
-            tx_receipt=tx_receipt,
+            tx_receipt=send_neon_transaction,
         )
         if full_trx:
             EthGetBlockByHashFullResult(**response)
@@ -151,11 +145,9 @@ class TestRpcGetBlock:
         full_trx: bool,
         json_rpc_client: JsonRPCSession,
         env_name: EnvName,
+        send_neon_transaction,
     ):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
-        sender_account = self.accounts[0]
-        recipient_account = self.accounts[1]
-        self.web3_client.send_neon(sender_account, recipient_account, 1)
         params = [quantity_tag.value, full_trx]
         response = json_rpc_client.send_rpc(method="eth_getBlockByNumber", params=params)
         rpc_checks.assert_block_fields(
@@ -191,7 +183,6 @@ class TestRpcGetBlock:
         method,
         full_trx,
     ):
-
         data = decode_function_signature("setNumber(uint256)", [18])
         trx_estimate_obj = ScheduledTrxEstimateRequest(neon_user.checksum_address, common_contract.address, data)
         estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), [trx_estimate_obj])

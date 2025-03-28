@@ -428,6 +428,7 @@ class TestRpcGetTransaction:
             ("senderNonce_case", "neon_getTransactionBySenderNonce"),
         ],
     )
+    @pytest.mark.only_stands  # NDEV-3675 devnet bug
     def test_neon_get_reverted_scheduled_transaction_by_parameters(
         self,
         json_sol_rpc_client,
@@ -494,7 +495,7 @@ class TestRpcGetTransaction:
         transactions_with_sig = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
         assert result["scheduledSolanaSignature"] in transactions_with_sig["result"]
 
-    @pytest.mark.parametrize("method", ["neon_getTransactionReceipt", "eth_getTransactionReceipt"])  # flaky
+    @pytest.mark.parametrize("method", ["neon_getTransactionReceipt", "eth_getTransactionReceipt"])
     @pytest.mark.neon_only
     def test_get_scheduled_transaction_receipt(
         self, method, json_rpc_client, neon_user, common_contract, web3_client_sol, evm_loader, treasury_pool

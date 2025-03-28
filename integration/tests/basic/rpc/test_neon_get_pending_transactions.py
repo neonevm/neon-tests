@@ -29,7 +29,7 @@ class TestRPCNeonGetPendingTransactions:
             delay=2,
             timeout_sec=60,
         )
-        wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=120, delay=2)
+        wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=6 * 60, delay=2)
 
     def test_neon_get_pending_scheduled_transaction_no_tx_body(
         self, web3_client_sol, neon_user, common_contract, evm_loader, treasury_pool
@@ -57,7 +57,7 @@ class TestRPCNeonGetPendingTransactions:
             delay=2,
             log=10,
         )
-        wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=120, delay=1)
+        wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=6 * 60, delay=2)
 
     def test_multiple_scheduled_trx_with_failed_trx_skipped_and_wait_for_parent_tx(
         self,

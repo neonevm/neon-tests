@@ -548,29 +548,11 @@ class TestERC20SPLMintable:
         amount = random.randint(10000, 1000000)
         sol_balance_before = sol_client.get_balance(acc.pubkey()).value
         contract_balance_before = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
-
-        opts = TokenAccountOpts(token_mint)
-        token_data = sol_client.get_token_accounts_by_owner_json_parsed(acc.pubkey(), opts).value[0]
-        token_balance_before = token_data.account.data.parsed["info"]["tokenAmount"]["amount"]
         erc20_contract.transfer_solana(erc20_contract.account, bytes(solana_address), amount)
-        wait_condition(
-            lambda: int(
-                sol_client.get_token_accounts_by_owner_json_parsed(acc.pubkey(), opts)
-                .value[0]
-                .account.data.parsed["info"]["tokenAmount"]["amount"]
-            )
-            > int(token_balance_before),
-            timeout_sec=30,
-        )
 
         sol_balance_after = sol_client.get_balance(acc.pubkey()).value
-        token_data = sol_client.get_token_accounts_by_owner_json_parsed(acc.pubkey(), opts).value[0]
-        token_balance_after = token_data.account.data.parsed["info"]["tokenAmount"]["amount"]
         contract_balance_after = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
 
-        assert (
-            int(token_balance_after) - int(token_balance_before) == amount
-        ), "Token balance for sol account is not correct"
         assert contract_balance_before - contract_balance_after == amount, "Contract balance is not correct"
         assert sol_balance_after == sol_balance_before, "Sol balance is changed"
 

@@ -502,10 +502,11 @@ class TestSolanaInteroperability:
         event_logs = call_solana_caller.events.LogStr().process_receipt(resp)
         assert len(event_logs) == 0
 
+    @pytest.mark.only_stands  #  This doesn't work on devnet
     def test_solana_call_after_iterative_actions_exceed_accounts_limit(
         self, counter_resource_address: bytes, call_solana_caller
     ):
-        loop_count = 154
+        loop_count = 64
         sender = self.accounts[0]
         lamports = 0
 

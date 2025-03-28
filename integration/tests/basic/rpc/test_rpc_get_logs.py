@@ -3,7 +3,6 @@ import string
 from enum import Enum
 
 import pytest
-from web3.types import TxParams
 
 import allure
 from integration.tests.basic.helpers.basic import Tag
@@ -54,7 +53,9 @@ class TestRpcGetLogs:
         "neonEventOrder",
     ]
 
-    def create_all_types_instruction(self, sender, event_caller_contract) -> TxParams:
+    @pytest.fixture(scope="class")
+    def trx_with_big_amount_of_logs(self, accounts, event_caller_contract):
+        sender = accounts[0]
         number = random.randint(1, 100)
         text = "".join([random.choice(string.ascii_uppercase) for _ in range(5)])
         bytes_array = text.encode().ljust(32, b"\0")
@@ -64,17 +65,38 @@ class TestRpcGetLogs:
             sender.address, number, text, bytes_array, bol
         ).build_transaction(tx)
 
-        return instruction_tx
+        return self.web3_client.send_transaction(sender, instruction_tx)
+
+    @pytest.fixture(scope="class")
+    def trx_for_filter_log_by_topics(self, accounts, event_caller_contract):
+        arg1, arg2, arg3 = ("text1", "text2", "text3")
+
+        sender_account = accounts[0]
+        tx = self.web3_client.make_raw_tx(from_=sender_account)
+        instruction_tx = event_caller_contract.functions.callEvent1(arg1).build_transaction(tx)
+        self.web3_client.send_transaction(sender_account, instruction_tx)
+
+        tx = self.web3_client.make_raw_tx(from_=sender_account)
+        instruction_tx = event_caller_contract.functions.callEvent2(arg1, arg2).build_transaction(tx)
+        self.web3_client.send_transaction(sender_account, instruction_tx)
+
+        tx = self.web3_client.make_raw_tx(from_=sender_account)
+        instruction_tx = event_caller_contract.functions.callEvent2(arg2, arg3).build_transaction(tx)
+        self.web3_client.send_transaction(sender_account, instruction_tx)
+
+        tx = self.web3_client.make_raw_tx(from_=sender_account)
+        instruction_tx = event_caller_contract.functions.callEvent3(arg1, arg2, arg3).build_transaction(tx)
+        self.web3_client.send_transaction(sender_account, instruction_tx)
+
+        return arg1, arg2, arg3
 
     @pytest.mark.parametrize("method", [Method.NEON_GET_LOGS, Method.ETH_GET_LOGS])
     @pytest.mark.parametrize("param_fields", [("address", "topics"), ("address",), ("topics",)])
     @pytest.mark.mainnet
-    def test_get_logs_blockhash(self, method, event_caller_contract, param_fields, json_rpc_client):
-        sender_account = self.accounts[0]
-        instruction_tx = self.create_all_types_instruction(sender_account, event_caller_contract)
-        receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
-
-        params = {"blockHash": receipt["blockHash"].hex()}
+    def test_get_logs_blockhash(
+        self, method, event_caller_contract, param_fields, json_rpc_client, trx_with_big_amount_of_logs
+    ):
+        params = {"blockHash": trx_with_big_amount_of_logs["blockHash"].hex()}
 
         topic = False
         if "address" in param_fields:
@@ -99,18 +121,17 @@ class TestRpcGetLogs:
             EthGetLogs(**response)
 
     @pytest.mark.parametrize("method", [Method.NEON_GET_LOGS, Method.ETH_GET_LOGS])
-    def test_get_logs_blockhash_empty_params(self, method, event_caller_contract, json_rpc_client):
-        sender_account = self.accounts[0]
-        instruction_tx = self.create_all_types_instruction(sender_account, event_caller_contract)
-        receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
-        params = {"blockHash": receipt["blockHash"].hex()}
+    def test_get_logs_blockhash_empty_params(
+        self, method, event_caller_contract, json_rpc_client, trx_with_big_amount_of_logs
+    ):
+        params = {"blockHash": trx_with_big_amount_of_logs["blockHash"].hex()}
         response = json_rpc_client.send_rpc(method.value, params=params)
 
         assert "error" not in response
         result = response["result"][0]
         assert_fields_are_hex(result, self.ETH_HEX_FIELDS)
         assert_fields_are_specified_type(bool, result, self.ETH_BOOL_FIELDS)
-        assert_equal_fields(result, receipt["logs"][0], ["blockHash"])
+        assert_equal_fields(result, trx_with_big_amount_of_logs["logs"][0], ["blockHash"])
         if method == Method.NEON_GET_LOGS:
             assert_fields_are_specified_type(int, result, self.NEON_INT_FIELDS)
             assert_fields_are_specified_type(str, result, self.NEON_HASH_FIELDS)
@@ -126,12 +147,10 @@ class TestRpcGetLogs:
             (None, Tag.LATEST),
         ],
     )
-    def test_get_logs_blockhash_negative_tags(self, method, event_caller_contract, tag1, tag2, json_rpc_client):
-        sender_account = self.accounts[0]
-        instruction_tx = self.create_all_types_instruction(sender_account, event_caller_contract)
-        receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
-
-        params = {"blockHash": receipt["blockHash"].hex()}
+    def test_get_logs_blockhash_negative_tags(
+        self, method, event_caller_contract, tag1, tag2, json_rpc_client, trx_with_big_amount_of_logs
+    ):
+        params = {"blockHash": trx_with_big_amount_of_logs["blockHash"].hex()}
         if tag1:
             params["fromBlock"] = tag1.value
         if tag2:
@@ -155,12 +174,16 @@ class TestRpcGetLogs:
         ],
     )
     def test_get_logs_negative_params(
-        self, method, event_caller_contract, p_name, p_value, p_error, p_code, json_rpc_client
+        self,
+        method,
+        event_caller_contract,
+        p_name,
+        p_value,
+        p_error,
+        p_code,
+        json_rpc_client,
+        trx_with_big_amount_of_logs,
     ):
-        sender_account = self.accounts[0]
-        instruction_tx = self.create_all_types_instruction(sender_account, event_caller_contract)
-        self.web3_client.send_transaction(sender_account, instruction_tx)
-
         params = {"fromBlock": Tag.EARLIEST.value, "toBlock": Tag.LATEST.value}
         if p_name == "address":
             params["address"] = p_value
@@ -207,21 +230,18 @@ class TestRpcGetLogs:
         ],
     )
     @pytest.mark.parametrize("param_fields", [("address", "topics"), ("address",), ("topics",)])
-    def test_get_logs(self, method, event_caller_contract, param_fields, tag1, tag2, json_rpc_client):
-        sender_account = self.accounts[0]
+    def test_get_logs(
+        self, method, event_caller_contract, param_fields, tag1, tag2, json_rpc_client, trx_with_big_amount_of_logs
+    ):
+
         params = {}
         block_number = False
         if isinstance(tag1, int) or isinstance(tag2, int):
-            response = json_rpc_client.send_rpc(method="eth_blockNumber")
-            assert "result" in response
-            block_number = int(response["result"], 16)
+            block_number = int(trx_with_big_amount_of_logs["blockNumber"])
         if tag1 or isinstance(tag1, int):
             params["fromBlock"] = hex(block_number + tag1) if isinstance(tag1, int) else tag1.value
         if tag2 or isinstance(tag2, int):
             params["toBlock"] = hex(block_number + tag2) if isinstance(tag2, int) else tag2.value
-
-        instruction_tx = self.create_all_types_instruction(sender_account, event_caller_contract)
-        receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
 
         topic = False
         if "address" in param_fields:
@@ -237,9 +257,9 @@ class TestRpcGetLogs:
             if topic:
                 assert topic in result["topics"]
             if "address" in param_fields:
-                assert response["result"][0]["address"] == receipt["to"], (
+                assert response["result"][0]["address"] == trx_with_big_amount_of_logs["to"], (
                     f"address from response {response['result'][0]['address']} "
-                    f"is not equal to address from receipt {receipt['to']}"
+                    f"is not equal to address from receipt {trx_with_big_amount_of_logs['to']}"
                 )
 
             assert_fields_are_hex(result, self.ETH_HEX_FIELDS)
@@ -254,13 +274,9 @@ class TestRpcGetLogs:
             EthGetLogs(**response)
 
     @pytest.mark.parametrize("method", [Method.NEON_GET_LOGS, Method.ETH_GET_LOGS])
-    def test_get_logs_eq_val(self, method, event_caller_contract, json_rpc_client):
-        sender_account = self.accounts[0]
-        instruction_tx = self.create_all_types_instruction(sender_account, event_caller_contract)
-        receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
-
+    def test_get_logs_eq_val(self, method, event_caller_contract, json_rpc_client, trx_with_big_amount_of_logs):
         params = {
-            "blockHash": receipt["blockHash"].hex(),
+            "blockHash": trx_with_big_amount_of_logs["blockHash"].hex(),
             "address": event_caller_contract.address,
         }
         topic = cryptohex("AllTypes(address,uint256,string,bytes32,bool)")
@@ -278,7 +294,7 @@ class TestRpcGetLogs:
             assert_fields_are_specified_type(str, result, self.NEON_HASH_FIELDS)
             NeonGetLogs(**response)
         else:
-            assert_equal_fields(result, receipt["logs"][0], self.ETH_HEX_FIELDS)
+            assert_equal_fields(result, trx_with_big_amount_of_logs["logs"][0], self.ETH_HEX_FIELDS)
             EthGetLogs(**response)
 
     @pytest.mark.parametrize("method", [Method.NEON_GET_LOGS, Method.ETH_GET_LOGS])
@@ -337,11 +353,16 @@ class TestRpcGetLogs:
             ([], None, 4),
         ],
     )
-    def test_filter_log_by_topics(self, event_filter, arg_filter, log_count, method, json_rpc_client):
-        sender_account = self.accounts[0]
-        event_caller, _ = self.web3_client.deploy_and_get_contract("common/EventCaller", "0.8.12", sender_account)
-
-        arg1, arg2, arg3 = ("text1", "text2", "text3")
+    def test_filter_log_by_topics(
+        self,
+        event_filter,
+        arg_filter,
+        log_count,
+        method,
+        json_rpc_client,
+        trx_for_filter_log_by_topics,
+        event_caller_contract,
+    ):
         topics = []
         if event_filter is not None:
             event_topics = []
@@ -354,27 +375,11 @@ class TestRpcGetLogs:
                 arg_topics.append(cryptohex(item))
             topics.append(arg_topics)
 
-        tx = self.web3_client.make_raw_tx(from_=sender_account)
-        instruction_tx = event_caller.functions.callEvent1(arg1).build_transaction(tx)
-        self.web3_client.send_transaction(sender_account, instruction_tx)
-
-        tx = self.web3_client.make_raw_tx(from_=sender_account)
-        instruction_tx = event_caller.functions.callEvent2(arg1, arg2).build_transaction(tx)
-        self.web3_client.send_transaction(sender_account, instruction_tx)
-
-        tx = self.web3_client.make_raw_tx(from_=sender_account)
-        instruction_tx = event_caller.functions.callEvent2(arg2, arg3).build_transaction(tx)
-        self.web3_client.send_transaction(sender_account, instruction_tx)
-
-        tx = self.web3_client.make_raw_tx(from_=sender_account)
-        instruction_tx = event_caller.functions.callEvent3(arg1, arg2, arg3).build_transaction(tx)
-        self.web3_client.send_transaction(sender_account, instruction_tx)
-
-        params = {"address": event_caller.address, "topics": topics}
+        params = {"address": event_caller_contract.address, "topics": topics}
         response = json_rpc_client.send_rpc(method.value, params=params)
 
         assert (
-            len(response["result"]) == log_count
+            len(response["result"]) >= log_count
         ), f"Expected {log_count} event logs, but found {len(response['result'])}"
 
         is_event_topic_in_list = False
@@ -397,24 +402,15 @@ class TestRpcGetLogs:
         assert is_arg_topic_in_list, f"Filter by {topics} works incorrect. Response: {response}"
 
     @pytest.mark.parametrize("method", [Method.NEON_GET_LOGS, Method.ETH_GET_LOGS])
-    def test_filter_by_topics_with_null(
-        self,
-        json_rpc_client: JsonRPCSession,
-        method: Method,
-    ):
+    def test_filter_by_topics_with_null(self, json_rpc_client: JsonRPCSession, method: Method, event_caller_contract):
         sender_account = self.accounts[0]
-        event_caller, _ = self.web3_client.deploy_and_get_contract(
-            contract="common/EventCaller",
-            version="0.8.12",
-            account=sender_account,
-        )
         from_block = self.web3_client.get_block_number()
 
         param_1 = "text 1"
         param_2 = "text 2"
 
         tx = self.web3_client.make_raw_tx(from_=sender_account)
-        instruction_tx = event_caller.functions.callEvent2(param_1, param_2).build_transaction(tx)
+        instruction_tx = event_caller_contract.functions.callEvent2(param_1, param_2).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert len(receipt.logs[0].topics) == 3
 
@@ -424,7 +420,7 @@ class TestRpcGetLogs:
         params = {
             "fromBlock": hex(from_block),
             "toBlock": hex(to_block),
-            "address": event_caller.address,
+            "address": event_caller_contract.address,
             "topics": [
                 event_signature,
                 None,

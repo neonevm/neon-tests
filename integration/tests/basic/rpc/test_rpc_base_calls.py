@@ -30,13 +30,6 @@ from utils.models.result import (
 )
 from utils.web3client import NeonChainWeb3Client
 
-GET_LOGS_TEST_DATA = [
-    (Tag.LATEST.value, Tag.LATEST.value),
-    (Tag.EARLIEST.value, Tag.LATEST.value),
-    (Tag.PENDING.value, Tag.LATEST.value),
-    (Tag.LATEST.value, Tag.EARLIEST.value),
-    (Tag.LATEST.value, Tag.PENDING.value),
-]
 
 UNSUPPORTED_METHODS = [
     "eth_accounts",

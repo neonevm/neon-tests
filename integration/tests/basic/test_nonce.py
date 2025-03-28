@@ -223,16 +223,15 @@ class TestNonce:
     def test_nonce_with_several_chains(self, class_account_sol_chain, web3_client_sol, faucet):
         recipient_account = self.accounts[1]
         sender = class_account_sol_chain
-        faucet.request_neon(sender.address, 100)
         neon_chain_nonce = self.web3_client.get_nonce(sender.address)
         sol_chain_nonce = web3_client_sol.get_nonce(sender.address)
-        transaction_order_list = ["sol", "neon", "sol", "sol", "sol", "neon"]
+        transaction_order_list = ["sol", "neon", "sol", "sol", "neon"]
 
         for item in transaction_order_list:
             client = web3_client_sol if item == "sol" else self.web3_client
-            client.send_tokens(sender, recipient_account, 1000)
+            client.send_tokens(sender, recipient_account, 1)
         assert self.web3_client.get_nonce(sender.address) == neon_chain_nonce + 2
-        assert web3_client_sol.get_nonce(sender.address) == sol_chain_nonce + 4
+        assert web3_client_sol.get_nonce(sender.address) == sol_chain_nonce + 3
 
     def test_contract_nonce_on_contract_deploy_from_constructor(self):
         """

@@ -50,7 +50,7 @@ env:
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   DEVNET_SOLANA_URL: "${{ secrets.SOLANA_URL }}"
   DEVNET_PROXY_URL: "${{ secrets.DEVNET_PROXY_URL }}"
-  DEVNET_FAUCET_URL: "${{ secrets.FAUCET_URL }}"
+  DEVNET_FAUCET_URL: "${{ secrets.DEVNET_FAUCET_URL }}"
   IMAGE:  ${{ github.repository_owner }}/neon_tests
   DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
   GENERATE_COST_REPORT: ${{ github.event.inputs.generate_cost_report || 'false' }}

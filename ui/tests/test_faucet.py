@@ -34,7 +34,7 @@ class Accounts:
     acc_3 = "Account 3"
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def required_extensions() -> tp.List:
     return "metamask"
 
@@ -59,24 +59,47 @@ def context(
     context.close()
 
 
+def get_metamask_extension_id(context: BrowserContext) -> str:
+    extension_id = None
+    for page in context.background_pages:
+        url = page.url
+        if url.startswith("chrome-extension://"):
+            extension_id = url.split("/")[2]
+            break
+    if not extension_id:
+        raise Exception("MetaMask extension ID not found.")
+    return extension_id
+
+
+@pytest.fixture
+def metamask_page(
+    context: BrowserContext,
+    network: str,
+    chrome_extension_password: str,
+) -> metamask.MetaMaskAccountsPage:
+    page = context.new_page()
+    page.goto("about:blank")
+    extension_id = get_metamask_extension_id(context)
+    page.goto(f"chrome-extension://{extension_id}/home.html")
+
+    login_page = metamask.MetaMaskLoginPage(page)
+    mm_page = login_page.login(password=chrome_extension_password)
+    mm_page.check_funds_protection()
+    mm_page.change_network(network)
+    mm_page.switch_assets()
+    # wait MetaMask initialization
+    libs.try_until(
+        lambda: int(mm_page.neon_balance) != BASE_NEON_BALANCE,
+        times=5,
+        interval=2,
+        raise_on_timeout=False,
+    )
+
+    return mm_page
+
+
 class TestMetaMaskPipeLIne:
     """Tests NeonEVM proxy functionality via MetaMask"""
-
-    @pytest.fixture
-    def metamask_page(self, page, network: str, chrome_extension_password):
-        login_page = metamask.MetaMaskLoginPage(page)
-        mm_page = login_page.login(password=chrome_extension_password)
-        mm_page.check_funds_protection()
-        mm_page.change_network(network)
-        mm_page.switch_assets()
-        # wait MetaMask initialization
-        libs.try_until(
-            lambda: int(mm_page.neon_balance) != BASE_NEON_BALANCE,
-            times=5,
-            interval=2,
-            raise_on_timeout=False,
-        )
-        return mm_page
 
     @pytest.fixture
     def neon_faucet_page(self, context: BrowserContext) -> neon_faucet.NeonTestAirdropsPage:

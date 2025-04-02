@@ -4,7 +4,6 @@ from playwright.sync_api import Page
 class BasePage:
     def __init__(self, page: Page):
         self.page = page
-        self.page_loaded()
         self._menu = None
 
     def page_loaded(self):

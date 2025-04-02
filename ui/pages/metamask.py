@@ -3,6 +3,8 @@
 Created on 2022-05-19
 @author: Eugeny Kurkovich
 """
+import time
+
 import allure
 import pyperclip3 as clipboard
 from playwright._impl._errors import TimeoutError
@@ -35,6 +37,7 @@ class MetaMaskLoginPage(BasePage):
 
     def login(self, password: str) -> "MetaMaskPopoverNewsPage":
         components.Input(self.page, element_id="password").fill(password)
+        time.sleep(10)
         components.Button(self.page, selector="//input[@id='password']/following::button").click()
         return MetaMaskPopoverNewsPage(self.page)
 

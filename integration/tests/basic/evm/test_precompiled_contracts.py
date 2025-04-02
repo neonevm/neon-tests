@@ -157,6 +157,7 @@ class TestPrecompiledContracts:
             except ValueError as exc:
                 assert "InvalidLength" in exc.args[0]["message"]
 
+    @pytest.mark.xdist_group("precompiled_contract_balance")
     def test_send_neon_without_data(self, pytestconfig, evm_loader):
         address = "0x0000000000000000000000000000000000000006"
         sender_account = self.accounts[0]

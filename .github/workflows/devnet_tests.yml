@@ -1,7 +1,7 @@
 name: "Devnet tests"
 on:
   schedule:
-    - cron: "0 2 * * 0,1,2,3,4"
+    - cron: "0 2 * * 0,1,2,3,4,5"
   workflow_dispatch:
     inputs:
       numprocesses:
@@ -10,6 +10,8 @@ on:
         required: true
         description: "Number of parallel jobs"
         options:
+          - 4
+          - 6
           - 8
           - 12
           - auto

@@ -70,8 +70,8 @@ class ERC20SPLTasksSet(NeonProxyTasksSet):
                 self.user.environment.erc20_one["accounts"].append(self.account)
                 LOG.info(f"Returned user: {self.account.address}")
 
-    def get_account(self):
-        return random.choice(self.user.environment.shared.accounts)
+        def get_account(self):
+            return random.choice(self.user.environment.shared.accounts)
 
     @task
     def task_send_erc20_spl(self):

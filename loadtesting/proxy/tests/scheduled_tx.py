@@ -11,7 +11,7 @@
 # from deploy.cli.network_manager import NetworkManager
 # from integration.tests.conftest import environment
 # from utils.accounts import EthAccounts
-# from utils.consts import wSOL, LAMPORT_PER_SOL
+# from utils.consts import LAMPORT_PER_SOL, wSOL
 # from utils.erc20wrapper import ERC20NewWrapper
 # from utils.evm_loader import EvmLoader
 # from utils.faucet import Faucet
@@ -20,7 +20,7 @@
 # from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData, ScheduledTrxEstimateRequest
 # from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 #
-# from locust import User, tag, task, events
+# from locust import User, tag, task, events, env
 # from loadtesting.proxy.common.base import NeonProxyTasksSet
 # from utils.web3client import NeonChainWeb3Client
 # from solders.keypair import Keypair
@@ -30,17 +30,16 @@
 #
 #
 # @events.test_start.add_listener
-# def prepare_one_contract_for_erc20(environment: env.Environment, **kwargs):
+# def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwargs):
 #     network = "local"
+#     use_bank = None
 #     neon_users = environment.parsed_options.num_users
-#     network_manager = NetworkManager()
-#     network_object = network_manager.get_network_object(network)
-#     web3_client = NeonChainWeb3Client(proxy_url=network_object["proxy_url"])
-#     faucet = Faucet(faucet_url=network_object["faucet_url"], web3_client=web3_client)
+#     web3_client = NeonChainWeb3Client(proxy_url=environment.credentials["proxy_url"])
+#     faucet = Faucet(faucet_url=environment.credentials["faucet_url"], web3_client=web3_client)
 #
 #     # set bank account if needed
 #     bank_account = None
-#     if network != "local" and network_object["use_bank"]:
+#     if network != "local" and use_bank:
 #         if network == "devnet":
 #             private_key = os.environ.get("BANK_PRIVATE_KEY")
 #         else:
@@ -54,16 +53,16 @@
 #     environment.contract_info = {}
 #
 #     evm_loader = EvmLoader(
-#         program_id=network_object["evm_loader"],
-#         endpoint=network_object["solana_url"],
-#         neon_chain_id=network_object["network_ids"]["neon"],
-#         sol_chain_id=network_object["network_ids"]["sol"],
-#         neon_token_mint_str=network_object["spl_neon_mint"],
+#         program_id=environment.credentials["evm_loader"],
+#         endpoint=environment.credentials["solana_url"],
+#         neon_chain_id=environment.credentials["network_ids"]["neon"],
+#         sol_chain_id=environment.credentials["network_ids"]["sol"],
+#         neon_token_mint_str=environment.credentials["spl_neon_mint"],
 #     )
 #
 #     # create solana account
 #     solana_account = Keypair()
-#     if network != "local" and network_object["use_bank"]:
+#     if network != "local" and use_bank:
 #         evm_loader.send_sol(bank_account, solana_account.pubkey(), int(1 * LAMPORT_PER_SOL))
 #     else:
 #         evm_loader.request_airdrop(solana_account.pubkey(), 1 * LAMPORT_PER_SOL)
@@ -124,7 +123,7 @@
 #         with USER_LOCK:
 #             if not self.user.environment.contract_info["accounts"]:
 #                 raise RuntimeError("Too little users")
-#             self.account = self.user.environment.contract_info["accounts"].pop(0)
+#             self.neon_account = self.user.environment.contract_info["accounts"].pop(0)
 #
 #     def on_stop(self):
 #         if self.account is not None:
@@ -132,68 +131,71 @@
 #                 self.user.environment.contract_info["accounts"].append(self.account)
 #                 LOG.info(f"Returned user: {self.account.address}")
 #
+#     def get_account(self):
+#         return random.choice(self.user.environment.shared.accounts)
 #
-# #     @task
-# #     def task_send_independent_scheduled_tx(self):
-# #         """Send independent scheduled transactions"""
-# #         neon_user = self.get_neon_user()
-# #         self.check_neon_user_balance(neon_user.solana_account)
-# #         recipient = self.get_random_neon_user(exclude_user=neon_user)
-# #
-# #         transfer_amount = 10
-# #         burn_amount = 10
-# #         approve_amount = 100
-# #         trx_count = 4
-# #
-# #         data_0 = decode_function_signature("approve(address,uint256)", [neon_user.checksum_address, approve_amount])
-# #         data_1 = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, transfer_amount])
-# #         data_2 = decode_function_signature("burn(uint256)", [burn_amount])
-# #         data_3 = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, transfer_amount])
-# #
-# #         call_data: list = [data_0, data_1, data_2, data_3]
-# #
-# #         trx_estimate_obj_list: list[ScheduledTrxEstimateRequest] = []
-# #         for i in range(trx_count):
-# #             trx_estimate_obj_list.append(
-# #                 ScheduledTrxEstimateRequest(
-# #                     neon_user.checksum_address,
-# #                     self.erc20_info["erc20_address"],
-# #                     call_data[i],
-# #                     child_transaction="0xFFFF",
-# #                 )
-# #             )
-# #         estimate_result = self.web3_client_sol.estimate_scheduled(
-# #             neon_user.solana_account.pubkey(), trx_estimate_obj_list
-# #         )
-# #
-# #         gas_list_new = []
-# #         for i in estimate_result["gasList"]:
-# #             new_value = 10 * int(i, 16)
-# #             gas_list_new.append(hex(new_value))
-# #
-# #         estimate_result["gasList"] = gas_list_new
-# #
-# #         trxs = []
-# #         for i in range(trx_count):
-# #             trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
-# #
-# #         tree_acc_data = CreateTreeAccMultipleData(
-# #             nonce=estimate_result["nonce"],
-# #             max_fee_per_gas=estimate_result["maxFeePerGas"],
-# #             max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
-# #         )
-# #         tree_acc_data.add_trx(trxs[0], 0xFFFF, 0)
-# #         tree_acc_data.add_trx(trxs[1], 0xFFFF, 0)
-# #         tree_acc_data.add_trx(trxs[2], 0xFFFF, 0)
-# #         tree_acc_data.add_trx(trxs[3], 0xFFFF, 0)
-# #
-# #         self.evm_loader.create_tree_account_multiple(
-# #             neon_user, self.treasury_pool, tree_acc_data.data, wSOL["address_spl"]
-# #         )
-# #         self.web3_client_sol.send_all_scheduled_transactions(trxs)
-# #         for trx in trxs:
-# #             check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex(), timeout=240)
-# #
+#     @task
+#     def task_send_independent_scheduled_tx(self):
+#         """Send independent scheduled transactions"""
+#         neon_user = self.neon_account
+#         self.check_neon_user_balance(neon_user.solana_account)
+#         recipient = self.get_account()
+#
+#         transfer_amount = 10
+#         burn_amount = 10
+#         approve_amount = 100
+#         trx_count = 4
+#
+#         data_0 = decode_function_signature("approve(address,uint256)", [neon_user.checksum_address, approve_amount])
+#         data_1 = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, transfer_amount])
+#         data_2 = decode_function_signature("burn(uint256)", [burn_amount])
+#         data_3 = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, transfer_amount])
+#
+#         call_data: list = [data_0, data_1, data_2, data_3]
+#
+#         trx_estimate_obj_list: list[ScheduledTrxEstimateRequest] = []
+#         for i in range(trx_count):
+#             trx_estimate_obj_list.append(
+#                 ScheduledTrxEstimateRequest(
+#                     neon_user.checksum_address,
+#                     self.user.environment.contract_info["erc20_address"],
+#                     call_data[i],
+#                     child_transaction="0xFFFF",
+#                 )
+#             )
+#         estimate_result = self.web3_client_sol.estimate_scheduled(
+#             neon_user.solana_account.pubkey(), trx_estimate_obj_list
+#         )
+#
+#         gas_list_new = []
+#         for i in estimate_result["gasList"]:
+#             new_value = 10 * int(i, 16)
+#             gas_list_new.append(hex(new_value))
+#
+#         estimate_result["gasList"] = gas_list_new
+#
+#         trxs = []
+#         for i in range(trx_count):
+#             trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
+#
+#         tree_acc_data = CreateTreeAccMultipleData(
+#             nonce=estimate_result["nonce"],
+#             max_fee_per_gas=estimate_result["maxFeePerGas"],
+#             max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
+#         )
+#         tree_acc_data.add_trx(trxs[0], 0xFFFF, 0)
+#         tree_acc_data.add_trx(trxs[1], 0xFFFF, 0)
+#         tree_acc_data.add_trx(trxs[2], 0xFFFF, 0)
+#         tree_acc_data.add_trx(trxs[3], 0xFFFF, 0)
+#
+#         self.evm_loader.create_tree_account_multiple(
+#             neon_user, self.treasury_pool, tree_acc_data.data, wSOL["address_spl"]
+#         )
+#         self.web3_client_sol.send_all_scheduled_transactions(trxs)
+#         for trx in trxs:
+#             check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex(), timeout=240)
+#
+#
 # #
 # # @tag("scheduled_tx dependent")
 # # class ScheduledTxsDependentTasksSet(NeonProxyTasksSet):
@@ -332,9 +334,9 @@
 # #             check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex(), timeout=240)
 # #
 # #
-# # class ScheduledTxUser(User):
-# #     tasks = {
-# #         ScheduledTxsIndependentTasksSet: 1,
-# #         ScheduledTxsDependentTasksSet: 1,
-# #         ScheduledTxsTransferToDifferentUsersTasksSet: 1,
-# #     }
+# class ScheduledTxUser(User):
+#     tasks = {
+#         ScheduledTxsIndependentTasksSet: 1,
+#         # ScheduledTxsDependentTasksSet: 1,
+#         # ScheduledTxsTransferToDifferentUsersTasksSet: 1,
+#     }

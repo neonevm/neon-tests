@@ -161,7 +161,7 @@ class NeonProxyTasksSet(TaskSet):
             int(self.user.environment.parsed_options.num_users or self.user.environment.runner.target_user_count) * 100
         )
 
-        # self.erc20_info = self.get_erc20_info()
+        self.erc20_info = self.get_erc20_info()
 
         self.credentials = self.user.environment.credentials
         self.network = self.user.environment.parsed_options.host or self.user.environment.host

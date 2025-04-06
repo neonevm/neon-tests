@@ -52,11 +52,11 @@ def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwarg
     environment.contract_info = {}
 
     evm_loader = EvmLoader(
-        program_id=environment.credentials["evm_loader"],
-        endpoint=environment.credentials["solana_url"],
-        neon_chain_id=environment.credentials["network_ids"]["neon"],
-        sol_chain_id=environment.credentials["network_ids"]["sol"],
-        neon_token_mint_str=environment.credentials["spl_neon_mint"],
+        program_id=network_object["evm_loader"],
+        endpoint=network_object["solana_url"],
+        neon_chain_id=network_object["network_ids"]["neon"],
+        sol_chain_id=network_object["network_ids"]["sol"],
+        neon_token_mint_str=network_object["spl_neon_mint"],
     )
 
     # create solana account

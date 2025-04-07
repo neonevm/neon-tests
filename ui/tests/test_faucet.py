@@ -15,6 +15,7 @@ from playwright.sync_api import BrowserType
 from ui import libs
 from ui.pages import metamask, neon_faucet
 from ui.plugins import browser
+from utils.helpers import wait_condition
 
 NEON_FAUCET_URL = "https://neonfaucet.org/"
 """Neon Test Airdrops
@@ -83,7 +84,8 @@ def metamask_page(
     page.goto(f"chrome-extension://{extension_id}/home.html")
 
     login_page = metamask.MetaMaskLoginPage(page)
-    mm_page = login_page.login(password=chrome_extension_password)
+    popup_news = login_page.login(password=chrome_extension_password)
+    mm_page = popup_news.close()
     mm_page.check_funds_protection()
     mm_page.change_network(network)
     mm_page.switch_assets()
@@ -108,10 +110,7 @@ class TestMetaMaskPipeLIne:
         yield neon_faucet.NeonTestAirdropsPage(page)
         page.close()
 
-    @pytest.mark.parametrize(
-        "tokens",
-        [libs.Tokens.neon.name, libs.Tokens.usdt.name],
-    )
+    @pytest.mark.parametrize("tokens", [libs.Tokens.neon.name, libs.Tokens.usdt.name])
     def test_get_tokens_from_faucet(
         self,
         metamask_page: metamask.MetaMaskAccountsPage,
@@ -119,12 +118,20 @@ class TestMetaMaskPipeLIne:
         tokens: str,
     ) -> None:
         """Checks Neon faucet pipeline"""
+        wait_condition(lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > 0, timeout_sec=120, delay=2)
         balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
+        print("Balance before airdrop", balance_before_airdrop_test)
         neon_faucet_page.connect_wallet()
-        neon_faucet_page.send_tokens(tokens, 100)
+        neon_faucet_page.send_tokens(tokens, 10)
         # wait new balance
+        wait_condition(
+            lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > balance_before_airdrop_test,
+            timeout_sec=120,
+            delay=2,
+        )
+        print("Balance after airdrop", int(getattr(metamask_page, f"{tokens.lower()}_balance")))
         libs.try_until(
-            lambda: balance_before_airdrop_test + 100 == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
+            lambda: balance_before_airdrop_test + 10 == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
             timeout=90,
             interval=5,
             error_msg=f"{tokens} balance was not changed after airdrop",

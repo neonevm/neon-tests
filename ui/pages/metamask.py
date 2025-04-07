@@ -3,7 +3,6 @@
 Created on 2022-05-19
 @author: Eugeny Kurkovich
 """
-import time
 
 import allure
 import pyperclip3 as clipboard
@@ -36,8 +35,8 @@ class MetaMaskLoginPage(BasePage):
         self.page.wait_for_selector("//button[contains(@class, 'app-header__logo-container')]")
 
     def login(self, password: str) -> "MetaMaskPopoverNewsPage":
+        self.page.wait_for_selector("//input[@id='password']")
         components.Input(self.page, element_id="password").fill(password)
-        time.sleep(10)
         components.Button(self.page, selector="//input[@id='password']/following::button").click()
         return MetaMaskPopoverNewsPage(self.page)
 

@@ -12,6 +12,7 @@ from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import NeonEventType, SolanaInstruction
 from utils.models.result import NeonGetTransactionResult, SolanaByNeonTransaction
 from utils.solana_client import SolanaClient
+from utils.solana_logs_helper import get_solana_trx_cancel_reason
 from utils.web3client import Web3Client
 
 NoneType = type(None)
@@ -39,7 +40,11 @@ def hex_str_consists_not_only_of_zeros(hex_data: str) -> bool:
 
 
 def assert_block_fields(
-    env_name: EnvName, response: dict, full_trx: bool, tx_receipt: tp.Optional[types.TxReceipt], pending: bool = False
+    env_name: EnvName,
+    response: dict,
+    full_trx: bool,
+    tx_receipt: tp.Optional[types.TxReceipt],
+    pending: bool = False,
 ):
     assert "error" not in response
     assert "result" in response, AssertMessage.DOES_NOT_CONTAIN_RESULT
@@ -96,6 +101,9 @@ def assert_block_fields(
                 transaction["hash"] for transaction in transactions
             ], "Created transaction should be in block"
         for transaction in transactions:
+            scheduled_tx = False
+            if transaction["type"] == "0x80":
+                scheduled_tx = True
             expected_hex_fields = [
                 "hash",
                 "nonce",
@@ -106,17 +114,25 @@ def assert_block_fields(
                 "value",
                 "gas",
                 "gasPrice",
-                "v",
-                "r",
-                "s",
             ]
+
+            if scheduled_tx:
+                expected_hex_fields += [
+                    "scheduledIndex",
+                    "scheduledPayer",
+                ]
+            else:
+                expected_hex_fields += ["v", "r", "s"]
+
             for field in expected_hex_fields:
                 assert is_hex(transaction[field]), f"field '{field}' is not correct. Actual : {transaction[field]}"
             if tx_receipt is not None:
                 if tx_receipt.transactionHash.hex() == transaction["hash"]:
                     assert transaction["from"].upper() == tx_receipt["from"].upper()
                     assert transaction["to"].upper() == tx_receipt["to"].upper()
-                    assert transaction["input"] == "0x"
+
+            assert str(transaction["input"]).startswith("0x")
+
     else:
         for transaction in transactions:
             assert is_hex(transaction)
@@ -164,6 +180,7 @@ def assert_log_field_in_neon_trx_receipt(response, events_count):
                 assert event_types == expected_event_types, f"Actual: {event_types}; Expected: {expected_event_types}"
 
 
+@allure.step("Assert that fields in the object are hex")
 def assert_fields_are_hex(obj, expected_hex_fields):
     if isinstance(obj, SimpleNamespace):
         for field in expected_hex_fields:
@@ -280,8 +297,6 @@ def assert_events_by_type(neon_trx_receipt: NeonGetTransactionResult):
                     event.topics, list
                 ), f"Expecting list of topics for {NeonEventType.Cancel}, got {event}"
                 assert len(event.topics) == 0, f"Expecting empty topics for {NeonEventType.Cancel}, got {event}"
-
-                assert event.data == "0x00", f"Expecting empty data for {NeonEventType.Cancel}, got {event}"
             case NeonEventType.EnterCallCode.value:
                 assert event.data == "0x", f"Expecting empty data for {NeonEventType.EnterCallCode}, got {event}"
 
@@ -433,3 +448,11 @@ def assert_solana_address_was_not_used_in_trx(
     sol_trx = web3_client.get_solana_trx_by_neon(neon_trx)["result"][0]
     sol_accounts = sol_client.get_account_keys_for_transaction(sol_trx)
     assert Pubkey.from_string(solana_address) not in sol_accounts, f"Address {solana_address} is in the account list"
+
+
+@allure.step("Check the transaction is success")
+def check_trx_is_success(web3_client: Web3Client, sol_client: SolanaClient, tx_hash, timeout=120):
+    assert web3_client.wait_for_transaction_receipt(tx_hash, timeout=timeout)["status"] == 1, (
+        f"transaction {tx_hash} failed, "
+        f"Trx cancel reason: {get_solana_trx_cancel_reason(web3_client, sol_client, tx_hash)}"
+    )

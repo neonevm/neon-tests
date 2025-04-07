@@ -60,10 +60,8 @@ class TestWNeon:
         neon_balance_after, wneon_balance_after = self.get_balances(wneon, recipient_account.address)
         assert wneon_balance_after == deposit_amount
         assert (
-            web3.Web3.from_wei(neon_balance_before, "ether")
-            - deposit_amount
-            - web3.Web3.from_wei(neon_balance_after, "ether")
-            < 1
+            neon_balance_before - self.web3_client._web3.to_wei(deposit_amount, "ether") - neon_balance_after
+            == receipt["gasUsed"] * receipt["effectiveGasPrice"]
         )
 
         deposit_amount2 = random.randint(1, 5)

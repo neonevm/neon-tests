@@ -1,15 +1,19 @@
+import logging
 import random
 
 import base58
 import pytest
+from solana.rpc.commitment import Confirmed
+from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 from web3.contract import Contract
-from solders.keypair import Keypair
 
 from utils.accounts import EthAccounts
 from utils.helpers import wait_condition
 from utils.solana_client import SolanaClient
 from utils.web3client import NeonChainWeb3Client
+
+logger = logging.getLogger(__name__)
 
 
 class TestQueryAccountLib:
@@ -117,15 +121,12 @@ class TestQueryAccountLib:
 
     # ---------------------------------------- lamports ----------------------------------------
     def test_lamports_positive(
-        self,
-        query_account_caller_contract: Contract,
-        solana_account: Keypair,
-        sol_client_session: SolanaClient,
+        self, query_account_caller_contract: Contract, solana_account: Keypair, sol_client: SolanaClient, bank_account
     ):
-        size = random.randint(0, 1000)
-        minimum_lamports = sol_client_session.get_minimum_balance_for_rent_exemption(size).value
+        size = random.randint(1, 1000)
+        minimum_lamports = sol_client.get_minimum_balance_for_rent_exemption(size, commitment=Confirmed).value
         expected_lamports_before = minimum_lamports + random.randint(1000, 10000)
-        new_solana_account = sol_client_session.create_account(
+        new_solana_account = sol_client.create_account(
             payer=solana_account,
             size=size,
             owner=solana_account.pubkey(),
@@ -134,23 +135,32 @@ class TestQueryAccountLib:
 
         solana_account_address_uint256 = int.from_bytes(new_solana_account.pubkey(), byteorder="big")
 
-        success, actual_lamports_before = query_account_caller_contract.functions.queryLamports(
-            solana_account_address_uint256
-        ).call()
+        wait_condition(
+            func_cond=query_account_caller_contract.functions.queryLamports(solana_account_address_uint256).call,
+            timeout_sec=30,
+            check_success=lambda x: x == [True, expected_lamports_before],
+        )
 
-        assert success is True
-        assert actual_lamports_before == expected_lamports_before
+        additional_lamports = random.randint(1, 1000)
+        if bank_account:
+            sol_client.send_sol(bank_account, new_solana_account.pubkey(), additional_lamports)
+        else:
+            sol_client.request_airdrop(
+                pubkey=new_solana_account.pubkey(),
+                lamports=additional_lamports,
+                commitment=Confirmed,
+            )
+        account_info = sol_client.get_account_info(new_solana_account.pubkey(), commitment=Confirmed)
+        expected_lamports_after = account_info.value.lamports
+        logger.info(f"expected_lamports_after: {expected_lamports_after}")
 
-        additional_lamports = random.randint(0, 1000)
-        sol_client_session.request_airdrop(pubkey=new_solana_account.pubkey(), lamports=additional_lamports)
-        expected_lamports_after = expected_lamports_before + additional_lamports
-
-        success, actual_lamports_after = query_account_caller_contract.functions.queryLamports(
-            solana_account_address_uint256
-        ).call()
-
-        assert success is True
-        assert actual_lamports_after == expected_lamports_after
+        wait_condition(
+            func_cond=query_account_caller_contract.functions.queryLamports(solana_account_address_uint256).call,
+            timeout_sec=120,
+            delay=3,
+            check_success=lambda x: x == [True, expected_lamports_after],
+            log=logging.INFO,
+        )
 
     def test_lamports_negative_address_max_int(
         self,

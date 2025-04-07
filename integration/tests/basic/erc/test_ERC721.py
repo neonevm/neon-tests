@@ -31,7 +31,7 @@ INCORRECT_ADDRESS_PARAMS = (
 
 NOT_ENOUGH_GAS_PARAMS = (
     "param, msg",
-    [({"gas_price": 0}, "transaction underpriced"), ({"gas": 0}, "gas limit reached")],
+    [({"gas_price": 0}, "transaction underpriced"), ({"gas": 1}, "gas limit reached")],
 )
 
 

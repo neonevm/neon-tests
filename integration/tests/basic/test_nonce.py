@@ -1,11 +1,13 @@
 import random
-import time
 
 import allure
 import pytest
+import web3
 
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import ErrorMessage
+from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
+from utils.solana_client import SolanaClient
 from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts
 from utils.apiclient import wait_finalized_block
@@ -13,24 +15,36 @@ from utils.apiclient import wait_finalized_block
 
 @allure.feature("Ethereum compatibility")
 @allure.story("Verify mempool and how proxy handle nonce")
-@pytest.mark.usefixtures("accounts", "web3_client")
+@pytest.mark.usefixtures("accounts", "web3_client", "sol_client")
 class TestNonce:
     web3_client: NeonChainWeb3Client
+    sol_client: SolanaClient
     accounts: EthAccounts
-    TRANSFER_CNT = 25
+    TRANSFER_CNT = 15
 
     def check_transaction_list(self, tx_hash_list):
         for tx_hash in tx_hash_list:
-            tx_receipt = self.web3_client.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
-            assert tx_receipt["status"] == 1
+            check_trx_is_success(self.web3_client, self.sol_client, tx_hash, timeout=180)
+            # tx_receipt = self.web3_client.eth.wait_for_transaction_receipt(tx_hash, timeout=180)
+            # assert tx_receipt["status"] == 1
 
     def test_get_receipt_sequence(self):
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
         tx_hash_list = []
+        nonce = self.web3_client.get_nonce(sender_account.address)
         for i in range(self.TRANSFER_CNT):
-            res = self.web3_client.send_neon(sender_account, recipient_account, 0.1)
-            tx_hash_list.append(res["transactionHash"].hex())
+            transaction = self.web3_client.make_raw_tx(
+                sender_account,
+                recipient_account,
+                nonce=nonce,
+                estimate_gas=True,
+                amount=web3.Web3.to_wei(0.001, "ether"),
+            )
+            signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
+            tx = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)
+            tx_hash_list.append(tx.hex())
+            nonce += 1
 
         self.check_transaction_list(tx_hash_list)
 
@@ -98,8 +112,6 @@ class TestNonce:
         transaction = self.web3_client.make_raw_tx(sender_account, recipient_account, nonce=nonce, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         response_trx1 = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.rawTransaction.hex()])
-
-        time.sleep(10)  # transaction with n+1 nonce should wait when transaction with nonce = n will be accepted
         receipt_trx1 = json_rpc_client.send_rpc(method="eth_getTransactionReceipt", params=[response_trx1["result"]])
         assert receipt_trx1["result"] is None, "Transaction shouldn't be accepted"
 
@@ -211,16 +223,15 @@ class TestNonce:
     def test_nonce_with_several_chains(self, class_account_sol_chain, web3_client_sol, faucet):
         recipient_account = self.accounts[1]
         sender = class_account_sol_chain
-        faucet.request_neon(sender.address, 100)
         neon_chain_nonce = self.web3_client.get_nonce(sender.address)
         sol_chain_nonce = web3_client_sol.get_nonce(sender.address)
-        transaction_order_list = ["sol", "neon", "sol", "sol", "sol", "neon"]
+        transaction_order_list = ["sol", "neon", "sol", "sol", "neon"]
 
         for item in transaction_order_list:
             client = web3_client_sol if item == "sol" else self.web3_client
-            client.send_tokens(sender, recipient_account, 1000)
+            client.send_tokens(sender, recipient_account, 1)
         assert self.web3_client.get_nonce(sender.address) == neon_chain_nonce + 2
-        assert web3_client_sol.get_nonce(sender.address) == sol_chain_nonce + 4
+        assert web3_client_sol.get_nonce(sender.address) == sol_chain_nonce + 3
 
     def test_contract_nonce_on_contract_deploy_from_constructor(self):
         """

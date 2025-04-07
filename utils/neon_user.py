@@ -12,10 +12,7 @@ class NeonUser:
     checksum_address: str
 
     def __init__(self, evm_loader_id, keypair=None):
-        if keypair:
-            self.solana_account = keypair
-        else:
-            self.solana_account = Keypair()
+        self.solana_account = keypair or Keypair()  # if keypair is None, then assigns Keypair()
         self.evm_loader = evm_loader_id
         self.neon_address = pubkey2neon_address(self.solana_account.pubkey())
         self.checksum_address = web3.Web3.to_checksum_address(self.neon_address)

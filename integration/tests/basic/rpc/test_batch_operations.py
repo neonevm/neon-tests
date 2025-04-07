@@ -76,7 +76,7 @@ class TestBatchOperations:
 
     def test_batch_operations_different_functions(
         self,
-        request: pytest.FixtureRequest,
+        environment,
     ):
         """
         sends a batch operation request with a few calls to different functions
@@ -110,7 +110,7 @@ class TestBatchOperations:
         ]
 
         response = requests.post(
-            url=request.config.environment.proxy_url,  # noqa
+            url=environment.proxy_url,  # noqa
             json=batch,
         )
 
@@ -121,6 +121,10 @@ class TestBatchOperations:
         for result in results:
             assert "error" not in result
             assert rpc_checks.is_hex(result["result"])
+
+        trx_hash = results[2]["result"]
+        resp = self.web3_client.wait_for_transaction_receipt(trx_hash)
+        assert resp["status"] == 1
 
     def test_batch_operations_negative(
         self,

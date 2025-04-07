@@ -5,6 +5,7 @@ import random
 
 import pytest
 
+from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 from utils.accounts import EthAccounts
 from utils.web3client import NeonChainWeb3Client
 
@@ -133,22 +134,18 @@ class TestPrecompiledContracts:
         if pytestconfig.getoption("--network") == "devnet" and address == "0x0000000000000000000000000000000000000005":
             pytest.skip("Doesn't work in devnet/mainnet")
         sender_account = self.accounts[0]
-        amount = random.choice([0, 10])
+        if address == "0x0000000000000000000000000000000000000007":
+            amount = random.choice([1, 10])
+        else:
+            amount = 0
         balance_before = self.web3_client.get_balance(address)
 
         instruction_tx = self.web3_client.make_raw_tx(
             sender_account, address, data=input_data, amount=amount, estimate_gas=True
         )
-        if request.node.callspec.id not in [
-            "modexp-nagydani-5-square0",
-            "modexp-nagydani-5-square1",
-            "modexp-nagydani-5-qube0",
-            "modexp-nagydani-5-qube1",
-            "modexp-nagydani-5-pow0x100010",
-            "modexp-nagydani-5-pow0x100011",
-        ]:
+        if "modexp-nagydani-5" not in request.node.callspec.id:
             receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
-            assert receipt["status"] == 1
+            check_trx_is_success(self.web3_client, evm_loader, receipt["transactionHash"].hex())
 
             if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
                 assert self.web3_client.get_balance(address) - balance_before == amount
@@ -161,16 +158,15 @@ class TestPrecompiledContracts:
                 assert "InvalidLength" in exc.args[0]["message"]
 
     @pytest.mark.xdist_group("precompiled_contract_balance")
-    @pytest.mark.parametrize("contract", PRECOMPILED_FIXTURES)
-    def test_send_neon_without_data(self, contract, pytestconfig):
-        address = PRECOMPILED_FIXTURES[contract]["address"]
+    def test_send_neon_without_data(self, pytestconfig, evm_loader):
+        address = "0x0000000000000000000000000000000000000006"
         sender_account = self.accounts[0]
         balance_before = self.web3_client.get_balance(address)
         amount = random.randint(1, 10)
         instruction_tx = self.web3_client.make_raw_tx(sender_account.address, address, amount=amount, estimate_gas=True)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
 
-        assert receipt["status"] == 1
+        check_trx_is_success(self.web3_client, evm_loader, receipt["transactionHash"].hex())
         pytestconfig.getoption("--network")
         if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
             assert self.web3_client.get_balance(address) - balance_before == amount

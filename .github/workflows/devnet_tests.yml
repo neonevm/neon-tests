@@ -1,0 +1,97 @@
+name: "Devnet tests"
+on:
+  schedule:
+    - cron: "0 2 * * 0,1,2,3,4,5"
+  workflow_dispatch:
+    inputs:
+      numprocesses:
+        type: choice
+        default: 8
+        required: true
+        description: "Number of parallel jobs"
+        options:
+          - 4
+          - 6
+          - 8
+          - 12
+          - auto
+      pytest_k:
+        type: string
+        default: "test_"
+        required: false
+        description: "Filter tests by name: pytest -k ..."
+      pytest_m:
+        type: string
+        default: ""
+        required: false
+        description: "Filter tests by mark: pytest -m ..."
+env:
+  NETWORK: devnet
+  NUMPROCESSES: ${{ github.event.inputs.numprocesses || 8 }}
+  BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+  DEVNET_SOLANA_URL: "${{ secrets.SOLANA_URL }}"
+  DEVNET_FAUCET_URL: "${{ secrets.DEVNET_FAUCET_URL }}"
+  DEVNET_PROXY_URL: "${{ secrets.DEVNET_PROXY_URL }}"
+  IMAGE:  ${{ github.repository_owner }}/neon_tests
+  DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
+jobs:
+  run-proxy-tests:
+    name: Run basic tests
+    runs-on: ["self-hosted", "k8s-prod"]
+    env:
+      CONTAINER: basic-tests-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install python requirements
+        id: requirements
+        uses: ./.github/actions/python-requirements
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set test version
+        id: test_image_tag
+        run: |
+          test_image_tag=`python ./clickfile.py get-stand-proxy-version -n ${{ env.NETWORK }}`
+          echo "Test image tag: $test_image_tag"
+          echo "value=$test_image_tag" >> $GITHUB_OUTPUT
+      - name: Run docker container
+        run: |
+          docker pull ${{ env.IMAGE }}:${{ steps.test_image_tag.outputs.value }}
+          echo "Create custom network with lower MTU to avoid problem with OpenSSL SSL_connect: Connection reset by peer"
+          docker network inspect custom-network >/dev/null 2>&1 || \
+          docker network create --driver bridge --opt com.docker.network.driver.mtu=1400 custom-network
+          docker run -i -d -e CI -e GITHUB_RUN_ID -e GITHUB_WORKFLOW \
+            -e BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }} \
+            -e DEVNET_SOLANA_URL \
+            -e DEVNET_PROXY_URL \
+            -e DEVNET_FAUCET_URL \
+            --name=${{ env.CONTAINER }} --network=custom-network ${{ env.IMAGE }}:${{ steps.test_image_tag.outputs.value }} /bin/bash
+      - name: Run basic proxy tests
+        timeout-minutes: 120
+        run: |
+          CMD="python3 ./clickfile.py run basic --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }} --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
+          docker exec -i ${{ env.CONTAINER }} /bin/bash -c "$CMD"
+      - name: Copy cost reports from container
+        if: ${{ env.GENERATE_COST_REPORT == 'true' }}
+        run: |
+          mkdir -p ./reports/cost_reports/ && \
+          docker cp ${{ env.CONTAINER }}:/opt/neon-tests/reports/cost_reports/. ./reports/cost_reports/
+      - name: "Generate allure report"
+        if: always()
+        uses: ./.github/actions/generate-allure-report
+        with:
+          container: ${{ env.CONTAINER }}
+          network: ${{ env.NETWORK }}
+          aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          tests_name: basic
+      - name: Remove docker container
+        if: always()
+        run: docker rm -f ${{ env.CONTAINER }}
+      - name: Notify on failure
+        if: failure()
+        run: |
+          python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+          -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group basic

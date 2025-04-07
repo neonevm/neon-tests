@@ -3,8 +3,9 @@ import math
 import allure
 import pytest
 import requests
+import time
 
-from clickfile import EXTERNAL_CONTRACT_PATH
+from utils.consts import EXTERNAL_CONTRACT_PATH
 from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts
 
@@ -55,6 +56,14 @@ class TestChainlink:
         assert math.isclose(abs(latest_price - latest_round_data[1] * 1e-8), 0.0, rel_tol=1)
 
 
-def latest_price_feeds(sym_one, sym_two):
-    response = requests.get(CHAINLINK_URI + f"data/pricemultifull?fsyms={sym_one}&tsyms={sym_two}")
-    return response.json()["RAW"][f"{sym_one}"][f"{sym_two}"]["PRICE"]
+def latest_price_feeds(sum_one, sum_two, retries=3, delay=2):
+    for attempt in range(retries):
+        try:
+            response = requests.get(CHAINLINK_URI + f"data/pricemultifull?fsyms={sum_one}&tsyms={sum_two}")
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            return response.json()["RAW"][f"{sum_one}"][f"{sum_two}"]["PRICE"]
+        except (requests.RequestException, KeyError) as e:
+            if attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                raise e

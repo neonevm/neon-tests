@@ -1,38 +1,35 @@
 import builtins
-import os
 import json
-import shutil
+import os
 import pathlib
+import re
+import shutil
 import sys
 from dataclasses import dataclass, field
-from typing import Optional, Dict
+from typing import Optional, Dict, Generator
 
-from solders.pubkey import Pubkey
-
-import allure
 import pytest
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
 from _pytest.nodes import Item
 from _pytest.runner import runtestprotocol
-from allure_commons.types import AttachmentType
 from solana.rpc.commitment import Confirmed
 from solders.keypair import Keypair
+from solders.pubkey import Pubkey
+from spl.token.constants import WRAPPED_SOL_MINT
 from web3.middleware import geth_poa_middleware
 
-from clickfile import TEST_GROUPS, EnvName
-from utils.consts import LAMPORT_PER_SOL
-from utils.evm_loader import EvmLoader
-from utils.neon_user import NeonUser
-from utils.types import TestGroup, TreasuryPool
-from utils.error_log import error_log
+import allure
 from utils import create_allure_environment_opts, setup_logging
-from utils.faucet import Faucet
 from utils.accounts import EthAccounts
-from utils.web3client import NeonChainWeb3Client
+from utils.consts import LAMPORT_PER_SOL, EnvName, TEST_GROUPS
+from utils.error_log import error_log
+from utils.evm_loader import EvmLoader
+from utils.faucet import Faucet
+from utils.neon_user import NeonUser
 from utils.solana_client import SolanaClient
-from spl.token.constants import WRAPPED_SOL_MINT
-
+from utils.types import TestGroup, TreasuryPool
+from utils.web3client import NeonChainWeb3Client
 
 pytest_plugins = ["ui.plugins.browser"]
 COST_REPORT_DIR: pathlib.Path = pathlib.Path()
@@ -121,11 +118,6 @@ def pytest_runtest_protocol(item: Item, nextitem):
                     error_log.add_failure(test_group=test_group, test_name=item.nodeid)
                 else:
                     error_log.add_error(test_group=test_group, test_name=item.nodeid)
-
-                if test_group == "ui":
-                    driver = request.getfixturevalue("driver")
-                    allure.attach(driver.get_screenshot_as_png(), attachment_type=AttachmentType.PNG)
-
     return True
 
 
@@ -148,8 +140,8 @@ def pytest_configure(config: Config):
     if network_name in ["devnet", "tracer_ci"]:
         if "DEVNET_SOLANA_URL" in os.environ and os.environ["DEVNET_SOLANA_URL"]:
             env["solana_url"] = os.environ.get("DEVNET_SOLANA_URL")
-        if "PROXY_URL" in os.environ and os.environ["PROXY_URL"]:
-            env["proxy_url"] = os.environ.get("PROXY_URL")
+        if "DEVNET_PROXY_URL" in os.environ and os.environ["DEVNET_PROXY_URL"]:
+            env["proxy_url"] = os.environ.get("DEVNET_PROXY_URL")
         if "DEVNET_FAUCET_URL" in os.environ and os.environ["DEVNET_FAUCET_URL"]:
             env["faucet_url"] = os.environ.get("DEVNET_FAUCET_URL")
     if "use_bank" not in env:
@@ -264,18 +256,39 @@ def accounts_session(pytestconfig: Config, web3_client_session, faucet, eth_bank
 
 
 @pytest.fixture(scope="function")
-def neon_user(evm_loader: EvmLoader, pytestconfig, bank_account, faucet, environment) -> NeonUser:
+def neon_user(
+    evm_loader: EvmLoader,
+    bank_account,
+    environment: EnvironmentConfig,
+    sol_client_session: SolanaClient,
+) -> Generator[NeonUser, None, None]:
+    user = NeonUser(evm_loader_id=environment.evm_loader)
+    lamports = 2 * LAMPORT_PER_SOL
+
+    if environment.use_bank:
+        evm_loader.send_sol(bank_account, user.solana_account.pubkey(), lamports)
+    else:
+        evm_loader.request_airdrop(
+            pubkey=user.solana_account.pubkey(),
+            lamports=lamports,
+            commitment=Confirmed,
+        )
+
+    yield user
+
+    if environment.use_bank:
+        sol_client_session.drain_sol(from_=user.solana_account, to=bank_account.pubkey())
+
+
+@pytest.fixture(scope="function")
+def neon_user_no_sols(pytestconfig, bank_account, faucet, environment) -> NeonUser:
     user = NeonUser(environment.evm_loader, bank_account)
-    balance = evm_loader.get_solana_balance(user.solana_account.pubkey())
-    if pytestconfig.getoption("--network") != "mainnet":
-        if balance < 5 * LAMPORT_PER_SOL:
-            evm_loader.request_airdrop(user.solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=Confirmed)
     return user
 
 
 @pytest.fixture(scope="session")
-def treasury_pool(evm_loader, pytestconfig) -> TreasuryPool:
-    index = 2
+def treasury_pool(evm_loader: EvmLoader, pytestconfig, index_of_process) -> TreasuryPool:
+    index = index_of_process
     evm_loader.create_treasury_pool_address(index)
     if pytestconfig.getoption("--network") == "mainnet":
         address = Pubkey.from_string(os.environ.get("MAINNET_TREASURY_POOL_ADDRESS"))
@@ -283,16 +296,25 @@ def treasury_pool(evm_loader, pytestconfig) -> TreasuryPool:
         address = evm_loader.create_treasury_pool_address(index)
     index_buf = index.to_bytes(4, "little")
     balance = evm_loader.get_solana_balance(address)
-    if pytestconfig.getoption("--network") != "mainnet":
+    if pytestconfig.getoption("--network") not in ["mainnet", "devnet"]:
         if balance < 5 * LAMPORT_PER_SOL:
             evm_loader.request_airdrop(address, 5 * LAMPORT_PER_SOL, commitment=Confirmed)
     return TreasuryPool(index, address, index_buf)
 
 
 @pytest.fixture(scope="session")
-def treasury_pool_new(evm_loader) -> TreasuryPool:
+def treasury_pool_new(evm_loader, pytestconfig) -> TreasuryPool:
     index = 3
     address = evm_loader.create_treasury_pool_address(index)
     index_buf = index.to_bytes(4, "little")
-    evm_loader.request_airdrop(address, 10000 * 10**9, commitment=Confirmed)
+    if pytestconfig.getoption("--network") not in ["mainnet", "devnet"]:
+        evm_loader.request_airdrop(address, 10000 * 10**9, commitment=Confirmed)
     return TreasuryPool(index, address, index_buf)
+
+
+@pytest.fixture(scope="session")
+def index_of_process(worker_id):
+    if worker_id in ("master", "gw1"):
+        return 1
+    match = re.search(r"gw(\d+)", worker_id)
+    return int(match.group(1)) if match else None

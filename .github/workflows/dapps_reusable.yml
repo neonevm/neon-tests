@@ -87,7 +87,7 @@ env:
 
 jobs:
   uniswap-v2:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'uniswap-v2')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -103,6 +103,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -139,7 +144,7 @@ jobs:
           path: uniswap-v2-report.json
 
   uniswap-v3:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'uniswap-v3')
     env:
       SOLANA_IP: ${{ inputs.solana_ip }}
@@ -155,6 +160,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -190,7 +200,7 @@ jobs:
           path: uniswap-v3-report.json
 
   saddle:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'saddle')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -206,6 +216,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -242,7 +257,7 @@ jobs:
           name: saddle-report
           path: saddle-report.json
   aave-v2:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'aave-v2')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -258,6 +273,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -288,7 +308,7 @@ jobs:
           name: aave-v2-report
           path: aave-v2-report.json
   aave-v3:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'aave-v3')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -304,6 +324,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -334,7 +359,7 @@ jobs:
           name: aave-v3-core-report
           path: aave-v3-core-report.json
   curve:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'curve')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -350,6 +375,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -369,6 +399,8 @@ jobs:
           docker pull ${{ env.IMAGE }}
           docker run -i -d --name curve-${{ github.run_number }} ${{ env.IMAGE }} /bin/bash
           test -t 1 && USE_TTY="-t"
+          docker exec -i ${USE_TTY} -e DOCKER_HUB_ORG_NAME=${{ github.repository_owner }} curve-${{ github.run_number }} \
+            python3.9 get_neon_contracts.py
           docker exec -i ${USE_TTY} curve-${{ github.run_number }} \
               brownie networks add live neon host="${{ env.PROXY_URL }}" chainid=${{env.NETWORK_ID}}  explorer=https://neonscan.org timeout=60
           docker exec -i ${USE_TTY} -e ACCOUNTS=${{ env.ACCOUNTS }} curve-${{ github.run_number }} \
@@ -385,7 +417,7 @@ jobs:
           name: curve-report
           path: curve-report.json
   curve-factory:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: false #contains( inputs.dapps, 'curve-factory') # skipped because of NDEV-2905
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -417,7 +449,7 @@ jobs:
           path: curve-factory-report.json
 
   compound:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'compound')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -433,6 +465,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -469,7 +506,7 @@ jobs:
           path: compound-report.json
 
   robonomics:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'robonomics')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -485,6 +522,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -519,7 +561,7 @@ jobs:
           path: robonomics-report.json
   yearn:
     if: contains( inputs.dapps, 'yearn')
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
       PROXY_URL: ${{ inputs.proxy_url }}
@@ -534,6 +576,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -570,7 +617,7 @@ jobs:
           path: yearn-report.json
 
   pancake:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [ "self-hosted", "k8s-prod" ]
     if: contains( inputs.dapps, 'pancake')
     env:
       SOLANA_IP: ${{ inputs.solana_ip }}
@@ -586,6 +633,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/neon-tests
           ref: develop
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
@@ -621,8 +673,8 @@ jobs:
           path: pancake-report.json
 
   swap-report:
-    runs-on: ["self-hosted", "k8s-prod"]
-    needs: [uniswap-v2, uniswap-v3, saddle, aave-v2, aave-v3, curve, robonomics, yearn, compound, curve-factory, pancake]
+    runs-on: [ "self-hosted", "k8s-prod" ]
+    needs: [ uniswap-v2, uniswap-v3, saddle, aave-v2, aave-v3, curve, robonomics, yearn, compound, curve-factory, pancake ]
     if: always()
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
@@ -766,10 +818,70 @@ jobs:
         if: ${{ steps.dump-cost-reports-to-markdown.outcome == 'success' || steps.save-cost-reports-zip-url.outcome == 'success'  }}
         run: |
           cat cost_reports.md >> $GITHUB_STEP_SUMMARY
-      - name: "Add PR comment"
-        if: ${{ inputs.pr_url_for_report != '' }}
+      - name: "Add PR comment with cost report data"
+        if: ${{ inputs.pr_url_for_report != '' && inputs.pr_url_for_report !='/comments' }}
         run: |
           python3 ./clickfile.py dapps add_pr_comment \
           --pr_url_for_report="${{ inputs.pr_url_for_report }}" \
           --token="${{ secrets.GHTOKEN }}" \
-          --md_file cost_reports.md
+          --md_file cost_reports.md \
+          --title "Dapps report"
+      - name: "Validate cost report data and save failures to file"
+        id: validate-cost-report
+        if: ${{ steps.set-do-compare-reports.outputs.compare == 'true' && steps.save-cost-report-to-db.outcome == 'success' }}
+        run: |
+          python3 ./clickfile.py dapps validate_cost_reports \
+            --repo "${{ inputs.repo }}" \
+            --evm_tag="${{ inputs.evm_tag }}" \
+            --proxy_tag="${{ inputs.proxy_tag }}" \
+            --version_branch "${{ inputs.repo == 'evm' && inputs.evm_pr_version_branch || inputs.proxy_pr_version_branch }}" \
+            --acc_count 0 \
+            --trx_count 0 \
+            --gas_estimated 10000 \
+            --gas_used 10000 \
+            --compute_units 1000000 \
+            --output cost_report_validation_issues.md
+
+          if [ -f "cost_report_validation_issues.md" ]; then
+            echo "has_errors=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_errors=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Save cost_report_validation_issues.md
+        uses: actions/upload-artifact@v4
+        with:
+          name: cost_report_validation_issues
+          path: cost_report_validation_issues.md
+      - name: "Get IDs of comments about failed cost report if they exist"
+        if: ${{ inputs.pr_url_for_report != '' && inputs.pr_url_for_report != '/comments' }}
+        run: |
+          TITLE="<strong>⚠️ Cost Report Validation Failed ⚠️</strong>"
+          CR_COMMENT_IDS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "${{ inputs.pr_url_for_report }}" \
+            | jq -r --arg TITLE "$TITLE" '[.[] | select(.body | contains($TITLE)) | .id] | @csv' | tr -d '"')
+
+          if [[ -n "$CR_COMMENT_IDS" && "$CR_COMMENT_IDS" != "null" && "$CR_COMMENT_IDS" != "" ]]; then
+            echo "CR_COMMENT_IDS=$CR_COMMENT_IDS" | tee -a $GITHUB_ENV
+          else
+            echo "CR_COMMENT_IDS=" | tee -a $GITHUB_ENV
+          fi
+      - name: "Delete PR comments about failed cost report if they have no issues anymore"
+        if: ${{ env.CR_COMMENT_IDS != '' && env.CR_COMMENT_IDS != 'null' }}
+        run: |
+          BASE_URL=$(echo "${{ inputs.pr_url_for_report }}" | sed 's|/issues/[0-9]*/comments$|/issues/comments|')
+
+          # Read and split comment IDs
+          IFS=',' read -ra IDS <<< "${{ env.CR_COMMENT_IDS }}"
+          for ID in "${IDS[@]}"; do
+            ID=$(echo "$ID" | tr -d '"') # Ensure quotes are removed
+            DELETE_URL="$BASE_URL/$ID"
+            echo "Deleting comment ID: $ID from $DELETE_URL"
+            curl -X DELETE -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$DELETE_URL"
+          done
+      - name: "Add PR comment if cost report validation has any issues"
+        if: ${{ steps.validate-cost-report.outputs.has_errors == 'true' && inputs.pr_url_for_report != '' && inputs.pr_url_for_report !='/comments' }}
+        run: |
+          python3 ./clickfile.py dapps add_pr_comment \
+            --pr_url_for_report="${{ inputs.pr_url_for_report }}" \
+            --token="${{ secrets.GHTOKEN }}" \
+            --md_file cost_report_validation_issues.md \
+            --title "<strong>⚠️ Cost Report Validation Failed ⚠️</strong>"

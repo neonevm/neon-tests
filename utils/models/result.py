@@ -108,6 +108,31 @@ class Transaction(BaseModel):
     type: HexString
 
 
+class ScheduledTransaction(BaseModel):
+    blockHash: HexString
+    blockNumber: HexString
+    from_: HexString = Field(alias="from")
+    gas: HexString
+    gasPrice: HexString
+    hash: HexString
+    input: HexString
+    nonce: HexString
+    to: Union[HexString, None]
+    transactionIndex: HexString
+    value: HexString
+    chainId: HexString
+    v: None
+    r: None
+    s: None
+    type: HexString
+    scheduledPayer: HexString
+    scheduledSolanaPayer: str
+    scheduledIndex: HexString
+    scheduledSolanaSignature: str
+    maxPriorityFeePerGas: HexString
+    maxFeePerGas: HexString
+
+
 class EthGetBlockByHashDetails(ForbidExtra):
     number: Union[HexString, None]
     hash: Union[HexString, None]
@@ -155,7 +180,7 @@ class EthGetBlockByHashFullDetails(ForbidExtra):
     gasLimit: HexString
     gasUsed: HexString
     timestamp: HexString
-    transactions: List[Transaction]
+    transactions: List[Union[Transaction, ScheduledTransaction]]
     uncles: List[HexString]
     mixHash: HexString
 
@@ -166,6 +191,20 @@ class EthGetBlockByHashResult(EthResult):
 
 class EthGetBlockByHashFullResult(EthResult):
     result: Union[EthGetBlockByHashFullDetails, None]
+
+
+class EstimateScheduledGasDetails(ForbidExtra):
+    chainId: HexString
+    maxFeePerGas: HexString
+    maxPriorityFeePerGas: HexString
+    nonce: HexString
+    treasuryIndex: HexString
+    gasList: tp.Optional[List[HexString]] = None
+    accountList: tp.Optional[List[str]] = None
+
+
+class EstimateScheduledGas(EthResult):
+    result: Union[EstimateScheduledGasDetails, None]
 
 
 class EthGetLogsDetails(ForbidExtra):
@@ -203,6 +242,7 @@ class NeonGetLogsDetails(ForbidExtra):
     neonEventOrder: int
     neonIsHidden: bool
     neonIsReverted: bool
+    neonDataMessage: str | None
 
 
 class NeonGetLogs(EthResult):
@@ -255,10 +295,23 @@ class EthGetTransactionByHashResult(EthResult):
     result: Transaction
 
 
+class EthEthGetScheduledTransactionByHashResult(EthResult):
+    result: ScheduledTransaction
+
+
 class SolanaInstruction(ForbidExtra):
     solanaProgram: str
     solanaInstructionIndex: int
     solanaInnerInstructionIndex: Union[int, None]
+
+
+class SolanaAddressLookupTableInstruction(SolanaInstruction):
+    lookupTableAddress: str
+    lookupTableInstructionCode: int
+    lookupTableInstructionName: str
+
+
+class SolanaNeonProgramInstruction(SolanaInstruction):
     svmHeapSizeLimit: int
     svmCyclesLimit: int
     svmCyclesUsed: int
@@ -279,13 +332,33 @@ class SolanaTransaction(ForbidExtra):
     solanaBlockSlot: int
     solanaLamportExpense: int
     neonOperatorAddress: str
-    solanaInstructions: List[SolanaInstruction]
+    solanaInstructions: List[Union[SolanaAddressLookupTableInstruction, SolanaNeonProgramInstruction]]
 
 
 class NeonCostsDetails(ForbidExtra):
     neonOperatorAddress: str
     solanaLamportExpense: int
     neonAlanIncome: int
+
+
+class NeonCancelDetails(ForbidExtra):
+    solanaTransactionSignature: str
+    solanaInstructionIndex: int
+    solanaInnerInstructionIndex: int | None
+    source: str
+    address: str
+    code: str
+    data: str
+    message: str
+
+
+class NeonRevertDetails(ForbidExtra):
+    solanaTransactionSignature: str
+    solanaInstructionIndex: int
+    solanaInnerInstructionIndex: int | None
+    address: str
+    data: str
+    message: str | None
 
 
 class NeonReceiptDetails(ForbidExtra):
@@ -309,8 +382,9 @@ class NeonReceiptDetails(ForbidExtra):
     solanaCompleteInstructionIndex: int
     solanaCompleteInnerInstructionIndex: Union[int, None]
     neonRawTransaction: HexString
-    neonIsCompleted: bool
     neonIsCanceled: bool
+    neonCancelData: NeonCancelDetails | None
+    neonRevertData: NeonRevertDetails | None
     solanaTransactions: List[SolanaTransaction]
     neonCosts: List[NeonCostsDetails]
     scheduledParentTransactionHashes: List[HexString]

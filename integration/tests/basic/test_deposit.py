@@ -1,23 +1,24 @@
-import pytest
 import allure
+import pytest
 import web3
 from _pytest.config import Config
-from solders.keypair import Keypair
+from eth_account.signers.local import LocalAccount
 from solana.rpc.commitment import Commitment
 from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
+from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 from spl.token.client import Token as SplToken
-from spl.token.constants import TOKEN_PROGRAM_ID
+from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
 from spl.token.instructions import create_associated_token_account, get_associated_token_address
 from web3 import exceptions as web3_exceptions
 
-from utils.consts import LAMPORT_PER_SOL, wSOL, MULTITOKEN_MINTS
-from utils.instructions import make_wSOL
-from utils.helpers import wait_condition
-from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts
+from utils.consts import LAMPORT_PER_SOL, wSOL, MULTITOKEN_MINTS_USDT
+from utils.helpers import wait_condition
+from utils.instructions import make_wSOL
 from utils.solana_client import SolanaClient
+from utils.web3client import NeonChainWeb3Client, Web3Client
 
 
 @allure.feature("Transfer NEON <-> Solana")
@@ -64,14 +65,13 @@ class TestDeposit:
     ):
         amount = 5000
         new_sol_account = Keypair()
-        token_mint = Pubkey.from_string(MULTITOKEN_MINTS["USDT"])
-        evm_loader.request_airdrop(new_sol_account.pubkey(), 1 * LAMPORT_PER_SOL)
+        token_mint = Pubkey.from_string(MULTITOKEN_MINTS_USDT)
+        evm_loader.send_sol(solana_account, new_sol_account.pubkey(), int(0.01 * LAMPORT_PER_SOL))
         new_account = self.accounts.create_account()
 
         evm_loader.deposit_neon_like_tokens_from_solana_to_neon(
             token_mint, new_sol_account, new_account, web3_client_usdt.chain_id, operator_keypair, amount
         )
-
         usdt_balance_after = web3_client_usdt.get_balance(new_account)
         assert usdt_balance_after == amount * 1000000000000
 
@@ -191,3 +191,37 @@ class TestWithdraw:
         destination_balance_after = spl_neon_token.get_balance(dest_acc.pubkey(), commitment=Commitment("confirmed"))
         with pytest.raises(AttributeError):
             _ = destination_balance_after.value
+
+    @pytest.mark.skip(reason="https://neonlabs.atlassian.net/browse/NDEV-3674")
+    def test_withdraw_wrapped_sol(
+        self,
+        web3_client_sol: Web3Client,
+        account_with_all_tokens: LocalAccount,
+        solana_account: Keypair,
+        sol_client: SolanaClient,
+    ):
+        contract, _ = web3_client_sol.deploy_and_get_contract(
+            contract="precompiled/NeonToken",
+            version="0.8.10",
+            account=account_with_all_tokens,
+        )
+
+        sol_client.create_associate_token_acc(solana_account, solana_account, WRAPPED_SOL_MINT)
+        associated_token_address = get_associated_token_address(solana_account.pubkey(), WRAPPED_SOL_MINT)
+        spl_neon_token = SplToken(self.sol_client, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID, solana_account)
+        balance_before = spl_neon_token.get_balance(
+            associated_token_address, commitment=Commitment("confirmed")
+        ).value.amount
+
+        amount = 100
+        tx = web3_client_sol.make_raw_tx(from_=account_with_all_tokens, amount=amount)
+        instruction_tx = contract.functions.withdraw(bytes(associated_token_address)).build_transaction(tx)
+        receipt = web3_client_sol.send_transaction(account_with_all_tokens, instruction_tx)
+        assert receipt["status"] == 1
+
+        wait_condition(
+            lambda: spl_neon_token.get_balance(
+                associated_token_address, commitment=Commitment("confirmed")
+            ).value.amount
+            > balance_before
+        )

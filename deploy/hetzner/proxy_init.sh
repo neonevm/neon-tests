@@ -16,6 +16,20 @@ sudo apt-get -y install pbzip2
 sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
+# Optional docker login to avoid docker hub pull limits
+# Check if both variables are set
+if [[ -n "$DOCKER_USERNAME" && -n "$DOCKER_PASSWORD" ]]; then
+
+  # Log in to Docker using masked credentials
+  if echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin; then
+    echo "Docker login succeeded!"
+  else
+    echo "Docker login failed! Check your credentials."
+  fi
+else
+  echo "DOCKER_USERNAME and/or DOCKER_PASSWORD are not set!"
+fi
+
 
 # Get docker-compose file
 cd /opt
@@ -30,14 +44,17 @@ export FAUCET_COMMIT=${faucet_model_commit}
 export DOCKERHUB_ORG_NAME=${dockerhub_org_name}
 export USE_REAL_GAS_PRICE=${use_real_price}
 export PROXY_IMAGE_NAME="neon-proxy.py"
+export DEVNET_SOLANA_URL=${devnet_solana_url}
 
 # Generate docker-compose override file
 cat > docker-compose-ci.override.yml <<EOF
 services:
   solana:
     container_name: solana
+    environment:
+      DEVNET_SOLANA_URL: $DEVNET_SOLANA_URL
     healthcheck:
-      test: [ CMD-SHELL, "/echo done" ]
+      test: [ CMD-SHELL, "echo done" ]
     entrypoint: "/usr/bin/sleep 10000"
 
   proxy:
@@ -93,6 +110,7 @@ function wait_service() {
   local URL=$2
   local DATA=$3
   local RESULT=$4
+  local SHOW_DOCKER_LOGS_IF_FAIL=$5
 
   # Max attempts is 100 (each for 2 seconds)
   local MAX_COUNT=100
@@ -113,6 +131,21 @@ function wait_service() {
     ((CURRENT_ATTEMPT=CURRENT_ATTEMPT+1))
     sleep 2
   done;
+
+  if [[ $CURRENT_ATTEMPT -eq $MAX_COUNT ]]; then
+      echo ""
+      echo "Service $SERVICE failed to respond as expected after $MAX_COUNT attempts."
+      if [[ "$SHOW_DOCKER_LOGS_IF_FAIL" == "show_docker_logs_if_fail" ]]; then
+        docker ps -a
+        docker ps -a --format "{{.ID}} {{.Names}}" | while read -r id name; do
+          echo ""
+          echo "Logs for container: $name"
+          docker logs "$id"
+          echo ""
+        done
+      fi
+      exit 1
+  fi
 }
 
 # Check if Solana is available
@@ -128,7 +161,7 @@ docker-compose -f docker-compose-ci.yml -f docker-compose-ci.override.yml up -d
 PROXY_URL="http://localhost:9090/solana"
 PROXY_DATA='{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["latest", false],"id":1}'
 PROXY_RESULT='"number"'
-wait_service "proxy" $PROXY_URL "$PROXY_DATA" $PROXY_RESULT
+wait_service "proxy" $PROXY_URL "$PROXY_DATA" $PROXY_RESULT "show_docker_logs_if_fail"
 
 
 docker rm -f solana

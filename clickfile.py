@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-import enum
 import functools
 import glob
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -17,14 +17,13 @@ from urllib.parse import urlparse
 
 import pytest
 
-from deploy.cli.cost_report import prepare_report_data, report_data_to_markdown
-from deploy.test_results_db.db_handler import PostgresTestResultsHandler
-from deploy.test_results_db.test_results_handler import TestResultsHandler
+from deploy.cli import cost_report
 from utils.accounts import EthAccounts
+from utils.consts import EnvName, TEST_GROUPS, EXTERNAL_CONTRACT_PATH
 from utils.error_log import error_log
 from utils.faucet import Faucet
 from utils.slack_notification import SlackNotification
-from utils.types import TestGroup, RepoType
+from utils.types import RepoType, TestGroup
 
 try:
     import click
@@ -49,6 +48,7 @@ try:
     from utils.helpers import wait_condition
     from utils.apiclient import JsonRPCSession
     from utils.k6_helpers import k6_prepare_accounts, k6_set_envs, deploy_erc20_contract, deploy_block_number_contract
+    from utils.locust_prepare import prepare_locust
 except ImportError:
     print("Please run ./clickfile.py requirements to install all requirements")
 
@@ -76,25 +76,8 @@ NEON_EVM_GITHUB_URL = f"https://api.github.com/repos/{DOCKER_HUB_ORG_NAME}/neon-
 HOODIES_CHAINLINK_GITHUB_URL = "https://github.com/hoodieshq/chainlink-neon"
 PROXY_GITHUB_URL = f"https://api.github.com/repos/{DOCKER_HUB_ORG_NAME}/neon-proxy.py"
 FAUCET_GITHUB_URL = f"https://api.github.com/repos/{DOCKER_HUB_ORG_NAME}/neon-faucet"
-EXTERNAL_CONTRACT_PATH = Path.cwd() / "contracts" / "external"
 VERSION_BRANCH_TEMPLATE = r"[vt]{1}\d{1,2}\.\d{1,2}\.x.*"
 GITHUB_TAG_PATTERN = re.compile(r"^[vt]\d{1,2}\.\d{1,2}\.\d{1,2}$")
-
-TEST_GROUPS: tp.Tuple[TestGroup, ...] = tp.get_args(TestGroup)
-
-
-class EnvName(str, enum.Enum):
-    NIGHT_STAND = "night-stand"
-    RELEASE_STAND = "release-stand"
-    MAINNET = "mainnet"
-    DEVNET = "devnet"
-    TESTNET = "testnet"
-    LOCAL = "local"
-    TERRAFORM = "terraform"
-    GETH = "geth"
-    TRACER_CI = "tracer_ci"
-    CUSTOM = "custom"
-    DOCKER_NET = "docker_net"
 
 
 def green(s):
@@ -376,16 +359,6 @@ def wait_for_tracer_service(network: str):
     return True
 
 
-def generate_allure_environment(network_name: str):
-    network_manager = NetworkManager()
-    network = network_manager.get_network_object(network_name)
-    env = os.environ.copy()
-
-    env["NETWORK_ID"] = str(network["network_ids"]["neon"])
-    env["PROXY_URL"] = network["proxy_url"]
-    return env
-
-
 def install_python_requirements():
     command = (
         "uv pip install --upgrade "
@@ -523,10 +496,12 @@ def update_contracts(branch):
     update_contracts_from_git(HOODIES_CHAINLINK_GITHUB_URL, "hoodies_chainlink", "main")
 
     # uncomment for new version of erc20ForSpl
-    # update_contracts_from_git(
-    #     f"https://github.com/{DOCKER_HUB_ORG_NAME}/neon-contracts.git", "neon-contracts", "main", update_npm=False
-    # )
-    # subprocess.check_call(f'npm ci --prefix {EXTERNAL_CONTRACT_PATH / "neon-contracts" / "ERC20ForSPL"}', shell=True)
+    update_contracts_from_git(
+        "https://github.com/neonevm/neon-contracts.git",
+        "neon-contracts",
+        "update/erc20forspl-solana-native",
+        update_npm=True,
+    )
 
 
 @cli.command(help="Run any type of tests")
@@ -574,6 +549,21 @@ def run(
     if name == "economy":
         command = "py.test integration/tests/economy/test_economics.py"
     elif name == "basic":
+        # run basic excluding tests for ERC20SPLNew contract
+        if network == "mainnet":
+            command = (
+                "py.test integration/tests/basic -m mainnet --ignore=integration/tests/basic/erc/test_ERC20SPLnew.py"
+            )
+        else:
+            command = (
+                "py.test integration/tests/basic --ignore=integration/tests/basic/erc/test_ERC20SPLnew.py"
+                " --ignore=integration/tests/basic/solana_signature/test_send_scheduled_transactions_new_erc.py "
+            )
+        if numprocesses:
+            command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
+
+    elif name == "basic_extended":
+        # run basic excluding tests for ERC20SPLNew contract
         if network == "mainnet":
             command = "py.test integration/tests/basic -m mainnet"
         else:
@@ -604,7 +594,7 @@ def run(
             raise click.ClickException(
                 red("Please set the `CHROME_EXT_PASSWORD` environment variable (password for wallets).")
             )
-        command = "py.test ui/tests/website_tests"
+        command = "pytest ui/tests/website_tests"
         if ui_item != "all":
             command = command + f"/test_{ui_item}.py"
     else:
@@ -632,7 +622,7 @@ def run(
     if cost_reports_dir:
         command += f" --cost_reports_dir {cost_reports_dir}"
 
-    args = command.split()[1:]
+    args = shlex.split(command)[1:]
     exit_code = int(pytest.main(args=args))
     if name != "ui":
         shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
@@ -843,6 +833,14 @@ def prepare(credentials, host, users, spawn_rate, run_time, tag):
 
     if cmd.returncode != 0:
         sys.exit(cmd.returncode)
+
+
+@locust.command("prepare-scheduled", help="Run preparation stage for `scheduled txs` performance test")
+@click.option("-n", "--network", default="local", required=True, help="Network name")
+@click.option("-u", "--neon_users", default=50, required=True, help="Number of neon users to prepare for the load test")
+def prepare_erc20_and_neon_users(network, neon_users):
+    """Run `Preparation stage` for scheduled txs performance test"""
+    prepare_locust(network, neon_users)
 
 
 @cli.group("allure")
@@ -1122,58 +1120,21 @@ def save_dapps_cost_report_to_db(
     evm_commit_sha: str,
     proxy_commit_sha: str,
 ):
-    tag = evm_tag if repo == "evm" else proxy_tag
-
-    report_data = prepare_report_data(directory)
-    db = PostgresTestResultsHandler()
-
-    # define if previous similar reports should be deleted
-    is_neon_evm_tag_version_branch = bool(re.fullmatch(VERSION_BRANCH_TEMPLATE, evm_tag))
-    is_proxy_tag_version_branch = bool(re.fullmatch(VERSION_BRANCH_TEMPLATE, proxy_tag))
-
-    if evm_tag == proxy_tag == "latest":
-        click.echo("This is a merge to develop")
-        do_delete = False
-    elif is_neon_evm_tag_version_branch and is_proxy_tag_version_branch and evm_tag == proxy_tag:
-        click.echo(f"This is a merge to version branch {evm_tag}")
-        do_delete = False
-    else:
-        do_delete = True
-
-    # delete them if needed
-    if do_delete:
-        report_ids_old = db.get_cost_report_ids(repo=repo, tag=tag)
-        if report_ids_old:
-            db.delete_data_by_report_ids(report_ids=report_ids_old)
-            db.delete_reports(report_ids=report_ids_old)
-
-    # save the new report
-    report_id_new = db.save_cost_report(
+    cost_report.save_dapps_cost_report_to_db(
+        directory=directory,
         repo=repo,
-        neon_evm_tag=evm_tag,
+        evm_tag=evm_tag,
         proxy_tag=proxy_tag,
         evm_commit_sha=evm_commit_sha,
         proxy_commit_sha=proxy_commit_sha,
+        version_branch_template=VERSION_BRANCH_TEMPLATE,
     )
-    db.save_cost_report_data(report_data=report_data, cost_report_id=report_id_new)
 
 
 @dapps.command("save_dapps_cost_report_to_md", help="Save dApps Cost Report to cost_reports.md")
 @click.option("-d", "--directory", default="reports", help="Directory with reports")
 def save_dapps_cost_report_to_md(directory: str):
-    report_data = prepare_report_data(directory)
-
-    # Add 'gas_used_%' column after 'gas_used'
-    report_data.insert(
-        report_data.columns.get_loc("gas_used") + 1,
-        "gas_used_%",
-        (report_data["gas_used"] / report_data["gas_estimated"]) * 100,
-    )
-    report_data["gas_used_%"] = report_data["gas_used_%"].round(2)
-
-    # Dump report_data DataFrame to markdown, grouped by the dApp
-    report_as_markdown_table = report_data_to_markdown(df=report_data)
-    Path("cost_reports.md").write_text(report_as_markdown_table)
+    cost_report.save_dapps_cost_report_to_md(directory=directory)
 
 
 @dapps.command("compare_dapp_cost_reports", help="Compare dApp results")
@@ -1189,73 +1150,49 @@ def compare_dapp_results(
     version_branch: str,
     history_depth_limit: int,
 ):
-    """
-    >>> compared_service_tag
-    v1.1.1 - GitHub tag
-    feature_foo - feature branch
-
-    >>> other_service_tag
-    v1.1.x - version branch
-    feature_foo - feature branch
-    latest - develop branch
-    """
-    click.echo(f"compare_dapp_results: {locals()}")
-
-    compared_service_tag = evm_tag if repo == "evm" else proxy_tag
-    other_service_tag = evm_tag if repo == "proxy" else proxy_tag
-    db = PostgresTestResultsHandler()
-
-    # define the tags against which the comparison will be done
-    previous_tags: list[str]
-
-    if re.fullmatch(GITHUB_TAG_PATTERN, compared_service_tag):
-        previous_tags = db.get_previous_tags(
-            repo=repo,
-            tag=compared_service_tag,
-            limit=history_depth_limit,
-        )
-    else:
-        if version_branch:
-            previous_tags = [version_branch]
-        else:
-            previous_tags = ["latest"]
-
-    click.echo(f"previous_tags: {previous_tags}")
-
-    historical_data = db.get_historical_data(
-        depth=history_depth_limit,
+    cost_report.compare_dapp_results(
         repo=repo,
-        latest_tag=compared_service_tag,
-        previous_tags=previous_tags,
+        evm_tag=evm_tag,
+        proxy_tag=proxy_tag,
+        version_branch=version_branch,
+        history_depth_limit=history_depth_limit,
     )
 
-    # get commit sha for compared_service and other_service
-    data_sample_row = historical_data[
-        (historical_data["repo"] == repo)
-        & (historical_data["neon_evm_tag"] == evm_tag)
-        & (historical_data["proxy_tag"] == proxy_tag)
-    ].iloc[0]
 
-    if repo == "evm":
-        compared_service_commit_sha = data_sample_row["evm_commit_sha"]
-        other_service_commit_sha = data_sample_row["proxy_commit_sha"]
-    elif repo == "proxy":
-        compared_service_commit_sha = data_sample_row["proxy_commit_sha"]
-        other_service_commit_sha = data_sample_row["evm_commit_sha"]
-    else:
-        raise ValueError(f'Unknown repo "{repo}"')
-
-    compared_service_sha_string = f", commit sha {compared_service_commit_sha}" if compared_service_commit_sha else ""
-    other_service_sha_string = f", commit sha {other_service_commit_sha}" if other_service_commit_sha else ""
-
-    # generate plots and save to pdf
-    other_service_name = "neon_evm" if repo == "proxy" else "proxy"
-    test_results_handler = TestResultsHandler()
-    test_results_handler.generate_and_save_plots_pdf(
-        historical_data=historical_data,
-        title_end=f"on {repo}:{compared_service_tag}{compared_service_sha_string}\n"
-        f"with {other_service_name}:{other_service_tag}{other_service_sha_string}",
-        output_pdf="cost_reports.pdf",
+@dapps.command("validate_cost_reports", help="Validate cost reports data")
+@click.option("--repo", type=click.Choice(tp.get_args(RepoType)), required=True)
+@click.option("--evm_tag", required=True)
+@click.option("--proxy_tag", required=True)
+@click.option("--version_branch", required=True)
+@click.option("--acc_count", type=int, help="Allowed absolute number of acceptable increase")
+@click.option("--trx_count", type=int, help="Allowed absolute number of acceptable increase")
+@click.option("--gas_estimated", type=int, help="Allowed absolute number of acceptable increase")
+@click.option("--gas_used", type=int, help="Allowed absolute number of acceptable increase")
+@click.option("--compute_units", type=int, help="Allowed absolute number of acceptable increase")
+@click.option("--output", type=str, help="Path to the JSON file where detected failures are saved")
+def validate_cost_reports(
+    repo: RepoType,
+    evm_tag: str,
+    proxy_tag: str,
+    version_branch: str,
+    acc_count: int,
+    trx_count: int,
+    gas_estimated: int,
+    gas_used: int,
+    compute_units: int,
+    output: str,
+):
+    cost_report.validate_cost_reports(
+        repo=repo,
+        evm_tag=evm_tag,
+        proxy_tag=proxy_tag,
+        version_branch=version_branch,
+        acc_count=acc_count,
+        trx_count=trx_count,
+        gas_estimated=gas_estimated,
+        gas_used=gas_used,
+        compute_units=compute_units,
+        output=output,
     )
 
 
@@ -1263,14 +1200,15 @@ def compare_dapp_results(
 @click.option("--pr_url_for_report", default="", help="Url to send the report as comment for PR")
 @click.option("--token", default="", help="github token")
 @click.option("--md_file", help="File with markdown for the comment")
-def add_pr_comment(pr_url_for_report: str, token: str, md_file: str):
+@click.option("--title", default="", help="Comment title")
+def add_pr_comment(pr_url_for_report: str, token: str, md_file: str, title: str):
     gh_client = GithubClient(token=token)
-    gh_client.delete_last_comment(pr_url_for_report)
+    gh_client.delete_last_comment(pr_url=pr_url_for_report, title=title)
 
     with open(md_file) as f:
         markdown = f.read()
 
-    gh_client.add_comment_to_pr(pr_url_for_report, markdown)
+    gh_client.add_comment_to_pr(url=pr_url_for_report, msg=markdown, title=title)
 
 
 @cli.group()
@@ -1334,6 +1272,18 @@ def run_load_k6(network, script, users, balance, bank_account):
     command_run = subprocess.run(command, shell=True)
     if command_run.returncode != 0:
         sys.exit(command_run.returncode)
+
+
+@cli.command(help="Get proxy version for the specified network")
+@click.option("-n", "--network", type=click.Choice(EnvName), help="Network name")
+def get_stand_proxy_version(network: EnvName):
+    network_manager = NetworkManager()
+    settings = network_manager.get_network_object(network.value)
+    web3_client = web3client.NeonChainWeb3Client(settings["proxy_url"])
+    response = web3_client.get_proxy_version()
+
+    match = re.search(r"v\d+\.\d+\.\d+", response["result"])
+    print(match.group(0))
 
 
 if __name__ == "__main__":

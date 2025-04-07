@@ -19,7 +19,12 @@ from solana.rpc.commitment import Confirmed
 from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
 from solders.rpc.responses import SendTransactionResp, GetTransactionResp
-from spl.token.instructions import get_associated_token_address, MintToParams, ApproveParams, approve
+from spl.token.instructions import (
+    get_associated_token_address,
+    MintToParams,
+    ApproveParams,
+    approve,
+)
 from spl.token.constants import TOKEN_PROGRAM_ID
 
 from integration.tests.neon_evm.utils.contract import get_contract_bin
@@ -630,9 +635,7 @@ class EvmLoader(SolanaClient):
         contract_pubkey = Pubkey.from_string(self.ether2program(neon_account)[0])
         associated_token_address = get_associated_token_address(solana_account.pubkey(), mint)
         authority_pool = Pubkey.find_program_address([b"Deposit"], self.loader_id)[0]
-
         pool = get_associated_token_address(authority_pool, mint)
-
         tx = Transaction(fee_payer=solana_account.pubkey())
         tx.add(
             approve(

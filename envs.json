@@ -5,8 +5,7 @@
     "network_ids": {
       "neon": 111,
       "sol": 112,
-      "usdt": 113,
-      "eth": 114
+      "usdt": 113
     },
     "solana_url": "http://proxy.night.stand.neontest.xyz/node-solana",
     "faucet_url": "http://proxy.night.stand.neontest.xyz",
@@ -45,11 +44,11 @@
   },
   "devnet": {
     "evm_loader": "eeLSJgWzzxrqKv1UxtRVVH8FX3qCQWUs9QuAjJpETGU",
-    "proxy_url": "http://proxy-svc.neon-proxy-devnet.svc.cluster.local.:9090",
+    "proxy_url": "https://devnet.neonevm.org/",
     "network_ids": {
       "neon": 245022926,
       "sol": 245022927,
-      "usdc": 245022928
+      "usdt": 245022929
     },
     "solana_url": "https://api.devnet.solana.com",
     "faucet_url": "secret_faucet_url",
@@ -81,8 +80,7 @@
     "network_ids": {
       "neon": 111,
       "sol": 112,
-      "usdt": 113,
-      "eth": 114
+      "usdt": 113
     },
     "solana_url": "http://127.0.0.1:8899/",
     "faucet_url": "http://127.0.0.1:3333/",
@@ -96,8 +94,7 @@
     "network_ids": {
       "neon": 111,
       "sol": 112,
-      "usdt": 113,
-      "eth": 114
+      "usdt": 113
     },
     "solana_url": "http://<solana_ip>:8899/",
     "faucet_url": "http://<proxy_ip>:3333/",
@@ -122,7 +119,9 @@
     "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
     "proxy_url": "http://proxy:9090/solana",
     "network_ids": {
-      "neon": 111
+      "neon": 111,
+      "sol": 112,
+      "usdt": 113
     },
     "solana_url": "http://solana:8899/",
     "faucet_url": "http://faucet:3333/request_neon",
@@ -139,8 +138,7 @@
     "network_ids": {
       "neon": 111,
       "sol": 112,
-      "usdt": 113,
-      "eth": 114
+      "usdt": 113
     },
     "solana_url": "http://solana:8899/",
     "faucet_url": "http://faucet:3333/",

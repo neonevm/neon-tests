@@ -1,22 +1,21 @@
+import logging
 import os
 import pathlib
 import random
 import string
 import typing
 import typing as tp
-import logging
 from queue import Queue
 
 import allure
 import base58
+import polling2
 import solcx
 import web3
 from eth_abi import abi
 from eth_utils import keccak
-from solders.pubkey import Pubkey
 from solcx import link_code
-import polling2
-from semantic_version import Version
+from solders.pubkey import Pubkey
 from solders.rpc.responses import GetTransactionResp
 
 T = tp.TypeVar("T")
@@ -58,7 +57,7 @@ def get_contract_interface(
     compiled = solcx.compile_files(
         [contract_path],
         output_values=["abi", "bin"],
-        solc_version=Version(version),
+        solc_version=version,
         import_remappings=import_remapping,
         allow_paths=["."],
         optimize=True,
@@ -103,7 +102,7 @@ def wait_condition(
     max_tries: tp.Optional[int] = None,
     check_success: tp.Callable[[T], bool] = polling2.is_truthy,
     step_function: tp.Callable[[float], float] = polling2.step_constant,
-    ignore_exceptions: tp.Tuple[Exception, ...] = (KeyError,),
+    ignore_exceptions: tp.Tuple[tp.Type[Exception], ...] = (KeyError,),
     poll_forever: bool = False,
     collect_values: tp.Optional[Queue] = None,
     log: int = logging.NOTSET,

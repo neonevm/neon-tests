@@ -70,6 +70,9 @@ jobs:
         uses: ./.github/actions/create-tf-stand
         with:
           ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
+          hetzner_instance_types: ${{vars.HETZNER_INSTANCE_TYPES}}
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
       - name: "Define outputs"
         id: vars
         uses: ./.github/actions/define-stand-env

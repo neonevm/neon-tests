@@ -28,6 +28,17 @@ Test configuration via environment variables settings:
 -  `SAVE_TRANSACTIONS` Save all neon transactions and their solana transactions to "transactions-{id}.json" files
 
 
+## Run load test for scheduled txs
+To prepare data for the scenario you should run a script from `loadtesting/proxy/deploy_contract_scripts/erc20_deploy.py`. Network and neon users number shoud be passed as arguments:
+```bash
+./clickfile.py locust prepare-scheduled --network local --neon_users 10
+```
+
+To run the scenario via locust native command:
+```bash
+locust -f ./loadtesting/proxy/tests/scheduled_tx.py --host=local -t 300 -u 2 -r 1 --logfile load_run.log
+```
+
 ## Running the test and analyzing the results in the console without using the web interface
 
 ##### Instant load method without locust web interface
@@ -150,4 +161,3 @@ for more options use --help
  - failures/s : failed requests per second
 
 ```
-

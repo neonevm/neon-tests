@@ -7,9 +7,15 @@ from integration.tests.basic.helpers.basic import Tag
 from integration.tests.basic.helpers.errors import Error32602
 from utils.accounts import EthAccounts
 from utils.apiclient import JsonRPCSession
-from utils.helpers import gen_hash_of_block
+from utils.consts import wSOL
+from utils.helpers import gen_hash_of_block, decode_function_signature, wait_condition
 from utils.models.error import EthError32602
-from utils.models.result import EthGetBlockByHashResult, EthGetBlockByHashFullResult
+from utils.models.result import (
+    EthGetBlockByHashResult,
+    EthGetBlockByHashFullResult,
+    EthResult,
+)
+from utils.scheduled_trx import ScheduledTrxEstimateRequest, ScheduledTransaction
 from utils.web3client import NeonChainWeb3Client
 
 
@@ -20,25 +26,25 @@ class TestRpcGetBlock:
     web3_client: NeonChainWeb3Client
     accounts: EthAccounts
 
+    @pytest.fixture(scope="class")
+    def send_neon_transaction(self):
+        sender_account = self.accounts[0]
+        recipient_account = self.accounts[1]
+        return self.web3_client.send_neon(sender_account, recipient_account, 1)
+
     @pytest.mark.mainnet
     @pytest.mark.parametrize("full_trx", [False, True])
     def test_eth_get_block_by_hash(
-        self,
-        full_trx: bool,
-        json_rpc_client: JsonRPCSession,
-        env_name: EnvName,
+        self, full_trx: bool, json_rpc_client: JsonRPCSession, env_name: EnvName, send_neon_transaction
     ):
         """Verify implemented rpc calls work eth_getBlockByHash"""
-        sender_account = self.accounts[0]
-        recipient_account = self.accounts[1]
-        tx_receipt = self.web3_client.send_neon(sender_account, recipient_account, 1)
-        params = [tx_receipt.blockHash.hex(), full_trx]
+        params = [send_neon_transaction.blockHash.hex(), full_trx]
         response = json_rpc_client.send_rpc(method="eth_getBlockByHash", params=params)
         rpc_checks.assert_block_fields(
             env_name=env_name,
             response=response,
             full_trx=full_trx,
-            tx_receipt=tx_receipt,
+            tx_receipt=send_neon_transaction,
         )
         if full_trx:
             EthGetBlockByHashFullResult(**response)
@@ -69,24 +75,18 @@ class TestRpcGetBlock:
     @pytest.mark.mainnet
     @pytest.mark.parametrize("full_trx", [False, True])
     def test_eth_get_block_by_number_via_numbers(
-        self,
-        full_trx: bool,
-        json_rpc_client: JsonRPCSession,
-        env_name: EnvName,
+        self, full_trx: bool, json_rpc_client: JsonRPCSession, env_name: EnvName, send_neon_transaction
     ):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
-        sender_account = self.accounts[0]
-        recipient_account = self.accounts[1]
-        tx_receipt = self.web3_client.send_neon(sender_account, recipient_account, 1)
         response = json_rpc_client.send_rpc(
             method="eth_getBlockByNumber",
-            params=[hex(tx_receipt.blockNumber), full_trx],
+            params=[hex(send_neon_transaction.blockNumber), full_trx],
         )
         rpc_checks.assert_block_fields(
             env_name=env_name,
             response=response,
             full_trx=full_trx,
-            tx_receipt=tx_receipt,
+            tx_receipt=send_neon_transaction,
         )
         if full_trx:
             EthGetBlockByHashFullResult(**response)
@@ -145,11 +145,9 @@ class TestRpcGetBlock:
         full_trx: bool,
         json_rpc_client: JsonRPCSession,
         env_name: EnvName,
+        send_neon_transaction,
     ):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
-        sender_account = self.accounts[0]
-        recipient_account = self.accounts[1]
-        self.web3_client.send_neon(sender_account, recipient_account, 1)
         params = [quantity_tag.value, full_trx]
         response = json_rpc_client.send_rpc(method="eth_getBlockByNumber", params=params)
         rpc_checks.assert_block_fields(
@@ -163,3 +161,67 @@ class TestRpcGetBlock:
             EthGetBlockByHashFullResult(**response)
         else:
             EthGetBlockByHashResult(**response)
+
+    @pytest.mark.parametrize(
+        "params_case, method, full_trx",
+        [
+            ("blockNumber_case", "eth_getBlockByNumber", True),
+            ("blockNumber_case", "eth_getBlockByNumber", False),
+            ("blockHash_case", "eth_getBlockByHash", True),
+            ("blockHash_case", "eth_getBlockByHash", False),
+        ],
+    )
+    def test_get_scheduled_transaction_block(
+        self,
+        json_rpc_client,
+        web3_client_sol,
+        neon_user,
+        common_contract,
+        evm_loader,
+        treasury_pool,
+        params_case,
+        method,
+        full_trx,
+    ):
+        data = decode_function_signature("setNumber(uint256)", [18])
+        trx_estimate_obj = ScheduledTrxEstimateRequest(neon_user.checksum_address, common_contract.address, data)
+        estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), [trx_estimate_obj])
+
+        tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
+
+        tree_account = evm_loader.create_tree_account(
+            neon_user, treasury_pool, tx.encode(), wSOL["address_spl"], chain_id=evm_loader.sol_chain_id
+        )
+
+        response = web3_client_sol.send_scheduled_transaction(tx, check_result=True)
+        EthResult(**response)
+
+        tx_receipt = web3_client_sol.wait_for_transaction_receipt(tx.hash(), timeout=180)
+
+        params = None
+        if params_case == "blockNumber_case":
+            params = [hex(tx_receipt.blockNumber), full_trx]
+        elif params_case == "blockHash_case":
+            params = [tx_receipt.blockHash.hex(), full_trx]
+
+        resp = json_rpc_client.send_rpc(
+            method=method,
+            params=params,
+        )
+
+        wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=120, delay=2)
+
+        if full_trx:
+            EthGetBlockByHashFullResult(**resp)
+            scheduled_trx_from_resp = next(
+                (trx for trx in resp["result"]["transactions"] if trx["hash"][2:] == tx.hash().hex()), None
+            )
+            assert scheduled_trx_from_resp["type"] == "0x80"
+            assert scheduled_trx_from_resp["scheduledIndex"] == "0x0"
+            assert scheduled_trx_from_resp["scheduledPayer"] == neon_user.checksum_address
+            assert scheduled_trx_from_resp["scheduledSolanaPayer"] == str(neon_user.solana_account.pubkey())
+
+            sol_sig_list = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
+            assert scheduled_trx_from_resp["scheduledSolanaSignature"] in sol_sig_list["result"]
+        else:
+            EthGetBlockByHashResult(**resp)

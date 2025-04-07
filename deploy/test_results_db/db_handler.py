@@ -4,16 +4,16 @@ import signal
 import typing as tp
 
 import click
-from sqlalchemy import create_engine, Engine, distinct, desc
-from sqlalchemy.orm import sessionmaker, Query
 import pandas as pd
-from packaging import version
+from packaging.version import Version
+from sqlalchemy import create_engine, Engine, distinct, desc, UnaryExpression, case, Integer, cast
+from sqlalchemy.orm import sessionmaker, Query
+from sqlalchemy.sql import func
 
 from deploy.test_results_db.table_models.base import Base
 from deploy.test_results_db.table_models.cost_report import CostReport
 from deploy.test_results_db.table_models.dapp_data import DappData
 from utils.types import RepoType
-from utils.version import remove_heading_chars_till_first_digit
 
 
 class PostgresTestResultsHandler:
@@ -39,10 +39,10 @@ class PostgresTestResultsHandler:
     def __create_tables_if_needed(self):
         Base.metadata.create_all(self.engine)
 
-    def __handle_exit(self, signum, frame):
+    def __handle_exit(self, signum, frame):  # noqa
         self.Session.close_all()
 
-    def get_cost_report_ids(self, repo: str, tag: str) -> list[int]:
+    def get_cost_report_ids(self, repo: str, tag: str) -> list[CostReport.id]:
         tag_column = CostReport.neon_evm_tag if repo == "evm" else CostReport.proxy_tag
         report_ids = (
             self.session.query(CostReport.id)
@@ -117,25 +117,25 @@ class PostgresTestResultsHandler:
 
         assert re.fullmatch(GITHUB_TAG_PATTERN, tag)
         tag_column = CostReport.neon_evm_tag if repo == "evm" else CostReport.proxy_tag
-        tags: list[str] = (
+        tags: list[UnaryExpression[CostReport.neon_evm_tag | CostReport.proxy_tag]] = (
             self.session.query(distinct(tag_column))
             .filter(
                 CostReport.repo == repo,
             )
             .all()
         )
-        tags = [tag[0] for tag in tags]
-        tags = [tag for tag in tags if GITHUB_TAG_PATTERN.match(tag)]
+        tags: list[CostReport.neon_evm_tag | CostReport.proxy_tag] = [t[0] for t in tags]
+        tags: list[str] = [t for t in tags if GITHUB_TAG_PATTERN.match(t) and t[0] == tag[0]]
         sorted_tags: list[str] = sorted(
             [t for t in tags if t is not None],
-            key=lambda t: version.parse(remove_heading_chars_till_first_digit(t)),
+            key=lambda t: Version(t),
             reverse=True,
         )
-        latest_tag: version.Version = version.parse(remove_heading_chars_till_first_digit(tag))
+        latest_tag = Version(tag)
 
         # Find the index of the first tag that is less than latest_tag
         for i, tag_ in enumerate(sorted_tags):
-            if version.parse(remove_heading_chars_till_first_digit(tag_)) < latest_tag:
+            if Version(tag_) < latest_tag:
                 # Return all tags before the found index, limited by the specified limit
                 previous_tags: list[str] = sorted_tags[i:]
                 return previous_tags[:limit]
@@ -155,6 +155,7 @@ class PostgresTestResultsHandler:
         :param latest_tag:
         :param previous_tags: ["latest] or ["v3.1.x"] or ["v3.1.0", "v3.1.1", ...]
         """
+        from clickfile import GITHUB_TAG_PATTERN
 
         tag_column = CostReport.neon_evm_tag if repo == "evm" else CostReport.proxy_tag
 
@@ -165,7 +166,30 @@ class PostgresTestResultsHandler:
                 CostReport.repo == repo,
                 tag_column.in_(previous_tags),
             )
-            .order_by(desc(CostReport.timestamp))
+            .order_by(
+                case(
+                    (
+                        tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
+                        cast(func.split_part(func.regexp_replace(tag_column, "^[vt]", ""), ".", 1), Integer),
+                    ),
+                    else_=0,
+                ),
+                case(
+                    (
+                        tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
+                        cast(func.split_part(func.regexp_replace(tag_column, "^[vt]", ""), ".", 2), Integer),
+                    ),
+                    else_=0,
+                ),
+                case(
+                    (
+                        tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
+                        cast(func.split_part(func.regexp_replace(tag_column, "^[vt]", ""), ".", 3), Integer),
+                    ),
+                    else_=0,
+                ),
+                desc(CostReport.timestamp),
+            )
         )
 
         # offset the previous_reports query by 1 if it's a merge event because latest_tag is the same as previous_tags
@@ -173,17 +197,45 @@ class PostgresTestResultsHandler:
         previous_reports: list[CostReport] = previous_reports.offset(offset).limit(depth - 1).all()
 
         # Fetch last CostReport
-        last_report: CostReport = (
+        last_report: CostReport | None = (
             self.session.query(CostReport)
             .filter(
                 CostReport.repo == repo,
                 tag_column == latest_tag,
             )
-            .order_by(desc(CostReport.timestamp))
+            .order_by(
+                case(
+                    (
+                        tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
+                        cast(func.split_part(func.regexp_replace(tag_column, "^[vt]", ""), ".", 1), Integer),
+                    ),
+                    else_=0,
+                ),
+                case(
+                    (
+                        tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
+                        cast(func.split_part(func.regexp_replace(tag_column, "^[vt]", ""), ".", 2), Integer),
+                    ),
+                    else_=0,
+                ),
+                case(
+                    (
+                        tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
+                        cast(func.split_part(func.regexp_replace(tag_column, "^[vt]", ""), ".", 3), Integer),
+                    ),
+                    else_=0,
+                ),
+                desc(CostReport.timestamp),
+            )
             .first()
         )
 
-        cost_report_entries: list[CostReport] = [last_report] + previous_reports
+        cost_report_entries: list[CostReport] = []
+        if previous_reports:
+            cost_report_entries.extend(previous_reports)
+        if last_report:
+            cost_report_entries.append(last_report)
+
         cost_report_ids: list[int] = [r.id for r in previous_reports] + [last_report.id]
 
         # Define the dapps that are present in the last_report
@@ -215,9 +267,10 @@ class PostgresTestResultsHandler:
         # prepare data for the DataFrame
         df_data = []
         for data_entry in dapp_data_entries:
-            cost_report: tp.Optional[CostReport] = cost_report_dict.get(data_entry.cost_report_id)
+            cost_report: tp.Optional[CostReport] = cost_report_dict.get(data_entry.cost_report_id)  # noqa
             if cost_report:
                 tag = cost_report.neon_evm_tag if repo == "evm" else cost_report.proxy_tag
+                tag_natural_sorting = Version(tag) if re.fullmatch(GITHUB_TAG_PATTERN, tag) else tag
                 df_data.append(
                     {
                         "repo": cost_report.repo,
@@ -225,6 +278,7 @@ class PostgresTestResultsHandler:
                         "neon_evm_tag": cost_report.neon_evm_tag,
                         "proxy_tag": cost_report.proxy_tag,
                         "tag": tag,
+                        "tag_natural_sorting": tag_natural_sorting,
                         "dapp_name": data_entry.dapp_name,
                         "action": data_entry.action,
                         "acc_count": data_entry.acc_count,
@@ -240,6 +294,9 @@ class PostgresTestResultsHandler:
         # Initialize the DataFrame and sort it
         df = pd.DataFrame(data=df_data)
         if not df.empty:
-            df = df.sort_values(by=["timestamp", "dapp_name", "action"])
+            df = df.sort_values(
+                by=["tag_natural_sorting", "timestamp", "dapp_name", "action"],
+                ignore_index=True,
+            )
 
         return df

@@ -3,22 +3,30 @@ import json
 import logging
 import time
 import random
+import pathlib
 import typing as tp
-from functools import lru_cache
-
 import web3.types
 import requests
 import gevent
 
-from gevent.pool import Pool
-from locust import TaskSet, events, env
+from dataclasses import dataclass
+from functools import lru_cache
+
+from eth_account.signers.local import LocalAccount
+from solana.rpc import commitment
+from solders.keypair import Keypair
 
 from utils import helpers
 from utils.faucet import Faucet
 from utils.web3client import NeonChainWeb3Client
-from eth_account.signers.local import LocalAccount
-
+from gevent.pool import Pool
+from utils.evm_loader import EvmLoader
+from utils.neon_user import NeonUser
+from utils.types import TreasuryPool
+from utils.consts import LAMPORT_PER_SOL
 from .events import statistics_collector, save_transaction
+
+from locust import TaskSet, events, env
 
 LOG = logging.getLogger(__name__)
 
@@ -77,12 +85,59 @@ class NeonWeb3ClientExt(NeonChainWeb3Client):
         return attr
 
 
+@dataclass
+class NeonGlobalEnv:
+    id = 0
+    accounts = []
+    counter_contracts = []
+    erc20_contracts = {}
+    erc20_wrapper_contracts = {}
+    increase_storage_contracts = []
+
+
+@events.init_command_line_parser.add_listener
+def arg_parser(parser):
+    """Add custom command line arguments to Locust"""
+    parser.add_argument(
+        "--credentials",
+        type=str,
+        env_var="NEON_CRED",
+        default="envs.json",
+        help="Relative path to environment credentials file.",
+    )
+
+
+@events.test_start.add_listener
+def make_env_preparation(environment: env.Environment, **kwargs):
+    neon = NeonGlobalEnv()
+    environment.shared = neon
+
+
+@events.test_start.add_listener
+def load_credentials(environment: env.Environment, **kwargs):
+    """Test start event handler"""
+    base_path = pathlib.Path().absolute()
+    path = base_path / environment.parsed_options.credentials
+    network = environment.parsed_options.host or environment.host
+    if not (path.exists() and path.is_file()):
+        path = base_path / "envs.json"
+    with open(path, "r") as fp:
+        f = json.load(fp)
+        environment.credentials = f[network]
+
+
 class NeonProxyTasksSet(TaskSet):
     """Implements base initialization, creates data requirements and helpers"""
 
-    faucet: tp.Optional[Faucet] = None
+    bank_account = None
     account: tp.Optional[LocalAccount] = None
     web3_client: tp.Optional[NeonWeb3ClientExt] = None
+    web3_client_sol: tp.Optional[NeonWeb3ClientExt] = None
+    evm_loader: tp.Optional[EvmLoader] = None
+    treasury_pool: tp.Optional[TreasuryPool] = None
+    erc20_info: tp.Optional[dict] = {}
+    network: tp.Optional[str] = None
+    credentials: tp.Optional[dict] = {}
 
     def setup(self) -> None:
         """Prepare data requirements"""
@@ -105,10 +160,36 @@ class NeonProxyTasksSet(TaskSet):
         session = init_session(
             int(self.user.environment.parsed_options.num_users or self.user.environment.runner.target_user_count) * 100
         )
+
+        self.erc20_info = self.get_erc20_info()
+
         self.credentials = self.user.environment.credentials
+        self.network = self.user.environment.parsed_options.host or self.user.environment.host
+
         LOG.info(f"Create web3 client to: {self.credentials['proxy_url']}")
         self.web3_client = NeonWeb3ClientExt(self.credentials["proxy_url"])
+
+        LOG.info(f"Create web3 sol client to: {self.credentials['proxy_url']}")
+        self.web3_client_sol = NeonWeb3ClientExt(self.credentials["proxy_url"] + "/sol")
+
         self.faucet = Faucet(self.credentials["faucet_url"], self.web3_client, session=session)
+        self.evm_loader = EvmLoader(
+            program_id=self.credentials["evm_loader"],
+            endpoint=self.credentials["solana_url"],
+            neon_chain_id=self.credentials["network_ids"]["neon"],
+            sol_chain_id=self.credentials["network_ids"]["sol"],
+            neon_token_mint_str=self.credentials["spl_neon_mint"],
+        )
+
+        index = 2
+        self.evm_loader.create_treasury_pool_address(index)
+        address = self.evm_loader.create_treasury_pool_address(index)
+        index_buf = index.to_bytes(4, "little")
+        balance = self.evm_loader.get_solana_balance(address)
+
+        if balance < 5 * LAMPORT_PER_SOL:
+            self.evm_loader.request_airdrop(address, 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed)
+        self.treasury_pool = TreasuryPool(index, address, index_buf)
 
     def task_block_number(self) -> None:
         """Check the number of the most recent block"""
@@ -162,3 +243,32 @@ class NeonProxyTasksSet(TaskSet):
     def _compile_contract_interface(self, name, version, contract_name: tp.Optional[str] = None) -> tp.Any:
         """Compile contract inteface form file"""
         return helpers.get_contract_interface(name, version, contract_name=contract_name)
+
+    def get_erc20_info(self):
+        path = pathlib.Path().absolute() / "loadtesting/proxy/data/scheduled_test_info.json"
+        with open(path, "r") as fp:
+            f = json.load(fp)
+        return f
+
+    def get_neon_user(self):
+        id = self.user.environment.shared.id
+        index = id % len(self.erc20_info["neon_users"])
+        item = self.erc20_info["neon_users"][index]
+        self.user.environment.shared.id = id + 1
+        account = bytes(item, encoding="raw_unicode_escape")
+        return NeonUser(evm_loader_id=self.evm_loader.loader_id, keypair=Keypair.from_bytes(account))
+
+    def get_random_neon_user(self, exclude_user):
+        exclude_item = (bytes(exclude_user.solana_account)).decode(encoding="raw_unicode_escape")
+        item = random.choice([x for x in self.erc20_info["neon_users"] if x != exclude_item])
+        account = bytes(item, encoding="raw_unicode_escape")
+        return NeonUser(evm_loader_id=self.evm_loader.loader_id, keypair=Keypair.from_bytes(account))
+
+    def check_neon_user_balance(self, solana_account):
+        balance = self.evm_loader.get_solana_balance(solana_account.pubkey())
+        if self.network not in ["devnet"]:
+            if balance < 0.5 * LAMPORT_PER_SOL:
+                print("Fund account")
+                self.evm_loader.request_airdrop(
+                    solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed
+                )

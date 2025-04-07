@@ -17,6 +17,11 @@ class BasePage(abc.ABC):
         self.wait = WebDriverWait(self.driver, 10)
         self.url = url or self._url
 
+    def page_loaded(self):
+        WebDriverWait(self.driver, 10).until(
+            lambda driver: driver.execute_script("return document.readyState") == "complete"
+        )
+
     def select_option_by_text(self, locator, text):
         sel = Select(locator)
         sel.select_by_visible_text(text)
@@ -31,7 +36,7 @@ class BasePage(abc.ABC):
 
     @allure.step("Switch to the new opened window")
     def switch_window(self, index: int):
-        WebDriverWait(self.driver, 10).until(lambda driver: len(driver.window_handles) > index)
+        WebDriverWait(self.driver, 15).until(lambda driver: len(driver.window_handles) > index)
         self.driver.switch_to.window(self.driver.window_handles[index])
 
     @allure.step("Check, that new window was opened")

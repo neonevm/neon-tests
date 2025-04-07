@@ -11,7 +11,7 @@ from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from utils.types import Contract
 
 
-class TestAccInLastIteration:
+class TestAccountList:
 
     def test_all_accounts_sent_in_last_iteration(
         self, user_account, evm_loader, operator_keypair, treasury_pool, holder_acc, neon_api_client, sol_client
@@ -81,3 +81,28 @@ class TestAccInLastIteration:
         )
 
         check_transaction_logs_have_text(solana_client=sol_client, trx=trx_final, text="exit_status=0x11")
+
+    def test_account_list_with_blockhash(
+        self, evm_loader, user_account, operator_keypair, treasury_pool, holder_acc, neon_api_client, sol_client
+    ):
+        contract: Contract = evm_loader.deploy_contract(
+            operator=operator_keypair,
+            user=user_account,
+            contract_file_name="opcodes/BlockHash.sol",
+            neon_api_client=neon_api_client,
+            treasury_pool=treasury_pool,
+            contract_name="BlockHashTest",
+            version="0.8.10",
+        )
+        slot = evm_loader.get_slot().value
+        signed_tx = make_contract_call_trx(evm_loader, user_account, contract, "getValues(uint256)", params=[slot])
+        evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
+        emulate_result = neon_api_client.emulate_contract_call(
+            user_account.eth_address.hex(), contract.eth_address.hex(), "getValues(uint256)", params=[slot]
+        )
+        acc_from_emulation = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
+        assert Pubkey.from_string("SysvarS1otHashes111111111111111111111111111") not in acc_from_emulation
+        resp = evm_loader.execute_transaction_steps_from_account(
+            operator_keypair, treasury_pool, holder_acc, acc_from_emulation
+        )
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x12")

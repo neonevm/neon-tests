@@ -98,12 +98,12 @@ def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwarg
         LOG.info(f"Creating {i} neon user...")
         neon_user = NeonUser(evm_loader.loader_id, keypair=neon_solana_account)
         environment.contract_info["accounts"].append(neon_user)
-        balance = evm_loader.get_solana_balance(neon_user.solana_account.pubkey())
-        if network not in ["devnet"]:
-            if balance < 5 * LAMPORT_PER_SOL:
-                evm_loader.request_airdrop(
-                    neon_user.solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed
-                )
+        if not network_object["use_bank"]:
+            evm_loader.request_airdrop(
+                neon_user.solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed
+            )
+        else:
+            evm_loader.send_sol(bank_account, solana_account.pubkey(), int(5 * LAMPORT_PER_SOL))
         LOG.info(f"Pop up {i} neon user balance...")
         erc20.pop_up_balance(
             evm_loader, recipient=neon_user, pda_amount=neon_user_balance, ata_amount=neon_user_balance

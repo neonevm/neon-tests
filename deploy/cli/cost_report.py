@@ -309,7 +309,7 @@ def validate_cost_reports(
     all_metric_names = "acc_count", "trx_count", "gas_estimated", "gas_used", "compute_units"
     dapp_names = historical_data["dapp_name"].unique()
 
-    failure = TypedDict("failure", {"dapp": str, "action": str, "metric": str, "increase": int})
+    failure = TypedDict("failure", {"dapp": str, "action": str, "metric": str, "DIFFERENCE": int})
     failures: list[failure] = []
 
     for dapp_name in dapp_names:
@@ -334,13 +334,10 @@ def validate_cost_reports(
                             "dapp": dapp_name,
                             "action": action,
                             "metric": metric_name,
-                            "increase": actual_change,
+                            "DIFFERENCE": actual_change,
                         }
                         failures.append(failure_dict)
 
     if failures:
         df = pd.DataFrame(failures)
-        md = df.to_markdown(index=False)
-
-        with open(output, "w") as f:
-            json.dump(md, f)
+        md = df.to_markdown(output, index=False)

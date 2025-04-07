@@ -689,7 +689,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository_owner }}/neon-tests
-          ref: NDEV-3613-move-cost-report-code
+          ref: develop
       - name: Setup gh cli
         uses: ksivamuthu/actions-setup-gh-cli@v3
       - name: Install python requirements
@@ -847,7 +847,36 @@ jobs:
           else
             echo "has_errors=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Save cost_report_validation_issues.md
+        uses: actions/upload-artifact@v4
+        with:
+          name: cost_report_validation_issues
+          path: cost_report_validation_issues.md
+      - name: "Get IDs of comments about failed cost report if they exist"
+        if: ${{ inputs.pr_url_for_report != '' && inputs.pr_url_for_report != '/comments' }}
+        run: |
+          TITLE="<strong>⚠️ Cost Report Validation Failed ⚠️</strong>"
+          CR_COMMENT_IDS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "${{ inputs.pr_url_for_report }}" \
+            | jq -r --arg TITLE "$TITLE" '[.[] | select(.body | contains($TITLE)) | .id] | @csv' | tr -d '"')
 
+          if [[ -n "$CR_COMMENT_IDS" && "$CR_COMMENT_IDS" != "null" && "$CR_COMMENT_IDS" != "" ]]; then
+            echo "CR_COMMENT_IDS=$CR_COMMENT_IDS" | tee -a $GITHUB_ENV
+          else
+            echo "CR_COMMENT_IDS=" | tee -a $GITHUB_ENV
+          fi
+      - name: "Delete PR comments about failed cost report if they have no issues anymore"
+        if: ${{ env.CR_COMMENT_IDS != '' && env.CR_COMMENT_IDS != 'null' }}
+        run: |
+          BASE_URL=$(echo "${{ inputs.pr_url_for_report }}" | sed 's|/issues/[0-9]*/comments$|/issues/comments|')
+
+          # Read and split comment IDs
+          IFS=',' read -ra IDS <<< "${{ env.CR_COMMENT_IDS }}"
+          for ID in "${IDS[@]}"; do
+            ID=$(echo "$ID" | tr -d '"') # Ensure quotes are removed
+            DELETE_URL="$BASE_URL/$ID"
+            echo "Deleting comment ID: $ID from $DELETE_URL"
+            curl -X DELETE -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$DELETE_URL"
+          done
       - name: "Add PR comment if cost report validation has any issues"
         if: ${{ steps.validate-cost-report.outputs.has_errors == 'true' && inputs.pr_url_for_report != '' && inputs.pr_url_for_report !='/comments' }}
         run: |

@@ -36,6 +36,9 @@ class NeonTestAirdropsPage(BasePage):
         self.page.wait_for_selector("//div[contains(@class, 'button--light')]").click()
         self.page.wait_for_selector("//h2[text()='Transfer Successful']")
 
+    def help_button_click(self) -> None:
+        self.page.click("//a[text()='Help']")
+
     @property
     def is_airdrop_enabled(self) -> bool:
         return bool(

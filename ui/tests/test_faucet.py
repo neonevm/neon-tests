@@ -18,6 +18,7 @@ from ui.plugins import browser
 from utils.helpers import wait_condition
 
 NEON_FAUCET_URL = "https://neonfaucet.org/"
+DOCS_URL = "https://neonevm.org/docs/developing/utilities/faucet"
 """Neon Test Airdrops
 """
 
@@ -98,6 +99,18 @@ def metamask_page(
     )
 
     return mm_page
+
+
+class TestFaucet:
+    def test_click_help_button(self, context):
+        page = context.new_page()
+        page.goto(NEON_FAUCET_URL)
+        neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
+        with context.expect_page() as new_tab_info:
+            neon_faucet_page.help_button_click()
+        help_page = new_tab_info.value
+        help_page.wait_for_load_state()
+        assert DOCS_URL in help_page.url
 
 
 class TestMetaMaskPipeLIne:

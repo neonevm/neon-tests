@@ -166,6 +166,7 @@ class ScheduledTxsIndependentTasksSet(BaseScheduledTxTaskSet):
                     self.neon_account.checksum_address,
                     self.user.environment.contract_info["erc20_address"],
                     call_data[i],
+                    child_transaction="0xFFFF",
                 )
             )
         estimate_result = self.web3_client_sol.estimate_scheduled(
@@ -227,16 +228,28 @@ class ScheduledTxsDependentTasksSet(BaseScheduledTxTaskSet):
         )
 
         trx_estimate_0 = ScheduledTrxEstimateRequest(
-            self.neon_account.checksum_address, self.user.environment.contract_info["erc20_address"], data_0
+            self.neon_account.checksum_address,
+            self.user.environment.contract_info["erc20_address"],
+            data_0,
+            child_transaction=hex(2),
         )
         trx_estimate_1 = ScheduledTrxEstimateRequest(
-            self.neon_account.checksum_address, self.user.environment.contract_info["erc20_address"], data_1
+            self.neon_account.checksum_address,
+            self.user.environment.contract_info["erc20_address"],
+            data_1,
+            child_transaction=hex(3),
         )
         trx_estimate_2 = ScheduledTrxEstimateRequest(
-            self.neon_account.checksum_address, self.user.environment.contract_info["erc20_address"], data_2
+            self.neon_account.checksum_address,
+            self.user.environment.contract_info["erc20_address"],
+            data_2,
+            child_transaction="0xFFFF",
         )
         trx_estimate_3 = ScheduledTrxEstimateRequest(
-            self.neon_account.checksum_address, self.user.environment.contract_info["erc20_address"], data_3
+            self.neon_account.checksum_address,
+            self.user.environment.contract_info["erc20_address"],
+            data_3,
+            child_transaction="0xFFFF",
         )
         trx_estimate_obj_list = [trx_estimate_0, trx_estimate_1, trx_estimate_2, trx_estimate_3]
 

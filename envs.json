@@ -76,7 +76,7 @@
     "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
     "neon_core_api_url": "http://127.0.0.1:8085/api",
     "neon_core_api_rpc_url": "http://127.0.0.1:3100/api",
-    "proxy_url": "http://127.0.0.1:9091/solana",
+    "proxy_url": "http://127.0.0.1:9090/solana",
     "network_ids": {
       "neon": 111,
       "sol": 112,

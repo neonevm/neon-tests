@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, BigInteger
 from sqlalchemy.orm import relationship
 
 from deploy.test_results_db.table_models.base import Base
@@ -13,9 +13,9 @@ class DappData(Base):
     action: str = Column(String(255), nullable=False)
     acc_count: int = Column(Integer, nullable=False)
     trx_count: int = Column(Integer, nullable=False)
-    gas_estimated: int = Column(Integer, nullable=False)
-    gas_used: int = Column(Integer, nullable=False)
-    compute_units: int = Column(Integer, nullable=False)
+    gas_estimated: int = Column(BigInteger, nullable=False)
+    gas_used: int = Column(BigInteger, nullable=False)
+    compute_units: int = Column(BigInteger, nullable=False)
 
     report = relationship("CostReport", back_populates="dapp_data")
 

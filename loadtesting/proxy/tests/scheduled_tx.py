@@ -8,6 +8,7 @@ import base58
 from solana.rpc import commitment
 
 from deploy.cli.network_manager import NetworkManager
+from integration.tests.economy.const import TX_COST
 from utils.accounts import EthAccounts
 from utils.consts import LAMPORT_PER_SOL, wSOL
 from utils.erc20wrapper import ERC20NewWrapper
@@ -51,7 +52,7 @@ def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwarg
     neon_user_balance = int(10**12 / neon_users)
     environment.contract_info = {}
 
-    evm_loader = EvmLoader(
+    environment.evm_loader = EvmLoader(
         program_id=network_object["evm_loader"],
         endpoint=network_object["solana_url"],
         neon_chain_id=network_object["network_ids"]["neon"],
@@ -62,9 +63,9 @@ def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwarg
     # create solana account
     solana_account = Keypair()
     if network != "local" and network_object["use_bank"]:
-        evm_loader.send_sol(bank_account, solana_account.pubkey(), int(1 * LAMPORT_PER_SOL))
+        environment.evm_loader.send_sol(bank_account, solana_account.pubkey(), int(1 * LAMPORT_PER_SOL))
     else:
-        evm_loader.request_airdrop(solana_account.pubkey(), 1 * LAMPORT_PER_SOL)
+        environment.evm_loader.request_airdrop(solana_account.pubkey(), 1 * LAMPORT_PER_SOL)
 
     # create owner
     eth_account = account_manager.create_account()
@@ -77,10 +78,10 @@ def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwarg
         faucet,
         f"Test {symbol}",
         symbol,
-        evm_loader,
+        environment.evm_loader,
         solana_account=solana_account,
         mintable=True,
-        bank_account=None,
+        bank_account=bank_account,
         account=eth_account,
     )
 
@@ -96,21 +97,39 @@ def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwarg
     for i in range(neon_users):
         neon_solana_account = Keypair()
         LOG.info(f"Creating {i} neon user...")
-        neon_user = NeonUser(evm_loader.loader_id, keypair=neon_solana_account)
+        neon_user = NeonUser(environment.evm_loader.loader_id, keypair=neon_solana_account)
         environment.contract_info["accounts"].append(neon_user)
         if not network_object["use_bank"]:
-            evm_loader.request_airdrop(
+            environment.evm_loader.request_airdrop(
                 neon_user.solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed
             )
         else:
-            evm_loader.send_sol(bank_account, solana_account.pubkey(), int(5 * LAMPORT_PER_SOL))
+            environment.evm_loader.send_sol(bank_account, neon_user.solana_account.pubkey(), int(5 * LAMPORT_PER_SOL))
         LOG.info(f"Pop up {i} neon user balance...")
         erc20.pop_up_balance(
-            evm_loader, recipient=neon_user, pda_amount=neon_user_balance, ata_amount=neon_user_balance
+            environment.evm_loader, recipient=neon_user, pda_amount=neon_user_balance, ata_amount=neon_user_balance
         )
         erc20.approve(erc20.account, neon_user.checksum_address, neon_user_balance)
 
     environment.contract_info["recipients"] = environment.contract_info["accounts"].copy()
+    environment.solana_account, environment.bank_account = solana_account, bank_account
+
+
+@events.test_stop.add_listener
+def teardown_one_contract_for_scheduled_trx(environment: env.Environment, **kwargs):
+    network = environment.parsed_options.host
+    network_manager = NetworkManager()
+    network_object = network_manager.get_network_object(network)
+    if not network_object["use_bank"]:
+        balance = environment.evm_loader.get_solana_balance(environment.solana_account.pubkey())
+        amount_lamports = max(0, balance - TX_COST)
+
+        if amount_lamports > 0:
+            environment.evm_loader.self.send_sol(
+                from_=environment.solana_account,
+                to=environment.bank_account.pubkey(),
+                amount_lamports=amount_lamports,
+            )
 
 
 class BaseScheduledTxTaskSet(NeonProxyTasksSet):
@@ -150,9 +169,7 @@ class ScheduledTxsIndependentTasksSet(BaseScheduledTxTaskSet):
         approve_amount = 100
         trx_count = 4
 
-        data_0 = decode_function_signature(
-            "approve(address,uint256)", [self.neon_account.checksum_address, approve_amount]
-        )
+        data_0 = decode_function_signature("approve(address,uint256)", [recipient.checksum_address, approve_amount])
         data_1 = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, transfer_amount])
         data_2 = decode_function_signature("burn(uint256)", [burn_amount])
         data_3 = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, transfer_amount])

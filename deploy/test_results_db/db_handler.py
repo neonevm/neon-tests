@@ -148,87 +148,39 @@ class PostgresTestResultsHandler:
         repo: RepoType,
         latest_tag: str,
         previous_tags: list[str],
+        order_by: tp.Literal["timestamp", "branch_name"],
     ) -> pd.DataFrame:
         """
         :param depth:
         :param repo:
         :param latest_tag:
         :param previous_tags: ["latest] or ["v3.1.x"] or ["v3.1.0", "v3.1.1", ...]
+        :param order_by:
         """
         from clickfile import GITHUB_TAG_PATTERN
 
         tag_column = CostReport.neon_evm_tag if repo == "evm" else CostReport.proxy_tag
 
         # Fetch previous CostReport entries
-        previous_reports: Query = (
-            self.session.query(CostReport)
-            .filter(
-                CostReport.repo == repo,
-                tag_column.in_(previous_tags),
-            )
-            .order_by(
-                case(
-                    (
-                        tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
-                        cast(func.split_part(func.regexp_replace(tag_column, "^[vt]", ""), ".", 1), Integer),
-                    ),
-                    else_=0,
-                ),
-                case(
-                    (
-                        tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
-                        cast(func.split_part(func.regexp_replace(tag_column, "^[vt]", ""), ".", 2), Integer),
-                    ),
-                    else_=0,
-                ),
-                case(
-                    (
-                        tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
-                        cast(func.split_part(func.regexp_replace(tag_column, "^[vt]", ""), ".", 3), Integer),
-                    ),
-                    else_=0,
-                ),
-                desc(CostReport.timestamp),
-            )
+        previous_reports_query = self.build_cost_report_query(
+            repo=repo,
+            tag_column=tag_column,
+            tags=previous_tags,
+            order_by=order_by,
         )
 
         # offset the previous_reports query by 1 if it's a merge event because latest_tag is the same as previous_tags
         offset = 1 if latest_tag in previous_tags else 0
-        previous_reports: list[CostReport] = previous_reports.offset(offset).limit(depth - 1).all()
+        previous_reports: list[CostReport] = previous_reports_query.offset(offset).limit(depth - 1).all()
 
         # Fetch last CostReport
-        last_report: CostReport | None = (
-            self.session.query(CostReport)
-            .filter(
-                CostReport.repo == repo,
-                tag_column == latest_tag,
-            )
-            .order_by(
-                case(
-                    (
-                        tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
-                        cast(func.split_part(func.regexp_replace(tag_column, "^[vt]", ""), ".", 1), Integer),
-                    ),
-                    else_=0,
-                ),
-                case(
-                    (
-                        tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
-                        cast(func.split_part(func.regexp_replace(tag_column, "^[vt]", ""), ".", 2), Integer),
-                    ),
-                    else_=0,
-                ),
-                case(
-                    (
-                        tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
-                        cast(func.split_part(func.regexp_replace(tag_column, "^[vt]", ""), ".", 3), Integer),
-                    ),
-                    else_=0,
-                ),
-                desc(CostReport.timestamp),
-            )
-            .first()
+        last_report_query = self.build_cost_report_query(
+            repo=repo,
+            tag_column=tag_column,
+            tags=[latest_tag],
+            order_by=order_by,
         )
+        last_report = last_report_query.first()
 
         cost_report_entries: list[CostReport] = []
         if previous_reports:
@@ -294,9 +246,55 @@ class PostgresTestResultsHandler:
         # Initialize the DataFrame and sort it
         df = pd.DataFrame(data=df_data)
         if not df.empty:
+            by = ["timestamp", "dapp_name", "action"]
+
+            if order_by == "branch_name":
+                by = ["tag_natural_sorting"] + by
+
             df = df.sort_values(
-                by=["tag_natural_sorting", "timestamp", "dapp_name", "action"],
+                by=by,
                 ignore_index=True,
             )
 
         return df
+
+    def build_cost_report_query(
+        self,
+        repo: RepoType,
+        tag_column: CostReport.neon_evm_tag | CostReport.proxy_tag,
+        tags: list[str],
+        order_by: tp.Literal["timestamp", "branch_name"],
+    ) -> Query:
+        from clickfile import GITHUB_TAG_PATTERN
+
+        query: Query = self.session.query(CostReport).filter(
+            CostReport.repo == repo,
+            tag_column.in_(tags),
+        )
+
+        if order_by == "branch_name":
+            query.order_by(
+                case(
+                    (
+                        tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
+                        cast(func.split_part(func.regexp_replace(tag_column, "^[vt]", ""), ".", 1), Integer),
+                    ),
+                    else_=0,
+                ),
+                case(
+                    (
+                        tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
+                        cast(func.split_part(func.regexp_replace(tag_column, "^[vt]", ""), ".", 2), Integer),
+                    ),
+                    else_=0,
+                ),
+                case(
+                    (
+                        tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
+                        cast(func.split_part(func.regexp_replace(tag_column, "^[vt]", ""), ".", 3), Integer),
+                    ),
+                    else_=0,
+                ),
+            )
+        query.order_by(desc(CostReport.timestamp))
+        return query

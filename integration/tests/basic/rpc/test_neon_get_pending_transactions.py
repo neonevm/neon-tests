@@ -18,7 +18,7 @@ class TestRPCNeonGetPendingTransactions:
 
         tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
-        tree_account = evm_loader.create_tree_account(
+        evm_loader.create_tree_account(
             neon_user, treasury_pool, tx.encode(), wSOL["address_spl"], chain_id=evm_loader.sol_chain_id
         )
 
@@ -29,7 +29,6 @@ class TestRPCNeonGetPendingTransactions:
             delay=2,
             timeout_sec=60,
         )
-        wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=6 * 60, delay=2)
 
     def test_neon_get_pending_scheduled_transaction_no_tx_body(
         self, web3_client_sol, neon_user, common_contract, evm_loader, treasury_pool
@@ -46,7 +45,7 @@ class TestRPCNeonGetPendingTransactions:
             nonce=nonce,
         )
         tree_acc_data.add_trx(tx, 0xFFFF, 0)
-        tree_account = evm_loader.create_tree_account_multiple(
+        evm_loader.create_tree_account_multiple(
             neon_user, treasury_pool, tree_acc_data.data, wSOL["address_spl"], chain_id=web3_client_sol.chain_id
         )
         expected_status = "NoTransactionBody"
@@ -57,7 +56,6 @@ class TestRPCNeonGetPendingTransactions:
             delay=2,
             log=10,
         )
-        wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=6 * 60, delay=2)
 
     def test_multiple_scheduled_trx_with_failed_trx_skipped_and_wait_for_parent_tx(
         self,

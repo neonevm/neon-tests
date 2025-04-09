@@ -4,11 +4,11 @@ import typing as tp
 from decimal import Decimal
 
 import logging
+
 import allure
 import base58
 import eth_account.signers.local
 import requests
-import web3
 import web3.types
 from eth_abi import abi
 from eth_typing import BlockIdentifier
@@ -29,15 +29,12 @@ BASE_MAX_PRIORITY_FEE = 2_500_000_000
 
 
 class Web3Client:
-    def __init__(
-        self,
-        proxy_url: str,
-        tracer_url: tp.Optional[tp.Any] = None,
-        session: tp.Optional[tp.Any] = None,
-    ):
+    def __init__(self, proxy_url: str, tracer_url: tp.Optional[tp.Any] = None):
         self._proxy_url = proxy_url
         self._tracer_url = tracer_url
         self._chain_id = None
+        session = requests.Session()
+        session.keep_alive = False
         self._web3 = web3.Web3(web3.HTTPProvider(proxy_url, session=session, request_kwargs={"timeout": 30}))
 
     def __getattr__(self, item):
@@ -192,9 +189,7 @@ class Web3Client:
         if transaction["gas"] == 0:
             transaction["gas"] = self._web3.eth.estimate_gas(transaction)
 
-        signed_tx = self._web3.eth.account.sign_transaction(transaction, from_.key)
-        tx = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-        return self._web3.eth.wait_for_transaction_receipt(tx)
+        return self.send_transaction(from_, transaction)
 
     @allure.step("Make raw tx")
     def make_raw_tx(
@@ -267,7 +262,6 @@ class Web3Client:
         self,
         account: eth_account.signers.local.LocalAccount,
         transaction: tp.Dict,
-        gas_multiplier: tp.Optional[float] = None,  # fix for some event depends transactions
         timeout: int = 120,
     ) -> web3.types.TxReceipt:
         signed_tx = self._web3.eth.account.sign_transaction(transaction, account.key)
@@ -679,9 +673,8 @@ class NeonChainWeb3Client(Web3Client):
         self,
         proxy_url: str,
         tracer_url: tp.Optional[tp.Any] = None,
-        session: tp.Optional[tp.Any] = None,
     ):
-        super().__init__(proxy_url, tracer_url, session)
+        super().__init__(proxy_url, tracer_url)
 
     @allure.step("Create account with balance")
     def create_account_with_balance(

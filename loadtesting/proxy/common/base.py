@@ -14,14 +14,12 @@ from functools import lru_cache
 
 from eth_account.signers.local import LocalAccount
 from solana.rpc import commitment
-from solders.keypair import Keypair
 
 from utils import helpers
 from utils.faucet import Faucet
 from utils.web3client import NeonChainWeb3Client
 from gevent.pool import Pool
 from utils.evm_loader import EvmLoader
-from utils.neon_user import NeonUser
 from utils.types import TreasuryPool
 from utils.consts import LAMPORT_PER_SOL
 from .events import statistics_collector, save_transaction
@@ -161,8 +159,6 @@ class NeonProxyTasksSet(TaskSet):
             int(self.user.environment.parsed_options.num_users or self.user.environment.runner.target_user_count) * 100
         )
 
-        self.erc20_info = self.get_erc20_info()
-
         self.credentials = self.user.environment.credentials
         self.network = self.user.environment.parsed_options.host or self.user.environment.host
 
@@ -243,26 +239,6 @@ class NeonProxyTasksSet(TaskSet):
     def _compile_contract_interface(self, name, version, contract_name: tp.Optional[str] = None) -> tp.Any:
         """Compile contract inteface form file"""
         return helpers.get_contract_interface(name, version, contract_name=contract_name)
-
-    def get_erc20_info(self):
-        path = pathlib.Path().absolute() / "loadtesting/proxy/data/scheduled_test_info.json"
-        with open(path, "r") as fp:
-            f = json.load(fp)
-        return f
-
-    def get_neon_user(self):
-        id = self.user.environment.shared.id
-        index = id % len(self.erc20_info["neon_users"])
-        item = self.erc20_info["neon_users"][index]
-        self.user.environment.shared.id = id + 1
-        account = bytes(item, encoding="raw_unicode_escape")
-        return NeonUser(evm_loader_id=self.evm_loader.loader_id, keypair=Keypair.from_bytes(account))
-
-    def get_random_neon_user(self, exclude_user):
-        exclude_item = (bytes(exclude_user.solana_account)).decode(encoding="raw_unicode_escape")
-        item = random.choice([x for x in self.erc20_info["neon_users"] if x != exclude_item])
-        account = bytes(item, encoding="raw_unicode_escape")
-        return NeonUser(evm_loader_id=self.evm_loader.loader_id, keypair=Keypair.from_bytes(account))
 
     def check_neon_user_balance(self, solana_account):
         balance = self.evm_loader.get_solana_balance(solana_account.pubkey())

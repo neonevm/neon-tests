@@ -48,7 +48,6 @@ try:
     from utils.helpers import wait_condition
     from utils.apiclient import JsonRPCSession
     from utils.k6_helpers import k6_prepare_accounts, k6_set_envs, deploy_erc20_contract, deploy_block_number_contract
-    from utils.locust_prepare import prepare_locust
 except ImportError:
     print("Please run ./clickfile.py requirements to install all requirements")
 
@@ -833,14 +832,6 @@ def prepare(credentials, host, users, spawn_rate, run_time, tag):
 
     if cmd.returncode != 0:
         sys.exit(cmd.returncode)
-
-
-@locust.command("prepare-scheduled", help="Run preparation stage for `scheduled txs` performance test")
-@click.option("-n", "--network", default="local", required=True, help="Network name")
-@click.option("-u", "--neon_users", default=50, required=True, help="Number of neon users to prepare for the load test")
-def prepare_erc20_and_neon_users(network, neon_users):
-    """Run `Preparation stage` for scheduled txs performance test"""
-    prepare_locust(network, neon_users)
 
 
 @cli.group("allure")

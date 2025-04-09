@@ -5,6 +5,7 @@ Created on 2021-10-01
 """
 
 from dataclasses import dataclass
+from urllib.parse import urlparse
 
 import pytest
 from playwright.sync_api import BrowserContext
@@ -33,15 +34,14 @@ class Accounts:
 
 
 def get_metamask_extension_id(context: BrowserContext) -> str:
-    extension_id = None
     for page in context.background_pages:
         url = page.url
         if url.startswith("chrome-extension://"):
-            extension_id = url.split("/")[2]
-            break
-    if not extension_id:
-        raise Exception("MetaMask extension ID not found.")
-    return extension_id
+            parsed_url = urlparse(url)
+            extension_id = parsed_url.netloc
+            return extension_id
+
+    raise Exception("MetaMask extension ID not found.")
 
 
 class TestFaucet:

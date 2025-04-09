@@ -6,13 +6,12 @@ import uuid
 import allure
 import pytest
 from _pytest.config import Config
+from playwright.sync_api import BrowserContext
+from ui.pages import metamask
+from ui.constants import PLATFORM_NETWORKS
+from ui.tests.test_faucet import get_metamask_extension_id, BASE_NEON_BALANCE
 
 from ui import libs
-
-PLATFORM_NETWORKS = {
-    "night-stand": "NEON EVM night-stand",
-    "devnet": "NeonEVM DevNet",
-}
 
 CHROME_TAR_PATH = pathlib.Path(__file__).absolute().parent / "extensions" / "data"
 CHROME_DATA_PATH = pathlib.Path(__file__).absolute().parent.parent / "chrome-data" / uuid.uuid4().hex
@@ -185,3 +184,31 @@ def pytest_runtest_setup(item: tp.Any) -> None:
 
     if browser_name in skip_browsers_names:
         pytest.skip("skipped for this browser: {}".format(browser_name))
+
+
+@pytest.fixture
+def metamask_page(
+    context: BrowserContext,
+    network: str,
+    chrome_extension_password: str,
+) -> metamask.MetaMaskAccountsPage:
+    page = context.new_page()
+    page.goto("about:blank")
+    extension_id = get_metamask_extension_id(context)
+    page.goto(f"chrome-extension://{extension_id}/home.html")
+
+    login_page = metamask.MetaMaskLoginPage(page)
+    popup_news = login_page.login(password=chrome_extension_password)
+    mm_page = popup_news.close()
+    mm_page.check_funds_protection()
+    mm_page.change_network(network)
+    mm_page.switch_assets()
+    # wait MetaMask initialization
+    libs.try_until(
+        lambda: int(mm_page.neon_balance) != BASE_NEON_BALANCE,
+        times=5,
+        interval=2,
+        raise_on_timeout=False,
+    )
+
+    return mm_page

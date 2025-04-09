@@ -3,6 +3,7 @@
 Created on 2022-05-19
 @author: Eugeny Kurkovich
 """
+from __future__ import annotations
 
 import allure
 import pyperclip3 as clipboard
@@ -10,7 +11,7 @@ from playwright._impl._errors import TimeoutError
 
 from ui import components
 from ui import libs
-from ui.conftest import PLATFORM_NETWORKS
+from ui.constants import PLATFORM_NETWORKS
 from ui.pages import phantom
 from . import BasePage
 from ..libs import Token
@@ -34,7 +35,7 @@ class MetaMaskLoginPage(BasePage):
     def page_loaded(self) -> None:
         self.page.wait_for_selector("//button[contains(@class, 'app-header__logo-container')]")
 
-    def login(self, password: str) -> "MetaMaskPopoverNewsPage":
+    def login(self, password: str) -> MetaMaskPopoverNewsPage:
         self.page.wait_for_selector("//input[@id='password']")
         components.Input(self.page, element_id="password").fill(password)
         components.Button(self.page, selector="//input[@id='password']/following::button").click()
@@ -62,7 +63,7 @@ class MetaMaskPopoverNewsPage(BasePage):
     def page_loaded(self) -> None:
         self.page.wait_for_selector("//section[contains(@class,'whats-new-popup__popover')]")
 
-    def close(self) -> "MetaMaskAccountsPage":
+    def close(self) -> MetaMaskAccountsPage:
         components.Button(self.page, selector="//button[contains(@data-testid, 'popover-close')]").click()
         return MetaMaskAccountsPage(self.page)
 

@@ -1,12 +1,12 @@
 import random
 import allure
 import pytest
-
+from polling2 import TimeoutException
 
 from utils.consts import wSOL
-from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateRequest
+from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateRequest, CreateTreeAccMultipleData
 from utils.types import TransactionType
-from utils.web3client import NeonChainWeb3Client
+from utils.web3client import NeonChainWeb3Client, BASE_MAX_PRIORITY_FEE
 from utils.accounts import EthAccounts
 from utils.tracer_client import TracerClient
 from tracer_helper import validate_response_result
@@ -190,3 +190,152 @@ class TestDebugTraceIterativeTransaction:
         assert response["result"]["to"].lower() == receipt["to"].lower()
         assert response["result"]["type"] == "CALL"
         assert "error" not in response["result"]
+
+    def test_trace_success_multiple_scheduled_trx(
+        self, web3_client_sol, neon_user, common_contract, evm_loader, treasury_pool
+    ):
+        data = decode_function_signature("setNumber(uint256)", [10])
+
+        trx_estimate_obj_list = []
+        for i in range(3):
+            trx_estimate_obj_list.append(
+                ScheduledTrxEstimateRequest(
+                    neon_user.checksum_address, common_contract.address, data, child_transaction=hex(3)
+                )
+            )
+        trx_estimate_obj_list.append(
+            ScheduledTrxEstimateRequest(
+                neon_user.checksum_address, common_contract.address, data, child_transaction="0xFFFF"
+            )
+        )
+        estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), trx_estimate_obj_list)
+        trxs = []
+        for i in range(4):
+            trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
+
+        tree_acc_data = CreateTreeAccMultipleData(
+            nonce=estimate_result["nonce"],
+            max_fee_per_gas=estimate_result["maxFeePerGas"],
+            max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
+        )
+
+        tree_acc_data.add_trx(trxs[0], 3, 0)
+        tree_acc_data.add_trx(trxs[1], 3, 0)
+        tree_acc_data.add_trx(trxs[2], 3, 0)
+        tree_acc_data.add_trx(trxs[3], 0xFFFF, 3)
+
+        evm_loader.create_tree_account_multiple(
+            neon_user,
+            treasury_pool,
+            tree_acc_data.data,
+            wSOL["address_spl"],
+        )
+        web3_client_sol.send_all_scheduled_transactions(trxs)
+
+        for tx in trxs:
+            check_trx_is_success(web3_client_sol, evm_loader, tx.hash().hex(), timeout=180)
+            receipt = web3_client_sol.wait_for_transaction_receipt(tx.hash().hex())
+            params = [tx.hash().hex(), tracer_params]
+            response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", params)
+            assert response["result"]["from"].lower() == receipt["from"].lower()
+            assert response["result"]["to"].lower() == receipt["to"].lower()
+            assert response["result"]["type"] == "CALL"
+            assert "error" not in response["result"]
+
+    def test_trace_failed_one_scheduled_tx(
+        self, web3_client_sol, neon_user, treasury_pool, revert_contract_caller, event_caller_contract, evm_loader
+    ):
+        nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
+
+        max_priority_fee_per_gas = BASE_MAX_PRIORITY_FEE
+        max_fee_per_gas = web3_client_sol.get_max_fee_per_gas()
+        gas_limit = 30000000
+
+        call_data_trx0 = decode_function_signature("doAssert()")
+
+        tx = ScheduledTransaction(
+            neon_user.neon_address,
+            None,
+            nonce,
+            index=0,
+            target=revert_contract_caller.address,
+            call_data=call_data_trx0,
+            max_fee_per_gas=max_fee_per_gas,
+            max_priority_fee_per_gas=max_priority_fee_per_gas,
+            gas_limit=gas_limit,
+            chain_id=web3_client_sol.chain_id,
+        )
+
+        tree_acc_data = CreateTreeAccMultipleData(
+            nonce=nonce, max_fee_per_gas=max_fee_per_gas, max_priority_fee_per_gas=max_priority_fee_per_gas
+        )
+        tree_acc_data.add_trx(tx, 0xFFFF, 0)
+        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data, wSOL["address_spl"])
+
+        web3_client_sol.send_all_scheduled_transactions([tx])
+
+        receipt = web3_client_sol.wait_for_transaction_receipt(tx.hash().hex())
+        params = [tx.hash().hex(), tracer_params]
+        response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", params)
+        assert response["result"]["from"].lower() == receipt["from"].lower()
+        assert response["result"]["to"].lower() == receipt["to"].lower()
+        assert response["result"]["type"] == "CALL"
+        assert "error" in response["result"]
+
+    def test_trace_failed_multiply_scheduled_tx(
+        self, web3_client_sol, neon_user, treasury_pool, revert_contract_caller, event_caller_contract, evm_loader
+    ):
+        nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
+
+        max_priority_fee_per_gas = BASE_MAX_PRIORITY_FEE
+        max_fee_per_gas = web3_client_sol.get_max_fee_per_gas()
+        gas_limit = 30000000
+
+        call_data_trx0 = decode_function_signature("doAssert()")
+        call_data_trx1 = decode_function_signature("indexedArgs()")
+
+        tx0 = ScheduledTransaction(
+            neon_user.neon_address,
+            None,
+            nonce,
+            index=0,
+            target=revert_contract_caller.address,
+            call_data=call_data_trx0,
+            max_fee_per_gas=max_fee_per_gas,
+            max_priority_fee_per_gas=max_priority_fee_per_gas,
+            gas_limit=gas_limit,
+            chain_id=web3_client_sol.chain_id,
+        )
+        tx1 = ScheduledTransaction(
+            neon_user.neon_address,
+            None,
+            nonce,
+            index=1,
+            target=revert_contract_caller.address,
+            call_data=call_data_trx1,
+            max_fee_per_gas=max_fee_per_gas,
+            max_priority_fee_per_gas=max_priority_fee_per_gas,
+            gas_limit=gas_limit,
+            chain_id=web3_client_sol.chain_id,
+        )
+        tree_acc_data = CreateTreeAccMultipleData(
+            nonce=nonce, max_fee_per_gas=max_fee_per_gas, max_priority_fee_per_gas=max_priority_fee_per_gas
+        )
+        tree_acc_data.add_trx(tx0, 1, 0)
+        tree_acc_data.add_trx(tx1, 0xFFFF, 1)
+        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data, wSOL["address_spl"])
+
+        web3_client_sol.send_all_scheduled_transactions([tx0, tx1])
+
+        receipt = web3_client_sol.wait_for_transaction_receipt(tx0.hash().hex())
+        params = [tx0.hash().hex(), tracer_params]
+        response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", params)
+        assert response["result"]["from"].lower() == receipt["from"].lower()
+        assert response["result"]["to"].lower() == receipt["to"].lower()
+        assert response["result"]["type"] == "CALL"
+        assert "error" in response["result"]
+
+        error_message = "Tracing Skip Scheduled Transaction is not supported"
+        params = [tx1.hash().hex(), tracer_params]
+        with pytest.raises(TimeoutException, match=error_message):
+            self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", params)

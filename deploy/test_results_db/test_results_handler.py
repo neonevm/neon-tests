@@ -1,5 +1,5 @@
 import textwrap
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP, getcontext
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -168,6 +168,7 @@ class TestResultsHandler:
                             # Set y-axis limits and labels
                             ax.tick_params(axis="y", labelsize=8)
                             ax.set_ylim(float(y_limits[metric][0]), float(y_limits[metric][1]))
+                            getcontext().prec = 100
                             has_decimals = any(Decimal(str(value)) % 1 != 0 for value in data_subset[metric])
                             if has_decimals:
                                 ax.yaxis.set_major_formatter(ticker.FormatStrFormatter("%.3f"))

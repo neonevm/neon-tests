@@ -40,7 +40,7 @@ class MainPage(BasePage):
     subscribe_button = (By.XPATH, "//button/span[text()='Subscribe']")
     subscription_notification_text = (
         By.XPATH,
-        "//div[contains(@class,'sm:w-auto')]/div[contains(.,'already subscribed')][2]",
+        "//div[contains(@message,'already subscribed')]",
     )
     problem_with_subscription_text = (
         By.XPATH,

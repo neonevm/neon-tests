@@ -4,19 +4,18 @@ Created on 2021-10-01
 @author: Eugeny Kurkovich
 """
 
-import pathlib
-import typing as tp
 from dataclasses import dataclass
+from urllib.parse import urlparse
 
 import pytest
 from playwright.sync_api import BrowserContext
-from playwright.sync_api import BrowserType
 
 from ui import libs
 from ui.pages import metamask, neon_faucet
-from ui.plugins import browser
+from utils.helpers import wait_condition
 
 NEON_FAUCET_URL = "https://neonfaucet.org/"
+DOCS_URL = "https://neonevm.org/docs/developing/utilities/faucet"
 """Neon Test Airdrops
 """
 
@@ -34,49 +33,31 @@ class Accounts:
     acc_3 = "Account 3"
 
 
-@pytest.fixture
-def required_extensions() -> tp.List:
-    return "metamask"
+def get_metamask_extension_id(context: BrowserContext) -> str:
+    for page in context.background_pages:
+        url = page.url
+        if url.startswith("chrome-extension://"):
+            parsed_url = urlparse(url)
+            extension_id = parsed_url.netloc
+            return extension_id
+
+    raise Exception("MetaMask extension ID not found.")
 
 
-@pytest.fixture
-def context(
-    browser_type: BrowserType,
-    browser_context_args: tp.Dict,
-    browser_type_launch_args: tp.Dict,
-    chrome_extensions_path: pathlib.Path,
-    chrome_extension_user_data: pathlib.Path,
-) -> BrowserContext:
-    """Override default context for MetaMasks load"""
-    context = browser.create_persistent_context(
-        browser_type,
-        browser_context_args,
-        browser_type_launch_args,
-        ext_source=chrome_extensions_path,
-        user_data_dir=chrome_extension_user_data.as_posix(),
-    )
-    yield context
-    context.close()
+class TestFaucet:
+    def test_click_help_button(self, context):
+        page = context.new_page()
+        page.goto(NEON_FAUCET_URL)
+        neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
+        with context.expect_page() as new_tab_info:
+            neon_faucet_page.help_button_click()
+        help_page = new_tab_info.value
+        help_page.wait_for_load_state()
+        assert DOCS_URL in help_page.url
 
 
 class TestMetaMaskPipeLIne:
     """Tests NeonEVM proxy functionality via MetaMask"""
-
-    @pytest.fixture
-    def metamask_page(self, page, network: str, chrome_extension_password):
-        login_page = metamask.MetaMaskLoginPage(page)
-        mm_page = login_page.login(password=chrome_extension_password)
-        mm_page.check_funds_protection()
-        mm_page.change_network(network)
-        mm_page.switch_assets()
-        # wait MetaMask initialization
-        libs.try_until(
-            lambda: int(mm_page.neon_balance) != BASE_NEON_BALANCE,
-            times=5,
-            interval=2,
-            raise_on_timeout=False,
-        )
-        return mm_page
 
     @pytest.fixture
     def neon_faucet_page(self, context: BrowserContext) -> neon_faucet.NeonTestAirdropsPage:
@@ -85,10 +66,7 @@ class TestMetaMaskPipeLIne:
         yield neon_faucet.NeonTestAirdropsPage(page)
         page.close()
 
-    @pytest.mark.parametrize(
-        "tokens",
-        [libs.Tokens.neon.name, libs.Tokens.usdt.name],
-    )
+    @pytest.mark.parametrize("tokens", [libs.Tokens.neon.name, libs.Tokens.usdt.name])
     def test_get_tokens_from_faucet(
         self,
         metamask_page: metamask.MetaMaskAccountsPage,
@@ -96,12 +74,18 @@ class TestMetaMaskPipeLIne:
         tokens: str,
     ) -> None:
         """Checks Neon faucet pipeline"""
+        wait_condition(lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > 0, timeout_sec=120, delay=2)
         balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
         neon_faucet_page.connect_wallet()
-        neon_faucet_page.send_tokens(tokens, 100)
+        neon_faucet_page.send_tokens(tokens, 10)
         # wait new balance
+        wait_condition(
+            lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > balance_before_airdrop_test,
+            timeout_sec=120,
+            delay=2,
+        )
         libs.try_until(
-            lambda: balance_before_airdrop_test + 100 == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
+            lambda: balance_before_airdrop_test + 10 == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
             timeout=90,
             interval=5,
             error_msg=f"{tokens} balance was not changed after airdrop",

@@ -2,16 +2,18 @@ import os
 import pathlib
 import typing as tp
 import uuid
-
-import allure
 import pytest
-from _pytest.config import Config
-from playwright.sync_api import BrowserContext
+import allure
+
+from ui import libs
+from ui.plugins import browser
 from ui.pages import metamask
 from ui.constants import PLATFORM_NETWORKS
 from ui.tests.test_faucet import get_metamask_extension_id, BASE_NEON_BALANCE
 
-from ui import libs
+from _pytest.config import Config
+from playwright.sync_api import BrowserContext, BrowserType
+
 
 CHROME_TAR_PATH = pathlib.Path(__file__).absolute().parent / "extensions" / "data"
 CHROME_DATA_PATH = pathlib.Path(__file__).absolute().parent.parent / "chrome-data" / uuid.uuid4().hex
@@ -84,6 +86,31 @@ def chrome_extension_password() -> str:
 def use_persistent_context() -> bool:
     """Flag used for Chrome extensions load, set to False for standard pages not extensions"""
     return True
+
+
+@pytest.fixture(scope="session")
+def required_extensions() -> tp.List:
+    return "metamask"
+
+
+@pytest.fixture
+def context(
+    browser_type: BrowserType,
+    browser_context_args: tp.Dict,
+    browser_type_launch_args: tp.Dict,
+    chrome_extensions_path: pathlib.Path,
+    chrome_extension_user_data: pathlib.Path,
+) -> BrowserContext:
+    """Override default context for MetaMasks load"""
+    context = browser.create_persistent_context(
+        browser_type,
+        browser_context_args,
+        browser_type_launch_args,
+        ext_source=chrome_extensions_path,
+        user_data_dir=chrome_extension_user_data.as_posix(),
+    )
+    yield context
+    context.close()
 
 
 # @pytest.hookimpl(tryfirst=True, hookwrapper=True)

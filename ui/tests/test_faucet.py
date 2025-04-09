@@ -4,17 +4,13 @@ Created on 2021-10-01
 @author: Eugeny Kurkovich
 """
 
-import pathlib
-import typing as tp
 from dataclasses import dataclass
 
 import pytest
 from playwright.sync_api import BrowserContext
-from playwright.sync_api import BrowserType
 
 from ui import libs
 from ui.pages import metamask, neon_faucet
-from ui.plugins import browser
 from utils.helpers import wait_condition
 
 NEON_FAUCET_URL = "https://neonfaucet.org/"
@@ -34,31 +30,6 @@ class Accounts:
     acc_1 = "Account 1"
     acc_2 = "Account 2"
     acc_3 = "Account 3"
-
-
-@pytest.fixture(scope="session")
-def required_extensions() -> tp.List:
-    return "metamask"
-
-
-@pytest.fixture
-def context(
-    browser_type: BrowserType,
-    browser_context_args: tp.Dict,
-    browser_type_launch_args: tp.Dict,
-    chrome_extensions_path: pathlib.Path,
-    chrome_extension_user_data: pathlib.Path,
-) -> BrowserContext:
-    """Override default context for MetaMasks load"""
-    context = browser.create_persistent_context(
-        browser_type,
-        browser_context_args,
-        browser_type_launch_args,
-        ext_source=chrome_extensions_path,
-        user_data_dir=chrome_extension_user_data.as_posix(),
-    )
-    yield context
-    context.close()
 
 
 def get_metamask_extension_id(context: BrowserContext) -> str:

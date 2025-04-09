@@ -75,6 +75,7 @@ NEON_EVM_GITHUB_URL = f"https://api.github.com/repos/{DOCKER_HUB_ORG_NAME}/neon-
 HOODIES_CHAINLINK_GITHUB_URL = "https://github.com/hoodieshq/chainlink-neon"
 PROXY_GITHUB_URL = f"https://api.github.com/repos/{DOCKER_HUB_ORG_NAME}/neon-proxy.py"
 FAUCET_GITHUB_URL = f"https://api.github.com/repos/{DOCKER_HUB_ORG_NAME}/neon-faucet"
+UNISWAP_V3_GIT = f"git@github.com:{DOCKER_HUB_ORG_NAME}/Uniswap-V3-NEON.git"
 VERSION_BRANCH_TEMPLATE = r"[vt]{1}\d{1,2}\.\d{1,2}\.x.*"
 GITHUB_TAG_PATTERN = re.compile(r"^[vt]\d{1,2}\.\d{1,2}\.\d{1,2}$")
 
@@ -490,7 +491,8 @@ def download_evm_contracts(branch):
     default="develop",
     help="neon_evm branch name. " "If branch doesn't exist, develop branch will be used",
 )
-def update_contracts(branch):
+@click.option("--with-uniswap", is_flag=True, default=False, required=False, help="Download uniswap-v3 contracts")
+def update_contracts(branch, with_uniswap):
     download_evm_contracts(branch)
     update_contracts_from_git(HOODIES_CHAINLINK_GITHUB_URL, "hoodies_chainlink", "main")
 
@@ -501,6 +503,13 @@ def update_contracts(branch):
         "update/erc20forspl-solana-native",
         update_npm=True,
     )
+
+    if with_uniswap:
+        Path(EXTERNAL_CONTRACT_PATH / "uniswap-v3").mkdir(parents=True, exist_ok=True)
+        uniswap_path = EXTERNAL_CONTRACT_PATH / "uniswap-v3"
+        commands = f"git clone {UNISWAP_V3_GIT} {uniswap_path}"
+        commands += f"\n npm ci --prefix {uniswap_path}"
+        subprocess.check_call(commands, shell=True)
 
 
 @cli.command(help="Run any type of tests")

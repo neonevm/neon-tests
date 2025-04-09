@@ -21,7 +21,7 @@ class TestResultsHandler:
         historical_data["gas_used"] = historical_data["gas_used"].apply(Decimal)
         historical_data["gas_used_%"] = (
             (historical_data["gas_used"] / historical_data["gas_estimated"]) * Decimal("100")
-        ).apply(lambda x: x.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP))
+        ).apply(lambda x_: x_.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP))
         historical_data["compute_units"] = historical_data["compute_units"].apply(Decimal)
 
         # analyze only the dapps that are present in the latest report
@@ -29,7 +29,6 @@ class TestResultsHandler:
         latest_report_data = historical_data[historical_data["timestamp"] == latest_timestamp]
         dapp_names = latest_report_data["dapp_name"].unique()
         metrics = ["acc_count", "trx_count", "gas_estimated", "gas_used", "gas_used_%", "compute_units"]
-        historical_data = historical_data.sort_values(by=["tag_natural_sorting", "timestamp"])
 
         unique_timestamps = historical_data["timestamp"].unique().tolist()
         x_tick_labels = historical_data.groupby("timestamp")["tag"].first().tolist()
@@ -92,9 +91,7 @@ class TestResultsHandler:
                                     )
                                     data_subset = pd.concat([data_subset, new_row], ignore_index=True)
 
-                        data_subset = data_subset.sort_values(
-                            by=["tag_natural_sorting", "timestamp"],
-                        ).reset_index(drop=True)
+                        data_subset = data_subset.reset_index(drop=True)
 
                         if not data_subset.empty:
                             prev_value = None
@@ -187,7 +184,8 @@ class TestResultsHandler:
                                 ax.axvline(x=len(data_subset[metric]) - 2.5, color="#a6a4a4", linestyle=":")
 
                 plt.tight_layout()
-                plt.subplots_adjust(top=0.9)
+                top = 0.9 if num_rows > 5 else 0.8
+                plt.subplots_adjust(top=top)
                 pdf.savefig(fig)
                 plt.close(fig)
 

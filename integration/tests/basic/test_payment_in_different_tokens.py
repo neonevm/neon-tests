@@ -3,6 +3,7 @@ import random
 import allure
 import pytest
 import web3
+from web3.exceptions import Web3RPCError
 
 from integration.tests.basic.helpers.chains import make_nonce_the_biggest_for_chain
 from utils.web3client import NeonChainWeb3Client
@@ -110,7 +111,7 @@ class TestMultiplyChains:
     ):
         tx = self.web3_client.make_raw_tx(bob.address)
         instruction_tx = event_caller_contract.functions.unnamedArg("hello").build_transaction(tx)
-        with pytest.raises(ValueError, match="wrong chain id"):
+        with pytest.raises(Web3RPCError, match="wrong chain id"):
             web3_client_sol.send_transaction(bob, instruction_tx)
 
     @pytest.mark.multipletokens
@@ -295,7 +296,7 @@ class TestMultiplyChains:
         instruction_tx.pop("chainId")
 
         with pytest.raises(
-            ValueError,
+            Web3RPCError,
             match="wrong chain id",
         ):
             web3_client_sol.send_transaction(account_with_all_tokens, instruction_tx)

@@ -42,7 +42,7 @@ class TestExternalCall:
             evm_loader.loader_id,
             treasury_pool.account,
             treasury_pool.buffer,
-            msg.rawTransaction,
+            msg.raw_transaction,
             accounts,
         )
         upd_instruction = Instruction(
@@ -92,7 +92,7 @@ class TestExternalCall:
             evm_loader.loader_id,
             treasury_pool.account,
             treasury_pool.buffer,
-            msg.rawTransaction,
+            msg.raw_transaction,
             accounts,
         )
         upd_instruction = Instruction(

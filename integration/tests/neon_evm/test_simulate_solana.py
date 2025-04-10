@@ -171,7 +171,7 @@ class TestSimulateSolana:
                 evm_loader_id=evm_loader.loader_id,
                 treasury_address=treasury_pool.account,
                 treasury_buffer=treasury_pool.buffer,
-                message=neon_signed_tx.rawTransaction,
+                message=neon_signed_tx.raw_transaction,
                 additional_accounts=[
                     sender_with_tokens.balance_account_address,
                     session_user.balance_account_address,
@@ -388,7 +388,7 @@ class TestSimulateSolana:
                 instructions.make_PartialCallOrContinueFromRawEthereumTX(
                     index=index,
                     step_count=500,
-                    instruction=neon_signed_tx.rawTransaction,
+                    instruction=neon_signed_tx.raw_transaction,
                     operator=operator_keypair,
                     operator_balance=operator_balance_pubkey,
                     evm_loader_id=evm_loader.loader_id,
@@ -448,7 +448,7 @@ class TestSimulateSolana:
                 evm_loader_id=evm_loader.loader_id,
                 treasury_address=treasury_pool.account,
                 treasury_buffer=treasury_pool.buffer,
-                message=neon_signed_tx.rawTransaction,
+                message=neon_signed_tx.raw_transaction,
                 additional_accounts=[
                     sender_with_tokens.balance_account_address,
                     query_account_caller_contract.solana_address,

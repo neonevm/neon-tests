@@ -17,7 +17,6 @@ from solana.rpc.commitment import Confirmed
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 from spl.token.constants import WRAPPED_SOL_MINT
-from web3.middleware import geth_poa_middleware
 
 import allure
 from utils import create_allure_environment_opts, setup_logging

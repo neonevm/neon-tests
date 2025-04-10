@@ -81,7 +81,7 @@ class TestNeonTransfer:
 
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
 
-        params = [signed_tx.rawTransaction.hex()]
+        params = [signed_tx.raw_transaction.hex()]
         transaction = json_rpc_client.send_rpc("eth_sendRawTransaction", params)["result"]
 
         actual_result = self.web3_client._web3.eth.wait_for_transaction_receipt(transaction)

@@ -56,7 +56,7 @@ class TestRpcGetTransaction:
         ]
         for field in expected_hex_fields:
             assert rpc_checks.is_hex(result[field])
-        assert result["blockHash"] == tx_receipt.blockHash.hex()
+        assert result["blockHash"][2:] == tx_receipt.blockHash.hex()
         assert result["from"].upper() == tx_receipt["from"].upper()
         assert result["to"].upper() == tx_receipt["to"].upper()
 
@@ -253,8 +253,8 @@ class TestRpcGetTransaction:
             ],
         )
         assert result["status"] == "0x1", "Transaction status must be 0x1"
-        assert result["transactionHash"] == transaction_hash
-        assert result["blockHash"] == tx_receipt.blockHash.hex()
+        assert result["transactionHash"][2:] == transaction_hash
+        assert result["blockHash"][2:] == tx_receipt.blockHash.hex()
         assert result["from"].upper() == tx_receipt["from"].upper()
         assert result["to"].upper() == tx_receipt["to"].upper()
         assert result["contractAddress"] is None
@@ -530,9 +530,9 @@ class TestRpcGetTransaction:
         assert len(result["scheduledParentTransactionHashes"]) == 0
         assert len(result["scheduledChildTransactionHashes"]) == 0
         assert result["status"] == "0x1", "Transaction status must be 0x1"
-        assert result["transactionHash"] == transaction_hash
+        assert result["transactionHash"][2:] == transaction_hash
 
-        assert result["blockHash"] == tx_receipt.blockHash.hex()
+        assert result["blockHash"][2:] == tx_receipt.blockHash.hex()
         assert result["from"].upper() == neon_user.checksum_address.upper()
         assert result["to"].upper() == common_contract.address.upper()
         assert result["contractAddress"] is None
@@ -638,9 +638,9 @@ class TestRpcGetTransaction:
                 assert result["scheduledChildTransactionHashes"][0][2:] == expected_child
 
             assert result["status"] == "0x1", "Transaction status must be 0x1"
-            assert result["transactionHash"] == trx_hashes[i]
+            assert result["transactionHash"][2:] == trx_hashes[i]
 
-            assert result["blockHash"] == receipts[i].blockHash.hex()
+            assert result["blockHash"][2:] == receipts[i].blockHash.hex()
 
             assert result["from"].upper() == neon_user.checksum_address.upper()
             assert result["to"].upper() == common_contract.address.upper()

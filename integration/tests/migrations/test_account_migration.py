@@ -184,7 +184,7 @@ def get_solana_accounts_by_emulation(web3_client, sender, contract, function_sig
         data += eth_abi.encode(types, params)
     tx = web3_client.make_raw_tx(sender.address, contract, data=data, estimate_gas=True)
     signed_tx = web3_client.eth.account.sign_transaction(tx, sender.key)
-    result = web3_client.get_neon_emulate(str(signed_tx.rawTransaction.hex())[2:])
+    result = web3_client.get_neon_emulate(str(signed_tx.raw_transaction.hex())[2:])
     print(result)
     return [item["pubkey"] for item in result["result"]["solanaAccounts"]]
 

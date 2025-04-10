@@ -424,7 +424,7 @@ class TestTracerDebugMethods:
         sender_account = self.accounts[0]
         transaction = self.web3_client.make_raw_tx(from_=sender_account, data=GOOD_CALLDATA[0], estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
-        tx = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)
+        tx = self.web3_client.eth.send_raw_transaction(signed_tx.raw_transaction)
 
         receipt = self.web3_client.eth.wait_for_transaction_receipt(tx)
         assert receipt["status"] == 1
@@ -433,7 +433,7 @@ class TestTracerDebugMethods:
             "debug_getRawTransaction", [receipt["transactionHash"].hex()]
         )
         assert "error" not in response, "Error in response"
-        assert "result" in response and response["result"] == signed_tx.rawTransaction.hex()
+        assert "result" in response and response["result"] == signed_tx.raw_transaction.hex()
 
     # GETH: NDEV-3252
     def test_debug_get_raw_transaction_invalid_tx_hash(self):

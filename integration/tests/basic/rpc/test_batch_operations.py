@@ -7,6 +7,7 @@ from web3 import Web3
 
 from integration.tests.basic.helpers import rpc_checks
 from utils.accounts import EthAccounts
+from utils.helpers import decode_function_signature
 from utils.web3client import NeonChainWeb3Client
 
 
@@ -35,10 +36,7 @@ class TestBatchOperations:
             b = random.randint(0, 10000)
             expected_results.append(a * b)
 
-            function_signature = Web3.solidity_keccak(["string"], ["multiply(uint32,uint32)"]).hex()[:10]
-            a_padded_hex = hex(a)[2:].zfill(64)
-            b_padded_hex = hex(b)[2:].zfill(64)
-            data = f"{function_signature}{a_padded_hex}{b_padded_hex}"
+            data = decode_function_signature("multiply(uint32,uint32)", [a, b])
 
             batch.append(
                 {
@@ -104,7 +102,7 @@ class TestBatchOperations:
             {
                 "jsonrpc": "2.0",
                 "method": "eth_sendRawTransaction",
-                "params": [signed_tx.rawTransaction.hex()],
+                "params": [signed_tx.raw_transaction.hex()],
                 "id": 3,
             },
         ]

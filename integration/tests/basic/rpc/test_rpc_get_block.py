@@ -1,6 +1,8 @@
 import pytest
 
 import allure
+from web3.types import TxReceipt
+
 from clickfile import EnvName
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.basic import Tag
@@ -27,7 +29,7 @@ class TestRpcGetBlock:
     accounts: EthAccounts
 
     @pytest.fixture(scope="class")
-    def send_neon_transaction(self):
+    def send_neon_transaction(self) -> TxReceipt:
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
         return self.web3_client.send_neon(sender_account, recipient_account, 1)
@@ -38,7 +40,7 @@ class TestRpcGetBlock:
         self, full_trx: bool, json_rpc_client: JsonRPCSession, env_name: EnvName, send_neon_transaction
     ):
         """Verify implemented rpc calls work eth_getBlockByHash"""
-        params = [send_neon_transaction.blockHash.hex(), full_trx]
+        params = [send_neon_transaction["blockHash"].hex(), full_trx]
         response = json_rpc_client.send_rpc(method="eth_getBlockByHash", params=params)
         rpc_checks.assert_block_fields(
             env_name=env_name,

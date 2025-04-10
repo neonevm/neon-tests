@@ -92,7 +92,7 @@ class TestPrecompiledContracts:
         if pytestconfig.getoption("--network") == "devnet" and address == "0x0000000000000000000000000000000000000005":
             pytest.skip("Doesn't work in devnet/mainnet")
         result = self.web3_client._web3.eth.call({"to": address, "value": 0, "data": input_data})
-        assert result.hex()[2:] == expected
+        assert result.hex() == expected
 
     @pytest.mark.parametrize(**parametrized_data)
     def test_call_via_contract(self, precompiled_contract, address, input_data, expected, pytestconfig):

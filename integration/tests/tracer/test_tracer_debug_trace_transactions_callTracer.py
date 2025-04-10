@@ -68,8 +68,8 @@ class TestDebugTraceTransactionCallTracer:
                                 "value": calls_value,
                                 "logs": [
                                     {
-                                        "topics": [log["topics"][0].hex()],
-                                        "data": log["data"].hex(),
+                                        "topics": ["0x" + log["topics"][0].hex()],
+                                        "data": "0x" + log["data"].hex(),
                                     }
                                 ],
                             }
@@ -81,8 +81,8 @@ class TestDebugTraceTransactionCallTracer:
                     expected_response["logs"] = [
                         {
                             "address": address_to,
-                            "topics": [log["topics"][0].hex()],
-                            "data": log["data"].hex(),
+                            "topics": ["0x" + log["topics"][0].hex()],
+                            "data": "0x" + log["data"].hex(),
                         }
                     ]
 
@@ -482,7 +482,7 @@ class TestDebugTraceTransactionCallTracer:
         # check if all topics from receipt logs are in response logs
         log_topics = []
         for log in receipt["logs"]:
-            log_topics.append(log["topics"][0].hex())
+            log_topics.append("0x" + log["topics"][0].hex())
 
         for topic in log_topics:
             assert (
@@ -510,4 +510,4 @@ class TestDebugTraceTransactionCallTracer:
         assert response["result"]["type"] == "CALL"
         assert response["result"]["calls"][0]["type"] == "CREATE"
         assert response["result"]["calls"][0]["calls"][0]["type"] == "CREATE"
-        assert response["result"]["calls"][0]["logs"][0]["topics"][0] == receipt["logs"][0]["topics"][0].hex()
+        assert response["result"]["calls"][0]["logs"][0]["topics"][0] == "0x" + receipt["logs"][0]["topics"][0].hex()

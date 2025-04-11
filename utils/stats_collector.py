@@ -74,8 +74,7 @@ def cost_report_from_receipt(func: Callable[..., TxReceipt]) -> Callable[..., Tx
 
                 used_gas = receipt["gasUsed"]
                 gas_price = receipt["effectiveGasPrice"]
-                tx_hash = receipt["transactionHash"].hex()
-
+                tx_hash = "0x" + receipt["transactionHash"].hex()
                 action = CostReportAction(
                     name=func.__name__,
                     usedGas=used_gas,

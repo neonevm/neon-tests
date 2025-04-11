@@ -10,7 +10,6 @@ import web3
 from solana.rpc import commitment
 
 from deploy.cli.network_manager import NetworkManager
-from integration.tests.economy.const import TX_COST
 from utils.accounts import EthAccounts
 from utils.consts import LAMPORT_PER_SOL, wSOL, REMAPPING_ZEPPELIN_UNISWAP
 from utils.erc20wrapper import ERC20NewWrapper
@@ -127,6 +126,9 @@ def get_max_tick(tick_spacing: int) -> int:
 
 @events.test_start.add_listener
 def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
+    initial_amount = 10**18
+    initial_calee_amount = 1_000_000_000
+    transfer_amount = 1_000_000
     network = environment.parsed_options.host
     network_manager = NetworkManager()
     network_object = network_manager.get_network_object(network)
@@ -181,7 +183,12 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
         tokens[f"{token}"] = erc20
 
         LOG.info("Mint tokens...")
-        erc20.mint_tokens(signer=erc20.account, to_address=erc20.account.address, amount=10**18)
+        erc20.mint_tokens(signer=erc20.account, to_address=erc20.account.address, amount=initial_amount)
+        for account in accounts:
+            receipt = erc20.approve(erc20.account, account.address, initial_amount)
+            assert receipt["status"] == 1
+            receipt = erc20.transfer(erc20.account, account.address, transfer_amount)
+            assert receipt["status"] == 1
 
     LOG.info("Deploy UniswapV3Factory...")
     deployer = account_manager.create_account()
@@ -197,6 +204,16 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
         constructor_args=[uniswap_v3_factory.address, tokens["WETH"].contract_address],
         import_remapping=REMAPPING_ZEPPELIN_UNISWAP,
     )
+
+    LOG.info("Approve for swap router...")
+    receipt = tokens["TTA"].approve(accounts[0], swap_router.address, initial_amount)
+    assert receipt["status"] == 1
+
+    receipt = tokens["TTB"].approve(accounts[0], swap_router.address, initial_amount)
+    assert receipt["status"] == 1
+
+    receipt = tokens["TTC"].approve(accounts[0], swap_router.address, initial_amount)
+    assert receipt["status"] == 1
 
     LOG.info("Create Pools...")
     pairs = {
@@ -262,13 +279,13 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
         "external/uniswap-v3/contracts/v3-core/test/TestUniswapV3Callee", "0.7.6", account=deployer
     )
     LOG.info("Add Liquidity...")
-    receipt = tokens["TTA"].approve(tokens["TTA"].account, callee.address, 10**18)
+    receipt = tokens["TTA"].approve(tokens["TTA"].account, callee.address, initial_calee_amount)
     assert receipt["status"] == 1
 
-    receipt = tokens["TTB"].approve(tokens["TTB"].account, callee.address, 10**18)
+    receipt = tokens["TTB"].approve(tokens["TTB"].account, callee.address, initial_calee_amount)
     assert receipt["status"] == 1
 
-    receipt = tokens["TTC"].approve(tokens["TTC"].account, callee.address, 10**18)
+    receipt = tokens["TTC"].approve(tokens["TTC"].account, callee.address, initial_calee_amount)
     assert receipt["status"] == 1
 
     LOG.info("Callee mint...")
@@ -284,33 +301,13 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
     receipt = web3_client.send_transaction(deployer, tx_mint)
     assert receipt["status"] == 1
 
-    LOG.info("Fund users with tokens...")
-    receipt = tokens["TTA"].transfer(tokens["TTA"].account, accounts[0].address, 1_000_000)
+    receipt = tokens["TTA"].approve(accounts[1], swap_router.address, initial_amount)
     assert receipt["status"] == 1
 
-    receipt = tokens["TTB"].transfer(tokens["TTB"].account, accounts[0].address, 1_000_000)
+    receipt = tokens["TTB"].approve(accounts[1], swap_router.address, initial_amount)
     assert receipt["status"] == 1
 
-    receipt = tokens["TTC"].transfer(tokens["TTC"].account, accounts[0].address, 1_000_000)
-    assert receipt["status"] == 1
-
-    receipt = tokens["TTA"].transfer(tokens["TTA"].account, accounts[1].address, 1_000_000)
-    assert receipt["status"] == 1
-
-    receipt = tokens["TTB"].transfer(tokens["TTB"].account, accounts[1].address, 1_000_000)
-    assert receipt["status"] == 1
-
-    receipt = tokens["TTC"].transfer(tokens["TTC"].account, accounts[1].address, 1_000_000)
-    assert receipt["status"] == 1
-
-    LOG.info("Approve for swap router...")
-    receipt = tokens["TTA"].approve(tokens["TTA"].account, swap_router.address, 10**18)
-    assert receipt["status"] == 1
-
-    receipt = tokens["TTB"].approve(tokens["TTB"].account, swap_router.address, 10**18)
-    assert receipt["status"] == 1
-
-    receipt = tokens["TTC"].approve(tokens["TTC"].account, swap_router.address, 10**18)
+    receipt = tokens["TTC"].approve(accounts[1], swap_router.address, initial_amount)
     assert receipt["status"] == 1
 
     environment.uniswap = {
@@ -329,16 +326,14 @@ def teardown_one_contract_for_scheduled_trx(environment: env.Environment, **kwar
     network = environment.parsed_options.host
     network_manager = NetworkManager()
     network_object = network_manager.get_network_object(network)
-    if not network_object["use_bank"]:
-        balance = environment.evm_loader.get_solana_balance(environment.solana_account.pubkey())
-        amount_lamports = max(0, balance - TX_COST)
 
-        if amount_lamports > 0:
-            environment.evm_loader.self.send_sol(
-                from_=environment.solana_account,
-                to=environment.bank_account.pubkey(),
-                amount_lamports=amount_lamports,
-            )
+    if network != "local" and network_object["use_bank"]:
+        # Drain SOL for every neon_user
+        for neon_user in environment.contract_info["accounts"]:
+            environment.evm_loader.drain_sol(neon_user.solana_account, environment.bank_account.pubkey())
+
+        # Drain SOL for solana contract account
+        environment.evm_loader.drain_sol(environment.solana_account, environment.bank_account.pubkey())
 
 
 class BaseScheduledTxTaskSet(NeonProxyTasksSet):
@@ -356,6 +351,8 @@ class BaseScheduledTxTaskSet(NeonProxyTasksSet):
     def on_stop(self):
         if self.account is not None:
             with USER_LOCK:
+                # Drain Sol to bank account in case "Devnet" environment
+
                 self.user.environment.contract_info["accounts"].append(self.neon_account)
                 LOG.info(f"Returned user: {self.account.address}")
 

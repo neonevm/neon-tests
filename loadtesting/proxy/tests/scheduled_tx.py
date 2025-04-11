@@ -1,16 +1,18 @@
 import logging
 import os
 import string
+import math
 import threading
 import random
-
 import base58
+
+import web3
 from solana.rpc import commitment
 
 from deploy.cli.network_manager import NetworkManager
 from integration.tests.economy.const import TX_COST
 from utils.accounts import EthAccounts
-from utils.consts import LAMPORT_PER_SOL, wSOL
+from utils.consts import LAMPORT_PER_SOL, wSOL, REMAPPING_ZEPPELIN_UNISWAP
 from utils.erc20wrapper import ERC20NewWrapper
 from utils.evm_loader import EvmLoader
 from utils.faucet import Faucet
@@ -113,6 +115,213 @@ def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwarg
 
     environment.contract_info["recipients"] = environment.contract_info["accounts"].copy()
     environment.solana_account, environment.bank_account = solana_account, bank_account
+
+
+def get_min_tick(tick_spacing: int) -> int:
+    return math.ceil(-887272 / tick_spacing) * tick_spacing
+
+
+def get_max_tick(tick_spacing: int) -> int:
+    return math.floor(887272 / tick_spacing) * tick_spacing
+
+
+@events.test_start.add_listener
+def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
+    network = environment.parsed_options.host
+    network_manager = NetworkManager()
+    network_object = network_manager.get_network_object(network)
+    web3_client = NeonChainWeb3Client(proxy_url=network_object["proxy_url"])
+    faucet = Faucet(faucet_url=network_object["faucet_url"], web3_client=web3_client)
+
+    # set bank account if needed
+    bank_account = None
+    if network != "local" and network_object["use_bank"]:
+        if network == "devnet":
+            private_key = os.environ.get("BANK_PRIVATE_KEY")
+        else:
+            raise ValueError("set BANK_PRIVATE_KEY env variable")
+        key = base58.b58decode(private_key)
+        bank_account = Keypair.from_bytes(key)
+
+    account_manager = EthAccounts(web3_client, faucet, bank_account)
+    accounts = [account_manager.create_account(), account_manager.create_account(), account_manager.create_account()]
+
+    environment.evm_loader = EvmLoader(
+        program_id=network_object["evm_loader"],
+        endpoint=network_object["solana_url"],
+        neon_chain_id=network_object["network_ids"]["neon"],
+        sol_chain_id=network_object["network_ids"]["sol"],
+        neon_token_mint_str=network_object["spl_neon_mint"],
+    )
+
+    # create solana account
+    solana_account = Keypair()
+    if network != "local" and network_object["use_bank"]:
+        environment.evm_loader.send_sol(bank_account, solana_account.pubkey(), int(1 * LAMPORT_PER_SOL))
+    else:
+        environment.evm_loader.request_airdrop(solana_account.pubkey(), 1 * LAMPORT_PER_SOL)
+
+    test_tokens = ["TTA", "TTB", "TTC", "WETH"]
+    tokens = {}
+    # deploy erc20 tokens
+    for token in test_tokens:
+        LOG.info(f"Start to deploy token {token}...")
+        eth_account = account_manager.create_account()
+        erc20 = ERC20NewWrapper(
+            web3_client,
+            faucet,
+            f"Test {token}",
+            token,
+            environment.evm_loader,
+            solana_account=solana_account,
+            mintable=True,
+            bank_account=bank_account,
+            account=eth_account,
+        )
+        tokens[f"{token}"] = erc20
+
+        LOG.info("Mint tokens...")
+        erc20.mint_tokens(signer=erc20.account, to_address=erc20.account.address, amount=10**18)
+
+    LOG.info("Deploy UniswapV3Factory...")
+    deployer = account_manager.create_account()
+    uniswap_v3_factory, _ = web3_client.deploy_and_get_contract(
+        "external/uniswap-v3/contracts/UniswapV3Factory", "0.7.6", account=deployer
+    )
+
+    LOG.info("Deploy SwapRouter...")
+    swap_router, _ = web3_client.deploy_and_get_contract(
+        "external/uniswap-v3/contracts/SwapRouter",
+        "0.7.6",
+        account=deployer,
+        constructor_args=[uniswap_v3_factory.address, tokens["WETH"].contract_address],
+        import_remapping=REMAPPING_ZEPPELIN_UNISWAP,
+    )
+
+    LOG.info("Create Pools...")
+    pairs = {
+        "AB": [tokens["TTA"].contract_address, tokens["TTB"].contract_address],
+        "BC": [tokens["TTB"].contract_address, tokens["TTC"].contract_address],
+    }
+    for token in pairs.values():
+        tx = uniswap_v3_factory.functions.createPool(token[0], token[1], 500).build_transaction(
+            {
+                "from": deployer.address,
+                "nonce": web3_client.eth.get_transaction_count(deployer.address),
+                "gasPrice": web3_client.gas_price(),
+            }
+        )
+        receipt = web3_client.send_transaction(deployer, tx)
+        assert receipt["status"] == 1
+
+    LOG.info("Get Pools...")
+    pool_1_address = uniswap_v3_factory.functions.getPool(
+        tokens["TTA"].contract_address, tokens["TTB"].contract_address, 500
+    ).call()
+    pool_2_address = uniswap_v3_factory.functions.getPool(
+        tokens["TTB"].contract_address, tokens["TTC"].contract_address, 500
+    ).call()
+
+    LOG.info("Get deployed pools as UniswapV3Pool...")
+    start_price = int(math.sqrt(1 / 2) * (2**96))
+    pool_1 = web3_client.get_deployed_contract(
+        pool_1_address,
+        contract_name="UniswapV3Pool",
+        contract_file="external/uniswap-v3/contracts//UniswapV3Pool",
+        solc_version="0.7.6",
+    )
+
+    tx_init_pool_1 = pool_1.functions.initialize(start_price).build_transaction(
+        {
+            "from": deployer.address,
+            "nonce": web3_client.eth.get_transaction_count(deployer.address),
+            "gasPrice": web3_client.gas_price(),
+        }
+    )
+    receipt = web3_client.send_transaction(deployer, tx_init_pool_1)
+    assert receipt["status"] == 1
+
+    pool_2 = web3_client.get_deployed_contract(
+        pool_2_address,
+        contract_name="UniswapV3Pool",
+        contract_file="external/uniswap-v3/contracts//UniswapV3Pool",
+        solc_version="0.7.6",
+    )
+    tx_init_pool_2 = pool_2.functions.initialize(start_price).build_transaction(
+        {
+            "from": deployer.address,
+            "nonce": web3_client.eth.get_transaction_count(deployer.address),
+            "gasPrice": web3_client.gas_price(),
+        }
+    )
+    receipt = web3_client.send_transaction(deployer, tx_init_pool_2)
+    assert receipt["status"] == 1
+
+    LOG.info("Deploy TestUniswapV3Callee...")
+    callee, _ = web3_client.deploy_and_get_contract(
+        "external/uniswap-v3/contracts/v3-core/test/TestUniswapV3Callee", "0.7.6", account=deployer
+    )
+    LOG.info("Add Liquidity...")
+    receipt = tokens["TTA"].approve(tokens["TTA"].account, callee.address, 10**18)
+    assert receipt["status"] == 1
+
+    receipt = tokens["TTB"].approve(tokens["TTB"].account, callee.address, 10**18)
+    assert receipt["status"] == 1
+
+    receipt = tokens["TTC"].approve(tokens["TTC"].account, callee.address, 10**18)
+    assert receipt["status"] == 1
+
+    LOG.info("Callee mint...")
+    tx_mint = callee.functions.mint(
+        pool_1.address, accounts[0].address, get_min_tick(10), get_max_tick(10), 10_000_000
+    ).build_transaction(
+        {
+            "from": deployer.address,
+            "nonce": web3_client.eth.get_transaction_count(deployer.address),
+            "gasPrice": web3_client.gas_price(),
+        }
+    )
+    receipt = web3_client.send_transaction(deployer, tx_mint)
+    assert receipt["status"] == 1
+
+    LOG.info("Fund users with tokens...")
+    receipt = tokens["TTA"].transfer(tokens["TTA"].account, accounts[0].address, 1_000_000)
+    assert receipt["status"] == 1
+
+    receipt = tokens["TTB"].transfer(tokens["TTB"].account, accounts[0].address, 1_000_000)
+    assert receipt["status"] == 1
+
+    receipt = tokens["TTC"].transfer(tokens["TTC"].account, accounts[0].address, 1_000_000)
+    assert receipt["status"] == 1
+
+    receipt = tokens["TTA"].transfer(tokens["TTA"].account, accounts[1].address, 1_000_000)
+    assert receipt["status"] == 1
+
+    receipt = tokens["TTB"].transfer(tokens["TTB"].account, accounts[1].address, 1_000_000)
+    assert receipt["status"] == 1
+
+    receipt = tokens["TTC"].transfer(tokens["TTC"].account, accounts[1].address, 1_000_000)
+    assert receipt["status"] == 1
+
+    LOG.info("Approve for swap router...")
+    receipt = tokens["TTA"].approve(tokens["TTA"].account, swap_router.address, 10**18)
+    assert receipt["status"] == 1
+
+    receipt = tokens["TTB"].approve(tokens["TTB"].account, swap_router.address, 10**18)
+    assert receipt["status"] == 1
+
+    receipt = tokens["TTC"].approve(tokens["TTC"].account, swap_router.address, 10**18)
+    assert receipt["status"] == 1
+
+    environment.uniswap = {
+        "signer": deployer,
+        "router": swap_router,
+        "factory": uniswap_v3_factory,
+        "pool_1": pool_1,
+        "pool_2": pool_2,
+        "tokens": tokens,
+        "accounts": accounts,
+    }
 
 
 @events.test_stop.add_listener
@@ -358,9 +567,46 @@ class ScheduledTxsTransferToDifferentUsersTasksSet(BaseScheduledTxTaskSet):
             check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex(), timeout=240)
 
 
+@tag("scheduled_tx uniswap-v3")
+class ScheduledTxsUniswapV3TasksSet(BaseScheduledTxTaskSet):
+    """Implements scheduled txs uniswap-v3 task"""
+
+    @task
+    def task_send_uniswap_scheduled_tx(self):
+        """Send scheduled transactions with uniswap-v3 swaps"""
+        pass
+        swap_amount = 1_000_000
+        user = self.user.environment.uniswap["accounts"][1]
+        router = self.user.environment.uniswap["router"]
+        token_0 = self.user.environment.uniswap["tokens"]["TTA"]
+        token_1 = self.user.environment.uniswap["tokens"]["TTB"]
+
+        params = {
+            "tokenIn": token_1.contract_address,
+            "tokenOut": token_0.contract_address,
+            "fee": 500,
+            "recipient": user.address,
+            "deadline": int(web3.constants.MAX_INT, 16),
+            "amountIn": swap_amount,
+            "amountOutMinimum": 1,
+            "sqrtPriceLimitX96": 1461446703485210103287273052203988822378723970341,
+        }
+
+        tx_instr = router.functions.exactInputSingle(params).build_transaction(
+            {
+                "from": user.address,
+                "nonce": self.web3_client.eth.get_transaction_count(user.address),
+                "gasPrice": self.web3_client.gas_price(),
+            }
+        )
+        receipt = self.web3_client.send_transaction(user, tx_instr)
+        assert receipt["status"] == 1
+
+
 class ScheduledTxUser(User):
     tasks = {
         ScheduledTxsIndependentTasksSet: 1,
         ScheduledTxsDependentTasksSet: 1,
         ScheduledTxsTransferToDifferentUsersTasksSet: 1,
+        ScheduledTxsUniswapV3TasksSet: 1,
     }

@@ -4,6 +4,7 @@ from solders.pubkey import Pubkey
 from hexbytes import HexBytes
 
 from utils.accounts import EthAccounts
+from utils.consts import ZERO_HASH
 from utils.solana_client import SolanaClient
 from utils.web3client import NeonChainWeb3Client
 
@@ -18,19 +19,11 @@ class TestGetBlockHash:
 
     def test_get_current_block_hash(self, blockhash_contract):
         sender_account = self.accounts[0]
-        instruction_tx = blockhash_contract.functions.getCurrentValues().build_transaction(
-            {
-                "from": sender_account.address,
-                "nonce": self.web3_client.eth.get_transaction_count(sender_account.address),
-                "gasPrice": self.web3_client.gas_price(),
-            }
-        )
+        tx = self.web3_client.make_raw_tx(sender_account)
+        instruction_tx = blockhash_contract.functions.getCurrentValues().build_transaction(tx)
         instruction_receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
 
-        assert (
-            instruction_receipt["logs"][0]["data"].hex()
-            == "0x0000000000000000000000000000000000000000000000000000000000000000"
-        )
+        assert instruction_receipt["logs"][0]["data"].hex() == ZERO_HASH
 
     def _get_slot_hash(self, number: int) -> HexBytes:
         slot_hashes_id = Pubkey.from_string("SysvarS1otHashes111111111111111111111111111")

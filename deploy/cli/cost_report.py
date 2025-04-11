@@ -4,7 +4,7 @@ import os
 import pathlib
 import re
 from collections import Counter
-from typing import TypedDict
+from typing import TypedDict, Literal
 
 import click
 import pandas as pd
@@ -110,7 +110,7 @@ def get_service_tags_for_cost_reports(
     db: PostgresTestResultsHandler,
     limit: int,
     version_branch: str,
-) -> tuple[str, str, list[str]]:
+) -> tuple[str, str, list[str], Literal["timestamp", "branch_name"]]:
     """
     :param evm_tag:
     :param proxy_tag:
@@ -127,6 +127,7 @@ def get_service_tags_for_cost_reports(
 
     # define the tags against which the comparison will be done
     previous_tags: list[str]
+    order_by: Literal["timestamp", "branch_name"]
 
     if re.fullmatch(GITHUB_TAG_PATTERN, compared_service_tag):
         previous_tags = db.get_previous_tags(
@@ -134,13 +135,15 @@ def get_service_tags_for_cost_reports(
             tag=compared_service_tag,
             limit=limit,
         )
+        order_by = "branch_name"
     else:
         if version_branch:
             previous_tags = [version_branch]
         else:
             previous_tags = ["latest"]
-
-    return compared_service_tag, other_service_tag, previous_tags
+        order_by = "timestamp"
+    click.echo(f"order_by: {order_by}")
+    return compared_service_tag, other_service_tag, previous_tags, order_by
 
 
 def save_dapps_cost_report_to_db(
@@ -213,7 +216,7 @@ def compare_dapp_results(
 ):
     click.echo(f"compare_dapp_results: {locals()}")
     db = PostgresTestResultsHandler()
-    compared_service_tag, other_service_tag, previous_tags = get_service_tags_for_cost_reports(
+    compared_service_tag, other_service_tag, previous_tags, order_by = get_service_tags_for_cost_reports(
         evm_tag=evm_tag,
         proxy_tag=proxy_tag,
         repo=repo,
@@ -228,6 +231,7 @@ def compare_dapp_results(
         repo=repo,
         latest_tag=compared_service_tag,
         previous_tags=previous_tags,
+        order_by=order_by,
     )
 
     # get commit sha for compared_service and other_service
@@ -289,7 +293,7 @@ def validate_cost_reports(
     :param output: Path to the JSON file where detected failures are saved.
     """
     db = PostgresTestResultsHandler()
-    compared_service_tag, other_service_tag, previous_tags = get_service_tags_for_cost_reports(
+    compared_service_tag, other_service_tag, previous_tags, order_by = get_service_tags_for_cost_reports(
         evm_tag=evm_tag,
         proxy_tag=proxy_tag,
         repo=repo,
@@ -304,6 +308,7 @@ def validate_cost_reports(
         repo=repo,
         latest_tag=compared_service_tag,
         previous_tags=previous_tags,
+        order_by=order_by,
     )
 
     all_metric_names = "acc_count", "trx_count", "gas_estimated", "gas_used", "compute_units"

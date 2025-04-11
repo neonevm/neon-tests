@@ -74,8 +74,8 @@ def assert_block_fields(
         assert is_hex(result[field]), f"Field {field} must be hex but '{result[field]}'"
     if tx_receipt is not None:
         assert (
-            result["hash"] == tx_receipt.blockHash.hex()
-        ), f"Actual:{result['hash']}; Expected: {tx_receipt.blockHash.hex()}"
+            result["hash"][2:] == tx_receipt.blockHash.hex()
+        ), f"Actual:{result['hash'][2:]}; Expected: {tx_receipt.blockHash.hex()}"
 
         assert result["number"] == hex(
             tx_receipt.blockNumber
@@ -98,7 +98,7 @@ def assert_block_fields(
     if full_trx:
         if tx_receipt is not None:
             assert tx_receipt.transactionHash.hex() in [
-                transaction["hash"] for transaction in transactions
+                transaction["hash"][2:] for transaction in transactions
             ], "Created transaction should be in block"
         for transaction in transactions:
             scheduled_tx = False
@@ -137,7 +137,7 @@ def assert_block_fields(
         for transaction in transactions:
             assert is_hex(transaction)
         if tx_receipt is not None:
-            assert tx_receipt.transactionHash.hex() in transactions, "Created transaction should be in block"
+            assert f"0x{tx_receipt.transactionHash.hex()}" in transactions, "Created transaction should be in block"
 
 
 def assert_log_field_in_neon_trx_receipt(response, events_count):
@@ -227,9 +227,10 @@ def assert_equal_fields(result, comparable_object, comparable_fields, keys_mappi
             result_value = result_value.lower()
             comparable_obj_value = comparable_obj_value.lower()
 
-        assert (
-            result_value.lower() == comparable_obj_value.lower()
-        ), f"The field '{field}' {result_value} from response  is not equal to {field} from receipt {comparable_obj_value}"
+        assert result_value.lower() in [
+            comparable_obj_value.lower(),
+            f"0x{comparable_obj_value.lower()}",
+        ], f"The field '{field}' {result_value} from response  is not equal to {field} from receipt {comparable_obj_value}"
 
 
 def count_events(
@@ -382,7 +383,7 @@ def assert_event_field(
         match comparator:
             case "==":
                 assert (
-                    getattr(event, field_name) == expected_value
+                    getattr(event, field_name) == expected_value or getattr(event, field_name)[2:] == expected_value
                 ), f"Expecting {field_name} to be {expected_value}, got {getattr(event, field_name)}. Event: {event}."
             case "!=":
                 assert (

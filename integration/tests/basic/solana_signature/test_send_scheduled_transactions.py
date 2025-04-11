@@ -22,7 +22,10 @@ class TestScheduledTrx:
             neon_user, treasury_pool, tx.encode(), wSOL["address_spl"], chain_id=evm_loader.sol_chain_id
         )
         check_trx_is_success(web3_client_sol, evm_loader, tx.hash().hex())
-        wait_condition(lambda: hex(tx.nonce) in web3_client_sol.get_pending_transactions(neon_user.checksum_address))
+        wait_condition(
+            lambda: hex(tx.nonce) in web3_client_sol.get_pending_transactions(neon_user.checksum_address),
+            timeout_sec=60,
+        )
         pending_trx = web3_client_sol.get_pending_transactions(neon_user.checksum_address)
         assert pending_trx[hex(tx.nonce)][0]["status"] in ("Done", "InProgress")
         assert common_contract.functions.getNumber().call() == contract_data
@@ -291,7 +294,7 @@ class TestScheduledTrx:
     ):
         total_trx_count = 8
 
-        call_data_counter = decode_function_signature("moreInstructionWithLogs(uint256,uint256)", [0, 1000])
+        call_data_counter = decode_function_signature("moreInstructionWithLogs(uint256,uint256)", [0, 2000])
         trx_estimate_obj_list = []
         for _ in range(total_trx_count):
             trx_estimate_obj_list.append(

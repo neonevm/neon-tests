@@ -357,10 +357,11 @@ class TestSolanaInteroperability:
                 [{"lamports": 0, "salt": seed, "instruction": serialized}]
             ).build_transaction(tx)
             signed_tx = self.web3_client.eth.account.sign_transaction(instruction_tx, sender.key)
-            result = self.web3_client.get_neon_emulate(str(signed_tx.rawTransaction.hex())[2:])
-            resp = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)
+            result = self.web3_client.get_neon_emulate(str(signed_tx.raw_transaction.hex()))
+            resp = self.web3_client.eth.send_raw_transaction(signed_tx.raw_transaction)
             resp = self.web3_client.eth.wait_for_transaction_receipt(resp, timeout=60)
             assert resp["status"] == 1
+
             return result["result"]["gasUsed"]
 
         gas_used_amount1 = get_gas_used_for_emulate_send_wsol(10000)

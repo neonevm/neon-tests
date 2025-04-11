@@ -26,7 +26,7 @@ from utils.web3client import NeonChainWeb3Client
 
 INCORRECT_ADDRESS_PARAMS = (
     "block_len, expected_exception",
-    [(20, web3.exceptions.InvalidAddress), (5, web3.exceptions.ValidationError)],
+    [(20, web3.exceptions.InvalidAddress)],
 )
 
 NOT_ENOUGH_GAS_PARAMS = (
@@ -103,7 +103,7 @@ class TestERC721:
     def test_mint_no_enough_gas(self, erc721, param, msg):
         seed = self.web3_client.text_to_bytes32(gen_hash_of_block(8))
         uri = generate_text(min_len=10, max_len=200, simple=True)
-        with pytest.raises(ValueError, match=msg):
+        with pytest.raises(web3.exceptions.Web3RPCError, match=msg):
             erc721.mint(seed, erc721.account.address, uri, **param)
 
     def test_name(self, erc721):
@@ -211,7 +211,7 @@ class TestERC721:
 
     @pytest.mark.parametrize(*NOT_ENOUGH_GAS_PARAMS)
     def test_transferFrom_no_enough_gas(self, erc721, token_id, accounts, param, msg):
-        with pytest.raises(ValueError, match=msg):
+        with pytest.raises(web3.exceptions.Web3RPCError, match=msg):
             erc721.transfer_from(
                 erc721.account.address,
                 accounts[0].address,
@@ -266,7 +266,7 @@ class TestERC721:
 
     @pytest.mark.parametrize(*NOT_ENOUGH_GAS_PARAMS)
     def test_approve_no_enough_gas(self, erc721, token_id, param, msg, accounts):
-        with pytest.raises(ValueError, match=msg):
+        with pytest.raises(web3.exceptions.Web3RPCError, match=msg):
             erc721.approve(accounts[0].address, token_id, erc721.account, **param)
 
     def test_safeTransferFrom_to_user(self, erc721, token_id, accounts):
@@ -397,7 +397,7 @@ class TestERC721:
     def test_setApprovalForAll_no_enough_gas(self, erc721, token_id, param, msg, accounts):
         new_account = accounts[4]
 
-        with pytest.raises(ValueError, match=msg):
+        with pytest.raises(web3.exceptions.Web3RPCError, match=msg):
             erc721.set_approval_for_all(new_account.address, True, erc721.account, **param)
 
     def test_isApprovedForAll(self, erc721, token_id, accounts):

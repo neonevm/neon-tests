@@ -186,7 +186,7 @@ def make_instruction_data_from_tx(instruction, private_key=None):
             raise Exception("Needed private key for transaction creation from fields")
 
         signed_tx = w3.eth.account.sign_transaction(instruction, private_key)
-        _trx = Trx.from_string(signed_tx.rawTransaction)
+        _trx = Trx.from_string(signed_tx.raw_transaction)
 
         raw_msg = _trx.get_msg(instruction["chainId"])
         sig = keys.Signature(vrs=[1 if _trx.v % 2 == 0 else 0, _trx.r, _trx.s])

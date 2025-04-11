@@ -460,10 +460,10 @@ class TestExecuteTrxFromInstruction:
         signed_tx = make_contract_call_trx(
             evm_loader, sender_with_tokens, calculator_caller_contract, "callCalculator()"
         )
-        new_raw_trx = HexBytes(bytes([0]) + signed_tx.rawTransaction)
+        new_raw_trx = HexBytes(bytes([0]) + signed_tx.raw_transaction)
 
         signed_tx_new = SignedTransaction(
-            rawTransaction=new_raw_trx,
+            raw_transaction=new_raw_trx,
             hash=signed_tx.hash,
             r=signed_tx.r,
             s=signed_tx.s,

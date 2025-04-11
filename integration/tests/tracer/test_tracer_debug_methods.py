@@ -64,7 +64,7 @@ class TestTracerDebugMethods:
                 "gas": hex(tx_info["gas"]),
                 "gasPrice": hex(tx_info["gasPrice"]),
                 "value": hex(tx_info["value"]),
-                "data": tx_info["input"].hex(),
+                "data": "0x" + tx_info["input"].hex(),
             },
             hex(tx_info["blockNumber"]),
         ]
@@ -89,7 +89,7 @@ class TestTracerDebugMethods:
                 "gas": hex(tx_info["gas"]),
                 "gasPrice": hex(tx_info["gasPrice"]),
                 "value": hex(tx_info["value"]),
-                "data": tx_info["input"].hex(),
+                "data": "0x" + tx_info["input"].hex(),
             },
             hex(tx_info["blockNumber"]),
         ]
@@ -131,7 +131,7 @@ class TestTracerDebugMethods:
         _, _, receipt = storage_object.call_storage(sender_account, store_value, "blockNumber")
 
         response = self.tracer_api.send_rpc_and_wait_response(
-            "debug_traceTransaction", [receipt["transactionHash"].hex()[2:]]
+            "debug_traceTransaction", [receipt["transactionHash"].hex()]
         )
 
         assert "error" not in response, "Error in response"
@@ -151,7 +151,7 @@ class TestTracerDebugMethods:
         recipient_account = self.accounts[1]
         receipt = self.web3_client.send_neon(sender_account, recipient_account, 0.1)
         assert receipt["status"] == 1
-        tx_hash = receipt["transactionHash"].hex()
+        tx_hash = "0x" + receipt["transactionHash"].hex()
 
         response = self.tracer_api.send_rpc_and_wait_response("debug_traceBlockByNumber", [hex(receipt["blockNumber"])])
         assert "error" not in response, "Error in response"
@@ -205,7 +205,7 @@ class TestTracerDebugMethods:
         recipient_account = self.accounts[1]
         receipt = self.web3_client.send_neon(sender_account, recipient_account, 0.1)
         assert receipt["status"] == 1
-        tx_hash = receipt["transactionHash"].hex()
+        tx_hash = "0x" + receipt["transactionHash"].hex()
 
         response = self.tracer_api.send_rpc_and_wait_response("debug_traceBlockByHash", [receipt["blockHash"].hex()])
         assert "error" not in response, "Error in response"
@@ -262,9 +262,9 @@ class TestTracerDebugMethods:
         block_info = self.web3_client.eth.get_block(receipt["blockNumber"])
         assert header[0] == block_info["number"]
         assert header[1].hex() == ""
-        assert header[2].hex() == block_info["parentHash"].hex()[2:]
-        assert header[3].hex() == block_info["stateRoot"].hex()[2:]
-        assert header[4].hex() == block_info["receiptsRoot"].hex()[2:]
+        assert header[2].hex() == block_info["parentHash"].hex()
+        assert header[3].hex() == block_info["stateRoot"].hex()
+        assert header[4].hex() == block_info["receiptsRoot"].hex()
 
     # GETH: NDEV-3250
     def test_debug_getRawHeader_by_invalid_block_number(self):
@@ -280,7 +280,7 @@ class TestTracerDebugMethods:
         receipt = self.web3_client.send_neon(sender_account, recipient_account, 0.1)
         assert receipt["status"] == 1
 
-        response = self.tracer_api.send_rpc_and_wait_response("debug_getRawHeader", [receipt["blockHash"].hex()])
+        response = self.tracer_api.send_rpc_and_wait_response("debug_getRawHeader", ["0x" + receipt["blockHash"].hex()])
         assert "error" not in response, "Error in response"
         assert "result" in response and response["result"] is not None
 
@@ -288,9 +288,9 @@ class TestTracerDebugMethods:
         block_info = self.web3_client.eth.get_block(receipt["blockNumber"])
         assert header[0] == block_info["number"]
         assert header[1].hex() == ""
-        assert header[2].hex() == block_info["parentHash"].hex()[2:]
-        assert header[3].hex() == block_info["stateRoot"].hex()[2:]
-        assert header[4].hex() == block_info["receiptsRoot"].hex()[2:]
+        assert header[2].hex() == block_info["parentHash"].hex()
+        assert header[3].hex() == block_info["stateRoot"].hex()
+        assert header[4].hex() == block_info["receiptsRoot"].hex()
 
     # GETH: NDEV-3250
     def test_debug_getRawHeader_by_invalid_block_hash(self):
@@ -424,7 +424,7 @@ class TestTracerDebugMethods:
         sender_account = self.accounts[0]
         transaction = self.web3_client.make_raw_tx(from_=sender_account, data=GOOD_CALLDATA[0], estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
-        tx = self.web3_client.eth.send_raw_transaction(signed_tx.rawTransaction)
+        tx = self.web3_client.eth.send_raw_transaction(signed_tx.raw_transaction)
 
         receipt = self.web3_client.eth.wait_for_transaction_receipt(tx)
         assert receipt["status"] == 1
@@ -433,7 +433,7 @@ class TestTracerDebugMethods:
             "debug_getRawTransaction", [receipt["transactionHash"].hex()]
         )
         assert "error" not in response, "Error in response"
-        assert "result" in response and response["result"] == signed_tx.rawTransaction.hex()
+        assert "result" in response and response["result"] == "0x" + signed_tx.raw_transaction.hex()
 
     # GETH: NDEV-3252
     def test_debug_get_raw_transaction_invalid_tx_hash(self):
@@ -444,7 +444,9 @@ class TestTracerDebugMethods:
         response = self.tracer_api.send_rpc(method="debug_getRawTransaction", params=[receipt["blockHash"].hex()])
         assert "error" in response, "No errors in response"
         assert response["error"]["code"] == -32603, "Invalid error code"
-        assert response["error"]["message"] == f'Empty Neon transaction receipt for {receipt["blockHash"].hex()}'
+
+        blockhash = "".join(["0x", receipt["blockHash"].hex()])
+        assert response["error"]["message"] == f"Empty Neon transaction receipt for {blockhash}"
 
     # GETH: NDEV-3252
     def test_debug_get_raw_transaction_non_existent_tx_hash(self):

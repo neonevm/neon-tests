@@ -14,7 +14,7 @@ def test_erc20_simple_trx(erc20_spl_mintable_new, endpoints, accounts):
         tx = web3_client.make_raw_tx(signer.address)
         instruction_tx = erc20_spl_mintable_new.contract.functions.transfer(address_to, amount).build_transaction(tx)
         signed_tx = web3_client._web3.eth.account.sign_transaction(instruction_tx, signer.key)
-        return web3_client._web3.eth.send_raw_transaction(signed_tx.rawTransaction).hex()
+        return web3_client._web3.eth.send_raw_transaction(signed_tx.raw_transaction).hex()
 
     trx_hash = sent_erc20_simple_trx(endpoints[1]["web3_client"])
     print(trx_hash)
@@ -35,7 +35,7 @@ def test_iterative_trx_contract_deploy(endpoints, accounts):
         tx = web3_client.make_raw_tx(signer.address)
         transaction = contract.constructor().build_transaction(tx)
         signed_tx = web3_client._web3.eth.account.sign_transaction(transaction, signer.key)
-        return web3_client._web3.eth.send_raw_transaction(signed_tx.rawTransaction).hex()
+        return web3_client._web3.eth.send_raw_transaction(signed_tx.raw_transaction).hex()
 
     trx_hash = sent_iterative_trx_contract_deploy(endpoints[1]["web3_client"])
     print(trx_hash)
@@ -59,7 +59,7 @@ def test_big_iterative_trx(endpoints, accounts):
         tx = web3_client.make_raw_tx(signer.address)
         instruction_tx = contract.functions.replaceValues(value).build_transaction(tx)
         signed_tx = web3_client.eth.account.sign_transaction(instruction_tx, signer.key)
-        return web3_client.eth.send_raw_transaction(signed_tx.rawTransaction).hex()
+        return web3_client.eth.send_raw_transaction(signed_tx.raw_transaction).hex()
 
     trx_hash = sent_big_iterative_trx(endpoints[1]["web3_client"])
     print(trx_hash)

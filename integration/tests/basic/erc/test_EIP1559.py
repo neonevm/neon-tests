@@ -11,7 +11,7 @@ from solana.rpc.commitment import Confirmed
 from solders.signature import Signature
 from web3._utils.fee_utils import _fee_history_priority_fee_estimate  # noqa
 from web3.contract import Contract
-from web3.exceptions import TimeExhausted
+from web3.exceptions import TimeExhausted, Web3RPCError
 
 from utils import helpers
 from utils.accounts import EthAccounts
@@ -43,7 +43,7 @@ NEGATIVE_PARAMETERS = (
         (  # Large values (potential overflow)
             2**256,
             2**256,
-            ValueError,
+            web3.exceptions.Web3RPCError,
             "{'code': -32000, 'message': '.+'}",
         ),
         (  # Fractional values
@@ -259,7 +259,7 @@ class TestEIP1559:
 
         # sign_transaction automatically sets chainId to 0
         signed_tx = self.web3_client._web3.eth.account.sign_transaction(tx_params, sender.key)
-        response = json_rpc_client.send_rpc(method="eth_sendRawTransaction", params=signed_tx.rawTransaction.hex())
+        response = json_rpc_client.send_rpc(method="eth_sendRawTransaction", params=signed_tx.raw_transaction.hex())
         assert "result" not in response
         assert "error" in response
         assert response["error"]["code"] == -32000
@@ -412,7 +412,7 @@ class TestEIP1559:
         )
 
         error_msg_regex = r"{'code': -32000, 'message': 'insufficient funds for.+'}"
-        with pytest.raises(expected_exception=ValueError, match=error_msg_regex):
+        with pytest.raises(expected_exception=Web3RPCError, match=error_msg_regex):
             self.web3_client.send_transaction(account=sender, transaction=tx_params)
 
     def test_too_low_fee(

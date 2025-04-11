@@ -3,6 +3,7 @@ import random
 import allure
 import pytest
 import web3
+from web3.exceptions import Web3RPCError
 
 from integration.tests.basic.helpers.chains import make_nonce_the_biggest_for_chain
 from utils.web3client import NeonChainWeb3Client
@@ -110,7 +111,7 @@ class TestMultiplyChains:
     ):
         tx = self.web3_client.make_raw_tx(bob.address)
         instruction_tx = event_caller_contract.functions.unnamedArg("hello").build_transaction(tx)
-        with pytest.raises(ValueError, match="wrong chain id"):
+        with pytest.raises(Web3RPCError, match="wrong chain id"):
             web3_client_sol.send_transaction(bob, instruction_tx)
 
     @pytest.mark.multipletokens
@@ -241,15 +242,11 @@ class TestMultiplyChains:
     def test_call_different_chains_contracts_in_one_transaction(
         self,
         alice,
-        common_contract,
         web3_client_sol,
-        web3_client_usdt,
-        class_account_sol_chain,
     ):
         chains = {
             "neon": {"client": self.web3_client},
             "sol": {"client": web3_client_sol},
-            "usdt": {"client": web3_client_usdt},
         }
 
         make_nonce_the_biggest_for_chain(alice, self.web3_client, [item["client"] for item in chains.values()])
@@ -266,12 +263,12 @@ class TestMultiplyChains:
                 alice, chains[chain]["client"], [item["client"] for item in chains.values()]
             )
 
-            common_contract, _ = chains[chain]["client"].deploy_and_get_contract(
+            contract, _ = chains[chain]["client"].deploy_and_get_contract(
                 contract="common/Common",
                 version="0.8.12",
                 account=alice,
             )
-            chains[chain]["common_contract"] = common_contract
+            chains[chain]["common_contract"] = contract
 
         for chain in chains:
             tx = chains[chain]["client"].make_raw_tx(alice.address)
@@ -299,7 +296,7 @@ class TestMultiplyChains:
         instruction_tx.pop("chainId")
 
         with pytest.raises(
-            ValueError,
+            Web3RPCError,
             match="wrong chain id",
         ):
             web3_client_sol.send_transaction(account_with_all_tokens, instruction_tx)

@@ -71,7 +71,7 @@ def test_write_tx_to_holder(operator_keypair, session_user, second_session_user,
     holder_acc = evm_loader.create_holder(operator_keypair)
     signed_tx = make_eth_transaction(evm_loader, second_session_user.eth_address, None, session_user, 10)
     evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
-    assert signed_tx.rawTransaction == transaction_from_holder(evm_loader, holder_acc), "Account data is not correct"
+    assert signed_tx.raw_transaction == transaction_from_holder(evm_loader, holder_acc), "Account data is not correct"
 
 
 def test_write_tx_to_holder_in_parts(operator_keypair, session_user, evm_loader):
@@ -81,7 +81,7 @@ def test_write_tx_to_holder_in_parts(operator_keypair, session_user, evm_loader)
         evm_loader, session_user, "external/neon-evm/erc20_for_spl_factory", "ERC20ForSplFactory"
     )
     evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
-    assert signed_tx.rawTransaction == transaction_from_holder(evm_loader, holder_acc), "Account data is not correct"
+    assert signed_tx.raw_transaction == transaction_from_holder(evm_loader, holder_acc), "Account data is not correct"
 
 
 def test_write_tx_to_holder_by_no_owner(operator_keypair, session_user, second_session_user, evm_loader):
@@ -163,7 +163,7 @@ def test_write_to_finalized_holder(
     )
 
     evm_loader.write_transaction_to_holder_account(signed_tx2, new_holder_acc, operator_keypair)
-    assert signed_tx2.rawTransaction == transaction_from_holder(
+    assert signed_tx2.raw_transaction == transaction_from_holder(
         evm_loader, new_holder_acc
     ), "Account data is not correct"
 
@@ -237,7 +237,7 @@ def test_temporary_holder_acc_is_free(treasury_pool, sender_with_tokens, evm_loa
             evm_loader.loader_id,
             treasury_pool.account,
             treasury_pool.buffer,
-            signed_tx.rawTransaction,
+            signed_tx.raw_transaction,
             [
                 sender_with_tokens.balance_account_address,
                 sender_with_tokens.solana_account_address,

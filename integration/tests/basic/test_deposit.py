@@ -116,7 +116,9 @@ class TestWithdraw:
         receipt = self.web3_client.send_transaction(sender_acc, instruction_tx)
         assert receipt["status"] == 1
 
-    @pytest.mark.parametrize("move_amount, error", [(11000, web3.exceptions.ContractLogicError), (10000, ValueError)])
+    @pytest.mark.parametrize(
+        "move_amount, error", [(11000, web3.exceptions.ContractLogicError), (10000, web3.exceptions.Web3RPCError)]
+    )
     def test_failed_withdraw_insufficient_balance(
         self, pytestconfig: Config, move_amount, error, withdraw_contract, neon_mint, solana_account
     ):

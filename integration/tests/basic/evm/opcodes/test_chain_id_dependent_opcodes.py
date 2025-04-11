@@ -56,11 +56,11 @@ class TestChainIdDependentOpcodes:
         return contract
 
     @pytest.mark.multipletokens
-    def test_chain_id_sol(self, contract_sol, pytestconfig):
-        assert contract_sol.functions.getChainId().call() == pytestconfig.environment.network_ids["sol"]
+    def test_chain_id_sol(self, contract_sol, environment):
+        assert contract_sol.functions.getChainId().call() == environment.network_ids["sol"]
 
-    def test_chain_id_neon(self, contract_neon, pytestconfig):
-        assert contract_neon.functions.getChainId().call() == pytestconfig.environment.network_ids["neon"]
+    def test_chain_id_neon(self, contract_neon, environment):
+        assert contract_neon.functions.getChainId().call() == environment.network_ids["neon"]
 
     @pytest.mark.multipletokens
     def test_balance_by_sol_contract(

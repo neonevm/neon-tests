@@ -18,6 +18,7 @@ from spl.token.instructions import (
     get_associated_token_address,
 )
 from web3.contract import Contract
+from web3.exceptions import Web3RPCError
 
 from utils import helpers
 from utils.accounts import EthAccounts
@@ -170,7 +171,7 @@ class TestEconomics:
 
         acc3 = w3_client.create_account()
 
-        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
+        with pytest.raises(Web3RPCError, match=INSUFFICIENT_FUNDS_ERROR):
             w3_client.send_tokens(acc2, acc3, transfer_amount, tx_type=tx_type)
 
         sol_balance_after = operator.get_solana_balance()
@@ -425,7 +426,7 @@ class TestEconomics:
         acc2 = w3_client.create_account()
         w3_client.send_tokens(account_with_all_tokens, acc2, value=1, tx_type=tx_type)
 
-        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
+        with pytest.raises(Web3RPCError, match=INSUFFICIENT_FUNDS_ERROR):
             w3_client.deploy_and_get_contract(
                 contract="common/Counter",
                 version="0.8.10",
@@ -625,7 +626,7 @@ class TestEconomics:
         tx = w3_client.make_raw_tx(from_=account_with_all_tokens.address, gas=1000, tx_type=tx_type)
         instruction_tx = counter_contract.functions.moreInstruction(0, 100).build_transaction(tx)
 
-        with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
+        with pytest.raises(Web3RPCError, match=GAS_LIMIT_ERROR):
             w3_client.send_transaction(account_with_all_tokens, instruction_tx)
 
         sol_balance_after = operator.get_solana_balance()
@@ -655,7 +656,7 @@ class TestEconomics:
         tx = w3_client.make_raw_tx(from_=acc2.address, tx_type=tx_type)
 
         instruction_tx = counter_contract.functions.moreInstruction(0, 1500).build_transaction(tx)
-        with pytest.raises(ValueError, match=INSUFFICIENT_FUNDS_ERROR):
+        with pytest.raises(Web3RPCError, match=INSUFFICIENT_FUNDS_ERROR):
             w3_client.send_transaction(acc2, instruction_tx)
 
         sol_balance_after = operator.get_solana_balance()
@@ -804,7 +805,7 @@ class TestEconomics:
         contract_address = w3_client.to_checksum_address(
             w3_client.keccak(rlp.encode((bytes.fromhex(account_with_all_tokens.address[2:]), nonce)))[-20:].hex()
         )
-        with pytest.raises(ValueError, match=GAS_LIMIT_ERROR):
+        with pytest.raises(Web3RPCError, match=GAS_LIMIT_ERROR):
             w3_client.send_tokens(
                 from_=account_with_all_tokens,
                 to=contract_address,

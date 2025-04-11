@@ -201,7 +201,7 @@ class TestRpcBaseCalls:
         )
 
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
-        response = json_rpc_client.send_rpc("eth_sendRawTransaction", params=signed_tx.rawTransaction.hex())
+        response = json_rpc_client.send_rpc("eth_sendRawTransaction", params=signed_tx.raw_transaction.hex())
         assert "error" not in response
         assert rpc_checks.is_hex(response["result"]), f"Invalid response result {response['result']}"
         EthResult(**response)
@@ -216,7 +216,7 @@ class TestRpcBaseCalls:
         )
 
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
-        response = json_rpc_client.send_rpc("eth_sendRawTransaction", params=signed_tx.rawTransaction.hex())
+        response = json_rpc_client.send_rpc("eth_sendRawTransaction", params=signed_tx.raw_transaction.hex())
         assert "error" not in response
         assert rpc_checks.is_hex(response["result"]), f"Invalid response result {response['result']}"
         EthResult(**response)

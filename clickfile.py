@@ -560,6 +560,8 @@ def run(
             )
         if numprocesses:
             command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
+        if network == network.DEVNET:
+            command += " --retries 3 --retry-delay 2"
 
     elif name == "basic_extended":
         # run basic excluding tests for ERC20SPLNew contract

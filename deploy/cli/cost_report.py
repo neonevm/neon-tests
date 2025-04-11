@@ -142,7 +142,7 @@ def get_service_tags_for_cost_reports(
         else:
             previous_tags = ["latest"]
         order_by = "timestamp"
-    print("order_by:", order_by)
+    click.echo(f"order_by: {order_by}")
     return compared_service_tag, other_service_tag, previous_tags, order_by
 
 

@@ -165,6 +165,7 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
 
     test_tokens = ["TTA", "TTB", "TTC", "WETH"]
     tokens = {}
+    deployer = account_manager.create_account()
     # deploy erc20 tokens
     for token in test_tokens:
         LOG.info(f"Start to deploy token {token}...")
@@ -184,14 +185,18 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
 
         LOG.info("Mint tokens...")
         erc20.mint_tokens(signer=erc20.account, to_address=erc20.account.address, amount=initial_amount)
+        receipt = erc20.approve(erc20.account, deployer.address, initial_amount)
+        assert receipt["status"] == 1
+        receipt = erc20.transfer(erc20.account, deployer.address, 50 * transfer_amount)
+        assert receipt["status"] == 1
+
         for account in accounts:
             receipt = erc20.approve(erc20.account, account.address, initial_amount)
             assert receipt["status"] == 1
-            receipt = erc20.transfer(erc20.account, account.address, transfer_amount)
+            receipt = erc20.transfer(erc20.account, account.address, 20 * transfer_amount)
             assert receipt["status"] == 1
 
     LOG.info("Deploy UniswapV3Factory...")
-    deployer = account_manager.create_account()
     uniswap_v3_factory, _ = web3_client.deploy_and_get_contract(
         "external/uniswap-v3/contracts/UniswapV3Factory", "0.7.6", account=deployer
     )
@@ -290,15 +295,13 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
 
     LOG.info("Callee mint...")
     tx_mint = callee.functions.mint(
-        pool_1.address, accounts[0].address, get_min_tick(10), get_max_tick(10), 10_000_000
+        pool_1.address, accounts[0].address, get_min_tick(10), get_max_tick(10), 10 * transfer_amount
     ).build_transaction(
         {
-            "from": deployer.address,
-            "nonce": web3_client.eth.get_transaction_count(deployer.address),
-            "gasPrice": web3_client.gas_price(),
+            "from": accounts[0].address,
         }
     )
-    receipt = web3_client.send_transaction(deployer, tx_mint)
+    receipt = web3_client.send_transaction(deployer.address, tx_mint)
     assert receipt["status"] == 1
 
     receipt = tokens["TTA"].approve(accounts[1], swap_router.address, initial_amount)

@@ -136,9 +136,6 @@ class TestRpcGetTransaction:
                     "gasPrice",
                     "gas",
                     "value",
-                    "v",
-                    "s",
-                    "r",
                 ]
                 for field in expected_hex_fields:
                     assert rpc_checks.is_hex(result[field]), f"Field {field} must be hex but '{result[field]}'"

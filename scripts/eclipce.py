@@ -93,7 +93,7 @@ class SolanaClient(solana.rpc.api.Client):
         items = Pubkey.find_program_address([self.account_seed_version, self.ether2bytes(ether)], LOADER_ID)
         return str(items[0]), items[1]
 
-    def sent_token_from_solana_to_neon(self, solana_account: Keypair, mint, neon_account, amount):
+    def send_token_from_solana_to_neon(self, solana_account: Keypair, mint, neon_account, amount):
         contract_pubkey = Pubkey.from_string(self.ether2program(neon_account)[0])
         associated_token_address = get_associated_token_address(solana_account.pubkey(), mint)
         authority_pool = Pubkey.find_program_address([b"Deposit"], LOADER_ID)[0]
@@ -192,6 +192,6 @@ solana_client.create_ata(sol_account, MINT_PUBKEY)
 wrap_sol_tx = make_wsol(AMOUNT, sol_account.pubkey(), ata_address)
 solana_client.send_tx_and_check_status_ok(wrap_sol_tx, sol_account)
 
-solana_client.sent_token_from_solana_to_neon(sol_account, MINT_PUBKEY, recipient, AMOUNT)
+solana_client.send_token_from_solana_to_neon(sol_account, MINT_PUBKEY, recipient, AMOUNT)
 
 print(f"Final balance: {web3_client.eth.get_balance(recipient)}")

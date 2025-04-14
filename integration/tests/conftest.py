@@ -124,13 +124,14 @@ def solana_account(
     bank_account,
     environment: EnvironmentConfig,
     sol_client_session: SolanaClient,
-) -> tp.Generator[Keypair, None, None]:
+) -> Keypair:
     account = Keypair()
+    lamports = 1 * LAMPORT_PER_SOL
 
     if environment.use_bank:
-        sol_client_session.send_sol(bank_account, account.pubkey(), int(0.5 * LAMPORT_PER_SOL))
+        sol_client_session.send_sol(bank_account, account.pubkey(), lamports)
     else:
-        sol_client_session.request_airdrop(account.pubkey(), 1 * LAMPORT_PER_SOL)
+        sol_client_session.request_airdrop(account.pubkey(), lamports)
     yield account
 
     if environment.use_bank:
@@ -348,7 +349,6 @@ def account_with_all_tokens(
     eth_bank_account,
     neon_mint,
     operator_keypair,
-    evm_loader_keypair,
     bank_account: Keypair | None,
 ) -> tp.Generator[LocalAccount, None, None]:
     neon_account = web3_client_session.create_account_with_balance(faucet, bank_account=eth_bank_account)
@@ -372,7 +372,7 @@ def account_with_all_tokens(
         1000000000000000,
     )
 
-    evm_loader.sent_token_from_solana_to_neon(
+    evm_loader.send_token_from_solana_to_neon(
         solana_account,
         token_mint,
         neon_account,
@@ -391,6 +391,14 @@ def neon_mint(environment: EnvironmentConfig) -> Pubkey:
 @pytest.fixture(scope="class")
 def withdraw_contract(web3_client, faucet, accounts) -> Contract:
     contract, _ = web3_client.deploy_and_get_contract("precompiled/NeonToken", "0.8.10", account=accounts[1])
+    return contract
+
+
+@pytest.fixture(scope="class")
+def withdraw_contract_sol_chain(web3_client_sol, faucet, account_with_all_tokens) -> Contract:
+    contract, _ = web3_client_sol.deploy_and_get_contract(
+        "precompiled/NeonToken", "0.8.10", account=account_with_all_tokens
+    )
     return contract
 
 

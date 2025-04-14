@@ -115,6 +115,7 @@ class SolanaClient(solana.rpc.api.Client):
             trx = Transaction()
             trx.add(create_associated_token_account(payer.pubkey(), owner.pubkey(), token_mint))
             self.send_tx_and_check_status_ok(trx, payer)
+        return ata
 
     def wait_transaction(self, tx):
         try:

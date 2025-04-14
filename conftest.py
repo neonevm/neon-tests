@@ -168,13 +168,6 @@ def operator_keypair() -> Keypair:
         return Keypair.from_bytes(secret_key)
 
 
-@pytest.fixture(scope="session")
-def evm_loader_keypair() -> Keypair:
-    with open("evm_loader-keypair.json", "r") as key:
-        secret_key = json.load(key)
-        return Keypair.from_bytes(secret_key)
-
-
 @pytest.fixture(scope="session", autouse=True)
 def allure_environment(pytestconfig: Config, web3_client_session: NeonChainWeb3Client):
     opts = {}

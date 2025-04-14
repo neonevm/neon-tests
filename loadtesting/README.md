@@ -35,6 +35,11 @@ To run the scenario via locust native command:
 locust -f ./loadtesting/proxy/tests/scheduled_tx.py --host=local -t 300 -u 2 -r 1 --logfile load_run.log
 ```
 
+To run scenario uniswap-v3 scheduled tx you have to load uniswap contracts:
+```bash
+./clickfile.py update-contracts --with-uniswap
+```
+
 ## Running the test and analyzing the results in the console without using the web interface
 
 ##### Instant load method without locust web interface

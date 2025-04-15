@@ -46,6 +46,14 @@ class NeonTestAirdropsPage(BasePage):
     def neon_website_button_click(self) -> None:
         self.page.click("//a[text()='Neon Website']")
 
+    @allure.step("Click 'NeonPass' button")
+    def neonpass_button_click(self) -> None:
+        self.page.click("//a[text()='NeonPass']")
+
+    @allure.step("Check install wallet message")
+    def install_wallet_message(self) -> None:
+        self.page.text_content("//div[text()='Please install a wallet that supports NEON network']")
+
     @property
     def is_airdrop_enabled(self) -> bool:
         return bool(

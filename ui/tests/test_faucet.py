@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 import pytest
 from playwright.sync_api import BrowserContext
+from playwright.sync_api import BrowserType
 
 from ui import libs
 from ui.pages import metamask, neon_faucet
@@ -17,12 +18,21 @@ from utils.helpers import wait_condition
 NEON_FAUCET_URL = "https://neonfaucet.org/"
 DOCS_URL = "https://neonevm.org/docs/developing/utilities/faucet"
 WEBSITE_URL = "https://neonevm.org/"
+NEONPASS_URL = "https://neonpass.live/"
+MOBILE_WARNING_TEXT = "Приложение не поддерживает мобильный"
 """Neon Test Airdrops
 """
 
 BASE_NEON_BALANCE = 7000
 """Balance saved in MetaMask extension by default
 """
+
+MOBILE_VIEWPORT = {"width": 375, "height": 812}  # iPhone X, например
+MOBILE_USER_AGENT = (
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 13_5 like Mac OS X) "
+    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 "
+    "Mobile/15E1"
+)
 
 
 @dataclass
@@ -65,6 +75,40 @@ class TestFaucet:
         neon_website_page = new_tab_info.value
         neon_website_page.wait_for_load_state()
         assert WEBSITE_URL in neon_website_page.url
+
+    def test_click_neonpass_button(self, context):
+        page = context.new_page()
+        page.goto(NEON_FAUCET_URL)
+        neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
+        with context.expect_page() as new_tab_info:
+            neon_faucet_page.neonpass_button_click()
+        neonpass_page = new_tab_info.value
+        neonpass_page.wait_for_load_state()
+        assert NEONPASS_URL in neonpass_page.url
+
+    # todo need to use browser without installed MM wallet
+    def test_open_faucet_without_installed_wallets(self, context):
+        page = context.new_page()
+        page.goto(NEON_FAUCET_URL)
+        neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
+        neon_faucet_page.install_wallet_message()
+
+    def test_mobile_faucet_message(self, browser_type: BrowserType):
+        context = browser_type.launch_persistent_context(
+            user_data_dir="/tmp/mobile-user-data",
+            viewport=MOBILE_VIEWPORT,
+            user_agent=MOBILE_USER_AGENT,
+            is_mobile=True,
+            device_scale_factor=2,
+            has_touch=True,
+            headless=False,
+        )
+        page = context.new_page()
+        page.goto(NEON_FAUCET_URL)
+
+        assert "Sorry, Neon Faucet " in page.content()
+
+        context.close()
 
 
 class TestMetaMaskPipeLIne:

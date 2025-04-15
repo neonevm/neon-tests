@@ -136,9 +136,5 @@ class TestOpCodes:
         instruction_tx = basefee_checker.functions.baseFeeTrx().build_transaction(tx)
         resp = web3_client.send_transaction(accounts[0], instruction_tx)
         base_fee_from_log = basefee_checker.events.Log().process_receipt(resp)[0]["args"]["baseFee"]
-        # Neon specific, it uses maxPriorityFee to pay an Operator
-        #   it is just an adoption to Ethereum clients
-        #   which use eth_maxPriorityFeePerGas() as a constant
-        #   and increase baseFeePerGas to increase chances to include a Tx into a block
-        #   on Solana the situation is another - increased part of the gasPrice should be used for the Prioritization
-        assert base_fee_from_log == instruction_tx["maxPriorityFeePerGas"]
+        # Due to problems with Metamask, Neon use the full maxFeePerGas
+        assert base_fee_from_log == instruction_tx["maxFeePerGas"]

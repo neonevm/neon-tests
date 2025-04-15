@@ -1,10 +1,10 @@
-from pathlib import Path
 import typing as tp
-
 from enum import Enum
-from utils.types import TestGroup
+from pathlib import Path
+
 from solders.pubkey import Pubkey
 
+from utils.types import TestGroup
 
 EXTERNAL_CONTRACT_PATH = Path.cwd() / "contracts" / "external"
 REMAPPING_ZEPPELIN = {"@openzeppelin": str(EXTERNAL_CONTRACT_PATH / "neon-contracts/node_modules/@openzeppelin")}
@@ -87,6 +87,7 @@ wSOL = {
 }
 
 MULTITOKEN_MINTS_USDT = "2duuuuhNJHUYqcnZ7LKfeufeeTBgSJdftf2zM3cZV6ym"
+MIN_CU_PRICE = 10500
 
 
 class InstructionTags(bytes, Enum):

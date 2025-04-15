@@ -17,6 +17,7 @@ from utils import helpers
 from utils.accounts import EthAccounts
 from utils.apiclient import JsonRPCSession
 from utils.consts import InstructionTags, COMPUTE_BUDGET_ID
+from utils.cu_cost_packed import CuCostPktData
 from utils.faucet import Faucet
 from utils.models.fee_history_model import EthFeeHistoryResult
 from utils.solana_client import SolanaClient
@@ -422,9 +423,14 @@ class TestEIP1559:
         sender = self.web3_client.create_account_with_balance(faucet=faucet)
         recipient = self.web3_client.create_account()
 
-        base_fee_per_gas = self.web3_client.base_fee_per_gas()
-        max_priority_fee_per_gas = self.web3_client.max_priority_fee_per_gas()
-        base_fee_per_gas -= max_priority_fee_per_gas
+        gas_price = self.web3_client.neon_gas_price()
+        min_acceptable_price = gas_price["minAcceptableGasPrice"]
+        min_executable_price = gas_price["minExecutableGasPrice"]
+        assert min_executable_price > min_acceptable_price, "Wrong Proxy configuration"
+
+        # Do the same as Metamask
+        max_priority_fee_per_gas = int(min_acceptable_price, 16) + 1
+        base_fee_per_gas = 0
 
         tx_params = self.web3_client.make_raw_tx_eip_1559(
             chain_id="auto",
@@ -433,7 +439,7 @@ class TestEIP1559:
             value=1000000,
             nonce="auto",
             gas="auto",
-            max_priority_fee_per_gas=int(max_priority_fee_per_gas * 0.75),
+            max_priority_fee_per_gas=max_priority_fee_per_gas,
             max_fee_per_gas=base_fee_per_gas + max_priority_fee_per_gas,
             data=None,
             access_list=None,
@@ -476,33 +482,14 @@ class TestEIP1559:
         )
 
         receipt = web3_client.send_transaction(account=sender, transaction=tx_params)
-        assert receipt.type == 2
+        assert receipt["type"] == 2
         solana_transactions = web3_client.get_solana_trx_by_neon(receipt["transactionHash"].hex())["result"]
         assert len(solana_transactions) == 1
         solana_transaction = sol_client.get_transaction(
             tx_sig=Signature.from_string(solana_transactions[0]),
             commitment=Confirmed,
-        )
-
-        # get ComputeBudget key index
-        compute_budget_index = -1
-        for index, account_key in enumerate(solana_transaction.value.transaction.transaction.message.account_keys):
-            if account_key == COMPUTE_BUDGET_ID:
-                compute_budget_index = index
-                break
-        assert compute_budget_index >= 0, "ComputeBudget not found"
-
-        # get setComputeUnitPrice value
-        cu_price_actual = 0
-        for instruction in solana_transaction.value.transaction.transaction.message.instructions:
-            if instruction.program_id_index == compute_budget_index:
-                decoded_data = base58.b58decode(instruction.data)
-                instruction_code = decoded_data[:1]
-                instruction_data = int.from_bytes(decoded_data[1:], "little")
-                if instruction_code == InstructionTags.SET_COMPUTE_UNIT_PRICE:
-                    cu_price_actual = instruction_data
-
-        # make sure the compute unit price equals default value set by var DEFAULT_CU_PRICE in proxy
+        ).value
+        cu_price_actual = sol_client.get_compute_budget_set_cu_price_from_tx(solana_transaction)
         assert cu_price_actual == 10500
 
     @pytest.mark.neon_only
@@ -537,6 +524,22 @@ class TestEIP1559:
             access_list=None,
         )
 
+        eth_gas_estimate = tx_params["gas"]
+        neon_gas_estimate = json_rpc_client.send_rpc(
+            method="neon_estimateGas",
+            params=[tx_params, {"showGasDetails": True}],
+        )["result"]
+
+        gas = (
+            neon_gas_estimate["gasTransactionSizeUsed"]
+            + neon_gas_estimate["gasAddressLookupTableUsed"]
+            + neon_gas_estimate["gasExecutionUsed"]
+            + neon_gas_estimate["gasFinishUsed"]
+        )
+        cu_price_expected = 10_500
+        cu_price_from_estimate = neon_gas_estimate["solanaComputeUnitPrice"]
+        assert cu_price_from_estimate == cu_price_expected
+
         receipt = web3_client.send_transaction(account=account, transaction=tx_params)
         solana_transaction_hashes = web3_client.get_solana_trx_by_neon(receipt["transactionHash"].hex())["result"]
         assert len(solana_transaction_hashes) > 1
@@ -557,7 +560,7 @@ class TestEIP1559:
         assert compute_budget_index >= 0, "ComputeBudget not found"
 
         # get setComputeUnitLimit and setComputeUnitPrice values
-        cu_price_actual = compute_unit_limit = 0
+        cu_price_actual = 0
         for instruction in solana_transaction.value.transaction.transaction.message.instructions:
             if instruction.program_id_index == compute_budget_index:
                 decoded_data = base58.b58decode(instruction.data)
@@ -567,12 +570,12 @@ class TestEIP1559:
                 match instruction_code:
                     case InstructionTags.SET_COMPUTE_UNIT_PRICE:
                         cu_price_actual = instruction_data
-                    case InstructionTags.SET_COMPUTE_UNIT_LIMIT:
-                        compute_unit_limit = instruction_data
 
-        # validate formula computeUnitPrice = baseFeePerGas∗10^{10} / computeUnitLimit / maxPriorityFeePerGas
-        cu_price_expected = int(base_fee * 10**10 / compute_unit_limit / max_priority_fee_per_gas)
         assert cu_price_actual == cu_price_expected, f"Actual: {cu_price_actual}, Expected: {cu_price_expected}"
+
+        pkt = CuCostPktData.from_raw(gas, neon_gas_estimate["numIterations"], cu_price_expected)
+        tx_cost = pkt.tx_cost
+        assert eth_gas_estimate == tx_cost
 
 
 @allure.feature("EIP Verifications")

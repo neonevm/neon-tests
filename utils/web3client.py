@@ -564,7 +564,7 @@ class Web3Client:
         gas_used_in_tx = tx_receipt.gasUsed * tx["gasPrice"]
         return gas_used_in_tx
 
-    def get_token_usd_gas_price(self):
+    def neon_gas_price(self):
         resp = requests.post(
             self._proxy_url,
             json={
@@ -574,7 +574,11 @@ class Web3Client:
                 "id": 0,
             },
         ).json()
-        return int(resp["result"]["tokenPriceUsd"], 16) / 100000
+        return resp["result"]
+
+    def get_token_usd_gas_price(self):
+        resp = self.neon_gas_price()
+        return int(resp["tokenPriceUsd"], 16) / 100000
 
     def gas_price_to_eip1559_params(
         self,

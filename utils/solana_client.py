@@ -5,6 +5,7 @@ import typing as tp
 import uuid
 
 import allure
+import base58
 import requests
 import solana.rpc.api
 import spl.token.client
@@ -24,6 +25,7 @@ from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address, create_associated_token_account
 
 from integration.tests.economy.const import TX_COST
+from utils.consts import COMPUTE_BUDGET_ID, InstructionTags
 from utils.helpers import wait_condition
 
 
@@ -233,3 +235,30 @@ class SolanaClient(solana.rpc.api.Client):
                 to=to,
                 amount_lamports=amount_lamports,
             )
+
+    @allure.step("Get ComputeBudget setComputeUnitPrice from transaction")
+    def get_compute_budget_set_cu_price_from_tx(
+        self,
+        tx: EncodedConfirmedTransactionWithStatusMeta,
+    ) -> int | None:
+        """
+        :param tx:
+        :return: setComputeUnitPrice value from ComputeBudget instruction if it exists
+        """
+        # get ComputeBudget key index
+        compute_budget_index = -1
+        for index, account_key in enumerate(tx.transaction.transaction.message.account_keys):
+            if account_key == COMPUTE_BUDGET_ID:
+                compute_budget_index = index
+                break
+
+        if compute_budget_index >= 0:
+            # get setComputeUnitPrice value
+            for instruction in tx.transaction.transaction.message.instructions:
+                if instruction.program_id_index == compute_budget_index:
+                    decoded_data = base58.b58decode(instruction.data)
+                    instruction_code = decoded_data[:1]
+                    instruction_data = int.from_bytes(decoded_data[1:], "little")
+                    if instruction_code == InstructionTags.SET_COMPUTE_UNIT_PRICE:
+                        set_cu_price = instruction_data
+                        return set_cu_price

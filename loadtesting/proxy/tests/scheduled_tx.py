@@ -126,7 +126,7 @@ def get_max_tick(tick_spacing: int) -> int:
 
 @events.test_start.add_listener
 def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
-    initial_amount = 10**18
+    initial_amount = 10**10
     initial_calee_amount = 1_000_000_000
     transfer_amount = 1_000_000
     network = environment.parsed_options.host
@@ -146,7 +146,8 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
         bank_account = Keypair.from_bytes(key)
 
     account_manager = EthAccounts(web3_client, faucet, bank_account)
-    accounts = [account_manager.create_account(), account_manager.create_account(), account_manager.create_account()]
+    deployer = account_manager.create_account()
+    accounts = [deployer, account_manager.create_account(), account_manager.create_account()]
 
     environment.evm_loader = EvmLoader(
         program_id=network_object["evm_loader"],
@@ -165,7 +166,7 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
 
     test_tokens = ["TTA", "TTB", "TTC", "WETH"]
     tokens = {}
-    deployer = account_manager.create_account()
+
     # deploy erc20 tokens
     for token in test_tokens:
         LOG.info(f"Start to deploy token {token}...")
@@ -184,16 +185,10 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
         tokens[f"{token}"] = erc20
 
         LOG.info("Mint tokens...")
-        erc20.mint_tokens(signer=erc20.account, to_address=erc20.account.address, amount=initial_amount)
-        receipt = erc20.approve(erc20.account, deployer.address, initial_amount)
-        assert receipt["status"] == 1
-        receipt = erc20.transfer(erc20.account, deployer.address, 50 * transfer_amount)
-        assert receipt["status"] == 1
+        erc20.mint_tokens(signer=erc20.account, to_address=erc20.account.address, amount=10 * 18)
 
         for account in accounts:
-            receipt = erc20.approve(erc20.account, account.address, initial_amount)
-            assert receipt["status"] == 1
-            receipt = erc20.transfer(erc20.account, account.address, 20 * transfer_amount)
+            receipt = erc20.mint_tokens(signer=erc20.account, to_address=account.address, amount=initial_amount)
             assert receipt["status"] == 1
 
     LOG.info("Deploy UniswapV3Factory...")
@@ -211,13 +206,13 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
     )
 
     LOG.info("Approve for swap router...")
-    receipt = tokens["TTA"].approve(accounts[0], swap_router.address, initial_amount)
+    receipt = tokens["TTA"].approve(deployer, swap_router.address, initial_amount)
     assert receipt["status"] == 1
 
-    receipt = tokens["TTB"].approve(accounts[0], swap_router.address, initial_amount)
+    receipt = tokens["TTB"].approve(deployer, swap_router.address, initial_amount)
     assert receipt["status"] == 1
 
-    receipt = tokens["TTC"].approve(accounts[0], swap_router.address, initial_amount)
+    receipt = tokens["TTC"].approve(deployer, swap_router.address, initial_amount)
     assert receipt["status"] == 1
 
     LOG.info("Create Pools...")
@@ -284,24 +279,29 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
         "external/uniswap-v3/contracts/v3-core/test/TestUniswapV3Callee", "0.7.6", account=deployer
     )
     LOG.info("Add Liquidity...")
-    receipt = tokens["TTA"].approve(tokens["TTA"].account, callee.address, initial_calee_amount)
+    receipt = tokens["TTA"].approve(deployer, callee.address, initial_calee_amount)
     assert receipt["status"] == 1
 
-    receipt = tokens["TTB"].approve(tokens["TTB"].account, callee.address, initial_calee_amount)
+    receipt = tokens["TTB"].approve(deployer, callee.address, initial_calee_amount)
     assert receipt["status"] == 1
 
-    receipt = tokens["TTC"].approve(tokens["TTC"].account, callee.address, initial_calee_amount)
+    receipt = tokens["TTC"].approve(deployer, callee.address, initial_calee_amount)
     assert receipt["status"] == 1
 
     LOG.info("Callee mint...")
     tx_mint = callee.functions.mint(
-        pool_1.address, accounts[0].address, get_min_tick(10), get_max_tick(10), 10 * transfer_amount
+        pool_1.address, deployer.address, get_min_tick(10), get_max_tick(10), 10 * transfer_amount
     ).build_transaction(
         {
-            "from": accounts[0].address,
+            "from": deployer.address,
+            "nonce": web3_client.eth.get_transaction_count(deployer.address),
+            "gasPrice": web3_client.gas_price(),
         }
     )
-    receipt = web3_client.send_transaction(deployer.address, tx_mint)
+    receipt = web3_client.send_transaction(deployer, tx_mint)
+    assert receipt["status"] == 1
+
+    receipt = web3_client.send_transaction(deployer, tx_mint)
     assert receipt["status"] == 1
 
     receipt = tokens["TTA"].approve(accounts[1], swap_router.address, initial_amount)
@@ -574,9 +574,9 @@ class ScheduledTxsUniswapV3TasksSet(BaseScheduledTxTaskSet):
     @task
     def task_send_uniswap_scheduled_tx(self):
         """Send scheduled transactions with uniswap-v3 swaps"""
-        pass
-        swap_amount = 1_000_000
+        swap_amount = 100_000
         user = self.user.environment.uniswap["accounts"][1]
+        signer = self.user.environment.uniswap["signer"]
         router = self.user.environment.uniswap["router"]
         token_0 = self.user.environment.uniswap["tokens"]["TTA"]
         token_1 = self.user.environment.uniswap["tokens"]["TTB"]
@@ -594,12 +594,12 @@ class ScheduledTxsUniswapV3TasksSet(BaseScheduledTxTaskSet):
 
         tx_instr = router.functions.exactInputSingle(params).build_transaction(
             {
-                "from": user.address,
-                "nonce": self.web3_client.eth.get_transaction_count(user.address),
+                "from": signer.address,
+                "nonce": self.web3_client.eth.get_transaction_count(signer.address),
                 "gasPrice": self.web3_client.gas_price(),
             }
         )
-        receipt = self.web3_client.send_transaction(user, tx_instr)
+        receipt = self.web3_client.send_transaction(signer, tx_instr)
         assert receipt["status"] == 1
 
 

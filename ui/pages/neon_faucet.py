@@ -6,6 +6,8 @@ Created on 2022-05-19
 
 import typing as tp
 
+import allure
+
 from ui import components
 from . import BasePage
 
@@ -36,8 +38,13 @@ class NeonTestAirdropsPage(BasePage):
         self.page.wait_for_selector("//div[contains(@class, 'button--light')]").click()
         self.page.wait_for_selector("//h2[text()='Transfer Successful']")
 
+    @allure.step("Click 'Help' button")
     def help_button_click(self) -> None:
         self.page.click("//a[text()='Help']")
+
+    @allure.step("Click 'Neon Website' button")
+    def neon_website_button_click(self) -> None:
+        self.page.click("//a[text()='Neon Website']")
 
     @property
     def is_airdrop_enabled(self) -> bool:

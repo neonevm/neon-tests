@@ -16,6 +16,7 @@ from utils.helpers import wait_condition
 
 NEON_FAUCET_URL = "https://neonfaucet.org/"
 DOCS_URL = "https://neonevm.org/docs/developing/utilities/faucet"
+WEBSITE_URL = "https://neonevm.org/"
 """Neon Test Airdrops
 """
 
@@ -54,6 +55,16 @@ class TestFaucet:
         help_page = new_tab_info.value
         help_page.wait_for_load_state()
         assert DOCS_URL in help_page.url
+
+    def test_click_neon_website_button(self, context):
+        page = context.new_page()
+        page.goto(NEON_FAUCET_URL)
+        neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
+        with context.expect_page() as new_tab_info:
+            neon_faucet_page.neon_website_button_click()
+        neon_website_page = new_tab_info.value
+        neon_website_page.wait_for_load_state()
+        assert WEBSITE_URL in neon_website_page.url
 
 
 class TestMetaMaskPipeLIne:

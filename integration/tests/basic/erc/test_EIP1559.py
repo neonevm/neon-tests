@@ -416,6 +416,7 @@ class TestEIP1559:
         with pytest.raises(expected_exception=Web3RPCError, match=error_msg_regex):
             self.web3_client.send_transaction(account=sender, transaction=tx_params)
 
+    @pytest.mark.only_stands
     def test_too_low_fee(
         self,
         faucet: Faucet,
@@ -450,6 +451,7 @@ class TestEIP1559:
             self.web3_client.send_transaction(account=sender, transaction=tx_params, timeout=TX_TIMEOUT)
 
     @pytest.mark.neon_only
+    @pytest.mark.only_stands
     def test_compute_unit_price_default_value(
         self,
         accounts: EthAccounts,
@@ -493,6 +495,7 @@ class TestEIP1559:
         assert cu_price_actual == 10500
 
     @pytest.mark.neon_only
+    @pytest.mark.only_stands
     def test_compute_unit_price_estimated_value(
         self,
         accounts: EthAccounts,

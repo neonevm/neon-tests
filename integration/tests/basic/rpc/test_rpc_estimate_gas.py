@@ -31,6 +31,7 @@ class TestRpcEstimateGas:
 
     @pytest.mark.parametrize("block_param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, Tag.FINALIZED, 1, None])
     @pytest.mark.neon_only
+    @pytest.mark.only_stands
     def test_eth_estimate_gas_different_block_param(self, block_param: tp.Union[int, Tag, None], json_rpc_client):
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
@@ -112,6 +113,7 @@ class TestRpcEstimateGas:
         EthEstimateGas(**response)
 
     @pytest.mark.neon_only  # Geth returns a different estimate
+    @pytest.mark.only_stands
     def test_rpc_estimate_gas_send_neon(self):
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
@@ -123,6 +125,7 @@ class TestRpcEstimateGas:
         assert estimated_gas == _MIN_GAS_LIMIT
 
     @pytest.mark.neon_only  # Geth returns a different estimate
+    @pytest.mark.only_stands
     def test_rpc_estimate_gas_erc20(self, erc20_simple, env_name: EnvName):
         recipient_account = self.accounts[1]
         tx_receipt = erc20_simple.transfer(erc20_simple.owner, recipient_account, 1)
@@ -133,6 +136,7 @@ class TestRpcEstimateGas:
         assert estimated_gas == 1_243_135
 
     @pytest.mark.neon_only  # Geth returns a different estimate
+    @pytest.mark.only_stands
     def test_rpc_estimate_gas_spl(self, erc20_spl):
         recipient_account = self.accounts.create_account()
         tx_receipt = erc20_spl.transfer(erc20_spl.account, recipient_account, 1)
@@ -140,6 +144,7 @@ class TestRpcEstimateGas:
         assert transaction["gas"] == 2_129_919
 
     @pytest.mark.neon_only  # Geth returns a different estimate
+    @pytest.mark.only_stands
     def test_rpc_estimate_gas_contract_get_value(self, common_contract):
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(from_=sender_account)
@@ -152,6 +157,7 @@ class TestRpcEstimateGas:
         assert estimated_gas == _MIN_GAS_LIMIT
 
     @pytest.mark.neon_only  # Geth returns a different estimate
+    @pytest.mark.only_stands
     def test_rpc_estimate_gas_contract_set_value(self, common_contract):
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(from_=sender_account)
@@ -163,6 +169,7 @@ class TestRpcEstimateGas:
         assert estimated_gas == _MIN_GAS_LIMIT
 
     @pytest.mark.neon_only  # Geth returns a different estimate
+    @pytest.mark.only_stands
     def test_rpc_estimate_gas_contract_calls_another_contract(self, common_contract):
         sender_account = self.accounts[0]
         caller_contract, _ = self.web3_client.deploy_and_get_contract(

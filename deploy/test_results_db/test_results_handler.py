@@ -33,7 +33,7 @@ class TestResultsHandler:
         unique_timestamps = historical_data["timestamp"].unique().tolist()
         timestamp_to_x = {ts: x for x, ts in enumerate(unique_timestamps)}
         historical_data["x"] = historical_data["timestamp"].map(timestamp_to_x)
-        x_tick_labels = historical_data["tag"].unique().tolist()
+        x_tick_labels = historical_data.groupby("timestamp", sort=False)["tag"].first().tolist()
 
         with PdfPages(output_pdf) as pdf:
             for dapp_name in dapp_names:

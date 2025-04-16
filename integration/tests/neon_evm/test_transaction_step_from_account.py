@@ -1107,6 +1107,16 @@ class TestStepFromAccountChangingOperatorsDuringTrxRun:
             operator_keypair,
         )
 
+        evm_loader.send_transaction_step_from_account(
+            second_operator_keypair,
+            second_operator_balance,
+            treasury_pool,
+            holder_acc,
+            additional_accounts,
+            EVM_STEPS,
+            second_operator_keypair,
+        )
+
         resp = evm_loader.send_transaction_step_from_account(
             second_operator_keypair,
             second_operator_balance,
@@ -1116,6 +1126,7 @@ class TestStepFromAccountChangingOperatorsDuringTrxRun:
             EVM_STEPS,
             second_operator_keypair,
         )
+
         check_holder_account_tag(
             solana_client=sol_client,
             storage_account=holder_acc,

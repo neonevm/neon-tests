@@ -1,6 +1,6 @@
 pragma solidity >=0.7.0;
 
-import {ERC20ForSplMintable} from "../../external/neon-evm/erc20_for_spl.sol";
+import {ERC20ForSplMintable} from "../../external/neon-contracts/contracts/token/ERC20ForSpl/erc20_for_spl.sol";
 
 pragma abicoder v2;
 
@@ -8,7 +8,11 @@ contract MultipleActionsERC20 {
     uint256 data;
     ERC20ForSplMintable erc20;
 
-    constructor(string memory _name, string memory _symbol, uint8 _decimals) {
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals
+    ) {
         erc20 = new ERC20ForSplMintable(
             _name,
             _symbol,
@@ -127,7 +131,10 @@ contract MultipleActionsERC20 {
         erc20.transfer(transfer_to, transfer_amount);
     }
 
-    function mintMint(uint256 mint_amount1, uint256 mint_amount2) public {
+    function mintMint(
+        uint256 mint_amount1,
+        uint256 mint_amount2
+    ) public {
         erc20.mint(address(this), mint_amount1);
         erc20.mint(address(this), mint_amount2);
     }
@@ -174,8 +181,7 @@ contract MultipleActionsERC20 {
         erc20.transfer(transfer_to, transfer_amount_5);
     }
 
-    function mintMintTransferTransferMintMintTransferTransfer(
-        // 17 Solana transactions
+    function mintMintTransferTransferMintMintTransferTransfer( // 17 Solana transactions
         uint256 mint_amount1,
         uint256 mint_amount2,
         address transfer_to
@@ -189,4 +195,5 @@ contract MultipleActionsERC20 {
         erc20.transfer(transfer_to, mint_amount1);
         erc20.transfer(transfer_to, mint_amount2);
     }
+
 }

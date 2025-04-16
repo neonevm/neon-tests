@@ -7,7 +7,7 @@ from locust import User, events, tag, task, env
 from solders.keypair import Keypair
 
 from loadtesting.proxy.common.base import NeonProxyTasksSet
-from utils.erc20wrapper import ERC20NewWrapper
+from utils.erc20wrapper import ERC20Wrapper
 from utils.faucet import Faucet
 from utils.web3client import NeonChainWeb3Client
 
@@ -27,7 +27,7 @@ def prepare_one_contract_for_erc20(environment: env.Environment, **kwargs):
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
     name = f"Test {symbol}"
 
-    erc20_wrapper = ERC20NewWrapper(
+    erc20_wrapper = ERC20Wrapper(
         neon_client,
         faucet,
         name,

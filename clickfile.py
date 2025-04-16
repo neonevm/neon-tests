@@ -457,48 +457,18 @@ def update_contracts_from_git(git_url: str, local_dir_name: str, branch="develop
     click.echo(f"Contracts downloaded from {git_url} {branch} to {EXTERNAL_CONTRACT_PATH / local_dir_name}")
 
 
-def download_evm_contracts(branch):
-    if is_branch_exist(NEON_EVM_GITHUB_URL, branch) and branch != "develop":
-        neon_evm_branch = branch
-    else:
-        neon_evm_branch = get_evm_pinned_version("develop")
-    click.echo(f"Contracts would be downloaded from {neon_evm_branch} neon-evm branch")
-    Path(EXTERNAL_CONTRACT_PATH / "neon-evm").mkdir(parents=True, exist_ok=True)
-
-    click.echo("Check contract availability in neon-evm repo")
-    response = requests.get(f"{NEON_EVM_GITHUB_URL}/contents/solidity?ref={neon_evm_branch}")
-    if response.status_code != 200:
-        click.echo("Repository doesn't has solidity directory, check old structure")
-        response = requests.get(f"{NEON_EVM_GITHUB_URL}/contents/evm_loader/solidity?ref={neon_evm_branch}")
-        if response.status_code != 200:
-            raise click.ClickException(f"Can't get contracts from neon-evm repo: {response.text}")
-
-    for item in response.json():
-        click.echo(f"Downloading {item['name']}")
-        r = requests.get(item["download_url"])
-        if r.status_code == 200:
-            with open(EXTERNAL_CONTRACT_PATH / "neon-evm" / item["name"], "wb") as f:
-                f.write(r.content)
-            click.echo(f" {item['name']} downloaded")
-        else:
-            raise click.ClickException(f"The contract {item['name']} is not downloaded. Error: {r.text}")
-
-
-@cli.command(help="Download test contracts from neon-evm repo")
+@cli.command(help="Download test contracts from neon-contracts repo")
 @click.option(
     "--branch",
-    default="develop",
+    default="main",
     help="neon_evm branch name. " "If branch doesn't exist, develop branch will be used",
 )
 def update_contracts(branch):
-    download_evm_contracts(branch)
     update_contracts_from_git(HOODIES_CHAINLINK_GITHUB_URL, "hoodies_chainlink", "main")
-
-    # uncomment for new version of erc20ForSpl
     update_contracts_from_git(
         "https://github.com/neonevm/neon-contracts.git",
         "neon-contracts",
-        "update/erc20forspl-solana-native",
+        branch=branch,
         update_npm=True,
     )
 
@@ -548,29 +518,14 @@ def run(
     if name == "economy":
         command = "py.test integration/tests/economy/test_economics.py"
     elif name == "basic":
-        # run basic excluding tests for ERC20SPLNew contract
-        if network == "mainnet":
-            command = (
-                "py.test integration/tests/basic -m mainnet --ignore=integration/tests/basic/erc/test_ERC20SPLnew.py"
-            )
-        else:
-            command = (
-                "py.test integration/tests/basic --ignore=integration/tests/basic/erc/test_ERC20SPLnew.py"
-                " --ignore=integration/tests/basic/solana_signature/test_send_scheduled_transactions_new_erc.py "
-            )
-        if numprocesses:
-            command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
-        if network == network.DEVNET:
-            command += " --retries 3 --retry-delay 2"
-
-    elif name == "basic_extended":
-        # run basic excluding tests for ERC20SPLNew contract
         if network == "mainnet":
             command = "py.test integration/tests/basic -m mainnet"
         else:
             command = "py.test integration/tests/basic"
         if numprocesses:
             command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
+        if network == network.DEVNET:
+            command += " --retries 3 --retry-delay 2"
     elif name == "tracer":
         command = "py.test -n 5 integration/tests/tracer"
     elif name == "services":

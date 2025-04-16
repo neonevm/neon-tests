@@ -31,7 +31,7 @@ from utils.helpers import wait_condition
 
 class SolanaClient(solana.rpc.api.Client):
     def __init__(self, endpoint, account_seed_version="\3"):
-        super().__init__(endpoint=endpoint, timeout=120)
+        super().__init__(endpoint=endpoint, timeout=120, commitment=Confirmed)
         self.endpoint = endpoint
         self.account_seed_version = (
             bytes(account_seed_version, encoding="utf-8").decode("unicode-escape").encode("utf-8")
@@ -44,7 +44,7 @@ class SolanaClient(solana.rpc.api.Client):
         commitment: tp.Optional[Commitment] = None,
     ) -> RequestAirdropResp:
         airdrop_resp = None
-        balance_before = self.get_balance(pubkey).value
+        balance_before = self.get_balance(pubkey, commitment=commitment).value
         for _ in range(5):
             airdrop_resp = super().request_airdrop(pubkey, lamports, commitment=commitment)
             if isinstance(airdrop_resp, InternalErrorMessage):
@@ -54,7 +54,9 @@ class SolanaClient(solana.rpc.api.Client):
                 break
         else:
             raise AssertionError(f"Can't get airdrop from solana: {airdrop_resp}")
-        wait_condition(lambda: self.get_balance(pubkey).value >= lamports + balance_before, timeout_sec=30)
+        wait_condition(
+            lambda: self.get_balance(pubkey, commitment=commitment).value >= lamports + balance_before, timeout_sec=30
+        )
         return airdrop_resp
 
     def send_sol(self, from_: Keypair, to: Pubkey, amount_lamports: int):

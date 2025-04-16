@@ -905,11 +905,15 @@ class EvmLoader(SolanaClient):
         encoded_args=None,
         contract_name: tp.Optional[str] = None,
         version: str = "0.7.6",
+        import_remappings: dict | list = None,
     ) -> Contract:
         if chain_id == "":
             chain_id = self.chain_id
 
-        contract_code = get_contract_bin(contract_file_name, contract_name=contract_name, version=version)
+        contract_code = get_contract_bin(
+            contract_file_name, contract_name=contract_name, version=version, import_remappings=import_remappings
+        )
+
         if encoded_args is None:
             encoded_args = b""
 
@@ -933,6 +937,7 @@ class EvmLoader(SolanaClient):
             value=value,
             version=version,
             chain_id=chain_id,
+            import_remappings=import_remappings,
         )
         self.write_transaction_to_holder_account(signed_tx, holder_acc, operator)
 

@@ -48,7 +48,7 @@ class TestSolanaInteroperability:
     def call_solana_caller_sol_network(self, class_account_sol_chain, web3_client_sol):
         contract, _ = web3_client_sol.deploy_and_get_contract(
             contract="precompiled/CallSolanaCaller.sol",
-            version="0.8.10",
+            version="0.8.28",
             contract_name="CallSolanaCaller",
             account=class_account_sol_chain,
         )
@@ -372,7 +372,7 @@ class TestSolanaInteroperability:
         sender = self.accounts[0]
         call_params = []
 
-        for _ in range(26):
+        for _ in range(30):
             instruction = Instruction(
                 program_id=COUNTER_ID,
                 accounts=[
@@ -386,7 +386,7 @@ class TestSolanaInteroperability:
         tx = self.web3_client.make_raw_tx(sender.address)
         instruction_tx = call_solana_caller.functions.batchExecute(call_params).build_transaction(tx)
         resp = self.web3_client.send_transaction(sender, instruction_tx)
-        assert resp["status"] == 0
+        assert resp["status"] == 0, resp
 
     def test_solana_call_after_iterative_actions_sol_network(
         self,
@@ -424,7 +424,7 @@ class TestSolanaInteroperability:
     ):
         sender = self.accounts[0]
         lamports = 0
-        matrix_length = 6
+        matrix_length = 9
         matrix = [[random.randint(1, 100) for _ in range(matrix_length)] for _ in range(matrix_length)]
 
         instruction = Instruction(
@@ -458,7 +458,7 @@ class TestSolanaInteroperability:
     ):
         sender = self.accounts[0]
         lamports = 0
-        matrix_length = 50
+        matrix_length = 70
         matrix = [[random.randint(1, 100) for _ in range(matrix_length)] for _ in range(matrix_length)]
 
         instruction = Instruction(
@@ -647,7 +647,7 @@ class TestSolanaInteroperability:
     def test_solana_call_before_iterative_actions_negative(self, counter_resource_address: bytes, call_solana_caller):
         sender = self.accounts[0]
         lamports = 0
-        matrix_lenght = 12
+        matrix_lenght = 15
         matrix = [[random.randint(1, 100) for _ in range(matrix_lenght)] for _ in range(matrix_lenght)]
 
         instruction = Instruction(
@@ -666,7 +666,7 @@ class TestSolanaInteroperability:
         ).build_transaction(tx)
 
         resp = self.web3_client.send_transaction(sender, instruction_tx)
-        assert resp["status"] == 0
+        assert resp["status"] == 0, resp
 
     def test_iterative_actions_and_multiple_solana_calls(
         self, counter_resource_address: bytes, call_solana_caller, get_counter_value

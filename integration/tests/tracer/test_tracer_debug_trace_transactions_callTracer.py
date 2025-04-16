@@ -1,3 +1,4 @@
+import logging
 import random
 import allure
 import pytest
@@ -7,6 +8,8 @@ from integration.tests.basic.helpers.basic import AccountData
 from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts
 from utils.tracer_client import TracerClient
+
+LOGGER = logging.getLogger(__name__)
 
 
 @allure.feature("Tracer API")
@@ -95,6 +98,7 @@ class TestDebugTraceTransactionCallTracer:
 
         return expected_response
 
+    @allure.step("Check tracer response matches expected response")
     def assert_response_contains_expected(self, pytestconfig, expected_response, response, sort_calls=False):
         if sort_calls:
             expected_response["calls"] = sorted(expected_response["calls"], key=lambda d: d["type"])
@@ -116,7 +120,8 @@ class TestDebugTraceTransactionCallTracer:
                     exclude_list.append(f"root['calls'][{i}]['logs'][0]['position']")
         else:
             exclude_list = []
-
+        logging.debug(f"Expected response: {expected_response}")
+        logging.debug(f"Response: {response['result']}")
         diff = DeepDiff(expected_response, response["result"], exclude_paths=exclude_list)
         # check if expected_response is subset of response
         assert "dictionary_item_removed" not in diff

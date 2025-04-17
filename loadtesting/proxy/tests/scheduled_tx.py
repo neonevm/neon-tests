@@ -164,7 +164,7 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
     else:
         environment.evm_loader.request_airdrop(solana_account.pubkey(), 1 * LAMPORT_PER_SOL)
 
-    test_tokens = ["TTA", "TTB", "TTC", "WETH"]
+    test_tokens = ["TTA", "TTB", "TTC"]
     tokens = {}
 
     # deploy erc20 tokens
@@ -187,9 +187,12 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
         LOG.info("Mint tokens...")
         erc20.mint_tokens(signer=erc20.account, to_address=erc20.account.address, amount=10 * 18)
 
+        receipts = []
         for account in accounts:
-            receipt = erc20.mint_tokens(signer=erc20.account, to_address=account.address, amount=initial_amount)
-            assert receipt["status"] == 1
+            receipts.append(erc20.mint_tokens(signer=erc20.account, to_address=account.address, amount=initial_amount))
+
+        for item in receipts:
+            assert item["status"] == 1
 
     LOG.info("Deploy UniswapV3Factory...")
     uniswap_v3_factory, _ = web3_client.deploy_and_get_contract(
@@ -201,7 +204,7 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
         "external/uniswap-v3/contracts/SwapRouter",
         "0.7.6",
         account=deployer,
-        constructor_args=[uniswap_v3_factory.address, tokens["WETH"].contract_address],
+        constructor_args=[uniswap_v3_factory.address, tokens["TTC"].contract_address],
         import_remapping=REMAPPING_ZEPPELIN_UNISWAP,
     )
 
@@ -212,66 +215,41 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
     receipt = tokens["TTB"].approve(deployer, swap_router.address, initial_amount)
     assert receipt["status"] == 1
 
-    receipt = tokens["TTC"].approve(deployer, swap_router.address, initial_amount)
+    LOG.info("Create Pool...")
+    tx = uniswap_v3_factory.functions.createPool(
+        tokens["TTA"].contract_address, tokens["TTB"].contract_address, 500
+    ).build_transaction(
+        {
+            "from": deployer.address,
+            "nonce": web3_client.eth.get_transaction_count(deployer.address),
+            "gasPrice": web3_client.gas_price(),
+        }
+    )
+    receipt = web3_client.send_transaction(deployer, tx)
     assert receipt["status"] == 1
 
-    LOG.info("Create Pools...")
-    pairs = {
-        "AB": [tokens["TTA"].contract_address, tokens["TTB"].contract_address],
-        "BC": [tokens["TTB"].contract_address, tokens["TTC"].contract_address],
-    }
-    for token in pairs.values():
-        tx = uniswap_v3_factory.functions.createPool(token[0], token[1], 500).build_transaction(
-            {
-                "from": deployer.address,
-                "nonce": web3_client.eth.get_transaction_count(deployer.address),
-                "gasPrice": web3_client.gas_price(),
-            }
-        )
-        receipt = web3_client.send_transaction(deployer, tx)
-        assert receipt["status"] == 1
-
-    LOG.info("Get Pools...")
-    pool_1_address = uniswap_v3_factory.functions.getPool(
+    LOG.info("Get Pool...")
+    pool_address = uniswap_v3_factory.functions.getPool(
         tokens["TTA"].contract_address, tokens["TTB"].contract_address, 500
     ).call()
-    pool_2_address = uniswap_v3_factory.functions.getPool(
-        tokens["TTB"].contract_address, tokens["TTC"].contract_address, 500
-    ).call()
 
-    LOG.info("Get deployed pools as UniswapV3Pool...")
+    LOG.info("Get deployed pool as UniswapV3Pool...")
     start_price = int(math.sqrt(1 / 2) * (2**96))
-    pool_1 = web3_client.get_deployed_contract(
-        pool_1_address,
+    pool = web3_client.get_deployed_contract(
+        pool_address,
         contract_name="UniswapV3Pool",
         contract_file="external/uniswap-v3/contracts//UniswapV3Pool",
         solc_version="0.7.6",
     )
 
-    tx_init_pool_1 = pool_1.functions.initialize(start_price).build_transaction(
+    tx_init_pool = pool.functions.initialize(start_price).build_transaction(
         {
             "from": deployer.address,
             "nonce": web3_client.eth.get_transaction_count(deployer.address),
             "gasPrice": web3_client.gas_price(),
         }
     )
-    receipt = web3_client.send_transaction(deployer, tx_init_pool_1)
-    assert receipt["status"] == 1
-
-    pool_2 = web3_client.get_deployed_contract(
-        pool_2_address,
-        contract_name="UniswapV3Pool",
-        contract_file="external/uniswap-v3/contracts//UniswapV3Pool",
-        solc_version="0.7.6",
-    )
-    tx_init_pool_2 = pool_2.functions.initialize(start_price).build_transaction(
-        {
-            "from": deployer.address,
-            "nonce": web3_client.eth.get_transaction_count(deployer.address),
-            "gasPrice": web3_client.gas_price(),
-        }
-    )
-    receipt = web3_client.send_transaction(deployer, tx_init_pool_2)
+    receipt = web3_client.send_transaction(deployer, tx_init_pool)
     assert receipt["status"] == 1
 
     LOG.info("Deploy TestUniswapV3Callee...")
@@ -290,7 +268,7 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
 
     LOG.info("Callee mint...")
     tx_mint = callee.functions.mint(
-        pool_1.address, deployer.address, get_min_tick(10), get_max_tick(10), 10 * transfer_amount
+        pool.address, deployer.address, get_min_tick(10), get_max_tick(10), 10 * transfer_amount
     ).build_transaction(
         {
             "from": deployer.address,
@@ -298,9 +276,6 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
             "gasPrice": web3_client.gas_price(),
         }
     )
-    receipt = web3_client.send_transaction(deployer, tx_mint)
-    assert receipt["status"] == 1
-
     receipt = web3_client.send_transaction(deployer, tx_mint)
     assert receipt["status"] == 1
 
@@ -317,8 +292,7 @@ def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
         "signer": deployer,
         "router": swap_router,
         "factory": uniswap_v3_factory,
-        "pool_1": pool_1,
-        "pool_2": pool_2,
+        "pool": pool,
         "tokens": tokens,
         "accounts": accounts,
     }

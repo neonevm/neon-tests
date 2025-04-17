@@ -20,7 +20,7 @@ def sol_client_tx_v2(pytestconfig: Config):
 
 
 @pytest.fixture(scope="class")
-def counter_contract(account_with_all_tokens, client_and_price, web3_client_sol, web3_client):
+def counter_contract_two_chain(account_with_all_tokens, client_and_price, web3_client_sol, web3_client):
     w3_client, _ = client_and_price
     make_nonce_the_biggest_for_chain(account_with_all_tokens, w3_client, [web3_client, web3_client_sol])
     contract, _ = w3_client.deploy_and_get_contract("common/Counter", "0.8.10", account=account_with_all_tokens)

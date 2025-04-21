@@ -12,8 +12,7 @@ from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts
 from utils.tracer_client import TracerClient
 from utils.helpers import padhex
-from tracer_helper import validate_response_result
-
+from tracer_helper import validate_response_result, check_struct_log_type, check_call_tracer_type
 
 SCHEMAS = "./integration/tests/tracer/schemas/"
 GOOD_CALLDATA = ["0x60fe60005360016000f3"]
@@ -27,7 +26,6 @@ class TestTracerDebugMethods:
     accounts: EthAccounts
     tracer_api: TracerClient
 
-    # NDEV-3009
     def test_debug_trace_call_invalid_params(self):
         response = self.tracer_api.send_rpc(method="debug_traceCall", params=[{}, "0x0"])
         assert "error" in response, "No errors in response"
@@ -460,3 +458,13 @@ class TestTracerDebugMethods:
             response["error"]["message"]
             == "Empty Neon transaction receipt for 0xd9765b77e470204ae5edb1a796ab92ecb0e20fea50aeb09275aea740af7bbc69"
         )
+
+    def test_trace_transaction_from_precompiled_contract(self, precompiled_contract, pytestconfig, evm_loader):
+        input_data = "0x000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000040e09ad9675465c53a109fac66a445c91b292d2bb2c5268addb30cd82f80fcb0033ff97c80a5fc6f39193ae969c6ede6710a6b7ac27078a06d90ef1c72e5c85fb502fc9e1f6beb81516545975218075ec2af118cd8798df6e08a147c60fd6095ac2bb02c2908cf4dd7c81f11c289e4bce98f3553768f392a80ce22bf5c4f4a248c6b"
+        address = "0x0000000000000000000000000000000000000005"
+        sender_account = self.accounts[0]
+        instruction_tx = self.web3_client.make_raw_tx(sender_account, address, estimate_gas=True, data=input_data)
+        receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
+        tx_data = self.web3_client.get_transaction_by_hash(receipt["transactionHash"].hex())
+        check_call_tracer_type(self.tracer_api, tx_data)
+        check_struct_log_type(self.tracer_api, tx_data, check_struct_logs=False)

@@ -30,6 +30,7 @@ from utils.helpers import decode_function_signature, get_selectors
 from utils.operator import Operator
 from utils.prices import get_sol_price_with_retry
 from utils.solana_client import SolanaClient
+from utils.types import TransactionType
 from utils.web3client import NeonChainWeb3Client, Web3Client
 from .basic.helpers.chains import make_nonce_the_biggest_for_chain
 
@@ -731,5 +732,24 @@ def diamond(web3_client_session, diamond_init, facet_cuts, accounts):
         accounts[0],
         contract_name="Diamond",
         constructor_args=[facet_cuts, diamond_args],
+    )
+    return contract
+
+
+@pytest.fixture(scope="class")
+def neon_token_contract(web3_client_session, accounts):
+    contract, _ = web3_client_session.deploy_and_get_contract(
+        contract="precompiled/NeonToken",
+        version="0.8.10",
+        account=accounts[0],
+        tx_type=TransactionType(2),  # EIP_1559
+    )
+    yield contract
+
+
+@pytest.fixture(scope="class")
+def precompiled_contract(web3_client, faucet, accounts):
+    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
+        "precompiled/CommonCaller", "0.8.10", accounts[0]
     )
     return contract

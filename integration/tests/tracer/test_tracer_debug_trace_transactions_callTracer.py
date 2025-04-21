@@ -2,9 +2,14 @@ import logging
 import random
 import allure
 import pytest
+from solders.keypair import Keypair as SolanaAccount
+
 
 from deepdiff import DeepDiff
+
 from integration.tests.basic.helpers.basic import AccountData
+from integration.tests.tracer.tracer_helper import check_struct_log_type, check_call_tracer_type
+from utils.types import TransactionType
 from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts
 from utils.tracer_client import TracerClient
@@ -516,3 +521,34 @@ class TestDebugTraceTransactionCallTracer:
         assert response["result"]["calls"][0]["type"] == "CREATE"
         assert response["result"]["calls"][0]["calls"][0]["type"] == "CREATE"
         assert response["result"]["calls"][0]["logs"][0]["topics"][0] == "0x" + receipt["logs"][0]["topics"][0].hex()
+
+    def test_trace_precompiled_neon_contract(
+        self,
+        web3_client: NeonChainWeb3Client,
+        accounts: EthAccounts,
+        neon_token_contract,
+    ):
+        tx_type = TransactionType(2)
+        sender_account = accounts[0]
+        sol_user = SolanaAccount()
+
+        move_amount = web3_client._web3.to_wei(5, "ether")
+
+        tx = self.web3_client.make_raw_tx(from_=sender_account, amount=move_amount, tx_type=tx_type)
+        instruction_tx = neon_token_contract.functions.withdraw(bytes(sol_user.pubkey())).build_transaction(tx)
+        receipt = web3_client.send_transaction(sender_account, instruction_tx)
+        assert receipt["status"] == 1
+
+        tx_data = self.web3_client.get_transaction_by_hash(receipt["transactionHash"].hex())
+        check_struct_log_type(self.tracer_api, tx_data)
+        check_call_tracer_type(self.tracer_api, tx_data)
+
+    def test_trace_trivial_error_tx(self, revert_contract_caller):
+        sender_account = self.accounts[0]
+        tx = self.web3_client.make_raw_tx(sender_account, gas=10000000)
+        instruction_tx = revert_contract_caller.functions.doTrivialRevert().build_transaction(tx)
+        receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
+
+        tx_data = self.web3_client.get_transaction_by_hash(receipt["transactionHash"].hex())
+        check_call_tracer_type(self.tracer_api, tx_data, wait_error=True, error_message="execution reverted")
+        check_struct_log_type(self.tracer_api, tx_data, wait_error=True)

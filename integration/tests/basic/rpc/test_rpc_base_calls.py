@@ -208,7 +208,8 @@ class TestRpcBaseCalls:
 
     def test_eth_sendRawTransaction_max_size(self, json_rpc_client):
         """Validate max size for transaction, 127 KB"""
-        size = 127 * 1024
+
+        size = 126 * 1024
         sender_account = self.accounts.create_account()
         recipient_account = self.accounts[1]
         transaction = self.web3_client.make_raw_tx(

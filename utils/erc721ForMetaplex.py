@@ -22,7 +22,7 @@ class ERC721ForMetaplex:
         self.account = account or web3_client.create_account_with_balance(faucet)
         if contract_address:
             self.contract = web3_client.get_deployed_contract(
-                contract_address, contract_file=contract, contract_name=contract_name
+                contract_address, contract_file=contract, contract_name=contract_name, solc_version="0.8.28"
             )
         else:
             self.contract = self.deploy(contract, contract_name)

@@ -191,9 +191,12 @@ class TestNonce:
         params = [signed_tx.raw_transaction.hex()]
         json_rpc_client.send_rpc("eth_sendRawTransaction", params)
         response = json_rpc_client.send_rpc("eth_sendRawTransaction", params)
-        self.web3_client.wait_for_transaction_receipt(response["result"])
-        assert "error" not in response
-        assert "result" in response
+        if "result" not in response:
+            assert "error" in response  # first transaction was already accepted
+        else:
+            self.web3_client.wait_for_transaction_receipt(response["result"])
+            assert "error" not in response
+            assert "result" in response
 
     def test_send_transaction_with_old_nonce(self, json_rpc_client):
         """Check that transaction with old nonce can't be sent"""

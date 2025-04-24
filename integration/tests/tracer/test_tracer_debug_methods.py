@@ -97,40 +97,26 @@ class TestTracerDebugMethods:
         assert response["result"]["returnValue"] == padhex(hex(store_value), 64)[2:]
         validate_response_result(response)
 
-    def test_debug_trace_transaction(self):
-        sender_account = self.accounts[0]
-        recipient_account = self.accounts[1]
-        receipt = self.web3_client.send_neon(sender_account, recipient_account, 0.1)
-        assert receipt["status"] == 1
-
-        response = self.tracer_api.send_rpc_and_wait_response(
-            "debug_traceTransaction", [receipt["transactionHash"].hex()]
-        )
+    def test_debug_trace_transaction(self, send_neon_tx_receipt, tracer_api):
+        tx_hash = send_neon_tx_receipt["transactionHash"].hex()
+        response = self.tracer_api.debug_trace_transaction(tx_hash, wait_response=120)
         assert "error" not in response, "Error in response"
         validate_response_result(response)
 
-    def test_debug_trace_transaction_non_zero_trace(self, storage_object):
-        sender_account = self.accounts[0]
-        store_value = random.randint(1, 100)
-        _, _, receipt = storage_object.call_storage(sender_account, store_value, "blockNumber")
-
-        response = self.tracer_api.send_rpc_and_wait_response(
-            "debug_traceTransaction", [receipt["transactionHash"].hex()]
-        )
+    def test_debug_trace_transaction_non_zero_trace(self, call_storage_tx_receipt):
+        call_storage_tx_receipt, store_value = call_storage_tx_receipt
+        tx_hash = call_storage_tx_receipt["transactionHash"].hex()
+        response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", [tx_hash])
 
         assert "error" not in response, "Error in response"
         assert response["result"]["returnValue"] == padhex(hex(store_value), 64)[2:]
         validate_response_result(response)
 
     # GETH: NDEV-3251
-    def test_debug_trace_transaction_hash_without_prefix(self, storage_object):
-        sender_account = self.accounts[0]
-        store_value = random.randint(1, 100)
-        _, _, receipt = storage_object.call_storage(sender_account, store_value, "blockNumber")
-
-        response = self.tracer_api.send_rpc_and_wait_response(
-            "debug_traceTransaction", [receipt["transactionHash"].hex()]
-        )
+    def test_debug_trace_transaction_hash_without_prefix(self, call_storage_tx_receipt):
+        call_storage_tx_receipt, store_value = call_storage_tx_receipt
+        tx_hash = call_storage_tx_receipt["transactionHash"].hex()
+        response = self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", [tx_hash])
 
         assert "error" not in response, "Error in response"
         assert response["result"]["returnValue"] == padhex(hex(store_value), 64)[2:]
@@ -418,27 +404,9 @@ class TestTracerDebugMethods:
         assert response["error"]["code"] == -32602, "Invalid error code"
         assert response["error"]["message"] == "Invalid params"
 
-    def test_debug_get_raw_transaction(self):
-        sender_account = self.accounts[0]
-        transaction = self.web3_client.make_raw_tx(from_=sender_account, data=GOOD_CALLDATA[0], estimate_gas=True)
-        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
-        tx = self.web3_client.eth.send_raw_transaction(signed_tx.raw_transaction)
-
-        receipt = self.web3_client.eth.wait_for_transaction_receipt(tx)
-        assert receipt["status"] == 1
-
-        response = self.tracer_api.send_rpc_and_wait_response(
-            "debug_getRawTransaction", [receipt["transactionHash"].hex()]
-        )
-        assert "error" not in response, "Error in response"
-        assert "result" in response and response["result"] == "0x" + signed_tx.raw_transaction.hex()
-
     # GETH: NDEV-3252
-    def test_debug_get_raw_transaction_invalid_tx_hash(self):
-        sender_account = self.accounts[0]
-        recipient_account = self.accounts[1]
-        receipt = self.web3_client.send_neon(sender_account, recipient_account, 0.1)
-        assert receipt["status"] == 1
+    def test_debug_get_raw_transaction_invalid_tx_hash(self, send_neon_tx_receipt):
+        receipt = send_neon_tx_receipt
         response = self.tracer_api.send_rpc(method="debug_getRawTransaction", params=[receipt["blockHash"].hex()])
         assert "error" in response, "No errors in response"
         assert response["error"]["code"] == -32603, "Invalid error code"
@@ -448,10 +416,8 @@ class TestTracerDebugMethods:
 
     # GETH: NDEV-3252
     def test_debug_get_raw_transaction_non_existent_tx_hash(self):
-        response = self.tracer_api.send_rpc(
-            method="debug_getRawTransaction",
-            params=["0xd9765b77e470204ae5edb1a796ab92ecb0e20fea50aeb09275aea740af7bbc69"],
-        )
+        block_hash = "0xd9765b77e470204ae5edb1a796ab92ecb0e20fea50aeb09275aea740af7bbc69"
+        response = self.tracer_api.debug_get_raw_transaction(block_hash)
         assert "error" in response, "No errors in response"
         assert response["error"]["code"] == -32603, "Invalid error code"
         assert (
@@ -459,12 +425,8 @@ class TestTracerDebugMethods:
             == "Empty Neon transaction receipt for 0xd9765b77e470204ae5edb1a796ab92ecb0e20fea50aeb09275aea740af7bbc69"
         )
 
-    def test_trace_transaction_from_precompiled_contract(self, precompiled_contract, pytestconfig, evm_loader):
-        input_data = "0x000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000040e09ad9675465c53a109fac66a445c91b292d2bb2c5268addb30cd82f80fcb0033ff97c80a5fc6f39193ae969c6ede6710a6b7ac27078a06d90ef1c72e5c85fb502fc9e1f6beb81516545975218075ec2af118cd8798df6e08a147c60fd6095ac2bb02c2908cf4dd7c81f11c289e4bce98f3553768f392a80ce22bf5c4f4a248c6b"
-        address = "0x0000000000000000000000000000000000000005"
-        sender_account = self.accounts[0]
-        instruction_tx = self.web3_client.make_raw_tx(sender_account, address, estimate_gas=True, data=input_data)
-        receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
-        tx_data = self.web3_client.get_transaction_by_hash(receipt["transactionHash"].hex())
+    def test_trace_transaction_from_precompiled_contract(self, precompile_contract_call_tx_receipt):
+        tx_hash = precompile_contract_call_tx_receipt["transactionHash"].hex()
+        tx_data = self.web3_client.get_transaction_by_hash(tx_hash)
         check_call_tracer_type(self.tracer_api, tx_data)
         check_struct_log_type(self.tracer_api, tx_data, check_struct_logs=False)

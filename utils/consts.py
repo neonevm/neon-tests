@@ -87,7 +87,6 @@ wSOL = {
 }
 
 MULTITOKEN_MINTS_USDT = "2duuuuhNJHUYqcnZ7LKfeufeeTBgSJdftf2zM3cZV6ym"
-MIN_CU_PRICE = 10500
 
 
 class InstructionTags(bytes, Enum):

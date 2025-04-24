@@ -492,7 +492,8 @@ class TestEIP1559:
             commitment=Confirmed,
         ).value
         cu_price_actual = sol_client.get_compute_budget_set_cu_price_from_tx(solana_transaction)
-        assert cu_price_actual == 10500
+        min_cu_price = int(web3_client.neon_gas_price()["solanaSimpleCUPriorityFee"], 16)
+        assert cu_price_actual == min_cu_price
 
     @pytest.mark.neon_only
     @pytest.mark.only_stands

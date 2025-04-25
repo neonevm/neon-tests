@@ -33,7 +33,9 @@ class TestResultsHandler:
         unique_timestamps = historical_data["timestamp"].unique().tolist()
         timestamp_to_x = {ts: x for x, ts in enumerate(unique_timestamps)}
         historical_data["x"] = historical_data["timestamp"].map(timestamp_to_x)
-        x_tick_labels = historical_data.groupby("timestamp", sort=False)["tag"].first().tolist()
+
+        tags_grouped_by_timestamp = historical_data.groupby("timestamp", sort=False).first()["tag"]
+        x_tick_labels = [f"{tag} - {ts.strftime('%b, %d, %H:%M')}" for ts, tag in tags_grouped_by_timestamp.items()]
 
         with PdfPages(output_pdf) as pdf:
             for dapp_name in dapp_names:
@@ -101,10 +103,10 @@ class TestResultsHandler:
                                             f"{y}",
                                             (x, y),
                                             textcoords="offset points",
-                                            xytext=(15, 5),
+                                            xytext=(7, 10),
                                             ha="center",
                                             color="red",
-                                            rotation=60,
+                                            rotation=75,
                                         )
 
                                         if prev_is_valid:
@@ -113,10 +115,10 @@ class TestResultsHandler:
                                                 f"{prev_value}",
                                                 (prev_x, prev_y),  # noqa: F821
                                                 textcoords="offset points",
-                                                xytext=(15, 5),
+                                                xytext=(7, 10),
                                                 ha="center",
                                                 color="blue",
-                                                rotation=60,
+                                                rotation=75,
                                             )
                                         prev_is_valid = False
                                     else:
@@ -128,7 +130,7 @@ class TestResultsHandler:
 
                             # Set x-axis ticks and labels
                             ax.set_xticks(range(len(x_tick_labels)))
-                            ax.set_xticklabels(x_tick_labels, rotation=45)
+                            ax.set_xticklabels(x_tick_labels, rotation=75)
 
                             # Set y-axis limits and labels
                             ax.tick_params(axis="y", labelsize=8)
@@ -149,7 +151,8 @@ class TestResultsHandler:
 
                             # add vertical grey dotted line before the last two dots
                             if len(data_subset[metric]) > 2:
-                                ax.axvline(x=len(data_subset[metric]) - 2.5, color="#a6a4a4", linestyle=":")
+                                x = data_subset["x"].iloc[-2] - 0.5
+                                ax.axvline(x=x, color="#a6a4a4", linestyle=":")
 
                 plt.tight_layout()
                 top = 0.9 if num_rows > 5 else 0.8

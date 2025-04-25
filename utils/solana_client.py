@@ -223,8 +223,16 @@ class SolanaClient(solana.rpc.api.Client):
 
     @allure.step("Get account keys for solana transaction")
     def get_account_keys_for_transaction(self, sol_trx: str):
-        resp = self.get_transaction(Signature.from_string(sol_trx), commitment=Confirmed)
-        return resp.value.transaction.transaction.message.account_keys
+        resp = self.get_transaction(
+            Signature.from_string(sol_trx), max_supported_transaction_version=0, commitment=Confirmed
+        )
+        print(f"resp: {resp}")
+        trx_account_keys = resp.value.transaction.transaction.message.account_keys
+        loaded_addresses = (
+            resp.value.transaction.meta.loaded_addresses.readonly
+            + resp.value.transaction.meta.loaded_addresses.writable
+        )
+        return trx_account_keys + loaded_addresses
 
     @allure.step("Drain SOL")
     def drain_sol(self, from_: Keypair, to: Pubkey):

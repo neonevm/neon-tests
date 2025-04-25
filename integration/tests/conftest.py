@@ -753,3 +753,9 @@ def precompiled_contract(web3_client, faucet, accounts):
         "precompiled/CommonCaller", "0.8.10", accounts[0]
     )
     return contract
+
+
+@pytest.fixture(scope="class")
+def alt_contract(accounts, web3_client):
+    contract, _ = web3_client.deploy_and_get_contract("common/ALT", "0.8.10", account=accounts[0], constructor_args=[8])
+    return contract

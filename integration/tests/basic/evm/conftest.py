@@ -9,14 +9,6 @@ from utils.web3client import Web3Client
 
 
 @pytest.fixture(scope="class")
-def precompiled_contract(web3_client, faucet, accounts):
-    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "precompiled/CommonCaller", "0.8.10", accounts[0]
-    )
-    return contract
-
-
-@pytest.fixture(scope="class")
 def metaplex_caller(web3_client, accounts):
     contract, _ = web3_client.deploy_and_get_contract(
         "precompiled/MetaplexCaller", "0.8.28", account=accounts[0], contract_name="MetaplexProgramCaller"

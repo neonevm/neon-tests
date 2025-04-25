@@ -30,11 +30,11 @@ from utils.types import TransactionType
 from utils.web3client import NeonChainWeb3Client, Web3Client
 from .const import INSUFFICIENT_FUNDS_ERROR, GAS_LIMIT_ERROR, BIG_STRING
 from .steps import (
-    wait_for_block,
     assert_profit,
     get_gas_used_percent,
     check_alt_off,
-    get_sol_trx_with_alt,
+    check_alt_on,
+    wait_until_alt_deleted,
 )
 
 from ..basic.helpers.chains import make_nonce_the_biggest_for_chain
@@ -840,7 +840,7 @@ class TestEconomics:
     @pytest.mark.timeout(16 * Time.MINUTE)
     @pytest.mark.parametrize("tx_type", TransactionType)
     @pytest.mark.eip_1559
-    def test_deploy_contract_alt_on(
+    def test_trx_alt_on(
         self,
         sol_client: SolanaClient,
         neon_price: float,
@@ -861,16 +861,8 @@ class TestEconomics:
         instr = alt_contract.functions.fill(accounts_quantity).build_transaction(tx)
         receipt = web3_client.send_transaction(sender_account, instr)
 
-        sol_trx_with_alt = get_sol_trx_with_alt(web3_client, sol_client, receipt)
-        assert sol_trx_with_alt is not None, "There are no lookup table for alt transaction"
-
-        alt_address = sol_trx_with_alt.value.transaction.transaction.message.address_table_lookups[0].account_key
-        wait_condition(
-            lambda: not sol_client.account_exists(alt_address),
-            timeout_sec=10 * Time.MINUTE,
-            delay=3,
-        )
-
+        check_alt_on(web3_client, sol_client, receipt)
+        wait_until_alt_deleted(web3_client, sol_client, receipt)
         sol_balance_after = operator.get_solana_balance()
         neon_balance_after = operator.get_token_balance(web3_client)
 
@@ -889,7 +881,7 @@ class TestEconomics:
 
     @pytest.mark.parametrize("tx_type", TransactionType)
     @pytest.mark.eip_1559
-    def test_deploy_contract_alt_off(
+    def test_trx_with_big_amount_of_accounts_alt_off(
         self,
         sol_client: SolanaClient,
         neon_price: float,
@@ -903,7 +895,7 @@ class TestEconomics:
         # see logs by hash, try with new account
         # if no fails - other tests interference
         """Trigger transaction than requires less than 30 accounts"""
-        accounts_quantity = 10
+        accounts_quantity = 30
         sender = accounts[1]
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(web3_client)
@@ -912,10 +904,7 @@ class TestEconomics:
 
         instr = alt_contract.functions.fill(accounts_quantity).build_transaction(tx)
         receipt = web3_client.send_transaction(sender, instr)
-        block = int(receipt["blockNumber"])
-
-        response = wait_for_block(sol_client, block)
-        check_alt_off(response)
+        check_alt_off(web3_client, sol_client, receipt)
 
         sol_balance_after = operator.get_solana_balance()
         token_balance_after = operator.get_token_balance(web3_client)
@@ -987,43 +976,32 @@ class TestEconomics:
     @pytest.mark.eip_1559
     def test_call_contract_with_mapping_updating(
         self,
-        client_and_price: tuple[Web3Client, float],
         account_with_all_tokens: LocalAccount,
         sol_price: float,
+        neon_price: float,
         web3_client: NeonChainWeb3Client,
-        web3_client_sol: Web3Client,
         sol_client: SolanaClient,
         value: int,
         operator: Operator,
         mapping_actions_contract: Contract,
         tx_type: TransactionType,
     ):
-        w3_client, token_price = client_and_price
-
         sol_balance_before = operator.get_solana_balance()
-        token_balance_before = operator.get_token_balance(w3_client)
+        token_balance_before = operator.get_token_balance(web3_client)
 
-        tx = w3_client.make_raw_tx(from_=account_with_all_tokens.address, tx_type=tx_type)
+        tx = web3_client.make_raw_tx(from_=account_with_all_tokens.address, tx_type=tx_type)
 
         instruction_tx = mapping_actions_contract.functions.replaceValues(value).build_transaction(tx)
-        receipt = w3_client.send_transaction(account_with_all_tokens, instruction_tx)
+        receipt = web3_client.send_transaction(account_with_all_tokens, instruction_tx)
         assert receipt["status"] == 1
         wait_condition(lambda: sol_balance_before != operator.get_solana_balance())
 
-        sol_trx_with_alt = get_sol_trx_with_alt(web3_client, sol_client, receipt)
-        if sol_trx_with_alt is not None:
-            alt_address = sol_trx_with_alt.value.transaction.transaction.message.address_table_lookups[0].account_key
-            wait_condition(
-                lambda: not sol_client.account_exists(alt_address),
-                timeout_sec=11 * Time.MINUTE,
-                delay=3,
-            )
-
+        wait_until_alt_deleted(web3_client, sol_client, receipt)
         sol_balance_after = operator.get_solana_balance()
-        token_balance_after = operator.get_token_balance(w3_client)
-        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
+        token_balance_after = operator.get_token_balance(web3_client)
+        token_diff = web3_client.to_main_currency(token_balance_after - token_balance_before)
         assert_profit(
-            sol_balance_before - sol_balance_after, sol_price, token_diff, token_price, w3_client.native_token_name
+            sol_balance_before - sol_balance_after, sol_price, token_diff, neon_price, web3_client.native_token_name
         )
 
     @pytest.mark.skip(reason="work incorrect very often")

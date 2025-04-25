@@ -158,7 +158,7 @@ class Web3Client:
     def wait_for_transaction_receipt(self, tx_hash, timeout=120):
         return self._web3.eth.wait_for_transaction_receipt(tx_hash, timeout=timeout)
 
-    @allure.step("Get contract")
+    @allure.step("Deploy contract")
     def deploy_contract(
         self,
         from_: eth_account.signers.local.LocalAccount,
@@ -170,17 +170,14 @@ class Web3Client:
         value=0,
         tx_type: TransactionType = 0,
     ) -> web3.types.TxReceipt:
-        """Proxy doesn't support send_transaction"""
         constructor_args = constructor_args or []
 
         contract = self._web3.eth.contract(abi=abi, bytecode=bytecode)
-        tx_params = {
-            "from": from_.address,
-            "gas": gas,
-            "nonce": self.get_nonce(from_),
-            "value": value,
-            "chainId": self.chain_id,
-        }
+        tx_params = self.make_raw_tx(
+            from_=from_.address,
+            gas=gas,
+            amount=value,
+        )
         if tx_type is TransactionType.LEGACY:
             tx_params["gasPrice"] = gas_price or self.gas_price()
 

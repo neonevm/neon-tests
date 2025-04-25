@@ -84,16 +84,8 @@ def erc721(erc721_neon_chain, client_and_price, faucet, account_with_all_tokens)
 
 
 @pytest.fixture(scope="class")
-def alt_contract(accounts, web3_client):
-    contract, _ = web3_client.deploy_and_get_contract("common/ALT", "0.8.10", account=accounts[0], constructor_args=[8])
-    return contract
-
-
-@pytest.fixture(scope="class")
-def mapping_actions_contract(account_with_all_tokens, client_and_price, web3_client_sol, web3_client):
-    w3_client = client_and_price[0]
-    make_nonce_the_biggest_for_chain(account_with_all_tokens, w3_client, [web3_client, web3_client_sol])
-    contract, _ = w3_client.deploy_and_get_contract(
-        contract="common/Common", version="0.8.19", contract_name="MappingActions", account=account_with_all_tokens
+def mapping_actions_contract(accounts, web3_client):
+    contract, _ = web3_client.deploy_and_get_contract(
+        contract="common/Common", version="0.8.19", contract_name="MappingActions", account=accounts[0]
     )
     return contract

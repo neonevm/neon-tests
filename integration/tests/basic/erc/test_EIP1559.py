@@ -433,7 +433,7 @@ class TestEIP1559:
         max_priority_fee_per_gas = int(min_acceptable_price, 16) + 1
         base_fee_per_gas = 0
 
-        tx_params = self.web3_client.make_raw_tx_eip_1559(
+        transaction = self.web3_client.make_raw_tx_eip_1559(
             chain_id="auto",
             from_=sender.address,
             to=recipient.address,
@@ -448,7 +448,9 @@ class TestEIP1559:
 
         error_msg_regex = r".+ not in the chain after \d+ seconds"
         with pytest.raises(expected_exception=TimeExhausted, match=error_msg_regex):
-            self.web3_client.send_transaction(account=sender, transaction=tx_params, timeout=TX_TIMEOUT)
+            signed_tx = self.web3_client._web3.eth.account.sign_transaction(transaction, sender.key)
+            tx_hash = self.web3_client.eth.send_raw_transaction(signed_tx.raw_transaction)
+            self.web3_client._web3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
 
     @pytest.mark.neon_only
     @pytest.mark.only_stands

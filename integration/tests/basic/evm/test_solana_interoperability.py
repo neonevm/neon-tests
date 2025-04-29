@@ -359,7 +359,7 @@ class TestSolanaInteroperability:
             signed_tx = self.web3_client.eth.account.sign_transaction(instruction_tx, sender.key)
             result = self.web3_client.get_neon_emulate(str(signed_tx.raw_transaction.hex()))
             resp = self.web3_client.eth.send_raw_transaction(signed_tx.raw_transaction)
-            resp = self.web3_client.eth.wait_for_transaction_receipt(resp, timeout=60)
+            resp = self.web3_client.wait_for_transaction_receipt(resp, timeout=60)
             assert resp["status"] == 1
 
             return result["result"]["gasUsed"]

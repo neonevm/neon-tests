@@ -7,6 +7,7 @@ from solders.pubkey import Pubkey
 from integration.tests.neon_evm.utils.assert_messages import InstructionAsserts
 from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
 from utils.consts import LAMPORT_PER_SOL
+from utils.helpers import wait_condition
 from utils.neon_user import NeonUser
 from utils.scheduled_trx import ScheduledTransaction
 
@@ -242,14 +243,18 @@ class TestScheduledTrx:
             neon_user, treasury_pool_new, tx.encode(), environment.sol_mint_id
         )
 
+        wait_condition(lambda: evm_loader.get_solana_balance(treasury_pool_new.account) < treasury_balance_before)
+        wait_condition(lambda: evm_loader.get_solana_balance(tree_account) > 0)
+        wait_condition(
+            lambda: evm_loader.get_neon_balance(neon_user.neon_address, evm_loader.sol_chain_id) < user_balance_before
+        )
+
         user_balance_after = evm_loader.get_neon_balance(neon_user.neon_address, evm_loader.sol_chain_id)
         treasury_balance_after = evm_loader.get_solana_balance(treasury_pool_new.account)
-        tree_account_balance = evm_loader.get_solana_balance(tree_account)
         user_balance_diff = user_balance_before - user_balance_after
         treasury_balance_diff = treasury_balance_before - treasury_balance_after
 
         assert treasury_balance_diff > 0
-        assert tree_account_balance > 0
         assert user_balance_diff > 0
 
         emulate_result = neon_api_client.emulate(

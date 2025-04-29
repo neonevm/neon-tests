@@ -84,7 +84,7 @@ class TestNeonTransfer:
         params = [signed_tx.raw_transaction.hex()]
         transaction = json_rpc_client.send_rpc("eth_sendRawTransaction", params)["result"]
 
-        actual_result = self.web3_client._web3.eth.wait_for_transaction_receipt(transaction)
+        actual_result = self.web3_client.wait_for_transaction_receipt(transaction)
 
         assert actual_result["status"] == 1, "Transaction status must be 0x1"
 

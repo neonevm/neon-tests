@@ -106,7 +106,7 @@ class TestRpcEstimateGas:
 
         signed_trx_big_gas = self.web3_client.eth.account.sign_transaction(trx_big_gas, sender_account.key)
         raw_trx_big_gas = self.web3_client.eth.send_raw_transaction(signed_trx_big_gas.raw_transaction)
-        deploy_trx_big_gas = self.web3_client.eth.wait_for_transaction_receipt(raw_trx_big_gas)
+        deploy_trx_big_gas = self.web3_client.wait_for_transaction_receipt(raw_trx_big_gas)
         assert deploy_trx_big_gas.get("status"), f"Transaction is incomplete: {deploy_trx_big_gas}"
         assert gas_estimate >= int(deploy_trx_big_gas["gasUsed"]), "Estimated Gas < Used Gas"
         EthEstimateGas(**response)

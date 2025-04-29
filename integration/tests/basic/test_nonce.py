@@ -25,8 +25,6 @@ class TestNonce:
     def check_transaction_list(self, tx_hash_list):
         for tx_hash in tx_hash_list:
             check_trx_is_success(self.web3_client, self.sol_client, tx_hash, timeout=180)
-            # tx_receipt = self.web3_client.eth.wait_for_transaction_receipt(tx_hash, timeout=180)
-            # assert tx_receipt["status"] == 1
 
     def test_get_receipt_sequence(self):
         sender_account = self.accounts[0]
@@ -101,7 +99,7 @@ class TestNonce:
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.raw_transaction.hex()])
 
-        tx_receipt = self.web3_client.eth.wait_for_transaction_receipt(trx[n + 3]["result"], timeout=120)
+        tx_receipt = self.web3_client.wait_for_transaction_receipt(trx[n + 3]["result"])
         assert tx_receipt is not None, "Transaction should be accepted"
 
     def test_send_transaction_with_low_nonce_after_high(self, json_rpc_client):

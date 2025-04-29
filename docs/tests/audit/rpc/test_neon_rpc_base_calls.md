@@ -2,13 +2,17 @@
 
 Tests for neon rpc base endpoints (check availability and basic functionality)
 
-| Test case                                                                                  | Description                              | XFailed |
-|--------------------------------------------------------------------------------------------|------------------------------------------|---------|
-| TestNeonRPCBaseCalls::test_neon_gas_price_negative                                         | Get neon gas price, negative cases       |         |
-| TestNeonRPCBaseCalls::test_neon_gas_price                                                  | Get neon gas price                       |         |
-| TestNeonRPCBaseCalls::test_neon_cli_version                                                | Get neon cli version                     |         |
-| TestNeonRPCBaseCalls::test_neon_get_solana_transaction_by_neon_transaction                 | Positive cases                           |         |
-| TestNeonRPCBaseCalls::test_neon_get_solana_transaction_by_neon_transaction_list_of_tx      | List of sol tx                           |         |
-| TestNeonRPCBaseCalls::test_neon_get_solana_transaction_by_neon_transaction_negative        | Negative cases                           |         |
-| TestNeonRPCBaseCalls::test_neon_get_solana_transaction_by_neon_transaction_non_existent_tx | Non existent transaction, empty response |         |
-| TestNeonRPCBaseCalls::test_neon_get_native_token_list                                      | Get list of native tokens                |         |
+| Test case                                                                                  | Description                                | XFailed |
+|--------------------------------------------------------------------------------------------|--------------------------------------------|---------|
+| TestNeonRPCBaseCalls::test_neon_gas_price_negative                                         | Get neon gas price, negative cases         |         |
+| TestNeonRPCBaseCalls::test_neon_gas_price                                                  | Get neon gas price                         |         |
+| TestNeonRPCBaseCalls::test_neon_cli_version                                                | Get neon cli version                       |         |
+| TestNeonRPCBaseCalls::test_neon_get_solana_transaction_by_neon_transaction                 | Positive cases                             |         |
+| TestNeonRPCBaseCalls::test_neon_get_solana_transaction_by_neon_transaction_list_of_tx      | List of sol tx                             |         |
+| TestNeonRPCBaseCalls::test_neon_get_solana_transaction_by_neon_transaction_negative        | Negative cases                             |         |
+| TestNeonRPCBaseCalls::test_neon_get_solana_transaction_by_neon_transaction_non_existent_tx | Non existent transaction, empty response   |         |
+| TestNeonRPCBaseCalls::test_neon_get_native_token_list                                      | Get list of native tokens                  |         |
+| TestNeonRPCBaseCalls::test_neon_estimate_gas_iterative_tx                                  | neon_estimateGas with iterative tx         |         |
+| TestNeonRPCBaseCalls::test_neon_estimate_gas_external_solana_call                          | neon_estimateGas with external Solana call |         |
+| TestNeonRPCBaseCalls::test_neon_estimate_gas_invalid_params                                | neon_estimateGas with invalid params       |         |
+| TestNeonRPCBaseCalls::test_neon_estimate_gas_failing_transaction                           | neon_estimateGas with failing tx           |         |

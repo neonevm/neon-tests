@@ -1,9 +1,8 @@
 import json
+import logging
 import pathlib
 import typing as tp
 from decimal import Decimal
-
-import logging
 
 import allure
 import base58
@@ -14,15 +13,15 @@ import web3.types
 from eth_abi import abi
 from eth_typing import BlockIdentifier
 from solders.instruction import Instruction
-from web3.contract import Contract
 from solders.pubkey import Pubkey
+from web3.contract import Contract
 from web3.exceptions import TransactionNotFound
 
-from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateRequest
-from utils.types import TransactionType
 from utils import helpers
 from utils.consts import InputTestConstants, Unit
 from utils.helpers import decode_function_signature, case_snake_to_camel
+from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateRequest
+from utils.types import TransactionType
 
 LOG = logging.getLogger(__name__)
 
@@ -667,6 +666,20 @@ class Web3Client:
             return resp["result"]
         else:
             return resp
+
+    @allure.step("neon_estimateGas")
+    def neon_estimate_gas(self, raw_tx: dict, show_gas_details: bool = True) -> dict:
+        resp = requests.post(
+            self._proxy_url,
+            json={
+                "jsonrpc": "2.0",
+                "method": "neon_estimateGas",
+                "params": [raw_tx, {"showGasDetails": show_gas_details}],
+                "id": 0,
+            },
+        )
+        resp.raise_for_status()
+        return resp.json()
 
 
 class NeonChainWeb3Client(Web3Client):

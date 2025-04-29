@@ -60,7 +60,8 @@
     "faucet_url": "http://127.0.0.1:3333/",
     "tracer_url": "http://127.0.0.1:9091",
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
-    "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D"
+    "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
+    "default_cu_price": 10500
   },
   "terraform": {
     "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
@@ -74,7 +75,8 @@
     "faucet_url": "http://<proxy_ip>:3333/",
     "tracer_url": "",
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
-    "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D"
+    "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
+    "default_cu_price": 10500
   },
   "geth": {
     "evm_loader": "",
@@ -118,6 +120,7 @@
     "faucet_url": "http://faucet:3333/",
     "tracer_url": "http://tracer:9091",
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
-    "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D"
+    "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
+    "default_cu_price": 10500
   }
 }

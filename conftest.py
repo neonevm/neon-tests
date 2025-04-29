@@ -47,6 +47,7 @@ class EnvironmentConfig:
     neon_erc20wrapper_address: str
     use_bank: bool
     eth_bank_account: str
+    default_cu_price: int | None = None
     neonpass_url: str = ""
     ws_subscriber_url: str = ""
     account_seed_version: str = "\3"

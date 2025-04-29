@@ -1,13 +1,14 @@
-import typing as tp
-import web3.exceptions
 import random
+import typing as tp
 
+import allure
 import pytest
 import spl
-from solders.keypair import Keypair
+import web3.exceptions
 from solana.rpc.commitment import Confirmed
 from solana.rpc.types import TxOpts
 from solana.transaction import AccountMeta, Instruction
+from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 from spl.token.client import Token as SplToken
 from spl.token.constants import TOKEN_PROGRAM_ID
@@ -17,12 +18,11 @@ from spl.token.instructions import (
     transfer,
 )
 
-import allure
-from utils.types import TransactionType
 from utils.accounts import EthAccounts
 from utils.consts import COUNTER_ID, TRANSFER_TOKENS_ID, wSOL
 from utils.helpers import bytes32_to_solana_pubkey, serialize_instruction, wait_condition
 from utils.instructions import make_wSOL
+from utils.types import TransactionType
 from utils.web3client import NeonChainWeb3Client
 
 
@@ -645,6 +645,10 @@ class TestSolanaInteroperability:
         )
 
     def test_solana_call_before_iterative_actions_negative(self, counter_resource_address: bytes, call_solana_caller):
+        """
+        makes sure that anything done after Solana call fits into a single transaction
+        while matrix triggers more than 1 transaction
+        """
         sender = self.accounts[0]
         lamports = 0
         matrix_lenght = 15

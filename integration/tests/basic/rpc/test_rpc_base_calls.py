@@ -127,7 +127,7 @@ class TestRpcBaseCalls:
     @pytest.mark.mainnet
     @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, None])
     @pytest.mark.neon_only
-    # since there's no tracer neither on night-stand nor on devnet, "earliest" == "latest" over there
+    # since there's no tracer on devnet, "earliest" == "latest" over there
     # while on geth, earliest returns 0 because "earliest" == "earliest" over there
     def test_eth_get_code(self, event_caller_contract, param: tp.Union[Tag, None], json_rpc_client):
         """Verify implemented rpc calls work eth_getCode"""

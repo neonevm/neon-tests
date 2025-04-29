@@ -56,8 +56,6 @@ class Unit(Enum):
 
 
 class EnvName(str, Enum):
-    NIGHT_STAND = "night-stand"
-    RELEASE_STAND = "release-stand"
     MAINNET = "mainnet"
     DEVNET = "devnet"
     TESTNET = "testnet"

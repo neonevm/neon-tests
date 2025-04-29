@@ -147,7 +147,7 @@ class TestPrecompiledContracts:
             receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
             check_trx_is_success(self.web3_client, evm_loader, receipt["transactionHash"].hex())
 
-            if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
+            if pytestconfig.getoption("--network") not in ["devnet"]:
                 assert self.web3_client.get_balance(address) - balance_before == amount
         else:
             # solana limits
@@ -168,7 +168,7 @@ class TestPrecompiledContracts:
 
         check_trx_is_success(self.web3_client, evm_loader, receipt["transactionHash"].hex())
         pytestconfig.getoption("--network")
-        if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
+        if pytestconfig.getoption("--network") not in ["devnet"]:
             assert self.web3_client.get_balance(address) - balance_before == amount
 
     @pytest.mark.parametrize("contract", PRECOMPILED_FIXTURES)

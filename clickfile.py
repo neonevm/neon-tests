@@ -511,53 +511,45 @@ def run(
     cost_reports_dir: str,
 ):
     if not network and name == "ui":
-        network = "devnet"
+        network = EnvName.DEVNET
     if DST_ALLURE_CATEGORIES.parent.exists():
         shutil.rmtree(DST_ALLURE_CATEGORIES.parent, ignore_errors=True)
     DST_ALLURE_CATEGORIES.parent.mkdir()
-    if name == "economy":
-        command = "py.test integration/tests/economy/test_economics.py"
-    elif name == "basic":
-        if network == "mainnet":
-            command = "py.test integration/tests/basic -m mainnet"
-        else:
-            command = "py.test integration/tests/basic"
-        if numprocesses:
-            command = f"{command} --numprocesses {numprocesses} --dist loadgroup"
-        if network == network.DEVNET:
+
+    commands = {
+        "economy": "py.test integration/tests/economy/test_economics.py",
+        "basic": "py.test integration/tests/basic --dist loadgroup",
+        "tracer": "py.test -n 5 integration/tests/tracer",
+        "services": "py.test integration/tests/services",
+        "compiler_compatibility": "py.test integration/tests/compiler_compatibility --dist loadscope",
+        "evm": "py.test integration/tests/neon_evm",
+        "ui": "pytest ui/tests/website_tests",
+        "oz": "",  # the command is defined in run_openzeppelin_tests()
+    }
+
+    if name not in commands:
+        raise click.ClickException(f"Test group '{name}' does not exist.")
+    command = commands[name]
+
+    if name == "basic":
+        if network == EnvName.MAINNET:
+            command += " -m mainnet"
+        if network == EnvName.DEVNET:
             command += " --retries 3 --retry-delay 2"
-    elif name == "tracer":
-        command = "py.test -n 5 integration/tests/tracer"
-    elif name == "services":
-        command = "py.test integration/tests/services"
-        if numprocesses:
-            command = f"{command} --numprocesses {numprocesses}"
-    elif name == "compiler_compatibility":
-        command = "py.test integration/tests/compiler_compatibility"
-        if numprocesses:
-            command = f"{command} --numprocesses {numprocesses} --dist loadscope"
-    elif name == "evm":
-        command = "py.test integration/tests/neon_evm"
-        if numprocesses:
-            command = f"{command} --numprocesses {numprocesses}"
-    elif name == "oz":
+
+    if name in {"services", "compiler_compatibility", "evm", "basic"} and numprocesses:
+        command += f" --numprocesses {numprocesses}"
+
+    if name == "ui" and ui_item != "all":
+        command += f"/test_{ui_item}.py"
+
+    if name == "oz":
         if not keep_error_log:
             error_log.clear()
         run_openzeppelin_tests(network, jobs=int(jobs), amount=int(amount), users=int(users))
-        return
-    elif name == "ui":
-        if not os.environ.get("CHROME_EXT_PASSWORD"):
-            raise click.ClickException(
-                red("Please set the `CHROME_EXT_PASSWORD` environment variable (password for wallets).")
-            )
-        command = "pytest ui/tests/website_tests"
-        if ui_item != "all":
-            command = command + f"/test_{ui_item}.py"
-    else:
-        raise click.ClickException("Unknown test name")
 
     if name == "tracer":
-        if network != "geth":
+        if network != EnvName.GETH:
             assert wait_for_tracer_service(network)
 
     if case:
@@ -580,8 +572,6 @@ def run(
 
     args = shlex.split(command)[1:]
     exit_code = int(pytest.main(args=args))
-    if name != "ui":
-        shutil.copyfile(SRC_ALLURE_CATEGORIES, DST_ALLURE_CATEGORIES)
 
     sys.exit(exit_code)
 
@@ -653,7 +643,7 @@ locust_credentials = click.option(
 locust_host = click.option(
     "-h",
     "--host",
-    default="night-stand",
+    default=EnvName.LOCAL,
     type=str,
     help="In which stand run tests.",
     show_default=True,
@@ -799,7 +789,7 @@ def allure_cli(ctx):
 
 @allure_cli.command("get-history", help="Download allure history")
 @click.argument("name", type=click.STRING)
-@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+@click.option("-n", "--network", default=EnvName.LOCAL, type=str, help="In which stand run tests")
 @click.option(
     "-d",
     "--destination",
@@ -825,7 +815,7 @@ def get_allure_history(name: str, network: str, destination: str = "./allure-res
 
 @allure_cli.command("upload-report", help="Upload allure history")
 @click.argument("name", type=click.Choice(TEST_GROUPS))
-@click.option("-n", "--network", default=EnvName.NIGHT_STAND, type=EnvName, help="In which stand run tests")
+@click.option("-n", "--network", default=EnvName.DEVNET, type=EnvName, help="In which stand run tests")
 @click.option(
     "-s",
     "--source",
@@ -867,7 +857,7 @@ def generate_allure_report():
 @click.option("-u", "--url", help="slack app endpoint url.")
 @click.option("-b", "--build_url", help="github action test build url.")
 @click.option(
-    "-n", "--network", type=click.Choice(EnvName), default=EnvName.NIGHT_STAND.value, help="In which stand run tests"
+    "-n", "--network", type=click.Choice(EnvName), default=EnvName.DEVNET.value, help="In which stand run tests"
 )
 @click.option("--test-group", help="Name of the failed test group")
 def send_notification(url, build_url, network, test_group: str):
@@ -915,7 +905,7 @@ def send_notification(url, build_url, network, test_group: str):
 
 
 @cli.command(name="get-balances", help="Get operator balances in NEON and SOL")
-@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+@click.option("-n", "--network", default=EnvName.LOCAL, type=str, help="In which stand run tests")
 def get_operator_balances(network: str):
     network_manager = NetworkManager()
     net = network_manager.get_network_object(network)
@@ -1028,13 +1018,13 @@ def download_logs():
 @infra.command(name="gen-accounts", help="Setup accounts with balance")
 @click.option("-c", "--count", default=2, help="How many users prepare")
 @click.option("-a", "--amount", default=10000, help="How many airdrop")
-@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+@click.option("-n", "--network", default=EnvName.LOCAL, type=str, help="In which stand run tests")
 def prepare_accounts(count, amount, network):
     infrastructure.prepare_accounts(network, count, amount)
 
 
 @infra.command("print-network-param")
-@click.option("-n", "--network", default="night-stand", type=str, help="In which stand run tests")
+@click.option("-n", "--network", default=EnvName.LOCAL, type=str, help="In which stand run tests")
 @click.option("-p", "--param", type=str, help="any network param like proxy_url, network_id e.t.c")
 def print_network_param(network, param):
     network_manager = NetworkManager(network)

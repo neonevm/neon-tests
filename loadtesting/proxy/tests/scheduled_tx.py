@@ -1,21 +1,19 @@
 import logging
 import os
 import string
-import math
 import threading
 import random
 import base58
 
-import web3
 from solana.rpc import commitment
 
 from deploy.cli.network_manager import NetworkManager
 from utils.accounts import EthAccounts
-from utils.consts import LAMPORT_PER_SOL, wSOL, REMAPPING_ZEPPELIN_UNISWAP
+from utils.consts import LAMPORT_PER_SOL, wSOL
 from utils.erc20wrapper import ERC20NewWrapper
 from utils.evm_loader import EvmLoader
 from utils.faucet import Faucet
-from utils.helpers import decode_function_signature, decode_function_with_stucture_in_arg_signature
+from utils.helpers import decode_function_signature
 from utils.neon_user import NeonUser
 from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData, ScheduledTrxEstimateRequest
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
@@ -27,8 +25,6 @@ from solders.keypair import Keypair
 
 LOG = logging.getLogger(__name__)
 USER_LOCK = threading.Lock()
-UNISWAP_USER_LOCK = threading.Lock()
-initial_amount = 10_000_000
 
 
 @events.test_start.add_listener
@@ -117,185 +113,6 @@ def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwarg
     environment.contract_info["recipients"] = environment.contract_info["accounts"].copy()
     environment.solana_account, environment.bank_account = solana_account, bank_account
 
-
-def get_min_tick(tick_spacing: int) -> int:
-    return math.ceil(-887272 / tick_spacing) * tick_spacing
-
-
-def get_max_tick(tick_spacing: int) -> int:
-    return math.floor(887272 / tick_spacing) * tick_spacing
-
-
-@events.test_start.add_listener
-def prepare_uniswap_contracts(environment: env.Environment, **kwargs):
-    initial_calee_amount = 1_000_000_000
-    transfer_amount = 1_000_000
-
-    neon_users = environment.parsed_options.num_users
-    network = environment.parsed_options.host
-    
-    network_manager = NetworkManager()
-    network_object = network_manager.get_network_object(network)
-    web3_client = NeonChainWeb3Client(proxy_url=network_object["proxy_url"])
-    faucet = Faucet(faucet_url=network_object["faucet_url"], web3_client=web3_client)
-
-    # set bank account if needed
-    bank_account = None
-    if network != "local" and network_object["use_bank"]:
-        if network == "devnet":
-            private_key = os.environ.get("BANK_PRIVATE_KEY")
-        else:
-            raise ValueError("set BANK_PRIVATE_KEY env variable")
-        key = base58.b58decode(private_key)
-        bank_account = Keypair.from_bytes(key)
-
-    account_manager = EthAccounts(web3_client, faucet, bank_account)
-    deployer = account_manager.create_account()
-    accounts = [deployer, account_manager.create_account(), account_manager.create_account()]
-
-    environment.evm_loader = EvmLoader(
-        program_id=network_object["evm_loader"],
-        endpoint=network_object["solana_url"],
-        neon_chain_id=network_object["network_ids"]["neon"],
-        sol_chain_id=network_object["network_ids"]["sol"],
-        neon_token_mint_str=network_object["spl_neon_mint"],
-    )
-
-    # create solana account
-    solana_account = Keypair()
-    if network != "local" and network_object["use_bank"]:
-        environment.evm_loader.send_sol(bank_account, solana_account.pubkey(), int(1 * LAMPORT_PER_SOL))
-    else:
-        environment.evm_loader.request_airdrop(solana_account.pubkey(), 1 * LAMPORT_PER_SOL)
-
-    neon_accounts = []
-    for i in range(neon_users):
-        neon_solana_account = Keypair()
-        LOG.info(f"Creating {i} neon user for uniswap...")
-        neon_user = NeonUser(environment.evm_loader.loader_id, keypair=neon_solana_account)
-        neon_accounts.append(neon_user)
-        if network != "local" and network_object["use_bank"]:
-            environment.evm_loader.send_sol(bank_account, neon_user.solana_account.pubkey(), int(5 * LAMPORT_PER_SOL))
-        else:
-            environment.evm_loader.request_airdrop(
-                neon_user.solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed
-            )
-
-    test_tokens = ["TTA", "TTB", "TTC"]
-    tokens = {}
-
-    # deploy erc20 tokens
-    for token in test_tokens:
-        LOG.info(f"Start to deploy token {token}...")
-        eth_account = account_manager.create_account()
-        erc20 = ERC20NewWrapper(
-            web3_client,
-            faucet,
-            f"Test {token}",
-            token,
-            environment.evm_loader,
-            solana_account=solana_account,
-            mintable=True,
-            bank_account=bank_account,
-            account=eth_account,
-        )
-        tokens[f"{token}"] = erc20
-
-        LOG.info("Mint tokens...")
-        erc20.mint_tokens(signer=erc20.account, to_address=erc20.account.address, amount=10 * 18)
-
-        receipts = []
-        for account in accounts:
-            receipts.append(erc20.mint_tokens(signer=erc20.account, to_address=account.address, amount=initial_amount))
-
-        for item in receipts:
-            assert item["status"] == 1
-
-    LOG.info("Deploy UniswapV3Factory...")
-    uniswap_v3_factory, _ = web3_client.deploy_and_get_contract(
-        "external/uniswap-v3/contracts/UniswapV3Factory", "0.7.6", account=deployer
-    )
-
-    LOG.info("Deploy SwapRouter...")
-    swap_router, _ = web3_client.deploy_and_get_contract(
-        "external/uniswap-v3/contracts/SwapRouter",
-        "0.7.6",
-        account=deployer,
-        constructor_args=[uniswap_v3_factory.address, tokens["TTC"].contract_address],
-        import_remapping=REMAPPING_ZEPPELIN_UNISWAP,
-    )
-
-    LOG.info("Approve for swap router...")
-    receipt = tokens["TTA"].approve(deployer, swap_router.address, 10 * 18)
-    assert receipt["status"] == 1
-
-    receipt = tokens["TTB"].approve(deployer, swap_router.address, 10 * 18)
-    assert receipt["status"] == 1
-
-    LOG.info("Create Pool...")
-    tx_raw = web3_client.make_raw_tx(deployer)
-    tx = uniswap_v3_factory.functions.createPool(
-        tokens["TTA"].contract_address, tokens["TTB"].contract_address, 500
-    ).build_transaction(tx_raw)
-    receipt = web3_client.send_transaction(deployer, tx)
-    assert receipt["status"] == 1
-
-    LOG.info("Get Pool...")
-    pool_address = uniswap_v3_factory.functions.getPool(
-        tokens["TTA"].contract_address, tokens["TTB"].contract_address, 500
-    ).call()
-
-    LOG.info("Get deployed pool as UniswapV3Pool...")
-    start_price = int(math.sqrt(1 / 2) * (2**96))
-    pool = web3_client.get_deployed_contract(
-        pool_address,
-        contract_name="UniswapV3Pool",
-        contract_file="external/uniswap-v3/contracts//UniswapV3Pool",
-        solc_version="0.7.6",
-        import_remapping=REMAPPING_ZEPPELIN_UNISWAP
-    )
-   
-    tx_raw = web3_client.make_raw_tx(deployer)
-    tx_init_pool = pool.functions.initialize(start_price).build_transaction(tx_raw)
-    receipt = web3_client.send_transaction(deployer, tx_init_pool)
-    assert receipt["status"] == 1
-
-    LOG.info("Deploy TestUniswapV3Callee...")
-    callee, _ = web3_client.deploy_and_get_contract(
-        "external/uniswap-v3/contracts/v3-core/test/TestUniswapV3Callee", "0.7.6", account=deployer
-    )
-    LOG.info("Add Liquidity...")
-    receipt = tokens["TTA"].approve(deployer, callee.address, initial_calee_amount)
-    assert receipt["status"] == 1
-
-    receipt = tokens["TTB"].approve(deployer, callee.address, initial_calee_amount)
-    assert receipt["status"] == 1
-
-    LOG.info("Callee mint...")
-    tx_raw = web3_client.make_raw_tx(deployer)
-    tx_mint = callee.functions.mint(
-        pool.address, deployer.address, get_min_tick(10), get_max_tick(10), transfer_amount
-    ).build_transaction(tx_raw)
-    receipt = web3_client.send_transaction(deployer, tx_mint)
-    assert receipt["status"] == 1
-
-    receipt = tokens["TTA"].approve(accounts[1], swap_router.address, initial_amount)
-    assert receipt["status"] == 1
-
-    receipt = tokens["TTB"].approve(accounts[1], swap_router.address, initial_amount)
-    assert receipt["status"] == 1
-
-    environment.uniswap = {
-        "signer": deployer,
-        "router": swap_router,
-        "factory": uniswap_v3_factory,
-        "pool": pool,
-        "tokens": tokens,
-        "accounts": accounts,
-        "neon_accounts": neon_accounts,
-    }
-
-
 @events.test_stop.add_listener
 def teardown_one_contract_for_scheduled_trx(environment: env.Environment, **kwargs):
     network = environment.parsed_options.host
@@ -326,11 +143,6 @@ class BaseScheduledTxTaskSet(NeonProxyTasksSet):
                 raise RuntimeError("Too little users")
             self.neon_account = self.user.environment.contract_info["accounts"].pop(0)
 
-        with UNISWAP_USER_LOCK:
-            if not self.user.environment.uniswap["neon_accounts"]:
-                raise RuntimeError("Too little users")
-            self.uniswap_neon_account = self.user.environment.uniswap["neon_accounts"].pop(0)
-
     def on_stop(self):
         if self.account is not None:
             with USER_LOCK:
@@ -338,11 +150,6 @@ class BaseScheduledTxTaskSet(NeonProxyTasksSet):
 
                 self.user.environment.contract_info["accounts"].append(self.neon_account)
                 LOG.info(f"Returned user: {self.neon_account.checksum_address}")
-        
-        if self.uniswap_neon_account is not None:
-            with UNISWAP_USER_LOCK:
-                self.user.environment.uniswap["neon_accounts"].append(self.uniswap_neon_account)
-                LOG.info(f"Returned user: {self.uniswap_neon_account.checksum_address}")
 
     def get_account(self):
         return random.choice(self.user.environment.contract_info["recipients"])
@@ -552,160 +359,9 @@ class ScheduledTxsTransferToDifferentUsersTasksSet(BaseScheduledTxTaskSet):
             check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex(), timeout=240)
 
 
-@tag("scheduled_tx uniswap-v3")
-class ScheduledTxsUniswapV3TasksSet(BaseScheduledTxTaskSet):
-    """Implements scheduled txs uniswap-v3 task"""
-
-    @task
-    def task_send_uniswap_scheduled_tx(self):
-        """Send scheduled transactions with uniswap-v3 swaps"""
-        swap_amount = 10_000
-        router = self.user.environment.uniswap["router"]
-        token_0 = self.user.environment.uniswap["tokens"]["TTA"]
-        token_1 = self.user.environment.uniswap["tokens"]["TTB"]
-
-        if not (token_1.contract_address < token_0.contract_address):
-            token_in = token_1
-            token_out = token_0
-        else:
-            token_in = token_0
-            token_out = token_1
-
-        self.check_neon_user_balance(self.uniswap_neon_account.solana_account)
-
-        data = decode_function_signature("approve(address,uint256)", [router.address, 10*swap_amount])
-        trx_estimate_obj_list: list[ScheduledTrxEstimateRequest] = []
-        to_addr = [token_in.account.address, token_out.account.address]
-        for i in range(2):
-            LOG.info(f"Estimate {i} approve trx...")
-            trx_estimate_obj_list.append(
-                    ScheduledTrxEstimateRequest(
-                        self.uniswap_neon_account.checksum_address,
-                        to_addr[i],
-                        data,
-                        child_transaction="0xFFFF",
-                    )
-            )
-        estimate_result = self.web3_client_sol.estimate_scheduled(
-            self.uniswap_neon_account.solana_account.pubkey(), trx_estimate_obj_list
-        )
-
-        gas_list_new = []
-        for i in estimate_result["gasList"]:
-            new_value = 10 * int(i, 16)
-            gas_list_new.append(hex(new_value))
-
-        estimate_result["gasList"] = gas_list_new
-
-        trxs = []
-        for i in range(2):
-            trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
-
-        tree_acc_data = CreateTreeAccMultipleData(
-            nonce=estimate_result["nonce"],
-            max_fee_per_gas=estimate_result["maxFeePerGas"],
-            max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
-        )
-        tree_acc_data.add_trx(trxs[0], 0xFFFF, 0)
-        tree_acc_data.add_trx(trxs[1], 0xFFFF, 0)
-
-        self.evm_loader.create_tree_account_multiple(
-            self.uniswap_neon_account, self.treasury_pool, tree_acc_data.data, wSOL["address_spl"]
-        )
-        self.web3_client_sol.send_all_scheduled_transactions(trxs)
-        for trx in trxs:
-            check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex(), timeout=240)
-
-        # Send uniswap-v3 swap trx
-        params_input = {
-            "tokenIn": token_in.contract_address,
-            "tokenOut": token_out.contract_address,
-            "fee": 500,
-            "recipient": self.uniswap_neon_account.checksum_address,
-            "deadline": int(web3.constants.MAX_INT, 16),
-            "amountIn": swap_amount,
-            "amountOutMinimum": 1,
-            "sqrtPriceLimitX96": 1461446703485210103287273052203988822378723970341,
-        }
-
-        params_output = {
-            "tokenIn": token_in.contract_address,
-            "tokenOut": token_out.contract_address,
-            "fee": 500,
-            "recipient": self.uniswap_neon_account.checksum_address,
-            "deadline": int(web3.constants.MAX_INT, 16),
-            "amountOut": swap_amount,
-            "amountOutMinimum": 1,
-            "sqrtPriceLimitX96": 1461446703485210103287273052203988822378723970341,
-        }
-
-        data_0 = decode_function_with_stucture_in_arg_signature("exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
-                                           [params_input["tokenIn"],
-                                            params_input["tokenOut"],
-                                            params_input["fee"],
-                                            params_input["recipient"],
-                                            params_input["deadline"],
-                                            params_input["amountIn"],
-                                            params_input["amountOutMinimum"],
-                                            params_input["sqrtPriceLimitX96"]])
-        data_1 = decode_function_with_stucture_in_arg_signature("exactOutputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))", 
-                                            [params_output["tokenIn"],
-                                            params_output["tokenOut"],
-                                            params_output["fee"],
-                                            params_output["recipient"],
-                                            params_output["deadline"],
-                                            params_output["amountOut"],
-                                            params_output["amountOutMinimum"],
-                                            params_output["sqrtPriceLimitX96"]])
-        
-        call_data: list = [data_0, data_1]
-
-        trx_estimate_obj_list: list[ScheduledTrxEstimateRequest] = []
-        for i in range(2):
-            LOG.info(f"Estimate {i} trx...")
-            trx_estimate_obj_list.append(
-                ScheduledTrxEstimateRequest(
-                    self.uniswap_neon_account.checksum_address,
-                    router.address,
-                    call_data[i],
-                    child_transaction="0xFFFF",
-                )
-            )
-        estimate_result = self.web3_client_sol.estimate_scheduled(
-            self.uniswap_neon_account.solana_account.pubkey(), trx_estimate_obj_list
-        )
-
-        gas_list_new = []
-        for i in estimate_result["gasList"]:
-            new_value = 10 * int(i, 16)
-            gas_list_new.append(hex(new_value))
-
-        estimate_result["gasList"] = gas_list_new
-
-        trxs = []
-        for i in range(2):
-            trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
-
-        tree_acc_data = CreateTreeAccMultipleData(
-            nonce=estimate_result["nonce"],
-            max_fee_per_gas=estimate_result["maxFeePerGas"],
-            max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
-        )
-        tree_acc_data.add_trx(trxs[0], 0xFFFF, 0)
-        tree_acc_data.add_trx(trxs[1], 0xFFFF, 0)
-
-        self.evm_loader.create_tree_account_multiple(
-            self.uniswap_neon_account, self.treasury_pool, tree_acc_data.data, wSOL["address_spl"]
-        )
-        self.web3_client_sol.send_all_scheduled_transactions(trxs)
-        for trx in trxs:
-            check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex(), timeout=240)
-
-
 class ScheduledTxUser(User):
     tasks = {
         ScheduledTxsIndependentTasksSet: 1,
         ScheduledTxsDependentTasksSet: 1,
         ScheduledTxsTransferToDifferentUsersTasksSet: 1,
-        ScheduledTxsUniswapV3TasksSet: 1,
     }

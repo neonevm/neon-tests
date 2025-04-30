@@ -240,19 +240,10 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
                 self.user.environment.uniswap["neon_accounts"].append(self.uniswap_neon_account)
                 LOG.info(f"Returned user: {self.uniswap_neon_account.checksum_address}")
 
-    def check_neon_user_token_balance(self, token):
-        balance_token = token.get_balance(self.uniswap_neon_account.checksum_address)
-        if balance_token < int(initial_amount / 1000):
-            LOG.info(f"Balance token check: {balance_token}")
-            resp = token.mint_tokens(
-                signer=token.account, to_address=self.uniswap_neon_account.checksum_address, amount=token_mint_amount
-            )
-            assert resp["status"] == 1
-
     @task
     def task_send_uniswap_scheduled_tx(self):
         """Send scheduled transactions with uniswap-v3 swaps"""
-        swap_amount = 1_000
+        swap_amount = 10
         router = self.user.environment.uniswap["router"]
         token_0 = self.user.environment.uniswap["tokens"]["TTA"]
         token_1 = self.user.environment.uniswap["tokens"]["TTB"]
@@ -265,8 +256,6 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
             token_out = token_1
 
         self.check_neon_user_balance(self.uniswap_neon_account.solana_account)
-        self.check_neon_user_token_balance(token_in)
-        self.check_neon_user_token_balance(token_out)
 
         params_input = {
             "tokenIn": token_in.contract_address,

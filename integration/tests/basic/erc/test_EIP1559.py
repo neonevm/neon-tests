@@ -460,6 +460,7 @@ class TestEIP1559:
         web3_client: NeonChainWeb3Client,
         json_rpc_client: JsonRPCSession,
         sol_client: SolanaClient,
+        default_cu_price: int,
     ):
         sender = accounts[0]
         recipient = accounts[1]
@@ -494,8 +495,7 @@ class TestEIP1559:
             commitment=Confirmed,
         ).value
         cu_price_actual = sol_client.get_compute_budget_set_cu_price_from_tx(solana_transaction)
-        min_cu_price = int(web3_client.neon_gas_price()["solanaSimpleCUPriorityFee"], 16)
-        assert cu_price_actual == min_cu_price
+        assert cu_price_actual == default_cu_price
 
     @pytest.mark.neon_only
     @pytest.mark.only_stands
@@ -505,6 +505,7 @@ class TestEIP1559:
         web3_client: NeonChainWeb3Client,
         json_rpc_client: JsonRPCSession,
         sol_client: SolanaClient,
+        default_cu_price: int,
     ):
         account = accounts[0]
         contract_iface = helpers.get_contract_interface(
@@ -542,9 +543,8 @@ class TestEIP1559:
             + neon_gas_estimate["gasExecutionUsed"]
             + neon_gas_estimate["gasFinishUsed"]
         )
-        cu_price_expected = 10_500
         cu_price_from_estimate = neon_gas_estimate["solanaComputeUnitPrice"]
-        assert cu_price_from_estimate == cu_price_expected
+        assert cu_price_from_estimate == default_cu_price
 
         receipt = web3_client.send_transaction(account=account, transaction=tx_params)
         solana_transaction_hashes = web3_client.get_solana_trx_by_neon(receipt["transactionHash"].hex())["result"]
@@ -577,9 +577,9 @@ class TestEIP1559:
                     case InstructionTags.SET_COMPUTE_UNIT_PRICE:
                         cu_price_actual = instruction_data
 
-        assert cu_price_actual == cu_price_expected, f"Actual: {cu_price_actual}, Expected: {cu_price_expected}"
+        assert cu_price_actual == default_cu_price, f"Actual: {cu_price_actual}, Expected: {default_cu_price}"
 
-        pkt = CuCostPktData.from_raw(gas, neon_gas_estimate["numIterations"], cu_price_expected)
+        pkt = CuCostPktData.from_raw(gas, neon_gas_estimate["numIterations"], default_cu_price)
         tx_cost = pkt.tx_cost
         assert eth_gas_estimate == tx_cost
 

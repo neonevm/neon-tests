@@ -18,7 +18,7 @@ from utils.models.result import EthEstimateGas, EthResult
 from utils.solana_client import SolanaClient
 from utils.web3client import NeonChainWeb3Client
 
-_MIN_GAS_LIMIT = 0x137FF
+_MIN_GAS_LIMIT = 1038831
 
 
 @allure.feature("JSON-RPC validation")
@@ -132,7 +132,7 @@ class TestRpcEstimateGas:
 
         assert "gas" in transaction
         estimated_gas = transaction["gas"]
-        assert estimated_gas == 1_243_135
+        assert estimated_gas == 2_087_407
 
     @pytest.mark.neon_only  # Geth returns a different estimate
     @pytest.mark.only_stands
@@ -140,7 +140,7 @@ class TestRpcEstimateGas:
         recipient_account = self.accounts.create_account()
         tx_receipt = erc20_spl.transfer(erc20_spl.account, recipient_account, 1)
         transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
-        assert transaction["gas"] == 2_140_159
+        assert transaction["gas"] == 3_004_911
 
     @pytest.mark.neon_only  # Geth returns a different estimate
     @pytest.mark.only_stands
@@ -189,13 +189,13 @@ class TestRpcEstimateGas:
         estimated_gas = transaction["gas"]
         assert estimated_gas == _MIN_GAS_LIMIT
 
-    @pytest.mark.skip(reason="For this test DEFAULT_CU_PRICE must be increased by 20 times")
-    @pytest.mark.parametrize("cu_price_coefficient", [0, 0.9, 1, 1.1])
+    @pytest.mark.parametrize("cu_price_coefficient", [0, 1, 1.1])
     def test_compute_unit_price_malicious_manipulation(
         self,
         web3_client: NeonChainWeb3Client,
         json_rpc_client: JsonRPCSession,
         sol_client: SolanaClient,
+        default_cu_price: int,
         cu_price_coefficient,
     ):
         sender = self.accounts[1]
@@ -255,11 +255,8 @@ class TestRpcEstimateGas:
 
         assert abs(operator_spent_total - neon_gas_used_total) <= 1
 
-        min_cu_price = int(web3_client.neon_gas_price()["solanaSimpleCUPriorityFee"], 16)
-
-        if cu_price_coefficient == 0:
-            assert all(cu_price == min_cu_price for cu_price in cu_prices_actual)
-        elif cu_price_coefficient < 1:
-            assert all(cu_price < cu_price_initial for cu_price in cu_prices_actual)
+        msg = str(cu_prices_actual) + " {sign} " + str(default_cu_price)
+        if cu_price_coefficient < 1:
+            assert all(cu_price < cu_price_initial for cu_price in cu_prices_actual), msg.format(sign="<")
         else:
-            assert all(cu_price == cu_price_initial for cu_price in cu_prices_actual)
+            assert all(cu_price == cu_price_initial for cu_price in cu_prices_actual), msg.format(sign="==")

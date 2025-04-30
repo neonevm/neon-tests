@@ -8,3 +8,4 @@ vyper==0.3.7
 typing-extensions==4.6.1
 PyCryptodome==3.19.0
 pytest-retry==1.7.0
+jsonschema==4.21.1

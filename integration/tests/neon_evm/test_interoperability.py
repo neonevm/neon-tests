@@ -37,7 +37,7 @@ from utils.consts import (
 
 from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
 from utils.evm_loader import EvmLoader
-from utils.helpers import serialize_instruction
+from utils.helpers import serialize_instruction, wait_condition
 
 from utils.instructions import DEFAULT_UNITS, make_CreateAssociatedTokenIdempotent
 from utils.layouts import COUNTER_ACCOUNT_LAYOUT
@@ -125,6 +125,7 @@ class TestInteroperability:
             neon_api_client,
             treasury_pool,
             contract_name="Test",
+            version="0.8.28",
         )
 
         data = abi.function_signature_to_4byte_selector("call_memo()")
@@ -183,7 +184,7 @@ class TestInteroperability:
         assert layout.count == instruction_count
 
     def test_limit_of_simple_instr_in_one_trx(self, sender_with_tokens, solana_caller):
-        instruction_count = 24
+        instruction_count = 29
         resource_addr = solana_caller.create_resource(sender_with_tokens, b"dss", 8, 1000000000, COUNTER_ID)
 
         instruction = Instruction(
@@ -248,7 +249,8 @@ class TestInteroperability:
         to_wallet = Keypair()
         amount = 100000
         evm_loader.request_airdrop(from_wallet.pubkey(), 1000 * 10**9, commitment=Confirmed)
-
+        wait_condition(lambda: evm_loader.account_exists(account_address=from_wallet.pubkey()) is True, timeout_sec=10)
+        wait_condition(lambda: evm_loader.get_solana_balance(account=from_wallet.pubkey()) != 0, timeout_sec=10)
         mint, from_token_account, to_token_account = _create_mint_and_accounts(
             evm_loader, from_wallet, to_wallet, amount
         )
@@ -453,7 +455,7 @@ class TestInteroperability:
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
 
         resource_addr = solana_caller.create_resource(sender_with_tokens, b"qqww", 8, 1000000000, COUNTER_ID)
-        matrix_size = 6
+        matrix_size = 8
         matrix = [[random.randint(1, 100) for _ in range(matrix_size)] for _ in range(matrix_size)]
 
         instruction = Instruction(
@@ -483,7 +485,7 @@ class TestInteroperability:
 
         evm_loader.write_transaction_to_holder_account(signed_tx, new_holder_acc_2, operator_keypair)
 
-        for _ in range(11):
+        for _ in range(9):
             evm_loader.send_transaction_step_from_account(
                 operator_keypair,
                 operator_balance_pubkey,

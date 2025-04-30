@@ -1,13 +1,14 @@
-import typing as tp
-import web3.exceptions
 import random
+import typing as tp
 
+import allure
 import pytest
 import spl
-from solders.keypair import Keypair
+import web3.exceptions
 from solana.rpc.commitment import Confirmed
 from solana.rpc.types import TxOpts
 from solana.transaction import AccountMeta, Instruction
+from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 from spl.token.client import Token as SplToken
 from spl.token.constants import TOKEN_PROGRAM_ID
@@ -17,12 +18,11 @@ from spl.token.instructions import (
     transfer,
 )
 
-import allure
-from utils.types import TransactionType
 from utils.accounts import EthAccounts
 from utils.consts import COUNTER_ID, TRANSFER_TOKENS_ID, wSOL
 from utils.helpers import bytes32_to_solana_pubkey, serialize_instruction, wait_condition
 from utils.instructions import make_wSOL
+from utils.types import TransactionType
 from utils.web3client import NeonChainWeb3Client
 
 
@@ -48,7 +48,7 @@ class TestSolanaInteroperability:
     def call_solana_caller_sol_network(self, class_account_sol_chain, web3_client_sol):
         contract, _ = web3_client_sol.deploy_and_get_contract(
             contract="precompiled/CallSolanaCaller.sol",
-            version="0.8.10",
+            version="0.8.28",
             contract_name="CallSolanaCaller",
             account=class_account_sol_chain,
         )
@@ -359,7 +359,7 @@ class TestSolanaInteroperability:
             signed_tx = self.web3_client.eth.account.sign_transaction(instruction_tx, sender.key)
             result = self.web3_client.get_neon_emulate(str(signed_tx.raw_transaction.hex()))
             resp = self.web3_client.eth.send_raw_transaction(signed_tx.raw_transaction)
-            resp = self.web3_client.eth.wait_for_transaction_receipt(resp, timeout=60)
+            resp = self.web3_client.wait_for_transaction_receipt(resp, timeout=60)
             assert resp["status"] == 1
 
             return result["result"]["gasUsed"]
@@ -372,7 +372,7 @@ class TestSolanaInteroperability:
         sender = self.accounts[0]
         call_params = []
 
-        for _ in range(26):
+        for _ in range(30):
             instruction = Instruction(
                 program_id=COUNTER_ID,
                 accounts=[
@@ -386,7 +386,7 @@ class TestSolanaInteroperability:
         tx = self.web3_client.make_raw_tx(sender.address)
         instruction_tx = call_solana_caller.functions.batchExecute(call_params).build_transaction(tx)
         resp = self.web3_client.send_transaction(sender, instruction_tx)
-        assert resp["status"] == 0
+        assert resp["status"] == 0, resp
 
     def test_solana_call_after_iterative_actions_sol_network(
         self,
@@ -424,7 +424,7 @@ class TestSolanaInteroperability:
     ):
         sender = self.accounts[0]
         lamports = 0
-        matrix_length = 6
+        matrix_length = 9
         matrix = [[random.randint(1, 100) for _ in range(matrix_length)] for _ in range(matrix_length)]
 
         instruction = Instruction(
@@ -458,7 +458,7 @@ class TestSolanaInteroperability:
     ):
         sender = self.accounts[0]
         lamports = 0
-        matrix_length = 50
+        matrix_length = 70
         matrix = [[random.randint(1, 100) for _ in range(matrix_length)] for _ in range(matrix_length)]
 
         instruction = Instruction(
@@ -645,9 +645,13 @@ class TestSolanaInteroperability:
         )
 
     def test_solana_call_before_iterative_actions_negative(self, counter_resource_address: bytes, call_solana_caller):
+        """
+        makes sure that anything done after Solana call fits into a single transaction
+        while matrix triggers more than 1 transaction
+        """
         sender = self.accounts[0]
         lamports = 0
-        matrix_lenght = 12
+        matrix_lenght = 15
         matrix = [[random.randint(1, 100) for _ in range(matrix_lenght)] for _ in range(matrix_lenght)]
 
         instruction = Instruction(
@@ -666,7 +670,7 @@ class TestSolanaInteroperability:
         ).build_transaction(tx)
 
         resp = self.web3_client.send_transaction(sender, instruction_tx)
-        assert resp["status"] == 0
+        assert resp["status"] == 0, resp
 
     def test_iterative_actions_and_multiple_solana_calls(
         self, counter_resource_address: bytes, call_solana_caller, get_counter_value

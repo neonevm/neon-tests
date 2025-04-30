@@ -48,10 +48,11 @@ def make_deployment_transaction(
     max_priority_fee_per_gas=None,
     max_fee_per_gas=None,
     version: str = "0.7.6",
+    import_remappings: dict | list = None,
 ) -> SignedTransaction:
     if chain_id == "":
         chain_id = evm_loader.chain_id
-    data = get_contract_bin(contract_file_name, contract_name, version)
+    data = get_contract_bin(contract_file_name, contract_name, version, import_remappings)
     if encoded_args is not None:
         data = data + encoded_args.hex()
 

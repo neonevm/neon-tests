@@ -47,6 +47,7 @@ class EnvironmentConfig:
     neon_erc20wrapper_address: str
     use_bank: bool
     eth_bank_account: str
+    default_cu_price: int | None = None
     neonpass_url: str = ""
     ws_subscriber_url: str = ""
     account_seed_version: str = "\3"
@@ -305,8 +306,8 @@ def treasury_pool_new(evm_loader, pytestconfig) -> TreasuryPool:
 
 
 @pytest.fixture(scope="session")
-def index_of_process(worker_id):
+def index_of_process(worker_id) -> int:
     if worker_id in ("master", "gw1"):
         return 1
     match = re.search(r"gw(\d+)", worker_id)
-    return int(match.group(1)) if match else None
+    return int(match.group(1))

@@ -1,12 +1,12 @@
-pragma solidity >=0.7.0 <0.9.0;
+pragma solidity ^0.8.28;
+
+import {Storage} from "../common/StorageSoliditySource.sol";
+import {ICallSolana} from "../external/neon-contracts/contracts/precompiles/ICallSolana.sol";
 pragma abicoder v2;
 
-import "../external/neon-evm/call_solana.sol";
-import "../common/StorageSoliditySource.sol";
-
 contract CallSolanaCaller {
-    CallSolana constant _callSolana =
-        CallSolana(0xFF00000000000000000000000000000000000006);
+    ICallSolana constant _callSolana =
+        ICallSolana(0xFF00000000000000000000000000000000000006);
     struct Data {
         uint256 value1;
         uint256 value2;
@@ -48,9 +48,10 @@ contract CallSolanaCaller {
         uint256 actionsNumber,
         uint64 lamports,
         bytes calldata instruction
-    ) public {
+    ) public returns (uint256){
         doIterativeActions(actionsNumber);
         execute(lamports, instruction);
+        return actionsNumber;
     }
 
     function solanaCallBeforeActionWithMatrix(

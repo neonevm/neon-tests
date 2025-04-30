@@ -22,14 +22,15 @@ from clickfile import EnvName
 from conftest import EnvironmentConfig
 from utils.accounts import EthAccounts
 from utils.apiclient import JsonRPCSession
-from utils.consts import COUNTER_ID, LAMPORT_PER_SOL, MULTITOKEN_MINTS_USDT
+from utils.consts import COUNTER_ID, LAMPORT_PER_SOL, MULTITOKEN_MINTS_USDT, REMAPPING_ZEPPELIN
 from utils.erc20 import ERC20
-from utils.erc20wrapper import ERC20Wrapper, ERC20NewWrapper
+from utils.erc20wrapper import ERC20Wrapper
 from utils.evm_loader import EvmLoader
 from utils.helpers import decode_function_signature, get_selectors
 from utils.operator import Operator
 from utils.prices import get_sol_price_with_retry
 from utils.solana_client import SolanaClient
+from utils.types import TransactionType
 from utils.web3client import NeonChainWeb3Client, Web3Client
 from .basic.helpers.chains import make_nonce_the_biggest_for_chain
 
@@ -204,45 +205,6 @@ def erc20_spl(
 
 
 @pytest.fixture(scope="session")
-def erc20_spl_new(
-    web3_client_session: NeonChainWeb3Client,
-    faucet,
-    environment: EnvironmentConfig,
-    sol_client_session,
-    solana_account,
-    eth_bank_account,
-    accounts_session,
-) -> tp.Generator[ERC20NewWrapper, tp.Any, tp.Any]:
-    symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
-    erc20 = ERC20NewWrapper(
-        web3_client_session,
-        faucet,
-        f"Test {symbol}",
-        symbol,
-        sol_client_session,
-        solana_account=solana_account,
-        mintable=False,
-        bank_account=eth_bank_account,
-        account=accounts_session[0],
-        evm_loader_id=environment.evm_loader,
-    )
-    erc20.token_mint.approve(
-        source=erc20.solana_associated_token_acc,
-        delegate=sol_client_session.get_erc_auth_address(
-            erc20.account.address,
-            erc20.contract.address,
-            environment.evm_loader,
-        ),
-        owner=erc20.solana_acc.pubkey(),
-        amount=1000000000000000,
-        opts=TxOpts(preflight_commitment=commitment.Confirmed, skip_confirmation=False),
-    )
-
-    erc20.claim(erc20.account, bytes(erc20.solana_associated_token_acc), 100000000000000)
-    yield erc20
-
-
-@pytest.fixture(scope="session")
 def erc20_simple(web3_client_session, faucet, accounts_session, eth_bank_account) -> tp.Generator[ERC20, None, None]:
     erc20 = ERC20(
         web3_client=web3_client_session, faucet=faucet, bank_account=eth_bank_account, owner=accounts_session[0]
@@ -261,31 +223,6 @@ def erc20_spl_mintable(
 ) -> tp.Generator[ERC20Wrapper, None, None]:
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
     erc20 = ERC20Wrapper(
-        web3_client_session,
-        faucet,
-        f"Test {symbol}",
-        symbol,
-        sol_client_session,
-        solana_account=solana_account,
-        mintable=True,
-        bank_account=eth_bank_account,
-        account=accounts_session[0],
-    )
-    erc20.mint_tokens(erc20.account, erc20.account.address)
-    yield erc20
-
-
-@pytest.fixture(scope="session")
-def erc20_spl_mintable_new(
-    web3_client_session: NeonChainWeb3Client,
-    faucet,
-    sol_client_session,
-    solana_account,
-    accounts_session,
-    eth_bank_account,
-) -> tp.Generator[ERC20NewWrapper, tp.Any, tp.Any]:
-    symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
-    erc20 = ERC20NewWrapper(
         web3_client_session,
         faucet,
         f"Test {symbol}",
@@ -622,10 +559,11 @@ def expected_error_checker(accounts, web3_client) -> tp.Generator[Contract, None
 def multiple_actions_erc20(web3_client_session, accounts, erc20_spl_mintable):
     contract, contract_deploy_tx = web3_client_session.deploy_and_get_contract(
         "EIPs/ERC20/MultipleActions",
-        "0.8.24",
+        "0.8.28",
         accounts[0],
         contract_name="MultipleActionsERC20",
-        constructor_args=["Test TTT", "TTT", 18],
+        constructor_args=["Test TTT", "TTT", 9],
+        import_remapping=REMAPPING_ZEPPELIN,
     )
     return accounts[0], contract
 
@@ -633,14 +571,14 @@ def multiple_actions_erc20(web3_client_session, accounts, erc20_spl_mintable):
 @pytest.fixture(scope="class")
 def multiple_actions_erc721(web3_client, accounts):
     contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
-        "EIPs/ERC721/MultipleActions", "0.8.10", accounts[0], contract_name="MultipleActionsERC721"
+        "EIPs/ERC721/MultipleActions", "0.8.28", accounts[0], contract_name="MultipleActionsERC721"
     )
     return accounts[0], contract
 
 
 @pytest.fixture(scope="class")
 def call_solana_caller(accounts, web3_client):
-    contract, _ = web3_client.deploy_and_get_contract("precompiled/CallSolanaCaller.sol", "0.8.10", accounts[0])
+    contract, _ = web3_client.deploy_and_get_contract("precompiled/CallSolanaCaller.sol", "0.8.28", accounts[0])
     return contract
 
 
@@ -796,3 +734,33 @@ def diamond(web3_client_session, diamond_init, facet_cuts, accounts):
         constructor_args=[facet_cuts, diamond_args],
     )
     return contract
+
+
+@pytest.fixture(scope="class")
+def neon_token_contract(web3_client_session, accounts):
+    contract, _ = web3_client_session.deploy_and_get_contract(
+        contract="precompiled/NeonToken",
+        version="0.8.10",
+        account=accounts[0],
+        tx_type=TransactionType(2),  # EIP_1559
+    )
+    yield contract
+
+
+@pytest.fixture(scope="class")
+def precompiled_contract(web3_client, faucet, accounts):
+    contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
+        "precompiled/CommonCaller", "0.8.10", accounts[0]
+    )
+    return contract
+
+
+@pytest.fixture(scope="class")
+def alt_contract(accounts, web3_client):
+    contract, _ = web3_client.deploy_and_get_contract("common/ALT", "0.8.10", account=accounts[0], constructor_args=[8])
+    return contract
+
+
+@pytest.fixture(scope="session")
+def default_cu_price(pytestconfig: Config) -> int | None:
+    return pytestconfig.environment.default_cu_price  # must be equal to compose.proxy.environment.DEFAULT_CU_PRICE

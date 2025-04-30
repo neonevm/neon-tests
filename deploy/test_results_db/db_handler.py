@@ -161,18 +161,6 @@ class PostgresTestResultsHandler:
 
         tag_column = CostReport.neon_evm_tag if repo == "evm" else CostReport.proxy_tag
 
-        # Fetch previous CostReport entries
-        previous_reports_query = self.build_cost_report_query(
-            repo=repo,
-            tag_column=tag_column,
-            tags=previous_tags,
-            order_by=order_by,
-        )
-
-        # offset the previous_reports query by 1 if it's a merge event because latest_tag is the same as previous_tags
-        offset = 1 if latest_tag in previous_tags else 0
-        previous_reports: list[CostReport] = previous_reports_query.offset(offset).limit(depth - 1).all()
-
         # Fetch last CostReport
         last_report_query = self.build_cost_report_query(
             repo=repo,
@@ -181,6 +169,20 @@ class PostgresTestResultsHandler:
             order_by=order_by,
         )
         last_report = last_report_query.first()
+
+        # Fetch previous CostReport entries
+        previous_reports_query = self.build_cost_report_query(
+            repo=repo,
+            tag_column=tag_column,
+            tags=previous_tags,
+            order_by=order_by,
+        ).filter(
+            CostReport.timestamp < last_report.timestamp
+        )  # filter out newer reports if reproducing locally
+
+        # offset the previous_reports query by 1 if it's a merge event because latest_tag is the same as previous_tags
+        offset = 1 if latest_tag in previous_tags else 0
+        previous_reports: list[CostReport] = previous_reports_query.offset(offset).limit(depth - 1).all()
 
         cost_report_entries: list[CostReport] = []
         if previous_reports:
@@ -273,7 +275,7 @@ class PostgresTestResultsHandler:
         )
 
         if order_by == "branch_name":
-            query.order_by(
+            query = query.order_by(
                 case(
                     (
                         tag_column.regexp_match(GITHUB_TAG_PATTERN.pattern),
@@ -296,5 +298,5 @@ class PostgresTestResultsHandler:
                     else_=0,
                 ),
             )
-        query.order_by(desc(CostReport.timestamp))
+        query = query.order_by(desc(CostReport.timestamp))
         return query

@@ -36,14 +36,8 @@ class TestRejectingContractsStartingWith0xEF:
 
     def test_sent_correct_calldata_via_trx(self):
         sender_account = self.accounts[0]
-        transaction = self.web3_client.make_raw_tx(sender_account)
-        transaction["data"] = GOOD_CALLDATA[0]
-        transaction["chainId"] = self.web3_client.eth.chain_id
-        transaction["gas"] = self.web3_client.eth.estimate_gas(transaction)
-        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
-        tx = self.web3_client.eth.send_raw_transaction(signed_tx.raw_transaction)
-
-        receipt = self.web3_client.eth.wait_for_transaction_receipt(tx)
+        transaction = self.web3_client.make_raw_tx(sender_account, data=GOOD_CALLDATA[0], estimate_gas=True)
+        receipt = self.web3_client.send_transaction(sender_account, transaction)
         assert receipt["status"] == 1
 
     @pytest.fixture(scope="function")

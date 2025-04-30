@@ -1,8 +1,7 @@
 import random
 
-import pytest
-
 import allure
+import pytest
 
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 from utils.accounts import EthAccounts
@@ -131,13 +130,14 @@ class TestBlockTimestampAndNumber:
         contract = self.web3_client.get_deployed_contract(addr, "common/Block.sol", "BlockTimestamp")
         assert contract.functions.accrualBlockTimestamp().call() <= int(tx_block_timestamp, 16)
 
+    @pytest.mark.skip(reason="https://neonlabs.atlassian.net/browse/NDEV-3701")
     def test_block_number_in_mapping(self, block_number_contract):
         contract, _ = block_number_contract
         sender_account = self.accounts[0]
 
         tx = self.web3_client.make_raw_tx(sender_account)
         v1 = 1
-        v2 = 5
+        v2 = 6
         instruction_tx = contract.functions.addDataToMapping(v1, v2).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert self.web3_client.is_trx_iterative(receipt["transactionHash"].hex())

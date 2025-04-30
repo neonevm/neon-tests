@@ -31,7 +31,7 @@ class SolanaCaller:
             contract_file_name="precompiled/CallSolanaCaller",
             neon_api_client=neon_api_client,
             treasury_pool=treasury_pool,
-            version="0.8.10",
+            version="0.8.28",
         )
 
     def get_neon_address(self, eth_address):

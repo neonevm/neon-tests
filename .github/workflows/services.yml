@@ -13,9 +13,8 @@ on:
         required: true
         description: "Stand name"
         options:
-          - night-stand
           - devnet
-          - private-devnet
+          - terraform
       numprocesses:
         type: choice
         default: 4

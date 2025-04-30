@@ -17,7 +17,7 @@ GAS_LIMIT_AND_PRICE_DATA = (
     [1, None, ErrorMessage.GAS_LIMIT_REACHED.value],
     [U64_MAX + 1, None, ErrorMessage.GAS_OVERFLOW.value],
     [
-        21_000,
+        35_000,
         U64_MAX + 1,
         ErrorMessage.INSUFFICIENT_FUNDS.value,
     ],

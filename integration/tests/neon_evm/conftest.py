@@ -2,6 +2,7 @@ import json
 import pathlib
 from typing import Tuple, Any
 
+import allure
 import eth_abi
 import pytest
 from eth_keys import keys as eth_keys
@@ -10,7 +11,7 @@ from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 
 from conftest import EnvironmentConfig
-from utils.consts import OPERATOR_KEYPAIR_PATH
+from utils.consts import OPERATOR_KEYPAIR_PATH, REMAPPING_ZEPPELIN
 from utils.evm_loader import EvmLoader
 from utils.solana_client import SolanaClient
 from utils.types import Contract, Caller, TreasuryPool
@@ -54,29 +55,31 @@ def solana_client(environment: EnvironmentConfig):
 
 # following two keypair could be parametrized
 @pytest.fixture(scope="session")
-def operator_keypair(worker_id: str, evm_loader: EvmLoader) -> Keypair:
+def operator_keypair(index_of_process: int, evm_loader: EvmLoader) -> Keypair:
     """
     Initialized solana keypair with balance. Get private keys from ci/operator-keypairs
     """
-    if worker_id in ("master", "gw1"):
-        key_file = pathlib.Path(f"{OPERATOR_KEYPAIR_PATH}/id.json")
-    else:
-        file_id = int(worker_id[-1]) + 2
-        key_file = pathlib.Path(f"{OPERATOR_KEYPAIR_PATH}/id{file_id}.json")
+    key_file = pathlib.Path(f"{OPERATOR_KEYPAIR_PATH}/id{index_of_process+1}.json")
+    allure.attach(
+        f"current key_file {key_file}",
+        "Operator key",
+        attachment_type=allure.attachment_type.TEXT,
+    )
     return prepare_operator(key_file, evm_loader)
 
 
 @pytest.fixture(scope="session")
-def second_operator_keypair(worker_id: str, evm_loader: EvmLoader) -> Keypair:
+def second_operator_keypair(index_of_process: int, evm_loader: EvmLoader) -> Keypair:
     """
     Initialized solana keypair with balance. Get private key from cli or ./ci/operator-keypairs
     """
-    if worker_id in ("master", "gw1"):
-        key_file = pathlib.Path(f"{OPERATOR_KEYPAIR_PATH}/id20.json")
-    else:
-        file_id = 20 + int(worker_id[-1]) + 2
-        key_file = pathlib.Path(f"{OPERATOR_KEYPAIR_PATH}/id{file_id}.json")
-
+    file_id = 20 + index_of_process
+    key_file = pathlib.Path(f"{OPERATOR_KEYPAIR_PATH}/id{file_id}.json")
+    allure.attach(
+        f"current key_file {key_file}",
+        "Operator key",
+        attachment_type=allure.attachment_type.TEXT,
+    )
     return prepare_operator(key_file, evm_loader)
 
 
@@ -210,7 +213,7 @@ def spl_token_caller(operator_keypair, evm_loader, session_user, treasury_pool, 
         "precompiled/SplTokenCaller",
         neon_api_client,
         treasury_pool,
-        version="0.8.12",
+        version="0.8.28",
     )
 
 
@@ -254,11 +257,12 @@ def erc20_for_spl_factory_contract(
     return evm_loader.deploy_contract(
         operator_keypair,
         sender_with_tokens,
-        "external/neon-evm/erc20_for_spl_factory",
+        "external/neon-contracts/contracts/token/ERC20ForSpl/erc20_for_spl_factory",
         neon_api_client,
         treasury_pool,
         contract_name="ERC20ForSplFactory",
-        version="0.8.24",
+        version="0.8.28",
+        import_remappings=REMAPPING_ZEPPELIN,
     )
 
 
@@ -271,7 +275,7 @@ def multiple_actions_erc20(
     neon_api_client: NeonApiClient,
     holder_acc: Pubkey,
 ) -> Contract:
-    encoded_args = eth_abi.encode(["string", "string", "uint256"], ["Test TTT", "TTT", 18])
+    encoded_args = eth_abi.encode(["string", "string", "uint256"], ["Test TTT", "TTT", 9])
     return evm_loader.deploy_contract(
         operator=operator_keypair,
         user=sender_with_tokens,
@@ -279,8 +283,9 @@ def multiple_actions_erc20(
         neon_api_client=neon_api_client,
         treasury_pool=treasury_pool,
         contract_name="MultipleActionsERC20",
-        version="0.8.24",
+        version="0.8.28",
         encoded_args=encoded_args,
+        import_remappings=REMAPPING_ZEPPELIN,
     )
 
 

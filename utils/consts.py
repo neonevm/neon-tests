@@ -1,10 +1,10 @@
-from pathlib import Path
 import typing as tp
-
 from enum import Enum
-from utils.types import TestGroup
+from pathlib import Path
+
 from solders.pubkey import Pubkey
 
+from utils.types import TestGroup
 
 EXTERNAL_CONTRACT_PATH = Path.cwd() / "contracts" / "external"
 REMAPPING_ZEPPELIN = {"@openzeppelin": str(EXTERNAL_CONTRACT_PATH / "neon-contracts/node_modules/@openzeppelin")}
@@ -61,8 +61,6 @@ class Unit(Enum):
 
 
 class EnvName(str, Enum):
-    NIGHT_STAND = "night-stand"
-    RELEASE_STAND = "release-stand"
     MAINNET = "mainnet"
     DEVNET = "devnet"
     TESTNET = "testnet"

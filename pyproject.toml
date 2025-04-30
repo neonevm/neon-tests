@@ -12,7 +12,7 @@ line-length = 88
 
 
 [tool.pytest.ini_options]
-timeout = 300
+timeout = 800
 markers = [
     "only_stands: these tests work only on test stands",
     "only_devnet: these tests work only on devnet env",

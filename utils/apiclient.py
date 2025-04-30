@@ -1,8 +1,9 @@
+import random
 import time
 import typing as tp
-import random
 
 import allure
+from hexbytes import HexBytes
 from requests import Session
 
 
@@ -45,10 +46,10 @@ class JsonRPCSession(Session):
         response = self.send_rpc("eth_getCode", [contract_address, "latest"])
         return response["result"]
 
-    def get_neon_trx_receipt(self, trx_hash: str) -> tp.Dict:
+    def get_neon_trx_receipt(self, trx_hash: HexBytes) -> tp.Dict:
         return self.send_rpc("neon_getTransactionReceipt", params=[trx_hash.hex()])
 
-    def get_solana_trx_by_neon(self, trx_hash: str) -> tp.Dict:
+    def get_solana_trx_by_neon(self, trx_hash: HexBytes) -> tp.Dict:
         return self.send_rpc("neon_getSolanaTransactionByNeonTransaction", params=[trx_hash.hex()])
 
 

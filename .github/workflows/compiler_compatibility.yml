@@ -16,7 +16,6 @@ on:
         description: "Stand name"
         options:
           - terraform
-          - night-stand
           - devnet
           - private-devnet
 

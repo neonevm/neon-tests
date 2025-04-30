@@ -2,10 +2,16 @@ import re
 
 import allure
 import pytest
+from solders.instruction import Instruction, AccountMeta
+from solders.pubkey import Pubkey
+from web3.contract import Contract
 
 from integration.tests.basic.helpers.errors import Error32602
 from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex, assert_fields_are_specified_type
 from utils.accounts import EthAccounts
+from utils.consts import COUNTER_ID
+from utils.helpers import serialize_instruction
+from utils.types import TransactionType
 from utils.web3client import NeonChainWeb3Client
 
 
@@ -126,3 +132,141 @@ class TestNeonRPCBaseCalls:
             if item["tokenName"] == "NEON":
                 assert item["tokenMint"] == pytestconfig.environment.spl_neon_mint
                 assert item["tokenChainId"] == hex(pytestconfig.environment.network_ids["neon"])
+
+    def test_neon_estimate_gas_iterative_tx(
+        self,
+        block_timestamp_contract: Contract,
+        default_cu_price: int | None,
+    ):
+        contract, _ = block_timestamp_contract
+        sender = self.accounts[1]
+        tx = self.web3_client.make_raw_tx(sender)
+        instruction_tx = contract.functions.callIterativeTrx().build_transaction(tx)
+
+        neon_gas_estimate = self.web3_client.neon_estimate_gas(instruction_tx)["result"]
+
+        assert neon_gas_estimate["exitCode"] == "succeed"
+        assert neon_gas_estimate["externalSolanaCall"] is False
+        assert neon_gas_estimate["gasAddressLookupTableUsed"] == 0
+        assert neon_gas_estimate["gasFinishUsed"] == 0
+
+        gas_used_sum = (
+            neon_gas_estimate["gasAddressLookupTableUsed"]
+            + neon_gas_estimate["gasExecutionUsed"]
+            + neon_gas_estimate["gasFinishUsed"]
+            + neon_gas_estimate["gasSolanaPriorityUsed"]
+            + neon_gas_estimate["gasTransactionSizeUsed"]
+        )
+        assert gas_used_sum == neon_gas_estimate["gasUsed"]
+
+        assert neon_gas_estimate["numEvmSteps"] == 46477
+        assert neon_gas_estimate["numIterations"] == 95
+        assert neon_gas_estimate["result"] == "0x"
+        assert neon_gas_estimate["revertAfterSolanaCall"] is False
+        assert neon_gas_estimate["revertBeforeSolanaCall"] is False
+        assert len(neon_gas_estimate["solanaAccounts"]) == 2
+
+        if default_cu_price is not None:
+            assert neon_gas_estimate["solanaComputeUnitPrice"] == default_cu_price
+
+    def test_neon_estimate_gas_external_solana_call(
+        self,
+        default_cu_price: int | None,
+        counter_resource_address: bytes,
+        call_solana_caller: Contract,
+    ):
+        iterations = 29
+        sender = self.accounts[0]
+        lamports = 0
+
+        instruction = Instruction(
+            program_id=COUNTER_ID,
+            accounts=[
+                AccountMeta(Pubkey(counter_resource_address), is_signer=False, is_writable=True),
+            ],
+            data=bytes([0x1]),
+        )
+        serialized = serialize_instruction(COUNTER_ID, instruction)
+
+        tx = self.web3_client.make_raw_tx(sender.address, tx_type=TransactionType.EIP_1559)
+        instruction_tx = call_solana_caller.functions.executeInIterativeMode(
+            iterations, lamports, serialized
+        ).build_transaction(tx)
+
+        neon_gas_estimate = self.web3_client.neon_estimate_gas(instruction_tx)["result"]
+
+        assert neon_gas_estimate["exitCode"] == "succeed"
+        assert neon_gas_estimate["externalSolanaCall"] is True
+        assert neon_gas_estimate["gasAddressLookupTableUsed"] == 60000
+        assert neon_gas_estimate["gasFinishUsed"] == 0
+
+        gas_used_sum = (
+            neon_gas_estimate["gasAddressLookupTableUsed"]
+            + neon_gas_estimate["gasExecutionUsed"]
+            + neon_gas_estimate["gasFinishUsed"]
+            + neon_gas_estimate["gasSolanaPriorityUsed"]
+            + neon_gas_estimate["gasTransactionSizeUsed"]
+        )
+        assert gas_used_sum == neon_gas_estimate["gasUsed"]
+
+        assert neon_gas_estimate["numEvmSteps"] == 2122
+        assert neon_gas_estimate["numIterations"] == 7
+        assert int(neon_gas_estimate["result"], 16) == iterations
+        assert neon_gas_estimate["revertAfterSolanaCall"] is False
+        assert neon_gas_estimate["revertBeforeSolanaCall"] is False
+        assert len(neon_gas_estimate["solanaAccounts"]) == 33
+
+        if default_cu_price is not None:
+            assert neon_gas_estimate["solanaComputeUnitPrice"] == default_cu_price
+
+    def test_neon_estimate_gas_invalid_params(self):
+        sender = self.accounts[0]
+        tx = self.web3_client.make_raw_tx(sender.address, estimate_gas=True)
+        tx["data"] = "invalid"
+
+        error = self.web3_client.neon_estimate_gas(tx)["error"]
+
+        assert error["code"] == -32602
+        assert error["message"] == "Invalid params"
+
+        errors = error["data"]["errors"]
+        assert len(errors) == 2
+        assert "Value error, non-hexadecimal number" in errors[0], errors[0]
+        assert "Value error, Wrong input type dict" in errors[1], errors[1]
+
+    def test_neon_estimate_gas_failing_transaction(
+        self,
+        expected_error_checker: Contract,
+        default_cu_price: int | None,
+    ):
+        sender_account = self.accounts[0]
+        tx = self.web3_client.make_raw_tx(sender_account)
+        instruction_tx = expected_error_checker.functions.method1().build_transaction(tx)
+        neon_gas_estimate = self.web3_client.neon_estimate_gas(instruction_tx)["result"]
+
+        assert neon_gas_estimate["exitCode"] == "succeed"
+        assert neon_gas_estimate["externalSolanaCall"] is False
+        assert neon_gas_estimate["gasAddressLookupTableUsed"] == 0
+        assert neon_gas_estimate["gasFinishUsed"] == 0
+
+        gas_used_sum = (
+            neon_gas_estimate["gasAddressLookupTableUsed"]
+            + neon_gas_estimate["gasExecutionUsed"]
+            + neon_gas_estimate["gasFinishUsed"]
+            + neon_gas_estimate["gasSolanaPriorityUsed"]
+            + neon_gas_estimate["gasTransactionSizeUsed"]
+        )
+        assert gas_used_sum == neon_gas_estimate["gasUsed"]
+
+        assert neon_gas_estimate["numEvmSteps"] == 21832
+        assert neon_gas_estimate["numIterations"] == 46
+        assert neon_gas_estimate["result"] == "0x"
+        assert neon_gas_estimate["revertAfterSolanaCall"] is False
+        assert neon_gas_estimate["revertBeforeSolanaCall"] is False
+        assert len(neon_gas_estimate["solanaAccounts"]) == 10
+
+        if default_cu_price is not None:
+            assert neon_gas_estimate["solanaComputeUnitPrice"] == default_cu_price
+
+        receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
+        assert receipt["status"] == 0

@@ -14,7 +14,7 @@ class ERC721ForMetaplex:
         web3_client: web3client.NeonChainWeb3Client,
         faucet,
         account=None,
-        contract="neon-evm/erc721_for_metaplex.sol",
+        contract="../common/erc721_for_metaplex.sol",
         contract_name="ERC721ForMetaplex",
         contract_address=None,
     ):
@@ -22,7 +22,7 @@ class ERC721ForMetaplex:
         self.account = account or web3_client.create_account_with_balance(faucet)
         if contract_address:
             self.contract = web3_client.get_deployed_contract(
-                contract_address, contract_file=contract, contract_name=contract_name
+                contract_address, contract_file=contract, contract_name=contract_name, solc_version="0.8.28"
             )
         else:
             self.contract = self.deploy(contract, contract_name)
@@ -30,7 +30,7 @@ class ERC721ForMetaplex:
     @allure.step("Deploy contract")
     def deploy(self, contract, contract_name):
         contract, _ = self.web3_client.deploy_and_get_contract(
-            contract, "0.8.0", self.account, contract_name=contract_name
+            contract, "0.8.28", self.account, contract_name=contract_name
         )
         return contract
 

@@ -295,7 +295,7 @@ class TestNeonRPCEstimateScheduledGas:
         self,
         web3_client_sol,
         neon_user,
-        erc20_spl_mintable_new,
+        erc20_spl_mintable,
         evm_loader,
     ):
         # ┌───────┐  ┌──────┐  ┌───────┐
@@ -303,26 +303,26 @@ class TestNeonRPCEstimateScheduledGas:
         # │ s=0   │  │ s=1  │  │ s=2   │
         # └───────┘  └──────┘  └───────┘
         recipient = NeonUser(evm_loader.loader_id)
-        erc20_spl_mintable_new.approve(erc20_spl_mintable_new.account, neon_user.checksum_address, 800)
+        erc20_spl_mintable.approve(erc20_spl_mintable.account, neon_user.checksum_address, 800)
         top_up_in_trx = 400
         amount_to_recipient = 400
 
         data_0 = data_2 = decode_function_signature(
             "transferFrom(address,address,uint256)",
-            [erc20_spl_mintable_new.account.address, neon_user.checksum_address, top_up_in_trx],
+            [erc20_spl_mintable.account.address, neon_user.checksum_address, top_up_in_trx],
         )
         data_1 = decode_function_signature(
             "transfer(address,uint256)", [recipient.checksum_address, amount_to_recipient]
         )
 
         trx_estimate_0 = ScheduledTrxEstimateRequest(
-            neon_user.checksum_address, erc20_spl_mintable_new.address, data_0, child_transaction=hex(1)
+            neon_user.checksum_address, erc20_spl_mintable.address, data_0, child_transaction=hex(1)
         )
         trx_estimate_1 = ScheduledTrxEstimateRequest(
-            neon_user.checksum_address, erc20_spl_mintable_new.address, data_1, child_transaction=hex(2)
+            neon_user.checksum_address, erc20_spl_mintable.address, data_1, child_transaction=hex(2)
         )
         trx_estimate_2 = ScheduledTrxEstimateRequest(
-            neon_user.checksum_address, erc20_spl_mintable_new.address, data_2, child_transaction="0xFFFF"
+            neon_user.checksum_address, erc20_spl_mintable.address, data_2, child_transaction="0xFFFF"
         )
 
         trx_estimate_obj_list = [trx_estimate_2, trx_estimate_0, trx_estimate_1]
@@ -415,25 +415,21 @@ class TestNeonRPCEstimateScheduledGas:
         assert Error3.EXECUTION_REVERTED in estimate_result["error"]["message"]
 
     def test_estimate_with_preparatory_solana_transactions(
-        self, web3_client_sol, neon_user, erc20_spl_mintable_new, evm_loader, common_contract
+        self, web3_client_sol, neon_user, erc20_spl_mintable, evm_loader, common_contract
     ):
         recipient = NeonUser(evm_loader.loader_id)
         ata_amount = 1_000
-        erc20_spl_mintable_new.approve(erc20_spl_mintable_new.account, neon_user.checksum_address, ata_amount)
+        erc20_spl_mintable.approve(erc20_spl_mintable.account, neon_user.checksum_address, ata_amount)
 
-        my_ata = get_associated_token_address(
-            neon_user.solana_account.pubkey(), erc20_spl_mintable_new.token_mint_pubkey
-        )
-        solana_contract_account = Pubkey.from_string(
-            evm_loader.ether2program(erc20_spl_mintable_new.contract.address)[0]
-        )
+        my_ata = get_associated_token_address(neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey)
+        solana_contract_account = Pubkey.from_string(evm_loader.ether2program(erc20_spl_mintable.contract.address)[0])
 
         trx = Transaction()
         trx.add(
             create_associated_token_account(
                 neon_user.solana_account.pubkey(),
                 neon_user.solana_account.pubkey(),
-                erc20_spl_mintable_new.token_mint_pubkey,
+                erc20_spl_mintable.token_mint_pubkey,
             )
         )
         trx.add(
@@ -450,16 +446,12 @@ class TestNeonRPCEstimateScheduledGas:
 
         data1 = decode_function_signature(
             "transferSolanaFrom(address,bytes32,uint64)",
-            [erc20_spl_mintable_new.account.address, bytes(my_ata), ata_amount],
+            [erc20_spl_mintable.account.address, bytes(my_ata), ata_amount],
         )
         data2 = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, ata_amount])
 
-        trx_estimate_obj1 = ScheduledTrxEstimateRequest(
-            neon_user.checksum_address, erc20_spl_mintable_new.address, data1
-        )
-        trx_estimate_obj2 = ScheduledTrxEstimateRequest(
-            neon_user.checksum_address, erc20_spl_mintable_new.address, data2
-        )
+        trx_estimate_obj1 = ScheduledTrxEstimateRequest(neon_user.checksum_address, erc20_spl_mintable.address, data1)
+        trx_estimate_obj2 = ScheduledTrxEstimateRequest(neon_user.checksum_address, erc20_spl_mintable.address, data2)
 
         resp = web3_client_sol.estimate_scheduled(
             neon_user.solana_account.pubkey(),
@@ -473,28 +465,22 @@ class TestNeonRPCEstimateScheduledGas:
         assert_fields_are_hex(resp, ["chainId", "maxFeePerGas", "maxPriorityFeePerGas", "nonce", "treasuryIndex"])
 
     def test_estimate_transfer_trx_without_approval_in_preparatory_sol_trx_list(
-        self, web3_client_sol, neon_user, erc20_spl_mintable_new, evm_loader, treasury_pool
+        self, web3_client_sol, neon_user, erc20_spl_mintable, evm_loader, treasury_pool
     ):
         recipient = NeonUser(evm_loader.loader_id)
         ata_amount = 1_000
-        erc20_spl_mintable_new.approve(erc20_spl_mintable_new.account, neon_user.checksum_address, ata_amount)
+        erc20_spl_mintable.approve(erc20_spl_mintable.account, neon_user.checksum_address, ata_amount)
 
-        my_ata = get_associated_token_address(
-            neon_user.solana_account.pubkey(), erc20_spl_mintable_new.token_mint_pubkey
-        )
+        my_ata = get_associated_token_address(neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey)
 
         data1 = decode_function_signature(
             "transferSolanaFrom(address,bytes32,uint64)",
-            [erc20_spl_mintable_new.account.address, bytes(my_ata), ata_amount],
+            [erc20_spl_mintable.account.address, bytes(my_ata), ata_amount],
         )
         data2 = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, ata_amount])
 
-        trx_estimate_obj1 = ScheduledTrxEstimateRequest(
-            neon_user.checksum_address, erc20_spl_mintable_new.address, data1
-        )
-        trx_estimate_obj2 = ScheduledTrxEstimateRequest(
-            neon_user.checksum_address, erc20_spl_mintable_new.address, data2
-        )
+        trx_estimate_obj1 = ScheduledTrxEstimateRequest(neon_user.checksum_address, erc20_spl_mintable.address, data1)
+        trx_estimate_obj2 = ScheduledTrxEstimateRequest(neon_user.checksum_address, erc20_spl_mintable.address, data2)
 
         resp = web3_client_sol.estimate_scheduled(
             neon_user.solana_account.pubkey(), [trx_estimate_obj1, trx_estimate_obj2], check_result=False

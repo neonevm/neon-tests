@@ -10,7 +10,7 @@ from solana.rpc import commitment
 from deploy.cli.network_manager import NetworkManager
 from utils.accounts import EthAccounts
 from utils.consts import LAMPORT_PER_SOL, wSOL, REMAPPING_ZEPPELIN_UNISWAP
-from utils.erc20wrapper import ERC20NewWrapper
+from utils.erc20wrapper import ERC20Wrapper
 from utils.evm_loader import EvmLoader
 from utils.faucet import Faucet
 from utils.helpers import decode_function_signature, decode_function_with_stucture_in_arg_signature
@@ -38,20 +38,19 @@ def get_min_tick(tick_spacing: int) -> int:
 def get_max_tick(tick_spacing: int) -> int:
     return math.floor(887272 / tick_spacing) * tick_spacing
 
+
 def fund_solana_account(evm_loader, solana_account, bank_account, network, network_object):
     if network != "local" and network_object["use_bank"]:
         evm_loader.send_sol(bank_account, solana_account.pubkey(), int(5 * LAMPORT_PER_SOL))
     else:
-        evm_loader.request_airdrop(
-            solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed
-        )
+        evm_loader.request_airdrop(solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed)
 
 
 @events.test_start.add_listener
 def prepare_contracts(environment: env.Environment, **kwargs):
     neon_users = environment.parsed_options.num_users
     network = environment.parsed_options.host
-    
+
     network_manager = NetworkManager()
     network_object = network_manager.get_network_object(network)
     web3_client = NeonChainWeb3Client(proxy_url=network_object["proxy_url"])
@@ -80,11 +79,7 @@ def prepare_contracts(environment: env.Environment, **kwargs):
 
     # create solana account
     solana_account = Keypair()
-    fund_solana_account(environment.evm_loader, 
-                        solana_account, 
-                        bank_account, 
-                        network, 
-                        network_object)
+    fund_solana_account(environment.evm_loader, solana_account, bank_account, network, network_object)
     environment.solana_account = solana_account
 
     # create neon accounts
@@ -94,11 +89,7 @@ def prepare_contracts(environment: env.Environment, **kwargs):
         LOG.info(f"Creating {i} neon user for uniswap...")
         neon_user = NeonUser(environment.evm_loader.loader_id, keypair=neon_solana_account)
         neon_accounts.append(neon_user)
-        fund_solana_account(environment.evm_loader, 
-                            neon_user.solana_account, 
-                            bank_account, 
-                            network, 
-                            network_object)
+        fund_solana_account(environment.evm_loader, neon_user.solana_account, bank_account, network, network_object)
 
     test_tokens = ["TTA", "TTB", "WETH"]
     tokens = {}
@@ -107,7 +98,7 @@ def prepare_contracts(environment: env.Environment, **kwargs):
     for token in test_tokens:
         LOG.info(f"Start to deploy token {token}...")
         eth_account = account_manager.create_account()
-        erc20 = ERC20NewWrapper(
+        erc20 = ERC20Wrapper(
             web3_client,
             faucet,
             f"Test {token}",
@@ -129,9 +120,9 @@ def prepare_contracts(environment: env.Environment, **kwargs):
         LOG.info("Mint tokens to neon accounts for swaps...")
         receipts = []
         for neon_user in neon_accounts:
-            receipts.append(erc20.mint_tokens(signer=erc20.account, 
-                                              to_address=neon_user.checksum_address, 
-                                              amount=token_mint_amount))
+            receipts.append(
+                erc20.mint_tokens(signer=erc20.account, to_address=neon_user.checksum_address, amount=token_mint_amount)
+            )
 
         for item in receipts:
             assert item["status"] == 1
@@ -177,7 +168,7 @@ def prepare_contracts(environment: env.Environment, **kwargs):
         contract_name="UniswapV3Pool",
         contract_file="external/uniswap-v3/contracts//UniswapV3Pool",
         solc_version="0.7.6",
-        import_remapping=REMAPPING_ZEPPELIN_UNISWAP
+        import_remapping=REMAPPING_ZEPPELIN_UNISWAP,
     )
     tx_raw = web3_client.make_raw_tx(deployer)
     tx_init_pool = pool.functions.initialize(start_price).build_transaction(tx_raw)
@@ -232,6 +223,7 @@ def teardown(environment: env.Environment, **kwargs):
 @tag("scheduled_tx uniswap-v3")
 class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
     """Implements scheduled txs uniswap-v3 task"""
+
     def on_start(self) -> None:
         super().on_start()
         super().setup()
@@ -248,10 +240,19 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
                 self.user.environment.uniswap["neon_accounts"].append(self.uniswap_neon_account)
                 LOG.info(f"Returned user: {self.uniswap_neon_account.checksum_address}")
 
+    def check_neon_user_token_balance(self, token):
+        balance_token = token.get_balance(self.uniswap_neon_account.checksum_address)
+        if balance_token < int(initial_amount / 1000):
+            LOG.info(f"Balance token check: {balance_token}")
+            resp = token.mint_tokens(
+                signer=token.account, to_address=self.uniswap_neon_account.checksum_address, amount=token_mint_amount
+            )
+            assert resp["status"] == 1
+
     @task
     def task_send_uniswap_scheduled_tx(self):
         """Send scheduled transactions with uniswap-v3 swaps"""
-        swap_amount = 10_000
+        swap_amount = 1_000
         router = self.user.environment.uniswap["router"]
         token_0 = self.user.environment.uniswap["tokens"]["TTA"]
         token_1 = self.user.environment.uniswap["tokens"]["TTB"]
@@ -264,6 +265,8 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
             token_out = token_1
 
         self.check_neon_user_balance(self.uniswap_neon_account.solana_account)
+        self.check_neon_user_token_balance(token_in)
+        self.check_neon_user_token_balance(token_out)
 
         params_input = {
             "tokenIn": token_in.contract_address,
@@ -287,27 +290,33 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
             "sqrtPriceLimitX96": 1461446703485210103287273052203988822378723970341,
         }
 
-        data = decode_function_signature("approve(address,uint256)", [router.address, 10*swap_amount])
+        data = decode_function_signature("approve(address,uint256)", [router.address, 2 * swap_amount])
         data_0 = decode_function_with_stucture_in_arg_signature(
             "exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
-                                           [params_input["tokenIn"],
-                                            params_input["tokenOut"],
-                                            params_input["fee"],
-                                            params_input["recipient"],
-                                            params_input["deadline"],
-                                            params_input["amountIn"],
-                                            params_input["amountOutMinimum"],
-                                            params_input["sqrtPriceLimitX96"]])
+            [
+                params_input["tokenIn"],
+                params_input["tokenOut"],
+                params_input["fee"],
+                params_input["recipient"],
+                params_input["deadline"],
+                params_input["amountIn"],
+                params_input["amountOutMinimum"],
+                params_input["sqrtPriceLimitX96"],
+            ],
+        )
         data_1 = decode_function_with_stucture_in_arg_signature(
-            "exactOutputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))", 
-                                            [params_output["tokenIn"],
-                                            params_output["tokenOut"],
-                                            params_output["fee"],
-                                            params_output["recipient"],
-                                            params_output["deadline"],
-                                            params_output["amountOut"],
-                                            params_output["amountInMaximum"],
-                                            params_output["sqrtPriceLimitX96"]])
+            "exactOutputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
+            [
+                params_output["tokenIn"],
+                params_output["tokenOut"],
+                params_output["fee"],
+                params_output["recipient"],
+                params_output["deadline"],
+                params_output["amountOut"],
+                params_output["amountInMaximum"],
+                params_output["sqrtPriceLimitX96"],
+            ],
+        )
 
         trx_estimate_0 = ScheduledTrxEstimateRequest(
             self.uniswap_neon_account.checksum_address, token_in.contract_address, data, child_transaction=hex(2)
@@ -323,7 +332,9 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
         )
         trx_estimate_obj_list = [trx_estimate_0, trx_estimate_1, trx_estimate_2, trx_estimate_3]
 
-        estimate_result = self.web3_client_sol.estimate_scheduled(self.uniswap_neon_account.solana_account.pubkey(), trx_estimate_obj_list)
+        estimate_result = self.web3_client_sol.estimate_scheduled(
+            self.uniswap_neon_account.solana_account.pubkey(), trx_estimate_obj_list
+        )
 
         gas_list_new = []
         for i in estimate_result["gasList"]:
@@ -346,10 +357,9 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
         tree_acc_data.add_trx(trxs[2], 0xFFFF, 0)
         tree_acc_data.add_trx(trxs[3], 0xFFFF, 0)
 
-        self.evm_loader.create_tree_account_multiple(self.uniswap_neon_account, 
-                                                     self.treasury_pool, 
-                                                     tree_acc_data.data, 
-                                                     wSOL["address_spl"])
+        self.evm_loader.create_tree_account_multiple(
+            self.uniswap_neon_account, self.treasury_pool, tree_acc_data.data, wSOL["address_spl"]
+        )
         self.web3_client_sol.send_all_scheduled_transactions(trxs)
 
         for trx in trxs:

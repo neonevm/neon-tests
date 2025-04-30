@@ -134,6 +134,7 @@ def decode_function_signature(function_name: str, args=None) -> str:
         data += abi.encode(types, args)
     return "0x" + data.hex()
 
+
 @allure.step("Decode function signature")
 def decode_function_with_stucture_in_arg_signature(function_name: str, args=None) -> str:
     data = keccak(text=function_name)[:4]
@@ -141,11 +142,12 @@ def decode_function_with_stucture_in_arg_signature(function_name: str, args=None
         match = re.search(r"\(\((.*?)\)\)", function_name)
     if match:
         inner = match.group(1)
-        types = inner.split(',')
+        types = inner.split(",")
     else:
         print("No match found")
     data += abi.encode(types, args)
     return "0x" + data.hex()
+
 
 @allure.step("Get functions signatures with params as keccak256 from contract abi")
 def get_selectors(abi_):

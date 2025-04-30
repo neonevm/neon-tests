@@ -464,7 +464,6 @@ def update_contracts_from_git(git_url: str, local_dir_name: str, branch="develop
     default="main",
     help="neon_evm branch name. " "If branch doesn't exist, develop branch will be used",
 )
-
 @click.option("--with-uniswap", is_flag=True, default=False, required=False, help="Download uniswap-v3 contracts")
 def update_contracts(branch, with_uniswap):
     update_contracts_from_git(HOODIES_CHAINLINK_GITHUB_URL, "hoodies_chainlink", "main")

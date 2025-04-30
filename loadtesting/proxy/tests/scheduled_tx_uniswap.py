@@ -39,8 +39,8 @@ def get_max_tick(tick_spacing: int) -> int:
     return math.floor(887272 / tick_spacing) * tick_spacing
 
 
-def fund_solana_account(evm_loader, solana_account, bank_account, network, network_object):
-    if network != "local" and network_object["use_bank"]:
+def fund_solana_account(evm_loader, solana_account, bank_account, network):
+    if network != "local" and bank_account is not None:
         evm_loader.send_sol(bank_account, solana_account.pubkey(), int(5 * LAMPORT_PER_SOL))
     else:
         evm_loader.request_airdrop(solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed)
@@ -79,7 +79,7 @@ def prepare_contracts(environment: env.Environment, **kwargs):
 
     # create solana account
     solana_account = Keypair()
-    fund_solana_account(environment.evm_loader, solana_account, bank_account, network, network_object)
+    fund_solana_account(environment.evm_loader, solana_account, bank_account, network)
     environment.solana_account = solana_account
 
     # create neon accounts
@@ -89,7 +89,7 @@ def prepare_contracts(environment: env.Environment, **kwargs):
         LOG.info(f"Creating {i} neon user for uniswap...")
         neon_user = NeonUser(environment.evm_loader.loader_id, keypair=neon_solana_account)
         neon_accounts.append(neon_user)
-        fund_solana_account(environment.evm_loader, neon_user.solana_account, bank_account, network, network_object)
+        fund_solana_account(environment.evm_loader, neon_user.solana_account, bank_account, network)
 
     test_tokens = ["TTA", "TTB", "WETH"]
     tokens = {}
@@ -97,7 +97,6 @@ def prepare_contracts(environment: env.Environment, **kwargs):
     # deploy erc20 tokens
     for token in test_tokens:
         LOG.info(f"Start to deploy token {token}...")
-        eth_account = account_manager.create_account()
         erc20 = ERC20Wrapper(
             web3_client,
             faucet,
@@ -107,25 +106,19 @@ def prepare_contracts(environment: env.Environment, **kwargs):
             solana_account=solana_account,
             mintable=True,
             bank_account=bank_account,
-            account=eth_account,
+            account=deployer,
         )
         tokens[f"{token}"] = erc20
 
         LOG.info("Mint tokens...")
         erc20.mint_tokens(signer=erc20.account, to_address=erc20.account.address, amount=token_mint_amount)
 
-        resp = erc20.mint_tokens(signer=erc20.account, to_address=deployer.address, amount=initial_amount)
-        assert resp["status"] == 1
-
         LOG.info("Mint tokens to neon accounts for swaps...")
-        receipts = []
         for neon_user in neon_accounts:
-            receipts.append(
-                erc20.mint_tokens(signer=erc20.account, to_address=neon_user.checksum_address, amount=token_mint_amount)
+            receipt = erc20.mint_tokens(
+                signer=erc20.account, to_address=neon_user.checksum_address, amount=token_mint_amount
             )
-
-        for item in receipts:
-            assert item["status"] == 1
+            assert receipt["status"] == 1
 
     LOG.info("Deploy UniswapV3Factory...")
     uniswap_v3_factory, _ = web3_client.deploy_and_get_contract(
@@ -140,13 +133,6 @@ def prepare_contracts(environment: env.Environment, **kwargs):
         constructor_args=[uniswap_v3_factory.address, tokens["WETH"].contract_address],
         import_remapping=REMAPPING_ZEPPELIN_UNISWAP,
     )
-
-    LOG.info("Approve for swap router...")
-    receipts = []
-    receipts.append(tokens["TTA"].approve(deployer, swap_router.address, token_mint_amount))
-    receipts.append(tokens["TTB"].approve(deployer, swap_router.address, token_mint_amount))
-    for item in receipts:
-        assert item["status"] == 1
 
     LOG.info("Create Pool...")
     tx_raw = web3_client.make_raw_tx(deployer)
@@ -308,13 +294,13 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
         )
 
         trx_estimate_0 = ScheduledTrxEstimateRequest(
-            self.uniswap_neon_account.checksum_address, token_in.contract_address, data, child_transaction=hex(2)
+            self.uniswap_neon_account.checksum_address, token_in.contract_address, data, child_transaction=2
         )
         trx_estimate_1 = ScheduledTrxEstimateRequest(
             self.uniswap_neon_account.checksum_address, token_out.contract_address, data, child_transaction="0xFFFF"
         )
         trx_estimate_2 = ScheduledTrxEstimateRequest(
-            self.uniswap_neon_account.checksum_address, router.address, data_0, child_transaction=hex(3)
+            self.uniswap_neon_account.checksum_address, router.address, data_0, child_transaction=3
         )
         trx_estimate_3 = ScheduledTrxEstimateRequest(
             self.uniswap_neon_account.checksum_address, router.address, data_1, child_transaction="0xFFFF"
@@ -342,7 +328,7 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
         )
 
         tree_acc_data.add_trx(trxs[0], 2, 0)
-        tree_acc_data.add_trx(trxs[1], 2, 0)
+        tree_acc_data.add_trx(trxs[1], 3, 0)
         tree_acc_data.add_trx(trxs[2], 0xFFFF, 0)
         tree_acc_data.add_trx(trxs[3], 0xFFFF, 0)
 

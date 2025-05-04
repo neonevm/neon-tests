@@ -163,7 +163,7 @@ class ScheduledTxsIndependentTasksSet(BaseScheduledTxTaskSet):
     @task
     def task_send_independent_scheduled_tx(self):
         """Send independent scheduled transactions"""
-        self.check_neon_user_balance(self.neon_account.solana_account)
+        self.check_solana_balance(self.neon_account.solana_account.pubkey())
         recipient = self.get_account()
 
         transfer_amount = 10
@@ -228,7 +228,7 @@ class ScheduledTxsDependentTasksSet(BaseScheduledTxTaskSet):
     @task
     def task_send_dependent_scheduled_tx(self):
         """Send dependent scheduled transactions"""
-        self.check_neon_user_balance(self.neon_account.solana_account)
+        self.check_solana_balance(self.neon_account.solana_account.pubkey())
         recipient = self.get_account()
 
         top_up_in_trx = 10
@@ -314,7 +314,7 @@ class ScheduledTxsTransferToDifferentUsersTasksSet(BaseScheduledTxTaskSet):
     @task
     def task_send_scheduled_tx_pda_and_ata_used(self):
         """Send scheduled transactions: transfer tokens to recipients"""
-        self.check_neon_user_balance(self.neon_account.solana_account)
+        self.check_solana_balance(self.neon_account.solana_account.pubkey())
         recipient_0 = self.get_account()
         recipient_1 = self.get_account()
 

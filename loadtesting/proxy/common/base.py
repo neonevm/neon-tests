@@ -206,6 +206,15 @@ class NeonProxyTasksSet(TaskSet):
             else:
                 raise AssertionError(f"Account {account.address} balance didn't change after 15 seconds")
 
+    def check_solana_balance(self, solana_account_pubkey):
+        balance = self.evm_loader.get_solana_balance(solana_account_pubkey)
+        if self.network not in ["devnet"]:
+            if balance < 0.5 * LAMPORT_PER_SOL:
+                print("Fund solana account")
+                self.evm_loader.request_airdrop(
+                    solana_account_pubkey, 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed
+                )
+
     def deploy_contract(
         self,
         name: str,
@@ -239,12 +248,3 @@ class NeonProxyTasksSet(TaskSet):
     def _compile_contract_interface(self, name, version, contract_name: tp.Optional[str] = None) -> tp.Any:
         """Compile contract inteface form file"""
         return helpers.get_contract_interface(name, version, contract_name=contract_name)
-
-    def check_neon_user_balance(self, solana_account):
-        balance = self.evm_loader.get_solana_balance(solana_account.pubkey())
-        if self.network not in ["devnet"]:
-            if balance < 0.5 * LAMPORT_PER_SOL:
-                print("Fund account")
-                self.evm_loader.request_airdrop(
-                    solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed
-                )

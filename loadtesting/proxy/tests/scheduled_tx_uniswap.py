@@ -241,7 +241,7 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
             token_in = token_0
             token_out = token_1
 
-        self.check_neon_user_balance(self.uniswap_neon_account.solana_account)
+        self.check_solana_balance(self.uniswap_neon_account.solana_account.pubkey())
 
         params_input = {
             "tokenIn": token_in.contract_address,
@@ -332,6 +332,7 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
         tree_acc_data.add_trx(trxs[2], 0xFFFF, 0)
         tree_acc_data.add_trx(trxs[3], 0xFFFF, 0)
 
+        self.check_solana_balance(self.treasury_pool.account)
         self.evm_loader.create_tree_account_multiple(
             self.uniswap_neon_account, self.treasury_pool, tree_acc_data.data, wSOL["address_spl"]
         )

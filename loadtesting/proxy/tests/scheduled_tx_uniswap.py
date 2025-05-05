@@ -18,7 +18,7 @@ from utils.neon_user import NeonUser
 from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData, ScheduledTrxEstimateRequest
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 
-from locust import TaskSet, User, tag, task, events, env
+from locust import User, tag, task, events, env
 from loadtesting.proxy.common.base import NeonProxyTasksSet
 from utils.web3client import NeonChainWeb3Client
 from solders.keypair import Keypair
@@ -229,121 +229,118 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
     @task
     def task_send_uniswap_scheduled_tx(self):
         """Send scheduled transactions with uniswap-v3 swaps"""
-        try:
-            swap_amount = 10
-            router = self.user.environment.uniswap["router"]
-            token_0 = self.user.environment.uniswap["tokens"]["TTA"]
-            token_1 = self.user.environment.uniswap["tokens"]["TTB"]
+        swap_amount = 10
+        router = self.user.environment.uniswap["router"]
+        token_0 = self.user.environment.uniswap["tokens"]["TTA"]
+        token_1 = self.user.environment.uniswap["tokens"]["TTB"]
 
-            if not (token_1.contract_address < token_0.contract_address):
-                token_in = token_1
-                token_out = token_0
-            else:
-                token_in = token_0
-                token_out = token_1
+        if not (token_1.contract_address < token_0.contract_address):
+            token_in = token_1
+            token_out = token_0
+        else:
+            token_in = token_0
+            token_out = token_1
 
-            self.check_solana_balance(self.uniswap_neon_account.solana_account.pubkey())
+        self.check_solana_balance(self.uniswap_neon_account.solana_account.pubkey())
 
-            params_input = {
-                "tokenIn": token_in.contract_address,
-                "tokenOut": token_out.contract_address,
-                "fee": fee,
-                "recipient": self.uniswap_neon_account.checksum_address,
-                "deadline": int(web3.constants.MAX_INT, 16),
-                "amountIn": swap_amount,
-                "amountOutMinimum": 1,
-                "sqrtPriceLimitX96": 1461446703485210103287273052203988822378723970341,
-            }
+        params_input = {
+            "tokenIn": token_in.contract_address,
+            "tokenOut": token_out.contract_address,
+            "fee": fee,
+            "recipient": self.uniswap_neon_account.checksum_address,
+            "deadline": int(web3.constants.MAX_INT, 16),
+            "amountIn": swap_amount,
+            "amountOutMinimum": 1,
+            "sqrtPriceLimitX96": 1461446703485210103287273052203988822378723970341,
+        }
 
-            params_output = {
-                "tokenIn": token_in.contract_address,
-                "tokenOut": token_out.contract_address,
-                "fee": fee,
-                "recipient": self.uniswap_neon_account.checksum_address,
-                "deadline": int(web3.constants.MAX_INT, 16),
-                "amountOut": swap_amount,
-                "amountInMaximum": int(web3.constants.MAX_INT, 16),
-                "sqrtPriceLimitX96": 1461446703485210103287273052203988822378723970341,
-            }
+        params_output = {
+            "tokenIn": token_in.contract_address,
+            "tokenOut": token_out.contract_address,
+            "fee": fee,
+            "recipient": self.uniswap_neon_account.checksum_address,
+            "deadline": int(web3.constants.MAX_INT, 16),
+            "amountOut": swap_amount,
+            "amountInMaximum": int(web3.constants.MAX_INT, 16),
+            "sqrtPriceLimitX96": 1461446703485210103287273052203988822378723970341,
+        }
 
-            data = decode_function_signature("approve(address,uint256)", [router.address, 2 * swap_amount])
-            data_0 = decode_function_with_stucture_in_arg_signature(
-                "exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
-                [
-                    params_input["tokenIn"],
-                    params_input["tokenOut"],
-                    params_input["fee"],
-                    params_input["recipient"],
-                    params_input["deadline"],
-                    params_input["amountIn"],
-                    params_input["amountOutMinimum"],
-                    params_input["sqrtPriceLimitX96"],
-                ],
-            )
-            data_1 = decode_function_with_stucture_in_arg_signature(
-                "exactOutputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
-                [
-                    params_output["tokenIn"],
-                    params_output["tokenOut"],
-                    params_output["fee"],
-                    params_output["recipient"],
-                    params_output["deadline"],
-                    params_output["amountOut"],
-                    params_output["amountInMaximum"],
-                    params_output["sqrtPriceLimitX96"],
-                ],
-            )
+        data = decode_function_signature("approve(address,uint256)", [router.address, 2 * swap_amount])
+        data_0 = decode_function_with_stucture_in_arg_signature(
+            "exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
+            [
+                params_input["tokenIn"],
+                params_input["tokenOut"],
+                params_input["fee"],
+                params_input["recipient"],
+                params_input["deadline"],
+                params_input["amountIn"],
+                params_input["amountOutMinimum"],
+                params_input["sqrtPriceLimitX96"],
+            ],
+        )
+        data_1 = decode_function_with_stucture_in_arg_signature(
+            "exactOutputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
+            [
+                params_output["tokenIn"],
+                params_output["tokenOut"],
+                params_output["fee"],
+                params_output["recipient"],
+                params_output["deadline"],
+                params_output["amountOut"],
+                params_output["amountInMaximum"],
+                params_output["sqrtPriceLimitX96"],
+            ],
+        )
 
-            # hex(2) - 0xFFFF - hex(3) - 0xFFFF - reason: bug
-            trx_estimate_0 = ScheduledTrxEstimateRequest(
-                self.uniswap_neon_account.checksum_address, token_in.contract_address, data, child_transaction=hex(2)
-            )
-            trx_estimate_1 = ScheduledTrxEstimateRequest(
-                self.uniswap_neon_account.checksum_address, token_out.contract_address, data, child_transaction="0xFFFF"
-            )
-            trx_estimate_2 = ScheduledTrxEstimateRequest(
-                self.uniswap_neon_account.checksum_address, router.address, data_0, child_transaction=hex(3)
-            )
-            trx_estimate_3 = ScheduledTrxEstimateRequest(
-                self.uniswap_neon_account.checksum_address, router.address, data_1, child_transaction="0xFFFF"
-            )
-            trx_estimate_obj_list = [trx_estimate_0, trx_estimate_1, trx_estimate_2, trx_estimate_3]
+        # hex(2) - 0xFFFF - hex(3) - 0xFFFF - reason: bug
+        trx_estimate_0 = ScheduledTrxEstimateRequest(
+            self.uniswap_neon_account.checksum_address, token_in.contract_address, data, child_transaction=hex(2)
+        )
+        trx_estimate_1 = ScheduledTrxEstimateRequest(
+            self.uniswap_neon_account.checksum_address, token_out.contract_address, data, child_transaction="0xFFFF"
+        )
+        trx_estimate_2 = ScheduledTrxEstimateRequest(
+            self.uniswap_neon_account.checksum_address, router.address, data_0, child_transaction=hex(3)
+        )
+        trx_estimate_3 = ScheduledTrxEstimateRequest(
+            self.uniswap_neon_account.checksum_address, router.address, data_1, child_transaction="0xFFFF"
+        )
+        trx_estimate_obj_list = [trx_estimate_0, trx_estimate_1, trx_estimate_2, trx_estimate_3]
 
-            estimate_result = self.web3_client_sol.estimate_scheduled(
-                self.uniswap_neon_account.solana_account.pubkey(), trx_estimate_obj_list
-            )
+        estimate_result = self.web3_client_sol.estimate_scheduled(
+            self.uniswap_neon_account.solana_account.pubkey(), trx_estimate_obj_list
+        )
 
-            gas_list_new = []
-            for i in estimate_result["gasList"]:
-                new_value = 15 * int(i, 16)
-                gas_list_new.append(hex(new_value))
-            estimate_result["gasList"] = gas_list_new
+        gas_list_new = []
+        for i in estimate_result["gasList"]:
+            new_value = 15 * int(i, 16)
+            gas_list_new.append(hex(new_value))
+        estimate_result["gasList"] = gas_list_new
 
-            trxs = []
-            for i in range(len(trx_estimate_obj_list)):
-                trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
+        trxs = []
+        for i in range(len(trx_estimate_obj_list)):
+            trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
 
-            tree_acc_data = CreateTreeAccMultipleData(
-                nonce=estimate_result["nonce"],
-                max_fee_per_gas=estimate_result["maxFeePerGas"],
-                max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
-            )
+        tree_acc_data = CreateTreeAccMultipleData(
+            nonce=estimate_result["nonce"],
+            max_fee_per_gas=estimate_result["maxFeePerGas"],
+            max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
+        )
 
-            tree_acc_data.add_trx(trxs[0], 2, 0)
-            tree_acc_data.add_trx(trxs[1], 2, 0)
-            tree_acc_data.add_trx(trxs[2], 3, 2)
-            tree_acc_data.add_trx(trxs[3], 0xFFFF, 1)
+        tree_acc_data.add_trx(trxs[0], 2, 0)
+        tree_acc_data.add_trx(trxs[1], 2, 0)
+        tree_acc_data.add_trx(trxs[2], 3, 2)
+        tree_acc_data.add_trx(trxs[3], 0xFFFF, 1)
 
-            self.check_solana_balance(self.treasury_pool.account)
-            self.evm_loader.create_tree_account_multiple(
-                self.uniswap_neon_account, self.treasury_pool, tree_acc_data.data, wSOL["address_spl"]
-            )
-            self.web3_client_sol.send_all_scheduled_transactions(trxs)
+        self.check_solana_balance(self.treasury_pool.account)
+        self.evm_loader.create_tree_account_multiple(
+            self.uniswap_neon_account, self.treasury_pool, tree_acc_data.data, wSOL["address_spl"]
+        )
+        self.web3_client_sol.send_all_scheduled_transactions(trxs)
 
-            for trx in trxs:
-                check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex(), timeout=180)
-        except BaseException:
-            TaskSet.interrupt(self)
+        for trx in trxs:
+            check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex(), timeout=180)
 
 
 class ScheduledTxUser(User):

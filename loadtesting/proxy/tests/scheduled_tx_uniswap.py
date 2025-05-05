@@ -297,10 +297,10 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
             self.uniswap_neon_account.checksum_address, token_in.contract_address, data, child_transaction=2
         )
         trx_estimate_1 = ScheduledTrxEstimateRequest(
-            self.uniswap_neon_account.checksum_address, token_out.contract_address, data, child_transaction="0xFFFF"
+            self.uniswap_neon_account.checksum_address, token_out.contract_address, data, child_transaction=3
         )
         trx_estimate_2 = ScheduledTrxEstimateRequest(
-            self.uniswap_neon_account.checksum_address, router.address, data_0, child_transaction=3
+            self.uniswap_neon_account.checksum_address, router.address, data_0, child_transaction="0xFFFF"
         )
         trx_estimate_3 = ScheduledTrxEstimateRequest(
             self.uniswap_neon_account.checksum_address, router.address, data_1, child_transaction="0xFFFF"
@@ -329,8 +329,8 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
 
         tree_acc_data.add_trx(trxs[0], 2, 0)
         tree_acc_data.add_trx(trxs[1], 3, 0)
-        tree_acc_data.add_trx(trxs[2], 0xFFFF, 0)
-        tree_acc_data.add_trx(trxs[3], 0xFFFF, 0)
+        tree_acc_data.add_trx(trxs[2], 0xFFFF, 2)
+        tree_acc_data.add_trx(trxs[3], 0xFFFF, 1)
 
         self.check_solana_balance(self.treasury_pool.account)
         self.evm_loader.create_tree_account_multiple(

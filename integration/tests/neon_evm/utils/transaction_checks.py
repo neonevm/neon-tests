@@ -20,3 +20,14 @@ def check_holder_account_tag(solana_client: SolanaClient, storage_account, layou
     account_data = solana_client.get_account_info(storage_account, commitment=Confirmed).value.data
     parsed_data = layout.parse(account_data)
     assert parsed_data.tag == expected_tag, f"Account tag {account_data[0]} != expected {expected_tag}"
+
+
+def check_transaction_logs_have_not_text(
+    solana_client: SolanaClient, trx: GetTransactionResp | SendTransactionResp, text: str
+) -> None:
+    if isinstance(trx, GetTransactionResp):
+        receipt = trx
+    else:
+        receipt = solana_client.get_transaction(trx)
+    logs = decode_logs(receipt.value.transaction.meta.log_messages)
+    assert text not in logs, f"Transaction logs shouldn't contain '{text}'. Logs: {logs}"

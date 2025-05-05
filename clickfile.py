@@ -481,6 +481,12 @@ def update_contracts(branch, with_uniswap):
             update_npm=True,
         )
 
+        # we replace init_code_hash of a contracts/external/uniswap-v3/contracts/UniswapV3Pool.sol
+        # it is calculated for python solc compiler and it is different from uniswap-v3 repository
+        # to calculate this hash you can use the method:
+        #     function getPoolInitCodeHash() public returns (bytes32) {
+        #       return keccak256(type(UniswapV3Pool).creationCode);
+        #     }
         pool_addr_path = (
             Path.cwd()
             / "contracts"

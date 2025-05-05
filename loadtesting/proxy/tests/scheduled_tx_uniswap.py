@@ -293,7 +293,7 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
             ],
         )
 
-        # hex(2) - 0xFFFF - hex(3) - 0xFFFF - reason: bug
+        # hex(2) - 0xFFFF - hex(3) - 0xFFFF - reason: bug NDEV-3744
         trx_estimate_0 = ScheduledTrxEstimateRequest(
             self.uniswap_neon_account.checksum_address, token_in.contract_address, data, child_transaction=hex(2)
         )

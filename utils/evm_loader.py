@@ -180,6 +180,10 @@ class EvmLoader(SolanaClient):
         account_data = self.get_solana_account_data(address, CONTRACT_ACCOUNT_LAYOUT.sizeof())
         return CONTRACT_ACCOUNT_LAYOUT.parse(account_data).revision
 
+    def get_balance_account_revision(self, address):
+        account_data = self.get_solana_account_data(address, BALANCE_ACCOUNT_LAYOUT.sizeof())
+        return BALANCE_ACCOUNT_LAYOUT.parse(account_data).revision
+
     def get_data_account_revision(self, address):
         account_data = self.get_solana_account_data(address, STORAGE_CELL_LAYOUT.sizeof())
         return STORAGE_CELL_LAYOUT.parse(account_data).revision

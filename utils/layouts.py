@@ -40,6 +40,8 @@ BALANCE_ACCOUNT_LAYOUT = Struct(
     "chain_id" / Int64ul,
     "trx_count" / Int64ul,
     "balance" / Bytes(32),
+    "revision" / Int32ul,
+    "solana_address" / Bytes(32),
 )
 
 OPERATOR_BALANCE_ACCOUNT_LAYOUT = Struct(

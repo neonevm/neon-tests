@@ -475,11 +475,36 @@ def update_contracts(branch, with_uniswap):
     )
 
     if with_uniswap:
-        Path(EXTERNAL_CONTRACT_PATH / "uniswap-v3").mkdir(parents=True, exist_ok=True)
-        uniswap_path = EXTERNAL_CONTRACT_PATH / "uniswap-v3"
-        commands = f"git clone {UNISWAP_V3_GIT} {uniswap_path}"
-        commands += f"\n npm ci --prefix {uniswap_path}"
-        subprocess.check_call(commands, shell=True)
+        update_contracts_from_git(
+            "https://github.com/neonlabsorg/Uniswap-V3-NEON.git",
+            "uniswap-v3",
+            branch="main",
+            update_npm=True,
+        )
+
+        pool_addr_path = (
+            Path.cwd()
+            / "contracts"
+            / "external"
+            / "uniswap-v3"
+            / "contracts"
+            / "v3-periphery"
+            / "libraries"
+            / "PoolAddress.sol"
+        )
+        replacements = [
+            (
+                b"0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54",
+                b"0xfeca55d18a66e13a3b004f5ea1833d181be8e62d7ac64669f176c76b5a79fc9d",
+            ),
+        ]
+        with open(pool_addr_path, "rb") as file:
+            s = file.read()
+            print(file.name)
+        for f, r in replacements:
+            s = s.replace(f, r)
+        with open(pool_addr_path, "wb") as file:
+            file.write(s)
 
 
 @cli.command(help="Run any type of tests")

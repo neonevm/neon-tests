@@ -282,13 +282,16 @@ class TestScheduledTrxERC20:
         # └───────┘
         recipient = NeonUser(evm_loader.loader_id)
 
-        erc20_spl_mintable.pop_up_balance(evm_loader, recipient=neon_user, pda_amount=1000, ata_amount=1000)
+        erc20_spl_mintable.approve(erc20_spl_mintable.account, neon_user.checksum_address, 1000)
         transfer_amount = 400
-        data_0 = decode_function_signature("approve(address,uint256)", [neon_user.checksum_address, transfer_amount])
-        data_1 = decode_function_signature("approve(address,uint256)", [recipient.checksum_address, transfer_amount])
-        data_2 = decode_function_signature(
+
+        data_0 = data_1 = decode_function_signature(
             "transferFrom(address,address,uint256)",
-            [neon_user.checksum_address, recipient.checksum_address, transfer_amount],
+            [erc20_spl_mintable.account.address, neon_user.checksum_address, transfer_amount],
+        )
+        data_2 = decode_function_signature(
+            "transfer(address,address,uint256)",
+            [neon_user.checksum_address, recipient.checksum_address, 2 * transfer_amount],
         )
 
         trx_estimate_0 = ScheduledTrxEstimateRequest(
@@ -332,11 +335,10 @@ class TestScheduledTrxERC20:
         balance_recipient_pda = erc20_spl_mintable.contract.functions.balanceOfPDA(recipient.checksum_address).call()
         balance_recipient_ata = erc20_spl_mintable.contract.functions.balanceOfATA(recipient.checksum_address).call()
 
-        assert balance_neon_user_pda == 600
-        assert balance_neon_user == 1600
-        assert balance_neon_user_ata == 1000
+        assert balance_neon_user_pda == balance_neon_user == 0
+        assert balance_neon_user_ata == 0
         assert balance_recipient_ata == 0
-        assert balance_recipient == balance_recipient_pda == 400
+        assert balance_recipient == balance_recipient_pda == 800
 
     def test_multiple_transactions_with_tree_actions_independent(
         self, web3_client_sol, neon_user, erc20_spl_mintable, evm_loader, treasury_pool

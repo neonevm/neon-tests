@@ -210,7 +210,7 @@ class NeonProxyTasksSet(TaskSet):
         balance = self.evm_loader.get_solana_balance(solana_account_pubkey)
         if self.network not in ["devnet"]:
             if balance < 0.5 * LAMPORT_PER_SOL:
-                print("Fund solana account")
+                LOG.info(f"Fund solana account: {solana_account_pubkey}")
                 self.evm_loader.request_airdrop(
                     solana_account_pubkey, 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed
                 )

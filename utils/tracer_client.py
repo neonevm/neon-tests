@@ -1,3 +1,4 @@
+import allure
 from web3.types import TxData
 
 from utils.apiclient import JsonRPCSession
@@ -9,6 +10,7 @@ class TracerClient:
         self.url = url
         self.tracer_api = JsonRPCSession(url)
 
+    @allure.step("send rpc and wait response")
     def send_rpc_and_wait_response(self, method_name, params, req_type=None, timeout_sec: int = 120):
         return wait_condition(
             func_cond=lambda: self.tracer_api.send_rpc(method=method_name, params=params, req_type=req_type),
@@ -19,6 +21,7 @@ class TracerClient:
     def send_rpc(self, method, params, req_type=None):
         return self.tracer_api.send_rpc(method=method, params=params, req_type=req_type)
 
+    @allure.step("send rpc debug_traceCall")
     def debug_trace_call(self, tx_data: TxData):
         params = [
             {
@@ -35,6 +38,7 @@ class TracerClient:
 
         return response
 
+    @allure.step("send rpc debug_traceTransaction")
     def debug_trace_transaction(
         self,
         tx_hash: str,
@@ -50,6 +54,7 @@ class TracerClient:
 
         return self.send_rpc_and_wait_response("debug_traceTransaction", params, timeout_sec=wait_response)
 
+    @allure.step("send rpc debug_traceBlockByHash or debug_traceBlockByNumber")
     def debug_trace_block_by_hash_or_number(
         self,
         req_type: str,
@@ -68,15 +73,17 @@ class TracerClient:
             method = "debug_traceBlockByHash"
         else:
             method = "debug_traceBlockByNumber"
-        response = self.tracer_api.send_rpc(method, params)
+        response = self.send_rpc_and_wait_response(method, params)
         return response
 
+    @allure.step("send rpc debug_getRawHeader")
     def debug_get_raw_header_by_block_hash_or_number(self, block_hash_or_number: str):
         """block_hash_or_number - block number or block hash in hex format"""
         params = [block_hash_or_number]
         response = self.send_rpc_and_wait_response("debug_getRawHeader", params)
         return response
 
+    @allure.step("send rpc debug_getModifiedAccounts")
     def debug_get_modified_accounts_by_block_hashes_or_numbers(
         self, block_hashes_or_numbers: list[str], param_type="hash"
     ):
@@ -89,6 +96,7 @@ class TracerClient:
         response = self.send_rpc_and_wait_response(method, params)
         return response
 
+    @allure.step("send rpc debug_getRawTransaction")
     def debug_get_raw_transaction(
         self,
         tx_hash: str,
@@ -101,6 +109,7 @@ class TracerClient:
             response = self.send_rpc("debug_getRawTransaction", params)
         return response
 
+    @allure.step("send rpc eth_call")
     def eth_call(
         self,
         tx_data: TxData,
@@ -133,6 +142,7 @@ class TracerClient:
 
         return response
 
+    @allure.step("send rpc eth_getStorageAt")
     def eth_get_storage_at(
         self,
         storage_address: str,
@@ -144,6 +154,7 @@ class TracerClient:
         response = self.send_rpc_and_wait_response("eth_getStorageAt", params, request_type)
         return response
 
+    @allure.step("send rpc eth_getTransactionCount")
     def eth_get_transaction_count(
         self,
         sender_address: str,
@@ -154,6 +165,7 @@ class TracerClient:
         response = self.send_rpc_and_wait_response("eth_getTransactionCount", params, request_type)
         return response
 
+    @allure.step("send rpc eth_getBalance")
     def eth_get_balance(
         self,
         sender_address: str,
@@ -164,6 +176,7 @@ class TracerClient:
         response = self.send_rpc_and_wait_response("eth_getBalance", params, request_type)
         return response
 
+    @allure.step("send rpc eth_getCode")
     def eth_get_code(
         self,
         contract_address: str,
@@ -174,6 +187,7 @@ class TracerClient:
         response = self.send_rpc_and_wait_response("eth_getCode", params, request_type)
         return response
 
+    @allure.step("send rpc get_neon_revision")
     def get_neon_revision(self, block: int):
         response = self.tracer_api.send_rpc(method="get_neon_revision", params=block)
         return response

@@ -5,7 +5,7 @@ from solana.transaction import AccountMeta, Instruction
 from solders.pubkey import Pubkey
 
 from utils.helpers import serialize_instruction
-from utils.consts import wSOL, COUNTER_ID
+from utils.consts import COUNTER_ID
 from utils.models.result import EthGetBlockByHashResult
 from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateRequest, CreateTreeAccMultipleData
 from utils.tracer_validator import TracerValidator
@@ -221,9 +221,7 @@ class TestDebugTraceIterativeTransaction:
         estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), [trx_estimate_obj])
         tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
-        evm_loader.create_tree_account(
-            neon_user, treasury_pool, tx.encode(), wSOL["address_spl"], chain_id=evm_loader.sol_chain_id
-        )
+        evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
         check_trx_is_success(web3_client_sol, evm_loader, tx.hash().hex())
 
         receipt = web3_client_sol.wait_for_transaction_receipt(tx.hash().hex())
@@ -268,12 +266,7 @@ class TestDebugTraceIterativeTransaction:
         tree_acc_data.add_trx(trxs[2], 3, 0)
         tree_acc_data.add_trx(trxs[3], 0xFFFF, 3)
 
-        evm_loader.create_tree_account_multiple(
-            neon_user,
-            treasury_pool,
-            tree_acc_data.data,
-            wSOL["address_spl"],
-        )
+        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data)
         web3_client_sol.send_all_scheduled_transactions(trxs)
 
         for tx in trxs:
@@ -317,7 +310,7 @@ class TestDebugTraceIterativeTransaction:
             nonce=nonce, max_fee_per_gas=max_fee_per_gas, max_priority_fee_per_gas=max_priority_fee_per_gas
         )
         tree_acc_data.add_trx(tx, 0xFFFF, 0)
-        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data, wSOL["address_spl"])
+        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data)
 
         web3_client_sol.send_all_scheduled_transactions([tx])
 
@@ -374,7 +367,7 @@ class TestDebugTraceIterativeTransaction:
         )
         tree_acc_data.add_trx(tx0, 1, 0)
         tree_acc_data.add_trx(tx1, 0xFFFF, 1)
-        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data, wSOL["address_spl"])
+        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data)
 
         web3_client_sol.send_all_scheduled_transactions([tx0, tx1])
 

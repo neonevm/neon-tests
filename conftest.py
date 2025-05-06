@@ -5,7 +5,7 @@ import pathlib
 import re
 import shutil
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional, Dict, Generator
 
 import pytest
@@ -16,7 +16,6 @@ from _pytest.runner import runtestprotocol
 from solana.rpc.commitment import Confirmed
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
-from spl.token.constants import WRAPPED_SOL_MINT
 
 import allure
 from utils import create_allure_environment_opts, setup_logging
@@ -53,7 +52,6 @@ class EnvironmentConfig:
     account_seed_version: str = "\3"
     neon_core_api_url: Optional[str] = None
     neon_core_api_rpc_url: Optional[str] = None
-    sol_mint_id: Pubkey = field(default=WRAPPED_SOL_MINT)
 
 
 def pytest_addoption(parser: Parser):

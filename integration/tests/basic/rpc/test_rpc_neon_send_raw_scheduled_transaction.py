@@ -4,7 +4,6 @@ import pytest
 from integration.tests.basic.helpers.errors import Error32602, Error32000
 from utils.helpers import decode_function_signature
 
-from utils.consts import wSOL
 from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateRequest
 
 
@@ -21,9 +20,7 @@ class TestNeonRPCSendRAWTransaction:
 
         tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
-        evm_loader.create_tree_account(
-            neon_user, treasury_pool, tx.encode(), wSOL["address_spl"], chain_id=evm_loader.sol_chain_id
-        )
+        evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
 
         resp = json_sol_rpc_client.send_rpc(
             method="neon_sendRawScheduledTransaction", params=[tx.encode().hex(), tx.encode().hex()]
@@ -46,9 +43,7 @@ class TestNeonRPCSendRAWTransaction:
 
         tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
-        evm_loader.create_tree_account(
-            neon_user, treasury_pool, tx.encode(), wSOL["address_spl"], chain_id=evm_loader.sol_chain_id
-        )
+        evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
 
         web3_client_sol.send_scheduled_transaction(tx, check_result=False)
         resp_for_second_sent_no_waiting = web3_client_sol.send_scheduled_transaction(tx, check_result=False)
@@ -82,9 +77,7 @@ class TestNeonRPCSendRAWTransaction:
 
         tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
-        evm_loader.create_tree_account(
-            neon_user, treasury_pool, tx.encode(), wSOL["address_spl"], chain_id=evm_loader.sol_chain_id
-        )
+        evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
 
         resp = json_rpc_client.send_rpc(method="neon_sendRawScheduledTransaction", params=[tx.encode().hex()])
         assert "error" in resp
@@ -107,9 +100,7 @@ class TestNeonRPCSendRAWTransaction:
 
         tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
-        evm_loader.create_tree_account(
-            neon_user, treasury_pool, tx.encode(), wSOL["address_spl"], chain_id=evm_loader.sol_chain_id
-        )
+        evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
         params = None
         if case == "empty_param":
             params = [""]

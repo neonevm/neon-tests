@@ -495,7 +495,6 @@ class TestSimulateSolana:
         session_user: Caller,
         basic_contract: Contract,
         neon_user: NeonUser,
-        environment,
     ):
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address)
         contract_data = 18
@@ -512,7 +511,7 @@ class TestSimulateSolana:
             call_data=data,
             chain_id=evm_loader.sol_chain_id,
         )
-        tree_account = evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode(), environment.sol_mint_id)
+        tree_account = evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
         evm_loader.write_transaction_to_holder_account(tx.encode(), holder_acc, operator_keypair)
         neon_user_balance_account = neon_user.get_balance_account(evm_loader.sol_chain_id)
         additional_accounts = [basic_contract.solana_address, neon_user_balance_account]

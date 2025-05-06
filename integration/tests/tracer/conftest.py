@@ -11,6 +11,7 @@ from integration.tests.basic.helpers.basic import AccountData
 from utils.tracer_client import TracerClient
 from utils.storage_contract import StorageContract
 from utils.accounts import EthAccounts
+from utils.tracer_validator import TracerValidator
 from utils.types import TransactionType
 from utils.web3client import NeonChainWeb3Client
 
@@ -25,6 +26,14 @@ def tracer_api(tracer_json_rpc_client_session, request):
     if inspect.isclass(request.cls):
         request.cls.tracer_api = tracer_json_rpc_client_session
     yield tracer_json_rpc_client_session
+
+
+@pytest.fixture(scope="class")
+def tracer_validator(request):
+    validator = TracerValidator()
+    if inspect.isclass(request.cls):
+        request.cls.tracer_validator = validator
+    yield validator
 
 
 @pytest.fixture(scope="class")

@@ -79,16 +79,6 @@ class InputTestConstants(Enum):
     ROUND_DIGITS = 3
 
 
-wSOL = {
-    "chain_id": 111,
-    "address_spl": Pubkey.from_string("So11111111111111111111111111111111111111112"),
-    "address": "0x16869acc45BA20abEFB2DdE2096F66373fDe364F",
-    "decimals": 9,
-    "name": "Wrapped SOL",
-    "symbol": "wSOL",
-    "logo_uri": "",
-}
-
 MULTITOKEN_MINTS_USDT = "2duuuuhNJHUYqcnZ7LKfeufeeTBgSJdftf2zM3cZV6ym"
 
 

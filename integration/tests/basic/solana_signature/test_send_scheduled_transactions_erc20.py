@@ -1,10 +1,10 @@
 import allure
+import pytest
 from solana.rpc.commitment import Confirmed
 from solders.pubkey import Pubkey
 from spl.token.instructions import get_associated_token_address
 
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
-from utils.consts import wSOL
 from utils.helpers import decode_function_signature
 from utils.neon_user import NeonUser
 from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData, ScheduledTrxEstimateRequest
@@ -30,9 +30,7 @@ class TestScheduledTrxERC20:
 
         tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
-        evm_loader.create_tree_account(
-            neon_user, treasury_pool, tx.encode(), wSOL["address_spl"], chain_id=evm_loader.sol_chain_id
-        )
+        evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
         check_trx_is_success(web3_client_sol, evm_loader, tx.hash().hex(), timeout=180)
 
         balance_ata = erc20_spl_mintable.contract.functions.balanceOfATA(neon_user.checksum_address).call()
@@ -61,9 +59,7 @@ class TestScheduledTrxERC20:
 
         tx0 = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
-        evm_loader.create_tree_account(
-            neon_user, treasury_pool, tx0.encode(), wSOL["address_spl"], chain_id=evm_loader.sol_chain_id
-        )
+        evm_loader.create_tree_account(neon_user, treasury_pool, tx0.encode())
         check_trx_is_success(web3_client_sol, evm_loader, tx0.hash().hex(), timeout=180)
 
         assert erc20_spl_mintable.get_balance(recipient.checksum_address) == 2000
@@ -89,9 +85,7 @@ class TestScheduledTrxERC20:
 
         tx0 = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
-        evm_loader.create_tree_account(
-            neon_user, treasury_pool, tx0.encode(), wSOL["address_spl"], chain_id=evm_loader.sol_chain_id
-        )
+        evm_loader.create_tree_account(neon_user, treasury_pool, tx0.encode())
         check_trx_is_success(web3_client_sol, evm_loader, tx0.hash().hex(), timeout=180)
 
         balance_pda = erc20_spl_mintable.contract.functions.balanceOfPDA(neon_user.checksum_address).call()
@@ -128,9 +122,7 @@ class TestScheduledTrxERC20:
             chain_id=evm_loader.sol_chain_id,
         )
 
-        evm_loader.create_tree_account(
-            neon_user, treasury_pool, tx0.encode(), wSOL["address_spl"], chain_id=evm_loader.sol_chain_id
-        )
+        evm_loader.create_tree_account(neon_user, treasury_pool, tx0.encode())
         resp = web3_client_sol.wait_for_transaction_receipt(tx0.hash(), timeout=180)
 
         assert resp["status"] == 0, resp
@@ -174,7 +166,7 @@ class TestScheduledTrxERC20:
 
         tree_acc_data.add_trx(tx, 0xFFFF, 0)
 
-        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data, wSOL["address_spl"])
+        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data)
         web3_client_sol.send_scheduled_transaction(tx)
 
         check_trx_is_success(web3_client_sol, evm_loader, tx.hash().hex(), timeout=180)
@@ -244,7 +236,7 @@ class TestScheduledTrxERC20:
         tree_acc_data.add_trx(trxs[2], 0xFFFF, 1)
         tree_acc_data.add_trx(trxs[3], 0xFFFF, 1)
 
-        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data, wSOL["address_spl"])
+        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data)
         web3_client_sol.send_all_scheduled_transactions(trxs)
 
         for trx in trxs:
@@ -261,6 +253,83 @@ class TestScheduledTrxERC20:
         assert balance_user_1 == balance_user_1_ata == balance_user_1_pda == 0
         assert balance_user_2_ata == 0
         assert balance_user_2 == balance_user_2_pda == 800
+
+    @pytest.mark.skip(reason="NDEV-3744")
+    def test_multiple_transactions_with_tree_actions_dependent_trx_with_2_parents(
+        self,
+        web3_client_sol,
+        neon_user,
+        erc20_spl_mintable,
+        evm_loader,
+        treasury_pool,
+    ):
+        # ┌───────┐
+        # │ t0 ✓  |       ┌──────┐
+        # │ s=0   ├-----> | t2 ✓ |
+        # └───────┘       │ s=2  │
+        # ┌───────┐       └──────┘
+        # │ t1 ✓  |_________↑
+        # │ s=0   │
+        # └───────┘
+        recipient = NeonUser(evm_loader.loader_id)
+
+        erc20_spl_mintable.approve(erc20_spl_mintable.account, neon_user.checksum_address, 1000)
+        transfer_amount = 400
+
+        data_0 = data_1 = decode_function_signature(
+            "transferFrom(address,address,uint256)",
+            [erc20_spl_mintable.account.address, neon_user.checksum_address, transfer_amount],
+        )
+        data_2 = decode_function_signature(
+            "transfer(address,address,uint256)",
+            [neon_user.checksum_address, recipient.checksum_address, 2 * transfer_amount],
+        )
+
+        trx_estimate_0 = ScheduledTrxEstimateRequest(
+            neon_user.checksum_address, erc20_spl_mintable.address, data_0, child_transaction=hex(2)
+        )
+        trx_estimate_1 = ScheduledTrxEstimateRequest(
+            neon_user.checksum_address, erc20_spl_mintable.address, data_1, child_transaction=hex(2)
+        )
+        trx_estimate_2 = ScheduledTrxEstimateRequest(
+            neon_user.checksum_address, erc20_spl_mintable.address, data_2, child_transaction="0xFFFF"
+        )
+
+        trx_estimate_obj_list = [trx_estimate_0, trx_estimate_1, trx_estimate_2]
+
+        estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), trx_estimate_obj_list)
+
+        trxs = []
+        for i in range(len(trx_estimate_obj_list)):
+            trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
+
+        tree_acc_data = CreateTreeAccMultipleData(
+            nonce=estimate_result["nonce"],
+            max_fee_per_gas=estimate_result["maxFeePerGas"],
+            max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
+        )
+
+        tree_acc_data.add_trx(trxs[0], 2, 0)
+        tree_acc_data.add_trx(trxs[1], 2, 0)
+        tree_acc_data.add_trx(trxs[2], 0xFFFF, 2)
+
+        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data)
+        web3_client_sol.send_all_scheduled_transactions(trxs)
+
+        for trx in trxs:
+            check_trx_is_success(web3_client_sol, evm_loader, trx.hash().hex(), timeout=180)
+
+        balance_neon_user = erc20_spl_mintable.get_balance(neon_user.checksum_address)
+        balance_recipient = erc20_spl_mintable.get_balance(recipient.checksum_address)
+        balance_neon_user_pda = erc20_spl_mintable.contract.functions.balanceOfPDA(neon_user.checksum_address).call()
+        balance_neon_user_ata = erc20_spl_mintable.contract.functions.balanceOfATA(neon_user.checksum_address).call()
+        balance_recipient_pda = erc20_spl_mintable.contract.functions.balanceOfPDA(recipient.checksum_address).call()
+        balance_recipient_ata = erc20_spl_mintable.contract.functions.balanceOfATA(recipient.checksum_address).call()
+
+        assert balance_neon_user_pda == balance_neon_user == 0
+        assert balance_neon_user_ata == 0
+        assert balance_recipient_ata == 0
+        assert balance_recipient == balance_recipient_pda == 800
 
     def test_multiple_transactions_with_tree_actions_independent(
         self, web3_client_sol, neon_user, erc20_spl_mintable, evm_loader, treasury_pool
@@ -307,7 +376,7 @@ class TestScheduledTrxERC20:
         tree_acc_data.add_trx(trxs[2], 0xFFFF, 0)
         tree_acc_data.add_trx(trxs[3], 0xFFFF, 0)
 
-        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data, wSOL["address_spl"])
+        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data)
         web3_client_sol.send_all_scheduled_transactions(trxs)
         for trx in trxs:
             check_trx_is_success(web3_client_sol, evm_loader, trx.hash().hex())

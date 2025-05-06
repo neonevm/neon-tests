@@ -5,7 +5,7 @@ import pytest
 
 from deepdiff import DeepDiff
 
-from integration.tests.tracer.tracer_helper import check_struct_log_type, check_call_tracer_type
+from utils.tracer_validator import TracerValidator
 from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts
 from utils.tracer_client import TracerClient
@@ -15,11 +15,12 @@ LOGGER = logging.getLogger(__name__)
 
 @allure.feature("Tracer API")
 @allure.story("Tracer API RPC calls debug method trace_transaction callTracer check")
-@pytest.mark.usefixtures("accounts", "web3_client", "tracer_api")
+@pytest.mark.usefixtures("accounts", "web3_client", "tracer_api", "tracer_validator")
 class TestDebugTraceTransactionCallTracer:
     web3_client: NeonChainWeb3Client
     accounts: EthAccounts
     tracer_api: TracerClient
+    tracer_validator: TracerValidator
 
     def fill_expected_response(
         self,
@@ -455,10 +456,24 @@ class TestDebugTraceTransactionCallTracer:
         tx_data = self.web3_client.get_transaction_by_hash(
             precompiled_neon_contract_tx_receipt["transactionHash"].hex()
         )
-        check_struct_log_type(self.tracer_api, tx_data)
-        check_call_tracer_type(self.tracer_api, tx_data)
+
+        response = self.tracer_api.debug_trace_call(tx_data)
+        assert self.tracer_validator.check_tracer_struct_log(response)
+
+        resp = self.tracer_api.debug_trace_transaction(
+            precompiled_neon_contract_tx_receipt["transactionHash"].hex(), tracer_type="callTracer", with_log=True
+        )
+        assert self.tracer_validator.check_call_tracer_type(resp, tx_data)
 
     def test_trace_trivial_error_tx(self, trivial_error_tx_receipt):
         tx_data = self.web3_client.get_transaction_by_hash(trivial_error_tx_receipt["transactionHash"].hex())
-        check_call_tracer_type(self.tracer_api, tx_data, wait_error=True, error_message="execution reverted")
-        check_struct_log_type(self.tracer_api, tx_data, wait_error=True)
+
+        response = self.tracer_api.debug_trace_call(tx_data)
+        assert self.tracer_validator.check_tracer_struct_log(response, wait_error=True)
+
+        resp = self.tracer_api.debug_trace_transaction(
+            trivial_error_tx_receipt["transactionHash"].hex(),
+            tracer_type="callTracer",
+            with_log=True,
+        )
+        assert self.tracer_validator.check_call_tracer_type(resp, tx_data, error_message="execution reverted")

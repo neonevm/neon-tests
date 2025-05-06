@@ -9,7 +9,7 @@ from solana.rpc import commitment
 
 from deploy.cli.network_manager import NetworkManager
 from utils.accounts import EthAccounts
-from utils.consts import LAMPORT_PER_SOL, wSOL, REMAPPING_ZEPPELIN_UNISWAP
+from utils.consts import LAMPORT_PER_SOL, REMAPPING_ZEPPELIN_UNISWAP
 from utils.erc20wrapper import ERC20Wrapper
 from utils.evm_loader import EvmLoader
 from utils.faucet import Faucet
@@ -334,9 +334,7 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
         tree_acc_data.add_trx(trxs[3], 0xFFFF, 1)
 
         self.check_solana_balance(self.treasury_pool.account)
-        self.evm_loader.create_tree_account_multiple(
-            self.uniswap_neon_account, self.treasury_pool, tree_acc_data.data, wSOL["address_spl"]
-        )
+        self.evm_loader.create_tree_account_multiple(self.uniswap_neon_account, self.treasury_pool, tree_acc_data.data)
         self.web3_client_sol.send_all_scheduled_transactions(trxs)
 
         for trx in trxs:

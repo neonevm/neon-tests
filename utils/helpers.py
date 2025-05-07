@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import pathlib
 import random
 import string
@@ -131,6 +132,20 @@ def decode_function_signature(function_name: str, args=None) -> str:
     if args is not None:
         types = function_name.split("(")[1].split(")")[0].split(",")
         data += abi.encode(types, args)
+    return "0x" + data.hex()
+
+
+@allure.step("Decode function signature")
+def decode_function_with_stucture_in_arg_signature(function_name: str, args=None) -> str:
+    data = keccak(text=function_name)[:4]
+    if args is not None:
+        match = re.search(r"\(\((.*?)\)\)", function_name)
+    if match:
+        inner = match.group(1)
+        types = inner.split(",")
+    else:
+        print("No match found")
+    data += abi.encode(types, args)
     return "0x" + data.hex()
 
 

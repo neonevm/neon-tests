@@ -1111,7 +1111,7 @@ class TestEconomics:
 
         gas_used = receipt["gasUsed"]
 
-        tx = web3_client.make_raw_tx(from_=accounts[0].address, tx_type=TransactionType.EIP_1559, gas=gas_used // 3)
+        tx = web3_client.make_raw_tx(from_=accounts[0].address, tx_type=TransactionType.EIP_1559, gas=gas_used // 4)
         instruction_tx = counter_contract.functions.moreInstruction(0, 3000).build_transaction(tx)
         receipt = web3_client.send_transaction(accounts[0], instruction_tx)
         assert receipt["status"] == 0

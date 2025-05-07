@@ -8,6 +8,11 @@ from utils.types import TestGroup
 
 EXTERNAL_CONTRACT_PATH = Path.cwd() / "contracts" / "external"
 REMAPPING_ZEPPELIN = {"@openzeppelin": str(EXTERNAL_CONTRACT_PATH / "neon-contracts/node_modules/@openzeppelin")}
+REMAPPING_ZEPPELIN_UNISWAP = {
+    "@openzeppelin": str(EXTERNAL_CONTRACT_PATH / "uniswap-v3/node_modules/@openzeppelin"),
+    "base64-sol": str(EXTERNAL_CONTRACT_PATH / "uniswap-v3/node_modules/base64-sol"),
+    "@uniswap": str(EXTERNAL_CONTRACT_PATH / "uniswap-v3/node_modules/@uniswap"),
+}
 TEST_GROUPS: tp.Tuple[TestGroup, ...] = tp.get_args(TestGroup)
 
 OPERATOR_KEYPAIR_PATH = "deploy/operator-keypairs"

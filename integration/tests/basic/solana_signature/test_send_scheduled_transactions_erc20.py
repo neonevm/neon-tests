@@ -313,7 +313,7 @@ class TestScheduledTrxERC20:
         tree_acc_data.add_trx(trxs[1], 2, 0)
         tree_acc_data.add_trx(trxs[2], 0xFFFF, 2)
 
-        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data, wSOL["address_spl"])
+        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data)
         web3_client_sol.send_all_scheduled_transactions(trxs)
 
         for trx in trxs:

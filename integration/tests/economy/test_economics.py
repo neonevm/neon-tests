@@ -1110,10 +1110,12 @@ class TestEconomics:
         assert receipt["status"] == 1
 
         gas_used = receipt["gasUsed"]
+        print("Gas used: ", gas_used)
 
-        tx = web3_client.make_raw_tx(from_=accounts[0].address, tx_type=TransactionType.EIP_1559, gas=gas_used // 4)
+        tx = web3_client.make_raw_tx(from_=accounts[0].address, tx_type=TransactionType.EIP_1559, gas=gas_used // 10)
         instruction_tx = counter_contract.functions.moreInstruction(0, 3000).build_transaction(tx)
         receipt = web3_client.send_transaction(accounts[0], instruction_tx)
+        print("Failed tx receipt: ", receipt)
         assert receipt["status"] == 0
 
         sol_balance_after = operator.get_solana_balance()

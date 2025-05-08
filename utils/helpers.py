@@ -15,6 +15,8 @@ import solcx
 import web3
 from eth_abi import abi
 from eth_utils import keccak
+from semantic_version import Version
+
 from solcx import link_code
 from solders.pubkey import Pubkey
 from solders.rpc.responses import GetTransactionResp
@@ -45,7 +47,8 @@ def get_contract_interface(
         else:
             contract_name = contract.rsplit(".", 1)[0]
 
-    solcx.install_solc(version)
+    installed_version = solcx.install_solc(version)
+    allure.attach(str(installed_version), "Installed solc version", allure.attachment_type.TEXT)
     if contract.startswith("/"):
         contract_path = pathlib.Path(contract)
     else:
@@ -58,14 +61,14 @@ def get_contract_interface(
     compiled = solcx.compile_files(
         [contract_path],
         output_values=["abi", "bin"],
-        solc_version=version,
+        solc_version=Version(version),
         import_remappings=import_remapping,
         allow_paths=["."],
         optimize=True,
     )  # this allow_paths isn't very good...
     contract_interface = get_contract_abi(contract_name, compiled)
     if libraries:
-        contract_interface["bin"] = link_code(contract_interface["bin"], libraries)
+        contract_interface["bin"] = link_code(contract_interface["bin"], libraries, solc_version=Version(version))
 
     return contract_interface
 

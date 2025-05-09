@@ -19,6 +19,3 @@ repos:
     rev: v0.9.3
     hooks:
       - id: ruff
-
-  # TODO
-  # Add .lock file

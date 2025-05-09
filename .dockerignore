@@ -1,0 +1,11 @@
+.git
+.gitignore
+.gitattributes
+.pytest_cache
+.ruff_cache
+
+.venv
+.idea
+.vscode
+
+allure-results

@@ -1,7 +1,7 @@
-name: "Build image"
-description: "Build and push neon test docker image"
+name: "Build base and final test image"
+description: "Build and push neon test base docker image"
 inputs:
-  image_tag:  # id of input
+  image_tag:
     description: 'neon tests image tag'
     required: true
   image_name:
@@ -20,37 +20,42 @@ inputs:
   docker_hub_org_name:
     description: 'docker hub organization name'
     required: true
+  force_rebuild_base_image:
+    description: 'flag to force rebuild basic image on current branch'
+    required: true
+    default: false
 
 runs:
   using: composite
   steps:
-    - name: Define feature or version branch
-      id: feature_branch
-      shell: bash
-      if: github.ref_name !='develop' || github.ref_name !='master'
-      run: |
-         if [[ "${{ github.ref }}" =~ "refs/heads/"[vt][0-9]+\.[0-9]+\.x ]]; then
-          value=${{ github.ref_name }}
-         elif [[ "${{ github.head_ref }}" != "" ]]; then # pr to feature/develop branch
-          value=${{ github.head_ref }}
-         fi;
-          echo "value=${value}"
-          echo "value=${value}" >> $GITHUB_OUTPUT
+    - name: Build and push base neon test image
+      id: base_image_build
+      uses: ./.github/actions/build-base-image
+      with:
+        image_tag: ${{ inputs.image_tag }}
+        image_name: ${{ inputs.docker_hub_org_name }}/neon_tests_base
+        oz_tag: ${{ inputs.oz_tag }}
+        docker_username: ${{ inputs.docker_username }}
+        docker_password: ${{ inputs.docker_password }}
+        docker_hub_org_name: ${{ inputs.docker_hub_org_name }}
+        force_rebuild_base_image: ${{ inputs.force_rebuild_base_image }}
+
     - name: Build and push neon tests docker image
       id: docker_pipeline
       shell: bash
       env:
         DOCKER_HUB_ORG_NAME: ${{ inputs.docker_hub_org_name }}
+        BASE_IMAGE_TAG: ${{ steps.base_image_build.outputs.image_tag }}
       run: |
+        echo "${{ env.BASE_IMAGE_TAG }}"
         image_name=${{ inputs.image_name }}
         delimeter=$(printf "%0.s-" {1..30})
         echo " ${delimeter} Build new docker image ${image_name} ${delimeter}"
         docker build . --no-cache --tag ${image_name}:${{ inputs.image_tag }} \
-            --build-arg OZ_TAG='${{ inputs.oz_tag }}' \
-            --build-arg CONTRACTS_BRANCH='main' \
-            --build-arg DOCKER_HUB_ORG_NAME="${{env.DOCKER_HUB_ORG_NAME}}"
-        if [[ "${{ steps.feature_branch.outputs.value }}" != ''  ]]; then
-          docker tag ${image_name}:${{ inputs.image_tag }} ${image_name}:${{ steps.feature_branch.outputs.value }}
+            --build-arg BASE_IMAGE_TAG=${{ env.BASE_IMAGE_TAG }} \
+            --build-arg DOCKER_HUB_ORG_NAME=${{ env.DOCKER_HUB_ORG_NAME }}
+        if [[ -n "${{ steps.base_image_build.outputs.feature_branch_tag }}" ]]; then
+          docker tag ${image_name}:${{ inputs.image_tag }} ${image_name}:${{ steps.base_image_build.outputs.feature_branch_tag }}
         fi;
         echo "${delimeter} Login into Docker registry as ${{ inputs.docker_username }} ${delimeter}"
         echo "${{ inputs.docker_password }}" | docker login -u ${{ inputs.docker_username }} --password-stdin

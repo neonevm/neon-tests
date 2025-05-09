@@ -197,7 +197,10 @@ class TestRpcEstimateGas:
         sol_client: SolanaClient,
         default_cu_price: int,
         cu_price_coefficient,
+        env_name,
     ):
+        if cu_price_coefficient < 1 and env_name == EnvName.DEVNET:
+            pytest.skip("Devnet DEFAULT_CU_PRICE is dynamic, so we can't test < 1")
         sender = self.accounts[1]
         receiver = self.accounts[0]
         raw_tx = web3_client.make_raw_tx(sender, receiver, amount=100000, estimate_gas=True)

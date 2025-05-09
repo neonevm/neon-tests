@@ -143,13 +143,11 @@ class TestScheduledTrx:
         )
         tree_acc.add_trx(tx0, 0xFFFF, 0)
 
-        tree_account = evm_loader.create_tree_account_multiple(
-            neon_user, treasury_pool, tree_acc.data, payer_nonce=nonce
-        )
+        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc.data, payer_nonce=nonce)
         with pytest.raises(AssertionError, match="transaction with the same nonce already exists"):
             evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc.data, payer_nonce=nonce)
         web3_client_sol.send_scheduled_transaction(tx0)
-        wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=120, delay=1)
+        check_trx_is_success(web3_client_sol, evm_loader, tx0.hash().hex())
 
     @pytest.mark.skip("NDEV-3453")
     def test_scheduled_trx_send_tokens_to_neon_chain_contract(

@@ -252,3 +252,4 @@ loadtesting/k6/data
 loadtesting/k6/contracts
 
 .git
+*.lock

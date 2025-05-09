@@ -7,7 +7,6 @@ from _pytest.config import Config
 from solana.rpc.commitment import Confirmed
 from solana.rpc.types import TokenAccountOpts
 from solana.transaction import Transaction
-from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 from spl.token import instructions
 from spl.token.constants import TOKEN_PROGRAM_ID
@@ -444,34 +443,29 @@ class TestERC20SPL:
         self,
         erc20_contract,
         sol_client,
-        solana_associated_token_erc20: tuple[Keypair, Pubkey, Pubkey],
+        solana_account,
     ):
-        acc, token_mint, solana_address = solana_associated_token_erc20
+        ata = sol_client.create_associate_token_acc(solana_account, solana_account, erc20_contract.token_mint_pubkey)
         amount = random.randint(10000, 1000000)
-        sol_balance_before = sol_client.get_balance(acc.pubkey()).value
+        sol_balance_before = sol_client.get_balance(solana_account.pubkey()).value
         contract_balance_before = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
 
-        erc20_contract.transfer_solana(erc20_contract.account, bytes(solana_address), amount)
+        erc20_contract.transfer_solana(erc20_contract.account, bytes(ata), amount)
 
-        sol_balance_after = sol_client.get_balance(acc.pubkey()).value
+        sol_balance_after = sol_client.get_balance(solana_account.pubkey()).value
         contract_balance_after = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
 
         assert contract_balance_before - contract_balance_after == amount, "Contract balance is not correct"
         assert sol_balance_after == sol_balance_before, "Sol balance is changed"
 
     @pytest.mark.only_stands  #  This doesn't work on devnet because GetTokenAccountsByDelegate doesn't work
-    def test_approveSolana(
-        self,
-        erc20_contract,
-        sol_client,
-        solana_associated_token_erc20: tuple[Keypair, Pubkey, Pubkey],
-    ):
-        acc, token_mint, solana_address = solana_associated_token_erc20
+    def test_approveSolana(self, erc20_contract, sol_client, solana_account):
+        sol_client.create_associate_token_acc(solana_account, solana_account, erc20_contract.token_mint_pubkey)
         amount = random.randint(10000, 1000000)
-        opts = TokenAccountOpts(token_mint)
-        erc20_contract.approve_solana(erc20_contract.account, bytes(acc.pubkey()), amount)
+        opts = TokenAccountOpts(erc20_contract.token_mint_pubkey)
+        erc20_contract.approve_solana(erc20_contract.account, bytes(solana_account.pubkey()), amount)
         token_account = (
-            sol_client.get_token_accounts_by_delegate_json_parsed(acc.pubkey(), opts, commitment=Confirmed)
+            sol_client.get_token_accounts_by_delegate_json_parsed(solana_account.pubkey(), opts, commitment=Confirmed)
             .value[0]
             .account
         )
@@ -479,72 +473,65 @@ class TestERC20SPL:
         assert int(token_account.data.parsed["info"]["delegatedAmount"]["decimals"]) == erc20_contract.decimals
 
     @pytest.mark.cost_report
-    def test_claim(
-        self,
-        erc20_contract,
-        sol_client,
-        solana_associated_token_erc20: tuple[Keypair, Pubkey, Pubkey],
-        pytestconfig,
-    ):
-        acc, token_mint, solana_address = solana_associated_token_erc20
+    def test_claim(self, erc20_contract, sol_client, environment, solana_account):
+        ata = sol_client.create_associate_token_acc(solana_account, solana_account, erc20_contract.token_mint_pubkey)
+
         balance_before = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
         sent_amount = random.randint(10, 1000)
-        erc20_contract.transfer_solana(erc20_contract.account, bytes(solana_address), sent_amount)
+        erc20_contract.transfer_solana(erc20_contract.account, bytes(ata), sent_amount)
         trx = Transaction()
         trx.add(
             instructions.approve(
                 instructions.ApproveParams(
                     program_id=TOKEN_PROGRAM_ID,
-                    source=solana_address,
+                    source=ata,
                     delegate=sol_client.get_erc_auth_address(
                         erc20_contract.account.address,
                         erc20_contract.contract.address,
-                        pytestconfig.environment.evm_loader,
+                        environment.evm_loader,
                     ),
-                    owner=acc.pubkey(),
+                    owner=solana_account.pubkey(),
                     amount=sent_amount,
                     signers=[],
                 )
             )
         )
-        sol_client.send_tx_and_check_status_ok(trx, acc)
+        sol_client.send_tx_and_check_status_ok(trx, solana_account)
 
         claim_amount = random.randint(10, sent_amount)
-        erc20_contract.claim(erc20_contract.account, bytes(solana_address), claim_amount)
+        erc20_contract.claim(erc20_contract.account, bytes(ata), claim_amount)
         balance_after = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
 
         assert balance_after == balance_before - sent_amount + claim_amount, "Balance is not correct"
 
-    def test_claimTo(
-        self, erc20_contract, sol_client, solana_associated_token_erc20: tuple[Keypair, Pubkey, Pubkey], pytestconfig
-    ):
+    def test_claimTo(self, erc20_contract, sol_client, environment, solana_account):
         new_account = self.accounts.create_account()
-        acc, token_mint, solana_address = solana_associated_token_erc20
+        ata = sol_client.create_associate_token_acc(solana_account, solana_account, erc20_contract.token_mint_pubkey)
         user1_balance_before = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
         user2_balance_before = erc20_contract.contract.functions.balanceOf(new_account.address).call()
         sent_amount = random.randint(10, 1000)
-        erc20_contract.transfer_solana(erc20_contract.account, bytes(solana_address), sent_amount)
+        erc20_contract.transfer_solana(erc20_contract.account, bytes(ata), sent_amount)
         trx = Transaction()
         trx.add(
             instructions.approve(
                 instructions.ApproveParams(
                     program_id=TOKEN_PROGRAM_ID,
-                    source=solana_address,
+                    source=ata,
                     delegate=sol_client.get_erc_auth_address(
                         erc20_contract.account.address,
                         erc20_contract.contract.address,
-                        pytestconfig.environment.evm_loader,
+                        environment.evm_loader,
                     ),
-                    owner=acc.pubkey(),
+                    owner=solana_account.pubkey(),
                     amount=sent_amount,
                     signers=[],
                 )
             )
         )
-        sol_client.send_tx_and_check_status_ok(trx, acc)
+        sol_client.send_tx_and_check_status_ok(trx, solana_account)
 
         claim_amount = random.randint(10, sent_amount)
-        erc20_contract.claim_to(erc20_contract.account, bytes(solana_address), new_account.address, claim_amount)
+        erc20_contract.claim_to(erc20_contract.account, bytes(ata), new_account.address, claim_amount)
         user1_balance_after = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
         user2_balance_after = erc20_contract.contract.functions.balanceOf(new_account.address).call()
 
@@ -652,34 +639,29 @@ class TestERC20SPLMintable:
         total_after = erc20_contract.contract.functions.totalSupply().call()
         assert total_before + amount == total_after, "Total supply is not correct"
 
-    def test_transferSolana(
-        self, sol_client, erc20_contract, solana_associated_token_mintable_erc20: tuple[Keypair, Pubkey, Pubkey]
-    ):
-        acc, token_mint, solana_address = solana_associated_token_mintable_erc20
-        amount = random.randint(10000, 1000000)
-        sol_balance_before = sol_client.get_balance(acc.pubkey()).value
-        contract_balance_before = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
-        erc20_contract.transfer_solana(erc20_contract.account, bytes(solana_address), amount)
+    def test_transferSolana(self, sol_client, erc20_contract, solana_account):
+        ata = sol_client.create_associate_token_acc(solana_account, solana_account, erc20_contract.token_mint_pubkey)
 
-        sol_balance_after = sol_client.get_balance(acc.pubkey()).value
+        amount = random.randint(10000, 1000000)
+        sol_balance_before = sol_client.get_balance(solana_account.pubkey()).value
+        contract_balance_before = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
+        erc20_contract.transfer_solana(erc20_contract.account, bytes(ata), amount)
+
+        sol_balance_after = sol_client.get_balance(solana_account.pubkey()).value
         contract_balance_after = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
 
         assert contract_balance_before - contract_balance_after == amount, "Contract balance is not correct"
         assert sol_balance_after == sol_balance_before, "Sol balance is changed"
 
     @pytest.mark.only_stands  #  This doesn't work on devnet because GetTokenAccountsByDelegate doesn't work
-    def test_approveSolana(
-        self,
-        erc20_contract,
-        sol_client,
-        solana_associated_token_mintable_erc20: tuple[Keypair, Pubkey, Pubkey],
-    ):
-        acc, token_mint, solana_address = solana_associated_token_mintable_erc20
+    def test_approveSolana(self, erc20_contract, sol_client, solana_account):
+        sol_client.create_associate_token_acc(solana_account, solana_account, erc20_contract.token_mint_pubkey)
+
         amount = random.randint(10000, 1000000)
-        opts = TokenAccountOpts(token_mint)
-        erc20_contract.approve_solana(erc20_contract.account, bytes(acc.pubkey()), amount)
+        opts = TokenAccountOpts(erc20_contract.token_mint_pubkey)
+        erc20_contract.approve_solana(erc20_contract.account, bytes(solana_account.pubkey()), amount)
         token_account = (
-            sol_client.get_token_accounts_by_delegate_json_parsed(acc.pubkey(), opts, commitment=Confirmed)
+            sol_client.get_token_accounts_by_delegate_json_parsed(solana_account.pubkey(), opts, commitment=Confirmed)
             .value[0]
             .account
         )
@@ -690,72 +672,67 @@ class TestERC20SPLMintable:
         self,
         erc20_contract,
         sol_client,
-        solana_associated_token_mintable_erc20: tuple[Keypair, Pubkey, Pubkey],
-        pytestconfig,
+        solana_account,
+        environment,
     ):
-        acc, token_mint, solana_address = solana_associated_token_mintable_erc20
+        ata = sol_client.create_associate_token_acc(solana_account, solana_account, erc20_contract.token_mint_pubkey)
+
         balance_before = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
         sent_amount = random.randint(10, 1000)
-        erc20_contract.transfer_solana(erc20_contract.account, bytes(solana_address), sent_amount)
+        erc20_contract.transfer_solana(erc20_contract.account, bytes(ata), sent_amount)
         trx = Transaction()
         trx.add(
             instructions.approve(
                 instructions.ApproveParams(
                     program_id=TOKEN_PROGRAM_ID,
-                    source=solana_address,
+                    source=ata,
                     delegate=sol_client.get_erc_auth_address(
                         erc20_contract.account.address,
                         erc20_contract.contract.address,
-                        pytestconfig.environment.evm_loader,
+                        environment.evm_loader,
                     ),
-                    owner=acc.pubkey(),
+                    owner=solana_account.pubkey(),
                     amount=sent_amount,
                     signers=[],
                 )
             )
         )
-        sol_client.send_tx_and_check_status_ok(trx, acc)
+        sol_client.send_tx_and_check_status_ok(trx, solana_account)
 
         claim_amount = random.randint(10, sent_amount)
-        erc20_contract.claim(erc20_contract.account, bytes(solana_address), claim_amount)
+        erc20_contract.claim(erc20_contract.account, bytes(ata), claim_amount)
         balance_after = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
 
         assert balance_after == balance_before - sent_amount + claim_amount, "Balance is not correct"
 
-    def test_claimTo(
-        self,
-        erc20_contract,
-        sol_client,
-        solana_associated_token_mintable_erc20: tuple[Keypair, Pubkey, Pubkey],
-        pytestconfig,
-    ):
-        acc, token_mint, solana_address = solana_associated_token_mintable_erc20
+    def test_claimTo(self, erc20_contract, sol_client, environment, solana_account):
         new_account = self.accounts.create_account()
+        ata = sol_client.create_associate_token_acc(solana_account, solana_account, erc20_contract.token_mint_pubkey)
         user1_balance_before = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
         user2_balance_before = erc20_contract.contract.functions.balanceOf(new_account.address).call()
         sent_amount = random.randint(10, 1000)
-        erc20_contract.transfer_solana(erc20_contract.account, bytes(solana_address), sent_amount)
+        erc20_contract.transfer_solana(erc20_contract.account, bytes(ata), sent_amount)
         trx = Transaction()
         trx.add(
             instructions.approve(
                 instructions.ApproveParams(
                     program_id=TOKEN_PROGRAM_ID,
-                    source=solana_address,
+                    source=ata,
                     delegate=sol_client.get_erc_auth_address(
                         erc20_contract.account.address,
                         erc20_contract.contract.address,
-                        pytestconfig.environment.evm_loader,
+                        environment.evm_loader,
                     ),
-                    owner=acc.pubkey(),
+                    owner=solana_account.pubkey(),
                     amount=sent_amount,
                     signers=[],
                 )
             )
         )
-        sol_client.send_tx_and_check_status_ok(trx, acc)
+        sol_client.send_tx_and_check_status_ok(trx, solana_account)
 
         claim_amount = random.randint(10, sent_amount)
-        erc20_contract.claim_to(erc20_contract.account, bytes(solana_address), new_account.address, claim_amount)
+        erc20_contract.claim_to(erc20_contract.account, bytes(ata), new_account.address, claim_amount)
         user1_balance_after = erc20_contract.contract.functions.balanceOf(erc20_contract.account.address).call()
         user2_balance_after = erc20_contract.contract.functions.balanceOf(new_account.address).call()
 

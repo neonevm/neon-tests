@@ -113,6 +113,7 @@ class SolanaClient(solana.rpc.api.Client):
         self.confirm_transaction(result.value, commitment=Confirmed)
         return self.get_transaction(result.value, commitment=Confirmed)
 
+    @allure.step("Create associated token account if not exists")
     def create_associate_token_acc(self, payer: Keypair, owner: Keypair, token_mint: Pubkey):
         ata: Pubkey = get_associated_token_address(owner.pubkey(), token_mint)
         if not self.account_exists(ata):

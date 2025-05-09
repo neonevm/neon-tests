@@ -3,15 +3,10 @@ import random
 import pytest
 import web3
 from solana.rpc.commitment import Confirmed
-from solana.rpc.types import Commitment, TxOpts
-from solana.transaction import Transaction
+from solana.rpc.types import Commitment
 from solders.signature import Signature
 from spl.token.client import Token as SplToken
 from spl.token.constants import TOKEN_PROGRAM_ID
-from spl.token.instructions import (
-    create_associated_token_account,
-    get_associated_token_address,
-)
 
 import allure
 from utils.helpers import wait_condition
@@ -186,28 +181,18 @@ class TestWNeon:
 
         wait_condition(lambda: self.sol_client.get_balance(solana_account.pubkey()) != 0)
 
-        trx = Transaction()
-        trx.add(create_associated_token_account(solana_account.pubkey(), solana_account.pubkey(), neon_mint))
-        opts = TxOpts(skip_preflight=True, skip_confirmation=False)
-        self.sol_client.send_transaction(trx, solana_account, opts=opts)
-
-        dest_token_acc = get_associated_token_address(solana_account.pubkey(), neon_mint)
+        dest_token_acc = self.sol_client.create_associate_token_acc(solana_account, solana_account, neon_mint)
 
         spl_neon_token = SplToken(self.sol_client, neon_mint, TOKEN_PROGRAM_ID, solana_account)
 
         destination_balance_before = spl_neon_token.get_balance(dest_token_acc, commitment=Commitment("confirmed"))
         neon_balance_before, wneon_balance_before = self.get_balances(wneon, recipient_account.address)
-
+        tx = self.web3_client.make_raw_tx(
+            recipient_account, amount=self.web3_client._web3.to_wei(withdraw_amount, "ether")
+        )
         instruction_tx = withdraw_contract.functions.withdraw(
             bytes(solana_account.pubkey()),
-        ).build_transaction(
-            {
-                "from": recipient_account.address,
-                "nonce": self.web3_client.eth.get_transaction_count(recipient_account.address),
-                "gasPrice": self.web3_client.gas_price(),
-                "value": self.web3_client._web3.to_wei(withdraw_amount, "ether"),
-            }
-        )
+        ).build_transaction(tx)
 
         receipt = self.web3_client.send_transaction(recipient_account, instruction_tx)
         assert receipt["status"] == 1

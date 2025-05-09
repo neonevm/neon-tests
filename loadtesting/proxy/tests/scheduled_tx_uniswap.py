@@ -106,17 +106,17 @@ def prepare_contracts(environment: env.Environment, **kwargs):
             solana_account=solana_account,
             mintable=True,
             bank_account=bank_account,
-            account=deployer,
+            owner=deployer,
         )
         tokens[f"{token}"] = erc20
 
         LOG.info("Mint tokens...")
-        erc20.mint_tokens(signer=erc20.account, to_address=erc20.account.address, amount=token_mint_amount)
+        erc20.mint_tokens(signer=erc20.owner, to_address=erc20.owner.address, amount=token_mint_amount)
 
         LOG.info("Mint tokens to neon accounts for swaps...")
         for neon_user in neon_accounts:
             receipt = erc20.mint_tokens(
-                signer=erc20.account, to_address=neon_user.checksum_address, amount=token_mint_amount
+                signer=erc20.owner, to_address=neon_user.checksum_address, amount=token_mint_amount
             )
             assert receipt["status"] == 1
 

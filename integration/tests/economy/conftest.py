@@ -50,7 +50,7 @@ def erc20_wrapper(
     sol_client,
     web3_client_sol,
     web3_client,
-):
+) -> ERC20Wrapper:
     client, _ = client_and_price
     make_nonce_the_biggest_for_chain(account_with_all_tokens, client, [web3_client, web3_client_sol])
     contract = ERC20Wrapper(
@@ -59,11 +59,11 @@ def erc20_wrapper(
         "Test AAA",
         "AAA",
         sol_client,
-        account=account_with_all_tokens,
+        owner=account_with_all_tokens,
         solana_account=solana_account,
         mintable=True,
     )
-    contract.mint_tokens(account_with_all_tokens, contract.account.address)
+    contract.mint_tokens(account_with_all_tokens, contract.owner.address)
     return contract
 
 

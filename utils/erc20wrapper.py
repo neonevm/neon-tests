@@ -1,3 +1,5 @@
+from typing import Union
+
 from eth_account.signers.local import LocalAccount
 from solana.rpc.commitment import Confirmed
 from solana.rpc.types import TxOpts
@@ -28,33 +30,21 @@ class ERC20Wrapper:
         sol_client,
         solana_account: Keypair,
         decimals=9,
-        evm_loader_id=None,
-        account=None,
+        owner=None,
         mintable=True,
         contract_address=None,
         bank_account=None,
     ) -> None:
-        self.solana_associated_token_acc = None
-        self.solana_acc = solana_account
-        self.evm_loader_id = evm_loader_id
         self.web3_client = web3_client
-        self.account = account
-
-        if self.account is None:
-            self.account = web3_client.create_account()
-            if bank_account is not None:
-                web3_client.send_neon(bank_account, self.account.address, 50)
-            else:
-                faucet.request_neon(self.account.address, 150)
-        else:
-            if bank_account is not None:
-                web3_client.send_neon(bank_account, self.account.address, 50)
+        self.sol_client = sol_client
+        self.solana_acc = solana_account
         self.name = name
         self.symbol = symbol
         self.decimals = decimals
-        self.sol_client = sol_client
         self.contract_address = contract_address
-        self.solana_associated_token_acc: Pubkey
+        self.solana_associated_token_acc: Union[Pubkey, None] = None
+
+        self.owner = owner or self._create_or_fund_owner(faucet, bank_account)
 
         if not self.contract_address:
             self.contract_address = self.deploy_wrapper(mintable)
@@ -68,7 +58,16 @@ class ERC20Wrapper:
             solc_version="0.8.28",
             import_remapping=REMAPPING_ZEPPELIN,
         )
+
         self.token_mint_pubkey = Pubkey(self.contract.functions.tokenMint().call())
+
+    def _create_or_fund_owner(self, faucet, bank_account):
+        owner = self.web3_client.create_account()
+        if bank_account:
+            self.web3_client.send_neon(bank_account, owner.address, 50)
+        else:
+            faucet.request_neon(owner.address, 150)
+        return owner
 
     @property
     def address(self):
@@ -96,17 +95,17 @@ class ERC20Wrapper:
         contract, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
             "neon-contracts/contracts/token/ERC20ForSpl/erc20_for_spl_factory",
             "0.8.28",
-            self.account,
+            self.owner,
             contract_name="ERC20ForSplFactory",
             import_remapping=REMAPPING_ZEPPELIN,
         )
 
         assert contract_deploy_tx["status"] == 1, f"ERC20 wasn't deployed: {contract_deploy_tx}"
 
-        tx_object = self.web3_client.make_raw_tx(self.account)
+        tx_object = self.web3_client.make_raw_tx(self.owner)
         if mintable:
             instruction_tx = contract.functions.createErc20ForSplMintable(
-                self.name, self.symbol, self.decimals, self.account.address
+                self.name, self.symbol, self.decimals, self.owner.address
             ).build_transaction(tx_object)
         else:
             self.token_mint, self.solana_associated_token_acc = self.sol_client.create_spl(
@@ -117,13 +116,12 @@ class ERC20Wrapper:
                 tx_object
             )
 
-        instruction_receipt = self.web3_client.send_transaction(self.account, instruction_tx)
+        instruction_receipt = self.web3_client.send_transaction(self.owner, instruction_tx)
         if instruction_receipt:
             logs = contract.events.ERC20ForSplCreated().process_receipt(instruction_receipt)
             return logs[0]["args"]["pair"]
         return instruction_receipt
 
-    # TODO: In all this methods verify if exist self.account
     @stats_collector.cost_report_from_receipt
     def mint_tokens(self, signer, to_address, amount: int = INIT_TOKEN_AMOUNT, gas_price=None, gas=None) -> TxReceipt:
         tx = self.web3_client.make_raw_tx(signer.address, gas_price=gas_price, gas=gas)
@@ -241,7 +239,7 @@ class ERC20Wrapper:
         """
 
         if pda_amount:
-            self.transfer(self.account, recipient.checksum_address, pda_amount)  # PDA top up
+            self.transfer(self.owner, recipient.checksum_address, pda_amount)  # PDA top up
 
         if ata_amount is not None:
             ata_account = get_associated_token_address(recipient.solana_account.pubkey(), self.token_mint_pubkey)
@@ -267,4 +265,4 @@ class ERC20Wrapper:
             )
             evm_loader.send_tx_and_check_status_ok(trx, recipient.solana_account)
 
-            self.transfer_solana(self.account, bytes(ata_account), ata_amount)
+            self.transfer_solana(self.owner, bytes(ata_account), ata_amount)

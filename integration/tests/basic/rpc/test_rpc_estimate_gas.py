@@ -138,7 +138,7 @@ class TestRpcEstimateGas:
     @pytest.mark.only_stands
     def test_rpc_estimate_gas_spl(self, erc20_spl):
         recipient_account = self.accounts.create_account()
-        tx_receipt = erc20_spl.transfer(erc20_spl.account, recipient_account, 1)
+        tx_receipt = erc20_spl.transfer(erc20_spl.owner, recipient_account, 1)
         transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
         assert transaction["gas"] == 3_004_911
 

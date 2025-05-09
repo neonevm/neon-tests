@@ -81,14 +81,14 @@ def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwarg
         solana_account=solana_account,
         mintable=True,
         bank_account=bank_account,
-        account=eth_account,
+        owner=eth_account,
     )
 
     LOG.info("Mint tokens...")
-    erc20.mint_tokens(signer=erc20.account, to_address=erc20.account.address, amount=10**18)
+    erc20.mint_tokens(signer=erc20.owner, to_address=erc20.owner.address, amount=10**18)
 
     environment.contract_info["erc20_address"] = erc20.contract.address
-    environment.contract_info["erc20_owner_address"] = erc20.account.address
+    environment.contract_info["erc20_owner_address"] = erc20.owner.address
 
     LOG.info("Create neon users...")
     environment.contract_info["accounts"] = []
@@ -108,7 +108,7 @@ def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwarg
         erc20.pop_up_balance(
             environment.evm_loader, recipient=neon_user, pda_amount=neon_user_balance, ata_amount=neon_user_balance
         )
-        erc20.approve(erc20.account, neon_user.checksum_address, neon_user_balance)
+        erc20.approve(erc20.owner, neon_user.checksum_address, neon_user_balance)
 
     environment.contract_info["recipients"] = environment.contract_info["accounts"].copy()
     environment.solana_account, environment.bank_account = solana_account, bank_account

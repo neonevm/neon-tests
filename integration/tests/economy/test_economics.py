@@ -174,13 +174,13 @@ class TestEconomics:
         assert sol_balance_before == sol_balance_after
         assert token_balance_before == token_balance_after
 
-    def test_erc20wrapper_transfer(self, erc20_wrapper, client_and_price, sol_price, operator, accounts):
+    def test_erc20_for_spl_transfer(self, erc20_wrapper, client_and_price, sol_price, operator, accounts):
         sender_account = accounts[0]
         w3_client, token_price = client_and_price
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(w3_client)
         assert erc20_wrapper.contract.functions.balanceOf(sender_account.address).call() == 0
-        transfer_tx = erc20_wrapper.transfer(erc20_wrapper.account, sender_account, 25)
+        transfer_tx = erc20_wrapper.transfer(erc20_wrapper.owner, sender_account, 25)
 
         assert erc20_wrapper.contract.functions.balanceOf(sender_account.address).call() == 25
         wait_condition(lambda: sol_balance_before > operator.get_solana_balance())

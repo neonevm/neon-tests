@@ -303,13 +303,13 @@ class TestNeonRPCEstimateScheduledGas:
         # │ s=0   │  │ s=1  │  │ s=2   │
         # └───────┘  └──────┘  └───────┘
         recipient = NeonUser(evm_loader.loader_id)
-        erc20_spl_mintable.approve(erc20_spl_mintable.account, neon_user.checksum_address, 800)
+        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user.checksum_address, 800)
         top_up_in_trx = 400
         amount_to_recipient = 400
 
         data_0 = data_2 = decode_function_signature(
             "transferFrom(address,address,uint256)",
-            [erc20_spl_mintable.account.address, neon_user.checksum_address, top_up_in_trx],
+            [erc20_spl_mintable.owner.address, neon_user.checksum_address, top_up_in_trx],
         )
         data_1 = decode_function_signature(
             "transfer(address,uint256)", [recipient.checksum_address, amount_to_recipient]
@@ -419,7 +419,7 @@ class TestNeonRPCEstimateScheduledGas:
     ):
         recipient = NeonUser(evm_loader.loader_id)
         ata_amount = 1_000
-        erc20_spl_mintable.approve(erc20_spl_mintable.account, neon_user.checksum_address, ata_amount)
+        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user.checksum_address, ata_amount)
 
         my_ata = get_associated_token_address(neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey)
         solana_contract_account = Pubkey.from_string(evm_loader.ether2program(erc20_spl_mintable.contract.address)[0])
@@ -446,7 +446,7 @@ class TestNeonRPCEstimateScheduledGas:
 
         data1 = decode_function_signature(
             "transferSolanaFrom(address,bytes32,uint64)",
-            [erc20_spl_mintable.account.address, bytes(my_ata), ata_amount],
+            [erc20_spl_mintable.owner.address, bytes(my_ata), ata_amount],
         )
         data2 = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, ata_amount])
 
@@ -469,13 +469,13 @@ class TestNeonRPCEstimateScheduledGas:
     ):
         recipient = NeonUser(evm_loader.loader_id)
         ata_amount = 1_000
-        erc20_spl_mintable.approve(erc20_spl_mintable.account, neon_user.checksum_address, ata_amount)
+        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user.checksum_address, ata_amount)
 
         my_ata = get_associated_token_address(neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey)
 
         data1 = decode_function_signature(
             "transferSolanaFrom(address,bytes32,uint64)",
-            [erc20_spl_mintable.account.address, bytes(my_ata), ata_amount],
+            [erc20_spl_mintable.owner.address, bytes(my_ata), ata_amount],
         )
         data2 = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, ata_amount])
 

@@ -19,18 +19,18 @@ class TestErc20SplTransfer:
         """Send spl wrapped account from one account to another"""
         recipient_account = self.accounts[1]
 
-        initial_sender_neon_balance = self.web3_client.get_balance(erc20_spl.account)
+        initial_sender_neon_balance = self.web3_client.get_balance(erc20_spl.owner)
         initial_recipient_neon_balance = self.web3_client.get_balance(recipient_account)
 
-        initial_sender_erc20_balance = erc20_spl.get_balance(erc20_spl.account)
+        initial_sender_erc20_balance = erc20_spl.get_balance(erc20_spl.owner)
         initial_recipient_erc20_balance = erc20_spl.get_balance(recipient_account)
-        tx_receipt = erc20_spl.transfer(erc20_spl.account, recipient_account, transfer_amount)
+        tx_receipt = erc20_spl.transfer(erc20_spl.owner, recipient_account, transfer_amount)
         # ERC20 balance
         assert (
-            erc20_spl.get_balance(erc20_spl.account) == initial_sender_erc20_balance - transfer_amount
+            erc20_spl.get_balance(erc20_spl.owner) == initial_sender_erc20_balance - transfer_amount
         ), AssertMessage.CONTRACT_BALANCE_IS_WRONG.value
 
-        assert self.web3_client.get_balance(erc20_spl.account) == (
+        assert self.web3_client.get_balance(erc20_spl.owner) == (
             initial_sender_neon_balance - self.web3_client.calculate_trx_gas(tx_receipt)
         )
 
@@ -42,22 +42,22 @@ class TestErc20SplTransfer:
 
         recipient_account = self.accounts[1]
 
-        initial_sender_neon_balance = self.web3_client.get_balance(erc20_spl.account.address)
+        initial_sender_neon_balance = self.web3_client.get_balance(erc20_spl.owner.address)
         initial_recipient_neon_balance = self.web3_client.get_balance(recipient_account)
 
-        initial_sender_erc20_balance = erc20_spl.get_balance(erc20_spl.account)
-        transfer_amount = erc20_spl.get_balance(erc20_spl.account) + 1
+        initial_sender_erc20_balance = erc20_spl.get_balance(erc20_spl.owner)
+        transfer_amount = erc20_spl.get_balance(erc20_spl.owner) + 1
 
         with pytest.raises(web3.exceptions.ContractLogicError):
-            erc20_spl.transfer(erc20_spl.account, recipient_account, transfer_amount)
+            erc20_spl.transfer(erc20_spl.owner, recipient_account, transfer_amount)
 
         # ERC20 balance
         assert (
-            erc20_spl.get_balance(erc20_spl.account) == initial_sender_erc20_balance
+            erc20_spl.get_balance(erc20_spl.owner) == initial_sender_erc20_balance
         ), AssertMessage.CONTRACT_BALANCE_IS_WRONG.value
 
         # Neon balance
-        assert initial_sender_neon_balance == self.web3_client.get_balance(erc20_spl.account.address)
+        assert initial_sender_neon_balance == self.web3_client.get_balance(erc20_spl.owner.address)
         assert initial_recipient_neon_balance == self.web3_client.get_balance(recipient_account)
 
     def test_send_tokens_to_non_exist_acc(self, erc20_spl):
@@ -65,14 +65,14 @@ class TestErc20SplTransfer:
         recipient = self.web3_client.eth.account.create()
         transfer_amount = 10
 
-        initial_sender_erc20_balance = erc20_spl.get_balance(erc20_spl.account)
-        initial_sender_neon_balance = self.web3_client.get_balance(erc20_spl.account.address)
+        initial_sender_erc20_balance = erc20_spl.get_balance(erc20_spl.owner)
+        initial_sender_neon_balance = self.web3_client.get_balance(erc20_spl.owner.address)
 
-        erc20_spl.transfer(erc20_spl.account, recipient, transfer_amount)
+        erc20_spl.transfer(erc20_spl.owner, recipient, transfer_amount)
 
         assert (
-            erc20_spl.get_balance(erc20_spl.account) == initial_sender_erc20_balance - transfer_amount
+            erc20_spl.get_balance(erc20_spl.owner) == initial_sender_erc20_balance - transfer_amount
         ), AssertMessage.CONTRACT_BALANCE_IS_WRONG.value
         assert erc20_spl.get_balance(recipient) == transfer_amount, AssertMessage.CONTRACT_BALANCE_IS_WRONG.value
         # Neon balance
-        assert initial_sender_neon_balance > self.web3_client.get_balance(erc20_spl.account.address)
+        assert initial_sender_neon_balance > self.web3_client.get_balance(erc20_spl.owner.address)

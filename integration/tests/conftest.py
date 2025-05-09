@@ -185,13 +185,12 @@ def erc20_spl(
         solana_account=solana_account,
         mintable=False,
         bank_account=eth_bank_account,
-        account=accounts_session[0],
-        evm_loader_id=environment.evm_loader,
+        owner=accounts_session[0],
     )
     erc20.token_mint.approve(
         source=erc20.solana_associated_token_acc,
         delegate=sol_client_session.get_erc_auth_address(
-            erc20.account.address,
+            erc20.owner.address,
             erc20.contract.address,
             environment.evm_loader,
         ),
@@ -200,7 +199,7 @@ def erc20_spl(
         opts=TxOpts(preflight_commitment=commitment.Confirmed, skip_confirmation=False),
     )
 
-    erc20.claim(erc20.account, bytes(erc20.solana_associated_token_acc), 100000000000000)
+    erc20.claim(erc20.owner, bytes(erc20.solana_associated_token_acc), 100000000000000)
     yield erc20
 
 
@@ -231,9 +230,9 @@ def erc20_spl_mintable(
         solana_account=solana_account,
         mintable=True,
         bank_account=eth_bank_account,
-        account=accounts_session[0],
+        owner=accounts_session[0],
     )
-    erc20.mint_tokens(erc20.account, erc20.account.address)
+    erc20.mint_tokens(erc20.owner, erc20.owner.address)
     yield erc20
 
 

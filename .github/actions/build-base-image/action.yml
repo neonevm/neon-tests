@@ -63,11 +63,16 @@ runs:
       shell: bash
       run: |
         echo "${{ inputs.docker_password }}" | docker login -u ${{ inputs.docker_username }} --password-stdin
+
     - name: Check if requirements folder changed
       id: check_requirements
       shell: bash
       run: |
         # Fetch parent folder
+        if [[ -n "${{ env.PARENT_BRANCH }}" ]]; then
+          echo "PARENT_BRANCH=develop" >> $GITHUB_ENV
+        fi
+
         git fetch --depth 1 origin ${{ env.PARENT_BRANCH }}
 
         # Check if there are changes in the requirements folder or Dockerfile-base

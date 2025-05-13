@@ -45,6 +45,7 @@ jobs:
 
       - name: "Dockerize neon tests"
         uses: ./.github/actions/dockerize-neon-tests
+        if: "${{ github.event_name != 'schedule' }}"
         with:
           image_tag: ${{ steps.define-env.outputs.tag }}
           image_name: ${{ github.repository_owner }}/neon_tests

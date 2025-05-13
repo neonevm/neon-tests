@@ -68,15 +68,20 @@ runs:
       id: check_requirements
       shell: bash
       run: |
-        # Fetch parent folder
-        if [[ -n "${{ env.PARENT_BRANCH }}" ]]; then
+        # Set PARENT_BRANCH to develop if not set (use output from previous step)
+        parent_branch="${{ env.PARENT_BRANCH }}"
+        if [[ -z "$parent_branch" ]]; then
+          parent_branch="develop"
           echo "PARENT_BRANCH=develop" >> $GITHUB_ENV
         fi
 
-        git fetch --depth 1 origin ${{ env.PARENT_BRANCH }}
+        echo "Using parent branch: $parent_branch"
+
+        # Fetch parent branch
+        git fetch --depth 1 origin $parent_branch
 
         # Check if there are changes in the requirements folder or Dockerfile-base
-        if git diff --name-only HEAD origin/${{ env.PARENT_BRANCH }} | \
+        if git diff --name-only HEAD origin/$parent_branch | \
           grep -E "^requirements/|^Dockerfile-base$|^.github/actions/build-base-image/"; then
           echo "Requirements folder | Dockerfile-base | Build-base-image action have changed"
           echo "changed=true" >> $GITHUB_OUTPUT

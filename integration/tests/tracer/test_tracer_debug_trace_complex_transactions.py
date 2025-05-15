@@ -1,6 +1,7 @@
 import random
 import allure
 import pytest
+from polling2 import TimeoutException
 from solana.transaction import AccountMeta, Instruction
 from solders.pubkey import Pubkey
 
@@ -21,9 +22,9 @@ tracer_params = {"tracer": "callTracer", "tracerConfig": {"withLog": True}}
 
 
 @allure.feature("Tracer API")
-@allure.story("Tracer API RPC calls debug method trace_transaction iterative txs check")
+@allure.story("Tracer API RPC calls debug method trace_transaction complex txs check")
 @pytest.mark.usefixtures("accounts", "web3_client", "tracer_api", "tracer_validator")
-class TestDebugTraceIterativeTransaction:
+class TestDebugTraceComplexTransactions:
     web3_client: NeonChainWeb3Client
     accounts: EthAccounts
     tracer_api: TracerClient
@@ -82,11 +83,12 @@ class TestDebugTraceIterativeTransaction:
         response = self.tracer_api.debug_trace_call(tx_data)
         assert self.tracer_validator.check_tracer_struct_log(response, wait_error=True)
 
-        # TODO reason="NDEV-3714"
-        # resp = self.tracer_api.debug_trace_transaction(
-        #     receipt["transactionHash"].hex(), tracer_type="callTracer", with_log=True,
-        # )
-        # assert self.tracer_validator.check_call_tracer_type(resp, tx_data, error_message="execution reverted")
+        resp = self.tracer_api.debug_trace_transaction(
+            receipt["transactionHash"].hex(),
+            tracer_type="callTracer",
+            with_log=True,
+        )
+        assert self.tracer_validator.check_call_tracer_type(resp, tx_data, error_message="execution reverted")
 
     def test_trace_iterative_tx_with_erc20_for_spl(self, multiple_actions_erc20):
         sender_account = self.accounts[0]
@@ -320,11 +322,10 @@ class TestDebugTraceIterativeTransaction:
         resp = self.tracer_api.debug_trace_call(tx_data)
         assert self.tracer_validator.check_tracer_struct_log(resp, wait_error=True)
 
-        # TODO comment by "NDEV-3714"
-        # resp = self.tracer_api.debug_trace_transaction(
-        #     receipt["transactionHash"].hex(), tracer_type="callTracer", with_log=True
-        # )
-        # assert self.tracer_validator.check_call_tracer_type(resp, tx_data, error_message="execution reverted")
+        resp = self.tracer_api.debug_trace_transaction(
+            receipt["transactionHash"].hex(), tracer_type="callTracer", with_log=True
+        )
+        assert self.tracer_validator.check_call_tracer_type(resp, tx_data, error_message="execution reverted")
 
     def test_trace_failed_multiply_scheduled_tx(
         self, web3_client_sol, neon_user, treasury_pool, revert_contract_caller, event_caller_contract, evm_loader
@@ -377,16 +378,16 @@ class TestDebugTraceIterativeTransaction:
         resp = self.tracer_api.debug_trace_call(tx_data)
         assert self.tracer_validator.check_tracer_struct_log(resp, wait_error=True)
 
-        # TODO comment by "NDEV-3714"
-        # resp = self.tracer_api.debug_trace_transaction(
-        #     receipt["transactionHash"].hex(), tracer_type="callTracer", with_log=True
-        # )
-        # assert self.tracer_validator.check_call_tracer_type(resp, tx_data, error_message="execution reverted")
+        resp = self.tracer_api.debug_trace_transaction(
+            receipt["transactionHash"].hex(), tracer_type="callTracer", with_log=True
+        )
+        assert self.tracer_validator.check_call_tracer_type(resp, tx_data, error_message="execution reverted")
 
-        # error_message = "Tracing Skip Scheduled Transaction is not supported "
-        # params = [tx1.hash().hex(), tracer_params]
-        # with pytest.raises(TimeoutException, match=error_message):
-        #     self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", params)
+        params = [tx1.hash().hex(), tracer_params]
+        with pytest.raises(TimeoutException) as exc_info:
+            self.tracer_api.send_rpc_and_wait_response("debug_traceTransaction", params)
+
+        assert "Tracing Skip Scheduled Transaction is not supported" in str(exc_info.value)
 
     def test_trace_solana_interoperability_contract(
         self, call_solana_caller, counter_resource_address: bytes, pytestconfig
@@ -472,8 +473,7 @@ class TestDebugTraceIterativeTransaction:
         resp = self.tracer_api.debug_trace_call(tx_data)
         assert self.tracer_validator.check_tracer_struct_log(resp, wait_error=True)
 
-        # TODO comment by "NDEV-3714"
-        # resp = self.tracer_api.debug_trace_transaction(
-        #     receipt["transactionHash"].hex(), tracer_type="callTracer", with_log=True
-        # )
-        # assert self.tracer_validator.check_call_tracer_type(resp, tx_data, error_message="execution reverted")
+        resp = self.tracer_api.debug_trace_transaction(
+            receipt["transactionHash"].hex(), tracer_type="callTracer", with_log=True
+        )
+        assert self.tracer_validator.check_call_tracer_type(resp, tx_data, error_message="execution reverted")

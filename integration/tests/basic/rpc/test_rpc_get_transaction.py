@@ -393,8 +393,8 @@ class TestRpcGetTransaction:
         evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
 
         web3_client_sol.send_scheduled_transaction(tx, check_result=True)
-        # TODO uncomment the following line after bug https://neonlabs.atlassian.net/browse/NDEV-3675 is fixed
         # tx_receipt = web3_client_sol.wait_for_transaction_receipt(tx.hash(), timeout=180)
+        web3_client_sol.wait_for_transaction_receipt(tx.hash(), timeout=180)
 
         nonce = self.web3_client.get_nonce(neon_user.checksum_address)
         params = [neon_user.checksum_address, nonce]

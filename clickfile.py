@@ -441,6 +441,19 @@ def get_evm_pinned_version(branch):
     return tag
 
 
+def update_private_contracts_from_git(ssh_url: str, local_dir_name: str, branch="main"):
+    download_path = EXTERNAL_CONTRACT_PATH / local_dir_name
+    click.echo(f"Downloading contracts from {ssh_url} {branch}")
+    if download_path.exists():
+        shutil.rmtree(download_path)
+    commands = f"""
+          git clone --branch {branch} {ssh_url} {download_path}
+      """
+
+    subprocess.check_call(commands, shell=True)
+    click.echo(f"Contracts downloaded from {ssh_url} {branch} to {EXTERNAL_CONTRACT_PATH / local_dir_name}")
+
+
 def update_contracts_from_git(git_url: str, local_dir_name: str, branch="develop", update_npm: bool = True):
     download_path = EXTERNAL_CONTRACT_PATH / local_dir_name
     click.echo(f"Downloading contracts from {git_url} {branch}")
@@ -464,22 +477,18 @@ def update_contracts_from_git(git_url: str, local_dir_name: str, branch="develop
     help="neon_evm branch name. " "If branch doesn't exist, develop branch will be used",
 )
 @click.option("--with-uniswap", is_flag=True, default=False, required=False, help="Download uniswap-v3 contracts")
-def update_contracts(branch, with_uniswap):
-    update_contracts_from_git(HOODIES_CHAINLINK_GITHUB_URL, "hoodies_chainlink", "main")
-    update_contracts_from_git(
-        "https://github.com/neonevm/neon-contracts.git",
-        "neon-contracts",
-        branch=branch,
-        update_npm=True,
-    )
+@click.option("--with-curve", is_flag=True, default=False, required=False, help="Download curve contracts")
+def update_contracts(branch, with_uniswap, with_curve):
+    # update_contracts_from_git(HOODIES_CHAINLINK_GITHUB_URL, "hoodies_chainlink", "main")
+    # update_contracts_from_git(
+    #     "https://github.com/neonevm/neon-contracts.git",
+    #     "neon-contracts",
+    #     branch=branch,
+    #     update_npm=True,
+    # )
 
     if with_uniswap:
-        update_contracts_from_git(
-            "https://github.com/neonlabsorg/Uniswap-V3-NEON.git",
-            "uniswap-v3",
-            branch="main",
-            update_npm=True,
-        )
+        update_contracts_from_git("https://github.com/neonlabsorg/Uniswap-V3-NEON.git", "uniswap-v3", branch="main")
 
         # we replace init_code_hash of a contracts/external/uniswap-v3/contracts/UniswapV3Pool.sol
         # it is calculated for python solc compiler and it is different from uniswap-v3 repository
@@ -510,6 +519,9 @@ def update_contracts(branch, with_uniswap):
             s = s.replace(f, r)
         with open(pool_addr_path, "wb") as file:
             file.write(s)
+
+    if with_curve:
+        update_private_contracts_from_git("git@github.com:neonlabsorg/curve-contracts-ci.git", "curve", branch="main")
 
 
 @cli.command(help="Run any type of tests")

@@ -49,7 +49,6 @@ contract rw_lock {
             n = n + 1;
         }
     }
-
 }
 
 
@@ -78,5 +77,6 @@ contract rw_lock_caller {
 
     function update_storage_map_with_salt(uint resize, uint salt) public {
        return rw.update_storage_map_with_salt(resize, salt);
-     }
+    }
+
 }

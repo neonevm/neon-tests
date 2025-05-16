@@ -40,15 +40,6 @@ def prepare_operator(key_file: pathlib.Path | str, evm_loader: EvmLoader) -> Key
 
 
 @pytest.fixture(scope="session")
-def default_operator_keypair(evm_loader: EvmLoader) -> Keypair:
-    """
-    Initialized solana keypair with balance. Get private keys from ci/operator-keypairs/id.json
-    """
-    key_file = pathlib.Path(OPERATOR_KEYPAIR_PATH / "id.json")
-    return prepare_operator(key_file, evm_loader)
-
-
-@pytest.fixture(scope="session")
 def solana_client(environment: EnvironmentConfig):
     return SolanaClient(endpoint=environment.solana_url)
 
@@ -141,18 +132,6 @@ def rw_lock_contract(
     treasury_pool: TreasuryPool,
 ) -> Contract:
     return evm_loader.deploy_contract(operator_keypair, session_user, "rw_lock", neon_api_client, treasury_pool)
-
-
-@pytest.fixture(scope="function")
-def store_zeros_contract(
-    evm_loader: EvmLoader,
-    operator_keypair: Keypair,
-    session_user: Caller,
-    treasury_pool: TreasuryPool,
-    rw_lock_contract: Contract,
-    neon_api_client: NeonApiClient,
-) -> Contract:
-    return evm_loader.deploy_contract(operator_keypair, session_user, "store_zeros", neon_api_client, treasury_pool)
 
 
 @pytest.fixture(scope="function")

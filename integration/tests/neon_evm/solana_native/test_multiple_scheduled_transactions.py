@@ -4,10 +4,10 @@ import solana
 from eth_utils import abi
 from solders.pubkey import Pubkey
 
-from integration.tests.basic.evm.conftest import SPL_TOKEN_ADDRESS
 from integration.tests.neon_evm.utils.assert_messages import InstructionAsserts
 from integration.tests.neon_evm.utils.contract import get_contract_bin
 from integration.tests.neon_evm.utils.ethereum import create_contract_address
+from utils.consts import SPL_TOKEN_ADDRESS
 
 from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData
 from utils.types import Contract

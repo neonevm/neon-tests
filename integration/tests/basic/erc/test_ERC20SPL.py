@@ -739,6 +739,13 @@ class TestERC20SPLMintable:
         assert user1_balance_after == user1_balance_before - sent_amount, "User1 balance is not correct"
         assert user2_balance_after == user2_balance_before + claim_amount, "User2 balance is not correct"
 
+    def test_solana_account_getter(self, erc20_spl_mintable, neon_user):
+        acc = self.accounts[0]
+        solana_pubkey = erc20_spl_mintable.get_solana_account(acc.address)
+
+        assert isinstance(solana_pubkey, bytes), "Returned value is not bytes32"
+        assert len(solana_pubkey) == 32, "Invalid bytes32 length"
+
 
 @allure.feature("ERC Verifications")
 @allure.story("ERC20SPL: Tests for multiple actions in one transaction")
@@ -1077,32 +1084,3 @@ class TestMultipleActionsForERC20:
             + transfer_amount_5
             + user_balance_before
         ), "User balance is not correct"
-
-    def test_solana_account_getter(self, erc20_spl_mintable, accounts):
-        acc = self.accounts[0]
-        solana_pubkey = erc20_spl_mintable.get_solana_account(acc.address)
-
-        assert isinstance(solana_pubkey, bytes), "Returned value is not bytes32"
-        assert len(solana_pubkey) == 32, "Invalid bytes32 length"
-
-
-@pytest.fixture(scope="class")
-def new_factory_contract(web3_client, erc20_spl_mintable):
-    contract, tx = web3_client.deploy_and_get_contract(
-        "external/neon-contracts/ERC20ForSPL/contracts/test/ERC20ForSPLMintableFactoryV2",
-        "0.8.24",
-        erc20_spl_mintable.owner,
-        contract_name="ERC20ForSPLMintableFactoryV2",
-    )
-    return contract
-
-
-@pytest.fixture(scope="class")
-def new_token_contract(web3_client, erc20_spl_mintable):
-    contract, tx = web3_client.deploy_and_get_contract(
-        "external/neon-contracts/ERC20ForSPL/contracts/test/ERC20ForSPLMintableV2",
-        "0.8.24",
-        erc20_spl_mintable.owner,
-        contract_name="ERC20ForSPLMintableV2",
-    )
-    return contract

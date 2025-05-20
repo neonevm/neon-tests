@@ -33,7 +33,7 @@ class TestAccountRevision:
             neon_api_client,
             treasury_pool,
             contract_name="RevisionChanger",
-            version="0.8.28",
+            version="0.8.12",
         )
 
     @pytest.fixture(scope="class")
@@ -56,7 +56,7 @@ class TestAccountRevision:
             treasury_pool,
             encoded_args=constructor_args,
             contract_name="RevisionChangerCaller",
-            version="0.8.28",
+            version="0.8.12",
         )
 
     @pytest.fixture(scope="class")
@@ -72,7 +72,7 @@ class TestAccountRevision:
         return evm_loader.deploy_contract(
             operator_keypair,
             sender_with_tokens,
-            "common/Revision.sol",
+            "common/Revert.sol",
             neon_api_client,
             treasury_pool,
             contract_name="RevisionRevert",
@@ -800,7 +800,7 @@ class TestAccountRevision:
 
         # finish the first tx
         final_receipt = None
-        for _ in range(3):
+        for _ in range(4):
             final_receipt = evm_loader.send_transaction_step_from_account(
                 operator_keypair,
                 operator_balance_pubkey,

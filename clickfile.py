@@ -479,13 +479,13 @@ def update_contracts_from_git(git_url: str, local_dir_name: str, branch="develop
 @click.option("--with-uniswap", is_flag=True, default=False, required=False, help="Download uniswap-v3 contracts")
 @click.option("--with-curve", is_flag=True, default=False, required=False, help="Download curve contracts")
 def update_contracts(branch, with_uniswap, with_curve):
-    # update_contracts_from_git(HOODIES_CHAINLINK_GITHUB_URL, "hoodies_chainlink", "main")
-    # update_contracts_from_git(
-    #     "https://github.com/neonevm/neon-contracts.git",
-    #     "neon-contracts",
-    #     branch=branch,
-    #     update_npm=True,
-    # )
+    update_contracts_from_git(HOODIES_CHAINLINK_GITHUB_URL, "hoodies_chainlink", "main")
+    update_contracts_from_git(
+        "https://github.com/neonevm/neon-contracts.git",
+        "neon-contracts",
+        branch=branch,
+        update_npm=True,
+    )
 
     if with_uniswap:
         update_contracts_from_git("https://github.com/neonlabsorg/Uniswap-V3-NEON.git", "uniswap-v3", branch="main")

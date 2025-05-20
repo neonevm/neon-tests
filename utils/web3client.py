@@ -398,8 +398,8 @@ class Web3Client:
     def compile_by_vyper_and_deploy(self, account, contract_name, constructor_args=None):
         import vyper  # Import here because vyper prevent override decimal precision (uses in economy tests)
 
-        contract_path = pathlib.Path.cwd() / "contracts" / "vyper"
-        with open(contract_path / f"{contract_name}.vy") as f:
+        contract_path = pathlib.Path.cwd() / "contracts" / "external" / "curve" / "contracts" / "tokens"
+        with open(f"{contract_path}/{contract_name}.vy") as f:
             contract_code = f.read()
             contract_interface = vyper.compile_code(contract_code, output_formats=["abi", "bytecode"])
 

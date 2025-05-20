@@ -4,6 +4,7 @@ import eth_abi
 import pytest
 
 from eth_utils import abi
+
 from eth_keys import keys as eth_keys
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
@@ -399,6 +400,7 @@ class TestInteroperability:
         else:
             assert False, f"Expected error but got {resp}"
 
+    @pytest.mark.parametrize("is_iterative", [False, True])
     def test_call_neon_instruction_by_neon_instruction(
         self,
         sender_with_tokens,
@@ -408,6 +410,7 @@ class TestInteroperability:
         treasury_pool,
         new_holder_acc,
         environment,
+        is_iterative,
     ):
         chain_id = environment.network_ids["neon"]
         key = Keypair()
@@ -435,6 +438,7 @@ class TestInteroperability:
                 ],
                 sender_with_tokens,
                 additional_signers=[sender_with_tokens.solana_account],
+                is_iterative=is_iterative,
             )
         except RPCException as err:
             assert "Program not allowed to call itself" in decode_logs(err.args[0].data.logs)

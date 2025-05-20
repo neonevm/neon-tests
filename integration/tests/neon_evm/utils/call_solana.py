@@ -29,6 +29,7 @@ class SolanaCaller:
             operator=operator_keypair,
             user=owner,
             contract_file_name="precompiled/CallSolanaCaller",
+            contract_name="CallSolanaCaller",
             neon_api_client=neon_api_client,
             treasury_pool=treasury_pool,
             version="0.8.28",
@@ -129,17 +130,25 @@ class SolanaCaller:
         )
         return resp
 
-    def batch_execute(self, call_params, sender=None, additional_accounts=None, additional_signers=None):
+    def batch_execute(
+        self, call_params, sender=None, additional_accounts=None, additional_signers=None, is_iterative=False
+    ):
         # call_params = [(program_id, lamports, instruction), ...]
         execute_params = []
         for program_id, lamports, instruction in call_params:
             serialized_instruction = serialize_instruction(program_id, instruction)
             execute_params.append((lamports, serialized_instruction))
 
-        calldata = keccak(text="batchExecute((uint64,bytes)[])")[:4] + eth_abi.encode(
-            ["(uint64,bytes)[]"],
-            [execute_params],
-        )
+        if is_iterative:
+            calldata = keccak(text="batchExecuteInIterativeMode((uint64,bytes)[])")[:4] + eth_abi.encode(
+                ["(uint64,bytes)[]"],
+                [execute_params],
+            )
+        else:
+            calldata = keccak(text="batchExecute((uint64,bytes)[])")[:4] + eth_abi.encode(
+                ["(uint64,bytes)[]"],
+                [execute_params],
+            )
 
         signed_tx = make_eth_transaction(self.evm_loader, self.contract.eth_address, calldata, sender)
 

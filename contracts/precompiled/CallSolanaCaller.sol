@@ -43,12 +43,11 @@ contract CallSolanaCaller {
         emit LogBytes(returnData);
     }
 
-
     function executeInIterativeMode(
         uint256 actionsNumber,
         uint64 lamports,
         bytes calldata instruction
-    ) public returns (uint256){
+    ) public returns (uint256) {
         doIterativeActions(actionsNumber);
         execute(lamports, instruction);
         return actionsNumber;
@@ -93,12 +92,14 @@ contract CallSolanaCaller {
         emit LogInt(sum);
     }
 
-
-    function batchExecuteInIterativeMode(
-        uint256 actionsNumber,
-        ExecuteArgs[] memory _args
-    ) public {
-        doIterativeActions(actionsNumber);
+    function batchExecuteInIterativeMode(ExecuteArgs[] memory _args) public {
+        uint x = 0;
+        uint y = 3000;
+        uint z = x;
+        while (x < y) {
+            z++;
+            x = z;
+        }
         batchExecute(_args);
     }
 

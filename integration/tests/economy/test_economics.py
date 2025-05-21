@@ -277,17 +277,17 @@ class TestEconomics:
         neon_price: float,
         sol_price: float,
         sol_client: SolanaClient,
+        solana_account: Keypair,
         operator: Operator,
         web3_client: NeonChainWeb3Client,
         accounts: EthAccounts,
         withdraw_contract: Contract,
         tx_type: TransactionType,
-        solana_account: Keypair,
     ):
         sender_account = accounts[0]
 
         ata = sol_client.create_associate_token_acc(solana_account, solana_account, neon_mint)
-
+        balances_before = json.loads(sol_client.get_token_account_balance(ata, Commitment("confirmed")).to_json())
         sol_balance_before = operator.get_solana_balance()
         neon_balance_before = operator.get_token_balance(web3_client)
 
@@ -303,7 +303,9 @@ class TestEconomics:
         assert (user_neon_balance_before - web3_client.get_balance(sender_account)) > 5
 
         balances = json.loads(sol_client.get_token_account_balance(ata, Commitment("confirmed")).to_json())
-        assert int(balances["result"]["value"]["amount"]) == int(move_amount / 1_000_000_000)
+        balance_before = int(balances_before["result"]["value"]["amount"])
+        balance_after = int(balances["result"]["value"]["amount"])
+        assert balance_after - balance_before == int(move_amount / 1_000_000_000)
 
         sol_balance_after = operator.get_solana_balance()
         neon_balance_after = operator.get_token_balance(web3_client)

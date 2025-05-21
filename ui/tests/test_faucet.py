@@ -121,6 +121,18 @@ class TestMetaMaskPipeLIne:
         yield neon_faucet.NeonTestAirdropsPage(page)
         page.close()
 
+    # todo need to use browser without installed MM wallet
+    def search_not_existing_token(
+        self,
+        metamask_page: metamask.MetaMaskAccountsPage,
+        neon_faucet_page: neon_faucet.NeonTestAirdropsPage,
+        tokens: str,
+    ) -> None:
+        """Checks Neon faucet pipeline"""
+        wait_condition(lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > 0, timeout_sec=120, delay=2)
+        neon_faucet_page.connect_wallet()
+        neon_faucet_page._choose_token("BTC")
+
     @pytest.mark.parametrize("tokens", [libs.Tokens.neon.name, libs.Tokens.usdt.name])
     def test_get_tokens_from_faucet(
         self,

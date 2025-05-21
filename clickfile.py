@@ -581,8 +581,8 @@ def run(
 
     if name == "ui" and ui_item != "all":
         command += f"/test_{ui_item}.py"
-        if ui_item == "faucet":
-            command += f"../test_{ui_item}.py"
+        if name == "ui" and ui_item == "faucet":
+            command += f"ui/tests/test_{ui_item}.py"
 
     if name == "oz":
         if not keep_error_log:

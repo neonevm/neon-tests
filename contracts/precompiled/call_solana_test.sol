@@ -2,11 +2,11 @@
 
 pragma solidity >= 0.7.0;
 pragma abicoder v2;
-import "../external/neon-evm/SPLToken.sol";
-import "../external/neon-evm/call_solana.sol";
+import "../external/neon-contracts/contracts/precompiles/ISPLTokenProgram.sol";
+import "../external/neon-contracts/contracts/precompiles/ICallSolana.sol";
 
-SPLToken constant _splToken = SPLToken(0xFf00000000000000000000000000000000000004);
-CallSolana constant _callSolana = CallSolana(0xFF00000000000000000000000000000000000006);
+ISPLTokenProgram constant _splToken = ISPLTokenProgram(0xFf00000000000000000000000000000000000004);
+ICallSolana constant _callSolana = ICallSolana(0xFF00000000000000000000000000000000000006);
 
 contract Test {
     uint256 balance;

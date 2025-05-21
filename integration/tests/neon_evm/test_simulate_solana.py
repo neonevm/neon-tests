@@ -8,7 +8,7 @@ from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 
 from utils import instructions
-from utils.consts import QUERY_ACCOUNT_ID
+from utils.consts import QUERY_ACCOUNT_ID, REMAPPING_ZEPPELIN
 from utils.evm_loader import EvmLoader
 from utils.neon_user import NeonUser
 from utils.scheduled_trx import ScheduledTransaction
@@ -282,12 +282,17 @@ class TestSimulateSolana:
     ):
         # Create Neon transaction and write it to a holder account
         chain_id = evm_loader.chain_id
-        contract_file_name = "external/neon-evm/erc20_for_spl_factory"
+        contract_file_name = "external/neon-contracts/contracts/token/ERC20ForSpl/erc20_for_spl_factory.sol"
         contract_name = "ERC20ForSplFactory"
-        version = "0.8.24"
+        version = "0.8.28"
         encoded_args = b""
 
-        contract_code = get_contract_bin(contract=contract_file_name, contract_name=contract_name, version=version)
+        contract_code = get_contract_bin(
+            contract=contract_file_name,
+            contract_name=contract_name,
+            version=version,
+            import_remappings=REMAPPING_ZEPPELIN,
+        )
 
         emulate_result = neon_api_client.emulate(
             sender_with_tokens.eth_address.hex(),
@@ -307,6 +312,7 @@ class TestSimulateSolana:
             value=0,
             version=version,
             chain_id=chain_id,
+            import_remappings=REMAPPING_ZEPPELIN,
         )
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 
@@ -489,7 +495,6 @@ class TestSimulateSolana:
         session_user: Caller,
         basic_contract: Contract,
         neon_user: NeonUser,
-        environment,
     ):
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address)
         contract_data = 18
@@ -506,7 +511,7 @@ class TestSimulateSolana:
             call_data=data,
             chain_id=evm_loader.sol_chain_id,
         )
-        tree_account = evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode(), environment.sol_mint_id)
+        tree_account = evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
         evm_loader.write_transaction_to_holder_account(tx.encode(), holder_acc, operator_keypair)
         neon_user_balance_account = neon_user.get_balance_account(evm_loader.sol_chain_id)
         additional_accounts = [basic_contract.solana_address, neon_user_balance_account]

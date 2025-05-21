@@ -12,7 +12,6 @@ on:
         required: true
         description: "Stand name"
         options:
-          - night-stand
           - devnet
           - terraform
           - custom

@@ -13,4 +13,11 @@ contract ALT {
         }
         return N - 7;
     }
+
+    function fillAndRevert(uint N) public {
+        for (uint i=0; i < N - 7; i++){
+            arr[i] = i + 1;
+        }
+        require(false, "Reverting for testing purposes");
+    }
 }

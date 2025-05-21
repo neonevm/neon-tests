@@ -57,6 +57,20 @@ NEON_PRECOMPILED = [
 ]
 
 
+SKIPPED_MODEXP_TESTS = [
+    "nagydani-2-square",
+    "nagydani-3-square",
+    "nagydani-4-square",
+    "nagydani-2-qube",
+    "nagydani-3-qube",
+    "nagydani-4-qube",
+    "nagydani-2-pow0x10001",
+    "nagydani-3-pow0x10001",
+    "nagydani-4-pow0x10001",
+]  # evm doesn't support mod exp operation with big values
+SKIPPED_BLACK2F_TESTS = ["vector 8"]  # NDEV-1961
+
+
 def load_parametrized_data():
     result = {"argnames": "address,input_data,expected", "argvalues": [], "ids": []}
 
@@ -66,14 +80,16 @@ def load_parametrized_data():
             with open(filepath, "r") as datafp:
                 data = json.load(datafp)
             for record in data:
-                result["argvalues"].append(
-                    (
-                        PRECOMPILED_FIXTURES[precompile_name]["address"],
-                        record["Input"],
-                        record["Expected"],
+                if record["Name"] not in SKIPPED_MODEXP_TESTS + SKIPPED_BLACK2F_TESTS:
+                    result["argvalues"].append(
+                        (
+                            PRECOMPILED_FIXTURES[precompile_name]["address"],
+                            record["Input"],
+                            record["Expected"],
+                        )
                     )
-                )
-                result["ids"].append(f'{precompile_name}-{record["Name"]}')
+                    result["ids"].append(f'{precompile_name}-{record["Name"]}')
+
     return result
 
 
@@ -129,10 +145,6 @@ class TestPrecompiledContracts:
     def test_call_via_send_trx(
         self, web3_client: NeonChainWeb3Client, address, input_data, request, pytestconfig, expected, evm_loader
     ):
-        if request.node.callspec.id == "blake2f-vector 8":
-            pytest.skip("NDEV-1961")
-        if pytestconfig.getoption("--network") == "devnet" and address == "0x0000000000000000000000000000000000000005":
-            pytest.skip("Doesn't work in devnet/mainnet")
         sender_account = self.accounts[0]
         if address == "0x0000000000000000000000000000000000000007":
             amount = random.choice([1, 10])
@@ -147,7 +159,7 @@ class TestPrecompiledContracts:
             receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
             check_trx_is_success(self.web3_client, evm_loader, receipt["transactionHash"].hex())
 
-            if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
+            if pytestconfig.getoption("--network") not in ["devnet"]:
                 assert self.web3_client.get_balance(address) - balance_before == amount
         else:
             # solana limits
@@ -168,18 +180,14 @@ class TestPrecompiledContracts:
 
         check_trx_is_success(self.web3_client, evm_loader, receipt["transactionHash"].hex())
         pytestconfig.getoption("--network")
-        if pytestconfig.getoption("--network") not in ["devnet", "night-stand"]:
+        if pytestconfig.getoption("--network") not in ["devnet"]:
             assert self.web3_client.get_balance(address) - balance_before == amount
 
     @pytest.mark.parametrize("contract", PRECOMPILED_FIXTURES)
     def test_eth_get_code_ethereum_precompiled(self, json_rpc_client, contract):
         address = PRECOMPILED_FIXTURES[contract]["address"]
-
-        response = json_rpc_client.send_rpc(
-            "eth_getCode",
-            params=[address, "latest"],
-        )
-        assert response["result"] == "0x"
+        code = json_rpc_client.get_contract_code(address)
+        assert code == "0x"
 
     @pytest.mark.parametrize("address", NEON_PRECOMPILED)
     def test_eth_get_code_neon_precompiled(self, json_rpc_client, address):

@@ -29,6 +29,11 @@ on:
           - 8
           - 12
           - auto
+      rebuild_base_image:
+        type: boolean
+        default: false
+        required: false
+        description: "Rebuild base test image"
       generate_cost_report:
         type: boolean
         default: false
@@ -52,10 +57,11 @@ env:
   DEVNET_PROXY_URL: "${{ secrets.DEVNET_PROXY_URL }}"
   DEVNET_FAUCET_URL: "${{ secrets.DEVNET_FAUCET_URL }}"
   IMAGE:  ${{ github.repository_owner }}/neon_tests
+  BASE_IMAGE: ${{ github.repository_owner }}/neon_tests_base
   DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
   GENERATE_COST_REPORT: ${{ github.event.inputs.generate_cost_report || 'false' }}
+  REBUILD_BASE_IMAGE: ${{ github.event.inputs.rebuild_base_image || 'false' }}
 jobs:
-
   pre-commit-check:
     name: Pre-commit hook validation
     runs-on: ["self-hosted", "k8s-prod"]
@@ -68,10 +74,12 @@ jobs:
           python-version: '3.10'
       - uses: pre-commit/action@v3.0.1
         timeout-minutes: 3
+
   dockerize:
     name: Dockerize neon tests
     runs-on: ["self-hosted", "k8s-prod"]
-    needs: pre-commit-check
+    needs:
+      - pre-commit-check
     steps:
       - uses: actions/checkout@v4
       - name: Dockerize neon tests
@@ -82,6 +90,7 @@ jobs:
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
           image_name: ${{ env.IMAGE }}
           docker_hub_org_name: ${{ env.DOCKER_HUB_ORG_NAME }}
+          force_rebuild_base_image: ${{ env.REBUILD_BASE_IMAGE }}
       - name: "Define image tag"
         id: image_tag
         uses: ./.github/actions/define-image-tag
@@ -90,7 +99,8 @@ jobs:
   prepare-env-proxy:
     name: Prepare environment for proxy tests
     runs-on: ["self-hosted", "k8s-prod"]
-    needs: pre-commit-check
+    needs:
+      - pre-commit-check
     if: always()
     steps:
       - uses: actions/checkout@v4
@@ -230,13 +240,7 @@ jobs:
       - name: Run basic proxy tests
         timeout-minutes: 120
         run: |
-          if [ "${{ github.event.schedule }}" == "0 1 * * 0,1,2,3,4" ]; then
-            TEST_SCOPE="basic_extended"
-          else
-            TEST_SCOPE="basic"
-          fi
-
-          CMD="python3 ./clickfile.py run $TEST_SCOPE --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }} --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
+          CMD="python3 ./clickfile.py run basic --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }} --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
 
           if [[ "${{ env.GENERATE_COST_REPORT }}" == "true" ]]; then
             CMD="$CMD --cost_reports_dir reports/cost_reports"

@@ -40,7 +40,7 @@ class TestNeonTransfer:
         recipient_balance = self.web3_client.get_balance(recipient_account)
 
         with pytest.raises(Exception, match=ErrorMessage.INSUFFICIENT_FUNDS.value):
-            self.web3_client.send_neon(sender_account, recipient_account, amount, gas=30000)
+            self.web3_client.send_neon(sender_account, recipient_account, amount, gas=35000)
 
         assert sender_balance == self.web3_client.get_balance(sender_account)
         assert recipient_balance == self.web3_client.get_balance(recipient_account)
@@ -84,7 +84,7 @@ class TestNeonTransfer:
         params = [signed_tx.raw_transaction.hex()]
         transaction = json_rpc_client.send_rpc("eth_sendRawTransaction", params)["result"]
 
-        actual_result = self.web3_client._web3.eth.wait_for_transaction_receipt(transaction)
+        actual_result = self.web3_client.wait_for_transaction_receipt(transaction)
 
         assert actual_result["status"] == 1, "Transaction status must be 0x1"
 

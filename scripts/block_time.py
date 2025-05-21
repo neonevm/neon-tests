@@ -8,9 +8,9 @@ from utils.solana_client import SolanaClient
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-sol_client = SolanaClient("https://solana-api.instantnodes.io/token-OjVeh8exYGMeFh7QKIRLsF93T4xratD6")
+sol_client = SolanaClient("https://solana-api.instantnodes.io/")
 
-expected_time = "20-10-2024 00:00:00"
+expected_time = "31-03-2025 12:14:00"
 
 dt = datetime.strptime(expected_time, "%d-%m-%Y %H:%M:%S")
 unix_time = int(time.mktime(dt.timetuple()))
@@ -48,3 +48,4 @@ while abs(current_time - expected_timestamp) > 1:
     print(current_slot)
 
 print("Timestamp for the closest slot: ", current_time)
+print(f"Last block in chain {sol_client.get_slot()}")

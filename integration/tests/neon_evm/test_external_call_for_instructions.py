@@ -1,5 +1,4 @@
 import pytest
-from solana.rpc.core import RPCException
 from solana.transaction import AccountMeta, Transaction, Instruction
 
 from utils.consts import TEST_INVOKE_ID
@@ -53,7 +52,7 @@ class TestExternalCall:
         trx = Transaction()
 
         trx.add(upd_instruction)
-        self.sol_client.send_tx(trx, operator_keypair)
+        self.sol_client.send_tx_and_check_status_ok(trx, operator_keypair)
 
         assert sender_initial_balance == evm_loader.get_neon_balance(sender_with_tokens.eth_address) + amount
         assert receiver_initial_balance == evm_loader.get_neon_balance(session_user.eth_address) - amount
@@ -67,6 +66,7 @@ class TestExternalCall:
         compute_unit_price = 1000000
         max_fee_per_gas = 100
         max_priority_fee_per_gas = 10
+        receiver_initial_balance = evm_loader.get_neon_balance(session_user.eth_address)
 
         msg = make_eth_transaction(
             evm_loader,
@@ -102,5 +102,5 @@ class TestExternalCall:
         )
         trx = TransactionWithComputeBudget(operator_keypair, compute_unit_price)
         trx.add(upd_instruction)
-        with pytest.raises(RPCException, match="CPI calls of Neon EVM are forbidden for DynamicFee transaction type"):
-            self.sol_client.send_tx(trx, operator_keypair)
+        self.sol_client.send_tx_and_check_status_ok(trx, operator_keypair)
+        assert receiver_initial_balance == evm_loader.get_neon_balance(session_user.eth_address) - amount

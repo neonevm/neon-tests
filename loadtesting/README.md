@@ -14,7 +14,7 @@ Python 3.6 or later, if you dont already have it.
    ./clickfile.py requirements
 2. export NEON_CRED=envs.json
    or --credentials=envs.json as locust command line argument
-3. locust -f ./loadtesting/locustfile.py --headless --host=night-stand -t 60 -u 10 -r 10 --logfile run.log
+3. locust -f ./loadtesting/locustfile.py --headless --host=local -t 60 -u 10 -r 10 --logfile run.log
 ```
 
 ## Environment Variables
@@ -35,11 +35,16 @@ To run the scenario via locust native command:
 locust -f ./loadtesting/proxy/tests/scheduled_tx.py --host=local -t 300 -u 2 -r 1 --logfile load_run.log
 ```
 
+To run scenario uniswap-v3 scheduled tx you have to load uniswap contracts:
+```bash
+./clickfile.py update-contracts --with-uniswap
+```
+
 ## Running the test and analyzing the results in the console without using the web interface
 
 ##### Instant load method without locust web interface
 ```bash
-locust -f ./loadtesting/{test_group}/locustfile.py --headless --host=night-stand -u 10 -r 10
+locust -f ./loadtesting/{test_group}/locustfile.py --headless --host=local -u 10 -r 10
 ```
 
 ```bash
@@ -53,7 +58,7 @@ Options:
                  --autostart
 --headless     : Disable the web interface, and start the test immediately. Use -u and -t to control user
                  count and run time
---host or -h   : Test environment name (night-stand | devnet | local)
+--host or -h   : Test environment name (devnet | local)
 ```
 
 ### Running the test with clickfile
@@ -75,9 +80,8 @@ Options:
                                   file name.  [default:
                                   loadtesting/{test_group}/locustfile.py]
                                   Choices between ["proxy", "synthetic", "tracerapi"]
-  -h, --host [night-stand|release-stand|devnet|local]
-                                  In which stand run tests.  [default: night-
-                                  stand]
+  -h, --host [devnet|local]
+                                  In which stand run tests.  [default: local]
   -u, --users INTEGER             Peak number of concurrent Locust users.
                                   [default: 10]
   -r, --spawn-rate INTEGER        Rate to spawn users at (users per second)
@@ -102,7 +106,7 @@ Usage: ./clickfile.py locust prepare [OPTIONS]
 Options:
   -c, --credentials TEXT    Relative path to credentials. Default repo
                             root/envs.json
-  -h, --host TEXT           In which stand run tests.  [default: night-stand]
+  -h, --host TEXT           In which stand run tests.  [default: local]
   -u, --users INTEGER       Peak number of concurrent Locust users.  [default:
                             50]
   -r, --spawn-rate INTEGER  Rate to spawn users at (users per second)

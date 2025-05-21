@@ -3,14 +3,14 @@ import os
 import string
 import threading
 import random
-
 import base58
+
 from solana.rpc import commitment
 
 from deploy.cli.network_manager import NetworkManager
 from utils.accounts import EthAccounts
-from utils.consts import LAMPORT_PER_SOL, wSOL
-from utils.erc20wrapper import ERC20NewWrapper
+from utils.consts import LAMPORT_PER_SOL
+from utils.erc20wrapper import ERC20Wrapper
 from utils.evm_loader import EvmLoader
 from utils.faucet import Faucet
 from utils.helpers import decode_function_signature
@@ -72,7 +72,7 @@ def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwarg
     # deploy a new erc20 contract
     LOG.info("Start to deploy a contract...")
     symbol = "".join([random.choice(string.ascii_uppercase) for _ in range(3)])
-    erc20 = ERC20NewWrapper(
+    erc20 = ERC20Wrapper(
         web3_client,
         faucet,
         f"Test {symbol}",
@@ -81,14 +81,14 @@ def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwarg
         solana_account=solana_account,
         mintable=True,
         bank_account=bank_account,
-        account=eth_account,
+        owner=eth_account,
     )
 
     LOG.info("Mint tokens...")
-    erc20.mint_tokens(signer=erc20.account, to_address=erc20.account.address, amount=10**18)
+    erc20.mint_tokens(signer=erc20.owner, to_address=erc20.owner.address, amount=10**18)
 
     environment.contract_info["erc20_address"] = erc20.contract.address
-    environment.contract_info["erc20_owner_address"] = erc20.account.address
+    environment.contract_info["erc20_owner_address"] = erc20.owner.address
 
     LOG.info("Create neon users...")
     environment.contract_info["accounts"] = []
@@ -98,17 +98,17 @@ def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwarg
         LOG.info(f"Creating {i} neon user...")
         neon_user = NeonUser(environment.evm_loader.loader_id, keypair=neon_solana_account)
         environment.contract_info["accounts"].append(neon_user)
-        if not network_object["use_bank"]:
+        if network != "local" and network_object["use_bank"]:
+            environment.evm_loader.send_sol(bank_account, neon_user.solana_account.pubkey(), int(5 * LAMPORT_PER_SOL))
+        else:
             environment.evm_loader.request_airdrop(
                 neon_user.solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed
             )
-        else:
-            environment.evm_loader.send_sol(bank_account, neon_user.solana_account.pubkey(), int(5 * LAMPORT_PER_SOL))
         LOG.info(f"Pop up {i} neon user balance...")
         erc20.pop_up_balance(
             environment.evm_loader, recipient=neon_user, pda_amount=neon_user_balance, ata_amount=neon_user_balance
         )
-        erc20.approve(erc20.account, neon_user.checksum_address, neon_user_balance)
+        erc20.approve(erc20.owner, neon_user.checksum_address, neon_user_balance)
 
     environment.contract_info["recipients"] = environment.contract_info["accounts"].copy()
     environment.solana_account, environment.bank_account = solana_account, bank_account
@@ -120,9 +120,12 @@ def teardown_one_contract_for_scheduled_trx(environment: env.Environment, **kwar
     network_manager = NetworkManager()
     network_object = network_manager.get_network_object(network)
 
-    if network_object["use_bank"]:
+    if network != "local" and network_object["use_bank"]:
         # Drain SOL for every neon_user
         for neon_user in environment.contract_info["accounts"]:
+            environment.evm_loader.drain_sol(neon_user.solana_account, environment.bank_account.pubkey())
+
+        for neon_user in environment.uniswap["neon_accounts"]:
             environment.evm_loader.drain_sol(neon_user.solana_account, environment.bank_account.pubkey())
 
         # Drain SOL for solana contract account
@@ -147,7 +150,7 @@ class BaseScheduledTxTaskSet(NeonProxyTasksSet):
                 # Drain Sol to bank account in case "Devnet" environment
 
                 self.user.environment.contract_info["accounts"].append(self.neon_account)
-                LOG.info(f"Returned user: {self.account.address}")
+                LOG.info(f"Returned user: {self.neon_account.checksum_address}")
 
     def get_account(self):
         return random.choice(self.user.environment.contract_info["recipients"])
@@ -160,7 +163,7 @@ class ScheduledTxsIndependentTasksSet(BaseScheduledTxTaskSet):
     @task
     def task_send_independent_scheduled_tx(self):
         """Send independent scheduled transactions"""
-        self.check_neon_user_balance(self.neon_account.solana_account)
+        self.check_solana_balance(self.neon_account.solana_account.pubkey())
         recipient = self.get_account()
 
         transfer_amount = 10
@@ -210,9 +213,7 @@ class ScheduledTxsIndependentTasksSet(BaseScheduledTxTaskSet):
         tree_acc_data.add_trx(trxs[2], 0xFFFF, 0)
         tree_acc_data.add_trx(trxs[3], 0xFFFF, 0)
 
-        self.evm_loader.create_tree_account_multiple(
-            self.neon_account, self.treasury_pool, tree_acc_data.data, wSOL["address_spl"]
-        )
+        self.evm_loader.create_tree_account_multiple(self.neon_account, self.treasury_pool, tree_acc_data.data)
         self.web3_client_sol.send_all_scheduled_transactions(trxs)
         for trx in trxs:
             check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex(), timeout=240)
@@ -225,7 +226,7 @@ class ScheduledTxsDependentTasksSet(BaseScheduledTxTaskSet):
     @task
     def task_send_dependent_scheduled_tx(self):
         """Send dependent scheduled transactions"""
-        self.check_neon_user_balance(self.neon_account.solana_account)
+        self.check_solana_balance(self.neon_account.solana_account.pubkey())
         recipient = self.get_account()
 
         top_up_in_trx = 10
@@ -295,9 +296,7 @@ class ScheduledTxsDependentTasksSet(BaseScheduledTxTaskSet):
         tree_acc_data.add_trx(trxs[2], 0xFFFF, 1)
         tree_acc_data.add_trx(trxs[3], 0xFFFF, 1)
 
-        self.evm_loader.create_tree_account_multiple(
-            self.neon_account, self.treasury_pool, tree_acc_data.data, wSOL["address_spl"]
-        )
+        self.evm_loader.create_tree_account_multiple(self.neon_account, self.treasury_pool, tree_acc_data.data)
         self.web3_client_sol.send_all_scheduled_transactions(trxs)
 
         for trx in trxs:
@@ -311,7 +310,7 @@ class ScheduledTxsTransferToDifferentUsersTasksSet(BaseScheduledTxTaskSet):
     @task
     def task_send_scheduled_tx_pda_and_ata_used(self):
         """Send scheduled transactions: transfer tokens to recipients"""
-        self.check_neon_user_balance(self.neon_account.solana_account)
+        self.check_solana_balance(self.neon_account.solana_account.pubkey())
         recipient_0 = self.get_account()
         recipient_1 = self.get_account()
 
@@ -349,9 +348,7 @@ class ScheduledTxsTransferToDifferentUsersTasksSet(BaseScheduledTxTaskSet):
         tree_acc_data.add_trx(trxs[0], 0xFFFF, 0)
         tree_acc_data.add_trx(trxs[1], 0xFFFF, 0)
 
-        self.evm_loader.create_tree_account_multiple(
-            self.neon_account, self.treasury_pool, tree_acc_data.data, wSOL["address_spl"]
-        )
+        self.evm_loader.create_tree_account_multiple(self.neon_account, self.treasury_pool, tree_acc_data.data)
         self.web3_client_sol.send_all_scheduled_transactions(trxs)
         for trx in trxs:
             check_trx_is_success(self.web3_client_sol, self.evm_loader, trx.hash().hex(), timeout=240)

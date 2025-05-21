@@ -38,13 +38,12 @@ runs:
         -e AWS_ACCESS_KEY_ID=${{ inputs.aws_access_key_id }} \
         -e AWS_SECRET_ACCESS_KEY=${{ inputs.aws_secret_access_key }} \
         ${{ inputs.container }} \
-         python3 ./clickfile.py allure get-history ${{ inputs.tests_name }} \
-          --network ${{ inputs.network }}
+         bash -c "python3 ./clickfile.py allure get-history ${{ inputs.tests_name }} --network ${{ inputs.network }}"
     - name: "Generate allure report"
       if: always()
       shell: bash
       run: |
-        docker exec -i ${{ inputs.container }} python3 ./clickfile.py allure generate
+        docker exec -i ${{ inputs.container }} bash -c "python3 ./clickfile.py allure generate"
     - name: "Upload allure history"
       if: always()
       shell: bash
@@ -54,7 +53,7 @@ runs:
         -e AWS_ACCESS_KEY_ID=${{ inputs.aws_access_key_id }} \
         -e AWS_SECRET_ACCESS_KEY=${{ inputs.aws_secret_access_key }} \
         ${{ inputs.container }} \
-        python3 ./clickfile.py allure upload-report ${{ inputs.tests_name }} --network ${{ inputs.network }}
+        bash -c "python3 ./clickfile.py allure upload-report ${{ inputs.tests_name }} --network ${{ inputs.network }}"
     - name: "Add result info to github page summary"
       if: always()
       shell: bash

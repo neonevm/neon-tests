@@ -30,7 +30,7 @@ class TestTrxRlpDecoding:
             "value": web3_client.to_wei(2, Unit.ETHER),
             "chainId": web3_client.eth.chain_id,
             "gasPrice": web3_client.gas_price(),
-            "gas": 21_000,
+            "gas": 35_000,
             "nonce": web3_client.eth.get_transaction_count(acc.address),
         }
 

@@ -1,18 +1,18 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 
-import "../external/neon-evm/SPLToken.sol";
+import "../external/neon-contracts/contracts/precompiles/ISPLTokenProgram.sol";
 
 
 contract SplTokenCaller {
 
-    SPLToken constant _splToken = SPLToken(0xFf00000000000000000000000000000000000004);
+    ISPLTokenProgram constant _splToken = ISPLTokenProgram(0xFf00000000000000000000000000000000000004);
 
     event LogBytes(bytes32 value);
     event LogStr(string value);
 
-    function getMint(bytes32 _tokenMint) public returns (SPLToken.Mint memory){
-        SPLToken.Mint memory m = _splToken.getMint(_tokenMint);
+    function getMint(bytes32 _tokenMint) public returns (ISPLTokenProgram.Mint memory){
+        ISPLTokenProgram.Mint memory m = _splToken.getMint(_tokenMint);
         return m;
     }
 
@@ -26,8 +26,8 @@ contract SplTokenCaller {
         return _tokenMint;
     }
 
-    function getAccount(bytes32 token_mint) public returns (SPLToken.Account memory){
-        SPLToken.Account memory a = _splToken.getAccount(token_mint);
+    function getAccount(bytes32 token_mint) public returns (ISPLTokenProgram.Account memory){
+        ISPLTokenProgram.Account memory a = _splToken.getAccount(token_mint);
         return a;
     }
 

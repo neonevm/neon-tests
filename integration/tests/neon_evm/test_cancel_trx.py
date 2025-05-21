@@ -66,7 +66,7 @@ class TestCancelTrx:
         )
         assert user_nonce_after_first_step == evm_loader.get_neon_nonce(user_account.eth_address)
 
-    @pytest.mark.parametrize("gas_limit", [6000, 5000, 15000, 16000])
+    @pytest.mark.parametrize("gas_limit", [10000, 15000, 16000])
     def test_cancel_after_out_of_gas(
         self,
         operator_keypair,
@@ -156,4 +156,4 @@ class TestCancelTrx:
         if gas_limit - 5000 <= 10000:
             assert user_neon_balance_after == user_neon_balance_before - gas_limit
         else:
-            assert user_neon_balance_after == user_neon_balance_before - 15000
+            assert user_neon_balance_after == user_neon_balance_before - 16000

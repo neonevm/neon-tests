@@ -41,6 +41,14 @@ contract rw_lock {
         hello.call_hello_world();
         return address(hello);
     }
+
+    function update_storage_map_with_salt(uint resize, uint salt) public {
+        uint n = 0;
+        while (n < resize){
+            data[msg.sender][n] = uint256(n + salt);
+            n = n + 1;
+        }
+    }
 }
 
 
@@ -66,4 +74,9 @@ contract rw_lock_caller {
     function get_text() public view returns (string memory) {
         return rw.get_text();
     }
+
+    function update_storage_map_with_salt(uint resize, uint salt) public {
+       return rw.update_storage_map_with_salt(resize, salt);
+    }
+
 }

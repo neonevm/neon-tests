@@ -18,17 +18,6 @@ class TestChainIdDependentOpcodes:
         return contract
 
     @pytest.fixture(scope="class")
-    def contract_neon_caller(self, web3_client_sol, accounts):
-        contract, _ = web3_client_sol.deploy_and_get_contract(
-            "opcodes/ChainIdDependentOpCodes",
-            "0.8.10",
-            accounts[0],
-            contract_name="ChainIdDependentOpCodesCaller",
-            constructor_args=[accounts[0].address],
-        )
-        return contract
-
-    @pytest.fixture(scope="class")
     def contract_sol(self, web3_client_sol, class_account_sol_chain):
         contract, _ = web3_client_sol.deploy_and_get_contract(
             "opcodes/ChainIdDependentOpCodes", "0.8.10", class_account_sol_chain

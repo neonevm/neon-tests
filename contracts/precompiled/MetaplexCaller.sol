@@ -1,12 +1,12 @@
 pragma solidity >=0.7.0 <0.9.0;
 
-import "../external/neon-evm/Metaplex.sol";
-import "../external/neon-evm/SPLToken.sol";
+import "../external/neon-contracts/contracts/precompiles/IMetaplexProgram.sol";
+import "../external/neon-contracts/contracts/precompiles/ISPLTokenProgram.sol";
 
-contract MetaplexCaller {
+contract MetaplexProgramCaller {
 
-    Metaplex constant _metaplex = Metaplex(0xff00000000000000000000000000000000000005);
-    SPLToken constant _splToken = SPLToken(0xFf00000000000000000000000000000000000004);
+    IMetaplexProgram constant _metaplex = IMetaplexProgram(0xff00000000000000000000000000000000000005);
+    ISPLTokenProgram constant _splToken = ISPLTokenProgram(0xFf00000000000000000000000000000000000004);
 
     event LogBytes(bytes32 value);
     event LogStr(string value);

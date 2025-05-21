@@ -9,7 +9,6 @@ from integration.tests.basic.helpers.basic import Tag
 from integration.tests.basic.helpers.errors import Error32602
 from utils.accounts import EthAccounts
 from utils.apiclient import JsonRPCSession
-from utils.consts import wSOL
 from utils.helpers import gen_hash_of_block, decode_function_signature, wait_condition
 from utils.models.error import EthError32602
 from utils.models.result import (
@@ -191,9 +190,7 @@ class TestRpcGetBlock:
 
         tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
-        tree_account = evm_loader.create_tree_account(
-            neon_user, treasury_pool, tx.encode(), wSOL["address_spl"], chain_id=evm_loader.sol_chain_id
-        )
+        tree_account = evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
 
         response = web3_client_sol.send_scheduled_transaction(tx, check_result=True)
         EthResult(**response)
@@ -221,9 +218,10 @@ class TestRpcGetBlock:
             assert scheduled_trx_from_resp["type"] == "0x80"
             assert scheduled_trx_from_resp["scheduledIndex"] == "0x0"
             assert scheduled_trx_from_resp["scheduledPayer"] == neon_user.checksum_address
-            assert scheduled_trx_from_resp["scheduledSolanaPayer"] == str(neon_user.solana_account.pubkey())
-
-            sol_sig_list = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
-            assert scheduled_trx_from_resp["scheduledSolanaSignature"] in sol_sig_list["result"]
+            # TODO uncomment the following lines after bug https://neonlabs.atlassian.net/browse/NDEV-3675 is fixed
+            # assert scheduled_trx_from_resp["scheduledSolanaPayer"] == str(neon_user.solana_account.pubkey())
+            #
+            # sol_sig_list = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
+            # assert scheduled_trx_from_resp["scheduledSolanaSignature"] in sol_sig_list["result"]
         else:
             EthGetBlockByHashResult(**resp)

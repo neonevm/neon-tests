@@ -6,14 +6,13 @@ scp==0.14.4
 tabulate>=0.8.10
 web3==7.10.0
 solana==0.34.3
-py-solc-x==1.1.1
+packaging==24.0
 pythclient==0.0.2
 boto3==1.28.54
 rlp==4.1.0
 python-terraform==0.10.1
 allure-pytest==2.13.5
 uv==0.1.13
-packaging==24.0
 deepdiff==7.0.1
 pydantic==2.7.3
 slack-sdk==3.30.0
@@ -28,3 +27,4 @@ tqdm==4.66.5
 prometheus-client==0.21.0
 diskcache==5.6.3
 sshtunnel==0.4.0
+py-solc-x==1.1.1

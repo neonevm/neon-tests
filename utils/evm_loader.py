@@ -26,7 +26,7 @@ from spl.token.instructions import (
     ApproveParams,
     approve,
 )
-from spl.token.constants import TOKEN_PROGRAM_ID
+from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
 
 from integration.tests.neon_evm.utils.contract import get_contract_bin
 from integration.tests.neon_evm.utils.ethereum import create_contract_address, make_deployment_transaction
@@ -35,7 +35,7 @@ from integration.tests.neon_evm.utils.transaction_checks import check_transactio
 from utils.scheduled_trx import ScheduledTransaction
 from utils.neon_user import NeonUser
 from integration.tests.neon_evm.utils.constants import TREASURY_POOL_SEED
-from utils.consts import LAMPORT_PER_SOL, wSOL
+from utils.consts import LAMPORT_PER_SOL
 from utils.helpers import ether2bytes
 from utils.instructions import (
     TransactionWithComputeBudget,
@@ -179,6 +179,10 @@ class EvmLoader(SolanaClient):
     def get_contract_account_revision(self, address):
         account_data = self.get_solana_account_data(address, CONTRACT_ACCOUNT_LAYOUT.sizeof())
         return CONTRACT_ACCOUNT_LAYOUT.parse(account_data).revision
+
+    def get_balance_account_revision(self, address):
+        account_data = self.get_solana_account_data(address, BALANCE_ACCOUNT_LAYOUT.sizeof())
+        return BALANCE_ACCOUNT_LAYOUT.parse(account_data).revision
 
     def get_data_account_revision(self, address):
         account_data = self.get_solana_account_data(address, STORAGE_CELL_LAYOUT.sizeof())
@@ -670,7 +674,7 @@ class EvmLoader(SolanaClient):
     def deposit_wrapped_sol_from_solana_to_neon(self, solana_account, neon_account, full_amount=None):
         if not full_amount:
             full_amount = int(0.1 * LAMPORT_PER_SOL)
-        mint_pubkey = wSOL["address_spl"]
+        mint_pubkey = WRAPPED_SOL_MINT
         ata_address = get_associated_token_address(solana_account.pubkey(), mint_pubkey)
 
         self.create_associate_token_acc(solana_account, solana_account, mint_pubkey)
@@ -679,9 +683,7 @@ class EvmLoader(SolanaClient):
         wrap_sol_tx = make_wSOL(full_amount, solana_account.pubkey(), ata_address)
         self.send_tx_and_check_status_ok(wrap_sol_tx, solana_account)
 
-        self.send_token_from_solana_to_neon(
-            solana_account, wSOL["address_spl"], neon_account, full_amount, self.sol_chain_id
-        )
+        self.send_token_from_solana_to_neon(solana_account, mint_pubkey, neon_account, full_amount, self.sol_chain_id)
 
     def deposit_neon_like_tokens_from_solana_to_neon(
         self,
@@ -712,7 +714,9 @@ class EvmLoader(SolanaClient):
         )
         self.send_tx(trx, operator_keypair)
 
-    def create_tree_account(self, neon_user: NeonUser, treasury, transaction, mint, chain_id: int | str | None = ""):
+    def create_tree_account(
+        self, neon_user: NeonUser, treasury, transaction, mint=WRAPPED_SOL_MINT, chain_id: int | str | None = ""
+    ):
         if chain_id == "":
             chain_id = self.sol_chain_id
 
@@ -732,7 +736,13 @@ class EvmLoader(SolanaClient):
         return tree_account
 
     def create_tree_account_multiple(
-        self, neon_user, treasury, tree_account_create_data, mint: Pubkey, payer_nonce=None, chain_id: int | None = ""
+        self,
+        neon_user,
+        treasury,
+        tree_account_create_data,
+        mint: Pubkey = WRAPPED_SOL_MINT,
+        payer_nonce=None,
+        chain_id: int | None = "",
     ):
         if chain_id == "":
             chain_id = self.sol_chain_id
@@ -905,11 +915,15 @@ class EvmLoader(SolanaClient):
         encoded_args=None,
         contract_name: tp.Optional[str] = None,
         version: str = "0.7.6",
+        import_remappings: dict | list = None,
     ) -> Contract:
         if chain_id == "":
             chain_id = self.chain_id
 
-        contract_code = get_contract_bin(contract_file_name, contract_name=contract_name, version=version)
+        contract_code = get_contract_bin(
+            contract_file_name, contract_name=contract_name, version=version, import_remappings=import_remappings
+        )
+
         if encoded_args is None:
             encoded_args = b""
 
@@ -933,6 +947,7 @@ class EvmLoader(SolanaClient):
             value=value,
             version=version,
             chain_id=chain_id,
+            import_remappings=import_remappings,
         )
         self.write_transaction_to_holder_account(signed_tx, holder_acc, operator)
 

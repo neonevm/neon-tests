@@ -9,7 +9,7 @@ from solana.transaction import Transaction
 import solders.system_program as sp
 from solana.rpc.core import RPCException as SolanaRPCException
 
-
+from utils.consts import REMAPPING_ZEPPELIN
 from utils.evm_loader import EvmLoader
 from utils.instructions import (
     make_WriteHolder,
@@ -78,7 +78,12 @@ def test_write_tx_to_holder_in_parts(operator_keypair, session_user, evm_loader)
     holder_acc = evm_loader.create_holder(operator_keypair)
 
     signed_tx = make_deployment_transaction(
-        evm_loader, session_user, "external/neon-evm/erc20_for_spl_factory", "ERC20ForSplFactory"
+        evm_loader,
+        session_user,
+        "external/neon-contracts/contracts/token/ERC20ForSpl/erc20_for_spl_factory",
+        "ERC20ForSplFactory",
+        version="0.8.28",
+        import_remappings=REMAPPING_ZEPPELIN,
     )
     evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
     assert signed_tx.raw_transaction == transaction_from_holder(evm_loader, holder_acc), "Account data is not correct"

@@ -42,12 +42,15 @@ jobs:
             echo "oz_tag=${oz_tag}"
             echo "tag=${tag}" >> $GITHUB_OUTPUT
             echo "oz_tag=${oz_tag}" >> $GITHUB_OUTPUT
+
       - name: "Dockerize neon tests"
         uses: ./.github/actions/dockerize-neon-tests
+        if: "${{ github.event_name != 'schedule' }}"
         with:
           image_tag: ${{ steps.define-env.outputs.tag }}
+          image_name: ${{ github.repository_owner }}/neon_tests
+          oz_tag: ${{ steps.define-env.outputs.oz_tag }}
           docker_username: ${{ secrets.DOCKER_USERNAME }}
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
-          oz_tag: ${{ steps.define-env.outputs.oz_tag }}
-          image_name: ${{ github.repository_owner }}/neon_tests
           docker_hub_org_name: ${{ github.repository_owner }}
+          force_rebuild_base_image: 'true'

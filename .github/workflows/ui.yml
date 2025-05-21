@@ -80,6 +80,12 @@ jobs:
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           tests_name: ui
 
+      - name: "Run Playwright UI tests"
+        run: |
+          docker exec -i ${{ env.CONTAINER_NAME }} \
+            /bin/bash -c "export DEVNET_FAUCET_URL=${{ env.FAUCET_URL }} && export DEVNET_SOLANA_URL=${{ env.DEVNET_SOLANA_URL }} && \
+            xvfb-run python3 ./clickfile.py run ui --network=${{ env.NETWORK }} --ui-item=faucet"
+
       - name: Remove docker container
         if: always()
         run: docker rm -f ${{ env.CONTAINER_NAME }}

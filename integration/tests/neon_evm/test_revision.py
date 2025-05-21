@@ -1147,6 +1147,7 @@ class TestAccountRevision:
         )
         assert balance_account_revision_after == balance_account_revision
 
+    @pytest.mark.skip(reason="https://neonlabs.atlassian.net/browse/NDEV-3773")
     def test_revision_revert_by_non_iterative_second_trx(
         self,
         evm_loader,

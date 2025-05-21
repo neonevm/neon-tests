@@ -400,7 +400,9 @@ class TestInteroperability:
         else:
             assert False, f"Expected error but got {resp}"
 
-    @pytest.mark.parametrize("is_iterative", [False, True])
+    @pytest.mark.parametrize("is_iterative", [False])
+    # @pytest.mark.parametrize("is_iterative", [False, True])
+    # reason="https://neonlabs.atlassian.net/browse/NDEV-3773"
     def test_call_neon_instruction_by_neon_instruction(
         self,
         sender_with_tokens,

@@ -1,4 +1,4 @@
-pragma solidity >=0.8.10 <0.9.0;
+pragma solidity >=0.8.28 <0.9.0;
 pragma abicoder v2;
 
 import {ICallSolana} from "../external/neon-contracts/contracts/precompiles/ICallSolana.sol";

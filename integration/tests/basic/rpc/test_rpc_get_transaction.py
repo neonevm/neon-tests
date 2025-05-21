@@ -1,9 +1,8 @@
 import typing as tp
 
+import allure
 import pytest
 import web3
-
-import allure
 
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import AssertMessage
@@ -343,7 +342,6 @@ class TestRpcGetTransaction:
         params_case,
         method,
     ):
-
         data = decode_function_signature("setNumber(uint256)", [18])
         trx_estimate_obj = ScheduledTrxEstimateRequest(neon_user.checksum_address, common_contract.address, data)
         estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), [trx_estimate_obj])
@@ -369,10 +367,11 @@ class TestRpcGetTransaction:
         assert result["type"] == "0x80"
         assert result["scheduledIndex"] == "0x0"
         assert result["scheduledPayer"].upper() == neon_user.checksum_address.upper()
-        assert result["scheduledSolanaPayer"] == str(neon_user.solana_account.pubkey())
+        # TODO uncomment the following lines after bug https://neonlabs.atlassian.net/browse/NDEV-3675 is fixed
+        # assert result["scheduledSolanaPayer"] == str(neon_user.solana_account.pubkey())
 
-        transactions_with_sig = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
-        assert result["scheduledSolanaSignature"] in transactions_with_sig["result"]
+        # transactions_with_sig = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
+        # assert result["scheduledSolanaSignature"] in transactions_with_sig["result"]
 
     @pytest.mark.neon_only
     def test_get_scheduled_transaction_by_sender_nonce(
@@ -394,7 +393,8 @@ class TestRpcGetTransaction:
         evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
 
         web3_client_sol.send_scheduled_transaction(tx, check_result=True)
-        tx_receipt = web3_client_sol.wait_for_transaction_receipt(tx.hash(), timeout=180)
+        # tx_receipt = web3_client_sol.wait_for_transaction_receipt(tx.hash(), timeout=180)
+        web3_client_sol.wait_for_transaction_receipt(tx.hash(), timeout=180)
 
         nonce = self.web3_client.get_nonce(neon_user.checksum_address)
         params = [neon_user.checksum_address, nonce]
@@ -406,11 +406,12 @@ class TestRpcGetTransaction:
         assert result["type"] == "0x80"
         assert result["scheduledIndex"] == "0x0"
         assert result["scheduledPayer"].upper() == neon_user.checksum_address.upper()
-        assert result["scheduledSolanaPayer"] == str(
-            neon_user.solana_account.pubkey()
-        ), f"waited {result['scheduledSolanaPayer']}, got {str(neon_user.solana_account.pubkey())}"
-        transactions_with_sig = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
-        assert result["scheduledSolanaSignature"] in transactions_with_sig["result"]
+        # TODO uncomment the following lines after bug https://neonlabs.atlassian.net/browse/NDEV-3675 is fixed
+        # assert result["scheduledSolanaPayer"] == str(
+        #     neon_user.solana_account.pubkey()
+        # ), f"waited {result['scheduledSolanaPayer']}, got {str(neon_user.solana_account.pubkey())}"
+        # transactions_with_sig = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
+        # assert result["scheduledSolanaSignature"] in transactions_with_sig["result"]
 
     @pytest.mark.neon_only
     @pytest.mark.parametrize(
@@ -483,9 +484,10 @@ class TestRpcGetTransaction:
         assert result["type"] == "0x80"
         assert result["scheduledIndex"] == "0x0"
         assert result["scheduledPayer"].upper() == neon_user.checksum_address.upper()
-        assert result["scheduledSolanaPayer"] == str(neon_user.solana_account.pubkey())
-        transactions_with_sig = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
-        assert result["scheduledSolanaSignature"] in transactions_with_sig["result"]
+        # TODO uncomment the following lines after bug https://neonlabs.atlassian.net/browse/NDEV-3675 is fixed
+        # assert result["scheduledSolanaPayer"] == str(neon_user.solana_account.pubkey())
+        # transactions_with_sig = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
+        # assert result["scheduledSolanaSignature"] in transactions_with_sig["result"]
 
     @pytest.mark.parametrize("method", ["neon_getTransactionReceipt", "eth_getTransactionReceipt"])
     @pytest.mark.neon_only

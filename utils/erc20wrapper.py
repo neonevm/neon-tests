@@ -6,16 +6,16 @@ from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
-
+from spl.token.client import Token
+from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address, create_associated_token_account, approve, ApproveParams
 from web3.types import TxReceipt
-from spl.token.constants import TOKEN_PROGRAM_ID
 
 from . import web3client, stats_collector
+from .consts import REMAPPING_ZEPPELIN
 from .evm_loader import EvmLoader
 from .metaplex import create_metadata_instruction_data, create_metadata_instruction
 from .neon_user import NeonUser
-from .consts import REMAPPING_ZEPPELIN
 
 INIT_TOKEN_AMOUNT = 1000000000000000
 
@@ -60,6 +60,7 @@ class ERC20Wrapper:
         )
 
         self.token_mint_pubkey = Pubkey(self.contract.functions.tokenMint().call())
+        self.token_mint: Token
 
     def _create_or_fund_owner(self, faucet, bank_account):
         owner = self.web3_client.create_account()

@@ -354,18 +354,6 @@ def common_contract(web3_client, accounts, pytestconfig) -> tp.Generator[Contrac
 
 
 @pytest.fixture(scope="class")
-def common_caller_contract(web3_client, accounts, common_contract) -> tp.Generator[Contract, None, None]:
-    contract, tx = web3_client.deploy_and_get_contract(
-        contract="common/Common",
-        version="0.8.12",
-        contract_name="CommonCaller",
-        account=accounts[0],
-        constructor_args=[common_contract.address],
-    )
-    yield contract
-
-
-@pytest.fixture(scope="class")
 def meta_proxy_contract(web3_client, accounts):
     contract, _ = web3_client.deploy_and_get_contract("./EIPs/MetaProxy", "0.8.10", account=accounts[0])
     return contract

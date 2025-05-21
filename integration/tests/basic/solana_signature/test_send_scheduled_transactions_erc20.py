@@ -1,14 +1,23 @@
 import allure
 import pytest
+from _pytest.config import Config
 from solana.rpc.commitment import Confirmed
+from solana.transaction import Transaction
+from solders.keypair import Keypair
 from solders.pubkey import Pubkey
-from spl.token.instructions import get_associated_token_address
+from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
+from spl.token.instructions import get_associated_token_address, approve, ApproveParams
 
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
+from utils.erc20wrapper import ERC20Wrapper
+from utils.evm_loader import EvmLoader
 from utils.helpers import decode_function_signature
+from utils.helpers import wait_condition
 from utils.neon_user import NeonUser
 from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData, ScheduledTrxEstimateRequest
-from utils.web3client import BASE_MAX_PRIORITY_FEE
+from utils.solana_client import SolanaClient
+from utils.types import TreasuryPool
+from utils.web3client import BASE_MAX_PRIORITY_FEE, Web3Client
 
 
 @allure.feature("Solana native")
@@ -97,7 +106,6 @@ class TestScheduledTrxERC20:
     def test_scheduled_trx_transfer_solana_ata_balance_not_used(
         self, web3_client_sol, neon_user, erc20_spl_mintable, evm_loader, treasury_pool
     ):
-
         token_mint = erc20_spl_mintable.token_mint_pubkey
 
         erc20_spl_mintable.pop_up_balance(evm_loader, recipient=neon_user, pda_amount=5, ata_amount=2000)
@@ -387,3 +395,167 @@ class TestScheduledTrxERC20:
         assert erc20_spl_mintable.get_balance(recipient.checksum_address) == transfer_amount * 2
         assert balance_pda == amount_to_transfer - transfer_amount * 2 - burn_amount
         assert balance_ata == amount_to_transfer
+
+    def test_claim(
+        self,
+        solana_account: Keypair,
+        web3_client_sol: Web3Client,
+        neon_user: NeonUser,
+        erc20_spl: ERC20Wrapper,
+        evm_loader: EvmLoader,
+        treasury_pool: TreasuryPool,
+        sol_client: SolanaClient,
+        pytestconfig: Config,
+    ):
+        transfer_amount = 1000
+        claim_amount = transfer_amount // 2
+
+        # create solana_account ATA, and approve neon_user to access solana_account's SPL tokens in solana_account's ATA
+        ata_account = evm_loader.create_associate_token_acc(
+            payer=solana_account,
+            owner=solana_account,
+            token_mint=erc20_spl.token_mint_pubkey,
+        )
+
+        trx = Transaction()
+        delegate = sol_client.get_erc_auth_address(
+            neon_account_address=neon_user.checksum_address,
+            token_address=erc20_spl.contract.address,
+            evm_loader_id=pytestconfig.environment.evm_loader,
+        )
+
+        trx.add(
+            approve(
+                ApproveParams(
+                    program_id=TOKEN_PROGRAM_ID,
+                    source=ata_account,
+                    delegate=delegate,
+                    owner=solana_account.pubkey(),
+                    amount=transfer_amount,
+                )
+            )
+        )
+
+        evm_loader.send_tx_and_check_status_ok(trx, solana_account)
+
+        # if necessary, fund solana_account ATA with SPL tokens (transfer from erc20_spl.owner account)
+        balance_before = int(erc20_spl.token_mint.get_balance(ata_account).value.amount)
+
+        if balance_before < transfer_amount:
+            erc20_spl.transfer_solana(
+                signer=erc20_spl.owner,
+                address_to=bytes(ata_account),
+                amount=transfer_amount,
+            )
+            wait_condition(
+                func_cond=lambda: erc20_spl.token_mint.get_balance(ata_account),
+                check_success=lambda r: int(r.value.amount) >= transfer_amount,
+            )
+
+        # neon_user claims tokens from solana_account's ATA to neon_user's neon address
+        data = decode_function_signature("claim(bytes32,uint64)", [bytes(ata_account), claim_amount])
+        sch_trx_rqst = ScheduledTrxEstimateRequest(
+            from_address=neon_user.checksum_address, to_address=erc20_spl.address, data=data, child_transaction="0xFFFF"
+        )
+        estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), [sch_trx_rqst])
+        sch_trx = ScheduledTransaction.from_estimate_result(0, sch_trx_rqst, estimate_result)
+
+        tree_acc_data = CreateTreeAccMultipleData(
+            nonce=estimate_result["nonce"],
+            max_fee_per_gas=estimate_result["maxFeePerGas"],
+            max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
+        )
+        tree_acc_data.add_trx(sch_trx, 0xFFFF, 0)
+
+        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data, WRAPPED_SOL_MINT)
+        web3_client_sol.send_scheduled_transaction(sch_trx)
+        check_trx_is_success(web3_client_sol, evm_loader, sch_trx.hash().hex())
+
+        balance = erc20_spl.get_balance(neon_user.neon_address)
+        assert balance == claim_amount
+
+    def test_claim_to(
+        self,
+        solana_account: Keypair,
+        web3_client_sol: Web3Client,
+        neon_user: NeonUser,
+        erc20_spl: ERC20Wrapper,
+        evm_loader: EvmLoader,
+        treasury_pool: TreasuryPool,
+        sol_client: SolanaClient,
+        pytestconfig: Config,
+    ):
+        transfer_amount = 1000
+        claim_amount = transfer_amount // 2
+        recipient = NeonUser(evm_loader.loader_id)
+
+        # create solana_account ATA, and approve neon_user to access solana_account's SPL tokens in solana_account's ATA
+        ata_account = evm_loader.create_associate_token_acc(
+            payer=solana_account,
+            owner=solana_account,
+            token_mint=erc20_spl.token_mint_pubkey,
+        )
+
+        trx = Transaction()
+        delegate = sol_client.get_erc_auth_address(
+            neon_account_address=neon_user.checksum_address,
+            token_address=erc20_spl.contract.address,
+            evm_loader_id=pytestconfig.environment.evm_loader,
+        )
+
+        trx.add(
+            approve(
+                ApproveParams(
+                    program_id=TOKEN_PROGRAM_ID,
+                    source=ata_account,
+                    delegate=delegate,
+                    owner=solana_account.pubkey(),
+                    amount=transfer_amount,
+                )
+            )
+        )
+
+        evm_loader.send_tx_and_check_status_ok(trx, solana_account)
+
+        # if necessary, fund solana_account ATA with SPL tokens (transfer from erc20_spl.owner account)
+        balance_before = int(erc20_spl.token_mint.get_balance(ata_account).value.amount)
+
+        if balance_before < transfer_amount:
+            erc20_spl.transfer_solana(
+                signer=erc20_spl.owner,
+                address_to=bytes(ata_account),
+                amount=transfer_amount,
+            )
+            wait_condition(
+                func_cond=lambda: erc20_spl.token_mint.get_balance(ata_account),
+                check_success=lambda r: int(r.value.amount) >= transfer_amount,
+            )
+
+        # neon_user claims tokens from solana_account's ATA to recipient's neon address
+        data = decode_function_signature(
+            function_name="claimTo(bytes32,address,uint64)",
+            args=[
+                bytes(ata_account),
+                recipient.checksum_address,
+                claim_amount,
+            ],
+        )
+
+        sch_trx_rqst = ScheduledTrxEstimateRequest(
+            neon_user.checksum_address, erc20_spl.address, data, child_transaction="0xFFFF"
+        )
+        estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), [sch_trx_rqst])
+        sch_trx = ScheduledTransaction.from_estimate_result(0, sch_trx_rqst, estimate_result)
+        tree_acc_data = CreateTreeAccMultipleData(
+            nonce=estimate_result["nonce"],
+            max_fee_per_gas=estimate_result["maxFeePerGas"],
+            max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
+        )
+        tree_acc_data.add_trx(sch_trx, 0xFFFF, 0)
+
+        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data, WRAPPED_SOL_MINT)
+        web3_client_sol.send_scheduled_transaction(sch_trx)
+        check_trx_is_success(web3_client_sol, evm_loader, sch_trx.hash().hex())
+
+        balance = erc20_spl.get_balance(recipient.neon_address)
+        assert balance == claim_amount

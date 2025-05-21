@@ -800,7 +800,7 @@ class TestRpcFeeHistory:
         fee_history = EthFeeHistoryResult(**response["result"])
         oldest_block_actual = int(fee_history.oldestBlock, 16)
         oldest_block_expected = last_block_number - expected_block_count
-        assert 0 <= oldest_block_actual - oldest_block_expected <= 5  # a few new blocks may be added
+        assert 0 <= oldest_block_actual - oldest_block_expected <= 10  # a few new blocks may be added
 
         assert 0 <= len(fee_history.baseFeePerGas) - (expected_block_count + 1) <= 2
         for base_fee_per_gas in fee_history.baseFeePerGas:

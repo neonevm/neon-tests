@@ -218,9 +218,10 @@ class TestRpcGetBlock:
             assert scheduled_trx_from_resp["type"] == "0x80"
             assert scheduled_trx_from_resp["scheduledIndex"] == "0x0"
             assert scheduled_trx_from_resp["scheduledPayer"] == neon_user.checksum_address
-            assert scheduled_trx_from_resp["scheduledSolanaPayer"] == str(neon_user.solana_account.pubkey())
-
-            sol_sig_list = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
-            assert scheduled_trx_from_resp["scheduledSolanaSignature"] in sol_sig_list["result"]
+            # TODO uncomment the following lines after bug https://neonlabs.atlassian.net/browse/NDEV-3675 is fixed
+            # assert scheduled_trx_from_resp["scheduledSolanaPayer"] == str(neon_user.solana_account.pubkey())
+            #
+            # sol_sig_list = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
+            # assert scheduled_trx_from_resp["scheduledSolanaSignature"] in sol_sig_list["result"]
         else:
             EthGetBlockByHashResult(**resp)

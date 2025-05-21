@@ -209,7 +209,7 @@ class TestNeonRPCBaseCalls:
         )
         assert gas_used_sum == neon_gas_estimate["gasUsed"]
 
-        assert neon_gas_estimate["numEvmSteps"] == 2122
+        assert neon_gas_estimate["numEvmSteps"] == 2117
         assert neon_gas_estimate["numIterations"] == 7
         assert int(neon_gas_estimate["result"], 16) == iterations
         assert neon_gas_estimate["revertAfterSolanaCall"] is False

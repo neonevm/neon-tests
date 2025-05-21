@@ -100,17 +100,40 @@ def context(
     browser_type_launch_args: tp.Dict,
     chrome_extensions_path: pathlib.Path,
     chrome_extension_user_data: pathlib.Path,
+    use_extension: bool,
 ) -> BrowserContext:
     """Override default context for MetaMasks load"""
-    context = browser.create_persistent_context(
-        browser_type,
-        browser_context_args,
-        browser_type_launch_args,
-        ext_source=chrome_extensions_path,
-        user_data_dir=chrome_extension_user_data.as_posix(),
-    )
+    if use_extension:
+        context = browser.create_persistent_context(
+            browser_type,
+            browser_context_args,
+            browser_type_launch_args,
+            ext_source=chrome_extensions_path,
+            user_data_dir=chrome_extension_user_data.as_posix(),
+        )
+    else:
+        context = browser_type.launch_persistent_context(
+            user_data_dir="/tmp/without-extension",
+            headless=False,
+        )
     yield context
     context.close()
+
+    # context = browser.create_persistent_context(
+    #     browser_type,
+    #     browser_context_args,
+    #     browser_type_launch_args,
+    #     ext_source=chrome_extensions_path,
+    #     user_data_dir=chrome_extension_user_data.as_posix(),
+    # )
+    # yield context
+    # context.close()
+
+
+@pytest.fixture
+def use_extension(request) -> bool:
+    marker = request.node.get_closest_marker("no_extension")
+    return marker is None
 
 
 # @pytest.hookimpl(tryfirst=True, hookwrapper=True)

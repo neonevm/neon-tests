@@ -87,6 +87,7 @@ class TestFaucet:
         assert NEONPASS_URL in neonpass_page.url
 
     # todo need to use browser without installed MM wallet
+    @pytest.mark.no_extension
     def test_open_faucet_without_installed_wallets(self, context):
         page = context.new_page()
         page.goto(NEON_FAUCET_URL)

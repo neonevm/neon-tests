@@ -19,6 +19,14 @@ contract A {
         }
     }
 
+    function iterativeWithCancel(uint N) public {
+        for (uint i = 1; i <= N; i++) {
+            if (i == N / 2) {
+                method1();
+            }
+        }
+    }
+
     function riskyDivision(uint x, uint y) public pure returns (uint) {
         return x / y;
     }

@@ -1,4 +1,3 @@
-import random
 import pytest
 import eth_abi
 
@@ -72,7 +71,7 @@ class TestAccountRevision:
         return evm_loader.deploy_contract(
             operator_keypair,
             sender_with_tokens,
-            "common/Revert.sol",
+            "common/RevisionRevert.sol",
             neon_api_client,
             treasury_pool,
             contract_name="RevisionRevert",
@@ -1028,7 +1027,7 @@ class TestAccountRevision:
             data_acc_revision_after = evm_loader.get_data_account_revision(acc)
             assert data_acc_revision_after == 3
 
-    def test_revision_revert(
+    def test_revision_revert_by_iterative_second_trx(
         self,
         evm_loader,
         operator_keypair,
@@ -1044,34 +1043,35 @@ class TestAccountRevision:
     ):
         holder1 = holder_acc
         holder2 = new_holder_acc
+        recipient = session_user
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
-
-        sender = session_user
-        recipient = evm_loader.make_new_user(operator_keypair)
-        amount = random.randint(1, 1000000)
-        evm_loader.deposit_neon(operator_keypair, sender.eth_address, 3 * amount)
-        evm_loader.deposit_neon(operator_keypair, revision_revert_contract.eth_address, 3 * amount)
+        balance_account_revision = evm_loader.get_balance_account_revision(
+            revision_revert_contract.balance_account_address
+        )
+        amount = 100000
+        evm_loader.deposit_neon(operator_keypair, sender_with_tokens.eth_address, 3 * amount)
 
         signed_tx1 = make_contract_call_trx(
             evm_loader,
-            sender,
+            sender_with_tokens,
             revision_revert_contract,
-            "transferNeonSeveralTimes(uint256,uint256,address)",
-            [3, amount, recipient.eth_address],
-            value=3 * amount,
+            "transferNeonSeveralTimes(uint256,address)",
+            [10, recipient.eth_address],
+            value=10 * amount,
         )
 
         emulate_result = neon_api_client.emulate_contract_call(
-            sender.eth_address.hex(),
+            sender_with_tokens.eth_address.hex(),
             revision_revert_contract.eth_address.hex(),
-            "transferNeonSeveralTimes(uint256,uint256,address)",
-            [3, amount, recipient.eth_address],
+            "transferNeonSeveralTimes(uint256,address)",
+            [10, recipient.eth_address],
+            value=hex(10 * amount),
         )
-
         accounts_from_emulation1 = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
+
         evm_loader.write_transaction_to_holder_account(signed_tx1, holder1, operator_keypair)
 
-        for _ in range(9):
+        for _ in range(25):
             evm_loader.send_transaction_step_from_account(
                 operator_keypair,
                 operator_balance_pubkey,
@@ -1089,7 +1089,126 @@ class TestAccountRevision:
             expected_tag=TAG_ACTIVE_STATE,
         )
 
-        sender_balance_before_trx2 = evm_loader.get_neon_balance(sender.eth_address)
+        recipient_balance_before_trx2 = evm_loader.get_neon_balance(recipient.eth_address)
+        payer_bytes32 = neon_api_client.call_contract_get_function(
+            sender_with_tokens, revision_revert_contract, "getPayer()"
+        )
+        payer = bytes32_to_solana_pubkey(payer_bytes32)
+
+        instruction = make_CreateAssociatedTokenIdempotent(
+            payer, sender_with_tokens.solana_account_address, Pubkey.from_string(environment.spl_neon_mint)
+        )
+        serialized_instructions = serialize_instruction(ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID, instruction)
+
+        signed_tx2 = make_contract_call_trx(
+            evm_loader,
+            sender_with_tokens,
+            revision_revert_contract,
+            "transferNeonAndCallSolana(uint64,bytes,uint256,address)",
+            [2039280, serialized_instructions, amount, recipient.eth_address],
+            value=amount,
+        )
+
+        emulate_result = neon_api_client.emulate_contract_call(
+            sender_with_tokens.eth_address.hex(),
+            revision_revert_contract.eth_address.hex(),
+            "transferNeonAndCallSolana(uint64,bytes,uint256,address)",
+            [2039280, serialized_instructions, amount, recipient.eth_address],
+            value=hex(amount),
+        )
+        accounts_from_emulation2 = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
+
+        evm_loader.write_transaction_to_holder_account(signed_tx2, holder2, operator_keypair)
+
+        # iterative execution of trx2
+        resp2 = evm_loader.execute_transaction_steps_from_account(
+            operator_keypair, treasury_pool, holder2, accounts_from_emulation2
+        )
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp2, text="exit_status=0x11")
+
+        payer_info = evm_loader.get_account_info(payer, commitment=Confirmed)
+        assert payer_info.value is None
+
+        recipient_balance_after_trx2 = evm_loader.get_neon_balance(recipient.eth_address)
+        assert recipient_balance_after_trx2 == recipient_balance_before_trx2 + amount
+
+        resp1 = evm_loader.execute_transaction_steps_from_account(
+            operator_keypair, treasury_pool, holder1, accounts_from_emulation1, check_invalid_revision=True
+        )
+        check_transaction_logs_have_text(solana_client=sol_client, trx=resp1, text="exit_status=0x11")
+
+        recipient_balance_after_trx1_rerun = evm_loader.get_neon_balance(recipient.eth_address)
+        assert recipient_balance_after_trx1_rerun == recipient_balance_before_trx2 + amount + 10 * amount
+        assert evm_loader.get_neon_balance(revision_revert_contract.eth_address) == 0
+
+        balance_account_revision_after = evm_loader.get_balance_account_revision(
+            revision_revert_contract.balance_account_address
+        )
+        assert balance_account_revision_after == balance_account_revision
+
+    def test_revision_revert_by_non_iterative_second_trx(
+        self,
+        evm_loader,
+        operator_keypair,
+        treasury_pool,
+        new_holder_acc,
+        holder_acc,
+        neon_api_client,
+        revision_revert_contract,
+        session_user,
+        sol_client,
+        environment,
+        sender_with_tokens,
+    ):
+        holder1 = holder_acc
+        holder2 = new_holder_acc
+        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
+        recipient = session_user
+        amount1 = 100000
+        amount2 = amount1 // 2
+        evm_loader.deposit_neon(operator_keypair, sender_with_tokens.eth_address, 10 * amount1 + 2 * amount2)
+
+        signed_tx1 = make_contract_call_trx(
+            evm_loader,
+            sender_with_tokens,
+            revision_revert_contract,
+            "transferNeonSeveralTimes(uint256,address)",
+            [10, recipient.eth_address],
+            value=10 * amount1,
+        )
+
+        emulate_result = neon_api_client.emulate_contract_call(
+            sender_with_tokens.eth_address.hex(),
+            revision_revert_contract.eth_address.hex(),
+            "transferNeonSeveralTimes(uint256,address)",
+            [10, recipient.eth_address],
+            value=hex(10 * amount1),
+        )
+
+        accounts_from_emulation1 = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
+        evm_loader.write_transaction_to_holder_account(signed_tx1, holder1, operator_keypair)
+        balance_account_revision_before = evm_loader.get_balance_account_revision(
+            revision_revert_contract.balance_account_address
+        )
+
+        for i in range(25):
+            evm_loader.send_transaction_step_from_account(
+                operator_keypair,
+                operator_balance_pubkey,
+                treasury_pool,
+                holder1,
+                accounts_from_emulation1,
+                EVM_STEPS,
+                operator_keypair,
+            )
+
+        check_holder_account_tag(
+            solana_client=evm_loader,
+            storage_account=holder1,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_ACTIVE_STATE,
+        )
+
         recipient_balance_before_trx2 = evm_loader.get_neon_balance(recipient.eth_address)
 
         payer_bytes32 = neon_api_client.call_contract_get_function(
@@ -1104,62 +1223,41 @@ class TestAccountRevision:
 
         signed_tx2 = make_contract_call_trx(
             evm_loader,
-            sender,
+            sender_with_tokens,
             revision_revert_contract,
             "transferNeonAndCallSolana(uint64,bytes,uint256,address)",
-            [2039280, serialized_instructions, amount, recipient.eth_address],
-            value=amount,
+            [2039280, serialized_instructions, amount2, recipient.eth_address],
+            value=amount2 * 2,
         )
 
         emulate_result = neon_api_client.emulate_contract_call(
-            sender.eth_address.hex(),
+            sender_with_tokens.eth_address.hex(),
             revision_revert_contract.eth_address.hex(),
             "transferNeonAndCallSolana(uint64,bytes,uint256,address)",
-            [2039280, serialized_instructions, amount, recipient.eth_address],
-            value=hex(amount),
+            [2039280, serialized_instructions, amount2, recipient.eth_address],
+            value=hex(amount2 * 2),
         )
+
         accounts_from_emulation2 = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
 
         evm_loader.write_transaction_to_holder_account(signed_tx2, holder2, operator_keypair)
 
-        resp2 = evm_loader.execute_transaction_steps_from_account(
-            operator_keypair, treasury_pool, holder2, accounts_from_emulation2
+        # non iterative execution of trx2
+        resp2 = evm_loader.execute_trx_from_account_with_solana_call(
+            operator_keypair, holder2, treasury_pool.account, treasury_pool.buffer, accounts_from_emulation2
         )
-        check_transaction_logs_have_text(solana_client=sol_client, trx=resp2, text="exit_status=0x11")
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp2, text="exit_status=0x11")
 
         payer_info = evm_loader.get_account_info(payer, commitment=Confirmed)
         assert payer_info.value is None
 
-        sender_balance_after_trx2 = evm_loader.get_neon_balance(sender.eth_address)
-        recipient_balance_after_trx2 = evm_loader.get_neon_balance(recipient.eth_address)
-        assert sender_balance_after_trx2 == sender_balance_before_trx2 - amount
-        assert recipient_balance_after_trx2 == recipient_balance_before_trx2 + amount
-
-        # 35 iteration with 500 steps overall
-        # we execute 34 steps to check trx is restarted
-        for _ in range(34):
-            evm_loader.send_transaction_step_from_account(
-                operator_keypair,
-                operator_balance_pubkey,
-                treasury_pool,
-                holder1,
-                accounts_from_emulation1,
-                EVM_STEPS,
-                operator_keypair,
-            )
-
-        check_holder_account_tag(
-            solana_client=evm_loader,
-            storage_account=holder1,
-            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
-            expected_tag=TAG_ACTIVE_STATE,
-        )
         resp1 = evm_loader.execute_transaction_steps_from_account(
             operator_keypair, treasury_pool, holder1, accounts_from_emulation1
         )
         check_transaction_logs_have_text(solana_client=sol_client, trx=resp1, text="exit_status=0x11")
-
-        sender_balance_after_trx1 = evm_loader.get_neon_balance(sender.eth_address)
-        recipient_balance_aftert_rx1 = evm_loader.get_neon_balance(recipient.eth_address)
-        assert sender_balance_after_trx1 == sender_balance_after_trx2 - 3 * amount
-        assert recipient_balance_aftert_rx1 == recipient_balance_after_trx2 + 3 * amount
+        balance_account_revision = evm_loader.get_balance_account_revision(
+            revision_revert_contract.balance_account_address
+        )
+        assert recipient_balance_before_trx2 == evm_loader.get_neon_balance(recipient.eth_address) + 2 * amount2
+        assert evm_loader.get_neon_balance(revision_revert_contract.eth_address) == 0
+        assert balance_account_revision == balance_account_revision_before + 1

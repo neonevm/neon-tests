@@ -140,7 +140,7 @@ class SolanaCaller:
             execute_params.append((lamports, serialized_instruction))
 
         if is_iterative:
-            calldata = keccak(text="batchExecuteInIterativeMode((uint64,bytes)[])")[:4] + eth_abi.encode(
+            calldata = keccak(text="batchExecuteFixedIterativeSteps((uint64,bytes)[])")[:4] + eth_abi.encode(
                 ["(uint64,bytes)[]"],
                 [execute_params],
             )

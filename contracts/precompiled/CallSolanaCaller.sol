@@ -92,7 +92,15 @@ contract CallSolanaCaller {
         emit LogInt(sum);
     }
 
-    function batchExecuteInIterativeMode(ExecuteArgs[] memory _args) public {
+    function batchExecuteInIterativeMode(
+        uint256 actionsNumber,
+        ExecuteArgs[] memory _args
+    ) public {
+        doIterativeActions(actionsNumber);
+        batchExecute(_args);
+    }
+
+    function batchExecuteFixedIterativeSteps(ExecuteArgs[] memory _args) public {
         uint x = 0;
         uint y = 3000;
         uint z = x;

@@ -1,0 +1,159 @@
+version: "3"
+
+services:
+  solana:
+    image: ${DOCKERHUB_ORG_NAME}/evm_loader:${NEON_EVM_COMMIT}
+    environment:
+      SOLANA_URL: http://127.0.0.1:8899
+    hostname: solana
+    networks:
+      - net
+    expose:
+      - 8899
+    healthcheck:
+      # Must be available from outside (calling without -u causes premature result)
+      test: [ CMD-SHELL, "./wait-for-neon.sh" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+    entrypoint: /opt/solana-run-neon.sh
+
+  postgres:
+    image: postgres:17.0
+    command: postgres -c 'max_connections=1000'
+    environment:
+      POSTGRES_DB: neon-db
+      POSTGRES_USER: neon-proxy
+      POSTGRES_PASSWORD: neon-proxy-pass
+    hostname: postgres
+    healthcheck:
+      test: [ CMD-SHELL, "pg_isready -h postgres -p 5432" ]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    expose:
+      - 5432
+    networks:
+      - net
+
+  dbcreation:
+    image: ${DOCKERHUB_ORG_NAME}/neon-proxy.py:${REVISION}
+    environment:
+      SOLANA_URL: http://solana:8899
+      POSTGRES_DB: neon-db
+      POSTGRES_USER: neon-proxy
+      POSTGRES_PASSWORD: neon-proxy-pass
+      POSTGRES_HOST: postgres
+    entrypoint: /bin/sh
+    command: db/run-dbcreation.sh
+    networks:
+      - net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  proxy:
+    image: ${DOCKERHUB_ORG_NAME}/neon-proxy.py:${REVISION}
+    environment:
+      SOLANA_URL: http://solana:8899
+      FAUCET_URL: http://faucet:3333
+      PROXY_URL: http://proxy:9090/solana
+      POSTGRES_DB: neon-db
+      POSTGRES_USER: neon-proxy
+      POSTGRES_PASSWORD: neon-proxy-pass
+      POSTGRES_HOST: postgres
+      DEBUG_CMD_LINE: "YES"
+      GATHER_STATISTICS: "YES"
+      MINIMAL_GAS_PRICE: 1
+      CONST_GAS_PRICE: 2
+      MINIMAL_WITHOUT_CHAIN_ID_GAS_PRICE: 1
+      CU_PRIORITY_FEE: 2
+      DEFAULT_CU_PRICE: 10500
+      SIMPLE_CU_PRIORITY_FEE: 1
+      ENABLE_PRIVATE_API: "NO"
+      NEON_CORE_API_SERVER_COUNT: 4
+      NEON_EVM_PROGRAM: 53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io
+      RUST_BACKTRACE: ${RUST_BACKTRACE:-0}
+      COMMIT_LEVEL: Confirmed
+      SOLANA_KEY_FOR_EVM_CONFIG: BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih
+      SOLANA_BLOCK_SEC: "0.1"
+    hostname: proxy
+    depends_on:
+      solana:
+        condition: service_healthy
+      dbcreation:
+        condition: service_completed_successfully
+    expose:
+      - 8888
+      - 9090
+    networks:
+      - net
+    entrypoint: proxy/run-test-proxy.sh
+    healthcheck:
+      test: [ CMD-SHELL, "/opt/neon-proxy/proxy/health_check_proxy.sh" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  faucet:
+    restart: always
+    image: ${DOCKERHUB_ORG_NAME}/faucet:${FAUCET_COMMIT}
+    environment:
+      FAUCET_RPC_BIND: 0.0.0.0
+      FAUCET_RPC_PORT: 3333
+      FAUCET_WEB3_ENABLE: 'true'
+      WEB3_RPC_URL: http://solana:8899
+      WEB3_PRIVATE_KEY: 0x4deacb079b4714c38f39508aa8900039f2721ed8686835d43347ba9267da767b
+      NEON_ERC20_TOKENS: '["0xB521b9F3484deF53545F276F1DAA50ef0Ca82E2d", "0x8a2a66CA0E5D491A001957edD45A6350bC76D708", "0x914782059DC42d4E590aeFCfdbF004B2EcBB9fAA", "0x7A7510b9b18241C788a7aAE8299D1fA6010D8128"]'
+      NEON_ERC20_MAX_AMOUNT: 1000
+      FAUCET_SOLANA_ENABLE: 'true'
+      SOLANA_URL: http://solana:8899
+      NEON_OPERATOR_KEYFILE: /root/.config/solana/id.json
+      NEON_ETH_MAX_AMOUNT: 50000
+      TEST_FAUCET_INIT_NEON_BALANCE: 100000000
+      NEON_EVM_PROGRAM: 53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io
+      NEON_TOKEN_MINT: HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU
+      NEON_TOKEN_MINT_DECIMALS: 9
+      SOLANA_COMMITMENT: confirmed
+      RUST_BACKTRACE: ${RUST_BACKTRACE:-0}
+    hostname: faucet
+    expose:
+      - 3333
+    networks:
+      - net
+    entrypoint: ./run-test-faucet.sh
+    depends_on:
+      solana:
+        condition: service_healthy
+  indexer:
+    restart: always
+    image: ${DOCKERHUB_ORG_NAME}/neon-proxy.py:${REVISION}
+    environment:
+      SOLANA_URL: http://solana:8899
+      POSTGRES_DB: neon-db
+      POSTGRES_USER: neon-proxy
+      POSTGRES_PASSWORD: neon-proxy-pass
+      POSTGRES_HOST: postgres
+      POSTGRES_TIMEOUT: 5
+      GATHER_STATISTICS: "YES"
+      NEON_EVM_PROGRAM: 53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io
+      START_SLOT: latest
+      REINDEX_START_SLOT: continue
+      INDEXER_CHECK_MSEC: 50
+      SOLANA_KEY_FOR_EVM_CONFIG: BMp6gEnveANdvSvspESJUrNczuHz1GF5UQKjVLCkAZih
+    hostname: indexer
+    depends_on:
+      solana:
+        condition: service_healthy
+      dbcreation:
+        condition: service_completed_successfully
+    networks:
+      - net
+    entrypoint: indexer/run-indexer.sh
+
+networks:
+  net:
+

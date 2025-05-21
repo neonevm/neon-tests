@@ -1,47 +1,46 @@
 name: "Destroy stand"
 description: "Destroy stand created by terraform"
 inputs:
-  working-directory:
-    description: 'Working directory for the commands'
-    required: false
-    default: '.'
-  ci_stands_key_hcloud:
-    description: 'Private key for hcloud'
+  hcloud_token:
+    required: true
+  aws_secret_access_key_id:
+    required: true
+  aws_secret_access_key:
     required: true
 
 runs:
   using: composite
   steps:
-    - uses: hashicorp/setup-terraform@v3
-    - uses: actions/setup-node@v4
+    - uses: actions/checkout@v4
       with:
-        node-version: 16
+          fetch-depth: 0
+    - uses: actions/checkout@v4
+      with:
+        repository: 'neonlabsorg/dynamic-ci-cd'
+        ref: 'main'
+        token: ${{ secrets.GHTOKEN }}
+        path: dynamic-ci-cd
     - name: Install python requirements
       if: always()
       id: requirements
       uses: neonlabsorg/neon-tests/.github/actions/python-requirements@develop
       with:
-        working-directory: ${{ inputs.working-directory }}
-    - name: Prepare server for destroy terraform stand
-      if: always()
-      shell: bash
-      run: |
-        ssh_key=/tmp/ci-stands
-        echo "${{ inputs.ci_stands_key_hcloud  }}" >> ${ssh_key} && chmod 400 ${ssh_key}
+        working-directory: /tmp
     - name: Download docker logs
       shell: bash
       run: |
         cd ${{ inputs.working-directory }}
         python3 ./clickfile.py infra download-logs
-    - name: Destroy stand with terraform
-      shell: bash
-      id: destroy
-      if: always()
-      run: |
-        cd ${{ inputs.working-directory }}
-        python3 ./clickfile.py infra destroy
+    - name: Delete instance
+      uses: ./dynamic-ci-cd/actions/delete-instance
+      id: detele-instance
+      with:
+        project-repository: ${{ github.event.repository.name }}
+        job-id: ${{ github.job }}
+        run-id: ${{github.run_id}}
+        hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
     - uses: actions/upload-artifact@v4
       if: always()
       with:
         name: Docker logs
-        path: ${{ inputs.working-directory }}/logs/*
+        path: /tmp/logs/*

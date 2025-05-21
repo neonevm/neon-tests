@@ -271,3 +271,13 @@ def event_tx_receipt(accounts, web3_client, event_caller_contract):
     receipt = web3_client.send_transaction(sender_account, instruction_tx)
     assert receipt["status"] == 1, f"Transaction failed: {receipt}"
     return receipt
+
+
+@pytest.fixture(scope="class")
+def canceled_iterative_tx_with_hash_receipt(accounts, web3_client, expected_error_checker):
+    sender_account = accounts[0]
+    tx = web3_client.make_raw_tx(sender_account)
+    instruction_tx = expected_error_checker.functions.iterativeWithCancel(300).build_transaction(tx)
+    receipt = web3_client.send_transaction(sender_account, instruction_tx)
+    assert receipt["status"] == 0, f"Transaction success: {receipt}"
+    return receipt

@@ -254,7 +254,7 @@ def neon_user(
     sol_client_session: SolanaClient,
 ) -> Generator[NeonUser, None, None]:
     user = NeonUser(evm_loader_id=environment.evm_loader)
-    lamports = 2 * LAMPORT_PER_SOL
+    lamports = 3 * LAMPORT_PER_SOL
 
     if environment.use_bank:
         evm_loader.send_sol(bank_account, user.solana_account.pubkey(), lamports)

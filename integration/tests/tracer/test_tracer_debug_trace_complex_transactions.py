@@ -477,3 +477,34 @@ class TestDebugTraceComplexTransactions:
             receipt["transactionHash"].hex(), tracer_type="callTracer", with_log=True
         )
         assert self.tracer_validator.check_call_tracer_type(resp, tx_data, error_message="execution reverted")
+
+    def test_cancel_during_iterative_transaction(self, canceled_iterative_tx_with_hash_receipt, json_rpc_client):
+        neon_tx_receipt = json_rpc_client.get_neon_trx_receipt(
+            canceled_iterative_tx_with_hash_receipt["transactionHash"]
+        )
+        assert (
+            neon_tx_receipt["result"]["solanaTransactions"][-1]["solanaInstructions"][0]["neonLogs"][0]["neonEventType"]
+            == "Cancel"
+        )
+
+        # TODO NDEV-3772
+        # tx_data = self.web3_client.get_transaction_by_hash(
+        #     canceled_iterative_tx_with_hash_receipt["transactionHash"].hex()
+        # )
+        # trace_call_resp = self.tracer_api.debug_trace_call(tx_data)
+        # assert self.tracer_validator.check_tracer_struct_log(trace_call_resp, wait_error=True)
+
+        dtt_resp = self.tracer_api.debug_trace_transaction(
+            canceled_iterative_tx_with_hash_receipt["transactionHash"].hex()
+        )
+        assert dtt_resp["result"]["failed"], f'Expected failed to be True, got {dtt_resp["result"]["failed"]}'
+        assert (
+            len(dtt_resp["result"]["structLogs"]) == 0
+        ), f'Expected empty structLogs, got {dtt_resp["result"]["structLogs"]}'
+
+        call_tracer_resp = self.tracer_api.debug_trace_transaction(
+            canceled_iterative_tx_with_hash_receipt["transactionHash"].hex(), tracer_type="callTracer", with_log=True
+        )
+        assert call_tracer_resp["result"]["from"].lower() == "0x0000000000000000000000000000000000000000"
+        assert call_tracer_resp["result"]["input"].lower() == "0x"
+        assert call_tracer_resp["result"]["type"] == "STOP"

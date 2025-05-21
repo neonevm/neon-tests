@@ -579,9 +579,10 @@ def run(
     if name in {"services", "compiler_compatibility", "evm", "basic"} and numprocesses:
         command += f" --numprocesses {numprocesses}"
 
-    if name == "ui" and ui_item != "all":
-        command += f"/test_{ui_item}.py"
-        if name == "ui" and ui_item == "faucet":
+    if name == "ui":
+        if ui_item == "all":
+            command += "ui/tests/"
+        else:
             command += f"ui/tests/test_{ui_item}.py"
 
     if name == "oz":

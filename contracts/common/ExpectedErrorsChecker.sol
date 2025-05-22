@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
+
 contract A {
     int a = 0;
     uint public M;
@@ -16,14 +17,6 @@ contract A {
 
         for (uint i = 0; i < 5; i++) {
             text_array[i] = text;
-        }
-    }
-
-    function iterativeWithCancel(uint N) public {
-        for (uint i = 1; i <= N; i++) {
-            if (i == N / 2) {
-                method1();
-            }
         }
     }
 

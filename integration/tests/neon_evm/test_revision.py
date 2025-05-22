@@ -17,7 +17,7 @@ from ..basic.helpers.assert_message import ErrorMessage
 
 class TestAccountRevision:
 
-    @pytest.fixture(scope="function")
+    @pytest.fixture(scope="class")
     def revision_contract(
         self, request, evm_loader, operator_keypair, sender_with_tokens, neon_api_client, treasury_pool
     ):
@@ -31,7 +31,7 @@ class TestAccountRevision:
             version="0.8.12",
         )
 
-    @pytest.fixture(scope="function")
+    @pytest.fixture(scope="class")
     def revision_contract_caller(
         self,
         request,

@@ -11,8 +11,10 @@ from typing import Optional, Dict, Generator
 import pytest
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
+from _pytest.logging import LoggingPlugin
 from _pytest.nodes import Item
 from _pytest.runner import runtestprotocol
+from allure_commons.model2 import TestResult, StatusDetails
 from solana.rpc.commitment import Confirmed
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
@@ -24,6 +26,7 @@ from utils.consts import LAMPORT_PER_SOL, EnvName, TEST_GROUPS
 from utils.error_log import error_log
 from utils.evm_loader import EvmLoader
 from utils.faucet import Faucet
+from utils.logger import RedactingColoredLevelFormatter, redact_string
 from utils.neon_user import NeonUser
 from utils.solana_client import SolanaClient
 from utils.types import TestGroup, TreasuryPool
@@ -119,7 +122,33 @@ def pytest_runtest_protocol(item: Item, nextitem):
     return True
 
 
+@pytest.hookimpl(hookwrapper=True, tryfirst=True)
+def pytest_runtest_makereport(item, call):
+    yield
+
+    # masks secrets in Allure exception logs
+    if call.excinfo:
+        allure_listener = item.config.pluginmanager.get_plugin("allure_listener")
+        uuid = allure_listener._cache.get(item.nodeid)
+        test_result: TestResult = allure_listener.allure_logger.get_test(uuid)
+        status_details: StatusDetails = test_result.statusDetails
+
+        if status_details:
+            status_details.message = redact_string(status_details.message)
+            status_details.trace = redact_string(status_details.trace)
+
+
+@pytest.hookimpl(trylast=True)  # allows pytest to initialize logging-plugin first
 def pytest_configure(config: Config):
+    # configure pytest logging - masks secrets in allure attachments
+    logging_plugin: LoggingPlugin = config.pluginmanager.get_plugin("logging-plugin")
+    terminal_writer = logging_plugin.formatter._terminalwriter
+    pytest_redacting_formatter = RedactingColoredLevelFormatter(terminal_writer)
+    logging_plugin.formatter = pytest_redacting_formatter
+    logging_plugin.caplog_handler.formatter = pytest_redacting_formatter
+    logging_plugin.log_cli_handler.formatter = pytest_redacting_formatter
+    logging_plugin.report_handler.formatter = pytest_redacting_formatter
+
     # redirect print to stderr for xdist-spawned processes because otherwise print statements get lost
     if "PYTEST_XDIST_WORKER" in os.environ:
         original_print = builtins.print

@@ -21,7 +21,7 @@ from ..basic.helpers.assert_message import ErrorMessage
 
 class TestAccountRevision:
 
-    @pytest.fixture(scope="function")
+    @pytest.fixture(scope="class")
     def revision_contract(
         self, request, evm_loader, operator_keypair, sender_with_tokens, neon_api_client, treasury_pool
     ):
@@ -35,7 +35,7 @@ class TestAccountRevision:
             version="0.8.12",
         )
 
-    @pytest.fixture(scope="function")
+    @pytest.fixture(scope="class")
     def revision_contract_caller(
         self,
         request,
@@ -927,7 +927,6 @@ class TestAccountRevision:
         assert balance_before == balance_after
         assert revision_before == revision_after
 
-    @pytest.mark.skip(reason="flaky test")
     def test_2_users_call_one_contract_with_nested_call(
         self,
         user_account,

@@ -35,6 +35,11 @@ contract Common {
         totalReceived += msg.value;
         text = _text;
     }
+
+    function getTextAndReceiveValue() public payable returns (string memory) {
+        totalReceived += msg.value;
+        return text;
+    }
 }
 
 contract CommonCaller {

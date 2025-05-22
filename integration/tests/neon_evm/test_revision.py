@@ -903,7 +903,6 @@ class TestAccountRevision:
         assert balance_before == balance_after
         assert revision_before == revision_after
 
-    @pytest.mark.skip(reason="flaky test")
     def test_2_users_call_one_contract_with_nested_call(
         self,
         user_account,

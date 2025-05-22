@@ -191,3 +191,8 @@ class TracerClient:
     def get_neon_revision(self, block: int):
         response = self.tracer_api.send_rpc(method="get_neon_revision", params=block)
         return response
+
+    @allure.step("send rpc trace_transaction")
+    def trace_transaction(self, tx_hash: str):
+        response = self.send_rpc_and_wait_response(method_name="trace_transaction", params=[tx_hash])
+        return response

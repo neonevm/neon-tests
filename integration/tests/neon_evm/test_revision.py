@@ -32,17 +32,31 @@ class TestAccountRevision:
         )
 
     @pytest.fixture(scope="function")
+    def revision_for_caller_contract(
+        self, request, evm_loader, operator_keypair, sender_with_tokens, neon_api_client, treasury_pool
+    ):
+        return evm_loader.deploy_contract(
+            operator_keypair,
+            sender_with_tokens,
+            "common/Revision.sol",
+            neon_api_client,
+            treasury_pool,
+            contract_name="RevisionChangerForCaller",
+            version="0.8.12",
+        )
+
+    @pytest.fixture(scope="function")
     def revision_contract_caller(
         self,
         request,
-        revision_contract,
+        revision_for_caller_contract,
         evm_loader,
         operator_keypair,
         sender_with_tokens,
         neon_api_client,
         treasury_pool,
     ):
-        constructor_args = eth_abi.encode(["address"], [revision_contract.eth_address.hex()])
+        constructor_args = eth_abi.encode(["address"], [revision_for_caller_contract.eth_address.hex()])
         return evm_loader.deploy_contract(
             operator_keypair,
             sender_with_tokens,
@@ -903,7 +917,6 @@ class TestAccountRevision:
         assert balance_before == balance_after
         assert revision_before == revision_after
 
-    @pytest.mark.skip(reason="flaky test")
     def test_2_users_call_one_contract_with_nested_call(
         self,
         user_account,
@@ -913,12 +926,12 @@ class TestAccountRevision:
         new_holder_acc,
         holder_acc,
         neon_api_client,
-        revision_contract,
+        revision_for_caller_contract,
         revision_contract_caller,
         session_user,
         sol_client,
     ):
-        contract_revision_before = evm_loader.get_contract_account_revision(revision_contract.solana_address)
+        contract_revision_before = evm_loader.get_contract_account_revision(revision_for_caller_contract.solana_address)
         contract_revision_caller_before = evm_loader.get_contract_account_revision(
             revision_contract_caller.solana_address
         )
@@ -929,7 +942,7 @@ class TestAccountRevision:
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         additional_accounts = [
             session_user.balance_account_address,
-            revision_contract.solana_address,
+            revision_for_caller_contract.solana_address,
             revision_contract_caller.solana_address,
         ]
 
@@ -992,7 +1005,7 @@ class TestAccountRevision:
         )
         check_transaction_logs_have_text(solana_client=sol_client, trx=resp1, text="exit_status=0x11")
 
-        contract_revision_after = evm_loader.get_contract_account_revision(revision_contract.solana_address)
+        contract_revision_after = evm_loader.get_contract_account_revision(revision_for_caller_contract.solana_address)
         contract_revision_caller_after = evm_loader.get_contract_account_revision(
             revision_contract_caller.solana_address
         )

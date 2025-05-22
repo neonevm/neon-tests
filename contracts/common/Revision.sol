@@ -6,7 +6,39 @@ contract RevisionChanger {
     bytes32[64] public b;
     uint256 public number_outer_contract_scope = 2;
 
-    function getVarB() public returns (bytes32[64] memory) {
+    function powNumberInnerAndRollback(uint256 n) public {
+        require(n > 0, "Exponent should be > 0");
+
+        uint original = number_inner_contract_scope;
+        uint computedValue = 1;
+
+        for (uint i = 0; i < n; i++) {
+            computedValue *= original;
+            number_inner_contract_scope = computedValue;
+        }
+        number_inner_contract_scope = original;
+    }
+
+    function powNumberOuterAndRollback(uint256 n) public {
+        require(n > 0, "Exponent should be > 0");
+
+        uint original = number_outer_contract_scope;
+        uint computedValue = 1;
+
+        for (uint i = 0; i < n; i++) {
+            computedValue *= original;
+            number_outer_contract_scope = computedValue;
+        }
+    }
+
+}
+
+contract RevisionChangerForCaller {
+    uint256 public number_inner_contract_scope = 1;
+    bytes32[64] public b;
+    uint256 public number_outer_contract_scope = 2;
+
+    function getVarB() public view returns (bytes32[64] memory) {
         return b;
     }
 
@@ -43,9 +75,9 @@ contract RevisionChanger {
 }
 
 contract RevisionChangerCaller {
-    RevisionChanger rch;
-    constructor(address revisionChangerAddress) {
-        rch = RevisionChanger(revisionChangerAddress);
+    RevisionChangerForCaller rch;
+    constructor(address revisionChangerForCallerAddress) {
+        rch = RevisionChangerForCaller(revisionChangerForCallerAddress);
     }
 
     function callRevisionChangerMethods(uint256 n) public {
@@ -57,13 +89,13 @@ contract RevisionChangerCaller {
 
     // we do not change rch.b value here
     // we need to have a func with the same signature as in the RevisionChanger contract
-    function changeGlobalVarB(uint256 n) public {
+    function changeGlobalVarB(uint256 n) public view {
         bytes32[64] memory b = rch.getVarB();
         b[0] = bytes32(abi.encodePacked(n+n));
         require(false, "Wrong method taken from caller contract");
     }
 
-    function checkGlobalVarBChanged(uint256 n) public {
+    function checkGlobalVarBChanged(uint256 n) public view {
         bytes32[64] memory b = rch.getVarB();
         for (uint i = 0; i < 64; i++) {
             require(

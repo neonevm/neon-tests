@@ -3,7 +3,7 @@ pragma abicoder v2;
 
 import {ICallSolana} from "../external/neon-contracts/contracts/precompiles/ICallSolana.sol";
 
-contract RevisionRevert {
+contract RevisionChangerWithSolanaCall {
     ICallSolana constant _callSolana =
         ICallSolana(0xFF00000000000000000000000000000000000006);
 

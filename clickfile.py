@@ -580,7 +580,7 @@ def run(
         command += f" --numprocesses {numprocesses}"
 
     if name == "ui" and ui_item == "faucet":
-        command += f"../ui/tests/test_{ui_item}.py"
+        command += f"/test_{ui_item}.py"
         # command += f"website_tests/test_{ui_item}.py"
         # if ui_item == "faucet":
         #     command += f"../ui/tests/test_{ui_item}.py"

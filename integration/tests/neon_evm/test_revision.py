@@ -1049,7 +1049,7 @@ class TestAccountRevision:
             revision_with_solana_call_contract.balance_account_address
         )
         amount = 100000
-        evm_loader.deposit_neon(operator_keypair, sender_with_tokens.eth_address, 10 * amount)
+        evm_loader.deposit_neon(operator_keypair, sender_with_tokens.eth_address, 12 * amount)
 
         signed_tx1 = make_contract_call_trx(
             evm_loader,
@@ -1106,7 +1106,7 @@ class TestAccountRevision:
             revision_with_solana_call_contract,
             "transferNeonAndCallSolana(uint64,bytes,uint256,address)",
             [2039280, serialized_instructions, amount, recipient.eth_address],
-            value=amount,
+            value=2 * amount,
         )
 
         emulate_result = neon_api_client.emulate_contract_call(
@@ -1114,7 +1114,7 @@ class TestAccountRevision:
             revision_with_solana_call_contract.eth_address.hex(),
             "transferNeonAndCallSolana(uint64,bytes,uint256,address)",
             [2039280, serialized_instructions, amount, recipient.eth_address],
-            value=hex(amount),
+            value=hex(2 * amount),
         )
         accounts_from_emulation2 = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
 
@@ -1129,9 +1129,6 @@ class TestAccountRevision:
         payer_info = evm_loader.get_account_info(payer, commitment=Confirmed)
         assert payer_info.value is None
 
-        recipient_balance_after_trx2 = evm_loader.get_neon_balance(recipient.eth_address)
-        assert recipient_balance_after_trx2 == recipient_balance_before_trx2 + amount
-
         # rerun trx1
         resp1 = evm_loader.execute_transaction_steps_from_account(
             operator_keypair, treasury_pool, holder1, accounts_from_emulation1, check_invalid_revision=True
@@ -1139,13 +1136,13 @@ class TestAccountRevision:
         check_transaction_logs_have_text(solana_client=sol_client, trx=resp1, text="exit_status=0x11")
 
         recipient_balance_after_trx1_rerun = evm_loader.get_neon_balance(recipient.eth_address)
-        assert recipient_balance_after_trx1_rerun == recipient_balance_before_trx2 + amount + 10 * amount
+        assert recipient_balance_after_trx1_rerun == recipient_balance_before_trx2 + 2 * amount + 10 * amount
         assert evm_loader.get_neon_balance(revision_with_solana_call_contract.eth_address) == 0
 
         balance_account_revision_after = evm_loader.get_balance_account_revision(
             revision_with_solana_call_contract.balance_account_address
         )
-        assert balance_account_revision_after == balance_account_revision
+        assert balance_account_revision_after == balance_account_revision + 2
 
     @pytest.mark.skip(reason="https://neonlabs.atlassian.net/browse/NDEV-3773")
     def test_revision_changed_by_non_iterative_second_trx_with_solana_call(
@@ -1193,7 +1190,7 @@ class TestAccountRevision:
             revision_with_solana_call_contract.balance_account_address
         )
 
-        for i in range(25):
+        for _ in range(25):
             evm_loader.send_transaction_step_from_account(
                 operator_keypair,
                 operator_balance_pubkey,

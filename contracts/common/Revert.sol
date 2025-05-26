@@ -1,4 +1,4 @@
-pragma solidity >=0.8.10 <0.9.0;
+pragma solidity 0.8.28;
 
 error NumberTooHigh(uint256 from, uint256 number);
 

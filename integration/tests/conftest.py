@@ -446,7 +446,7 @@ def storage_contract_with_deploy_tx(web3_client, accounts) -> tp.Generator[tp.Tu
 def revert_contract(web3_client, accounts) -> tp.Generator[Contract, None, None]:
     contract, _ = web3_client.deploy_and_get_contract(
         contract="common/Revert",
-        version="0.8.10",
+        version="0.8.28",
         contract_name="TrivialRevert",
         account=accounts[0],
     )
@@ -457,7 +457,7 @@ def revert_contract(web3_client, accounts) -> tp.Generator[Contract, None, None]
 def revert_contract_caller(web3_client, accounts, revert_contract) -> tp.Generator[Contract, None, None]:
     contract, _ = web3_client.deploy_and_get_contract(
         contract="common/Revert",
-        version="0.8.10",
+        version="0.8.28",
         contract_name="Caller",
         account=accounts[0],
         constructor_args=[revert_contract.address],

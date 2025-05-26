@@ -82,7 +82,7 @@ class TestContractReverting:
         sender_account = self.accounts[0]
         contract, _ = self.web3_client.deploy_and_get_contract(
             contract="common/Revert",
-            version="0.8.10",
+            version="0.8.28",
             contract_name="Caller",
             account=sender_account,
             constructor_args=[revert_contract.address],

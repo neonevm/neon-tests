@@ -92,7 +92,7 @@ def second_session_user(evm_loader, operator_keypair) -> Caller:
 @pytest.fixture(scope="session")
 def sender_with_tokens(evm_loader: EvmLoader, operator_keypair: Keypair) -> Caller:
     user = evm_loader.make_new_user(operator_keypair)
-    evm_loader.deposit_neon(operator_keypair, user.eth_address, 100000)
+    evm_loader.deposit_neon(operator_keypair, user.eth_address, 10000000)
     return user
 
 

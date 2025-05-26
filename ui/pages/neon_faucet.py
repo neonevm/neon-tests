@@ -29,6 +29,13 @@ class NeonTestAirdropsPage(BasePage):
         self.page.query_selector("//span[text()='Choose Token']").click()
         self.page.wait_for_selector(f"//div[@class='text-base' and text()='{token}']").click()
 
+    def choose_non_existing_token(self, token: str) -> None:
+        list_of_tokens = "//div[contains(@class,'overflow-y-auto')]/div"
+        self.page.query_selector("//span[text()='Choose Token']").click()
+        self.page.wait_for_selector("//input[contains(@placeholder,'Search token...')]").type(token)
+        tokens = self.page.query_selector_all(list_of_tokens)
+        assert len(tokens) == 0, f"Expected no tokens, but found {len(tokens)}"
+
     def _set_amount(self, amount: tp.Union[int, str]) -> None:
         self.page.query_selector("//input[@title='Token Amount']").fill(str(amount))
 

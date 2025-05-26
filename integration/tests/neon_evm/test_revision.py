@@ -1048,8 +1048,7 @@ class TestAccountRevision:
         balance_account_revision = evm_loader.get_balance_account_revision(
             revision_with_solana_call_contract.balance_account_address
         )
-        amount = 100000
-        evm_loader.deposit_neon(operator_keypair, sender_with_tokens.eth_address, 12 * amount)
+        amount = 10000
 
         signed_tx1 = make_contract_call_trx(
             evm_loader,
@@ -1163,9 +1162,8 @@ class TestAccountRevision:
         holder2 = new_holder_acc
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         recipient = session_user
-        amount1 = 100000
+        amount1 = 10000
         amount2 = amount1 // 2
-        evm_loader.deposit_neon(operator_keypair, sender_with_tokens.eth_address, 10 * amount1 + 2 * amount2)
 
         signed_tx1 = make_contract_call_trx(
             evm_loader,

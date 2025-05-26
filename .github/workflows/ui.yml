@@ -66,6 +66,12 @@ jobs:
           "
           docker exec -i ${{ env.CONTAINER_NAME }} bash -c "$CMD"
 
+      - name: "Run Playwright UI tests"
+        run: |
+          docker exec -i ${{ env.CONTAINER_NAME }} \
+            /bin/bash -c "export DEVNET_FAUCET_URL=${{ env.FAUCET_URL }} && export DEVNET_SOLANA_URL=${{ env.DEVNET_SOLANA_URL }} && \
+            xvfb-run python3 ./clickfile.py run ui --network=${{ env.NETWORK }} --ui-item=faucet"
+
       - name: Run tests
         id: run-tests
         run: |
@@ -80,12 +86,6 @@ jobs:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           tests_name: ui
-
-      - name: "Run Playwright UI tests"
-        run: |
-          docker exec -i ${{ env.CONTAINER_NAME }} \
-            /bin/bash -c "export DEVNET_FAUCET_URL=${{ env.FAUCET_URL }} && export DEVNET_SOLANA_URL=${{ env.DEVNET_SOLANA_URL }} && \
-            xvfb-run python3 ./clickfile.py run ui --network=${{ env.NETWORK }} --ui-item=faucet"
 
       - name: Remove docker container
         if: always()

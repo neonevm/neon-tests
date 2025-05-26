@@ -137,6 +137,11 @@ class MetaMaskAccountsPage(BasePage):
         self.switch_assets()
         return self._get_balance(self.active_account, libs.Tokens.usdc.name)
 
+    @property
+    def wneon_balance(self) -> float:
+        self.switch_assets()
+        return self._get_balance(self.active_account, libs.Tokens.wneon.name)
+
     @allure.step("Get balance in the wallet")
     def get_balance(self, token: Token) -> float:
         balance = float(getattr(self, f"{token.name.lower()}_balance"))

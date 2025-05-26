@@ -29,6 +29,10 @@ class NeonTestAirdropsPage(BasePage):
         self.page.query_selector("//span[text()='Choose Token']").click()
         self.page.wait_for_selector(f"//div[@class='text-base' and text()='{token}']").click()
 
+    def choose_spl_token(self, token: str) -> None:
+        self.page.query_selector("//span[text()='Choose Token']").click()
+        self.page.wait_for_selector(f"//div[@class='text-base' and text()='{token}']").click()
+
     def choose_non_existing_token(self, token: str) -> None:
         list_of_tokens = "//div[contains(@class,'overflow-y-auto')]/div"
         self.page.query_selector("//span[text()='Choose Token']").click()

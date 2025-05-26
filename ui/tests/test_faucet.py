@@ -86,7 +86,6 @@ class TestFaucet:
         neonpass_page.wait_for_load_state()
         assert NEONPASS_URL in neonpass_page.url
 
-    # todo need to use browser without installed MM wallet
     @pytest.mark.no_extension
     def test_open_faucet_without_installed_wallets(self, context):
         page = context.new_page()
@@ -122,8 +121,8 @@ class TestMetaMaskPipeLIne:
         yield neon_faucet.NeonTestAirdropsPage(page)
         page.close()
 
-    # todo need to use browser without installed MM wallet
-    def search_not_existing_token(
+    @pytest.mark.parametrize("tokens", [libs.Tokens.neon.name])
+    def test_search_not_existing_token(
         self,
         metamask_page: metamask.MetaMaskAccountsPage,
         neon_faucet_page: neon_faucet.NeonTestAirdropsPage,
@@ -132,7 +131,7 @@ class TestMetaMaskPipeLIne:
         """Checks Neon faucet pipeline"""
         wait_condition(lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > 0, timeout_sec=120, delay=2)
         neon_faucet_page.connect_wallet()
-        neon_faucet_page._choose_token("BTC")
+        neon_faucet_page.choose_non_existing_token("BTC")
 
     @pytest.mark.parametrize("tokens", [libs.Tokens.neon.name, libs.Tokens.usdt.name])
     def test_get_tokens_from_faucet(
@@ -146,6 +145,33 @@ class TestMetaMaskPipeLIne:
         balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
         neon_faucet_page.connect_wallet()
         neon_faucet_page.send_tokens(tokens, 10)
+        # wait new balance
+        wait_condition(
+            lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > balance_before_airdrop_test,
+            timeout_sec=120,
+            delay=2,
+        )
+        libs.try_until(
+            lambda: balance_before_airdrop_test + 10 == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
+            timeout=90,
+            interval=5,
+            error_msg=f"{tokens} balance was not changed after airdrop",
+        )
+        # Wait next airdrop was enabled
+        libs.try_until(lambda: neon_faucet_page.is_airdrop_enabled, timeout=90, interval=5)
+
+    @pytest.mark.parametrize("tokens", [libs.Tokens.wneon.name])
+    def test_get_spl_token_from_faucet(
+        self,
+        metamask_page: metamask.MetaMaskAccountsPage,
+        neon_faucet_page: neon_faucet.NeonTestAirdropsPage,
+        tokens: str,
+    ) -> None:
+        """Checks Neon faucet pipeline"""
+        wait_condition(lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > 0, timeout_sec=120, delay=2)
+        balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
+        neon_faucet_page.connect_wallet()
+        neon_faucet_page.send_tokens("wNEON", 10)
         # wait new balance
         wait_condition(
             lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > balance_before_airdrop_test,

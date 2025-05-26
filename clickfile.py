@@ -562,7 +562,7 @@ def run(
         "services": "py.test integration/tests/services",
         "compiler_compatibility": "py.test integration/tests/compiler_compatibility --dist loadscope",
         "evm": "py.test integration/tests/neon_evm",
-        "ui": "pytest ui/tests/website_tests",
+        "ui": "pytest ui/tests/",
         "oz": "",  # the command is defined in run_openzeppelin_tests()
     }
 
@@ -579,11 +579,10 @@ def run(
     if name in {"services", "compiler_compatibility", "evm", "basic"} and numprocesses:
         command += f" --numprocesses {numprocesses}"
 
-    if name == "ui":
-        if ui_item == "all":
-            command += "ui/tests/"
-        else:
-            command += f"ui/tests/test_{ui_item}.py"
+    if name == "ui" and ui_item != "all":
+        command += f"website_tests/test_{ui_item}.py"
+        if ui_item == "faucet":
+            command += f"../ui/tests/test_{ui_item}.py"
 
     if name == "oz":
         if not keep_error_log:

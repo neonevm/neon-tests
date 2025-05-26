@@ -8,11 +8,14 @@ import sys
 from dataclasses import dataclass
 from typing import Optional, Dict, Generator
 
+import base58
 import pytest
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
+from _pytest.logging import LoggingPlugin
 from _pytest.nodes import Item
 from _pytest.runner import runtestprotocol
+from allure_commons.model2 import TestResult, StatusDetails
 from solana.rpc.commitment import Confirmed
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
@@ -24,6 +27,7 @@ from utils.consts import LAMPORT_PER_SOL, EnvName, TEST_GROUPS
 from utils.error_log import error_log
 from utils.evm_loader import EvmLoader
 from utils.faucet import Faucet
+from utils.logger import RedactingColoredLevelFormatter, redact_string
 from utils.neon_user import NeonUser
 from utils.solana_client import SolanaClient
 from utils.types import TestGroup, TreasuryPool
@@ -119,7 +123,33 @@ def pytest_runtest_protocol(item: Item, nextitem):
     return True
 
 
+@pytest.hookimpl(hookwrapper=True, tryfirst=True)
+def pytest_runtest_makereport(item, call):
+    yield
+
+    # masks secrets in Allure exception logs
+    if call.excinfo:
+        allure_listener = item.config.pluginmanager.get_plugin("allure_listener")
+        uuid = allure_listener._cache.get(item.nodeid)
+        test_result: TestResult = allure_listener.allure_logger.get_test(uuid)
+        status_details: StatusDetails = test_result.statusDetails
+
+        if status_details:
+            status_details.message = redact_string(status_details.message)
+            status_details.trace = redact_string(status_details.trace)
+
+
+@pytest.hookimpl(trylast=True)  # allows pytest to initialize logging-plugin first
 def pytest_configure(config: Config):
+    # configure pytest logging - masks secrets in allure attachments
+    logging_plugin: LoggingPlugin = config.pluginmanager.get_plugin("logging-plugin")
+    terminal_writer = logging_plugin.formatter._terminalwriter
+    pytest_redacting_formatter = RedactingColoredLevelFormatter(terminal_writer)
+    logging_plugin.formatter = pytest_redacting_formatter
+    logging_plugin.caplog_handler.formatter = pytest_redacting_formatter
+    logging_plugin.log_cli_handler.formatter = pytest_redacting_formatter
+    logging_plugin.report_handler.formatter = pytest_redacting_formatter
+
     # redirect print to stderr for xdist-spawned processes because otherwise print statements get lost
     if "PYTEST_XDIST_WORKER" in os.environ:
         original_print = builtins.print
@@ -254,6 +284,31 @@ def neon_user(
     sol_client_session: SolanaClient,
 ) -> Generator[NeonUser, None, None]:
     user = NeonUser(evm_loader_id=environment.evm_loader)
+    lamports = 3 * LAMPORT_PER_SOL
+
+    if environment.use_bank:
+        evm_loader.send_sol(bank_account, user.solana_account.pubkey(), lamports)
+    else:
+        evm_loader.request_airdrop(
+            pubkey=user.solana_account.pubkey(),
+            lamports=lamports,
+            commitment=Confirmed,
+        )
+
+    yield user
+
+    if environment.use_bank:
+        sol_client_session.drain_sol(from_=user.solana_account, to=bank_account.pubkey())
+
+
+@pytest.fixture(scope="session")
+def neon_user_for_session(
+    evm_loader: EvmLoader,
+    bank_account,
+    environment: EnvironmentConfig,
+    sol_client_session: SolanaClient,
+) -> Generator[NeonUser, None, None]:
+    user = NeonUser(evm_loader_id=environment.evm_loader)
     lamports = 2 * LAMPORT_PER_SOL
 
     if environment.use_bank:
@@ -278,7 +333,22 @@ def neon_user_no_sols(pytestconfig, bank_account, faucet, environment) -> NeonUs
 
 
 @pytest.fixture(scope="session")
-def treasury_pool(evm_loader: EvmLoader, pytestconfig, index_of_process) -> TreasuryPool:
+def bank_account(pytestconfig: Config) -> Generator[Keypair | None, None, None]:
+    account = None
+    if pytestconfig.environment.use_bank:
+        if pytestconfig.getoption("--network") == "devnet":
+            private_key = os.environ.get("BANK_PRIVATE_KEY")
+        elif pytestconfig.getoption("--network") == "mainnet":
+            private_key = os.environ.get("BANK_PRIVATE_KEY_MAINNET")
+        else:
+            raise ValueError("set BANK_PRIVATE_KEY or BANK_PRIVATE_KEY_MAINNET env variable")
+        key = base58.b58decode(private_key)
+        account = Keypair.from_bytes(key)
+    yield account
+
+
+@pytest.fixture(scope="session")
+def treasury_pool(evm_loader: EvmLoader, pytestconfig, index_of_process, bank_account) -> TreasuryPool:
     index = index_of_process
     evm_loader.create_treasury_pool_address(index)
     if pytestconfig.getoption("--network") == "mainnet":
@@ -290,6 +360,10 @@ def treasury_pool(evm_loader: EvmLoader, pytestconfig, index_of_process) -> Trea
     if pytestconfig.getoption("--network") not in ["mainnet", "devnet"]:
         if balance < 5 * LAMPORT_PER_SOL:
             evm_loader.request_airdrop(address, 5 * LAMPORT_PER_SOL, commitment=Confirmed)
+    else:
+        if balance < LAMPORT_PER_SOL:
+            amount = LAMPORT_PER_SOL - balance
+            evm_loader.send_sol(bank_account, address, amount)
     return TreasuryPool(index, address, index_buf)
 
 

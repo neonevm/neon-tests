@@ -1,3 +1,4 @@
+import json
 import random
 
 import allure
@@ -7,10 +8,10 @@ import web3
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
-from utils.solana_client import SolanaClient
-from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts
 from utils.apiclient import wait_finalized_block
+from utils.solana_client import SolanaClient
+from utils.web3client import NeonChainWeb3Client
 
 
 @allure.feature("Ethereum compatibility")
@@ -110,6 +111,9 @@ class TestNonce:
         transaction = self.web3_client.make_raw_tx(sender_account, recipient_account, nonce=nonce, estimate_gas=True)
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         response_trx1 = json_rpc_client.send_rpc("eth_sendRawTransaction", [signed_tx.raw_transaction.hex()])
+        allure.attach(
+            json.dumps(response_trx1, indent=2), name="response_trx1", attachment_type=allure.attachment_type.JSON
+        )
         receipt_trx1 = json_rpc_client.send_rpc(method="eth_getTransactionReceipt", params=[response_trx1["result"]])
         assert receipt_trx1["result"] is None, "Transaction shouldn't be accepted"
 
@@ -172,6 +176,7 @@ class TestNonce:
         signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
         params = [signed_tx.raw_transaction.hex()]
         response = json_rpc_client.send_rpc("eth_sendRawTransaction", params)
+        allure.attach(json.dumps(response, indent=2), name="response", attachment_type=allure.attachment_type.JSON)
         receipt = self.web3_client.wait_for_transaction_receipt(response["result"])
         block_num = receipt["blockNumber"]
         wait_finalized_block(json_rpc_client, block_num)

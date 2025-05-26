@@ -771,3 +771,35 @@ class TestSolanaInteroperability:
 
         balance_after = self.web3_client.get_balance(call_solana_caller.address)
         assert balance_after == balance_before + 10
+
+    @pytest.mark.skip(reason="https://neonlabs.atlassian.net/browse/NDEV-3773")
+    def test_call_solana_from_contract_constructor(
+        self, counter_resource_address, call_solana_caller, web3_client, get_counter_value
+    ):
+        account = self.accounts[0]
+        lamports = 0
+        store_number = random.randint(1, 1000000)
+
+        instruction = Instruction(
+            program_id=COUNTER_ID,
+            accounts=[
+                AccountMeta(Pubkey(counter_resource_address), is_signer=False, is_writable=True),
+            ],
+            data=bytes([0x1]),
+        )
+        serialized_instruction = serialize_instruction(COUNTER_ID, instruction)
+
+        contract, contract_deploy_tx = web3_client.deploy_and_get_contract(
+            "precompiled/CallSolanaInConstructor.sol",
+            "0.8.28",
+            contract_name="CallSolanaInConstructor",
+            constructor_args=[store_number, lamports, serialized_instruction],
+            account=account,
+        )
+        assert contract_deploy_tx["status"] == 1
+
+        store_number_from_constructor = contract.functions.getStoreNumber().call()
+        assert store_number == store_number_from_constructor
+
+        event_logs = call_solana_caller.events.LogBytes().process_receipt(contract_deploy_tx)
+        assert int.from_bytes(event_logs[0].args.value, byteorder="little") == next(get_counter_value)

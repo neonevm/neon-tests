@@ -570,7 +570,7 @@ def run(
     commands = {
         "economy": "py.test integration/tests/economy/test_economics.py",
         "basic": "py.test integration/tests/basic --dist loadgroup",
-        "tracer": "py.test -n 5 integration/tests/tracer",
+        "tracer": "py.test -n 5 integration/tests/tracer --dist loadscope",
         "services": "py.test integration/tests/services",
         "compiler_compatibility": "py.test integration/tests/compiler_compatibility --dist loadscope",
         "evm": "py.test integration/tests/neon_evm",

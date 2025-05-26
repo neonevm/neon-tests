@@ -657,6 +657,24 @@ class Web3Client:
         assert "result" in resp, f"Failed to get pending transactions: {resp}"
         return resp["result"]
 
+    @staticmethod
+    def _pack_preparatory_solana_instructions(trxs: tuple[Instruction, ...]):
+        instructions = []
+        for trx in trxs:
+            instruction = {"programId": str(trx.program_id), "data": base58.b58encode(trx.data).decode("utf-8")}
+            accounts = []
+            for account in trx.accounts:
+                accounts.append(
+                    {
+                        "address": str(account.pubkey),
+                        "isWritable": account.is_writable,
+                        "isSigner": account.is_signer,
+                    }
+                )
+            instruction["accounts"] = accounts
+            instructions.append(instruction)
+        return instructions
+
     @allure.step("Estimate list of scheduled transactions")
     def estimate_scheduled(
         self,
@@ -678,20 +696,7 @@ class Web3Client:
             transactions.append(transaction)
         params = {"scheduledSolanaPayer": str(solana_payer), "transactions": transactions}
         if preparatory_solana_trxs:
-            instructions = []
-            for trx in preparatory_solana_trxs:
-                instruction = {"programId": str(trx.program_id), "data": base58.b58encode(trx.data).decode("utf-8")}
-                accounts = []
-                for account in trx.accounts:
-                    accounts.append(
-                        {
-                            "address": str(account.pubkey),
-                            "isWritable": account.is_writable,
-                            "isSigner": account.is_signer,
-                        }
-                    )
-                instruction["accounts"] = accounts
-                instructions.append(instruction)
+            instructions = self._pack_preparatory_solana_instructions(preparatory_solana_trxs)
             params["preparatorySolanaTransactions"] = [{"instructions": instructions}]
         json = {
             "jsonrpc": "2.0",
@@ -710,13 +715,24 @@ class Web3Client:
             return resp
 
     @allure.step("neon_estimateGas")
-    def neon_estimate_gas(self, raw_tx: dict, show_gas_details: bool = True) -> dict:
+    def neon_estimate_gas(
+        self,
+        raw_tx: dict,
+        preparatory_solana_instructions: tp.Tuple[Instruction, ...] = None,
+        show_gas_details: bool = True,
+    ) -> dict:
+        params = {"showGasDetails": show_gas_details}
+
+        if preparatory_solana_instructions:
+            instructions = self._pack_preparatory_solana_instructions(preparatory_solana_instructions)
+            params["preparatorySolanaTransactions"] = [{"instructions": instructions}]
+
         resp = requests.post(
             self._proxy_url,
             json={
                 "jsonrpc": "2.0",
                 "method": "neon_estimateGas",
-                "params": [raw_tx, {"showGasDetails": show_gas_details}],
+                "params": [raw_tx, params],
                 "id": 0,
             },
         )

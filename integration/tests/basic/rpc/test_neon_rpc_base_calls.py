@@ -2,17 +2,24 @@ import re
 
 import allure
 import pytest
+from solana.transaction import Transaction
 from solders.instruction import Instruction, AccountMeta
 from solders.pubkey import Pubkey
+from solders.token.associated import get_associated_token_address
+from spl.token.constants import TOKEN_PROGRAM_ID
+from spl.token.instructions import create_associated_token_account, approve, ApproveParams
 from web3.contract import Contract
 
 from integration.tests.basic.helpers.errors import Error32602
 from integration.tests.basic.helpers.rpc_checks import assert_fields_are_hex, assert_fields_are_specified_type
 from utils.accounts import EthAccounts
 from utils.consts import COUNTER_ID
+from utils.erc20wrapper import ERC20Wrapper
+from utils.evm_loader import EvmLoader
 from utils.helpers import serialize_instruction
+from utils.neon_user import NeonUser
 from utils.types import TransactionType
-from utils.web3client import NeonChainWeb3Client
+from utils.web3client import NeonChainWeb3Client, Web3Client
 
 
 @allure.feature("JSON-RPC validation")
@@ -209,7 +216,7 @@ class TestNeonRPCBaseCalls:
         )
         assert gas_used_sum == neon_gas_estimate["gasUsed"]
 
-        assert neon_gas_estimate["numEvmSteps"] == 2122
+        assert neon_gas_estimate["numEvmSteps"] == 2117
         assert neon_gas_estimate["numIterations"] == 7
         assert int(neon_gas_estimate["result"], 16) == iterations
         assert neon_gas_estimate["revertAfterSolanaCall"] is False
@@ -270,3 +277,207 @@ class TestNeonRPCBaseCalls:
 
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 0
+
+    def test_neon_estimate_gas_with_preparatory_solana_transactions_positive(
+        self,
+        web3_client_sol: Web3Client,
+        neon_user: NeonUser,
+        erc20_spl_mintable: ERC20Wrapper,
+        evm_loader: EvmLoader,
+        default_cu_price: int,
+    ):
+        amount = 1_000
+        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user.checksum_address, amount)
+
+        neon_user_ata = get_associated_token_address(
+            neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
+        )
+        erc20_spl_mintable_solana_address = Pubkey.from_string(
+            evm_loader.ether2program(erc20_spl_mintable.contract.address)[0]
+        )
+
+        # preparatory Solana Transactions: create ATA and approve
+        trx = Transaction()
+        trx.add(
+            create_associated_token_account(
+                neon_user.solana_account.pubkey(),
+                neon_user.solana_account.pubkey(),
+                erc20_spl_mintable.token_mint_pubkey,
+            )
+        )
+
+        # neon_user allows erc20_spl_mintable contract to spend amount from neon_user_ata
+        trx.add(
+            approve(
+                ApproveParams(
+                    program_id=TOKEN_PROGRAM_ID,
+                    source=neon_user_ata,
+                    delegate=erc20_spl_mintable_solana_address,
+                    owner=neon_user.solana_account.pubkey(),
+                    amount=amount,
+                )
+            )
+        )
+
+        # actual transaction that has to be estimated
+        data = erc20_spl_mintable.contract.encode_abi(
+            abi_element_identifier="transferSolanaFrom",
+            args=[erc20_spl_mintable.owner.address, bytes(neon_user_ata), amount],
+        )
+        raw_tx = self.web3_client.make_raw_tx(
+            from_=neon_user.checksum_address,
+            to=erc20_spl_mintable.address,
+            data=data,
+        )
+
+        neon_gas_estimate = web3_client_sol.neon_estimate_gas(
+            raw_tx=raw_tx,
+            preparatory_solana_instructions=trx.instructions,
+        )["result"]
+
+        assert neon_gas_estimate["exitCode"] == "succeed"
+        assert neon_gas_estimate["externalSolanaCall"] is False
+        assert neon_gas_estimate["gasAddressLookupTableUsed"] == 0
+        assert neon_gas_estimate["gasFinishUsed"] == 0
+
+        gas_used_sum = (
+            neon_gas_estimate["gasAddressLookupTableUsed"]
+            + neon_gas_estimate["gasExecutionUsed"]
+            + neon_gas_estimate["gasFinishUsed"]
+            + neon_gas_estimate["gasSolanaPriorityUsed"]
+            + neon_gas_estimate["gasTransactionSizeUsed"]
+        )
+        assert gas_used_sum == neon_gas_estimate["gasUsed"]
+
+        assert neon_gas_estimate["numEvmSteps"] == 858
+        assert neon_gas_estimate["numIterations"] == 4
+        assert neon_gas_estimate["result"] == "0x0000000000000000000000000000000000000000000000000000000000000001"
+        assert neon_gas_estimate["revertAfterSolanaCall"] is False
+        assert neon_gas_estimate["revertBeforeSolanaCall"] is False
+        assert len(neon_gas_estimate["solanaAccounts"]) == 6
+
+        if default_cu_price is not None:
+            assert neon_gas_estimate["solanaComputeUnitPrice"] == default_cu_price
+
+    def test_neon_estimate_gas_with_preparatory_solana_transactions_invalid_preparatory(
+        self,
+        web3_client_sol: Web3Client,
+        neon_user: NeonUser,
+        erc20_spl_mintable: ERC20Wrapper,
+        evm_loader: EvmLoader,
+        default_cu_price: int,
+    ):
+        wrong_user = NeonUser(evm_loader.loader_id)
+        amount = 1_000
+        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user.checksum_address, amount)
+
+        neon_user_ata = get_associated_token_address(
+            neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
+        )
+        erc20_spl_mintable_solana_address = Pubkey.from_string(
+            evm_loader.ether2program(erc20_spl_mintable.contract.address)[0]
+        )
+
+        # preparatory Solana Transactions: create ATA and approve
+        trx = Transaction()
+        trx.add(
+            create_associated_token_account(
+                neon_user.solana_account.pubkey(),
+                neon_user.solana_account.pubkey(),
+                erc20_spl_mintable.token_mint_pubkey,
+            )
+        )
+
+        # wrong_user allows erc20_spl_mintable contract to spend amount from neon_user_ata
+        trx.add(
+            approve(
+                ApproveParams(
+                    program_id=TOKEN_PROGRAM_ID,
+                    source=neon_user_ata,
+                    delegate=erc20_spl_mintable_solana_address,
+                    owner=wrong_user.solana_account.pubkey(),
+                    amount=amount,
+                )
+            )
+        )
+
+        # actual transaction that has to be estimated
+        data = erc20_spl_mintable.contract.encode_abi(
+            abi_element_identifier="transferSolanaFrom",
+            args=[erc20_spl_mintable.owner.address, bytes(neon_user_ata), amount],
+        )
+        raw_tx = self.web3_client.make_raw_tx(
+            from_=neon_user.checksum_address,
+            to=erc20_spl_mintable.address,
+            data=data,
+        )
+
+        error = web3_client_sol.neon_estimate_gas(
+            raw_tx=raw_tx,
+            preparatory_solana_instructions=trx.instructions,
+        )["error"]
+
+        assert error["code"] == 3
+        assert error["data"]
+        assert "execution reverted" in error["message"].lower()
+
+    def test_neon_estimate_gas_with_preparatory_solana_transactions_invalid_tx(
+        self,
+        web3_client_sol: Web3Client,
+        neon_user: NeonUser,
+        erc20_spl_mintable: ERC20Wrapper,
+        evm_loader: EvmLoader,
+        default_cu_price: int,
+    ):
+        amount = 1_000
+        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user.checksum_address, amount)
+
+        neon_user_ata = get_associated_token_address(
+            neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
+        )
+        erc20_spl_mintable_solana_address = Pubkey.from_string(
+            evm_loader.ether2program(erc20_spl_mintable.contract.address)[0]
+        )
+
+        # preparatory Solana Transactions: create ATA and approve
+        trx = Transaction()
+        trx.add(
+            create_associated_token_account(
+                neon_user.solana_account.pubkey(),
+                neon_user.solana_account.pubkey(),
+                erc20_spl_mintable.token_mint_pubkey,
+            )
+        )
+
+        # neon_user allows erc20_spl_mintable contract to spend amount from neon_user_ata
+        trx.add(
+            approve(
+                ApproveParams(
+                    program_id=TOKEN_PROGRAM_ID,
+                    source=neon_user_ata,
+                    delegate=erc20_spl_mintable_solana_address,
+                    owner=neon_user.solana_account.pubkey(),
+                    amount=amount,
+                )
+            )
+        )
+
+        # actual transaction that has to be estimated - invalid data
+        raw_tx = self.web3_client.make_raw_tx(
+            from_=neon_user.checksum_address,
+            to=erc20_spl_mintable.address,
+            data="invalid",
+        )
+
+        error = web3_client_sol.neon_estimate_gas(
+            raw_tx=raw_tx,
+            preparatory_solana_instructions=trx.instructions,
+        )["error"]
+
+        assert error["code"] == -32602
+        assert error["message"] == "Invalid params"
+
+        errors = error["data"]["errors"]
+        assert len(errors) == 2
+        assert "Value error, non-hexadecimal number" in errors[0], errors[0]
+        assert "Value error, Wrong input type dict" in errors[1], errors[1]

@@ -186,3 +186,14 @@ class TestMetaMaskPipeLIne:
         )
         # Wait next airdrop was enabled
         libs.try_until(lambda: neon_faucet_page.is_airdrop_enabled, timeout=90, interval=5)
+
+    @pytest.mark.parametrize("tokens", [libs.Tokens.neon.name])
+    def test_101_token_request(
+        self,
+        metamask_page: metamask.MetaMaskAccountsPage,
+        neon_faucet_page: neon_faucet.NeonTestAirdropsPage,
+        tokens: str,
+    ) -> None:
+        """Checks Neon faucet pipeline"""
+        neon_faucet_page.connect_wallet()
+        neon_faucet_page.text_too_much_tokens(tokens, 101)

@@ -49,6 +49,12 @@ class NeonTestAirdropsPage(BasePage):
         self.page.wait_for_selector("//div[contains(@class, 'button--light')]").click()
         self.page.wait_for_selector("//h2[text()='Transfer Successful']")
 
+    @allure.step("Text on exceeding the limit is displayed")
+    def text_too_much_tokens(self, token: str, amount: tp.Union[int, str]) -> None:
+        self._choose_token(token)
+        self._set_amount(amount)
+        self.page.wait_for_selector("//div[contains(text(),'Maximum limit for one airdrop is 100 tokens per minute')]")
+
     @allure.step("Click 'Help' button")
     def help_button_click(self) -> None:
         self.page.click("//a[text()='Help']")

@@ -404,7 +404,7 @@ class Web3Client:
         tx_type: TransactionType = TransactionType.LEGACY,
     ):
 
-        contract_path = pathlib.Path.cwd() / "contracts" / "external" / "curve" / "contracts" / "contracts"
+        contract_path = pathlib.Path.cwd() / "contracts" / "curve"
         with open(f"{contract_path}/{contract_name}.json") as f:
             contract_interface = json.load(f)
 
@@ -424,7 +424,7 @@ class Web3Client:
 
     @allure.step("Compile by vyper and deploy")
     def read_vyper_file_and_deploy(self, account, contract_name, constructor_args=None):
-        contract_path = pathlib.Path.cwd() / "contracts" / "external" / "curve" / "contracts" / "contracts"
+        contract_path = pathlib.Path.cwd() / "contracts" / "curve"
         with open(f"{contract_path}/{contract_name}.json") as f:
             contract_interface = json.load(f)
 

@@ -7,7 +7,6 @@ import time
 import typing as tp
 
 import allure
-import base58
 import pytest
 from _pytest.config import Config
 from eth_account.signers.local import LocalAccount
@@ -94,21 +93,6 @@ def operator(environment: EnvironmentConfig, web3_client_session: NeonChainWeb3C
         web3_client_session,
         environment.evm_loader,
     )
-
-
-@pytest.fixture(scope="session")
-def bank_account(pytestconfig: Config) -> tp.Generator[Keypair | None, None, None]:
-    account = None
-    if pytestconfig.environment.use_bank:
-        if pytestconfig.getoption("--network") == "devnet":
-            private_key = os.environ.get("BANK_PRIVATE_KEY")
-        elif pytestconfig.getoption("--network") == "mainnet":
-            private_key = os.environ.get("BANK_PRIVATE_KEY_MAINNET")
-        else:
-            raise ValueError("set BANK_PRIVATE_KEY or BANK_PRIVATE_KEY_MAINNET env variable")
-        key = base58.b58decode(private_key)
-        account = Keypair.from_bytes(key)
-    yield account
 
 
 @pytest.fixture(scope="session")
@@ -467,7 +451,7 @@ def storage_contract_with_deploy_tx(web3_client, accounts) -> tp.Generator[tp.Tu
 def revert_contract(web3_client, accounts) -> tp.Generator[Contract, None, None]:
     contract, _ = web3_client.deploy_and_get_contract(
         contract="common/Revert",
-        version="0.8.10",
+        version="0.8.28",
         contract_name="TrivialRevert",
         account=accounts[0],
     )
@@ -478,7 +462,7 @@ def revert_contract(web3_client, accounts) -> tp.Generator[Contract, None, None]
 def revert_contract_caller(web3_client, accounts, revert_contract) -> tp.Generator[Contract, None, None]:
     contract, _ = web3_client.deploy_and_get_contract(
         contract="common/Revert",
-        version="0.8.10",
+        version="0.8.28",
         contract_name="Caller",
         account=accounts[0],
         constructor_args=[revert_contract.address],

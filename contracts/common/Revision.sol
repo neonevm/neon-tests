@@ -60,7 +60,7 @@ contract RevisionChangerCaller {
     // we need to have a func with the same signature as in the RevisionChanger contract
     function changeGlobalVarB(uint256 n) public view {
         bytes32[64] memory b = rch.getVarB();
-        b[0] = bytes32(abi.encodePacked(n+n));
+        b[0] = bytes32(abi.encodePacked(n + n));
         require(false, "Wrong method taken from caller contract");
     }
 

@@ -8,6 +8,7 @@ import sys
 from dataclasses import dataclass
 from typing import Optional, Dict, Generator
 
+import base58
 import pytest
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
@@ -332,7 +333,22 @@ def neon_user_no_sols(pytestconfig, bank_account, faucet, environment) -> NeonUs
 
 
 @pytest.fixture(scope="session")
-def treasury_pool(evm_loader: EvmLoader, pytestconfig, index_of_process) -> TreasuryPool:
+def bank_account(pytestconfig: Config) -> Generator[Keypair | None, None, None]:
+    account = None
+    if pytestconfig.environment.use_bank:
+        if pytestconfig.getoption("--network") == "devnet":
+            private_key = os.environ.get("BANK_PRIVATE_KEY")
+        elif pytestconfig.getoption("--network") == "mainnet":
+            private_key = os.environ.get("BANK_PRIVATE_KEY_MAINNET")
+        else:
+            raise ValueError("set BANK_PRIVATE_KEY or BANK_PRIVATE_KEY_MAINNET env variable")
+        key = base58.b58decode(private_key)
+        account = Keypair.from_bytes(key)
+    yield account
+
+
+@pytest.fixture(scope="session")
+def treasury_pool(evm_loader: EvmLoader, pytestconfig, index_of_process, bank_account) -> TreasuryPool:
     index = index_of_process
     evm_loader.create_treasury_pool_address(index)
     if pytestconfig.getoption("--network") == "mainnet":
@@ -344,6 +360,10 @@ def treasury_pool(evm_loader: EvmLoader, pytestconfig, index_of_process) -> Trea
     if pytestconfig.getoption("--network") not in ["mainnet", "devnet"]:
         if balance < 5 * LAMPORT_PER_SOL:
             evm_loader.request_airdrop(address, 5 * LAMPORT_PER_SOL, commitment=Confirmed)
+    else:
+        if balance < LAMPORT_PER_SOL:
+            amount = LAMPORT_PER_SOL - balance
+            evm_loader.send_sol(bank_account, address, amount)
     return TreasuryPool(index, address, index_buf)
 
 

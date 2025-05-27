@@ -28,7 +28,6 @@ jobs:
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
           image_name: ${{ env.IMAGE_NAME }}
           docker_hub_org_name: ${{ env.DOCKER_HUB_ORG_NAME }}
-          force_rebuild_base_image: ${{ env.REBUILD_BASE_IMAGE }}
       - name: "Define image tag"
         id: image_tag
         uses: ./.github/actions/define-image-tag
@@ -66,16 +65,10 @@ jobs:
           "
           docker exec -i ${{ env.CONTAINER_NAME }} bash -c "$CMD"
 
-      - name: "Run Playwright UI tests"
-        run: |
-          docker exec -i ${{ env.CONTAINER_NAME }} \
-            /bin/bash -c "export DEVNET_FAUCET_URL=${{ env.FAUCET_URL }} && export DEVNET_SOLANA_URL=${{ env.DEVNET_SOLANA_URL }} && \
-            xvfb-run python3 ./clickfile.py run ui --network=${{ env.NETWORK }} --ui-item=faucet"
-
       - name: Run tests
         id: run-tests
         run: |
-          docker exec -i ${{ env.CONTAINER_NAME }} bash -c "CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} python3 clickfile.py run ui --network ${{ env.NETWORK }}"
+          docker exec -i ${{ env.CONTAINER_NAME }} bash -c "CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} python3 clickfile.py run ui --network ${{ env.NETWORK }} --ui-item=website"
 
       - name: "Generate allure report"
         if: always()

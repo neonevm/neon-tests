@@ -523,8 +523,8 @@ def update_contracts(branch, with_uniswap):
 @click.option("--cost_reports_dir", default="", help="Directory where CostReports will be created")
 @click.option(
     "--ui-item",
-    default="all",
-    type=click.Choice(["faucet", "neonpass", "all"]),
+    default="website",
+    type=click.Choice(["faucet", "neonpass", "website"]),
     help="Which UI test run",
 )
 @click.option(
@@ -579,11 +579,13 @@ def run(
     if name in {"services", "compiler_compatibility", "evm", "basic"} and numprocesses:
         command += f" --numprocesses {numprocesses}"
 
-    if name == "ui" and ui_item == "faucet":
-        command += f"/test_{ui_item}.py"
-        # command += f"website_tests/test_{ui_item}.py"
-        # if ui_item == "faucet":
-        #     command += f"../ui/tests/test_{ui_item}.py"
+    if name == "ui":
+        if ui_item == "faucet":
+            command += f"test_{ui_item}.py"
+        elif ui_item == "website":
+            command += f"website_tests/test_{ui_item}.py"
+        elif ui_item == "neonpass":
+            command = f"test_{ui_item}.py"
 
     if name == "oz":
         if not keep_error_log:

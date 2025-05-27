@@ -23,6 +23,7 @@ from conftest import EnvironmentConfig
 from utils.accounts import EthAccounts
 from utils.apiclient import JsonRPCSession
 from utils.consts import COUNTER_ID, LAMPORT_PER_SOL, MULTITOKEN_MINTS_USDT, REMAPPING_ZEPPELIN
+
 from utils.erc20 import ERC20
 from utils.erc20wrapper import ERC20Wrapper
 from utils.evm_loader import EvmLoader
@@ -98,15 +99,15 @@ def operator(environment: EnvironmentConfig, web3_client_session: NeonChainWeb3C
 @pytest.fixture(scope="session")
 def bank_account(pytestconfig: Config) -> tp.Generator[Keypair | None, None, None]:
     account = None
-    if pytestconfig.environment.use_bank:
-        if pytestconfig.getoption("--network") == "devnet":
-            private_key = os.environ.get("BANK_PRIVATE_KEY")
-        elif pytestconfig.getoption("--network") == "mainnet":
-            private_key = os.environ.get("BANK_PRIVATE_KEY_MAINNET")
-        else:
-            raise ValueError("set BANK_PRIVATE_KEY or BANK_PRIVATE_KEY_MAINNET env variable")
-        key = base58.b58decode(private_key)
-        account = Keypair.from_bytes(key)
+    # if pytestconfig.environment.use_bank:
+    # if pytestconfig.getoption("--network") == "devnet":
+    private_key = os.environ.get("BANK_PRIVATE_KEY")
+    # elif pytestconfig.getoption("--network") == "mainnet":
+    #     private_key = os.environ.get("BANK_PRIVATE_KEY_MAINNET")
+    # else:
+    #     raise ValueError("set BANK_PRIVATE_KEY or BANK_PRIVATE_KEY_MAINNET env variable")
+    key = base58.b58decode(private_key)
+    account = Keypair.from_bytes(key)
     yield account
 
 
@@ -127,6 +128,7 @@ def solana_account(
     sol_client_session: SolanaClient,
 ) -> Keypair:
     account = Keypair()
+
     lamports = 1 * LAMPORT_PER_SOL
 
     if environment.use_bank:

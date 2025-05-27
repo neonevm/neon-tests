@@ -26,14 +26,17 @@ from spl.token.instructions import (
     ApproveParams,
     approve,
 )
+from spl.token.client import Token as SplToken
 from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
 
 from integration.tests.neon_evm.utils.contract import get_contract_bin
 from integration.tests.neon_evm.utils.ethereum import create_contract_address, make_deployment_transaction
 from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
 from integration.tests.neon_evm.utils.transaction_checks import check_transaction_logs_have_text
+from integration.tests.economy.const import TX_COST
 from utils.scheduled_trx import ScheduledTransaction
 from utils.neon_user import NeonUser
+from utils.instructions import make_SyncNative
 from integration.tests.neon_evm.utils.constants import TREASURY_POOL_SEED
 from utils.consts import LAMPORT_PER_SOL
 from utils.helpers import ether2bytes
@@ -684,6 +687,25 @@ class EvmLoader(SolanaClient):
         self.send_tx_and_check_status_ok(wrap_sol_tx, solana_account)
 
         self.send_token_from_solana_to_neon(solana_account, mint_pubkey, neon_account, full_amount, self.sol_chain_id)
+
+    def drain_wsol(self, from_: LocalAccount, to: Keypair, web3_client, withdraw_contract, sol_client, bank_account):
+        ata = get_associated_token_address(to.pubkey(), WRAPPED_SOL_MINT)
+        spl_token = SplToken(sol_client, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID, to)
+        balance = sol_client.get_solana_balance(to.pubkey())
+        amount_lamports = max(0, balance - TX_COST) * 10**9
+        ata_balance_before = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
+
+        tx = web3_client.make_raw_tx(from_=from_, amount=amount_lamports)
+        instruction_tx = withdraw_contract.functions.withdraw_on_chain(bytes(to.pubkey())).build_transaction(tx)
+        receipt = web3_client.send_transaction(from_, instruction_tx)
+        assert receipt["status"] == 1
+        ata_balance = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
+        assert ata_balance_before == ata_balance - amount_lamports
+
+        tx = Transaction(fee_payer=to.pubkey())
+        tx.add(sp.transfer(sp.TransferParams(from_pubkey=ata, to_pubkey=bank_account.pubkey(), lamports=ata_balance)))
+        tx.add(make_SyncNative(bank_account.pubkey()))
+        sol_client.send_tx_and_check_status_ok(tx, to)
 
     def deposit_neon_like_tokens_from_solana_to_neon(
         self,

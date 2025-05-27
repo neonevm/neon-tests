@@ -99,15 +99,15 @@ def operator(environment: EnvironmentConfig, web3_client_session: NeonChainWeb3C
 @pytest.fixture(scope="session")
 def bank_account(pytestconfig: Config) -> tp.Generator[Keypair | None, None, None]:
     account = None
-    # if pytestconfig.environment.use_bank:
-    # if pytestconfig.getoption("--network") == "devnet":
-    private_key = os.environ.get("BANK_PRIVATE_KEY")
-    # elif pytestconfig.getoption("--network") == "mainnet":
-    #     private_key = os.environ.get("BANK_PRIVATE_KEY_MAINNET")
-    # else:
-    #     raise ValueError("set BANK_PRIVATE_KEY or BANK_PRIVATE_KEY_MAINNET env variable")
-    key = base58.b58decode(private_key)
-    account = Keypair.from_bytes(key)
+    if pytestconfig.environment.use_bank:
+        if pytestconfig.getoption("--network") == "devnet":
+            private_key = os.environ.get("BANK_PRIVATE_KEY")
+        elif pytestconfig.getoption("--network") == "mainnet":
+            private_key = os.environ.get("BANK_PRIVATE_KEY_MAINNET")
+        else:
+            raise ValueError("set BANK_PRIVATE_KEY or BANK_PRIVATE_KEY_MAINNET env variable")
+        key = base58.b58decode(private_key)
+        account = Keypair.from_bytes(key)
     yield account
 
 
@@ -245,6 +245,7 @@ def class_account_sol_chain(
     web3_client,
     faucet,
     eth_bank_account,
+    withdraw_contract_sol_chain,
     bank_account: Keypair,
     environment: EnvironmentConfig,
     web3_client_sol: Web3Client,
@@ -262,6 +263,14 @@ def class_account_sol_chain(
     )
 
     yield account
+    if environment.use_bank:
+        evm_loader.drain_wsol(
+            withdraw_from=account,
+            withdraw_to=solana_account,
+            withdraw_contract=withdraw_contract_sol_chain,
+            web3_client=web3_client_sol,
+            return_to=bank_account,
+        )
 
 
 @pytest.fixture(scope="session")
@@ -285,6 +294,7 @@ def account_with_all_tokens(
     environment: EnvironmentConfig,
     faucet,
     eth_bank_account,
+    withdraw_contract_sol_chain,
     neon_mint,
     operator_keypair,
     bank_account: Keypair | None,
@@ -319,6 +329,15 @@ def account_with_all_tokens(
     )
 
     yield neon_account
+    if web3_client_sol:
+        if environment.use_bank:
+            evm_loader.drain_wsol(
+                withdraw_from=neon_account,
+                withdraw_to=solana_account,
+                withdraw_contract=withdraw_contract_sol_chain,
+                web3_client=web3_client_sol,
+                return_to=bank_account,
+            )
 
 
 @pytest.fixture(scope="session")

@@ -221,16 +221,7 @@ class TestNonce:
         assert response["error"]["code"] == -32002
 
     @pytest.mark.multipletokens
-    def test_nonce_with_several_chains(
-        self,
-        class_account_sol_chain,
-        sol_client,
-        web3_client_sol,
-        evm_loader,
-        solana_account,
-        withdraw_contract_sol_chain,
-        bank_account,
-    ):
+    def test_nonce_with_several_chains(self, class_account_sol_chain, web3_client_sol):
         recipient_account = self.accounts[1]
         sender = class_account_sol_chain
         neon_chain_nonce = self.web3_client.get_nonce(sender.address)
@@ -242,9 +233,6 @@ class TestNonce:
             client.send_tokens(sender, recipient_account, 1)
         assert self.web3_client.get_nonce(sender.address) == neon_chain_nonce + 2
         assert web3_client_sol.get_nonce(sender.address) == sol_chain_nonce + 3
-        evm_loader.drain_wsol(
-            sender, solana_account, web3_client_sol, withdraw_contract_sol_chain, sol_client, bank_account
-        )
 
     def test_contract_nonce_on_contract_deploy_from_constructor(self):
         """

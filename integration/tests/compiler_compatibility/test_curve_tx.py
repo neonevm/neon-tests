@@ -74,8 +74,14 @@ class TestVyperCompatibility:
         ]
         coins = []
         for coin_arg in coins_args:
-            coin, _ = web3_client.deploy_contract_by_file(
-                contract_name="NeonErc20ForSpl", account=accounts[0], constructor_args=[*coin_arg]
+            # coin, _ = web3_client.deploy_contract_by_file(
+            #     contract_name="NeonErc20ForSpl", account=accounts[0], constructor_args=[*coin_arg]
+            # )
+            coin, _ = web3_client.deploy_and_get_contract(
+                "curve/contracts/testing/NeonErc20ForSpl",
+                version="0.7.0",
+                account=accounts[0],
+                constructor_args=[*coin_arg],
             )
             coin.functions.set_exchange_rate(1).call()
             coins.append(coin)

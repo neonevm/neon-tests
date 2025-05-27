@@ -1,0 +1,1388 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "name": "admin",
+          "type": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {
+          "name": "admin",
+          "type": "address"
+        }
+      ],
+      "name": "set_admin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "rate_write",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "name": "rate",
+          "type": "uint256"
+        }
+      ],
+      "name": "set_rate",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "admin",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "rate",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "allSourcePaths": {
+    "0": "contracts/testing/ConstantMonetaryPolicy.vy"
+  },
+  "ast": {
+    "ast_type": "Module",
+    "body": [
+      {
+        "annotation": {
+          "ast_type": "Name",
+          "col_offset": 14,
+          "end_col_offset": 21,
+          "end_lineno": 6,
+          "id": "address",
+          "lineno": 6,
+          "node_id": 9,
+          "src": "117:7:4"
+        },
+        "ast_type": "VariableDecl",
+        "col_offset": 0,
+        "end_col_offset": 22,
+        "end_lineno": 6,
+        "is_constant": false,
+        "is_immutable": false,
+        "is_public": true,
+        "is_transient": false,
+        "lineno": 6,
+        "node_id": 3,
+        "src": "103:22:4",
+        "target": {
+          "ast_type": "Name",
+          "col_offset": 0,
+          "end_col_offset": 5,
+          "end_lineno": 6,
+          "id": "admin",
+          "lineno": 6,
+          "node_id": 4,
+          "src": "103:5:4"
+        },
+        "value": null
+      },
+      {
+        "annotation": {
+          "ast_type": "Name",
+          "col_offset": 13,
+          "end_col_offset": 20,
+          "end_lineno": 7,
+          "id": "uint256",
+          "lineno": 7,
+          "node_id": 17,
+          "src": "139:7:4"
+        },
+        "ast_type": "VariableDecl",
+        "col_offset": 0,
+        "end_col_offset": 21,
+        "end_lineno": 7,
+        "is_constant": false,
+        "is_immutable": false,
+        "is_public": true,
+        "is_transient": false,
+        "lineno": 7,
+        "node_id": 11,
+        "src": "126:21:4",
+        "target": {
+          "ast_type": "Name",
+          "col_offset": 0,
+          "end_col_offset": 4,
+          "end_lineno": 7,
+          "id": "rate",
+          "lineno": 7,
+          "node_id": 12,
+          "src": "126:4:4"
+        },
+        "value": null
+      },
+      {
+        "args": {
+          "args": [
+            {
+              "annotation": {
+                "ast_type": "Name",
+                "col_offset": 20,
+                "end_col_offset": 27,
+                "end_lineno": 11,
+                "id": "address",
+                "lineno": 11,
+                "node_id": 22,
+                "src": "180:7:4"
+              },
+              "arg": "admin",
+              "ast_type": "arg",
+              "col_offset": 13,
+              "end_col_offset": 27,
+              "end_lineno": 11,
+              "lineno": 11,
+              "node_id": 21,
+              "src": "173:14:4"
+            }
+          ],
+          "ast_type": "arguments",
+          "col_offset": 13,
+          "default": null,
+          "defaults": [],
+          "end_col_offset": 27,
+          "end_lineno": 11,
+          "lineno": 11,
+          "node_id": 20,
+          "src": "173:14:4"
+        },
+        "ast_type": "FunctionDef",
+        "body": [
+          {
+            "ast_type": "Assign",
+            "col_offset": 4,
+            "end_col_offset": 22,
+            "end_lineno": 12,
+            "lineno": 12,
+            "node_id": 24,
+            "src": "194:18:4",
+            "target": {
+              "ast_type": "Attribute",
+              "attr": "admin",
+              "col_offset": 4,
+              "end_col_offset": 14,
+              "end_lineno": 12,
+              "lineno": 12,
+              "node_id": 25,
+              "src": "194:10:4",
+              "value": {
+                "ast_type": "Name",
+                "col_offset": 4,
+                "end_col_offset": 8,
+                "end_lineno": 12,
+                "id": "self",
+                "lineno": 12,
+                "node_id": 26,
+                "src": "194:4:4"
+              }
+            },
+            "value": {
+              "ast_type": "Name",
+              "col_offset": 17,
+              "end_col_offset": 22,
+              "end_lineno": 12,
+              "id": "admin",
+              "lineno": 12,
+              "node_id": 29,
+              "src": "207:5:4"
+            }
+          }
+        ],
+        "col_offset": 0,
+        "decorator_list": [
+          {
+            "ast_type": "Name",
+            "col_offset": 1,
+            "end_col_offset": 9,
+            "end_lineno": 10,
+            "id": "external",
+            "lineno": 10,
+            "node_id": 31,
+            "src": "151:8:4"
+          }
+        ],
+        "doc_string": null,
+        "end_col_offset": 22,
+        "end_lineno": 12,
+        "lineno": 11,
+        "name": "__init__",
+        "node_id": 19,
+        "pos": null,
+        "returns": null,
+        "src": "160:52:4"
+      },
+      {
+        "args": {
+          "args": [
+            {
+              "annotation": {
+                "ast_type": "Name",
+                "col_offset": 21,
+                "end_col_offset": 28,
+                "end_lineno": 16,
+                "id": "address",
+                "lineno": 16,
+                "node_id": 36,
+                "src": "246:7:4"
+              },
+              "arg": "admin",
+              "ast_type": "arg",
+              "col_offset": 14,
+              "end_col_offset": 28,
+              "end_lineno": 16,
+              "lineno": 16,
+              "node_id": 35,
+              "src": "239:14:4"
+            }
+          ],
+          "ast_type": "arguments",
+          "col_offset": 14,
+          "default": null,
+          "defaults": [],
+          "end_col_offset": 28,
+          "end_lineno": 16,
+          "lineno": 16,
+          "node_id": 34,
+          "src": "239:14:4"
+        },
+        "ast_type": "FunctionDef",
+        "body": [
+          {
+            "ast_type": "Assert",
+            "col_offset": 4,
+            "end_col_offset": 35,
+            "end_lineno": 17,
+            "lineno": 17,
+            "msg": null,
+            "node_id": 38,
+            "src": "260:31:4",
+            "test": {
+              "ast_type": "Compare",
+              "col_offset": 11,
+              "end_col_offset": 35,
+              "end_lineno": 17,
+              "left": {
+                "ast_type": "Attribute",
+                "attr": "sender",
+                "col_offset": 11,
+                "end_col_offset": 21,
+                "end_lineno": 17,
+                "lineno": 17,
+                "node_id": 40,
+                "src": "267:10:4",
+                "value": {
+                  "ast_type": "Name",
+                  "col_offset": 11,
+                  "end_col_offset": 14,
+                  "end_lineno": 17,
+                  "id": "msg",
+                  "lineno": 17,
+                  "node_id": 41,
+                  "src": "267:3:4"
+                }
+              },
+              "lineno": 17,
+              "node_id": 39,
+              "op": {
+                "ast_type": "Eq",
+                "col_offset": 11,
+                "end_col_offset": 35,
+                "end_lineno": 17,
+                "lineno": 17,
+                "node_id": 80,
+                "src": "267:24:4"
+              },
+              "right": {
+                "ast_type": "Attribute",
+                "attr": "admin",
+                "col_offset": 25,
+                "end_col_offset": 35,
+                "end_lineno": 17,
+                "lineno": 17,
+                "node_id": 45,
+                "src": "281:10:4",
+                "value": {
+                  "ast_type": "Name",
+                  "col_offset": 25,
+                  "end_col_offset": 29,
+                  "end_lineno": 17,
+                  "id": "self",
+                  "lineno": 17,
+                  "node_id": 46,
+                  "src": "281:4:4"
+                }
+              },
+              "src": "267:24:4"
+            }
+          },
+          {
+            "ast_type": "Assign",
+            "col_offset": 4,
+            "end_col_offset": 22,
+            "end_lineno": 18,
+            "lineno": 18,
+            "node_id": 49,
+            "src": "296:18:4",
+            "target": {
+              "ast_type": "Attribute",
+              "attr": "admin",
+              "col_offset": 4,
+              "end_col_offset": 14,
+              "end_lineno": 18,
+              "lineno": 18,
+              "node_id": 50,
+              "src": "296:10:4",
+              "value": {
+                "ast_type": "Name",
+                "col_offset": 4,
+                "end_col_offset": 8,
+                "end_lineno": 18,
+                "id": "self",
+                "lineno": 18,
+                "node_id": 51,
+                "src": "296:4:4"
+              }
+            },
+            "value": {
+              "ast_type": "Name",
+              "col_offset": 17,
+              "end_col_offset": 22,
+              "end_lineno": 18,
+              "id": "admin",
+              "lineno": 18,
+              "node_id": 54,
+              "src": "309:5:4"
+            }
+          }
+        ],
+        "col_offset": 0,
+        "decorator_list": [
+          {
+            "ast_type": "Name",
+            "col_offset": 1,
+            "end_col_offset": 9,
+            "end_lineno": 15,
+            "id": "external",
+            "lineno": 15,
+            "node_id": 56,
+            "src": "216:8:4"
+          }
+        ],
+        "doc_string": null,
+        "end_col_offset": 22,
+        "end_lineno": 18,
+        "lineno": 16,
+        "name": "set_admin",
+        "node_id": 33,
+        "pos": null,
+        "returns": null,
+        "src": "225:89:4"
+      },
+      {
+        "args": {
+          "args": [],
+          "ast_type": "arguments",
+          "col_offset": 0,
+          "default": null,
+          "defaults": [],
+          "end_col_offset": 3,
+          "end_lineno": 22,
+          "lineno": 22,
+          "node_id": 59,
+          "src": "327:3:4"
+        },
+        "ast_type": "FunctionDef",
+        "body": [
+          {
+            "ast_type": "Return",
+            "col_offset": 4,
+            "end_col_offset": 20,
+            "end_lineno": 23,
+            "lineno": 23,
+            "node_id": 60,
+            "src": "360:16:4",
+            "value": {
+              "ast_type": "Attribute",
+              "attr": "rate",
+              "col_offset": 11,
+              "end_col_offset": 20,
+              "end_lineno": 23,
+              "lineno": 23,
+              "node_id": 61,
+              "src": "367:9:4",
+              "value": {
+                "ast_type": "Name",
+                "col_offset": 11,
+                "end_col_offset": 15,
+                "end_lineno": 23,
+                "id": "self",
+                "lineno": 23,
+                "node_id": 62,
+                "src": "367:4:4"
+              }
+            }
+          }
+        ],
+        "col_offset": 0,
+        "decorator_list": [
+          {
+            "ast_type": "Name",
+            "col_offset": 1,
+            "end_col_offset": 9,
+            "end_lineno": 21,
+            "id": "external",
+            "lineno": 21,
+            "node_id": 65,
+            "src": "318:8:4"
+          }
+        ],
+        "doc_string": null,
+        "end_col_offset": 20,
+        "end_lineno": 23,
+        "lineno": 22,
+        "name": "rate_write",
+        "node_id": 58,
+        "pos": null,
+        "returns": {
+          "ast_type": "Name",
+          "col_offset": 20,
+          "end_col_offset": 27,
+          "end_lineno": 22,
+          "id": "uint256",
+          "lineno": 22,
+          "node_id": 67,
+          "src": "347:7:4"
+        },
+        "src": "327:49:4"
+      },
+      {
+        "args": {
+          "args": [
+            {
+              "annotation": {
+                "ast_type": "Name",
+                "col_offset": 19,
+                "end_col_offset": 26,
+                "end_lineno": 27,
+                "id": "uint256",
+                "lineno": 27,
+                "node_id": 72,
+                "src": "408:7:4"
+              },
+              "arg": "rate",
+              "ast_type": "arg",
+              "col_offset": 13,
+              "end_col_offset": 26,
+              "end_lineno": 27,
+              "lineno": 27,
+              "node_id": 71,
+              "src": "402:13:4"
+            }
+          ],
+          "ast_type": "arguments",
+          "col_offset": 13,
+          "default": null,
+          "defaults": [],
+          "end_col_offset": 26,
+          "end_lineno": 27,
+          "lineno": 27,
+          "node_id": 70,
+          "src": "402:13:4"
+        },
+        "ast_type": "FunctionDef",
+        "body": [
+          {
+            "ast_type": "Assert",
+            "col_offset": 4,
+            "end_col_offset": 35,
+            "end_lineno": 28,
+            "lineno": 28,
+            "msg": null,
+            "node_id": 74,
+            "src": "422:31:4",
+            "test": {
+              "ast_type": "Compare",
+              "col_offset": 11,
+              "end_col_offset": 35,
+              "end_lineno": 28,
+              "left": {
+                "ast_type": "Attribute",
+                "attr": "sender",
+                "col_offset": 11,
+                "end_col_offset": 21,
+                "end_lineno": 28,
+                "lineno": 28,
+                "node_id": 76,
+                "src": "429:10:4",
+                "value": {
+                  "ast_type": "Name",
+                  "col_offset": 11,
+                  "end_col_offset": 14,
+                  "end_lineno": 28,
+                  "id": "msg",
+                  "lineno": 28,
+                  "node_id": 77,
+                  "src": "429:3:4"
+                }
+              },
+              "lineno": 28,
+              "node_id": 75,
+              "op": {
+                "ast_type": "Eq",
+                "col_offset": 11,
+                "end_col_offset": 35,
+                "end_lineno": 28,
+                "lineno": 28,
+                "node_id": 80,
+                "src": "429:24:4"
+              },
+              "right": {
+                "ast_type": "Attribute",
+                "attr": "admin",
+                "col_offset": 25,
+                "end_col_offset": 35,
+                "end_lineno": 28,
+                "lineno": 28,
+                "node_id": 81,
+                "src": "443:10:4",
+                "value": {
+                  "ast_type": "Name",
+                  "col_offset": 25,
+                  "end_col_offset": 29,
+                  "end_lineno": 28,
+                  "id": "self",
+                  "lineno": 28,
+                  "node_id": 82,
+                  "src": "443:4:4"
+                }
+              },
+              "src": "429:24:4"
+            }
+          },
+          {
+            "ast_type": "Assign",
+            "col_offset": 4,
+            "end_col_offset": 20,
+            "end_lineno": 29,
+            "lineno": 29,
+            "node_id": 85,
+            "src": "458:16:4",
+            "target": {
+              "ast_type": "Attribute",
+              "attr": "rate",
+              "col_offset": 4,
+              "end_col_offset": 13,
+              "end_lineno": 29,
+              "lineno": 29,
+              "node_id": 86,
+              "src": "458:9:4",
+              "value": {
+                "ast_type": "Name",
+                "col_offset": 4,
+                "end_col_offset": 8,
+                "end_lineno": 29,
+                "id": "self",
+                "lineno": 29,
+                "node_id": 87,
+                "src": "458:4:4"
+              }
+            },
+            "value": {
+              "ast_type": "Name",
+              "col_offset": 16,
+              "end_col_offset": 20,
+              "end_lineno": 29,
+              "id": "rate",
+              "lineno": 29,
+              "node_id": 90,
+              "src": "470:4:4"
+            }
+          }
+        ],
+        "col_offset": 0,
+        "decorator_list": [
+          {
+            "ast_type": "Name",
+            "col_offset": 1,
+            "end_col_offset": 9,
+            "end_lineno": 26,
+            "id": "external",
+            "lineno": 26,
+            "node_id": 92,
+            "src": "380:8:4"
+          }
+        ],
+        "doc_string": null,
+        "end_col_offset": 20,
+        "end_lineno": 29,
+        "lineno": 27,
+        "name": "set_rate",
+        "node_id": 69,
+        "pos": null,
+        "returns": null,
+        "src": "389:85:4"
+      }
+    ],
+    "col_offset": 0,
+    "doc_string": {
+      "ast_type": "DocStr",
+      "col_offset": 0,
+      "end_col_offset": 3,
+      "end_lineno": 4,
+      "lineno": 2,
+      "node_id": 94,
+      "src": "18:83:4",
+      "value": "\nAlthough this monetary policy works, it's only intended to be used in tests\n"
+    },
+    "end_col_offset": 20,
+    "end_lineno": 29,
+    "lineno": 1,
+    "name": "contracts/testing/ConstantMonetaryPolicy.vy",
+    "node_id": 0,
+    "src": "0:474:4"
+  },
+  "bytecode": "0x3461003057602061012f6000396000518060a01c610030576040526040516000556100e76100356000396100e76000f35b600080fd60003560e01c60026003821660011b6100df01601e39600051565b63f851a440811861003657346100da5760005460405260206040f35b63e91f2f4c81186100d457346100da5760015460405260206040f36100d4565b632c4e722e81186100d457346100da5760015460405260206040f36100d4565b63e9333fab81186100d4576024361034176100da576004358060a01c6100da5760405260005433186100da57604051600055006100d4565b63d4387a9981186100d4576024361034176100da5760005433186100da57600435600155005b60006000fd5b600080fd001a00ae005600768418e7810800a16576797065728300030a0013",
+  "bytecodeSha1": "db308e538809fe464bb88b930dadd7dcde422147",
+  "compiler": {
+    "evm_version": "istanbul",
+    "version": "0.3.10"
+  },
+  "contractName": "ConstantMonetaryPolicy",
+  "coverageMap": {
+    "branches": {
+      "0": {
+        "ConstantMonetaryPolicy.set_admin": {
+          "2": [
+            260,
+            291,
+            true
+          ]
+        },
+        "ConstantMonetaryPolicy.set_rate": {
+          "5": [
+            422,
+            453,
+            true
+          ]
+        }
+      }
+    },
+    "statements": {
+      "0": {
+        "ConstantMonetaryPolicy.rate_write": {
+          "0": [
+            360,
+            376
+          ]
+        },
+        "ConstantMonetaryPolicy.set_admin": {
+          "1": [
+            260,
+            291
+          ],
+          "3": [
+            296,
+            314
+          ]
+        },
+        "ConstantMonetaryPolicy.set_rate": {
+          "4": [
+            422,
+            453
+          ],
+          "6": [
+            458,
+            474
+          ]
+        }
+      }
+    }
+  },
+  "dependencies": [],
+  "deployedBytecode": "0x60003560e01c60026003821660011b6100df01601e39600051565b63f851a440811861003657346100da5760005460405260206040f35b63e91f2f4c81186100d457346100da5760015460405260206040f36100d4565b632c4e722e81186100d457346100da5760015460405260206040f36100d4565b63e9333fab81186100d4576024361034176100da576004358060a01c6100da5760405260005433186100da57604051600055006100d4565b63d4387a9981186100d4576024361034176100da5760005433186100da57600435600155005b60006000fd5b600080fd001a00ae00560076",
+  "deployedSourceMap": "-1:-1:4:-;;;;;;;;;;;;;;;;:::-;:::-;;;;;:::-;;;:::-;;;;;;117:7;;-1:-1::-;;;;;:::-;;;:::-;367:9;-1:-1;;;;327:49;;-1:-1;:::-;:::-;;;;;:::-;;;:::-;;;;;;139:7;;-1:-1;:::-;:::-;;;;;:::-;;;;;;;:::-;;;;;;;:::-;239:14;;281:10;267:24;:10;:24;260:31;:::-;309:5;-1:-1;296:10;-1:-1;225:89;-1:-1;:::-;:::-;;;;;:::-;;;;;;;:::-;443:10;429:24;:10;:24;422:31;:::-;470:4;-1:-1;458:9;-1:-1;389:85;-1:-1::-;;;;:::-;;;",
+  "language": "Vyper",
+  "natspec": {
+    "methods": {},
+    "notice": "Although this monetary policy works, it's only intended to be used in tests"
+  },
+  "offset": [
+    0,
+    474
+  ],
+  "opcodes": "PUSH1 0x0 CALLDATALOAD PUSH1 0xE0 SHR PUSH1 0x2 PUSH1 0x3 DUP3 AND PUSH1 0x1 SHL PUSH2 0x0DF ADD PUSH1 0x1E CODECOPY PUSH1 0x0 MLOAD JUMP JUMPDEST PUSH4 0xF851A440 DUP2 XOR PUSH2 0x036 JUMPI CALLVALUE PUSH2 0x0DA JUMPI PUSH1 0x0 SLOAD PUSH1 0x40 MSTORE PUSH1 0x20 PUSH1 0x40 RETURN JUMPDEST PUSH4 0xE91F2F4C DUP2 XOR PUSH2 0x0D4 JUMPI CALLVALUE PUSH2 0x0DA JUMPI PUSH1 0x1 SLOAD PUSH1 0x40 MSTORE PUSH1 0x20 PUSH1 0x40 RETURN PUSH2 0x0D4 JUMP JUMPDEST PUSH4 0x2C4E722E DUP2 XOR PUSH2 0x0D4 JUMPI CALLVALUE PUSH2 0x0DA JUMPI PUSH1 0x1 SLOAD PUSH1 0x40 MSTORE PUSH1 0x20 PUSH1 0x40 RETURN PUSH2 0x0D4 JUMP JUMPDEST PUSH4 0xE9333FAB DUP2 XOR PUSH2 0x0D4 JUMPI PUSH1 0x24 CALLDATASIZE LT CALLVALUE OR PUSH2 0x0DA JUMPI PUSH1 0x4 CALLDATALOAD DUP1 PUSH1 0xA0 SHR PUSH2 0x0DA JUMPI PUSH1 0x40 MSTORE PUSH1 0x0 SLOAD CALLER XOR PUSH2 0x0DA JUMPI PUSH1 0x40 MLOAD PUSH1 0x0 SSTORE STOP PUSH2 0x0D4 JUMP JUMPDEST PUSH4 0xD4387A99 DUP2 XOR PUSH2 0x0D4 JUMPI PUSH1 0x24 CALLDATASIZE LT CALLVALUE OR PUSH2 0x0DA JUMPI PUSH1 0x0 SLOAD CALLER XOR PUSH2 0x0DA JUMPI PUSH1 0x4 CALLDATALOAD PUSH1 0x1 SSTORE STOP JUMPDEST PUSH1 0x0 PUSH1 0x0 REVERT JUMPDEST PUSH1 0x0 DUP1 REVERT STOP BYTE STOP VERBATIM_0xae STOP JUMP STOP PUSH23 0x",
+  "pcMap": {
+    "0": {
+      "offset": [
+        0,
+        474
+      ],
+      "op": "PUSH1",
+      "path": "0",
+      "value": "0x0"
+    },
+    "2": {
+      "op": "CALLDATALOAD"
+    },
+    "3": {
+      "op": "PUSH1",
+      "value": "0xE0"
+    },
+    "5": {
+      "op": "SHR"
+    },
+    "6": {
+      "op": "PUSH1",
+      "value": "0x2"
+    },
+    "8": {
+      "op": "PUSH1",
+      "value": "0x3"
+    },
+    "10": {
+      "op": "DUP3"
+    },
+    "11": {
+      "op": "AND"
+    },
+    "12": {
+      "op": "PUSH1",
+      "value": "0x1"
+    },
+    "14": {
+      "op": "SHL"
+    },
+    "15": {
+      "op": "PUSH2",
+      "value": "0x0DF"
+    },
+    "18": {
+      "op": "ADD"
+    },
+    "19": {
+      "op": "PUSH1",
+      "value": "0x1E"
+    },
+    "21": {
+      "op": "CODECOPY"
+    },
+    "22": {
+      "op": "PUSH1",
+      "value": "0x0"
+    },
+    "24": {
+      "op": "MLOAD"
+    },
+    "25": {
+      "op": "JUMP"
+    },
+    "26": {
+      "op": "JUMPDEST"
+    },
+    "27": {
+      "op": "PUSH4",
+      "value": "0xF851A440"
+    },
+    "32": {
+      "op": "DUP2"
+    },
+    "33": {
+      "op": "XOR"
+    },
+    "34": {
+      "op": "PUSH2",
+      "value": "0x036"
+    },
+    "37": {
+      "op": "JUMPI"
+    },
+    "38": {
+      "op": "CALLVALUE"
+    },
+    "39": {
+      "op": "PUSH2",
+      "value": "0x0DA"
+    },
+    "42": {
+      "op": "JUMPI"
+    },
+    "43": {
+      "op": "PUSH1",
+      "value": "0x0"
+    },
+    "45": {
+      "op": "SLOAD"
+    },
+    "46": {
+      "op": "PUSH1",
+      "value": "0x40"
+    },
+    "48": {
+      "op": "MSTORE"
+    },
+    "49": {
+      "op": "PUSH1",
+      "value": "0x20"
+    },
+    "51": {
+      "offset": [
+        117,
+        124
+      ],
+      "op": "PUSH1",
+      "path": "0",
+      "value": "0x40"
+    },
+    "53": {
+      "offset": [
+        117,
+        124
+      ],
+      "op": "RETURN",
+      "path": "0"
+    },
+    "54": {
+      "op": "JUMPDEST"
+    },
+    "55": {
+      "op": "PUSH4",
+      "value": "0xE91F2F4C"
+    },
+    "60": {
+      "op": "DUP2"
+    },
+    "61": {
+      "op": "XOR"
+    },
+    "62": {
+      "op": "PUSH2",
+      "value": "0x0D4"
+    },
+    "65": {
+      "op": "JUMPI"
+    },
+    "66": {
+      "op": "CALLVALUE"
+    },
+    "67": {
+      "op": "PUSH2",
+      "value": "0x0DA"
+    },
+    "70": {
+      "op": "JUMPI"
+    },
+    "71": {
+      "fn": "ConstantMonetaryPolicy.rate_write",
+      "offset": [
+        367,
+        376
+      ],
+      "op": "PUSH1",
+      "path": "0",
+      "statement": 0,
+      "value": "0x1"
+    },
+    "73": {
+      "op": "SLOAD"
+    },
+    "74": {
+      "op": "PUSH1",
+      "value": "0x40"
+    },
+    "76": {
+      "op": "MSTORE"
+    },
+    "77": {
+      "op": "PUSH1",
+      "value": "0x20"
+    },
+    "79": {
+      "fn": "ConstantMonetaryPolicy.rate_write",
+      "offset": [
+        327,
+        376
+      ],
+      "op": "PUSH1",
+      "path": "0",
+      "value": "0x40"
+    },
+    "81": {
+      "fn": "ConstantMonetaryPolicy.rate_write",
+      "offset": [
+        327,
+        376
+      ],
+      "op": "RETURN",
+      "path": "0"
+    },
+    "82": {
+      "op": "PUSH2",
+      "value": "0x0D4"
+    },
+    "85": {
+      "op": "JUMP"
+    },
+    "86": {
+      "op": "JUMPDEST"
+    },
+    "87": {
+      "op": "PUSH4",
+      "value": "0x2C4E722E"
+    },
+    "92": {
+      "op": "DUP2"
+    },
+    "93": {
+      "op": "XOR"
+    },
+    "94": {
+      "op": "PUSH2",
+      "value": "0x0D4"
+    },
+    "97": {
+      "op": "JUMPI"
+    },
+    "98": {
+      "op": "CALLVALUE"
+    },
+    "99": {
+      "op": "PUSH2",
+      "value": "0x0DA"
+    },
+    "102": {
+      "op": "JUMPI"
+    },
+    "103": {
+      "op": "PUSH1",
+      "value": "0x1"
+    },
+    "105": {
+      "op": "SLOAD"
+    },
+    "106": {
+      "op": "PUSH1",
+      "value": "0x40"
+    },
+    "108": {
+      "op": "MSTORE"
+    },
+    "109": {
+      "op": "PUSH1",
+      "value": "0x20"
+    },
+    "111": {
+      "offset": [
+        139,
+        146
+      ],
+      "op": "PUSH1",
+      "path": "0",
+      "value": "0x40"
+    },
+    "113": {
+      "offset": [
+        139,
+        146
+      ],
+      "op": "RETURN",
+      "path": "0"
+    },
+    "114": {
+      "op": "PUSH2",
+      "value": "0x0D4"
+    },
+    "117": {
+      "op": "JUMP"
+    },
+    "118": {
+      "op": "JUMPDEST"
+    },
+    "119": {
+      "op": "PUSH4",
+      "value": "0xE9333FAB"
+    },
+    "124": {
+      "op": "DUP2"
+    },
+    "125": {
+      "op": "XOR"
+    },
+    "126": {
+      "op": "PUSH2",
+      "value": "0x0D4"
+    },
+    "129": {
+      "op": "JUMPI"
+    },
+    "130": {
+      "op": "PUSH1",
+      "value": "0x24"
+    },
+    "132": {
+      "op": "CALLDATASIZE"
+    },
+    "133": {
+      "op": "LT"
+    },
+    "134": {
+      "op": "CALLVALUE"
+    },
+    "135": {
+      "op": "OR"
+    },
+    "136": {
+      "op": "PUSH2",
+      "value": "0x0DA"
+    },
+    "139": {
+      "op": "JUMPI"
+    },
+    "140": {
+      "op": "PUSH1",
+      "value": "0x4"
+    },
+    "142": {
+      "op": "CALLDATALOAD"
+    },
+    "143": {
+      "op": "DUP1"
+    },
+    "144": {
+      "op": "PUSH1",
+      "value": "0xA0"
+    },
+    "146": {
+      "op": "SHR"
+    },
+    "147": {
+      "op": "PUSH2",
+      "value": "0x0DA"
+    },
+    "150": {
+      "op": "JUMPI"
+    },
+    "151": {
+      "fn": "ConstantMonetaryPolicy.set_admin",
+      "offset": [
+        239,
+        253
+      ],
+      "op": "PUSH1",
+      "path": "0",
+      "value": "0x40"
+    },
+    "153": {
+      "fn": "ConstantMonetaryPolicy.set_admin",
+      "offset": [
+        239,
+        253
+      ],
+      "op": "MSTORE",
+      "path": "0"
+    },
+    "154": {
+      "fn": "ConstantMonetaryPolicy.set_admin",
+      "offset": [
+        281,
+        291
+      ],
+      "op": "PUSH1",
+      "path": "0",
+      "statement": 1,
+      "value": "0x0"
+    },
+    "156": {
+      "fn": "ConstantMonetaryPolicy.set_admin",
+      "offset": [
+        267,
+        291
+      ],
+      "op": "SLOAD",
+      "path": "0"
+    },
+    "157": {
+      "fn": "ConstantMonetaryPolicy.set_admin",
+      "offset": [
+        267,
+        277
+      ],
+      "op": "CALLER",
+      "path": "0"
+    },
+    "158": {
+      "fn": "ConstantMonetaryPolicy.set_admin",
+      "offset": [
+        267,
+        291
+      ],
+      "op": "XOR",
+      "path": "0"
+    },
+    "159": {
+      "fn": "ConstantMonetaryPolicy.set_admin",
+      "offset": [
+        260,
+        291
+      ],
+      "op": "PUSH2",
+      "path": "0",
+      "value": "0x0DA"
+    },
+    "162": {
+      "branch": 2,
+      "fn": "ConstantMonetaryPolicy.set_admin",
+      "offset": [
+        260,
+        291
+      ],
+      "op": "JUMPI",
+      "path": "0"
+    },
+    "163": {
+      "fn": "ConstantMonetaryPolicy.set_admin",
+      "offset": [
+        309,
+        314
+      ],
+      "op": "PUSH1",
+      "path": "0",
+      "statement": 3,
+      "value": "0x40"
+    },
+    "165": {
+      "op": "MLOAD"
+    },
+    "166": {
+      "fn": "ConstantMonetaryPolicy.set_admin",
+      "offset": [
+        296,
+        306
+      ],
+      "op": "PUSH1",
+      "path": "0",
+      "value": "0x0"
+    },
+    "168": {
+      "op": "SSTORE"
+    },
+    "169": {
+      "fn": "ConstantMonetaryPolicy.set_admin",
+      "offset": [
+        225,
+        314
+      ],
+      "op": "STOP",
+      "path": "0"
+    },
+    "170": {
+      "op": "PUSH2",
+      "value": "0x0D4"
+    },
+    "173": {
+      "op": "JUMP"
+    },
+    "174": {
+      "op": "JUMPDEST"
+    },
+    "175": {
+      "op": "PUSH4",
+      "value": "0xD4387A99"
+    },
+    "180": {
+      "op": "DUP2"
+    },
+    "181": {
+      "op": "XOR"
+    },
+    "182": {
+      "op": "PUSH2",
+      "value": "0x0D4"
+    },
+    "185": {
+      "op": "JUMPI"
+    },
+    "186": {
+      "op": "PUSH1",
+      "value": "0x24"
+    },
+    "188": {
+      "op": "CALLDATASIZE"
+    },
+    "189": {
+      "op": "LT"
+    },
+    "190": {
+      "op": "CALLVALUE"
+    },
+    "191": {
+      "op": "OR"
+    },
+    "192": {
+      "op": "PUSH2",
+      "value": "0x0DA"
+    },
+    "195": {
+      "op": "JUMPI"
+    },
+    "196": {
+      "fn": "ConstantMonetaryPolicy.set_rate",
+      "offset": [
+        443,
+        453
+      ],
+      "op": "PUSH1",
+      "path": "0",
+      "statement": 4,
+      "value": "0x0"
+    },
+    "198": {
+      "fn": "ConstantMonetaryPolicy.set_rate",
+      "offset": [
+        429,
+        453
+      ],
+      "op": "SLOAD",
+      "path": "0"
+    },
+    "199": {
+      "fn": "ConstantMonetaryPolicy.set_rate",
+      "offset": [
+        429,
+        439
+      ],
+      "op": "CALLER",
+      "path": "0"
+    },
+    "200": {
+      "fn": "ConstantMonetaryPolicy.set_rate",
+      "offset": [
+        429,
+        453
+      ],
+      "op": "XOR",
+      "path": "0"
+    },
+    "201": {
+      "fn": "ConstantMonetaryPolicy.set_rate",
+      "offset": [
+        422,
+        453
+      ],
+      "op": "PUSH2",
+      "path": "0",
+      "value": "0x0DA"
+    },
+    "204": {
+      "branch": 5,
+      "fn": "ConstantMonetaryPolicy.set_rate",
+      "offset": [
+        422,
+        453
+      ],
+      "op": "JUMPI",
+      "path": "0"
+    },
+    "205": {
+      "fn": "ConstantMonetaryPolicy.set_rate",
+      "offset": [
+        470,
+        474
+      ],
+      "op": "PUSH1",
+      "path": "0",
+      "statement": 6,
+      "value": "0x4"
+    },
+    "207": {
+      "op": "CALLDATALOAD"
+    },
+    "208": {
+      "fn": "ConstantMonetaryPolicy.set_rate",
+      "offset": [
+        458,
+        467
+      ],
+      "op": "PUSH1",
+      "path": "0",
+      "value": "0x1"
+    },
+    "210": {
+      "op": "SSTORE"
+    },
+    "211": {
+      "fn": "ConstantMonetaryPolicy.set_rate",
+      "offset": [
+        389,
+        474
+      ],
+      "op": "STOP",
+      "path": "0"
+    },
+    "212": {
+      "op": "JUMPDEST"
+    },
+    "213": {
+      "op": "PUSH1",
+      "value": "0x0"
+    },
+    "215": {
+      "op": "PUSH1",
+      "value": "0x0"
+    },
+    "217": {
+      "op": "REVERT"
+    },
+    "218": {
+      "op": "JUMPDEST"
+    },
+    "219": {
+      "op": "PUSH1",
+      "value": "0x0"
+    },
+    "221": {
+      "op": "DUP1"
+    },
+    "222": {
+      "op": "REVERT"
+    }
+  },
+  "sha1": "71f162700f805c3ab5e220599d9e5737ea3bb3c3",
+  "source": "# @version 0.3.10\n\"\"\"\nAlthough this monetary policy works, it's only intended to be used in tests\n\"\"\"\n\nadmin: public(address)\nrate: public(uint256)\n\n\n@external\ndef __init__(admin: address):\n    self.admin = admin\n\n\n@external\ndef set_admin(admin: address):\n    assert msg.sender == self.admin\n    self.admin = admin\n\n\n@external\ndef rate_write() -> uint256:\n    return self.rate\n\n\n@external\ndef set_rate(rate: uint256):\n    assert msg.sender == self.admin\n    self.rate = rate",
+  "sourceMap": "",
+  "sourcePath": "contracts/testing/ConstantMonetaryPolicy.vy",
+  "type": "contract"
+}

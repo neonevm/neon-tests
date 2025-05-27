@@ -197,3 +197,18 @@ class TestMetaMaskPipeLIne:
         """Checks Neon faucet pipeline"""
         neon_faucet_page.connect_wallet()
         neon_faucet_page.text_too_much_tokens(tokens, 101)
+
+    @pytest.mark.parametrize("tokens", [libs.Tokens.neon.name])
+    def test_get_1_token_per_10_seconds(
+        self,
+        metamask_page: metamask.MetaMaskAccountsPage,
+        neon_faucet_page: neon_faucet.NeonTestAirdropsPage,
+        tokens: str,
+    ) -> None:
+        """Checks Neon faucet pipeline"""
+        neon_faucet_page.connect_wallet()
+        neon_faucet_page.send_tokens(tokens, 3)
+        neon_faucet_page.reload_page()
+        neon_faucet_page.connect_wallet()
+        neon_faucet_page.send_tokens(tokens, 3)
+        neon_faucet_page.too_many_requests_notification()

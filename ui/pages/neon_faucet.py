@@ -78,3 +78,13 @@ class NeonTestAirdropsPage(BasePage):
                 "//div[not(contains(@class, 'button--disabled')) and span[text()='send test tokens']]"
             )
         )
+
+    @allure.step("Reload page")
+    def reload_page(self) -> None:
+        self.page.reload()
+
+    @allure.step("Too many request notification exists")
+    def too_many_requests_notification(self) -> None:
+        self.page.wait_for_selector(
+            "//p[text()='For security reasons, please wait a minute before making a new request']"
+        )

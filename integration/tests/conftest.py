@@ -362,7 +362,12 @@ def account_sol_chain_for_withdraw_contract(
 
 @pytest.fixture(scope="session")
 def withdraw_contract_sol_chain(
-    web3_client_sol, account_sol_chain_for_withdraw_contract, solana_account, bank_account, evm_loader
+    web3_client_sol,
+    account_sol_chain_for_withdraw_contract,
+    solana_account,
+    bank_account,
+    evm_loader,
+    environment: EnvironmentConfig,
 ) -> Contract:
     contract, _ = web3_client_sol.deploy_and_get_contract(
         "precompiled/NeonToken", "0.8.10", account=account_sol_chain_for_withdraw_contract

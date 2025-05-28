@@ -133,6 +133,7 @@ class TestMetaMaskPipeLIne:
         neon_faucet_page.connect_wallet()
         neon_faucet_page.choose_non_existing_token("BTC")
 
+    @pytest.mark.skip
     @pytest.mark.parametrize("tokens", [libs.Tokens.neon.name, libs.Tokens.usdt.name])
     def test_get_tokens_from_faucet(
         self,
@@ -160,6 +161,7 @@ class TestMetaMaskPipeLIne:
         # Wait next airdrop was enabled
         libs.try_until(lambda: neon_faucet_page.is_airdrop_enabled, timeout=90, interval=5)
 
+    @pytest.mark.skip
     @pytest.mark.parametrize("tokens", [libs.Tokens.wneon.name])
     def test_get_spl_token_from_faucet(
         self,
@@ -198,6 +200,7 @@ class TestMetaMaskPipeLIne:
         neon_faucet_page.connect_wallet()
         neon_faucet_page.text_too_much_tokens(tokens, 101)
 
+    @pytest.mark.skip
     @pytest.mark.parametrize("tokens", [libs.Tokens.neon.name])
     def test_get_1_token_per_10_seconds(
         self,

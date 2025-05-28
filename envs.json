@@ -76,7 +76,8 @@
     "tracer_url": "",
     "spl_neon_mint": "HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU",
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
-    "default_cu_price": 210000
+    "default_cu_price": 210000,
+    "use_bank": false
   },
   "geth": {
     "evm_loader": "",

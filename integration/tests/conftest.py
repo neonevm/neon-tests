@@ -335,12 +335,47 @@ def withdraw_contract(web3_client, faucet, accounts) -> Contract:
     return contract
 
 
-@pytest.fixture(scope="class")
-def withdraw_contract_sol_chain(web3_client_sol, faucet, account_with_all_tokens) -> Contract:
-    contract, _ = web3_client_sol.deploy_and_get_contract(
-        "precompiled/NeonToken", "0.8.10", account=account_with_all_tokens
+@pytest.fixture(scope="session")
+def account_sol_chain_for_withdraw_contract(
+    evm_loader,
+    solana_account: Keypair,
+    web3_client_session,
+    faucet,
+    eth_bank_account,
+    bank_account: Keypair,
+    environment: EnvironmentConfig,
+) -> tp.Generator[LocalAccount, None, None]:
+    account = web3_client_session.create_account_with_balance(faucet, bank_account=eth_bank_account)
+    if environment.use_bank:
+        evm_loader.send_sol(bank_account, solana_account.pubkey(), int(1 * LAMPORT_PER_SOL))
+    else:
+        evm_loader.request_airdrop(solana_account.pubkey(), 1 * LAMPORT_PER_SOL)
+
+    evm_loader.deposit_wrapped_sol_from_solana_to_neon(
+        solana_account,
+        account,
+        int(1 * LAMPORT_PER_SOL),
     )
-    return contract
+
+    yield account
+
+
+@pytest.fixture(scope="session")
+def withdraw_contract_sol_chain(
+    web3_client_sol, account_sol_chain_for_withdraw_contract, solana_account, bank_account, evm_loader
+) -> Contract:
+    contract, _ = web3_client_sol.deploy_and_get_contract(
+        "precompiled/NeonToken", "0.8.10", account=account_sol_chain_for_withdraw_contract
+    )
+    yield contract
+    if environment.use_bank:
+        evm_loader.drain_wsol(
+            withdraw_from=account_sol_chain_for_withdraw_contract,
+            withdraw_to=solana_account,
+            withdraw_contract=contract,
+            web3_client=web3_client_sol,
+            return_to=bank_account,
+        )
 
 
 @pytest.fixture(scope="class")

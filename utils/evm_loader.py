@@ -697,7 +697,7 @@ class EvmLoader(SolanaClient):
     ):
         neon_balance = web3_client.get_balance(withdraw_from)
 
-        ata = get_associated_token_address(withdraw_to.pubkey(), WRAPPED_SOL_MINT)
+        ata = self.create_associate_token_acc(withdraw_to, withdraw_to, WRAPPED_SOL_MINT)
         spl_token = SplToken(self, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID, withdraw_to)
         ata_balance_before = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
         ata_info = spl_token.get_account_info(ata, commitment=Confirmed)

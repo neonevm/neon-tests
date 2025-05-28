@@ -324,3 +324,13 @@ def decode_error_output(data_hex):
         return f"Panic(uint256): {desc}"
     # 4) Unknow format
     return f"Unknown revert payload: {data_hex}"
+
+
+def withdraw_neon_to_solana(web3_client, withdraw_from, withdraw_to, withdraw_contract):
+    amount = web3_client.get_balance(withdraw_from)
+    tx = web3_client.make_raw_tx(from_=withdraw_from, amount=amount)
+    value = (amount - web3_client.eth.estimate_gas(tx) * web3_client.gas_price()) // 10**9
+    tx["value"] = value * 10**9
+    instruction_tx = withdraw_contract.functions.withdraw_on_chain(bytes(withdraw_to.pubkey())).build_transaction(tx)
+    receipt = web3_client.send_transaction(withdraw_from, instruction_tx)
+    assert receipt["status"] == 1

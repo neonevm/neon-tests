@@ -26,7 +26,7 @@ from utils.consts import COUNTER_ID, LAMPORT_PER_SOL, MULTITOKEN_MINTS_USDT, REM
 from utils.erc20 import ERC20
 from utils.erc20wrapper import ERC20Wrapper
 from utils.evm_loader import EvmLoader
-from utils.helpers import decode_function_signature, get_selectors
+from utils.helpers import decode_function_signature, get_selectors, withdraw_neon_to_solana
 from utils.operator import Operator
 from utils.prices import get_sol_price_with_retry
 from utils.solana_client import SolanaClient
@@ -248,13 +248,7 @@ def class_account_sol_chain(
 
     yield account
     if environment.use_bank:
-        evm_loader.drain_wsol(
-            withdraw_from=account,
-            withdraw_to=solana_account,
-            withdraw_contract=withdraw_contract_sol_chain,
-            web3_client=web3_client_sol,
-            return_to=bank_account,
-        )
+        withdraw_neon_to_solana(web3_client_sol, account, bank_account, withdraw_contract_sol_chain)
 
 
 @pytest.fixture(scope="session")
@@ -315,13 +309,7 @@ def account_with_all_tokens(
     yield neon_account
     if web3_client_sol:
         if environment.use_bank:
-            evm_loader.drain_wsol(
-                withdraw_from=neon_account,
-                withdraw_to=solana_account,
-                withdraw_contract=withdraw_contract_sol_chain,
-                web3_client=web3_client_sol,
-                return_to=bank_account,
-            )
+            withdraw_neon_to_solana(web3_client_sol, neon_account, bank_account, withdraw_contract_sol_chain)
 
 
 @pytest.fixture(scope="session")
@@ -364,9 +352,7 @@ def account_sol_chain_for_withdraw_contract(
 def withdraw_contract_sol_chain(
     web3_client_sol,
     account_sol_chain_for_withdraw_contract,
-    solana_account,
     bank_account,
-    evm_loader,
     environment: EnvironmentConfig,
 ) -> Contract:
     contract, _ = web3_client_sol.deploy_and_get_contract(
@@ -374,13 +360,7 @@ def withdraw_contract_sol_chain(
     )
     yield contract
     if environment.use_bank:
-        evm_loader.drain_wsol(
-            withdraw_from=account_sol_chain_for_withdraw_contract,
-            withdraw_to=solana_account,
-            withdraw_contract=contract,
-            web3_client=web3_client_sol,
-            return_to=bank_account,
-        )
+        withdraw_neon_to_solana(web3_client_sol, account_sol_chain_for_withdraw_contract, bank_account, contract)
 
 
 @pytest.fixture(scope="class")

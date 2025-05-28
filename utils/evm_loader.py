@@ -26,7 +26,6 @@ from spl.token.instructions import (
     ApproveParams,
     approve,
 )
-from spl.token.client import Token as SplToken
 from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
 
 from integration.tests.neon_evm.utils.contract import get_contract_bin
@@ -70,7 +69,6 @@ from utils.layouts import (
 from utils.solana_client import SolanaClient
 from utils.solana_logs_helper import decode_logs
 from utils.types import Caller, Contract, TreasuryPool
-from utils.helpers import wait_condition
 
 EVM_STEPS = 500
 
@@ -686,46 +684,6 @@ class EvmLoader(SolanaClient):
         self.send_tx_and_check_status_ok(wrap_sol_tx, solana_account)
 
         self.send_token_from_solana_to_neon(solana_account, mint_pubkey, neon_account, full_amount, self.sol_chain_id)
-
-    def drain_wsol(
-        self,
-        withdraw_from: LocalAccount,
-        withdraw_to: Keypair,
-        withdraw_contract: Contract,
-        web3_client,
-        return_to: Keypair,
-    ):
-        neon_balance = web3_client.get_balance(withdraw_from)
-
-        ata = self.create_associate_token_acc(withdraw_to, withdraw_to, WRAPPED_SOL_MINT)
-        spl_token = SplToken(self, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID, withdraw_to)
-        ata_balance_before = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
-        ata_info = spl_token.get_account_info(ata, commitment=Confirmed)
-        assert ata_info.owner == withdraw_to.pubkey()
-
-        tx = web3_client.make_raw_tx(from_=withdraw_from, amount=neon_balance)
-        value = (neon_balance - web3_client.eth.estimate_gas(tx) * web3_client.gas_price()) // 10**9
-        tx["value"] = value * 10**9
-
-        instruction_tx = withdraw_contract.functions.withdraw_on_chain(bytes(withdraw_to.pubkey())).build_transaction(
-            tx
-        )
-        receipt = web3_client.send_transaction(withdraw_from, instruction_tx)
-        assert receipt["status"] == 1
-
-        ata_balance_after = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
-        assert ata_balance_after == ata_balance_before + value
-
-        balance_return_account = self.get_solana_balance(return_to.pubkey())
-        print("Balance bank account before return: ", balance_return_account)
-        spl_token.close_account(account=ata, dest=return_to.pubkey(), authority=withdraw_to)
-
-        wait_condition(
-            lambda: self.get_solana_balance(return_to.pubkey()) >= balance_return_account + value,
-            timeout_sec=30,
-        )
-        balance_return_account_after = self.get_solana_balance(return_to.pubkey())
-        print("Balance bank account after return: ", balance_return_account_after)
 
     def deposit_neon_like_tokens_from_solana_to_neon(
         self,

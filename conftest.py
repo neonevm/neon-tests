@@ -19,6 +19,8 @@ from allure_commons.model2 import TestResult, StatusDetails
 from solana.rpc.commitment import Confirmed
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
+from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
+from spl.token.client import Token as SplToken
 
 import allure
 from utils import create_allure_environment_opts, setup_logging
@@ -32,6 +34,7 @@ from utils.neon_user import NeonUser
 from utils.solana_client import SolanaClient
 from utils.types import TestGroup, TreasuryPool
 from utils.web3client import NeonChainWeb3Client
+from utils.helpers import wait_condition
 
 pytest_plugins = ["ui.plugins.browser"]
 COST_REPORT_DIR: pathlib.Path = pathlib.Path()
@@ -333,7 +336,7 @@ def neon_user_no_sols(pytestconfig, bank_account, faucet, environment) -> NeonUs
 
 
 @pytest.fixture(scope="session")
-def bank_account(pytestconfig: Config) -> Generator[Keypair | None, None, None]:
+def bank_account(pytestconfig: Config, sol_client_session: SolanaClient) -> Generator[Keypair | None, None, None]:
     account = None
     if pytestconfig.environment.use_bank:
         if pytestconfig.getoption("--network") == "devnet":
@@ -342,9 +345,23 @@ def bank_account(pytestconfig: Config) -> Generator[Keypair | None, None, None]:
             private_key = os.environ.get("BANK_PRIVATE_KEY_MAINNET")
         else:
             raise ValueError("set BANK_PRIVATE_KEY or BANK_PRIVATE_KEY_MAINNET env variable")
-        key = base58.b58decode(private_key)
-        account = Keypair.from_bytes(key)
+    key = base58.b58decode(private_key)
+    account = Keypair.from_bytes(key)
+
+    if pytestconfig.environment.use_bank:
+        ata = sol_client_session.create_associate_token_acc(account, account, WRAPPED_SOL_MINT)
+
     yield account
+
+    if pytestconfig.environment.use_bank:
+        balance = sol_client_session.get_solana_balance(account.pubkey())
+        spl_token = SplToken(sol_client_session, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID, account)
+        ata_balance = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
+        spl_token.close_account(account=ata, dest=account.pubkey(), authority=account)
+        wait_condition(
+            lambda: sol_client_session.get_solana_balance(account.pubkey()) >= balance + ata_balance,
+            timeout_sec=30,
+        )
 
 
 @pytest.fixture(scope="session")

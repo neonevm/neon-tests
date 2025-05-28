@@ -345,14 +345,11 @@ def bank_account(pytestconfig: Config, sol_client_session: SolanaClient) -> Gene
             private_key = os.environ.get("BANK_PRIVATE_KEY_MAINNET")
         else:
             raise ValueError("set BANK_PRIVATE_KEY or BANK_PRIVATE_KEY_MAINNET env variable")
-    key = base58.b58decode(private_key)
-    account = Keypair.from_bytes(key)
-
-    if pytestconfig.environment.use_bank:
+        key = base58.b58decode(private_key)
+        account = Keypair.from_bytes(key)
         ata = sol_client_session.create_associate_token_acc(account, account, WRAPPED_SOL_MINT)
 
     yield account
-
     if pytestconfig.environment.use_bank:
         balance = sol_client_session.get_solana_balance(account.pubkey())
         spl_token = SplToken(sol_client_session, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID, account)

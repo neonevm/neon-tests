@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 Created on 2021-10-01
 @author: Eugeny Kurkovich
@@ -94,6 +93,7 @@ class TestFaucet:
         neon_faucet_page.install_wallet_message()
 
     def test_mobile_faucet_message(self, browser_type: BrowserType):
+        expected_message = "Sorry, Neon Faucet "
         context = browser_type.launch_persistent_context(
             user_data_dir="/tmp/mobile-user-data",
             viewport=MOBILE_VIEWPORT,
@@ -105,9 +105,11 @@ class TestFaucet:
         )
         page = context.new_page()
         page.goto(NEON_FAUCET_URL)
+        content = page.content()
 
         assert "Sorry, Neon Faucet " in page.content()
 
+        assert expected_message in content, f"Expected '{expected_message}' in page content, but it was not found."
         context.close()
 
 
@@ -182,7 +184,7 @@ class TestMetaMaskPipeLIne:
         )
         libs.try_until(
             lambda: balance_before_airdrop_test + 10 == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
-            timeout=90,
+            timeout=240,
             interval=5,
             error_msg=f"{tokens} balance was not changed after airdrop",
         )

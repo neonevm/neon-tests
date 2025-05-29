@@ -585,7 +585,7 @@ def run(
         elif ui_item == "website":
             command += f"website_tests/test_{ui_item}.py"
         elif ui_item == "neonpass":
-            command = f"test_{ui_item}.py"
+            command += f"test_{ui_item}.py"
 
     if name == "oz":
         if not keep_error_log:

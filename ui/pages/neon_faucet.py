@@ -5,7 +5,6 @@ Created on 2022-05-19
 """
 
 import typing as tp
-
 import allure
 
 from ui import components
@@ -26,10 +25,6 @@ class NeonTestAirdropsPage(BasePage):
         )
 
     def _choose_token(self, token: str) -> None:
-        self.page.query_selector("//span[text()='Choose Token']").click()
-        self.page.wait_for_selector(f"//div[@class='text-base' and text()='{token}']").click()
-
-    def choose_spl_token(self, token: str) -> None:
         self.page.query_selector("//span[text()='Choose Token']").click()
         self.page.wait_for_selector(f"//div[@class='text-base' and text()='{token}']").click()
 

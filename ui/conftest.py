@@ -14,7 +14,6 @@ from ui.tests.test_faucet import get_metamask_extension_id, BASE_NEON_BALANCE
 from _pytest.config import Config
 from playwright.sync_api import BrowserContext, BrowserType
 
-
 CHROME_TAR_PATH = pathlib.Path(__file__).absolute().parent / "extensions" / "data"
 CHROME_DATA_PATH = pathlib.Path(__file__).absolute().parent.parent / "chrome-data" / uuid.uuid4().hex
 """CHROME_DATA_PATH is temporary local destination in project to untar chrome data directory and plugins"""
@@ -119,45 +118,11 @@ def context(
     yield context
     context.close()
 
-    # context = browser.create_persistent_context(
-    #     browser_type,
-    #     browser_context_args,
-    #     browser_type_launch_args,
-    #     ext_source=chrome_extensions_path,
-    #     user_data_dir=chrome_extension_user_data.as_posix(),
-    # )
-    # yield context
-    # context.close()
-
 
 @pytest.fixture
 def use_extension(request) -> bool:
     marker = request.node.get_closest_marker("no_extension")
     return marker is None
-
-
-# @pytest.hookimpl(tryfirst=True, hookwrapper=True)
-# def pytest_runtest_makereport(item, call):
-#     """Save screenshot on fail"""
-#     outcome = yield
-#     rep = outcome.get_result()
-#     if rep.when == 'call' and rep.failed:
-#         mode = 'a' if os.path.exists('failures') else 'w'
-#         try:
-#             with open('failures', mode):
-#                 if 'page' in item.fixturenames:
-#                     page = item.funcargs['page']
-#                 else:
-#                     print('Fail to take screenshot')
-#                     return
-#             allure.attach(
-#                 page.screenshot(full_page=True),
-#                 name='screenshot',
-#                 attachment_type=allure.attachment_type.PNG,
-#                 extension="png"
-#             )
-#         except Exception as e:
-#             print('Fail to take screenshot: {}'.format(e))
 
 
 def pytest_exception_interact(node, call, report):
@@ -179,16 +144,6 @@ def pytest_exception_interact(node, call, report):
                 )
             except Exception as e:
                 print("Fail to take screenshot: {}".format(e))
-
-
-# def save_screenshot_on_fail(request: pytest.FixtureRequest, page: Page):
-#     if request.session.testsfailed and not page.is_closed():
-#         allure.attach(
-#             page.screenshot(full_page=True),
-#             name="screenshot",
-#             attachment_type=allure.attachment_type.PNG,
-#             extension="png",
-#         )
 
 
 def pytest_generate_tests(metafunc: tp.Any) -> None:

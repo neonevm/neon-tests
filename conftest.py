@@ -34,7 +34,7 @@ from utils.neon_user import NeonUser
 from utils.solana_client import SolanaClient
 from utils.types import TestGroup, TreasuryPool
 from utils.web3client import NeonChainWeb3Client
-from utils.helpers import wait_condition
+from utils.helpers import wait_condition, withdraw_neon_to_solana_sol_sign
 
 pytest_plugins = ["ui.plugins.browser"]
 COST_REPORT_DIR: pathlib.Path = pathlib.Path()
@@ -285,6 +285,9 @@ def neon_user(
     bank_account,
     environment: EnvironmentConfig,
     sol_client_session: SolanaClient,
+    web3_client_sol: NeonChainWeb3Client,
+    withdraw_contract_sol_chain,
+    treasury_pool,
 ) -> Generator[NeonUser, None, None]:
     user = NeonUser(evm_loader_id=environment.evm_loader)
     lamports = 3 * LAMPORT_PER_SOL
@@ -301,6 +304,10 @@ def neon_user(
     yield user
 
     if environment.use_bank:
+        if web3_client_sol.get_balance(user.checksum_address) != 0:
+            withdraw_neon_to_solana_sol_sign(
+                user, bank_account, withdraw_contract_sol_chain, evm_loader, web3_client_sol, treasury_pool
+            )
         sol_client_session.drain_sol(from_=user.solana_account, to=bank_account.pubkey())
 
 
@@ -347,6 +354,8 @@ def bank_account(pytestconfig: Config, sol_client_session: SolanaClient) -> Gene
             raise ValueError("set BANK_PRIVATE_KEY or BANK_PRIVATE_KEY_MAINNET env variable")
         key = base58.b58decode(private_key)
         account = Keypair.from_bytes(key)
+
+    if pytestconfig.environment.use_bank:
         ata = sol_client_session.create_associate_token_acc(account, account, WRAPPED_SOL_MINT)
 
     yield account

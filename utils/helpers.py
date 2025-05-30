@@ -22,6 +22,8 @@ from solcx import link_code
 from solders.pubkey import Pubkey
 from solders.rpc.responses import GetTransactionResp
 from web3 import Web3
+from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateRequest
+
 
 T = tp.TypeVar("T")
 
@@ -326,11 +328,34 @@ def decode_error_output(data_hex):
     return f"Unknown revert payload: {data_hex}"
 
 
-def withdraw_neon_to_solana(web3_client, withdraw_from, withdraw_to, withdraw_contract):
+def withdraw_neon_to_solana_eth_sign(web3_client, withdraw_from, withdraw_to, withdraw_contract):
     amount = web3_client.get_balance(withdraw_from)
     tx = web3_client.make_raw_tx(from_=withdraw_from, amount=amount)
+
+    """
+        withdraw contract requires trx value to be divisible to 10**9
+        remainings of the value are dropped with // operation
+    """
     value = (amount - web3_client.eth.estimate_gas(tx) * web3_client.gas_price()) // 10**9
     tx["value"] = value * 10**9
     instruction_tx = withdraw_contract.functions.withdraw_on_chain(bytes(withdraw_to.pubkey())).build_transaction(tx)
     receipt = web3_client.send_transaction(withdraw_from, instruction_tx)
     assert receipt["status"] == 1
+
+
+def withdraw_neon_to_solana_sol_sign(
+    withdraw_from, withdraw_to, withdraw_contract, evm_loader, web3_client_sol, treasury_pool
+):
+    """
+    withdraw contract requires trx value to be divisible to 10**9
+    remainings of the value are dropped with // operation
+    """
+    amount = (web3_client_sol.get_balance(withdraw_from.checksum_address) // 10**9) * 10**9
+    data = decode_function_signature("withdraw_on_chain(bytes32)", [bytes(withdraw_to.pubkey())])
+    trx_estimate_obj = ScheduledTrxEstimateRequest(
+        withdraw_from.checksum_address, withdraw_contract.address, data, amount
+    )
+    estimate_result = web3_client_sol.estimate_scheduled(withdraw_from.solana_account.pubkey(), [trx_estimate_obj])
+    tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
+    evm_loader.create_tree_account(withdraw_from, treasury_pool, tx.encode())
+    web3_client_sol.wait_for_transaction_receipt(tx.hash())["status"] == 1

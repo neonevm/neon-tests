@@ -83,7 +83,7 @@ class NeonTestAirdropsPage(BasePage):
         self.page.reload()
 
     @allure.step("Too many request notification exists")
-    def too_many_requests_notification(self, timeout: int = 3000) -> None:
+    def wait_for_too_many_requests_notification(self, timeout: int = 3000) -> None:
         self.page.wait_for_selector(
             "//p[text()='For security reasons, please wait a minute before making a new request']",
             timeout=timeout,

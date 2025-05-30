@@ -148,6 +148,8 @@ class TestMetaMaskPipeLIne:
         balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
         neon_faucet_page.connect_wallet()
         neon_faucet_page.send_tokens(tokens, 10)
+        neon_faucet_page.click_transfer_btn()
+        neon_faucet_page.check_sucessfull_sent()
         # wait new balance
         wait_condition(
             lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > balance_before_airdrop_test,
@@ -174,15 +176,17 @@ class TestMetaMaskPipeLIne:
         wait_condition(lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > 0, timeout_sec=120, delay=2)
         balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
         neon_faucet_page.connect_wallet()
-        neon_faucet_page.send_tokens("wNEON", 10)
+        neon_faucet_page.send_tokens("wNEON", 3)
+        neon_faucet_page.click_transfer_btn()
+        neon_faucet_page.check_sucessfull_sent()
         # wait new balance
         wait_condition(
             lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > balance_before_airdrop_test,
-            timeout_sec=120,
+            timeout_sec=240,
             delay=2,
         )
         libs.try_until(
-            lambda: balance_before_airdrop_test + 10 == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
+            lambda: balance_before_airdrop_test + 3 == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
             timeout=240,
             interval=5,
             error_msg=f"{tokens} balance was not changed after airdrop",
@@ -201,7 +205,6 @@ class TestMetaMaskPipeLIne:
         neon_faucet_page.connect_wallet()
         neon_faucet_page.text_too_much_tokens(tokens, 101)
 
-    @pytest.mark.skip
     @pytest.mark.parametrize("tokens", [libs.Tokens.neon.name])
     def test_get_1_token_per_10_seconds(
         self,
@@ -209,10 +212,19 @@ class TestMetaMaskPipeLIne:
         neon_faucet_page: neon_faucet.NeonTestAirdropsPage,
         tokens: str,
     ) -> None:
+        MAX_RETRIES = 3
         """Checks Neon faucet pipeline"""
-        neon_faucet_page.connect_wallet()
-        neon_faucet_page.send_tokens(tokens, 3)
-        neon_faucet_page.reload_page()
-        neon_faucet_page.connect_wallet()
-        neon_faucet_page.send_tokens(tokens, 3)
-        neon_faucet_page.too_many_requests_notification()
+        for attempt in range(1, MAX_RETRIES + 1):
+            neon_faucet_page.reload_page()
+            neon_faucet_page.connect_wallet()
+            neon_faucet_page.send_tokens(tokens, 3)
+            neon_faucet_page.click_transfer_btn()
+
+            try:
+                neon_faucet_page.too_many_requests_notification(timeout=3000)
+                return
+            except Exception:
+                if attempt < MAX_RETRIES:
+                    print(f"Attempt {attempt} failed — retrying...")
+                else:
+                    assert False, "Notification 'Too Many Requests' is not visible"

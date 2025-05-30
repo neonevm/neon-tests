@@ -41,7 +41,11 @@ class NeonTestAirdropsPage(BasePage):
     def send_tokens(self, token: str, amount: tp.Union[int, str]) -> None:
         self._choose_token(token)
         self._set_amount(amount)
+
+    def click_transfer_btn(self) -> None:
         self.page.wait_for_selector("//div[contains(@class, 'button--light')]").click()
+
+    def check_sucessfull_sent(self) -> None:
         self.page.wait_for_selector("//h2[text()='Transfer Successful']")
 
     @allure.step("Text on exceeding the limit is displayed")
@@ -79,7 +83,9 @@ class NeonTestAirdropsPage(BasePage):
         self.page.reload()
 
     @allure.step("Too many request notification exists")
-    def too_many_requests_notification(self) -> None:
+    def too_many_requests_notification(self, timeout: int = 3000) -> None:
         self.page.wait_for_selector(
-            "//p[text()='For security reasons, please wait a minute before making a new request']"
+            "//p[text()='For security reasons, please wait a minute before making a new request']",
+            timeout=timeout,
+            state="visible",
         )

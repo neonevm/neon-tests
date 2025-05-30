@@ -1,16 +1,44 @@
 import allure
 import pytest
 
+from solders.keypair import Keypair
+from solana.rpc.commitment import Confirmed
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 from utils.consts import LAMPORT_PER_SOL
-from utils.helpers import wait_condition, decode_function_signature
+from utils.helpers import wait_condition, decode_function_signature, withdraw_neon_to_solana_sol_sign
 from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData, ScheduledTrxEstimateRequest
 from utils.web3client import BASE_MAX_PRIORITY_FEE
+from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
+from spl.token.client import Token as SplToken
 
 
 @allure.feature("Solana native")
 @allure.story("Test sending scheduled transaction")
 class TestScheduledTrx:
+    def test_scheduled_trx_withdraw_neon_to_solana(
+        self, neon_user, evm_loader, web3_client_sol, treasury_pool, withdraw_contract_sol_chain
+    ):
+        evm_loader.deposit_wrapped_sol_from_solana_to_neon(
+            neon_user.solana_account,
+            "0x" + neon_user.neon_address.hex(),
+            int(1 * LAMPORT_PER_SOL),
+        )
+        recipient = Keypair()
+        evm_loader.request_airdrop(recipient.pubkey(), 5 * LAMPORT_PER_SOL, commitment=Confirmed)
+
+        ata = evm_loader.create_associate_token_acc(recipient, recipient, WRAPPED_SOL_MINT)
+        spl_token = SplToken(evm_loader, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID, recipient)
+        ata_balance_before = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
+
+        withdraw_neon_to_solana_sol_sign(
+            neon_user, recipient, withdraw_contract_sol_chain, evm_loader, web3_client_sol, treasury_pool
+        )
+
+        balance = evm_loader.get_solana_balance(recipient.pubkey())
+        spl_token = SplToken(evm_loader, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID, recipient)
+        ata_balance_after = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
+        assert ata_balance_after >= ata_balance_before + balance
+
     def test_send_simple_single_trx(self, web3_client_sol, neon_user, common_contract, evm_loader, treasury_pool):
         contract_data = 18
         data = decode_function_signature("setNumber(uint256)", [contract_data])

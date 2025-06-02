@@ -128,6 +128,19 @@ def context(
 
 @pytest.fixture
 def use_extension(request) -> bool:
+    """Fixture that determines whether to load browser extensions (e.g., MetaMask)
+    for the current test.
+
+    If the test is marked with `@pytest.mark.no_extension`, the fixture returns False,
+    indicating that the browser should be launched without loading any extensions.
+    Otherwise, it returns True.
+
+    Args:
+        request (pytest.FixtureRequest): The request object providing information
+            about the test function.
+
+    Returns:
+        bool: True if extensions should be loaded, False if the test is marked with 'no_extension'."""
     marker = request.node.get_closest_marker("no_extension")
     return marker is None
 

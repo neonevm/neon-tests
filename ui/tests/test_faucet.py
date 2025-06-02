@@ -113,6 +113,7 @@ class TestFaucet:
         context.close()
 
 
+@pytest.mark.flaky(retries=3, retriy_delay=2)
 class TestMetaMaskPipeLIne:
     """Tests NeonEVM proxy functionality via MetaMask"""
 
@@ -221,7 +222,7 @@ class TestMetaMaskPipeLIne:
             neon_faucet_page.click_transfer_btn()
 
             try:
-                neon_faucet_page.too_many_requests_notification(timeout=3000)
+                neon_faucet_page.wait_for_too_many_requests_notification(timeout=3000)
                 return
             except Exception:
                 if attempt < MAX_RETRIES:

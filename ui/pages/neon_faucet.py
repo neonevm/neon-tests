@@ -6,13 +6,11 @@ Created on 2022-05-19
 
 import typing as tp
 import allure
-
 from ui import components
 from . import BasePage
 
 
 class NeonTestAirdropsPage(BasePage):
-
     SELECTORS = {
         "connect_wallet_message": "//div[text()='Connect your wallet to get tokens']",
         "connect_metamask_btn": "//div[text()='Connect MetaMask']",
@@ -24,13 +22,13 @@ class NeonTestAirdropsPage(BasePage):
         "send_button": "//div[contains(@class, 'button--light')]",
         "transfer_success": "//h2[text()='Transfer Successful']",
         "neonpass_button": "//a[text()='NeonPass']",
-        "token_list": "//div[contains(@class,'overflow-y-auto')]/div",
         "limit_exceeded": "//div[contains(text(),'Maximum limit for one airdrop is 100 tokens per minute')]",
         "install_wallet_msg": "//div[text()='Please install a wallet that supports NEON network']",
         "too_many_requests": "//p[text()='For security reasons, please wait a minute before making a new request']",
         "airdrop_enabled": "//div[not(contains(@class, 'button--disabled')) and span[text()='send test tokens']]",
         "help_button": "//a[text()='Help']",
         "neon_website_button": "//a[text()='Neon Website']",
+        "token_search_results": "//div[contains(@class,'overflow-y-auto')]/div",
     }
 
     def __init__(self, *args, **kwargs) -> None:
@@ -48,10 +46,9 @@ class NeonTestAirdropsPage(BasePage):
         self.page.wait_for_selector(self.SELECTORS["token_option"].format(token)).click()
 
     def choose_non_existing_token(self, token: str) -> None:
-        list_of_tokens = self.SELECTORS["token_list"]
         self.page.query_selector(self.SELECTORS["choose_token_btn"]).click()
         self.page.wait_for_selector(self.SELECTORS["token_search"]).type(token)
-        tokens = self.page.query_selector_all(list_of_tokens)
+        tokens = self.page.query_selector_all(self.SELECTORS["token_search_results"])
         assert len(tokens) == 0, f"Expected no tokens, but found {len(tokens)}"
 
     def _set_amount(self, amount: tp.Union[int, str]) -> None:

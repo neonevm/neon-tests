@@ -172,7 +172,7 @@ class MetaMaskAccountsPage(BasePage):
             self.change_account(account)
         return float(
             self.page.wait_for_selector(
-                f"//*[@data-testid='multichain-token-list-button']//*[text()='{token}']"
+                f"//*[@data-testid='multichain-token-list-button']//*[text()='{token.upper()}']"
                 f"/../../../*[@data-testid='multichain-token-list-item-value']"
             )
             .text_content()

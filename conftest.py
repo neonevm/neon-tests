@@ -284,7 +284,6 @@ def neon_user(
     evm_loader: EvmLoader,
     bank_account,
     environment: EnvironmentConfig,
-    sol_client_session: SolanaClient,
     web3_client_sol: NeonChainWeb3Client,
     withdraw_contract_sol_chain,
     treasury_pool,
@@ -308,7 +307,7 @@ def neon_user(
             withdraw_neon_to_solana_sol_sign(
                 user, bank_account, withdraw_contract_sol_chain, evm_loader, web3_client_sol, treasury_pool
             )
-        sol_client_session.drain_sol(from_=user.solana_account, to=bank_account.pubkey())
+        evm_loader.drain_sol(from_=user.solana_account, to=bank_account.pubkey())
 
 
 @pytest.fixture(scope="session")

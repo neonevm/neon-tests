@@ -34,7 +34,7 @@ class TestScheduledTrx:
             neon_user, recipient, withdraw_contract_sol_chain, evm_loader, web3_client_sol, treasury_pool
         )
 
-        balance = evm_loader.get_solana_balance(recipient.pubkey())
+        balance = web3_client_sol.get_balance(neon_user.checksum_address) // 10**9
         spl_token = SplToken(evm_loader, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID, recipient)
         ata_balance_after = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
         assert ata_balance_after >= ata_balance_before + balance

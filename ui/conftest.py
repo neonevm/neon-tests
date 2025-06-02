@@ -102,21 +102,28 @@ def context(
     use_extension: bool,
 ) -> BrowserContext:
     """Override default context for MetaMasks load"""
-    if use_extension:
-        context = browser.create_persistent_context(
-            browser_type,
-            browser_context_args,
-            browser_type_launch_args,
-            ext_source=chrome_extensions_path,
-            user_data_dir=chrome_extension_user_data.as_posix(),
-        )
-    else:
-        context = browser_type.launch_persistent_context(
-            user_data_dir="/tmp/without-extension",
-            headless=False,
-        )
-    yield context
-    context.close()
+    context = None
+    try:
+        if use_extension:
+            context = browser.create_persistent_context(
+                browser_type,
+                browser_context_args,
+                browser_type_launch_args,
+                ext_source=chrome_extensions_path,
+                user_data_dir=chrome_extension_user_data.as_posix(),
+            )
+        else:
+            context = browser_type.launch_persistent_context(
+                user_data_dir="/tmp/without-extension",
+                headless=False,
+            )
+        yield context
+    finally:
+        if context:
+            try:
+                context.close()
+            except Exception as e:
+                print(f"Failed to close browser context: {e}")
 
 
 @pytest.fixture

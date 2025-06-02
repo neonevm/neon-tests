@@ -579,13 +579,16 @@ def run(
     if name in {"services", "compiler_compatibility", "evm", "basic"} and numprocesses:
         command += f" --numprocesses {numprocesses}"
 
+    UI_TEST_PATHS = {
+        "faucet": "test_faucet.py",
+        "website": "website_tests/test_website.py",
+        "neonpass": "test_neonpass.py",
+    }
+
     if name == "ui":
-        if ui_item == "faucet":
-            command += f"test_{ui_item}.py"
-        elif ui_item == "website":
-            command += f"website_tests/test_{ui_item}.py"
-        elif ui_item == "neonpass":
-            command += f"test_{ui_item}.py"
+        if ui_item not in UI_TEST_PATHS:
+            raise click.ClickException(f"Invalid UI item '{ui_item}'. Available: {', '.join(UI_TEST_PATHS.keys())}")
+        command += UI_TEST_PATHS[ui_item]
 
     if name == "oz":
         if not keep_error_log:

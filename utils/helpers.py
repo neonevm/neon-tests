@@ -358,6 +358,7 @@ def withdraw_neon_to_solana_sol_sign(
     """
     trx_estimate_obj.value = ((trx_estimate_obj.value - gas) // 10**9) * 10**9
 
-    tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
-    evm_loader.create_tree_account(withdraw_from, treasury_pool, tx.encode())
-    web3_client_sol.wait_for_transaction_receipt(tx.hash())["status"] == 1
+    if trx_estimate_obj.value > 0:
+        tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
+        evm_loader.create_tree_account(withdraw_from, treasury_pool, tx.encode())
+        web3_client_sol.wait_for_transaction_receipt(tx.hash())["status"] == 1

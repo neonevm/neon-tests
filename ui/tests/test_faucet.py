@@ -63,7 +63,10 @@ class TestFaucet:
             neon_faucet_page.help_button_click()
         help_page = new_tab_info.value
         help_page.wait_for_load_state()
-        assert DOCS_URL in help_page.url
+        actual_url = help_page.url
+        assert DOCS_URL in actual_url, (
+            f"Help button should open documentation at '{DOCS_URL}', " f"but actually opened '{actual_url}'"
+        )
 
     def test_click_neon_website_button(self, context):
         page = context.new_page()
@@ -73,7 +76,10 @@ class TestFaucet:
             neon_faucet_page.neon_website_button_click()
         neon_website_page = new_tab_info.value
         neon_website_page.wait_for_load_state()
-        assert WEBSITE_URL in neon_website_page.url
+        actual_url = neon_website_page.url
+        assert WEBSITE_URL in neon_website_page.url, (
+            f"Neon Website button should open '{WEBSITE_URL}', " f"but actually opened '{actual_url}'"
+        )
 
     def test_click_neonpass_button(self, context):
         page = context.new_page()
@@ -83,7 +89,10 @@ class TestFaucet:
             neon_faucet_page.neonpass_button_click()
         neonpass_page = new_tab_info.value
         neonpass_page.wait_for_load_state()
-        assert NEONPASS_URL in neonpass_page.url
+        actual_url = neonpass_page.url
+        assert NEONPASS_URL in neonpass_page.url, (
+            f"NeonPass button should open '{NEONPASS_URL}', " f"but actually opened '{actual_url}'"
+        )
 
     @pytest.mark.no_extension
     def test_open_faucet_without_installed_wallets(self, context):

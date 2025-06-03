@@ -8,7 +8,7 @@ import web3
 from solana.rpc import commitment
 from deploy.cli.network_manager import NetworkManager
 from utils.accounts import EthAccounts
-from utils.consts import LAMPORT_PER_SOL
+from utils.consts import LAMPORT_PER_SOL, REMAPPING_ZEPPELIN
 from utils.evm_loader import EvmLoader
 from utils.faucet import Faucet
 from utils.helpers import decode_function_signature
@@ -120,41 +120,38 @@ def prepare_contracts(environment: env.Environment, **kwargs):
         fund_solana_account(environment.evm_loader, neon_user.solana_account, bank_account, network)
 
     test_coins = {
-        "renBTC": ("Coin renBTC", "renBTC", 8, deployer.address),
-        "wBTC": ("Coin wBTC", "wBTC", 8, deployer.address),
-        "sBTC": ("Coin sBTC", "sBTC", 18, deployer.address),
+        "renBTC": ("Coin renBTC", "renBTC", 9, deployer.address),
+        "wBTC": ("Coin wBTC", "wBTC", 9, deployer.address),
+        "sBTC": ("Coin sBTC", "sBTC", 9, deployer.address),
     }
     coins = {}
 
     # deploy curve tokens
     for name, params in test_coins.items():
         LOG.info(f"Start to deploy coin {name}...")
-        coin, _ = web3_client.deploy_contract_by_file(
-            contract_name="NeonErc20ForSpl", account=deployer, constructor_args=[*params]
+        coin, _ = web3_client.deploy_and_get_contract(
+            "curve/contracts/testing/NeonErc20ForSpl",
+            version="0.8.28",
+            account=deployer,
+            constructor_args=[*params],
+            import_remapping=REMAPPING_ZEPPELIN,
         )
         tx = web3_client.make_raw_tx(deployer.address)
         instruction_tx = coin.functions.set_exchange_rate(1).build_transaction(tx)
         resp = web3_client.send_transaction(deployer, instruction_tx)
         assert resp["status"] == 1, "Set exchange rate failed"
 
-        LOG.info("Mint coins to contracts...")
-        tx = web3_client.make_raw_tx(deployer.address)
-        instruction_tx = coin.functions._mint_for_testing(deployer.address, token_mint_amount).build_transaction(tx)
-        resp = web3_client.send_transaction(deployer, instruction_tx)
-        assert resp["status"] == 1, "Mint failed"
-
         coins[name] = coin
-        # coin.mint_tokens(signer=erc20.owner, to_address=erc20.owner.address, amount=token_mint_amount)
 
-        LOG.info("Mint coins to neon accounts for swaps...")
-        for neon_user in neon_accounts:
-            for coin in coins.values():
-                tx = web3_client.make_raw_tx(deployer.address)
-                instruction_tx = coin.functions._mint_for_testing(
-                    neon_user.checksum_address, token_mint_amount
-                ).build_transaction(tx)
-                receipt = web3_client.send_transaction(deployer, instruction_tx)
-                assert receipt["status"] == 1
+    LOG.info("Mint coins to neon accounts for swaps...")
+    for neon_user in neon_accounts:
+        for coin in coins.values():
+            tx = web3_client.make_raw_tx(deployer.address)
+            instruction_tx = coin.functions._mint_for_testing(
+                neon_user.checksum_address, token_mint_amount
+            ).build_transaction(tx)
+            receipt = web3_client.send_transaction(deployer, instruction_tx)
+            assert receipt["status"] == 1
 
     # deploy token
     token = web3_client.read_vyper_file_and_deploy(
@@ -262,22 +259,22 @@ class ScheduledTxsCurveTasksSet(NeonProxyTasksSet):
 
         data_0 = decode_function_signature(
             "exchange(int128,int128,uint256,uint256)",
-            [1, 0, swap_amount, 0],
+            [0, 1, swap_amount, 0],
         )
 
         data_1 = decode_function_signature(
             "exchange(int128,int128,uint256,uint256)",
-            [0, 1, swap_amount, 0],
+            [1, 0, swap_amount, 0],
         )
 
         trx_estimate_0 = ScheduledTrxEstimateRequest(
             self.curve_neon_account.checksum_address, coin_0.address, data, child_transaction=hex(2)
         )
         trx_estimate_1 = ScheduledTrxEstimateRequest(
-            self.curve_neon_account.checksum_address, coin_1.address, data, child_transaction="0xFFFF"
+            self.curve_neon_account.checksum_address, coin_1.address, data, child_transaction=hex(3)
         )
         trx_estimate_2 = ScheduledTrxEstimateRequest(
-            self.curve_neon_account.checksum_address, pool.address, data_0, child_transaction=hex(3)
+            self.curve_neon_account.checksum_address, pool.address, data_0, child_transaction="0xFFFF"
         )
         trx_estimate_3 = ScheduledTrxEstimateRequest(
             self.curve_neon_account.checksum_address, pool.address, data_1, child_transaction="0xFFFF"
@@ -305,8 +302,8 @@ class ScheduledTxsCurveTasksSet(NeonProxyTasksSet):
         )
 
         tree_acc_data.add_trx(trxs[0], 2, 0)
-        tree_acc_data.add_trx(trxs[1], 2, 0)
-        tree_acc_data.add_trx(trxs[2], 3, 2)
+        tree_acc_data.add_trx(trxs[1], 3, 0)
+        tree_acc_data.add_trx(trxs[2], 0xFFFF, 1)
         tree_acc_data.add_trx(trxs[3], 0xFFFF, 1)
 
         self.check_solana_balance(self.treasury_pool.account)

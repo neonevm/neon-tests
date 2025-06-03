@@ -15,7 +15,7 @@ from utils.web3client import BASE_MAX_PRIORITY_FEE
 class TestScheduledTrx:
     @pytest.mark.skip(reason="NDEV-3795")
     def test_scheduled_trx_withdraw_neon_to_solana(
-        self, neon_user, evm_loader, web3_client_sol, treasury_pool, withdraw_contract_sol_chain
+        self, neon_user, evm_loader, web3_client_sol, treasury_pool, withdraw_contract_sol_chain, bank_account, network
     ):
         evm_loader.deposit_wrapped_sol_from_solana_to_neon(
             neon_user.solana_account,
@@ -23,7 +23,10 @@ class TestScheduledTrx:
             int(1 * LAMPORT_PER_SOL),
         )
         recipient = Keypair()
-        evm_loader.request_airdrop(recipient.pubkey(), 5 * LAMPORT_PER_SOL, commitment=Confirmed)
+        if network != "local" and bank_account is not None:
+            evm_loader.send_sol(bank_account, recipient.pubkey(), 3 * LAMPORT_PER_SOL)
+        else:
+            evm_loader.request_airdrop(recipient.pubkey(), 3 * LAMPORT_PER_SOL, commitment=Confirmed)
 
         withdraw_neon_to_solana_sol_sign(
             neon_user, recipient, withdraw_contract_sol_chain, evm_loader, web3_client_sol, treasury_pool

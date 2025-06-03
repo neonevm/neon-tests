@@ -24,7 +24,7 @@ def add_liquidity_base_pool(acc, client, base_coins, pool, amount=10000000):
     assert resp["status"] == 1, "Add liquidity failed"
 
 
-class TestVyperCompatibility:
+class TestCurveExchange:
 
     @pytest.fixture
     def base_pool_erc20_for_spl(self, base_pool_and_token_erc20_for_spl):
@@ -43,7 +43,7 @@ class TestVyperCompatibility:
                 0,  # _supply: uint256
             ],
         )
-        pool = web3_client.compile_by_vyper_and_deploy(
+        pool = web3_client.read_vyper_file_and_deploy(
             accounts[0],
             "StableSwapSBTC",
             [
@@ -63,26 +63,29 @@ class TestVyperCompatibility:
         assert resp["status"] == 1, "Trx succeed"
 
         add_liquidity_base_pool(accounts[1], web3_client, base_coins_erc20_for_spl, pool)
+        mint_and_approve(accounts[1], web3_client, base_coins_erc20_for_spl, [10000000, 10000000, 10000000], pool)
+
         return pool, token
 
     @pytest.fixture
     def base_coins_erc20_for_spl(self, web3_client, accounts):
         coins_args = [
-            ("Coin renBTC", "renBTC", 8, accounts[1].address),
-            ("Coin wBTC", "wBTC", 8, accounts[1].address),
-            ("Coin sBTC", "sBTC", 18, accounts[1].address),
+            ("Coin renBTC", "renBTC", 9, accounts[1].address),
+            ("Coin wBTC", "wBTC", 9, accounts[1].address),
+            ("Coin sBTC", "sBTC", 9, accounts[1].address),
         ]
         coins = []
         for coin_arg in coins_args:
-            # coin, _ = web3_client.deploy_contract_by_file(
-            #     contract_name="NeonErc20ForSpl", account=accounts[0], constructor_args=[*coin_arg]
-            # )
-            coin, _ = web3_client.deploy_and_get_contract(
-                "curve/contracts/testing/NeonErc20ForSpl",
-                version="0.7.0",
-                account=accounts[0],
-                constructor_args=[*coin_arg],
+            coin, _ = web3_client.deploy_contract_by_file(
+                contract_name="NeonErc20ForSpl", account=accounts[0], constructor_args=[*coin_arg]
             )
+            # coin, _ = web3_client.deploy_and_get_contract(
+            #     "curve/contracts/testing/NeonErc20ForSpl",
+            #     version="0.8.28",
+            #     account=accounts[0],
+            #     constructor_args=[*coin_arg],
+            #     import_remapping=REMAPPING_ZEPPELIN
+            # )
             coin.functions.set_exchange_rate(1).call()
             coins.append(coin)
         return coins

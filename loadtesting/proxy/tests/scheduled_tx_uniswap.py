@@ -13,7 +13,7 @@ from utils.consts import LAMPORT_PER_SOL, REMAPPING_ZEPPELIN_UNISWAP
 from utils.erc20wrapper import ERC20Wrapper
 from utils.evm_loader import EvmLoader
 from utils.faucet import Faucet
-from utils.helpers import decode_function_signature, decode_function_with_stucture_in_arg_signature
+from utils.helpers import decode_function_signature, decode_function_with_structure_in_arg_signature
 from utils.neon_user import NeonUser
 from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData, ScheduledTrxEstimateRequest
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
@@ -266,7 +266,7 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
         }
 
         data = decode_function_signature("approve(address,uint256)", [router.address, 2 * swap_amount])
-        data_0 = decode_function_with_stucture_in_arg_signature(
+        data_0 = decode_function_with_structure_in_arg_signature(
             "exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
             [
                 params_input["tokenIn"],
@@ -279,7 +279,7 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
                 params_input["sqrtPriceLimitX96"],
             ],
         )
-        data_1 = decode_function_with_stucture_in_arg_signature(
+        data_1 = decode_function_with_structure_in_arg_signature(
             "exactOutputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
             [
                 params_output["tokenIn"],

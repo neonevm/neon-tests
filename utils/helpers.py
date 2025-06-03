@@ -141,7 +141,7 @@ def decode_function_signature(function_name: str, args=None) -> str:
 
 
 @allure.step("Decode function signature")
-def decode_function_with_stucture_in_arg_signature(function_name: str, args=None) -> str:
+def decode_function_with_structure_in_arg_signature(function_name: str, args=None) -> str:
     data = keccak(text=function_name)[:4]
     if args is not None:
         match = re.search(r"\(\((.*?)\)\)", function_name)

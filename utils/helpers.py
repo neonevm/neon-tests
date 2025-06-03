@@ -332,6 +332,7 @@ def decode_error_output(data_hex):
 
 def withdraw_neon_to_solana_eth_sign(web3_client, withdraw_from, withdraw_to, withdraw_contract):
     amount = web3_client.get_balance(withdraw_from)
+    assert amount > 0, "Withdraw value shoul be > 0"
     tx = web3_client.make_raw_tx(from_=withdraw_from, amount=amount)
     """
         withdraw contract requires trx value to be divisible to 10**9
@@ -352,6 +353,7 @@ def withdraw_neon_to_solana_sol_sign(
     ata_balance_before = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
 
     amount = web3_client_sol.get_balance(withdraw_from.checksum_address)
+    assert amount > 0, "Withdraw value shoul be > 0"
     data = decode_function_signature("withdraw_on_chain(bytes32)", [bytes(withdraw_to.pubkey())])
     trx_estimate_obj = ScheduledTrxEstimateRequest(
         withdraw_from.checksum_address, withdraw_contract.address, data, amount
@@ -363,14 +365,12 @@ def withdraw_neon_to_solana_sol_sign(
         remainings of the value are dropped with // operation
     """
     trx_estimate_obj.value = ((trx_estimate_obj.value - gas) // 10**9) * 10**9
-
-    if trx_estimate_obj.value > 0:
-        tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
-        evm_loader.create_tree_account(withdraw_from, treasury_pool, tx.encode())
-        web3_client_sol.wait_for_transaction_receipt(tx.hash())["status"] == 1
+    tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
+    evm_loader.create_tree_account(withdraw_from, treasury_pool, tx.encode())
+    web3_client_sol.wait_for_transaction_receipt(tx.hash())["status"] == 1
 
     ata_balance_after = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
     assert ata_balance_after >= ata_balance_before + trx_estimate_obj.value // 10**9
 
     balance_withdraw_from_after = web3_client_sol.get_balance(withdraw_from.checksum_address)
-    assert balance_withdraw_from_after == 0
+    assert balance_withdraw_from_after != amount

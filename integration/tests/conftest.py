@@ -336,9 +336,9 @@ def withdraw_contract_sol_chain(
 ) -> Contract:
     account = web3_client_session.create_account_with_balance(faucet, bank_account=eth_bank_account)
     if environment.use_bank:
-        evm_loader.send_sol(bank_account, solana_account.pubkey(), int(1 * LAMPORT_PER_SOL))
+        evm_loader.send_sol(bank_account, solana_account.pubkey(), int(2 * LAMPORT_PER_SOL))
     else:
-        evm_loader.request_airdrop(solana_account.pubkey(), 1 * LAMPORT_PER_SOL)
+        evm_loader.request_airdrop(solana_account.pubkey(), 2 * LAMPORT_PER_SOL)
 
     evm_loader.deposit_wrapped_sol_from_solana_to_neon(
         solana_account,

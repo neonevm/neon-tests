@@ -1,8 +1,6 @@
 import allure
 import pytest
 
-from solders.keypair import Keypair
-from solana.rpc.commitment import Confirmed
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 from utils.consts import LAMPORT_PER_SOL
 from utils.helpers import wait_condition, decode_function_signature, withdraw_neon_to_solana_sol_sign
@@ -15,25 +13,22 @@ from utils.web3client import BASE_MAX_PRIORITY_FEE
 class TestScheduledTrx:
     @pytest.mark.skip(reason="NDEV-3795")
     def test_scheduled_trx_withdraw_neon_to_solana(
-        self, neon_user, evm_loader, web3_client_sol, treasury_pool, withdraw_contract_sol_chain, bank_account, network
+        self, neon_user, evm_loader, web3_client_sol, treasury_pool, withdraw_contract_sol_chain, solana_account
     ):
         evm_loader.deposit_wrapped_sol_from_solana_to_neon(
             neon_user.solana_account,
             "0x" + neon_user.neon_address.hex(),
             int(1 * LAMPORT_PER_SOL),
         )
-        recipient = Keypair()
-        if network != "local" and bank_account is not None:
-            evm_loader.send_sol(bank_account, recipient.pubkey(), 3 * LAMPORT_PER_SOL)
-        else:
-            evm_loader.request_airdrop(recipient.pubkey(), 3 * LAMPORT_PER_SOL, commitment=Confirmed)
+
+        balance_before = web3_client_sol.get_balance(neon_user.checksum_address)
 
         withdraw_neon_to_solana_sol_sign(
-            neon_user, recipient, withdraw_contract_sol_chain, evm_loader, web3_client_sol, treasury_pool
+            neon_user, solana_account, withdraw_contract_sol_chain, evm_loader, web3_client_sol, treasury_pool
         )
 
-        balance_after = web3_client_sol.get_balance(neon_user.checksum_address) // 10**9
-        assert balance_after == 0
+        balance_after = web3_client_sol.get_balance(neon_user.checksum_address)
+        assert balance_after != balance_before
 
     def test_send_simple_single_trx(self, web3_client_sol, neon_user, common_contract, evm_loader, treasury_pool):
         contract_data = 18

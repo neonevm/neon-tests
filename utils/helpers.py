@@ -334,11 +334,16 @@ def withdraw_neon_to_solana_eth_sign(web3_client, withdraw_from, withdraw_to, wi
     amount = web3_client.get_balance(withdraw_from)
     assert amount > 0, "Withdraw value shoul be > 0"
     tx = web3_client.make_raw_tx(from_=withdraw_from, amount=amount)
+    value = (amount - 1.1 * web3_client.eth.estimate_gas(tx) * web3_client.gas_price()) // 10**9
     """
-        withdraw contract requires trx value to be divisible to 10**9
-        remainings of the value are dropped with // operation
+        value = (amount - 1.1 * gas) // 10**9
+
+        Withdraw contract requires trx value to be divisible to 10**9,
+        remainings of the value are dropped with // operation.
+
+        Multiplier 1.1 - we do 10% increase of the gas
+        because estimated value is done for an empty data field.
     """
-    value = (amount - web3_client.eth.estimate_gas(tx) * web3_client.gas_price()) // 10**9
     tx["value"] = value * 10**9
     instruction_tx = withdraw_contract.functions.withdraw_on_chain(bytes(withdraw_to.pubkey())).build_transaction(tx)
     receipt = web3_client.send_transaction(withdraw_from, instruction_tx)

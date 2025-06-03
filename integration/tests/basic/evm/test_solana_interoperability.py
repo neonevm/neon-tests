@@ -368,11 +368,10 @@ class TestSolanaInteroperability:
         gas_used_amount2 = get_gas_used_for_emulate_send_wsol(10000 * 2)
         assert gas_used_amount1 == gas_used_amount2, "Gas used for different transfer amounts should be the same"
 
-    @pytest.mark.skip(reason="https://neonlabs.atlassian.net/browse/NDEV-3761")
     def test_limit_of_simple_instr_in_one_trx(self, call_solana_caller, counter_resource_address: bytes):
         sender = self.accounts[0]
         call_params = []
-        limit = 30
+        limit = 32
 
         for _ in range(limit):
             instruction = Instruction(

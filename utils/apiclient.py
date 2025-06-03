@@ -1,3 +1,4 @@
+import json
 import random
 import time
 import typing as tp
@@ -39,7 +40,7 @@ class JsonRPCSession(Session):
             assert "result" not in response_body, "Response can't contains error and result"
         if "error" not in response_body:
             assert response_body["id"] == req_id
-
+        allure.attach(json.dumps(response_body, indent=2), name="response", attachment_type=allure.attachment_type.JSON)
         return response_body
 
     def get_contract_code(self, contract_address: str) -> str:

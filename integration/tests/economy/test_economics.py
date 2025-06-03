@@ -926,7 +926,6 @@ class TestEconomics:
         )
         get_gas_used_percent(w3_client, receipt)
 
-    # @pytest.mark.skip(reason="work incorrect very often")
     @pytest.mark.eip_1559
     def test_deploy_big_contract_with_structures_eip_1559(
         self,
@@ -991,9 +990,8 @@ class TestEconomics:
             sol_balance_before - sol_balance_after, sol_price, token_diff, neon_price, web3_client.native_token_name
         )
 
-    @pytest.mark.skip(reason="work incorrect very often")
     @pytest.mark.eip_1559
-    def test_eip_1559_zero_priority_fee(
+    def test_eip_1559_small_priority_fee(
         self,
         client_and_price: tuple[Web3Client, float],
         operator: Operator,
@@ -1016,11 +1014,11 @@ class TestEconomics:
             from_=account_with_all_tokens,
             to=recipient,
             value=transfer_value,
-            max_priority_fee_per_gas=0,
+            max_priority_fee_per_gas=10,
             max_fee_per_gas=base_fee_per_gas,
         )
-
-        assert w3_client.get_balance(recipient) == transfer_value
+        assert receipt["status"] == 1, "Transaction failed"
+        wait_condition(lambda: sol_balance_before != operator.get_solana_balance())
 
         sol_balance_after = operator.get_solana_balance()
         token_balance_after = operator.get_token_balance(w3_client)

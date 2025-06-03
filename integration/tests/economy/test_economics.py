@@ -926,7 +926,6 @@ class TestEconomics:
         )
         get_gas_used_percent(w3_client, receipt)
 
-    # @pytest.mark.skip(reason="work incorrect very often")
     @pytest.mark.eip_1559
     def test_deploy_big_contract_with_structures_eip_1559(
         self,
@@ -991,7 +990,6 @@ class TestEconomics:
             sol_balance_before - sol_balance_after, sol_price, token_diff, neon_price, web3_client.native_token_name
         )
 
-    @pytest.mark.skip(reason="work incorrect very often")
     @pytest.mark.eip_1559
     def test_eip_1559_zero_priority_fee(
         self,

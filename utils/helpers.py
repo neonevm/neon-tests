@@ -23,7 +23,9 @@ from solders.pubkey import Pubkey
 from solders.rpc.responses import GetTransactionResp
 from web3 import Web3
 from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateRequest
-
+from solana.rpc.commitment import Confirmed
+from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
+from spl.token.client import Token as SplToken
 
 T = tp.TypeVar("T")
 
@@ -345,13 +347,17 @@ def withdraw_neon_to_solana_eth_sign(web3_client, withdraw_from, withdraw_to, wi
 def withdraw_neon_to_solana_sol_sign(
     withdraw_from, withdraw_to, withdraw_contract, evm_loader, web3_client_sol, treasury_pool
 ):
+    ata = evm_loader.create_associate_token_acc(withdraw_to, withdraw_to, WRAPPED_SOL_MINT)
+    spl_token = SplToken(evm_loader, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID, withdraw_to)
+    ata_balance_before = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
+
     amount = web3_client_sol.get_balance(withdraw_from.checksum_address)
     data = decode_function_signature("withdraw_on_chain(bytes32)", [bytes(withdraw_to.pubkey())])
     trx_estimate_obj = ScheduledTrxEstimateRequest(
         withdraw_from.checksum_address, withdraw_contract.address, data, amount
     )
     estimate_result = web3_client_sol.estimate_scheduled(withdraw_from.solana_account.pubkey(), [trx_estimate_obj])
-    gas = 250 * web3_client_sol.gas_price() * int(estimate_result["gasList"][0], 16)
+    gas = web3_client_sol.gas_price() * int(estimate_result["gasList"][0], 16)
     """
         withdraw contract requires trx value to be divisible to 10**9
         remainings of the value are dropped with // operation
@@ -362,3 +368,9 @@ def withdraw_neon_to_solana_sol_sign(
         tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
         evm_loader.create_tree_account(withdraw_from, treasury_pool, tx.encode())
         web3_client_sol.wait_for_transaction_receipt(tx.hash())["status"] == 1
+
+    ata_balance_after = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
+    assert ata_balance_after >= ata_balance_before + trx_estimate_obj.value // 10**9
+
+    balance_withdraw_from_after = web3_client_sol.get_balance(withdraw_from.checksum_address)
+    assert balance_withdraw_from_after == 0

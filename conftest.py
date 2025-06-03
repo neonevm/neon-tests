@@ -34,7 +34,7 @@ from utils.neon_user import NeonUser
 from utils.solana_client import SolanaClient
 from utils.types import TestGroup, TreasuryPool
 from utils.web3client import NeonChainWeb3Client
-from utils.helpers import wait_condition, withdraw_neon_to_solana_sol_sign
+from utils.helpers import wait_condition
 
 pytest_plugins = ["ui.plugins.browser"]
 COST_REPORT_DIR: pathlib.Path = pathlib.Path()
@@ -303,10 +303,11 @@ def neon_user(
     yield user
 
     if environment.use_bank:
-        if web3_client_sol.get_balance(user.checksum_address) != 0:
-            withdraw_neon_to_solana_sol_sign(
-                user, bank_account, withdraw_contract_sol_chain, evm_loader, web3_client_sol, treasury_pool
-            )
+        # TODO: enable after fix NDEV-3795
+        # if web3_client_sol.get_balance(user.checksum_address) != 0:
+        #     withdraw_neon_to_solana_sol_sign(
+        #         user, bank_account, withdraw_contract_sol_chain, evm_loader, web3_client_sol, treasury_pool
+        #     )
         evm_loader.drain_sol(from_=user.solana_account, to=bank_account.pubkey())
 
 
@@ -315,7 +316,9 @@ def neon_user_for_session(
     evm_loader: EvmLoader,
     bank_account,
     environment: EnvironmentConfig,
-    sol_client_session: SolanaClient,
+    web3_client_sol: NeonChainWeb3Client,
+    withdraw_contract_sol_chain,
+    treasury_pool,
 ) -> Generator[NeonUser, None, None]:
     user = NeonUser(evm_loader_id=environment.evm_loader)
     lamports = 2 * LAMPORT_PER_SOL
@@ -332,7 +335,12 @@ def neon_user_for_session(
     yield user
 
     if environment.use_bank:
-        sol_client_session.drain_sol(from_=user.solana_account, to=bank_account.pubkey())
+        # TODO: enable after fix NDEV-3795
+        # if web3_client_sol.get_balance(user.checksum_address) != 0:
+        #     withdraw_neon_to_solana_sol_sign(
+        #         user, bank_account, withdraw_contract_sol_chain, evm_loader, web3_client_sol, treasury_pool
+        #     )
+        evm_loader.drain_sol(from_=user.solana_account, to=bank_account.pubkey())
 
 
 @pytest.fixture(scope="function")

@@ -69,22 +69,49 @@ class MetaMaskPopoverNewsPage(BasePage):
 
 
 class MetaMaskAccountsPage(BasePage):
+    SELECTORS = {
+        "account_icon_name": "//button[@data-testid='account-menu-icon']/descendant::span[text()='{account_name}']",
+        "account_menu_button": "//button[@data-testid='account-menu-icon']",
+        "account_list_item": "//button[contains(@class, 'multichain-account-list-item__account-name') and text()='{account}']",
+        "asset_tab_button": "//*[@data-testid='home__asset-tab']/button",
+        "activity_tab_button": "//button[text()='Activity']",
+        "address_copy_button": "//button[@data-testid='address-copy-button-text']",
+        "funds_protection_popup": "//h2[text()='Protect your funds']/following::button[text()='Got it']",
+        "accounts_menu_header": "//header[text()='Select an account']",
+        "accounts_menu_items": "//div[contains(@class, 'multichain-account-list-item__account-name')]",
+        "networks_menu_header": "//div[@class='network-dropdown-title' and text()='Networks']",
+        "networks_menu_items": "//div[contains(@class, 'multichain-network-list-item')]",
+        "current_network": "//button[contains(@data-testid, 'network-display')]/span",
+        "active_account": "//button[@data-testid='account-menu-icon']/span",
+        "network_option": "//li[@class='dropdown-menu-item']/span[text()='{}']",
+        "account_button": "//button[@data-testid='account-menu-icon']",
+        "account_option": "//button[contains(@class, 'multichain-account-list-item__account-name') and text()='{}']",
+        "token_balance": (
+            "//*[@data-testid='multichain-token-list-button']//*[text()='{token}']"
+            "/../../../*[@data-testid='multichain-token-list-item-value']"
+        ),
+    }
+
     _networks_menu: components.Menu = None
     _accounts_menu: components.Menu = None
+
+    def selector(self, name: str, **kwargs) -> str:
+        return self.SELECTORS[name].format(**kwargs)
 
     def __init__(self, *args, **kwargs) -> None:
         super(MetaMaskAccountsPage, self).__init__(*args, **kwargs)
 
     def page_loaded(self) -> None:
-        self.page.wait_for_selector("//button[@data-testid='account-menu-icon']/descendant::span[text()='Account 1']")
+        account_name = self.active_account
+        self.page.wait_for_selector(self.selector("account_icon_name", account_name=account_name))
 
     @property
     def networks_menu(self) -> components.Menu:
         if not self._networks_menu:
             self._networks_menu = components.Menu(
                 self.page,
-                header_selector="//div[@class='network-dropdown-title' and text()='Networks']",
-                menu_selector="//div[contains(@class, 'multichain-network-list-item')]",
+                header_selector=self.SELECTORS["networks_menu_header"],
+                menu_selector=self.SELECTORS["networks_menu_items"],
             )
         return self._networks_menu
 
@@ -93,24 +120,38 @@ class MetaMaskAccountsPage(BasePage):
         if not self._accounts_menu:
             self._accounts_menu = components.Menu(
                 self.page,
-                header_selector="//div[contains(@class, 'account-menu__header') and text()='My Accounts']",
-                menu_selector="//div[@class='account-menu__icon']",
+                header_selector=self.SELECTORS["accounts_menu_header"],
+                menu_selector=self.SELECTORS["accounts_menu_items"],
             )
         return self._accounts_menu
 
     @property
     def current_network(self) -> str:
-        return self.page.query_selector("//button[contains(@data-testid, 'network-display')]/span").text_content()
+        return self.page.query_selector(self.SELECTORS["current_network"]).text_content()
 
     @property
     def active_account(self) -> str:
-        return self.page.query_selector("//button[@data-testid='account-menu-icon']/span").text_content()
+        return self.page.query_selector(self.SELECTORS["active_account"]).text_content()
 
     @property
     def active_account_address(self) -> str:
         clipboard.clear()
-        components.Button(self.page, selector="//button[@data-testid='address-copy-button-text']").click()
+        components.Button(self.page, selector=self.SELECTORS["address_copy_button"]).click()
         return clipboard.paste()
+
+    def switch_assets(self) -> None:
+        self.page.query_selector(self.SELECTORS["asset_tab_button"]).click()
+
+    def switch_activity(self) -> None:
+        self.page.query_selector(self.SELECTORS["activity_tab_button"]).click()
+
+    def _get_balance(self, account: str, token: str) -> float:
+        if self.active_account != account:
+            self.page.click(self.SELECTORS["account_button"])
+            self.accounts_menu.select_item(self.SELECTORS["account_option"].format(account))
+        selector = self.SELECTORS["token_balance"].format(token=token.upper())
+        balance_text = self.page.wait_for_selector(selector).text_content().split(" ")[0]
+        return float(balance_text)
 
     @property
     def neon_balance(self) -> float:
@@ -149,39 +190,16 @@ class MetaMaskAccountsPage(BasePage):
         return balance
 
     def change_network(self, network: str) -> None:
-        """Select EVM network"""
         if self.current_network != network:
-            self.networks_menu.select_item(f"//li[@class='dropdown-menu-item']/span[text()='{network}']")
+            self.networks_menu.select_item(self.SELECTORS["network_option"].format(network))
 
     def change_account(self, account: str) -> None:
-        """Select account"""
-        if self.active_account != account:
-            self.accounts_menu.select_item(f"//div[@class='account-menu__name' and text()='{account}']")
-
-    def switch_assets(self) -> None:
-        """Switch to assets tab"""
-        self.page.query_selector("//*[@data-testid='home__asset-tab']/button").click()
-
-    def switch_activity(self) -> None:
-        """Switch to assets tab"""
-        self.page.query_selector("//button[text()='Activity']").click()
-
-    def _get_balance(self, account: str, token: str) -> float:
-        """Return token balance on account"""
-        if self.active_account != account:
-            self.change_account(account)
-        return float(
-            self.page.wait_for_selector(
-                f"//*[@data-testid='multichain-token-list-button']//*[text()='{token.upper()}']"
-                f"/../../../*[@data-testid='multichain-token-list-item-value']"
-            )
-            .text_content()
-            .split(" ")[0]
-        )
+        if self.active_account == account:
+            return
+        components.Button(self.page, selector=self.SELECTORS["account_button"]).click()
 
     def check_funds_protection(self) -> None:
-        """Check MetaMask funds protection"""
-        el = self.page.query_selector("//h2[text()='Protect your funds']/following::button[text()='Got it']")
+        el = self.page.query_selector(self.SELECTORS["funds_protection_popup"])
         if el:
             el.click()
 

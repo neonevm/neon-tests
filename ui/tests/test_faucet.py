@@ -252,7 +252,7 @@ class TestMetaMaskPipeLIne:
             try:
                 neon_faucet_page.wait_for_too_many_requests_notification(timeout=3000)
                 return
-            except Exception:
+            except TimeoutError:
                 if attempt < MAX_RETRIES:
                     print(f"Attempt {attempt} failed — retrying...")
                 else:

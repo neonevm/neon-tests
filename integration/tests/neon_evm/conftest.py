@@ -1,6 +1,6 @@
 import json
 import pathlib
-from typing import Tuple, Any
+from typing import Tuple, Any, Generator
 
 import allure
 import eth_abi
@@ -11,10 +11,11 @@ from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 
 from conftest import EnvironmentConfig
-from utils.consts import OPERATOR_KEYPAIR_PATH, REMAPPING_ZEPPELIN
+from utils.consts import OPERATOR_KEYPAIR_PATH, REMAPPING_ZEPPELIN, LAMPORT_PER_SOL
 from utils.evm_loader import EvmLoader
 from utils.solana_client import SolanaClient
 from utils.types import Contract, Caller, TreasuryPool
+from utils.neon_user import NeonUser
 from .utils.ethereum import make_contract_call_trx
 from .utils.neon_api_client import NeonApiClient
 from .utils.neon_api_rpc_client import NeonApiRpcClient
@@ -337,3 +338,20 @@ def erc20_for_spl(
     token_mint = decoded_data[0]
     erc20_for_spl_address = decoded_data[1]
     return token_mint, erc20_for_spl_address
+
+
+@pytest.fixture(scope="function")
+def neon_user(evm_loader: EvmLoader, bank_account, environment: EnvironmentConfig) -> Generator[NeonUser, None, None]:
+    user = NeonUser(evm_loader_id=environment.evm_loader)
+    lamports = 3 * LAMPORT_PER_SOL
+
+    if environment.use_bank:
+        evm_loader.send_sol(bank_account, user.solana_account.pubkey(), lamports)
+    else:
+        evm_loader.request_airdrop(
+            pubkey=user.solana_account.pubkey(),
+            lamports=lamports,
+            commitment=Confirmed,
+        )
+
+    yield user

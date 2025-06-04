@@ -26,6 +26,7 @@ from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateReques
 from solana.rpc.commitment import Confirmed
 from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
 from spl.token.client import Token as SplToken
+from spl.token.instructions import get_associated_token_address
 
 T = tp.TypeVar("T")
 
@@ -333,18 +334,17 @@ def decode_error_output(data_hex):
 def withdraw_neon_to_solana_eth_sign(web3_client, withdraw_from, withdraw_to, withdraw_contract):
     amount = web3_client.get_balance(withdraw_from)
     assert amount > 0, "Withdraw value shoul be > 0"
-    tx = web3_client.make_raw_tx(from_=withdraw_from, amount=amount)
-    value = (amount - 1.1 * web3_client.eth.estimate_gas(tx) * web3_client.gas_price()) // 10**9
+    data = decode_function_signature("withdraw_on_chain(bytes32)", [bytes(withdraw_to.pubkey())])
     """
-        value = (amount - 1.1 * gas) // 10**9
-
         Withdraw contract requires trx value to be divisible to 10**9,
         remainings of the value are dropped with // operation.
-
-        Multiplier 1.1 - we do 10% increase of the gas
-        because estimated value is done for an empty data field.
     """
-    tx["value"] = value * 10**9
+    tx_estimate = web3_client.make_raw_tx(
+        from_=withdraw_from, to=withdraw_contract.address, amount=(amount // 10**9) * 10**9, data=data
+    )
+    value = (amount - web3_client.eth.estimate_gas(tx_estimate) * web3_client.gas_price()) // 10**9
+
+    tx = web3_client.make_raw_tx(from_=withdraw_from, amount=value * 10**9)
     instruction_tx = withdraw_contract.functions.withdraw_on_chain(bytes(withdraw_to.pubkey())).build_transaction(tx)
     receipt = web3_client.send_transaction(withdraw_from, instruction_tx)
     assert receipt["status"] == 1
@@ -353,7 +353,7 @@ def withdraw_neon_to_solana_eth_sign(web3_client, withdraw_from, withdraw_to, wi
 def withdraw_neon_to_solana_sol_sign(
     withdraw_from, withdraw_to, withdraw_contract, evm_loader, web3_client_sol, treasury_pool
 ):
-    ata = evm_loader.create_associate_token_acc(withdraw_to, withdraw_to, WRAPPED_SOL_MINT)
+    ata = get_associated_token_address(withdraw_to.pubkey(), WRAPPED_SOL_MINT)
     spl_token = SplToken(evm_loader, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID, withdraw_to)
     ata_balance_before = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
 

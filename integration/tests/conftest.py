@@ -26,6 +26,7 @@ from utils.consts import COUNTER_ID, LAMPORT_PER_SOL, MULTITOKEN_MINTS_USDT, REM
 from utils.erc20 import ERC20
 from utils.erc20wrapper import ERC20Wrapper
 from utils.evm_loader import EvmLoader
+from utils.neon_user import NeonUser
 from utils.helpers import decode_function_signature, get_selectors, withdraw_neon_to_solana_eth_sign
 from utils.operator import Operator
 from utils.prices import get_sol_price_with_retry
@@ -149,6 +150,76 @@ def accounts(request, accounts_session, web3_client_session, pytestconfig: Confi
     if inspect.isclass(request.cls):
         request.cls.accounts = accounts_session
     return accounts_session
+
+
+@pytest.fixture(scope="session")
+def neon_user_for_session(
+    evm_loader: EvmLoader,
+    bank_account,
+    environment: EnvironmentConfig,
+    web3_client_sol: NeonChainWeb3Client,
+    withdraw_contract_sol_chain,
+    treasury_pool,
+) -> tp.Generator[NeonUser, None, None]:
+    user = NeonUser(evm_loader_id=environment.evm_loader)
+    lamports = 2 * LAMPORT_PER_SOL
+
+    if environment.use_bank:
+        evm_loader.send_sol(bank_account, user.solana_account.pubkey(), lamports)
+    else:
+        evm_loader.request_airdrop(
+            pubkey=user.solana_account.pubkey(),
+            lamports=lamports,
+            commitment=commitment.Confirmed,
+        )
+
+    yield user
+
+    if environment.use_bank:
+        # TODO: enable after fix NDEV-3795
+        # if web3_client_sol.get_balance(user.checksum_address) != 0:
+        #     withdraw_neon_to_solana_sol_sign(
+        #         user, bank_account, withdraw_contract_sol_chain, evm_loader, web3_client_sol, treasury_pool
+        #     )
+        evm_loader.drain_sol(from_=user.solana_account, to=bank_account.pubkey())
+
+
+@pytest.fixture(scope="function")
+def neon_user_no_sols(pytestconfig, bank_account, faucet, environment) -> NeonUser:
+    user = NeonUser(environment.evm_loader, bank_account)
+    return user
+
+
+@pytest.fixture(scope="function")
+def neon_user(
+    evm_loader: EvmLoader,
+    bank_account,
+    environment: EnvironmentConfig,
+    web3_client_sol: NeonChainWeb3Client,
+    withdraw_contract_sol_chain,
+    treasury_pool,
+) -> tp.Generator[NeonUser, None, None]:
+    user = NeonUser(evm_loader_id=environment.evm_loader)
+    lamports = 2 * LAMPORT_PER_SOL
+
+    if environment.use_bank:
+        evm_loader.send_sol(bank_account, user.solana_account.pubkey(), lamports)
+    else:
+        evm_loader.request_airdrop(
+            pubkey=user.solana_account.pubkey(),
+            lamports=lamports,
+            commitment=commitment.Confirmed,
+        )
+
+    yield user
+
+    if environment.use_bank:
+        # TODO: enable after fix NDEV-3795
+        # if web3_client_sol.get_balance(user.checksum_address) != 0:
+        #     withdraw_neon_to_solana_sol_sign(
+        #         user, bank_account, withdraw_contract_sol_chain, evm_loader, web3_client_sol, treasury_pool
+        #     )
+        evm_loader.drain_sol(from_=user.solana_account, to=bank_account.pubkey())
 
 
 @pytest.fixture(scope="session")

@@ -72,12 +72,12 @@ class Menu:
     def open(self):
         if not self.is_open():
             self.page.click(self._menu_selector)
-            self.page.wait_for_selector(self._header_selector, state="visible", timeout=50)
+            self.page.wait_for_selector(self._header_selector, state="visible", timeout=3000)
 
     def close(self):
         if self.is_open():
             self.page.click(self._menu_selector)
-            self.page.wait_for_selector(self._header_selector, state="hidden", timeout=10)
+            self.page.wait_for_selector(self._header_selector, state="hidden", timeout=3000)
 
 
 class CheckBox:

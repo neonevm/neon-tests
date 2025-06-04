@@ -523,8 +523,8 @@ def update_contracts(branch, with_uniswap):
 @click.option("--cost_reports_dir", default="", help="Directory where CostReports will be created")
 @click.option(
     "--ui-item",
-    default="all",
-    type=click.Choice(["faucet", "neonpass", "all"]),
+    default="website",
+    type=click.Choice(["faucet", "neonpass", "website"]),
     help="Which UI test run",
 )
 @click.option(
@@ -562,7 +562,7 @@ def run(
         "services": "py.test integration/tests/services",
         "compiler_compatibility": "py.test integration/tests/compiler_compatibility --dist loadscope",
         "evm": "py.test integration/tests/neon_evm",
-        "ui": "pytest ui/tests/website_tests",
+        "ui": "pytest ui/tests/",
         "oz": "",  # the command is defined in run_openzeppelin_tests()
     }
 
@@ -579,8 +579,16 @@ def run(
     if name in {"services", "compiler_compatibility", "evm", "basic"} and numprocesses:
         command += f" --numprocesses {numprocesses}"
 
-    if name == "ui" and ui_item != "all":
-        command += f"/test_{ui_item}.py"
+    UI_TEST_PATHS = {
+        "faucet": "test_faucet.py",
+        "website": "website_tests/test_website.py",
+        "neonpass": "test_neonpass.py",
+    }
+
+    if name == "ui":
+        if ui_item not in UI_TEST_PATHS:
+            raise click.ClickException(f"Invalid UI item '{ui_item}'. Available: {', '.join(UI_TEST_PATHS.keys())}")
+        command += UI_TEST_PATHS[ui_item]
 
     if name == "oz":
         if not keep_error_log:

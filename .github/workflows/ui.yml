@@ -68,7 +68,7 @@ jobs:
       - name: Run tests
         id: run-tests
         run: |
-          docker exec -i ${{ env.CONTAINER_NAME }} bash -c "CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} python3 clickfile.py run ui --network ${{ env.NETWORK }}"
+          docker exec -i ${{ env.CONTAINER_NAME }} bash -c "CHROME_EXT_PASSWORD=${{ secrets.CHROME_EXT_PASSWORD }} python3 clickfile.py run ui --network ${{ env.NETWORK }} --ui-item=website"
 
       - name: "Generate allure report"
         if: always()

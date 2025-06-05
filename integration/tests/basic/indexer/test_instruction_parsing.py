@@ -80,18 +80,18 @@ class TestInstruction:
         assert_solana_trxs_in_neon_receipt(json_rpc_client, resp["transactionHash"], validated_response)
 
     @pytest.mark.parametrize(
-        "remove_chain_id, expected_instruction",
-        [(True, "TxStepFromAccountNoChainId"), (False, "TxStepFromData")],
+        "chain_id, expected_instruction",
+        [(None, "TxStepFromAccountNoChainId"), ("auto", "TxStepFromData")],
     )
     def test_tx_iterative_with_and_without_chain_id(
-        self, counter_contract, json_rpc_client, remove_chain_id, expected_instruction
+        self, counter_contract, json_rpc_client, chain_id, expected_instruction
     ):
         sender_account = self.accounts[0]
-        tx = self.web3_client.make_raw_tx(sender_account, estimate_gas=True)
-        if remove_chain_id:
-            tx["chainId"] = None
-        instruction_tx = counter_contract.functions.moreInstructionWithLogs(0, 1000).build_transaction(tx)
+        tx = self.web3_client.make_raw_tx(sender_account, estimate_gas=True, chain_id=chain_id)
 
+        instruction_tx = counter_contract.functions.moreInstructionWithLogs(0, 1000).build_transaction(tx)
+        if chain_id is None:
+            instruction_tx.pop("chainId")
         resp = self.web3_client.send_transaction(sender_account, instruction_tx)
 
         response = json_rpc_client.get_neon_trx_receipt(resp["transactionHash"])

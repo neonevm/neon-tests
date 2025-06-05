@@ -352,7 +352,6 @@ class TestInteroperability:
             contract_name="CommonCaller",
             version="0.8.3",
         )
-
         resource_addr = solana_caller.create_resource(sender_with_tokens, b"12ss3", 8, 1000000000, COUNTER_ID)
 
         instruction = Instruction(

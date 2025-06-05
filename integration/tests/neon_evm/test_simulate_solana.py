@@ -658,7 +658,7 @@ class TestSimulateSolana:
         holder_acc: Pubkey,
         treasury_pool: TreasuryPool,
     ):
-        function_signature = "update_data_map(uint256)"
+        function_signature = "update_data(uint256)"
         params = [239]
 
         emulate_result = neon_api_client.emulate_contract_call(
@@ -669,7 +669,7 @@ class TestSimulateSolana:
         )
         additional_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
 
-        signed_tx = eth_utils.make_contract_call_trx(
+        signed_tx_1 = eth_utils.make_contract_call_trx(
             evm_loader=evm_loader,
             user=sender_with_tokens,
             contract=solana_override_contract,
@@ -677,18 +677,33 @@ class TestSimulateSolana:
             params=params,
         )
 
-        evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
-        resp = evm_loader.execute_transaction_steps_from_account(
+        evm_loader.write_transaction_to_holder_account(signed_tx_1, holder_acc, operator_keypair)
+        resp_1 = evm_loader.execute_transaction_steps_from_account(
             operator_keypair, treasury_pool, holder_acc, additional_accounts
         )
-        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp_1, text="exit_status=0x11")
+
         accounts = [
             sender_with_tokens.balance_account_address,
             solana_override_contract.solana_address,
         ]
-
         data_account = list(set(additional_accounts) - set(accounts))[0]
         account_info = evm_loader.get_account_info(data_account, commitment=Confirmed)
+
+        signed_tx_2 = eth_utils.make_contract_call_trx(
+            evm_loader=evm_loader,
+            user=sender_with_tokens,
+            contract=solana_override_contract,
+            function_signature=function_signature,
+            params=[1934],
+        )
+
+        evm_loader.write_transaction_to_holder_account(signed_tx_2, holder_acc, operator_keypair)
+        resp_2 = evm_loader.execute_transaction_steps_from_account(
+            operator_keypair, treasury_pool, holder_acc, additional_accounts
+        )
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp_2, text="exit_status=0x11")
+        account_info_actual = evm_loader.get_account_info(data_account, commitment=Confirmed)
 
         # Create Solana transaction
         signed_tx_for_sol_tx = eth_utils.make_contract_call_trx(
@@ -723,13 +738,9 @@ class TestSimulateSolana:
         hex_serialized_transaction = serialized_transaction.hex()
         blockhash = base58.b58decode(str(evm_loader.get_latest_blockhash(Finalized).value.blockhash)).hex()
 
-        new_data = ""
-        for ch in account_info.value.data:
-            new_data += str(ch)
-
         account_info_override = {
             "lamports": account_info.value.lamports,
-            "data": new_data,
+            "data": account_info.value.data.hex(),
             "owner": str(account_info.value.owner),
             "executable": account_info.value.executable,
             "rent_epoch": account_info.value.rent_epoch,
@@ -746,3 +757,6 @@ class TestSimulateSolana:
         for simulated_transaction in simulated_transactions:
             if simulated_transaction["error"]:
                 raise AssertionError(f"Error in sol trx: {simulated_transaction}")
+
+        account_info_after_simulate = evm_loader.get_account_info(data_account, commitment=Confirmed)
+        assert account_info_after_simulate.value.data == account_info_actual.value.data

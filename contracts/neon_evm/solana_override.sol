@@ -1,9 +1,10 @@
 pragma solidity >=0.5.12;
 
 contract solana_override {
-    mapping(address => mapping(uint256 => uint256)) public data;
+    bytes32[64] public a;
+    uint256 public b = 0;
 
-    function update_data_map(uint256 store_value) public {
-        data[msg.sender][0] = uint256(store_value);
+    function update_data(uint256 store_value) public {
+        b = store_value;
     }
 }

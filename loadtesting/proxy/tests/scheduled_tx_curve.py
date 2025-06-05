@@ -96,7 +96,7 @@ def prepare_contracts(environment: env.Environment, **kwargs):
     for name, params in test_coins.items():
         LOG.info(f"Start to deploy coin {name}...")
         coin, _ = web3_client.deploy_and_get_contract(
-            "curve/contracts/testing/NeonErc20ForSpl",
+            "curve/NeonErc20ForSpl",
             version="0.8.28",
             account=deployer,
             constructor_args=[*params],

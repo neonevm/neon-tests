@@ -477,8 +477,7 @@ def update_contracts_from_git(git_url: str, local_dir_name: str, branch="develop
     help="neon_evm branch name. " "If branch doesn't exist, develop branch will be used",
 )
 @click.option("--with-uniswap", is_flag=True, default=False, required=False, help="Download uniswap-v3 contracts")
-@click.option("--with-curve", is_flag=True, default=False, required=False, help="Download curve contracts")
-def update_contracts(branch, with_uniswap, with_curve):
+def update_contracts(branch, with_uniswap):
     update_contracts_from_git(HOODIES_CHAINLINK_GITHUB_URL, "hoodies_chainlink", "main")
     update_contracts_from_git(
         "https://github.com/neonevm/neon-contracts.git",
@@ -519,9 +518,6 @@ def update_contracts(branch, with_uniswap, with_curve):
             s = s.replace(f, r)
         with open(pool_addr_path, "wb") as file:
             file.write(s)
-
-    if with_curve:
-        update_private_contracts_from_git("git@github.com:neonlabsorg/curve-contracts-ci.git", "curve", branch="main")
 
 
 @cli.command(help="Run any type of tests")

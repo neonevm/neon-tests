@@ -231,6 +231,17 @@ def calculator_caller_contract(
 
 
 @pytest.fixture(scope="session")
+def solana_override_contract(
+    evm_loader: EvmLoader,
+    neon_api_client: NeonApiClient,
+    operator_keypair: Keypair,
+    session_user: Caller,
+    treasury_pool: TreasuryPool,
+) -> Contract:
+    return evm_loader.deploy_contract(operator_keypair, session_user, "solana_override", neon_api_client, treasury_pool)
+
+
+@pytest.fixture(scope="session")
 def erc20_for_spl_factory_contract(
     operator_keypair, evm_loader, sender_with_tokens, treasury_pool, neon_api_client, holder_acc
 ):

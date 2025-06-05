@@ -29,8 +29,6 @@ LOG = logging.getLogger(__name__)
 CURVE_USER_LOCK = threading.Lock()
 
 token_mint_amount = web3.Web3.to_wei(1, "ether")
-initial_amount = 10_000_000
-fee = 500
 
 
 def fund_solana_account(evm_loader, solana_account, bank_account, network):
@@ -38,39 +36,6 @@ def fund_solana_account(evm_loader, solana_account, bank_account, network):
         evm_loader.send_sol(bank_account, solana_account.pubkey(), int(5 * LAMPORT_PER_SOL))
     else:
         evm_loader.request_airdrop(solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed)
-
-
-def mint_and_approve(acc: NeonUser, client, coins, amounts, approve_to):
-    for i in range(len(coins)):
-        tx = client.make_raw_tx(acc.checksum_address)
-        instruction_tx = coins[i].functions._mint_for_testing(acc.checksum_address, amounts[i]).build_transaction(tx)
-        resp = client.send_transaction(acc, instruction_tx)
-        assert resp["status"] == 1, "Mint failed"
-
-        tx = client.make_raw_tx(acc.checksum_address)
-        instruction_tx = coins[i].functions.approve(approve_to.address, amounts[i]).build_transaction(tx)
-        resp = client.send_transaction(acc, instruction_tx)
-        assert resp["status"] == 1, "Approve failed"
-
-
-def add_liquidity_base_pool(acc, client, base_coin, pool, amount=10000000):
-
-    # Mint neon_acc
-    tx = client.make_raw_tx(acc.checksum_address)
-    instruction_tx = base_coin.functions._mint_for_testing(acc.checksum_address, amount).build_transaction(tx)
-    resp = client.send_transaction(acc, instruction_tx)
-    assert resp["status"] == 1, "Mint failed"
-
-    # Approve pool from neon acc to make trx
-    tx = client.make_raw_tx(acc.checksum_address)
-    instruction_tx = base_coin.functions.approve(pool.address, amount).build_transaction(tx)
-    resp = client.send_transaction(acc, instruction_tx)
-    assert resp["status"] == 1, "Approve failed"
-
-    tx = client.make_raw_tx(acc.checksum_address)
-    instruction_tx = pool.functions.add_liquidity([amount], 0).build_transaction(tx)
-    resp = client.send_transaction(acc, instruction_tx)
-    assert resp["status"] == 1, "Add liquidity failed"
 
 
 @events.test_start.add_listener
@@ -127,6 +92,7 @@ def prepare_contracts(environment: env.Environment, **kwargs):
     coins = {}
 
     # deploy curve tokens
+    # TODO Make separate class Coin(Token) with trx not to duplicate code
     for name, params in test_coins.items():
         LOG.info(f"Start to deploy coin {name}...")
         coin, _ = web3_client.deploy_and_get_contract(
@@ -136,10 +102,17 @@ def prepare_contracts(environment: env.Environment, **kwargs):
             constructor_args=[*params],
             import_remapping=REMAPPING_ZEPPELIN,
         )
+
         tx = web3_client.make_raw_tx(deployer.address)
         instruction_tx = coin.functions.set_exchange_rate(1).build_transaction(tx)
         resp = web3_client.send_transaction(deployer, instruction_tx)
         assert resp["status"] == 1, "Set exchange rate failed"
+
+        LOG.info("Mint coins to contracts...")
+        tx = web3_client.make_raw_tx(deployer.address)
+        instruction_tx = coin.functions.mint(deployer.address, token_mint_amount).build_transaction(tx)
+        resp = web3_client.send_transaction(deployer, instruction_tx)
+        assert resp["status"] == 1, "Mint failed"
 
         coins[name] = coin
 
@@ -147,9 +120,7 @@ def prepare_contracts(environment: env.Environment, **kwargs):
     for neon_user in neon_accounts:
         for coin in coins.values():
             tx = web3_client.make_raw_tx(deployer.address)
-            instruction_tx = coin.functions._mint_for_testing(
-                neon_user.checksum_address, token_mint_amount
-            ).build_transaction(tx)
+            instruction_tx = coin.functions.mint(neon_user.checksum_address, token_mint_amount).build_transaction(tx)
             receipt = web3_client.send_transaction(deployer, instruction_tx)
             assert receipt["status"] == 1
 
@@ -218,7 +189,7 @@ def teardown(environment: env.Environment, **kwargs):
 
     if network != "local" and network_object["use_bank"]:
         # Drain SOL for every neon_user
-        for neon_user in environment.uniswap["neon_accounts"]:
+        for neon_user in environment.curve["neon_accounts"]:
             environment.evm_loader.drain_sol(neon_user.solana_account, environment.bank_account.pubkey())
 
         # Drain SOL for solana contract account
@@ -246,7 +217,7 @@ class ScheduledTxsCurveTasksSet(NeonProxyTasksSet):
                 LOG.info(f"Returned user: {self.curve_neon_account.checksum_address}")
 
     @task
-    def task_send_uniswap_scheduled_tx(self):
+    def task_send_curve_scheduled_tx(self):
         """Send scheduled transactions with curve swaps"""
         swap_amount = 10
         pool = self.user.environment.curve["pool"]

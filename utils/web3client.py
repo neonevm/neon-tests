@@ -394,34 +394,6 @@ class Web3Client:
 
         return contract, contract_deploy_tx
 
-    def deploy_contract_by_file(
-        self,
-        account,
-        contract_name,
-        constructor_args=None,
-        gas: tp.Optional[int] = 0,
-        value=0,
-        tx_type: TransactionType = TransactionType.LEGACY,
-    ):
-
-        contract_path = pathlib.Path.cwd() / "contracts" / "curve"
-        with open(f"{contract_path}/{contract_name}.json") as f:
-            contract_interface = json.load(f)
-
-        contract_deploy_tx = self.deploy_contract(
-            account,
-            abi=contract_interface["abi"],
-            bytecode=contract_interface["bytecode"],
-            constructor_args=constructor_args,
-            gas=gas,
-            value=value,
-            tx_type=tx_type,
-        )
-
-        contract = self._web3.eth.contract(address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"])
-
-        return contract, contract_deploy_tx
-
     @allure.step("Compile by vyper and deploy")
     def read_vyper_file_and_deploy(self, account, contract_name, constructor_args=None):
         contract_path = pathlib.Path.cwd() / "contracts" / "curve"

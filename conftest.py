@@ -19,6 +19,8 @@ from allure_commons.model2 import TestResult, StatusDetails
 from solana.rpc.commitment import Confirmed
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
+from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
+from spl.token.client import Token as SplToken
 
 import allure
 from utils import create_allure_environment_opts, setup_logging
@@ -28,7 +30,6 @@ from utils.error_log import error_log
 from utils.evm_loader import EvmLoader
 from utils.faucet import Faucet
 from utils.logger import RedactingColoredLevelFormatter, redact_string
-from utils.neon_user import NeonUser
 from utils.solana_client import SolanaClient
 from utils.types import TestGroup, TreasuryPool
 from utils.web3client import NeonChainWeb3Client
@@ -276,64 +277,8 @@ def accounts_session(pytestconfig: Config, web3_client_session, faucet, eth_bank
     accounts_session._accounts = []
 
 
-@pytest.fixture(scope="function")
-def neon_user(
-    evm_loader: EvmLoader,
-    bank_account,
-    environment: EnvironmentConfig,
-    sol_client_session: SolanaClient,
-) -> Generator[NeonUser, None, None]:
-    user = NeonUser(evm_loader_id=environment.evm_loader)
-    lamports = 3 * LAMPORT_PER_SOL
-
-    if environment.use_bank:
-        evm_loader.send_sol(bank_account, user.solana_account.pubkey(), lamports)
-    else:
-        evm_loader.request_airdrop(
-            pubkey=user.solana_account.pubkey(),
-            lamports=lamports,
-            commitment=Confirmed,
-        )
-
-    yield user
-
-    if environment.use_bank:
-        sol_client_session.drain_sol(from_=user.solana_account, to=bank_account.pubkey())
-
-
 @pytest.fixture(scope="session")
-def neon_user_for_session(
-    evm_loader: EvmLoader,
-    bank_account,
-    environment: EnvironmentConfig,
-    sol_client_session: SolanaClient,
-) -> Generator[NeonUser, None, None]:
-    user = NeonUser(evm_loader_id=environment.evm_loader)
-    lamports = 2 * LAMPORT_PER_SOL
-
-    if environment.use_bank:
-        evm_loader.send_sol(bank_account, user.solana_account.pubkey(), lamports)
-    else:
-        evm_loader.request_airdrop(
-            pubkey=user.solana_account.pubkey(),
-            lamports=lamports,
-            commitment=Confirmed,
-        )
-
-    yield user
-
-    if environment.use_bank:
-        sol_client_session.drain_sol(from_=user.solana_account, to=bank_account.pubkey())
-
-
-@pytest.fixture(scope="function")
-def neon_user_no_sols(pytestconfig, bank_account, faucet, environment) -> NeonUser:
-    user = NeonUser(environment.evm_loader, bank_account)
-    return user
-
-
-@pytest.fixture(scope="session")
-def bank_account(pytestconfig: Config) -> Generator[Keypair | None, None, None]:
+def bank_account(pytestconfig: Config, sol_client_session: SolanaClient) -> Generator[Keypair | None, None, None]:
     account = None
     if pytestconfig.environment.use_bank:
         if pytestconfig.getoption("--network") == "devnet":
@@ -344,7 +289,14 @@ def bank_account(pytestconfig: Config) -> Generator[Keypair | None, None, None]:
             raise ValueError("set BANK_PRIVATE_KEY or BANK_PRIVATE_KEY_MAINNET env variable")
         key = base58.b58decode(private_key)
         account = Keypair.from_bytes(key)
+
+    if pytestconfig.environment.use_bank:
+        ata = sol_client_session.create_associate_token_acc(account, account, WRAPPED_SOL_MINT)
+
     yield account
+    if pytestconfig.environment.use_bank:
+        spl_token = SplToken(sol_client_session, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID, account)
+        spl_token.close_account(account=ata, dest=account.pubkey(), authority=account)
 
 
 @pytest.fixture(scope="session")

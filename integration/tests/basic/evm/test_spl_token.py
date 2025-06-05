@@ -74,11 +74,7 @@ class TestPrecompiledSplToken:
             solana_account,
             opts=TxOpts(preflight_commitment=Confirmed, skip_confirmation=False),
         )
-        tx = {
-            "from": self.accounts[0].address,
-            "nonce": self.web3_client.eth.get_transaction_count(self.accounts[0].address),
-            "gasPrice": self.web3_client.gas_price(),
-        }
+        tx = self.web3_client.make_raw_tx(self.accounts[0])
         instruction_tx = spl_token_caller.functions.initializeMint(DECIMALS).build_transaction(tx)
         receipt = self.web3_client.send_transaction(self.accounts[0], instruction_tx)
         assert receipt["status"] == 1

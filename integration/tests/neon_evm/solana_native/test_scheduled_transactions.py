@@ -15,7 +15,13 @@ from utils.scheduled_trx import ScheduledTransaction
 class TestScheduledTrx:
     # This tests can be run only with environment WITHOUT proxy service
     def test_execute_scheduled_trx_from_account(
-        self, evm_loader, neon_user: NeonUser, treasury_pool, basic_contract, neon_api_client, operator_keypair
+        self,
+        evm_loader,
+        neon_user: NeonUser,
+        treasury_pool,
+        basic_contract,
+        neon_api_client,
+        operator_keypair,
     ):
         holder_acc = evm_loader.create_holder(operator_keypair)
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, evm_loader.sol_chain_id)
@@ -38,7 +44,10 @@ class TestScheduledTrx:
         assert transaction_tree_data.get_transaction_count() == 1
 
         evm_loader.write_transaction_to_holder_account(tx.encode(), holder_acc, operator_keypair)
-        additional_accounts = [basic_contract.solana_address, neon_user.get_balance_account(evm_loader.sol_chain_id)]
+        additional_accounts = [
+            basic_contract.solana_address,
+            neon_user.get_balance_account(evm_loader.sol_chain_id),
+        ]
         evm_loader.execute_scheduled_trx_from_account(
             0, operator_keypair, holder_acc, tree_account, treasury_pool, additional_accounts, compute_unit_price=3929
         )

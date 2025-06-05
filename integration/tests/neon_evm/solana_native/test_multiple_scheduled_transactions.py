@@ -19,7 +19,14 @@ class TestMultipleScheduledTrx:
     # │ s=0   │  │ s=1  │
     # └───────┘  └──────┘
     def test_2_depended_transactions(
-        self, neon_user, basic_contract, evm_loader, treasury_pool, holder_acc, operator_keypair, neon_api_client
+        self,
+        neon_user,
+        basic_contract,
+        evm_loader,
+        treasury_pool,
+        holder_acc,
+        operator_keypair,
+        neon_api_client,
     ):
 
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, evm_loader.sol_chain_id)
@@ -73,7 +80,14 @@ class TestMultipleScheduledTrx:
     # │ s=0   │  │ s=1  │
     # └───────┘  └──────┘
     def test_2_depended_transactions_one_failed(
-        self, neon_user, basic_contract, evm_loader, treasury_pool, holder_acc, operator_keypair, neon_api_client
+        self,
+        neon_user,
+        basic_contract,
+        evm_loader,
+        treasury_pool,
+        holder_acc,
+        operator_keypair,
+        neon_api_client,
     ):
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, evm_loader.sol_chain_id)
         contract_data = 18
@@ -144,7 +158,14 @@ class TestMultipleScheduledTrx:
     #  │ s=1  │
     #  └──────┘
     def test_tree_with_parallel_trx(
-        self, evm_loader, neon_user, basic_contract, treasury_pool, holder_acc, operator_keypair, neon_api_client
+        self,
+        evm_loader,
+        neon_user,
+        basic_contract,
+        treasury_pool,
+        holder_acc,
+        operator_keypair,
+        neon_api_client,
     ):
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, evm_loader.sol_chain_id)
         contract_data = 18
@@ -188,7 +209,14 @@ class TestMultipleScheduledTrx:
         assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
 
     def test_deploy_and_call_contract(
-        self, evm_loader, neon_user, neon_api_client, treasury_pool, operator_keypair, holder_acc, basic_contract
+        self,
+        evm_loader,
+        neon_user,
+        neon_api_client,
+        treasury_pool,
+        operator_keypair,
+        holder_acc,
+        basic_contract,
     ):
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, evm_loader.sol_chain_id)
         contract_code = (
@@ -198,7 +226,10 @@ class TestMultipleScheduledTrx:
         caller_contract: Contract = create_contract_address(neon_user.neon_address, evm_loader)
 
         emulate_deploy = neon_api_client.emulate(
-            neon_user.neon_address.hex(), contract=None, data=contract_code, chain_id=evm_loader.sol_chain_id
+            neon_user.neon_address.hex(),
+            contract=None,
+            data=contract_code,
+            chain_id=evm_loader.sol_chain_id,
         )
         additional_accounts_deploy = [Pubkey.from_string(item["pubkey"]) for item in emulate_deploy["solana_accounts"]]
 
@@ -257,7 +288,14 @@ class TestMultipleScheduledTrx:
         assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
 
     def test_call_precompiled_by_scheduled_trx(
-        self, evm_loader, neon_user, neon_api_client, treasury_pool, operator_keypair, holder_acc, spl_token_caller
+        self,
+        evm_loader,
+        neon_user,
+        neon_api_client,
+        treasury_pool,
+        operator_keypair,
+        holder_acc,
+        spl_token_caller,
     ):
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, evm_loader.sol_chain_id)
 

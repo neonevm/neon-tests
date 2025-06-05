@@ -59,7 +59,7 @@ jobs:
         run: |
           docker exec -i ${{ env.CONTAINER }} \
             /bin/bash -c "export DEVNET_FAUCET_URL=${{ env.FAUCET_URL }} && export DEVNET_SOLANA_URL=${{ env.DEVNET_SOLANA_URL }} && \
-            xvfb-run python3 ./clickfile.py run ui --network=${{ env.NETWORK }} --ui-item=neonpass"
+            xvfb-run python3 ./clickfile.py run ui --network=${{ env.NETWORK }} --ui-item=faucet"
       - name: "Generate allure report"
         if: always()
         uses: ./.github/actions/generate-allure-report

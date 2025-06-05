@@ -226,7 +226,7 @@ class TestNonce:
         assert response["error"]["code"] == -32002
 
     @pytest.mark.multipletokens
-    def test_nonce_with_several_chains(self, class_account_sol_chain, web3_client_sol, faucet):
+    def test_nonce_with_several_chains(self, class_account_sol_chain, web3_client_sol):
         recipient_account = self.accounts[1]
         sender = class_account_sol_chain
         neon_chain_nonce = self.web3_client.get_nonce(sender.address)

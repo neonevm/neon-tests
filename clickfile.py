@@ -441,19 +441,6 @@ def get_evm_pinned_version(branch):
     return tag
 
 
-def update_private_contracts_from_git(ssh_url: str, local_dir_name: str, branch="main"):
-    download_path = EXTERNAL_CONTRACT_PATH / local_dir_name
-    click.echo(f"Downloading contracts from {ssh_url} {branch}")
-    if download_path.exists():
-        shutil.rmtree(download_path)
-    commands = f"""
-          git clone --branch {branch} {ssh_url} {download_path}
-      """
-
-    subprocess.check_call(commands, shell=True)
-    click.echo(f"Contracts downloaded from {ssh_url} {branch} to {EXTERNAL_CONTRACT_PATH / local_dir_name}")
-
-
 def update_contracts_from_git(git_url: str, local_dir_name: str, branch="develop", update_npm: bool = True):
     download_path = EXTERNAL_CONTRACT_PATH / local_dir_name
     click.echo(f"Downloading contracts from {git_url} {branch}")

@@ -111,7 +111,7 @@ def prepare_contracts(environment: env.Environment, **kwargs):
             assert receipt["status"] == 1
 
     # deploy token
-    token = web3_client.read_vyper_file_and_deploy(
+    token = web3_client.deploy_compiled_contract(
         deployer,
         "CurveTokenV1",
         [
@@ -124,7 +124,7 @@ def prepare_contracts(environment: env.Environment, **kwargs):
 
     # deploy pool
     LOG.info("Create Pool...")
-    pool = web3_client.read_vyper_file_and_deploy(
+    pool = web3_client.deploy_compiled_contract(
         deployer,
         "StableSwapSBTC",
         [

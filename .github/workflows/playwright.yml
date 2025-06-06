@@ -2,7 +2,10 @@ name: "Playwright Tests"
 run-name: Playwright tests / ${{ github.event.pull_request.title || github.event_name }}
 
 on:
+  schedule:
+    - cron: "0 3 * * 0,1,2,3,4"
   workflow_dispatch:
+
 env:
   IMAGE:  ${{ github.repository_owner }}/neon_tests
   CONTAINER:  services-${{ github.run_id }}

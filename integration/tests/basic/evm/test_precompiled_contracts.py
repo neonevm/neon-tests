@@ -111,30 +111,30 @@ class TestPrecompiledContracts:
         assert result.hex() == expected
 
     @pytest.mark.parametrize(**parametrized_data)
-    def test_call_via_contract(self, precompiled_contract, address, input_data, expected, pytestconfig):
+    def test_call_via_contract(self, precompiled_caller, address, input_data, expected, pytestconfig):
         if pytestconfig.getoption("--network") == "devnet" and address == "0x0000000000000000000000000000000000000005":
             pytest.skip("Doesn't work in devnet/mainnet")
-        contract = precompiled_contract
+        contract = precompiled_caller
         input_data = b"" if input_data == "" else input_data
         result = contract.functions.call_precompiled(address, input_data).call()
 
         assert result.hex() == expected
 
     @pytest.mark.parametrize(**parametrized_data)
-    def test_staticcall_via_contract(self, precompiled_contract, address, input_data, expected, pytestconfig):
+    def test_staticcall_via_contract(self, precompiled_caller, address, input_data, expected, pytestconfig):
         if pytestconfig.getoption("--network") == "devnet" and address == "0x0000000000000000000000000000000000000005":
             pytest.skip("Doesn't work in devnet/mainnet")
-        contract = precompiled_contract
+        contract = precompiled_caller
         input_data = b"" if input_data == "" else input_data
         result = contract.functions.staticcall_precompiled(address, input_data).call()
 
         assert result.hex() == expected
 
     @pytest.mark.parametrize(**parametrized_data)
-    def test_delegatecall_via_contract(self, precompiled_contract, address, input_data, expected, pytestconfig):
+    def test_delegatecall_via_contract(self, precompiled_caller, address, input_data, expected, pytestconfig):
         if pytestconfig.getoption("--network") == "devnet" and address == "0x0000000000000000000000000000000000000005":
             pytest.skip("Doesn't work in devnet/mainnet")
-        contract = precompiled_contract
+        contract = precompiled_caller
         input_data = b"" if input_data == "" else input_data
         result = contract.functions.delegatecall_precompiled(address, input_data).call()
 

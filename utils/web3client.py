@@ -189,7 +189,7 @@ class Web3Client:
         gas: tp.Optional[int] = None,
         gas_price: tp.Optional[int] = None,
         nonce: tp.Optional[int] = None,
-        chain_id: tp.Optional[int] = None,
+        chain_id: tp.Optional[int] = "auto",
         data: tp.Optional[tp.Union[str, bytes]] = None,
         estimate_gas=False,
         tx_type: TransactionType = TransactionType.LEGACY,
@@ -214,7 +214,7 @@ class Web3Client:
             else:
                 transaction["nonce"] = nonce
 
-            if chain_id is None:
+            if chain_id == "auto":
                 transaction["chainId"] = self.chain_id
             elif chain_id:
                 transaction["chainId"] = chain_id
@@ -332,6 +332,8 @@ class Web3Client:
         if base_fee_per_gas == "auto":
             base_fee_per_gas = self.base_fee_per_gas()
 
+        if chain_id == "auto":
+            chain_id = self.chain_id
         auto_map = {
             "chain_id": lambda: self.chain_id,
             "nonce": lambda: self.get_nonce(from_),

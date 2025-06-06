@@ -128,21 +128,18 @@ class TestEconomics:
         token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
         assert_profit(sol_diff, sol_price, token_diff, token_price, w3_client.native_token_name)
 
+    @pytest.mark.skip(reason="Trxs without chain_id doesn't have profit with current CI stand configuration")
     def test_send_neon_token_without_chain_id(
-        self, account_with_all_tokens, web3_client, sol_price, operator, neon_price, faucet
+        self, account_with_all_tokens, web3_client, sol_price, operator, neon_price, accounts
     ):
-        # for neon token transactions without chain_id NeonEVM execute it inside NEON network
+        # for neon token transactions without chain_id NeonEVM
         # checks eip1820
-        # for a transaction without chain_id users need in 1000 times more neon tokens for the execution
-        faucet.request_neon(account_with_all_tokens.address, 10000)
-        acc2 = web3_client.create_account()
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(web3_client)
 
-        instruction_tx = web3_client.make_raw_tx(account_with_all_tokens.address, acc2.address, 1000, estimate_gas=True)
-
-        instruction_tx.pop("chainId")
-
+        instruction_tx = web3_client.make_raw_tx(
+            account_with_all_tokens.address, accounts[1].address, 100, estimate_gas=True, chain_id=None
+        )
         web3_client.send_transaction(account_with_all_tokens, instruction_tx)
         sol_balance_after = operator.get_solana_balance()
         token_balance_after = operator.get_token_balance(web3_client)
@@ -486,7 +483,6 @@ class TestEconomics:
         assert sol_balance_before == sol_balance_after
         assert token_balance_before == token_balance_after
 
-    @pytest.mark.xfail(reason="https://neonlabs.atlassian.net/browse/NDEV-699")
     @pytest.mark.parametrize("tx_type", TransactionType)
     @pytest.mark.eip_1559
     def test_cost_resize_account(
@@ -541,18 +537,16 @@ class TestEconomics:
         sol_price: float,
         operator: Operator,
     ):
-        """Deploy a contract with more 500 instructions"""
+        """Interact with a contract with more 500 instructions"""
         w3_client, token_price = client_and_price
 
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(w3_client)
         tx = w3_client.make_raw_tx(from_=account_with_all_tokens.address)
-
         instruction_tx = counter_contract_two_chain.functions.moreInstruction(0, 100).build_transaction(
             tx
         )  # 1086 steps in evm
         instruction_receipt = w3_client.send_transaction(account_with_all_tokens, instruction_tx)
-
         sol_balance_after = operator.get_solana_balance()
         token_balance_after = operator.get_token_balance(w3_client)
 
@@ -563,6 +557,34 @@ class TestEconomics:
             sol_balance_before - sol_balance_after, sol_price, token_diff, token_price, w3_client.native_token_name
         )
         get_gas_used_percent(w3_client, instruction_receipt)
+
+    @pytest.mark.skip(reason="Trxs without chain_id doesn't have profit with current CI stand configuration")
+    def test_contract_interact_1000_steps_no_chain_id(
+        self,
+        counter_contract: Contract,
+        web3_client: Web3Client,
+        account_with_all_tokens: LocalAccount,
+        sol_price: float,
+        operator: Operator,
+        neon_price,
+    ):
+        """Interact with a contract with more 500 instructions, transaction without chain_id"""
+        sol_balance_before = operator.get_solana_balance()
+        token_balance_before = operator.get_token_balance(web3_client)
+        tx = web3_client.make_raw_tx(from_=account_with_all_tokens.address, chain_id=None)
+        instruction_tx = counter_contract.functions.moreInstruction(0, 100).build_transaction(tx)
+        instruction_tx.pop("chainId")
+        instruction_receipt = web3_client.send_transaction(account_with_all_tokens, instruction_tx)
+        sol_balance_after = operator.get_solana_balance()
+        token_balance_after = operator.get_token_balance(web3_client)
+
+        assert sol_balance_before > sol_balance_after, "SOL Balance not changed"
+        assert token_balance_after > token_balance_before, "TOKEN Balance incorrect"
+        token_diff = web3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(
+            sol_balance_before - sol_balance_after, sol_price, token_diff, neon_price, web3_client.native_token_name
+        )
+        get_gas_used_percent(web3_client, instruction_receipt)
 
     @pytest.mark.parametrize("tx_type", TransactionType)
     @pytest.mark.eip_1559

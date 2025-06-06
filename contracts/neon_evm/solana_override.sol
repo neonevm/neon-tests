@@ -7,4 +7,9 @@ contract solana_override {
     function update_data(uint256 store_value) public {
         b = store_value;
     }
+
+    function send_neon(address recipient, uint256 amount) public payable {
+        (bool success, ) = recipient.call{value: amount}("");
+        require(success, "Failed transfer");
+    }
 }

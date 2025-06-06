@@ -5,10 +5,9 @@ import os
 import threading
 import base58
 import web3
-from solana.rpc import commitment
 from deploy.cli.network_manager import NetworkManager
 from utils.accounts import EthAccounts
-from utils.consts import LAMPORT_PER_SOL, REMAPPING_ZEPPELIN
+from utils.consts import REMAPPING_ZEPPELIN
 from utils.evm_loader import EvmLoader
 from utils.faucet import Faucet
 from utils.helpers import decode_function_signature
@@ -17,6 +16,7 @@ from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData,
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 from locust import User, tag, task, events, env
 from loadtesting.proxy.common.base import NeonProxyTasksSet
+from utils.solana_client import fund_solana_account
 from utils.web3client import NeonChainWeb3Client
 from solders.keypair import Keypair
 
@@ -29,13 +29,6 @@ LOG = logging.getLogger(__name__)
 CURVE_USER_LOCK = threading.Lock()
 
 token_mint_amount = web3.Web3.to_wei(1, "ether")
-
-
-def fund_solana_account(evm_loader, solana_account, bank_account, network):
-    if network != "local" and bank_account is not None:
-        evm_loader.send_sol(bank_account, solana_account.pubkey(), int(5 * LAMPORT_PER_SOL))
-    else:
-        evm_loader.request_airdrop(solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed)
 
 
 @events.test_start.add_listener
@@ -60,7 +53,6 @@ def prepare_contracts(environment: env.Environment, **kwargs):
 
     account_manager = EthAccounts(web3_client, faucet, bank_account)
     deployer = account_manager.create_account()
-    # Removed unused coin_owner variable
 
     environment.evm_loader = EvmLoader(
         program_id=network_object["evm_loader"],
@@ -70,17 +62,11 @@ def prepare_contracts(environment: env.Environment, **kwargs):
         neon_token_mint_str=network_object["spl_neon_mint"],
     )
 
-    # create solana account
-    solana_account = Keypair()
-    fund_solana_account(environment.evm_loader, solana_account, bank_account, network)
-    environment.solana_account = solana_account
-
     # create neon accounts
     neon_accounts = []
     for i in range(neon_users):
-        neon_solana_account = Keypair()
         LOG.info(f"Creating {i} neon user for curve...")
-        neon_user = NeonUser(environment.evm_loader.loader_id, keypair=neon_solana_account)
+        neon_user = NeonUser(environment.evm_loader.loader_id)
         neon_accounts.append(neon_user)
         fund_solana_account(environment.evm_loader, neon_user.solana_account, bank_account, network)
 
@@ -155,10 +141,10 @@ def prepare_contracts(environment: env.Environment, **kwargs):
     tx = web3_client.make_raw_tx(deployer.address)
     instruction_tx = token.functions.set_minter(pool.address).build_transaction(tx)
     resp = web3_client.send_transaction(deployer, instruction_tx)
-    assert resp["status"] == 1, "Trx succeed"
+    assert resp["status"] == 1, "Minter setting failed"
 
     for name, coin in coins.items():
-        LOG.info(f"Approving coin {name} to spend")
+        LOG.info(f"Coin {name} approve for pool spender")
         tx = web3_client.make_raw_tx(deployer.address)
         instruction_tx = coin.functions.approve(pool.address, token_mint_amount).build_transaction(tx)
         resp = web3_client.send_transaction(deployer, instruction_tx)

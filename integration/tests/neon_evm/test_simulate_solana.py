@@ -939,9 +939,8 @@ class TestSimulateSolana:
             transactions=[hex_serialized_transaction],
             solana_overrides_params={str(balance_account): account_info_override},
         )
-        print(simulate_response.json())
-        simulated_transactions = simulate_response.json()["value"]["transactions"]
 
+        simulated_transactions = simulate_response.json()["value"]["transactions"]
         for simulated_transaction in simulated_transactions:
             if simulated_transaction["error"]:
                 raise AssertionError(f"Error in sol trx: {simulated_transaction}")

@@ -65,7 +65,7 @@ class TestNeonTransfer:
         self.web3_client.send_neon(sender_account, sender_balance, amount=1)
         assert sender_balance > self.web3_client.get_balance(sender_account)
 
-    def test_erc_1820_transaction(self, json_rpc_client):
+    def test_erc_1820_transfer_transaction(self):
         """Check ERC-1820 transaction (without chain_id in sign)"""
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
@@ -76,32 +76,11 @@ class TestNeonTransfer:
         transfer_amount = self.web3_client._web3.to_wei(2, Unit.ETHER.value)
 
         transaction = self.web3_client.make_raw_tx(
-            from_=sender_account, to=recipient_account, amount=transfer_amount, chain_id=False, estimate_gas=True
+            from_=sender_account, to=recipient_account, amount=transfer_amount, chain_id=None, estimate_gas=True
         )
+        resp = self.web3_client.send_transaction(sender_account, transaction)
 
-        signed_tx = self.web3_client.eth.account.sign_transaction(transaction, sender_account.key)
-
-        params = [signed_tx.raw_transaction.hex()]
-        transaction = json_rpc_client.send_rpc("eth_sendRawTransaction", params)["result"]
-
-        actual_result = self.web3_client.wait_for_transaction_receipt(transaction)
-
-        assert actual_result["status"] == 1, "Transaction status must be 0x1"
+        assert resp["status"] == 1, "Transaction status must be 0x1"
 
         assert self.web3_client.get_balance(sender_account.address) < (initial_sender_balance - transfer_amount)
         assert self.web3_client.get_balance(recipient_account.address) == (initial_recipient_balance + transfer_amount)
-
-    def test_transaction_does_not_fail_nested_contract(self):
-        """Send Neon to contract via low level call"""
-        sender_account = self.accounts[0]
-        _, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
-            "issues/ndev1004/ContractOne", "0.8.15", account=sender_account
-        )
-        address = contract_deploy_tx["contractAddress"]
-
-        contractTwo, _ = self.web3_client.deploy_and_get_contract(
-            "issues/ndev1004/ContractTwo", "0.8.15", account=sender_account
-        )
-        balance = contractTwo.functions.getBalance().call()
-        assert balance == 0
-        contractTwo.functions.depositOnContractOne(address).call()

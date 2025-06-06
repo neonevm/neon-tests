@@ -89,3 +89,38 @@ class TestTransactionsValidation:
         )
         bytes_amount = contract.functions.makeBigMemoryValue(5).call()
         assert bytes_amount == 32 * 1024
+
+    def test_erc_1820_contract_call_transaction(self):
+        """Check ERC-1820 transaction (without chain_id in sign)"""
+        sender_account = self.accounts[0]
+        recipient_account = self.accounts[1]
+
+        initial_sender_balance = self.web3_client.get_balance(sender_account)
+        initial_recipient_balance = self.web3_client.get_balance(recipient_account)
+
+        transfer_amount = 100
+
+        transaction = self.web3_client.make_raw_tx(
+            from_=sender_account, to=recipient_account, amount=transfer_amount, chain_id=None, estimate_gas=True
+        )
+        resp = self.web3_client.send_transaction(sender_account, transaction)
+
+        assert resp["status"] == 1, "Transaction status must be 0x1"
+
+        assert self.web3_client.get_balance(sender_account.address) < (initial_sender_balance - transfer_amount)
+        assert self.web3_client.get_balance(recipient_account.address) == (initial_recipient_balance + transfer_amount)
+
+    def test_transaction_does_not_fail_nested_contract(self):
+        """Send Neon to contract via low level call"""
+        sender_account = self.accounts[0]
+        _, contract_deploy_tx = self.web3_client.deploy_and_get_contract(
+            "issues/ndev1004/ContractOne", "0.8.15", account=sender_account
+        )
+        address = contract_deploy_tx["contractAddress"]
+
+        contractTwo, _ = self.web3_client.deploy_and_get_contract(
+            "issues/ndev1004/ContractTwo", "0.8.15", account=sender_account
+        )
+        balance = contractTwo.functions.getBalance().call()
+        assert balance == 0
+        contractTwo.functions.depositOnContractOne(address).call()

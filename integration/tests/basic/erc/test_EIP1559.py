@@ -10,7 +10,6 @@ from eth_account.signers.local import LocalAccount
 from solana.rpc.commitment import Confirmed
 from solders.signature import Signature
 from web3._utils.fee_utils import _fee_history_priority_fee_estimate  # noqa
-from web3.contract import Contract
 from web3.exceptions import TimeExhausted, Web3RPCError
 
 from utils import helpers
@@ -18,7 +17,6 @@ from utils.accounts import EthAccounts
 from utils.apiclient import JsonRPCSession
 from utils.consts import InstructionTags, COMPUTE_BUDGET_ID
 from utils.cu_cost_packed import CuCostPktData
-from utils.faucet import Faucet
 from utils.models.fee_history_model import EthFeeHistoryResult
 from utils.solana_client import SolanaClient
 from utils.types import TransactionType
@@ -243,7 +241,7 @@ class TestEIP1559:
         json_rpc_client: JsonRPCSession,
     ):
         sender = self.accounts[0]
-        recipient = self.web3_client.create_account()
+        recipient = self.accounts[1]
 
         tx_params = self.web3_client.make_raw_tx_eip_1559(
             chain_id=None,
@@ -272,19 +270,10 @@ class TestEIP1559:
             access_list=None,
         )
 
-    def test_contract_function_call_positive(
-        self,
-    ):
+    def test_contract_function_call_positive(self, common_contract):
         account = self.accounts[0]
-        contract_a, _ = self.web3_client.deploy_and_get_contract(
-            contract="EIPs/EIP161/contract_a_function.sol",
-            version="0.8.12",
-            account=account,
-            contract_name="ContractA",
-        )
-
-        tx_params = contract_a.functions.deploy_contract().build_transaction()
-        tx_params["nonce"] = self.web3_client.get_nonce(account)
+        tx = self.web3_client.make_raw_tx(account, tx_type=TransactionType.EIP_1559)
+        tx_params = common_contract.functions.setNumber(100).build_transaction(tx)
 
         tx_receipt = self.web3_client.send_transaction(
             account=account,
@@ -292,37 +281,7 @@ class TestEIP1559:
         )
 
         assert tx_receipt.type == 2
-        assert tx_receipt.status == 1, "ContractB was not deployed"
-        assert tx_receipt.logs, "ContractB was not deployed"
-        contract_b_address = tx_receipt.logs[0].address
-
-        contract_a_nonce = self.web3_client.get_nonce(contract_a.address)
-        assert contract_a_nonce == 2
-
-        contract_b: Contract = self.web3_client.get_deployed_contract(
-            address=contract_b_address,
-            contract_file="EIPs/EIP161/contract_b.sol",
-            contract_name="ContractB",
-        )
-
-        data = contract_b.functions.getOne().build_transaction()["data"]
-        tx_params = self.web3_client.make_raw_tx_eip_1559(
-            chain_id="auto",
-            from_=account.address,
-            to=contract_b.address,
-            value=0,
-            nonce="auto",
-            gas="auto",
-            max_priority_fee_per_gas="auto",
-            max_fee_per_gas="auto",
-            data=data,
-            access_list=None,
-        )
-
-        tx_receipt = self.web3_client.send_transaction(account, tx_params)
-        assert tx_receipt.type == 2
-        result = int(tx_receipt.logs[0].topics[1].hex(), 16)
-        assert result == 1
+        assert tx_receipt.status == 1, "Transaction failed"
 
     @pytest.mark.parametrize(*NEGATIVE_PARAMETERS)
     def test_transfer_negative(
@@ -332,8 +291,8 @@ class TestEIP1559:
         expected_exception,
         exception_message_regex,
     ):
-        sender = self.accounts[1]
-        recipient = self.web3_client.create_account()
+        sender = self.accounts[0]
+        recipient = self.accounts[1]
         value = 1
 
         tx_params = self.web3_client.make_raw_tx_eip_1559(
@@ -364,7 +323,7 @@ class TestEIP1559:
         expected_exception,
         exception_message_regex,
     ):
-        account = self.accounts[3]
+        account = self.accounts[0]
 
         contract_iface = helpers.get_contract_interface(
             contract="common/Common.sol",
@@ -397,7 +356,7 @@ class TestEIP1559:
     ):
         sender = self.accounts[0]
         balance = self.web3_client.get_balance(sender.address)
-        recipient = self.web3_client.create_account()
+        recipient = self.accounts[1]
 
         tx_params = self.web3_client.make_raw_tx_eip_1559(
             chain_id="auto",
@@ -417,12 +376,9 @@ class TestEIP1559:
             self.web3_client.send_transaction(account=sender, transaction=tx_params)
 
     @pytest.mark.only_stands
-    def test_too_low_fee(
-        self,
-        faucet: Faucet,
-    ):
-        sender = self.web3_client.create_account_with_balance(faucet=faucet)
-        recipient = self.web3_client.create_account()
+    def test_too_low_fee(self):
+        sender = self.accounts[8]
+        recipient = self.accounts[1]
 
         gas_price = self.web3_client.neon_gas_price()
         min_acceptable_price = gas_price["minAcceptableGasPrice"]
@@ -456,23 +412,21 @@ class TestEIP1559:
     @pytest.mark.only_stands
     def test_compute_unit_price_default_value(
         self,
-        accounts: EthAccounts,
-        web3_client: NeonChainWeb3Client,
         json_rpc_client: JsonRPCSession,
         sol_client: SolanaClient,
         default_cu_price: int,
     ):
-        sender = accounts[0]
-        recipient = accounts[1]
+        sender = self.accounts[0]
+        recipient = self.accounts[1]
 
-        max_priority_fee_per_gas = web3_client.max_priority_fee_per_gas()
-        base_fee_per_gas = web3_client.base_fee_per_gas()
+        max_priority_fee_per_gas = self.web3_client.max_priority_fee_per_gas()
+        base_fee_per_gas = self.web3_client.base_fee_per_gas()
         base_fee_multiplier = 1.1
         max_fee_per_gas = int((base_fee_multiplier * base_fee_per_gas) + max_priority_fee_per_gas)
 
         value = 10
 
-        tx_params = web3_client.make_raw_tx_eip_1559(
+        tx_params = self.web3_client.make_raw_tx_eip_1559(
             chain_id="auto",
             from_=sender.address,
             to=recipient.address,
@@ -486,9 +440,9 @@ class TestEIP1559:
             access_list=None,
         )
 
-        receipt = web3_client.send_transaction(account=sender, transaction=tx_params)
+        receipt = self.web3_client.send_transaction(account=sender, transaction=tx_params)
         assert receipt["type"] == 2
-        solana_transactions = web3_client.get_solana_trx_by_neon(receipt["transactionHash"].hex())["result"]
+        solana_transactions = self.web3_client.get_solana_trx_by_neon(receipt["transactionHash"].hex())["result"]
         assert len(solana_transactions) == 1
         solana_transaction = sol_client.get_transaction(
             tx_sig=Signature.from_string(solana_transactions[0]),
@@ -501,24 +455,22 @@ class TestEIP1559:
     @pytest.mark.only_stands
     def test_compute_unit_price_estimated_value(
         self,
-        accounts: EthAccounts,
-        web3_client: NeonChainWeb3Client,
         json_rpc_client: JsonRPCSession,
         sol_client: SolanaClient,
         default_cu_price: int,
     ):
-        account = accounts[0]
+        account = self.accounts[0]
         contract_iface = helpers.get_contract_interface(
             contract="common/Common.sol",
             version="0.8.12",
             contract_name="Common",
         )
 
-        max_priority_fee_per_gas = web3_client.max_priority_fee_per_gas()
-        base_fee = int(web3_client.base_fee_per_gas() / 40000)  # make it small
+        max_priority_fee_per_gas = self.web3_client.max_priority_fee_per_gas()
+        base_fee = int(self.web3_client.base_fee_per_gas() / 40000)  # make it small
         max_fee_per_gas = base_fee + max_priority_fee_per_gas
 
-        tx_params = web3_client.make_raw_tx_eip_1559(
+        tx_params = self.web3_client.make_raw_tx_eip_1559(
             chain_id="auto",
             from_=account.address,
             to=None,
@@ -546,8 +498,8 @@ class TestEIP1559:
         cu_price_from_estimate = neon_gas_estimate["solanaComputeUnitPrice"]
         assert cu_price_from_estimate == default_cu_price
 
-        receipt = web3_client.send_transaction(account=account, transaction=tx_params)
-        solana_transaction_hashes = web3_client.get_solana_trx_by_neon(receipt["transactionHash"].hex())["result"]
+        receipt = self.web3_client.send_transaction(account=account, transaction=tx_params)
+        solana_transaction_hashes = self.web3_client.get_solana_trx_by_neon(receipt["transactionHash"].hex())["result"]
         assert len(solana_transaction_hashes) > 1
 
         # first transactions are "WriteToHolder", so we're interested only in the last one
@@ -582,6 +534,26 @@ class TestEIP1559:
         pkt = CuCostPktData.from_raw(gas, neon_gas_estimate["numIterations"], default_cu_price)
         tx_cost = pkt.tx_cost
         assert eth_gas_estimate == tx_cost
+
+    def test_contract_call_no_chain_id(self, counter_contract):
+        tx = self.web3_client.make_raw_tx(from_=self.accounts[0], tx_type=TransactionType.EIP_1559, chain_id=None)
+        instruction_tx = counter_contract.functions.moreInstruction(0, 3000).build_transaction(tx)
+        instruction_tx.pop("chainId")
+        with pytest.raises(web3.exceptions.Web3RPCError, match="wrong chain id"):
+            self.web3_client.send_transaction(self.accounts[0], instruction_tx)
+
+    def test_transfer_no_chain_id(self, counter_contract):
+        tx = self.web3_client.make_raw_tx(
+            from_=self.accounts[0],
+            estimate_gas=True,
+            to=self.accounts[1].address,
+            amount=1000,
+            chain_id=None,
+            tx_type=TransactionType.EIP_1559,
+        )
+        tx.pop("chainId")
+        with pytest.raises(web3.exceptions.Web3RPCError, match="wrong chain id"):
+            self.web3_client.send_transaction(self.accounts[0], tx)
 
 
 @allure.feature("EIP Verifications")

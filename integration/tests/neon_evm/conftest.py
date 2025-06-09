@@ -231,7 +231,7 @@ def calculator_caller_contract(
 
 
 @pytest.fixture(scope="session")
-def solana_override_contract(
+def solana_overrides_contract(
     evm_loader: EvmLoader,
     neon_api_client: NeonApiClient,
     operator_keypair: Keypair,

@@ -1,27 +1,31 @@
 name: "Prepare stand"
 description: "Create terraform stand"
 outputs:
-  proxy_ip:
-    description: "proxy ip"
-    value: ${{ steps.share.outputs.proxy_ip }}
-  solana_ip:
-    description: "solana ip"
-    value: ${{ steps.share.outputs.solana_ip }}
+  instance_public_ip_v4:
+    value: ${{ steps.create-instance.outputs.public-ip-v4 }}
+  docker_ca_cert:
+    value: ${{ steps.prepare-docker-instance.outputs.docker_ca_cert }}
+  docker_cert:
+    value: ${{ steps.prepare-docker-instance.outputs.docker_cert }}
+  docker_key:
+    value: ${{ steps.prepare-docker-instance.outputs.docker_key }}
+
 inputs:
-  working-directory:
-    description: 'Working directory for the commands'
+  hcloud_token:
+    required: true
+  aws_secret_access_key_id:
+    required: true
+  aws_secret_access_key:
+    required: true
+  aws_default_region:
+    required: true
+  memory:
+    description: "Instance memory amount"
+    default: 32
     required: false
-    default: '.'
-  ci_stands_key_hcloud:
-    description: 'Private key for hcloud'
-    required: false
-  use_real_price:
-    description: 'Remove CONST_GAS_PRICE option from proxy'
-    default: '0'
-    required: false
-  hetzner_instance_types:
-    description: 'list of Hcloud instaces used(one by one) to try to set up infra e.g. ccx33,ccx43,ccx53,cx42,ccx63'
-    default: cpx51,cx52,cpx41,cx42,ccx33,ccx43
+  cpu:
+    description: "Instance CPU amount"
+    default: 16
     required: false
   docker_username:
     description: 'docker hub username'
@@ -29,83 +33,104 @@ inputs:
   docker_password:
     description: 'docker hub password'
     required: true
-
+  gh_token:
+    required: true
+  dockerhub_org_name:
+    required: true
+  devnet_solana_url:
+    required: true
+  neonevm_commit:
+    required: true
+    default: "latest"
+  revision:
+    default: "latest"
+  faucet_commit:
+    default: "latest"
+  proxy_branch:
+    required: true
+  use_real_price:
+    description: 'Remove CONST_GAS_PRICE option from proxy'
+    default: '0'
+    required: false
 
 runs:
   using: composite
 
   steps:
-    - uses: hashicorp/setup-terraform@v3
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 16
-    - name: Install python requirements
-      id: requirements
-      uses: neonlabsorg/neon-tests/.github/actions/python-requirements@develop
-      with:
-        working-directory: ${{ inputs.working-directory }}
-    - name: Deploy stand with terraform
-      id: deploy
-      env:
-        HETZNER_INSTANCE_TYPES: ${{ inputs.hetzner_instance_types }}
-      shell: bash
-      run: |
-        cd ${{ inputs.working-directory }}
-        echo "USE PRICE: ${{ inputs.use_real_price }}"
-        ssh_key='/tmp/ci-stands'
-        echo "${{ inputs.ci_stands_key_hcloud  }}" >> ${ssh_key} && chmod 400 ${ssh_key}
-        python3 ./clickfile.py infra deploy --current_branch ${{ github.ref_name}} \
-          --head_branch ${{ github.head_ref }} \
-          --base_branch ${{ github.base_ref }} \
-          --use-real-price ${{inputs.use_real_price}} \
-          --devnet-solana-url ${{env.DEVNET_SOLANA_URL}}
-    - uses: actions/upload-artifact@v4
-      with:
-        name: tf-state
-        path: ${{ inputs.working-directory }}/deploy/hetzner/
-    - name: Set outputs
-      id: share
-      env:
-        SOLANA_IP: ${{ env.SOLANA_IP }}
-        PROXY_IP: ${{ env.PROXY_IP }}
-      shell: bash
-      run: |
-        cd ${{ inputs.working-directory }}
-        proxy_url=`python ./clickfile.py infra print-network-param -n 'terraform' -p 'proxy_url'`
-        echo "proxy_url=$proxy_url"
-        echo "solana_ip=${{ env.SOLANA_IP }}"
-        echo "proxy_ip=${{ env.PROXY_IP }}"
-        echo "proxy_url=$proxy_url" >> $GITHUB_OUTPUT
-        echo "proxy_ip=${{ env.PROXY_IP }}" >> $GITHUB_OUTPUT
-        echo "solana_ip=${{ env.SOLANA_IP }}" >> $GITHUB_OUTPUT
-    - name: Run Solana docker compose
-      uses: appleboy/ssh-action@v1.2.1
-      env:
-        DOCKER_USERNAME: ${{ inputs.docker_username }}
-        DOCKER_PASSWORD: ${{ inputs.docker_password }}
-      with:
-        host: ${{ env.SOLANA_IP }}
-        username: root
-        key: ${{ inputs.ci_stands_key_hcloud  }}
-        envs: DOCKER_USERNAME,DOCKER_PASSWORD
-        script: |
-          cd ${{ inputs.working-directory }}
-          chmod a+x /tmp/solana_init.sh
-          sudo -E /tmp/solana_init.sh
+  - uses: actions/checkout@v4
+    with:
+      fetch-depth: 0
+  - uses: actions/checkout@v4
+    with:
+      repository: 'neonlabsorg/dynamic-ci-cd'
+      ref: 'main'
+      token: ${{ inputs.gh_token }}
+      path: ./dynamic-ci-cd
+  - uses: actions/checkout@v4
+    with:
+      repository: 'neonlabsorg/neon-proxy.py'
+      ref: ${{ inputs.proxy_branch }}
+      token: ${{ inputs.gh_token }}
+      path: ./neon-proxy.py
+  - name: Create instance
+    uses: ./dynamic-ci-cd/actions/create-instance
+    id: create-instance
+    with:
+      project-repository: ${{ github.event.repository.name }}
+      run-id: ${{github.run_id}}
+      cpu: 16
+      memory: 32
+      hcloud-token: ${{ inputs.hcloud_token }}
+    env:
+      AWS_ACCESS_KEY_ID: ${{ inputs.aws_secret_access_key_id }}
+      AWS_DEFAULT_REGION: ${{ inputs.aws_default_region }}
+      AWS_SECRET_ACCESS_KEY: ${{ inputs.aws_secret_access_key }}
+  - name: Install docker
+    uses: ./dynamic-ci-cd/actions/prepare-docker-instance
+    id: prepare-docker-instance
+    with:
+        host: ${{ steps.create-instance.outputs.public-ip-v4 }}
+        ssh-user: ${{ steps.create-instance.outputs.ssh-user }}
+        ssh-key: ${{ steps.create-instance.outputs.ssh-key }}
+  - name: Set Gas Price
+    id: set-gas-price
+    shell: bash
+    run: |
+      set -euo pipefail
+        COMPOSE_FILE="./neon-proxy.py/docker-compose/docker-compose-ci.yml"
+        USE_REAL="${{ inputs.use_real_price }}"
 
-    - name: Run Poxy docker compose
-      uses: appleboy/ssh-action@v1.2.1
-      env:
-        SOLANA_IP: ${{ env.SOLANA_IP }}
-        DOCKER_USERNAME: ${{ inputs.docker_username }}
-        DOCKER_PASSWORD: ${{ inputs.docker_password }}
-      with:
-        host: ${{ env.PROXY_IP }}
-        username: root
-        key: ${{ inputs.ci_stands_key_hcloud  }}
-        envs: SOLANA_IP,DOCKER_USERNAME,DOCKER_PASSWORD
-        script: |
-          cd ${{ inputs.working-directory }}
-          echo $SOLANA_IP > /tmp/solana_host
-          chmod a+x /tmp/proxy_init.sh
-          sudo -E /tmp/proxy_init.sh
+        # Only strip out CONST_GAS_PRICE when use_real_price != "0"
+        if [[ "$USE_REAL" != "0" ]]; then
+          sed -i '/^[[:space:]]*-[[:space:]]*CONST_GAS_PRICE=.*$/d' "$COMPOSE_FILE"
+        fi
+  - name: Install envsubst
+    shell: bash
+    run: sudo apt-get update && sudo apt-get install -y gettext
+  - name: Read docker-compose.yaml file content into variable
+    id: read_compose_file
+    shell: bash
+    run: |
+      rendered=$(envsubst < ./neon-proxy.py/docker-compose/docker-compose-ci.yml)
+      echo "value<<EOF" >> "$GITHUB_OUTPUT"
+      echo "$rendered" >> "$GITHUB_OUTPUT"
+      echo "EOF" >> "$GITHUB_OUTPUT"
+    env:
+      REVISION: ${{ inputs.revision }}
+      NEON_EVM_COMMIT: ${{ inputs.neonevm_commit }}
+      FAUCET_COMMIT: ${{ inputs.faucet_commit }}
+      DOCKERHUB_ORG_NAME: ${{ inputs.dockerhub_org_name }}
+      DEVNET_SOLANA_URL: ${{ inputs.devnet_solana_url }}
+  - name: Debug
+    shell: bash
+    run: echo "${{ steps.read_compose_file.outputs.value }}"
+  - name: Run docker containers
+    uses: ./dynamic-ci-cd/actions/run-docker-containers
+    id: run-docker-containerss
+    with:
+        docker_host: ${{ steps.create-instance.outputs.public-ip-v4 }}
+        docker_ca_cert: ${{ steps.prepare-docker-instance.outputs.docker_ca_cert }}
+        docker_cert: ${{ steps.prepare-docker-instance.outputs.docker_cert }}
+        docker_key: ${{ steps.prepare-docker-instance.outputs.docker_key }}
+        docker_containers_wait_for_ready_seconds: 30
+        docker_compose: ${{ steps.read_compose_file.outputs.value }}

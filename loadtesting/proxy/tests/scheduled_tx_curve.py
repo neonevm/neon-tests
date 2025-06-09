@@ -20,7 +20,6 @@ from utils.solana_client import fund_solana_account
 from utils.web3client import NeonChainWeb3Client
 from solders.keypair import Keypair
 
-# Mock trio completely before httpcore tries to import it
 sys.modules["trio"] = MagicMock()
 sys.modules["trio._core"] = MagicMock()
 sys.modules["trio._core._run"] = MagicMock()

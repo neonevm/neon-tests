@@ -55,7 +55,8 @@ runs:
             --build-arg BASE_IMAGE_TAG=${{ env.BASE_IMAGE_TAG }} \
             --build-arg DOCKER_HUB_ORG_NAME=${{ env.DOCKER_HUB_ORG_NAME }}
         if [[ -n "${{ steps.base_image_build.outputs.feature_branch_tag }}" ]]; then
-          docker tag ${image_name}:${{ inputs.image_tag }} ${image_name}:${{ steps.base_image_build.outputs.feature_branch_tag }}
+          branch_tag=$(echo "${{ steps.base_image_build.outputs.feature_branch_tag }}" | sed 's|/|-|g')
+          docker tag ${image_name}:${{ inputs.image_tag }} ${image_name}:${branch_tag}
         fi;
         echo "${delimeter} Login into Docker registry as ${{ inputs.docker_username }} ${delimeter}"
         echo "${{ inputs.docker_password }}" | docker login -u ${{ inputs.docker_username }} --password-stdin

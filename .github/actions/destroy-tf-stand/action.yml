@@ -1,47 +1,59 @@
 name: "Destroy stand"
 description: "Destroy stand created by terraform"
 inputs:
-  working-directory:
-    description: 'Working directory for the commands'
-    required: false
-    default: '.'
-  ci_stands_key_hcloud:
-    description: 'Private key for hcloud'
+  instance_public_ipv4:
+    required: true
+  docker_ca_cert:
+    required: true
+  docker_cert:
+    required: true
+  docker_key:
+    required: true
+  hcloud_token:
+    required: true
+  aws_secret_access_key_id:
+    required: true
+  aws_secret_access_key:
+    required: true
+  aws_default_region:
+    required: true
+  gh_token:
     required: true
 
 runs:
   using: composite
   steps:
-    - uses: hashicorp/setup-terraform@v3
-    - uses: actions/setup-node@v4
+    - uses: actions/checkout@v4
       with:
-        node-version: 16
-    - name: Install python requirements
-      if: always()
-      id: requirements
-      uses: neonlabsorg/neon-tests/.github/actions/python-requirements@develop
+          fetch-depth: 0
+    - uses: actions/checkout@v4
       with:
-        working-directory: ${{ inputs.working-directory }}
-    - name: Prepare server for destroy terraform stand
-      if: always()
-      shell: bash
-      run: |
-        ssh_key=/tmp/ci-stands
-        echo "${{ inputs.ci_stands_key_hcloud  }}" >> ${ssh_key} && chmod 400 ${ssh_key}
-    - name: Download docker logs
-      shell: bash
-      run: |
-        cd ${{ inputs.working-directory }}
-        python3 ./clickfile.py infra download-logs
-    - name: Destroy stand with terraform
-      shell: bash
-      id: destroy
-      if: always()
-      run: |
-        cd ${{ inputs.working-directory }}
-        python3 ./clickfile.py infra destroy
+        repository: 'neonlabsorg/dynamic-ci-cd'
+        ref: 'main'
+        token: ${{ inputs.gh_token }}
+        path: dynamic-ci-cd
+    - name: Fetch docker logs
+      uses: ./dynamic-ci-cd/actions/fetch-docker-container-logs
+      with:
+          docker_host: ${{ inputs.instance_public_ipv4 }}
+          docker_ca_cert: ${{ inputs.docker_ca_cert }}
+          docker_cert: ${{ inputs.docker_cert }}
+          docker_key: ${{ inputs.docker_key }}
+          container_names: "solana,neon-core-api,neon-core-rpc,postgres,dbcreation,proxy,faucet,indexer"
+    - name: Delete instance
+      uses: ./dynamic-ci-cd/actions/delete-instance
+      id: detele-instance
+      with:
+        project-repository: ${{ github.event.repository.name }}
+        job-id: ${{ github.job }}
+        run-id: ${{github.run_id}}
+        hcloud-token: ${{ inputs.hcloud_token }}
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws_secret_access_key_id }}
+        AWS_DEFAULT_REGION: ${{ inputs.aws_default_region }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws_secret_access_key }}
     - uses: actions/upload-artifact@v4
       if: always()
       with:
         name: Docker logs
-        path: ${{ inputs.working-directory }}/logs/*
+        path: /tmp/logs/*

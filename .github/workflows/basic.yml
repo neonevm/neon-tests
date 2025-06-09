@@ -75,70 +75,13 @@ jobs:
       - uses: pre-commit/action@v3.0.1
         timeout-minutes: 3
 
-  dockerize:
-    name: Dockerize neon tests
+  share-tags:
+    name: Determine image tags
     runs-on: ["self-hosted", "k8s-prod"]
     needs:
       - pre-commit-check
     steps:
       - uses: actions/checkout@v4
-      - name: Dockerize neon tests
-        uses: ./.github/actions/dockerize-neon-tests
-        with:
-          image_tag: ${{ github.sha }}
-          docker_username: ${{ secrets.DOCKER_USERNAME }}
-          docker_password: ${{ secrets.DOCKER_PASSWORD }}
-          image_name: ${{ env.IMAGE }}
-          docker_hub_org_name: ${{ env.DOCKER_HUB_ORG_NAME }}
-          force_rebuild_base_image: ${{ env.REBUILD_BASE_IMAGE }}
-      - name: "Define image tag"
-        id: image_tag
-        uses: ./.github/actions/define-image-tag
-    outputs:
-      tag: ${{ steps.image_tag.outputs.tag }}
-  prepare-env-proxy:
-    name: Prepare environment for proxy tests
-    runs-on: ["self-hosted", "k8s-prod"]
-    needs:
-      - pre-commit-check
-    if: always()
-    steps:
-      - uses: actions/checkout@v4
-      - name: "Prepare terraform stand"
-        id: prepare_terraform
-        if: ${{ env.NETWORK == 'terraform' }}
-        timeout-minutes: 15
-        env:
-          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
-          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
-          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-          HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
-          TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
-          TFSTATE_KEY: ${{vars.TFSTATE_KEY_PREFIX}}-${{ github.run_number }}
-          TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
-        uses: ./.github/actions/create-tf-stand
-        with:
-          ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
-          hetzner_instance_types: ${{vars.HETZNER_INSTANCE_TYPES}}
-          docker_username: ${{ secrets.DOCKER_USERNAME }}
-          docker_password: ${{ secrets.DOCKER_PASSWORD }}
-    outputs:
-      proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
-      solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
-  run-evm-tests:
-    name: Run EVM tests
-    runs-on: ["self-hosted", "k8s-prod"]
-    needs:
-      - dockerize
-    env:
-      DOCKER_PROJECT_NAME: "evm-tests-${{ github.run_number }}-${{ github.run_attempt }}"
-    outputs:
-      test-group : ${{ steps.step_fail.outputs.FAILED_TEST_GROUP  }}
-    steps:
-      - uses: actions/checkout@v4
-        if: ${{ env.NETWORK != 'devnet' }}
-        with:
-          fetch-depth: 0
       - name: Install python requirements
         if: ${{ env.NETWORK != 'devnet' }}
         uses: ./.github/actions/python-requirements
@@ -162,6 +105,77 @@ jobs:
           echo "evm_tag=$env_tag" >> $GITHUB_OUTPUT
           echo "evm_branch=$evm_branch"
           echo "evm_branch=$evm_branch" >> $GITHUB_OUTPUT
+          echo "proxy_branch=$proxy_branch"
+          echo "proxy_branch=$proxy_branch" >> $GITHUB_OUTPUT
+    outputs:
+      evm_tag: ${{ steps.share.outputs.evm_tag }}
+      evm_branch: ${{ steps.share.outputs.evm_branch }}
+      proxy_branch: ${{ steps.share.outputs.proxy_branch }}
+
+  dockerize:
+    name: Dockerize neon tests
+    runs-on: ["self-hosted", "k8s-prod"]
+    needs:
+      - share-tags
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dockerize neon tests
+        uses: ./.github/actions/dockerize-neon-tests
+        with:
+          image_tag: ${{ github.sha }}
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
+          image_name: ${{ env.IMAGE }}
+          docker_hub_org_name: ${{ env.DOCKER_HUB_ORG_NAME }}
+          force_rebuild_base_image: ${{ env.REBUILD_BASE_IMAGE }}
+      - name: "Define image tag"
+        id: image_tag
+        uses: ./.github/actions/define-image-tag
+    outputs:
+      tag: ${{ steps.image_tag.outputs.tag }}
+  prepare-env-proxy:
+    name: Prepare environment for proxy tests
+    runs-on: ["self-hosted", "k8s-prod"]
+    needs:
+      - share-tags
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Prepare terraform stand"
+        id: prepare_terraform
+        uses: ./.github/actions/create-tf-stand
+        with:
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
+          aws_default_region: "eu-central-1"
+          aws_secret_access_key_id: ${{ secrets.CI_AWS_ACCESS_KEY }}
+          aws_secret_access_key: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+          gh_token: ${{ secrets.GHTOKEN }}
+          dockerhub_org_name: ${{ github.repository_owner }}
+          devnet_solana_url: "${{ secrets.SOLANA_URL }}"
+          neonevm_commit: ${{ needs.share-tags.outputs.evm_tag }}
+          proxy_branch: ${{ needs.share-tags.outputs.proxy_branch }}
+    outputs:
+      proxy_ip: ${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}
+      solana_ip: ${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}
+      docker_ca_cert: ${{ steps.prepare_terraform.outputs.docker_ca_cert }}
+      docker_cert: ${{ steps.prepare_terraform.outputs.docker_cert }}
+      docker_key: ${{ steps.prepare_terraform.outputs.docker_key }}
+  run-evm-tests:
+    name: Run EVM tests
+    runs-on: ["self-hosted", "k8s-prod"]
+    needs:
+      - dockerize
+      - share-tags
+    env:
+      DOCKER_PROJECT_NAME: "evm-tests-${{ github.run_number }}-${{ github.run_attempt }}"
+    outputs:
+      test-group : ${{ steps.step_fail.outputs.FAILED_TEST_GROUP  }}
+    steps:
+      - uses: actions/checkout@v4
+        if: ${{ env.NETWORK != 'devnet' }}
+        with:
+          fetch-depth: 0
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3.1.0
@@ -173,9 +187,9 @@ jobs:
         if: ${{ env.NETWORK != 'devnet' }}
         env:
           NEON_TESTS_IMAGE: ${{ env.IMAGE }}:${{ needs.dockerize.outputs.tag }}
-          EVM_LOADER_IMAGE: ${{ github.repository_owner }}/evm_loader:${{ steps.share.outputs.evm_tag }}
+          EVM_LOADER_IMAGE: ${{ github.repository_owner }}/evm_loader:${{ needs.share-tags.outputs.evm_tag }}
         run: |
-          curl -O https://raw.githubusercontent.com/${{ github.repository_owner }}/neon-evm/${{ steps.share.outputs.evm_branch }}/ci/docker-compose-ci.yml
+          curl -O https://raw.githubusercontent.com/${{ github.repository_owner }}/neon-evm/${{ needs.share-tags.outputs.evm_branch }}/ci/docker-compose-ci.yml
           docker-compose -p ${{env.DOCKER_PROJECT_NAME}} -f docker-compose-ci.yml pull
           docker-compose -p ${{env.DOCKER_PROJECT_NAME}} -f docker-compose-ci.yml up -d
           docker exec -i ${{env.DOCKER_PROJECT_NAME}}-tests-1 bash -c "python3 clickfile.py run evm --numprocesses 8 --network docker_net --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
@@ -195,7 +209,7 @@ jobs:
       - name: Stop and remove containers
         env:
           NEON_TESTS_IMAGE: ${{ env.IMAGE }}:${{ needs.dockerize.outputs.tag }}
-          EVM_LOADER_IMAGE: ${{ github.repository_owner }}/evm_loader:${{ steps.share.outputs.evm_tag }}
+          EVM_LOADER_IMAGE: ${{ github.repository_owner }}/evm_loader:${{ needs.share-tags.outputs.evm_tag }}
         if: always() && env.NETWORK != 'devnet'
         run: |
           docker-compose -p ${{env.DOCKER_PROJECT_NAME}} -f docker-compose-ci.yml down
@@ -288,20 +302,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: "Destroy stand"
-        if: env.NETWORK == 'terraform'
-        env:
-          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
-          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
-          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-          HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
-          TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
-          TFSTATE_KEY: ${{vars.TFSTATE_KEY_PREFIX}}-${{ github.run_number }}
-          TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
-          PROXY_IP: ${{ needs.prepare-env-proxy.outputs.proxy_ip }}
-          SOLANA_IP: ${{ needs.prepare-env-proxy.outputs.solana_ip }}
         uses: ./.github/actions/destroy-tf-stand
         with:
           ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
+          instance_public_ipv4: ${{ needs.prepare-env-proxy.outputs.proxy_ip }}
+          docker_ca_cert: ${{ needs.prepare-env-proxy.outputs.docker_ca_cert }}
+          docker_cert: ${{ needs.prepare-env-proxy.outputs.docker_cert }}
+          docker_key: ${{ needs.prepare-env-proxy.outputs.docker_key }}
+          aws_secret_access_key_id: ${{ secrets.CI_AWS_ACCESS_KEY }}
+          aws_default_region: "eu-central-1"
+          aws_secret_access_key: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+          gh_token: ${{ secrets.GHTOKEN }}
   send-notification:
     name: Send notification on failure
     if: failure() && github.ref_name == 'develop'

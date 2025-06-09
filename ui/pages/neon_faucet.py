@@ -34,33 +34,41 @@ class NeonTestAirdropsPage(BasePage):
     def __init__(self, *args, **kwargs) -> None:
         super(NeonTestAirdropsPage, self).__init__(*args, **kwargs)
 
+    @allure.step("Wait until message 'Connect your wallet' is visible")
     def page_loaded(self) -> None:
         self.page.wait_for_selector(self.SELECTORS["connect_wallet_message"])
 
+    @allure.step("Click 'Connect MetaMask' button'")
     def connect_wallet(self, timeout: int = 300) -> None:
         components.Button(self.page, selector=self.SELECTORS["connect_metamask_btn"]).click()
         self.page.wait_for_selector(self.SELECTORS["success_message"], timeout=timeout)
 
+    @allure.step("Wait until message 'Connect your wallet' is visible")
     def _choose_token(self, token: str) -> None:
         self.page.query_selector(self.SELECTORS["choose_token_btn"]).click()
         self.page.wait_for_selector(self.SELECTORS["token_option"].format(token)).click()
 
+    @allure.step("Input into search field non-existing token")
     def choose_non_existing_token(self, token: str) -> None:
         self.page.query_selector(self.SELECTORS["choose_token_btn"]).click()
         self.page.wait_for_selector(self.SELECTORS["token_search"]).type(token)
         tokens = self.page.query_selector_all(self.SELECTORS["token_search_results"])
         assert len(tokens) == 0, f"Expected no tokens, but found {len(tokens)}"
 
+    @allure.step("Input token amount {amount}")
     def _set_amount(self, amount: tp.Union[int, str]) -> None:
         self.page.query_selector(self.SELECTORS["token_amount_input"]).fill(str(amount))
 
+    @allure.step("Select token and input amount")
     def send_tokens(self, token: str, amount: tp.Union[int, str]) -> None:
         self._choose_token(token)
         self._set_amount(amount)
 
+    @allure.step("Click 'Send token' button")
     def click_transfer_btn(self) -> None:
         self.page.wait_for_selector(self.SELECTORS["send_button"]).click()
 
+    @allure.step("Wait message 'Transfer successful' is visible")
     def check_sucessfull_sent(self) -> None:
         self.page.wait_for_selector(self.SELECTORS["transfer_success"])
 

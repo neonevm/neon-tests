@@ -39,6 +39,7 @@ curl -O https://raw.githubusercontent.com/${dockerhub_org_name}/neon-proxy.py/${
 # Set required environment variables
 export REVISION=${proxy_image_tag}
 export SOLANA_URL=http:\/\/${solana_ip}:8899
+export SOLANA_WS_URL=http:\/\/${solana_ip}:8900
 export NEON_EVM_COMMIT=${neon_evm_commit}
 export FAUCET_COMMIT=${faucet_model_commit}
 export DOCKERHUB_ORG_NAME=${dockerhub_org_name}
@@ -61,6 +62,7 @@ services:
     container_name: proxy
     environment:
       SOLANA_URL: $SOLANA_URL
+      SOLANA_WS_URL: $SOLANA_WS_URL
       EXTRA_ARGS: "--num-workers 16"
     ports:
       - "9090:9090"
@@ -72,6 +74,7 @@ services:
     container_name: faucet
     environment:
       SOLANA_URL: $SOLANA_URL
+      SOLANA_WS_URL: $SOLANA_WS_URL
     ports:
       - "3333:3333"
     depends_on:

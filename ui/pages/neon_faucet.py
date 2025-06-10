@@ -43,7 +43,7 @@ class NeonTestAirdropsPage(BasePage):
         components.Button(self.page, selector=self.SELECTORS["connect_metamask_btn"]).click()
         self.page.wait_for_selector(self.SELECTORS["success_message"], timeout=timeout)
 
-    @allure.step("Wait until message 'Connect your wallet' is visible")
+    @allure.step("Select from token {token}")
     def _choose_token(self, token: str) -> None:
         self.page.query_selector(self.SELECTORS["choose_token_btn"]).click()
         self.page.wait_for_selector(self.SELECTORS["token_option"].format(token)).click()

@@ -48,6 +48,7 @@ inputs:
     default: "latest"
   proxy_branch:
     required: true
+    default: "develop"
   use_real_price:
     description: 'Remove CONST_GAS_PRICE option from proxy'
     default: '0'

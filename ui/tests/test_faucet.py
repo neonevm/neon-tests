@@ -16,7 +16,7 @@ from utils.helpers import wait_condition
 
 NEON_FAUCET_URL = "https://neonfaucet.org/"
 DOCS_URL = "https://neonevm.org/docs/developing/utilities/faucet"
-WEBSITE_URL = "https://neonevm.org/"
+WEBSITE_URL = "https://www.neonevm.org/"
 NEONPASS_URL = "https://neonpass.live/"
 MOBILE_WARNING_TEXT = "Приложение не поддерживает мобильный"
 """Neon Test Airdrops

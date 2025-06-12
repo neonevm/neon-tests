@@ -83,15 +83,15 @@ jobs:
           devnet_faucet_url: ${{ secrets.DEVNET_FAUCET_URL }}
           proxy_ip: ${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}
           solana_ip: ${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}
-          proxy_url: ${{ inputs.proxy_url }}
-          solana_url: ${{ inputs.solana_url }}
-          faucet_url: ${{ inputs.faucet_url }}
+          proxy_url: "http://${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}:9090"
+          solana_url: "http://${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}:8899"
+          faucet_url: "http://${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}:3333"
           network_id: ${{ inputs.network_id }}
     outputs:
       network: ${{ env.NETWORK }}
-      solana_url: ${{ steps.vars.outputs.solana_url }}
-      proxy_url: ${{ steps.vars.outputs.proxy_url }}
-      faucet_url:  ${{ steps.vars.outputs.faucet_url }}
+      solana_url: ${{ inputs.solana_url != '' && inputs.solana_url || steps.vars.outputs.solana_url }}
+      proxy_url: ${{ inputs.proxy_url != '' && inputs.proxy_url || steps.vars.outputs.proxy_url }}
+      faucet_url:  ${{ inputs.faucet_url != '' && inputs.faucet_url || steps.vars.outputs.faucet_url }}
       network_id: ${{ steps.vars.outputs.network_id }}
       proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
       solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}

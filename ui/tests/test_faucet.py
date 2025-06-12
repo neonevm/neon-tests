@@ -3,6 +3,7 @@ Created on 2021-10-01
 @author: Eugeny Kurkovich
 """
 
+import random
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
@@ -16,9 +17,9 @@ from utils.helpers import wait_condition
 
 NEON_FAUCET_URL = "https://neonfaucet.org/"
 DOCS_URL = "https://neonevm.org/docs/developing/utilities/faucet"
-WEBSITE_URL = "https://neonevm.org/"
+WEBSITE_URL = "https://www.neonevm.org/"
 NEONPASS_URL = "https://neonpass.live/"
-MOBILE_WARNING_TEXT = "Приложение не поддерживает мобильный"
+
 """Neon Test Airdrops
 """
 
@@ -32,6 +33,8 @@ MOBILE_USER_AGENT = (
     "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 "
     "Mobile/15E1"
 )
+
+token_random_amount = random.randint(1, 100)
 
 
 @dataclass
@@ -144,7 +147,7 @@ class TestMetaMaskPipeLIne:
         wait_condition(lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > 0, timeout_sec=120, delay=2)
         balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
         neon_faucet_page.connect_wallet()
-        neon_faucet_page.send_tokens(tokens, 10)
+        neon_faucet_page.send_tokens(tokens, token_random_amount)
         neon_faucet_page.click_transfer_btn()
         neon_faucet_page.check_sucessfull_sent()
         # wait new balance
@@ -154,7 +157,8 @@ class TestMetaMaskPipeLIne:
             delay=2,
         )
         libs.try_until(
-            lambda: balance_before_airdrop_test + 10 == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
+            lambda: balance_before_airdrop_test + token_random_amount
+            == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
             timeout=240,
             interval=5,
             error_msg=f"{tokens} balance was not changed after airdrop",
@@ -185,7 +189,7 @@ class TestMetaMaskPipeLIne:
         wait_condition(lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > 0, timeout_sec=120, delay=2)
         balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
         neon_faucet_page.connect_wallet()
-        neon_faucet_page.send_tokens("wNEON", 3)
+        neon_faucet_page.send_tokens("wNEON", token_random_amount)
         neon_faucet_page.click_transfer_btn()
         neon_faucet_page.check_sucessfull_sent()
         # wait new balance
@@ -195,7 +199,8 @@ class TestMetaMaskPipeLIne:
             delay=2,
         )
         libs.try_until(
-            lambda: balance_before_airdrop_test + 3 == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
+            lambda: balance_before_airdrop_test + token_random_amount
+            == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
             timeout=240,
             interval=5,
             error_msg=f"{tokens} balance was not changed after airdrop",
@@ -225,7 +230,7 @@ class TestMetaMaskPipeLIne:
         wait_condition(lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > 0, timeout_sec=120, delay=2)
         balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
         neon_faucet_page.connect_wallet()
-        neon_faucet_page.send_tokens(tokens, 10)
+        neon_faucet_page.send_tokens(tokens, token_random_amount)
         neon_faucet_page.click_transfer_btn()
         neon_faucet_page.check_sucessfull_sent()
         # wait new balance
@@ -235,7 +240,8 @@ class TestMetaMaskPipeLIne:
             delay=2,
         )
         libs.try_until(
-            lambda: balance_before_airdrop_test + 10 == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
+            lambda: balance_before_airdrop_test + token_random_amount
+            == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
             timeout=240,
             interval=5,
             error_msg=f"{tokens} balance was not changed after airdrop",
@@ -255,7 +261,7 @@ class TestMetaMaskPipeLIne:
         for attempt in range(1, MAX_RETRIES + 1):
             neon_faucet_page.reload_page()
             neon_faucet_page.connect_wallet()
-            neon_faucet_page.send_tokens(tokens, 3)
+            neon_faucet_page.send_tokens(tokens, token_random_amount)
             neon_faucet_page.click_transfer_btn()
 
             try:

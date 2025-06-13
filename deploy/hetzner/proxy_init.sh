@@ -74,6 +74,7 @@ services:
     container_name: faucet
     environment:
       SOLANA_URL: $SOLANA_URL
+      SOLANA_WS_URL: $SOLANA_WS_URL
     ports:
       - "3333:3333"
     depends_on:

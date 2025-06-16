@@ -60,8 +60,6 @@ jobs:
         timeout-minutes: 15
         uses: ./.github/actions/create-tf-stand
         with:
-          ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
-          hetzner_instance_types: ${{vars.HETZNER_INSTANCE_TYPES}}
           docker_username: ${{ secrets.DOCKER_USERNAME }}
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
           aws_default_region: "eu-central-1"
@@ -169,16 +167,6 @@ jobs:
         with:
           node-version: 16
       - name: "Destroy stand"
-        env:
-          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
-          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
-          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-          HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
-          TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
-          TFSTATE_KEY: ${{vars.TFSTATE_KEY_PREFIX}}-${{ github.run_number }}
-          TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
-          PROXY_IP: ${{ needs.prepare-env.outputs.proxy_ip }}
-          SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}
         uses: ./.github/actions/destroy-tf-stand
         with:
           devnet_solana_url: ${{ secrets.SOLANA_URL }}

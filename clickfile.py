@@ -474,12 +474,7 @@ def update_contracts(branch, with_uniswap):
     )
 
     if with_uniswap:
-        update_contracts_from_git(
-            "https://github.com/neonlabsorg/Uniswap-V3-NEON.git",
-            "uniswap-v3",
-            branch="main",
-            update_npm=True,
-        )
+        update_contracts_from_git("https://github.com/neonlabsorg/Uniswap-V3-NEON.git", "uniswap-v3", branch="main")
 
         # we replace init_code_hash of a contracts/external/uniswap-v3/contracts/UniswapV3Pool.sol
         # it is calculated for python solc compiler and it is different from uniswap-v3 repository

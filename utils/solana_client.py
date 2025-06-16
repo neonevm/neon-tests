@@ -9,6 +9,7 @@ import base58
 import requests
 import solana.rpc.api
 import spl.token.client
+from solana.rpc import commitment
 from solana.rpc.commitment import Commitment, Confirmed
 from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
@@ -25,8 +26,15 @@ from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address, create_associated_token_account
 
 from integration.tests.economy.const import TX_COST
-from utils.consts import COMPUTE_BUDGET_ID, InstructionTags
+from utils.consts import COMPUTE_BUDGET_ID, InstructionTags, LAMPORT_PER_SOL
 from utils.helpers import wait_condition
+
+
+def fund_solana_account(evm_loader, solana_account, bank_account, network):
+    if network != "local" and bank_account is not None:
+        evm_loader.send_sol(bank_account, solana_account.pubkey(), int(5 * LAMPORT_PER_SOL))
+    else:
+        evm_loader.request_airdrop(solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed)
 
 
 class SolanaClient(solana.rpc.api.Client):

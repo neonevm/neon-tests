@@ -48,7 +48,7 @@ env:
 
 jobs:
   prepare:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set-large"]
     steps:
       - uses: actions/checkout@v4
       - name: Define dapps to run
@@ -74,6 +74,7 @@ jobs:
           gh_token: ${{ secrets.GHTOKEN }}
           dockerhub_org_name: ${{ github.repository_owner }}
           devnet_solana_url: "${{ secrets.SOLANA_URL }}"
+          hcloud_token: ${{ secrets.HCLOUD_TOKEN }}
       - name: "Define outputs"
         id: vars
         uses: ./.github/actions/define-stand-env
@@ -119,7 +120,7 @@ jobs:
       repo: "tests"
 
   notify:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set-large"]
     needs: [ prepare, dapps-tests ]
     if: failure() && github.ref_name == 'develop'
     steps:
@@ -137,7 +138,7 @@ jobs:
           --test-group dapps
 
   destroy:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set-large"]
     needs: [ prepare, dapps-tests ]
     if: always()
     steps:
@@ -154,4 +155,5 @@ jobs:
           aws_default_region: "eu-central-1"
           aws_secret_access_key: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
           gh_token: ${{ secrets.GHTOKEN }}
+          hcloud_token: ${{ secrets.HCLOUD_TOKEN }}
 

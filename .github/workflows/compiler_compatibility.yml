@@ -31,7 +31,7 @@ env:
 jobs:
   dockerize:
     if: ${{ github.ref_name != 'develop'}}
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set-large"]
     steps:
       - uses: actions/checkout@v4
       - name: "Dockerize neon tests"
@@ -45,7 +45,7 @@ jobs:
           docker_hub_org_name: ${{ env.DOCKER_HUB_ORG_NAME }}
 
   prepare-env:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set-large"]
     if: always()
     steps:
       - name: Setup `terraform` by cron schedule
@@ -67,6 +67,7 @@ jobs:
           gh_token: ${{ secrets.GHTOKEN }}
           dockerhub_org_name: ${{ github.repository_owner }}
           devnet_solana_url: "${{ secrets.SOLANA_URL }}"
+          hcloud_token: ${{ secrets.HCLOUD_TOKEN }}
     outputs:
       proxy_ip: ${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}
       solana_ip: ${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}
@@ -80,7 +81,7 @@ jobs:
     needs:
       - dockerize
       - prepare-env
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set-large"]
     env:
       SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}
       PROXY_IP: ${{ needs.prepare-env.outputs.proxy_ip }}
@@ -130,7 +131,7 @@ jobs:
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}
   destroy:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set-large"]
     needs: [ prepare-env, tests ]
     if: always()
     steps:
@@ -147,3 +148,4 @@ jobs:
           aws_default_region: "eu-central-1"
           aws_secret_access_key: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
           gh_token: ${{ secrets.GHTOKEN }}
+          hcloud_token: ${{ secrets.HCLOUD_TOKEN }}

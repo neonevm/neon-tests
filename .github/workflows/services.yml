@@ -52,7 +52,7 @@ jobs:
     name: "Services tests"
     needs:
       - dockerize
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["self-hosted", "k8s-prod"]
     env:
       NETWORK: ${{ github.event.inputs.network || 'devnet'}}
 #      TODO Add parallel execution for test_ws_subscriber after https://neonlabs.atlassian.net/browse/NDEV-2064

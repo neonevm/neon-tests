@@ -47,7 +47,7 @@ jobs:
           image_name: ${{ env.IMAGE }}
           docker_hub_org_name: ${{ github.repository_owner }}
   prepare-env:
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["self-hosted", "k8s-prod"]
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -103,7 +103,7 @@ jobs:
     needs:
       - prepare-env
       - dockerize
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["self-hosted", "k8s-prod"]
     if: always() && contains(fromJSON('["success", "skipped"]'), needs.dockerize.result) && needs.prepare-env.result == 'success'
     steps:
       - uses: actions/checkout@v4
@@ -159,7 +159,7 @@ jobs:
         run: docker rm -f ${{ env.CONTAINER }}
 
   destroy:
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["self-hosted", "k8s-prod"]
     needs: [tests, prepare-env]
     if: always() && needs.prepare-env.outputs.network == 'terraform'
     steps:

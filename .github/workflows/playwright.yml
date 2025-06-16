@@ -36,7 +36,7 @@ jobs:
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
-    runs-on: ["gha-runner-scale-set-large"]
+    runs-on: [“gha-runner-scale-set”]
     timeout-minutes: 60
     env:
       NETWORK: "devnet"

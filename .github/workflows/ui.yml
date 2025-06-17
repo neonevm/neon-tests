@@ -2,8 +2,8 @@ name: "UI Website tests"
 run-name: UI tests
 
 on:
-  schedule:
-    - cron: "0 3 * * 0,1,2,3,4"
+#  schedule:
+#    - cron: "0 3 * * 0,1,2,3,4"
   workflow_dispatch:
 
 env:

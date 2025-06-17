@@ -64,7 +64,7 @@ env:
 jobs:
   pre-commit-check:
     name: Pre-commit hook validation
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["gha-runner-scale-set"]
     permissions:
       contents: read
     steps:
@@ -176,7 +176,8 @@ jobs:
         if: ${{ env.NETWORK != 'devnet' }}
         with:
           fetch-depth: 0
-
+      - name: Set up Docker Compose
+        uses: docker/setup-compose-action@v1
       - name: Log in to Docker Hub
         uses: docker/login-action@v3.1.0
         with:
@@ -190,8 +191,8 @@ jobs:
           EVM_LOADER_IMAGE: ${{ github.repository_owner }}/evm_loader:${{ needs.share-tags.outputs.evm_tag }}
         run: |
           curl -O https://raw.githubusercontent.com/${{ github.repository_owner }}/neon-evm/${{ needs.share-tags.outputs.evm_branch }}/ci/docker-compose-ci.yml
-          docker-compose -p ${{env.DOCKER_PROJECT_NAME}} -f docker-compose-ci.yml pull
-          docker-compose -p ${{env.DOCKER_PROJECT_NAME}} -f docker-compose-ci.yml up -d
+          docker compose -p ${{env.DOCKER_PROJECT_NAME}} -f docker-compose-ci.yml pull
+          docker compose -p ${{env.DOCKER_PROJECT_NAME}} -f docker-compose-ci.yml up -d
           docker exec -i ${{env.DOCKER_PROJECT_NAME}}-tests-1 bash -c "python3 clickfile.py run evm --numprocesses 8 --network docker_net --case \"${{ github.event.inputs.pytest_k}}\" --marker \"${{ github.event.inputs.pytest_m}}\""
       - name: Set failed test group to evm
         id: step_fail
@@ -212,7 +213,7 @@ jobs:
           EVM_LOADER_IMAGE: ${{ github.repository_owner }}/evm_loader:${{ needs.share-tags.outputs.evm_tag }}
         if: always() && env.NETWORK != 'devnet'
         run: |
-          docker-compose -p ${{env.DOCKER_PROJECT_NAME}} -f docker-compose-ci.yml down
+          docker compose -p ${{env.DOCKER_PROJECT_NAME}} -f docker-compose-ci.yml down
       - name: Cancel the build if job failed
         if: failure()
         uses: "andymckay/cancel-action@0.4"

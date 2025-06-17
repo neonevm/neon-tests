@@ -5,21 +5,21 @@ import threading
 import base58
 
 import web3
-from solana.rpc import commitment
 
 from deploy.cli.network_manager import NetworkManager
 from utils.accounts import EthAccounts
-from utils.consts import LAMPORT_PER_SOL, REMAPPING_ZEPPELIN_UNISWAP
+from utils.consts import REMAPPING_ZEPPELIN_UNISWAP
 from utils.erc20wrapper import ERC20Wrapper
 from utils.evm_loader import EvmLoader
 from utils.faucet import Faucet
-from utils.helpers import decode_function_signature, decode_function_with_stucture_in_arg_signature
+from utils.helpers import decode_function_signature, decode_function_with_structure_in_arg_signature
 from utils.neon_user import NeonUser
 from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData, ScheduledTrxEstimateRequest
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 
 from locust import User, tag, task, events, env
 from loadtesting.proxy.common.base import NeonProxyTasksSet
+from utils.solana_client import fund_solana_account
 from utils.web3client import NeonChainWeb3Client
 from solders.keypair import Keypair
 
@@ -37,13 +37,6 @@ def get_min_tick(tick_spacing: int) -> int:
 
 def get_max_tick(tick_spacing: int) -> int:
     return math.floor(887272 / tick_spacing) * tick_spacing
-
-
-def fund_solana_account(evm_loader, solana_account, bank_account, network):
-    if network != "local" and bank_account is not None:
-        evm_loader.send_sol(bank_account, solana_account.pubkey(), int(5 * LAMPORT_PER_SOL))
-    else:
-        evm_loader.request_airdrop(solana_account.pubkey(), 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed)
 
 
 @events.test_start.add_listener
@@ -266,7 +259,7 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
         }
 
         data = decode_function_signature("approve(address,uint256)", [router.address, 2 * swap_amount])
-        data_0 = decode_function_with_stucture_in_arg_signature(
+        data_0 = decode_function_with_structure_in_arg_signature(
             "exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
             [
                 params_input["tokenIn"],
@@ -279,7 +272,7 @@ class ScheduledTxsUniswapV3TasksSet(NeonProxyTasksSet):
                 params_input["sqrtPriceLimitX96"],
             ],
         )
-        data_1 = decode_function_with_stucture_in_arg_signature(
+        data_1 = decode_function_with_structure_in_arg_signature(
             "exactOutputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
             [
                 params_output["tokenIn"],

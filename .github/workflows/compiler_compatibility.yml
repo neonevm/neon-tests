@@ -31,7 +31,7 @@ env:
 jobs:
   dockerize:
     if: ${{ github.ref_name != 'develop'}}
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set"]
     steps:
       - uses: actions/checkout@v4
       - name: "Dockerize neon tests"
@@ -45,7 +45,7 @@ jobs:
           docker_hub_org_name: ${{ env.DOCKER_HUB_ORG_NAME }}
 
   prepare-env:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set"]
     if: always()
     steps:
       - uses: hashicorp/setup-terraform@v3
@@ -88,7 +88,7 @@ jobs:
     needs:
       - dockerize
       - prepare-env
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set"]
     env:
       SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}
       PROXY_IP: ${{ needs.prepare-env.outputs.proxy_ip }}
@@ -138,7 +138,7 @@ jobs:
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}
   destroy:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set"]
     needs: [ prepare-env, tests ]
     if: always() && needs.prepare-env.outputs.network == 'terraform'
     steps:

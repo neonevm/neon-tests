@@ -16,7 +16,7 @@ on:
 
 jobs:
   dockerize:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set"]
     steps:
       - uses: actions/checkout@v4
       - name: Define env

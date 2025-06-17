@@ -169,7 +169,6 @@ jobs:
       - name: "Destroy stand"
         uses: ./.github/actions/destroy-tf-stand
         with:
-          devnet_solana_url: ${{ secrets.SOLANA_URL }}
           instance_public_ipv4: ${{ needs.prepare-env.outputs.proxy_ip }}
           docker_ca_cert: ${{ needs.prepare-env.outputs.docker_ca_cert }}
           docker_cert: ${{ needs.prepare-env.outputs.docker_cert }}

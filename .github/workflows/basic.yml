@@ -77,7 +77,7 @@ jobs:
 
   share-tags:
     name: Determine image tags
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["gha-runner-scale-set"]
     needs:
       - pre-commit-check
     steps:
@@ -135,7 +135,7 @@ jobs:
       tag: ${{ steps.image_tag.outputs.tag }}
   prepare-env-proxy:
     name: Prepare environment for proxy tests
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["gha-runner-scale-set"]
     needs:
       - share-tags
     if: always()
@@ -163,7 +163,7 @@ jobs:
       docker_key: ${{ steps.prepare_terraform.outputs.docker_key }}
   run-evm-tests:
     name: Run EVM tests
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["gha-runner-scale-set"]
     needs:
       - dockerize
       - share-tags
@@ -222,7 +222,7 @@ jobs:
     needs:
       - dockerize
       - prepare-env-proxy
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["gha-runner-scale-set"]
     env:
       SOLANA_IP: ${{ needs.prepare-env-proxy.outputs.solana_ip }}
       PROXY_IP: ${{ needs.prepare-env-proxy.outputs.proxy_ip }}
@@ -297,7 +297,7 @@ jobs:
         run: docker rm -f ${{ env.CONTAINER }}
   destroy:
     name: Destroy stand
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["gha-runner-scale-set"]
     needs: [ prepare-env-proxy, run-proxy-tests ]
     if: always()
     steps:
@@ -319,7 +319,7 @@ jobs:
     needs:
       - run-proxy-tests
       - run-evm-tests
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["gha-runner-scale-set"]
     steps:
       - uses: actions/checkout@v4
       - name: Install python requirements

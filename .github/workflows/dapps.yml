@@ -48,7 +48,7 @@ env:
 
 jobs:
   prepare:
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["gha-runner-scale-set"]
     steps:
       - uses: actions/checkout@v4
       - name: Define dapps to run
@@ -120,7 +120,7 @@ jobs:
       repo: "tests"
 
   notify:
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["gha-runner-scale-set"]
     needs: [ prepare, dapps-tests ]
     if: failure() && github.ref_name == 'develop'
     steps:
@@ -138,7 +138,7 @@ jobs:
           --test-group dapps
 
   destroy:
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["gha-runner-scale-set"]
     needs: [ prepare, dapps-tests ]
     if: always()
     steps:

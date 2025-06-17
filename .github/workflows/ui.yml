@@ -36,7 +36,7 @@ jobs:
 
   test:
     needs: dockerize
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["gha-runner-scale-set"]
 
     steps:
       - name: Checkout repository
@@ -87,7 +87,7 @@ jobs:
     name: Send notification on failure
     needs: test
     if: failure() && github.ref_name == 'develop'
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["gha-runner-scale-set"]
     steps:
       - uses: actions/checkout@v4
       - name: Install python requirements

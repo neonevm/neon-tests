@@ -39,7 +39,7 @@ jobs:
           image_name: ${{ env.IMAGE }}
           docker_hub_org_name: ${{ env.DOCKER_HUB_ORG_NAME }}
   prepare-env:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [“gha-runner-scale-set”]
     if: always()
     steps:
       - uses: actions/checkout@v4
@@ -74,7 +74,7 @@ jobs:
     needs:
       - prepare-env
       - dockerize
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [“gha-runner-scale-set”]
     env:
       NETWORK: ${{ needs.prepare-env.outputs.network }}
       SOLANA_IP: ${{ needs.prepare-env.outputs.solana_ip }}
@@ -122,7 +122,7 @@ jobs:
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}
   destroy:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [“gha-runner-scale-set”]
     needs: [ prepare-env, tests ]
     if: always() && needs.prepare-env.outputs.network == 'terraform'
     steps:

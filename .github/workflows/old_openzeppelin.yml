@@ -38,7 +38,7 @@ env:
 
 jobs:
   prepare-env:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: [“gha-runner-scale-set”]
     steps:
       - name: Setup env
         id: setup

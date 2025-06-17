@@ -44,6 +44,14 @@ class NeonApiClient:
         else:
             return resp.json()
 
+    def emulate_from_holder(self, holder_pubkey: Pubkey, max_steps_to_execute=500000):
+        body = {"step_limit": max_steps_to_execute, "holder_pubkey": str(holder_pubkey)}
+        resp = requests.post(url=f"{self.url}/emulate_from_holder", json=body, headers=self.headers)
+        if resp.status_code == 200:
+            return resp.json()["value"]
+        else:
+            return resp.json()
+
     def emulate_contract_call(self, sender, contract, function_signature, params=None, value="0x0", trace_config=None):
         # does not work for tuple in params
         data = abi.function_signature_to_4byte_selector(function_signature)

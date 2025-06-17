@@ -36,7 +36,7 @@ env:
 jobs:
   dockerize:
     if: ${{ github.ref_name != 'develop'}}
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set"]
     steps:
       - uses: actions/checkout@v4
       - name: "Dockerize neon tests"
@@ -52,7 +52,7 @@ jobs:
     name: "Services tests"
     needs:
       - dockerize
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set"]
     env:
       NETWORK: ${{ github.event.inputs.network || 'devnet'}}
 #      TODO Add parallel execution for test_ws_subscriber after https://neonlabs.atlassian.net/browse/NDEV-2064

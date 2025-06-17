@@ -11,7 +11,7 @@ env:
 
 jobs:
   tests:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set"]
     name: The Graph tests
     steps:
       - uses: actions/checkout@v4

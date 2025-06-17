@@ -48,7 +48,7 @@ env:
 
 jobs:
   prepare:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set"]
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -127,7 +127,7 @@ jobs:
       repo: "tests"
 
   notify:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set"]
     needs: [ prepare, dapps-tests ]
     if: failure() && github.ref_name == 'develop'
     steps:
@@ -145,7 +145,7 @@ jobs:
           --test-group dapps
 
   destroy:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set"]
     needs: [ prepare, dapps-tests ]
     if: always() && needs.prepare.outputs.network == 'terraform'
     steps:

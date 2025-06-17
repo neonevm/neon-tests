@@ -37,7 +37,7 @@ env:
 jobs:
   run-proxy-tests:
     name: Run basic tests
-    runs-on: [“gha-runner-scale-set”]
+    runs-on: ["gha-runner-scale-set-large"]
     env:
       CONTAINER: basic-tests-${{ github.run_id }}
     steps:

@@ -101,7 +101,7 @@ jobs:
     needs:
       - prepare-env
       - dockerize
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set-large"]
     if: always() && contains(fromJSON('["success", "skipped"]'), needs.dockerize.result) && needs.prepare-env.result == 'success'
     steps:
       - uses: actions/checkout@v4

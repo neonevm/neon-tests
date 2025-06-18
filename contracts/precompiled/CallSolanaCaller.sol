@@ -43,6 +43,14 @@ contract CallSolanaCaller {
         emit LogBytes(returnData);
     }
 
+    function execute(bytes calldata instruction) public {
+        numberToStore = 190;
+        bytes32 returnData = bytes32(
+            _callSolana.execute(instruction)
+        );
+        emit LogBytes(returnData);
+    }
+
     function executeInIterativeMode(
         uint256 actionsNumber,
         uint64 lamports,

@@ -116,6 +116,17 @@ class TestInteroperability:
         resp = solana_caller.execute(COMPUTE_BUDGET_ID, instruction, sender=sender_with_tokens)
         check_transaction_logs_have_text(solana_client, trx=resp, text="exit_status=0x11")
 
+    def test_execute_from_instruction_for_compute_budget_overload(
+        self, sender_with_tokens, solana_caller, solana_client
+    ):
+        instruction = Instruction(
+            program_id=COMPUTE_BUDGET_ID,
+            accounts=[AccountMeta(sender_with_tokens.solana_account_address, is_signer=False, is_writable=False)],
+            data=bytes.fromhex("02") + DEFAULT_UNITS.to_bytes(4, "little"),
+        )
+        resp = solana_caller.execute_overload(COMPUTE_BUDGET_ID, instruction, sender=sender_with_tokens)
+        check_transaction_logs_have_text(solana_client, trx=resp, text="exit_status=0x11")
+
     def test_execute_from_instruction_for_call_memo(
         self, sender_with_tokens, neon_api_client, operator_keypair, evm_loader, treasury_pool, holder_acc
     ):
@@ -278,6 +289,42 @@ class TestInteroperability:
         )
 
         resp = solana_caller.execute(TRANSFER_TOKENS_ID, instruction, sender=sender_with_tokens)
+        check_transaction_logs_have_text(solana_client, trx=resp, text="exit_status=0x11")
+        assert int(mint.get_balance(to_token_account, commitment=Confirmed).value.amount) == amount
+
+    def test_transfer_with_PDA_signature_o(self, solana_caller, sender_with_tokens, evm_loader, solana_client):
+        from_wallet = Keypair()
+        to_wallet = Keypair()
+        amount = 100000
+        evm_loader.request_airdrop(from_wallet.pubkey(), 1000 * 10**9, commitment=Confirmed)
+        wait_condition(lambda: evm_loader.account_exists(account_address=from_wallet.pubkey()) is True, timeout_sec=10)
+        wait_condition(lambda: evm_loader.get_solana_balance(account=from_wallet.pubkey()) != 0, timeout_sec=10)
+        mint, from_token_account, to_token_account = _create_mint_and_accounts(
+            evm_loader, from_wallet, to_wallet, amount
+        )
+
+        authority_pubkey = solana_caller.get_solana_PDA(TRANSFER_TOKENS_ID, b"authority")
+        mint.set_authority(
+            from_token_account,
+            from_wallet,
+            spl.token.instructions.AuthorityType.ACCOUNT_OWNER,
+            authority_pubkey,
+            opts=TxOpts(skip_confirmation=False, skip_preflight=True),
+        )
+
+        instruction = Instruction(
+            program_id=TRANSFER_TOKENS_ID,
+            accounts=[
+                AccountMeta(from_token_account, is_signer=False, is_writable=True),
+                AccountMeta(mint.pubkey, is_signer=False, is_writable=True),
+                AccountMeta(to_token_account, is_signer=False, is_writable=True),
+                AccountMeta(authority_pubkey, is_signer=False, is_writable=True),
+                AccountMeta(TOKEN_PROGRAM_ID, is_signer=False, is_writable=True),
+            ],
+            data=bytes([0x0]),
+        )
+
+        resp = solana_caller.execute_overload(TRANSFER_TOKENS_ID, instruction, sender=sender_with_tokens)
         check_transaction_logs_have_text(solana_client, trx=resp, text="exit_status=0x11")
         assert int(mint.get_balance(to_token_account, commitment=Confirmed).value.amount) == amount
 

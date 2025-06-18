@@ -29,7 +29,7 @@ SOLANA_CALL_PRECOMPILED_ID: Pubkey = Pubkey.from_string("83fAnx3LLG612mHbEh4HzXE
 COUNTER_ID: Pubkey = Pubkey.from_string("FUVnLFCgK48arAUgngmyYkSSKKD2PpjsneNTyigbe4oh")
 TRANSFER_SOL_ID: Pubkey = Pubkey.from_string("6x9dAYQehxXLh16EHAKXevnQADTZPKP6ZT4t8BfNDxtB")
 TRANSFER_TOKENS_ID: Pubkey = Pubkey.from_string("BFsGPJUwgE1rz4eoL322HaKZYNZ5wDLafwYtKwomv2XF")
-TEST_INVOKE_ID: Pubkey = Pubkey.from_string("2Uax3YiG6wiAcCdDCAZwKSuzi47w3cidMRQQnteMJJCT")
+TEST_INVOKE_ID: Pubkey = Pubkey.from_string("FYXJ8GHb1HuxVfW3MDXfGBE3RoLkuACj8UvfbDFd8a4D")
 QUERY_ACCOUNT_ID: Pubkey = Pubkey.from_string("Fbc3Hf6FK7wCQjQHq9qS2phvhujfkfMQQWLsyA5s4oSu")
 
 SPL_TOKEN_ADDRESS = "0xFf00000000000000000000000000000000000004"

@@ -48,6 +48,7 @@ inputs:
     default: "latest"
   proxy_branch:
     required: true
+    default: "develop"
   use_real_price:
     description: 'Remove CONST_GAS_PRICE option from proxy'
     default: '0'
@@ -102,7 +103,7 @@ runs:
 
         # Only strip out CONST_GAS_PRICE when use_real_price != "0"
         if [[ "$USE_REAL" != "0" ]]; then
-          sed -i '/^[[:space:]]*-[[:space:]]*CONST_GAS_PRICE=.*$/d' "$COMPOSE_FILE"
+          sed -i '/CONST_GAS_PRICE/d' "$COMPOSE_FILE"
         fi
   - name: Install envsubst
     shell: bash

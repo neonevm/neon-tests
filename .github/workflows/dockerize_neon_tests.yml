@@ -16,7 +16,7 @@ on:
 
 jobs:
   dockerize:
-    runs-on: ["gha-runner-scale-set"]
+    runs-on: ["gha-runner-scale-set-large"]
     steps:
       - uses: actions/checkout@v4
       - name: Define env

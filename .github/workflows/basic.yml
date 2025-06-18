@@ -299,7 +299,9 @@ jobs:
     name: Destroy stand
     runs-on: ["gha-runner-scale-set"]
     needs: [ prepare-env-proxy, run-proxy-tests ]
-    if: always()
+    if: |
+      always() &&
+      !contains(needs.prepare-env-proxy.result, 'cancelled')
     steps:
       - uses: actions/checkout@v4
       - name: "Destroy stand"

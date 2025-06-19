@@ -449,6 +449,54 @@ class EvmLoader(SolanaClient):
 
         return receipt
 
+    def execute_transaction_steps_from_instruction_with_details(
+        self,
+        operator: Keypair,
+        treasury,
+        storage_account,
+        instruction: SignedTransaction,
+        additional_accounts,
+        signer: Keypair = None,
+        compute_unit_price=None,
+        chain_id: int | None = None,
+    ) -> GetTransactionResp:
+        chain_id = chain_id or self.chain_id
+
+        signer = operator if signer is None else signer
+        operator_balance_pubkey = self.get_operator_balance_pubkey(operator, chain_id)
+        index = 0
+        receipt = None
+        done = False
+        while not done:
+            receipt = self.send_transaction_step_from_instruction(
+                operator,
+                operator_balance_pubkey,
+                treasury,
+                storage_account,
+                instruction,
+                additional_accounts,
+                EVM_STEPS,
+                signer,
+                compute_unit_price=compute_unit_price,
+                index=index,
+            )
+            index += 1
+            if receipt.value.transaction.meta.err:
+                raise AssertionError(f"Transaction failed with error: {receipt.value.transaction.meta.err}")
+            for log in receipt.value.transaction.meta.log_messages:
+                if "exit_status" in log:
+                    done = True
+                    break
+                if "ExitError" in log:
+                    raise AssertionError(f"EVM Return error in logs: {receipt}")
+            print(f"\n----Balances trx is executed index {index}----")
+
+            # print(f'Holder {self.get_solana_balance(holder)}')
+            # print(f'Tree account {self.get_solana_balance(tree_account)}')
+            print(f"Treasury pool {self.get_solana_balance(treasury.account)}")
+            print(f"Operator {self.get_solana_balance(operator.pubkey())}")
+        return receipt
+
     def send_transaction_step_from_account(
         self,
         operator: Keypair,
@@ -847,6 +895,31 @@ class EvmLoader(SolanaClient):
 
         self.start_scheduled_trx_from_instruction(trx, operator, holder, tree_account, additional_accounts, chain_id)
         self.execute_transaction_steps_from_instruction(
+            operator, treasury, holder, trx.encode(), additional_accounts, compute_unit_price=15, chain_id=chain_id
+        )
+
+    def execute_scheduled_trx_from_instruction_with_details(
+        self,
+        trx: ScheduledTransaction,
+        operator,
+        holder,
+        tree_account,
+        treasury,
+        additional_accounts,
+        chain_id: int | str | None = "",
+    ):
+        if chain_id == "":
+            chain_id = self.sol_chain_id
+
+        self.start_scheduled_trx_from_instruction(trx, operator, holder, tree_account, additional_accounts, chain_id)
+        print("\n----Balances after trx is started----")
+
+        print(f"Holder {self.get_solana_balance(holder)}")
+        print(f"Tree account {self.get_solana_balance(tree_account)}")
+        print(f"Treasury pool {self.get_solana_balance(treasury.account)}")
+        print(f"Operator {self.get_solana_balance(operator.pubkey())}")
+
+        self.execute_transaction_steps_from_instruction_with_details(
             operator, treasury, holder, trx.encode(), additional_accounts, compute_unit_price=15, chain_id=chain_id
         )
 

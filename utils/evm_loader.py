@@ -48,7 +48,7 @@ from utils.instructions import (
     make_CreateAssociatedTokenIdempotent,
     make_DepositV03,
     make_wSOL,
-    make_OperatorBalanceAccount,
+    make_OperatorBalanceCreate,
     make_ScheduledTransactionCreate,
     make_ScheduledTransactionStartFromAccount,
     make_ScheduledTransactionFinish,
@@ -709,7 +709,7 @@ class EvmLoader(SolanaClient):
             chain_id = self.chain_id
 
         account = self.ether2operator_balance(operator_keypair, operator_ether, chain_id)
-        trx = make_OperatorBalanceAccount(
+        trx = make_OperatorBalanceCreate(
             operator_keypair, account, ether2bytes(operator_ether), chain_id, self.loader_id
         )
         self.send_tx(trx, operator_keypair)

@@ -16,7 +16,7 @@ env:
 jobs:
   dockerize:
     if: ${{ github.ref_name != 'develop'}}
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set-large"]
     steps:
       - uses: actions/checkout@v4
       - name: "Dockerize neon tests"
@@ -36,7 +36,7 @@ jobs:
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set"]
     timeout-minutes: 60
     env:
       NETWORK: "devnet"

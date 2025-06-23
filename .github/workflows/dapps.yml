@@ -48,13 +48,9 @@ env:
 
 jobs:
   prepare:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set"]
     steps:
       - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 16
       - name: Define dapps to run
         id: dapps
         run: |
@@ -66,24 +62,19 @@ jobs:
           echo "list=${list}"
           echo "list=${list}" >> $GITHUB_OUTPUT
       - name: "Prepare terraform stand"
-        if: ${{ env.NETWORK == 'terraform' }}
         id: prepare_terraform
-        timeout-minutes: 15
-        env:
-          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
-          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
-          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-          HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
-          TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
-          TFSTATE_KEY: ${{vars.TFSTATE_KEY_PREFIX}}-${{ github.run_number }}
-          TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
-          DEVNET_SOLANA_URL: "${{ secrets.SOLANA_URL }}"
+        if: ${{ env.NETWORK == 'terraform' }}
         uses: ./.github/actions/create-tf-stand
         with:
-          ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
-          hetzner_instance_types: ${{vars.HETZNER_INSTANCE_TYPES}}
           docker_username: ${{ secrets.DOCKER_USERNAME }}
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
+          aws_default_region: "eu-central-1"
+          aws_secret_access_key_id: ${{ secrets.CI_AWS_ACCESS_KEY }}
+          aws_secret_access_key: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+          gh_token: ${{ secrets.GHTOKEN }}
+          dockerhub_org_name: ${{ github.repository_owner }}
+          devnet_solana_url: "${{ secrets.SOLANA_URL }}"
+          hcloud_token: ${{ secrets.HCLOUD_TOKEN }}
       - name: "Define outputs"
         id: vars
         uses: ./.github/actions/define-stand-env
@@ -91,22 +82,24 @@ jobs:
           network: ${{ env.NETWORK }}
           devnet_solana_url: ${{ secrets.SOLANA_URL }}
           devnet_faucet_url: ${{ secrets.DEVNET_FAUCET_URL }}
-          proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
-          solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
+          proxy_ip: ${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}
+          solana_ip: ${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}
           proxy_url: ${{ inputs.proxy_url }}
           solana_url: ${{ inputs.solana_url }}
           faucet_url: ${{ inputs.faucet_url }}
           network_id: ${{ inputs.network_id }}
-
     outputs:
       network: ${{ env.NETWORK }}
       solana_url: ${{ steps.vars.outputs.solana_url }}
       proxy_url: ${{ steps.vars.outputs.proxy_url }}
       faucet_url:  ${{ steps.vars.outputs.faucet_url }}
       network_id: ${{ steps.vars.outputs.network_id }}
-      proxy_ip: ${{ steps.prepare_terraform.outputs.proxy_ip }}
-      solana_ip: ${{ steps.prepare_terraform.outputs.solana_ip }}
+      proxy_ip: ${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}
+      solana_ip: ${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}
       dapps: ${{ steps.dapps.outputs.list }}
+      docker_ca_cert: ${{ steps.prepare_terraform.outputs.docker_ca_cert }}
+      docker_cert: ${{ steps.prepare_terraform.outputs.docker_cert }}
+      docker_key: ${{ steps.prepare_terraform.outputs.docker_key }}
 
   dapps-tests:
     needs:
@@ -127,7 +120,7 @@ jobs:
       repo: "tests"
 
   notify:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set"]
     needs: [ prepare, dapps-tests ]
     if: failure() && github.ref_name == 'develop'
     steps:
@@ -145,28 +138,23 @@ jobs:
           --test-group dapps
 
   destroy:
-    runs-on: ["self-hosted", "k8s-prod"]
+    runs-on: ["gha-runner-scale-set"]
     needs: [ prepare, dapps-tests ]
-    if: always() && needs.prepare.outputs.network == 'terraform'
+    if: always() &&
+      !contains(needs.prepare.result, 'cancelled')
     steps:
       - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 16
       - name: "Destroy stand"
-        env:
-          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
-          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
-          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-          HCLOUD_TOKEN: ${{secrets.HCLOUD_TOKEN}}
-          TFSTATE_BUCKET: ${{vars.TFSTATE_BUCKET}}
-          TFSTATE_KEY: ${{vars.TFSTATE_KEY_PREFIX}}-${{ github.run_number }}
-          TFSTATE_REGION: ${{vars.TFSTATE_REGION}}
-          PROXY_IP: ${{ needs.prepare.outputs.proxy_ip }}
-          SOLANA_IP: ${{ needs.prepare.outputs.solana_ip }}
-          DEVNET_SOLANA_URL: ${{ secrets.SOLANA_URL }}
-        uses: ././.github/actions/destroy-tf-stand
+        uses: ./.github/actions/destroy-tf-stand
         with:
           ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
+          instance_public_ipv4: ${{ needs.prepare-env-proxy.outputs.proxy_ip }}
+          docker_ca_cert: ${{ needs.prepare-env-proxy.outputs.docker_ca_cert }}
+          docker_cert: ${{ needs.prepare-env-proxy.outputs.docker_cert }}
+          docker_key: ${{ needs.prepare-env-proxy.outputs.docker_key }}
+          aws_secret_access_key_id: ${{ secrets.CI_AWS_ACCESS_KEY }}
+          aws_default_region: "eu-central-1"
+          aws_secret_access_key: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+          gh_token: ${{ secrets.GHTOKEN }}
+          hcloud_token: ${{ secrets.HCLOUD_TOKEN }}
 

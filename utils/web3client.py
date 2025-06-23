@@ -396,6 +396,20 @@ class Web3Client:
 
         return contract, contract_deploy_tx
 
+    @allure.step("Deploy compiled contract")
+    def deploy_compiled_contract(self, account, contract_name, constructor_args=None):
+        contract_path = pathlib.Path.cwd() / "contracts" / "curve"
+        with open(f"{contract_path}/{contract_name}.json") as f:
+            contract_interface = json.load(f)
+
+        contract_deploy_tx = self.deploy_contract(
+            account,
+            abi=contract_interface["abi"],
+            bytecode=contract_interface["bytecode"],
+            constructor_args=constructor_args,
+        )
+        return self.eth.contract(address=contract_deploy_tx["contractAddress"], abi=contract_interface["abi"])
+
     @allure.step("Compile by vyper and deploy")
     def compile_by_vyper_and_deploy(self, account, contract_name, constructor_args=None):
         import vyper  # Import here because vyper prevent override decimal precision (uses in economy tests)

@@ -84,6 +84,7 @@ services:
     container_name: indexer
     environment:
       SOLANA_URL: $SOLANA_URL
+      SOLANA_WS_URL: $SOLANA_WS_URL
     depends_on:
       solana:
         condition: service_started

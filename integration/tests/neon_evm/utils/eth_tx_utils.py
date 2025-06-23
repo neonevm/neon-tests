@@ -1,8 +1,6 @@
 from Crypto.Hash import keccak
 import json
-from web3.auto import w3
 from eth_keys import keys
-import struct
 
 
 def unpack(data):
@@ -176,61 +174,3 @@ class JsonEncoder(json.JSONEncoder):
         if isinstance(obj, bytes):
             return obj.hex()
         return json.JSONEncoder.default(self, obj)
-
-
-def make_instruction_data_from_tx(instruction, private_key=None):
-    if isinstance(instruction, dict):
-        if instruction["chainId"] is None:
-            raise Exception("chainId value is needed in input dict")
-        if private_key is None:
-            raise Exception("Needed private key for transaction creation from fields")
-
-        signed_tx = w3.eth.account.sign_transaction(instruction, private_key)
-        _trx = Trx.from_string(signed_tx.raw_transaction)
-
-        raw_msg = _trx.get_msg(instruction["chainId"])
-        sig = keys.Signature(vrs=[1 if _trx.v % 2 == 0 else 0, _trx.r, _trx.s])
-        pub = sig.recover_public_key_from_msg_hash(_trx.hash())
-
-        return pub.to_canonical_address(), sig.to_bytes(), raw_msg
-    elif isinstance(instruction, str):
-        if instruction[:2] == "0x":
-            instruction = instruction[2:]
-
-        _trx = Trx.from_string(bytearray.fromhex(instruction))
-        # print(json.dumps(_trx.__dict__, cls=JsonEncoder, indent=3))
-
-        raw_msg = _trx.get_msg()
-        sig = keys.Signature(vrs=[1 if _trx.v % 2 == 0 else 0, _trx.r, _trx.s])
-        pub = sig.recover_public_key_from_msg_hash(_trx.hash())
-
-        data = pub.to_canonical_address()
-        data += sig.to_bytes()
-        data += raw_msg
-
-        return pub.to_canonical_address(), sig.to_bytes(), raw_msg
-    else:
-        raise Exception("function gets ")
-
-
-def make_keccak_instruction_data(check_instruction_index, msg_len, data_start):
-    if 255 < check_instruction_index < 0:
-        raise Exception("Invalid index for instruction - {}".format(check_instruction_index))
-
-    check_count = 1
-    eth_address_size = 20
-    signature_size = 65
-    eth_address_offset = data_start
-    signature_offset = eth_address_offset + eth_address_size
-    message_data_offset = signature_offset + signature_size
-
-    data = struct.pack("B", check_count)
-    data += struct.pack("<H", signature_offset)
-    data += struct.pack("B", check_instruction_index)
-    data += struct.pack("<H", eth_address_offset)
-    data += struct.pack("B", check_instruction_index)
-    data += struct.pack("<H", message_data_offset)
-    data += struct.pack("<H", msg_len)
-    data += struct.pack("B", check_instruction_index)
-
-    return data

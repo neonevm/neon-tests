@@ -3,6 +3,7 @@ import os
 import re
 
 from _pytest.logging import ColoredLevelFormatter
+import allure
 
 SECRET_ENV_VARS = [
     "DEVNET_FAUCET_URL",
@@ -33,6 +34,11 @@ def create_logger(name: str, level: int = logging.INFO) -> Logger:
         logger.addHandler(console_handler)
 
     return logger
+
+
+def log_text_to_allure_and_stdout(title: str, message):
+    logging.getLogger(__name__).info(f"{title}:\n{message}")
+    allure.attach(message, name=title, attachment_type=allure.attachment_type.TEXT)
 
 
 def redact_string(message: str, secret_env_var_names: list[str] | None = None) -> str:

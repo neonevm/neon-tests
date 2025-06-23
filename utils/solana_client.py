@@ -28,6 +28,7 @@ from spl.token.instructions import get_associated_token_address, create_associat
 from integration.tests.economy.const import TX_COST
 from utils.consts import COMPUTE_BUDGET_ID, InstructionTags, LAMPORT_PER_SOL
 from utils.helpers import wait_condition
+from utils.logger import log_text_to_allure_and_stdout
 
 
 def fund_solana_account(evm_loader, solana_account, bank_account, network):
@@ -45,6 +46,7 @@ class SolanaClient(solana.rpc.api.Client):
             bytes(account_seed_version, encoding="utf-8").decode("unicode-escape").encode("utf-8")
         )
 
+    @allure.step("Request airdrop")
     def request_airdrop(
         self,
         pubkey: Pubkey,
@@ -57,7 +59,8 @@ class SolanaClient(solana.rpc.api.Client):
             airdrop_resp = super().request_airdrop(pubkey, lamports, commitment=commitment)
             if isinstance(airdrop_resp, InternalErrorMessage):
                 time.sleep(10)
-                print(f"Get error from solana airdrop: {airdrop_resp}")
+                log_text_to_allure_and_stdout("Error from solana airdrop", airdrop_resp)
+
             else:
                 break
         else:
@@ -67,12 +70,14 @@ class SolanaClient(solana.rpc.api.Client):
         )
         return airdrop_resp
 
+    @allure.step("Send SOL")
     def send_sol(self, from_: Keypair, to: Pubkey, amount_lamports: int):
         tx = Transaction().add(
             transfer(TransferParams(from_pubkey=from_.pubkey(), to_pubkey=to, lamports=amount_lamports))
         )
         self.send_tx_and_check_status_ok(tx, from_)
 
+    @allure.step("Get ERC auth address")
     def get_erc_auth_address(self, neon_account_address: str, token_address: str, evm_loader_id: str):
         neon_account_addressbytes = bytes(12) + bytes.fromhex(neon_account_address[2:])
         if token_address.startswith("0x"):
@@ -88,6 +93,7 @@ class SolanaClient(solana.rpc.api.Client):
             Pubkey.from_string(evm_loader_id),
         )[0]
 
+    @allure.step("Create SPL token mint and associated token account")
     def create_spl(self, owner: Keypair, decimals: int = 9) -> tuple[Token, Pubkey]:
         token_mint = spl.token.client.Token.create_mint(
             conn=self,
@@ -106,12 +112,14 @@ class SolanaClient(solana.rpc.api.Client):
 
         return token_mint, assoc_addr
 
+    @allure.step("Send transaction and check status is Ok")
     def send_tx_and_check_status_ok(self, tx, *signers):
         opts = TxOpts(skip_preflight=True, skip_confirmation=False)
         sig = self.send_transaction(tx, *signers, opts=opts).value
         statuses_resp = self.confirm_transaction(sig, commitment=Confirmed)
         sig_status = json.loads(statuses_resp.to_json())
         receipt = self.get_transaction(sig)
+        log_text_to_allure_and_stdout("Solana trx receipt", str(receipt))
         assert sig_status["result"]["value"][0]["status"] == {"Ok": None}, f"error:{sig_status}, receipt: {receipt}"
 
     def send_tx(self, trx: Transaction, *signers: Keypair, wait_status=Confirmed) -> GetTransactionResp:
@@ -130,6 +138,7 @@ class SolanaClient(solana.rpc.api.Client):
             self.send_tx_and_check_status_ok(trx, payer)
         return ata
 
+    @allure.step("Wait for transaction")
     def wait_transaction(self, tx):
         try:
             wait_condition(
@@ -142,15 +151,13 @@ class SolanaClient(solana.rpc.api.Client):
 
     @allure.step("Check if account exists")
     def account_exists(self, account_address: Pubkey) -> bool:
-        try:
-            account_info = self.get_account_info(account_address, commitment=Confirmed)
-            if account_info.value is not None:
-                return True
-            else:
-                return False
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        account_info = self.get_account_info(account_address, commitment=Confirmed)
+        if account_info.value is not None:
+            return True
+        else:
+            return False
 
+    @allure.step("Get account info")
     def get_account_whole_info(
         self,
         pubkey: Pubkey,
@@ -166,6 +173,7 @@ class SolanaClient(solana.rpc.api.Client):
         response = requests.post(self.endpoint, json=body, headers={"Content-Type": "application/json"})
         return response.json()
 
+    @allure.step("Mint SPL tokens to account")
     def mint_spl_to(self, mint: Pubkey, dest: Keypair, amount: int, authority: tp.Optional[Keypair] = None):
         token_account = get_associated_token_address(dest.pubkey(), mint)
 
@@ -181,9 +189,13 @@ class SolanaClient(solana.rpc.api.Client):
         opts = TxOpts(skip_preflight=True, skip_confirmation=False)
         token.mint_to(token_account, authority, amount, opts=opts)
 
+    @allure.step("Get solana balance")
     def get_solana_balance(self, account: Pubkey):
+        balance = self.get_balance(account, commitment=Confirmed).value
+        log_text_to_allure_and_stdout("Solana balance", f"Account: {account}, Balance: {balance} lamports")
         return self.get_balance(account, commitment=Confirmed).value
 
+    @allure.step("Create solana account")
     def create_account(self, payer: Keypair, size: int, owner: Pubkey, account=None, lamports=None):
         account = account or Keypair()
         lamports = lamports or self.get_minimum_balance_for_rent_exemption(size).value
@@ -197,45 +209,12 @@ class SolanaClient(solana.rpc.api.Client):
         self.send_tx_and_check_status_ok(trx.add(instr), payer, account)
         return account
 
-    def transaction_contains_call_to_program(
-        self,
-        tx: EncodedConfirmedTransactionWithStatusMeta,
-        program_id: Pubkey,
-    ) -> bool:
-        account_key_index = self.get_account_key_index_from_tx(tx=tx, account=program_id)
-        return self.do_tx_instructions_contain_program_id_index(tx=tx, i=account_key_index)
-
-    @staticmethod
-    def get_account_key_index_from_tx(
-        tx: EncodedConfirmedTransactionWithStatusMeta,
-        account: Pubkey,
-    ) -> int:
-        """
-        :returns index in transaction.message.account_keys or -1 if not found
-        """
-        for i, account_key in enumerate(tx.transaction.transaction.message.account_keys):
-            if account_key == account:
-                return i
-        else:
-            return -1
-
-    @staticmethod
-    def do_tx_instructions_contain_program_id_index(
-        tx: EncodedConfirmedTransactionWithStatusMeta,
-        i: int,
-    ) -> bool:
-        for instruction in tx.transaction.transaction.message.instructions:
-            if instruction.program_id_index == i:
-                return True
-        else:
-            return False
-
     @allure.step("Get account keys for solana transaction")
     def get_account_keys_for_transaction(self, sol_trx: str):
         resp = self.get_transaction(
             Signature.from_string(sol_trx), max_supported_transaction_version=0, commitment=Confirmed
         )
-        print(f"resp: {resp}")
+        log_text_to_allure_and_stdout("Solana trx", str(resp))
         trx_account_keys = resp.value.transaction.transaction.message.account_keys
         loaded_addresses = (
             resp.value.transaction.meta.loaded_addresses.readonly

@@ -90,8 +90,6 @@ class TestMultiplyChains:
             account=bob,
             value=value,
         )
-        print(wsol_contract_caller.address)
-        print(web3_client_sol.get_nonce(wsol_contract_caller.address))
         wrapper_address = wsol_contract_caller.events.Log().process_receipt(resp)[0].args["addr"]
         assert web3_client_sol.get_balance(wrapper_address) == value
 

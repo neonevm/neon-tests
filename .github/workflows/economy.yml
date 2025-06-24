@@ -124,7 +124,7 @@ jobs:
   destroy:
     runs-on: ["gha-runner-scale-set"]
     needs: [ prepare-env, tests ]
-    if: always() && needs.prepare-env.outputs.network == 'terraform'
+    if: always() && needs.prepare-env.outputs.network == 'terraform' && !contains(needs.prepare-env.result, 'cancelled')
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3

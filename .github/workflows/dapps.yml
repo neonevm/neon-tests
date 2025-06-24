@@ -140,7 +140,8 @@ jobs:
   destroy:
     runs-on: ["gha-runner-scale-set"]
     needs: [ prepare, dapps-tests ]
-    if: always()
+    if: always() &&
+      !contains(needs.prepare.result, 'cancelled')
     steps:
       - uses: actions/checkout@v4
       - name: "Destroy stand"

@@ -16,7 +16,7 @@ env:
 jobs:
   dockerize:
     name: Dockerize neon tests
-    runs-on: ubuntu-latest
+    runs-on: ["gha-runner-scale-set-large"]
     steps:
       - uses: actions/checkout@v4
       - name: Dockerize neon tests
@@ -36,7 +36,7 @@ jobs:
 
   test:
     needs: dockerize
-    runs-on: ubuntu-latest
+    runs-on: ["gha-runner-scale-set"]
 
     steps:
       - name: Checkout repository

@@ -114,7 +114,7 @@ jobs:
 
   dockerize:
     name: Dockerize neon tests
-    runs-on: ["gha-runner-scale-set"]
+    runs-on: ["gha-runner-scale-set-large"]
     needs:
       - share-tags
     steps:
@@ -299,13 +299,14 @@ jobs:
     name: Destroy stand
     runs-on: ["gha-runner-scale-set"]
     needs: [ prepare-env-proxy, run-proxy-tests ]
-    if: always()
+    if: |
+      always() &&
+      !contains(needs.prepare-env-proxy.result, 'cancelled')
     steps:
       - uses: actions/checkout@v4
       - name: "Destroy stand"
         uses: ./.github/actions/destroy-tf-stand
         with:
-          ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
           instance_public_ipv4: ${{ needs.prepare-env-proxy.outputs.proxy_ip }}
           docker_ca_cert: ${{ needs.prepare-env-proxy.outputs.docker_ca_cert }}
           docker_cert: ${{ needs.prepare-env-proxy.outputs.docker_cert }}

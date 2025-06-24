@@ -106,7 +106,6 @@ def get_sol_trx_with_alt(web3_client, sol_client, web3_transaction_receipt):
         ):
             sol_trx_with_alt = trx_sol
     if not sol_trx_with_alt:
-        print(f"There are no lookup table for {solana_trx}")
         return None
 
     return sol_trx_with_alt

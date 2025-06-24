@@ -29,9 +29,9 @@ SOLANA_CALL_PRECOMPILED_ID: Pubkey = Pubkey.from_string("83fAnx3LLG612mHbEh4HzXE
 COUNTER_ID: Pubkey = Pubkey.from_string("FUVnLFCgK48arAUgngmyYkSSKKD2PpjsneNTyigbe4oh")
 TRANSFER_SOL_ID: Pubkey = Pubkey.from_string("6x9dAYQehxXLh16EHAKXevnQADTZPKP6ZT4t8BfNDxtB")
 TRANSFER_TOKENS_ID: Pubkey = Pubkey.from_string("BFsGPJUwgE1rz4eoL322HaKZYNZ5wDLafwYtKwomv2XF")
-TEST_INVOKE_ID: Pubkey = Pubkey.from_string("9W1E93NQ7gWZw8zFMBwvUqdQLzzKExkHBCBaQrAhigLv")
+TEST_INVOKE_ID: Pubkey = Pubkey.from_string("A4HqdWTdJku9MB4FZfzv5YjsPmGCxX8NfKcrQJh2spqu")
 QUERY_ACCOUNT_ID: Pubkey = Pubkey.from_string("Fbc3Hf6FK7wCQjQHq9qS2phvhujfkfMQQWLsyA5s4oSu")
-ALT_UPDATER_ID: Pubkey = Pubkey.from_string("7pZR1DbAc9KQm2eJEDUTMKaf92LKchWNzNF6iJhcv7zy")
+ALT_UPDATER_ID: Pubkey = Pubkey.from_string("2opr1VoyXxpNePA4gcLBGPMPgrzgpyixuqDrE7EzKFWv")
 
 SPL_TOKEN_ADDRESS = "0xFf00000000000000000000000000000000000004"
 METAPLEX_ADDRESS = "0xff00000000000000000000000000000000000005"

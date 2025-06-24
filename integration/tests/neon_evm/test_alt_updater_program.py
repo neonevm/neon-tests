@@ -27,7 +27,6 @@ class TestAltUpdaterProgram:
             accounts=[
                 AccountMeta(pubkey=alt_address, is_signer=False, is_writable=True),
                 AccountMeta(pubkey=solana_account.pubkey(), is_signer=True, is_writable=True),
-                AccountMeta(pubkey=solana_account.pubkey(), is_signer=True, is_writable=True),
                 AccountMeta(pubkey=SYS_PROGRAM_ID, is_signer=False, is_writable=False),
                 AccountMeta(pubkey=SYS_ALT_PROGRAM_ID, is_signer=False, is_writable=False),
             ],
@@ -59,7 +58,6 @@ class TestAltUpdaterProgram:
             accounts=[
                 AccountMeta(pubkey=alt_address, is_signer=False, is_writable=True),
                 AccountMeta(pubkey=solana_account.pubkey(), is_signer=True, is_writable=True),
-                AccountMeta(pubkey=solana_account.pubkey(), is_signer=True, is_writable=True),
                 AccountMeta(pubkey=SYS_PROGRAM_ID, is_signer=False, is_writable=False),
                 AccountMeta(pubkey=SYS_ALT_PROGRAM_ID, is_signer=False, is_writable=False),
                 AccountMeta(pubkey=new_account.pubkey(), is_signer=False, is_writable=True),
@@ -89,7 +87,6 @@ class TestAltUpdaterProgram:
         accounts = [
             AccountMeta(pubkey=alt_address, is_signer=False, is_writable=True),
             AccountMeta(pubkey=solana_account.pubkey(), is_signer=True, is_writable=True),
-            AccountMeta(pubkey=solana_account.pubkey(), is_signer=True, is_writable=True),
             AccountMeta(pubkey=SYS_PROGRAM_ID, is_signer=False, is_writable=False),
             AccountMeta(pubkey=SYS_ALT_PROGRAM_ID, is_signer=False, is_writable=False),
             AccountMeta(pubkey=new_account_0.pubkey(), is_signer=False, is_writable=True),
@@ -113,7 +110,7 @@ class TestAltUpdaterProgram:
         check_transaction_logs_have_text(self.sol_client, receipt, "Instruction: ExtendLookupTable")
 
         new_account_1 = Keypair()
-        accounts[5] = AccountMeta(pubkey=new_account_1.pubkey(), is_signer=False, is_writable=True)
+        accounts[4] = AccountMeta(pubkey=new_account_1.pubkey(), is_signer=False, is_writable=True)
         for _ in range(9):
             new_account = Keypair()
             accounts.append(AccountMeta(pubkey=new_account.pubkey(), is_signer=False, is_writable=True))
@@ -143,7 +140,6 @@ class TestAltUpdaterProgram:
             program_id=ALT_UPDATER_ID,
             accounts=[
                 AccountMeta(pubkey=alt_address, is_signer=False, is_writable=True),
-                AccountMeta(pubkey=solana_account.pubkey(), is_signer=True, is_writable=True),
                 AccountMeta(pubkey=solana_account.pubkey(), is_signer=True, is_writable=True),
                 AccountMeta(pubkey=SYS_PROGRAM_ID, is_signer=False, is_writable=False),
                 AccountMeta(pubkey=SYS_ALT_PROGRAM_ID, is_signer=False, is_writable=False),
@@ -185,7 +181,6 @@ class TestAltUpdaterProgram:
             accounts=[
                 AccountMeta(pubkey=alt_address, is_signer=False, is_writable=True),
                 AccountMeta(pubkey=solana_account.pubkey(), is_signer=True, is_writable=True),
-                AccountMeta(pubkey=solana_account.pubkey(), is_signer=True, is_writable=True),
                 AccountMeta(pubkey=SYS_PROGRAM_ID, is_signer=False, is_writable=False),
                 AccountMeta(pubkey=SYS_ALT_PROGRAM_ID, is_signer=False, is_writable=False),
             ],
@@ -209,8 +204,7 @@ class TestAltUpdaterProgram:
             accounts=[
                 AccountMeta(pubkey=alt_address, is_signer=False, is_writable=True),
                 AccountMeta(pubkey=solana_account.pubkey(), is_signer=True, is_writable=True),
-                AccountMeta(pubkey=solana_account.pubkey(), is_signer=True, is_writable=True),
-                AccountMeta(pubkey=SYS_PROGRAM_ID, is_signer=False, is_writable=False),
+                AccountMeta(pubkey=SYS_ALT_PROGRAM_ID, is_signer=False, is_writable=False),
             ],
             data=slot.to_bytes(8, "little"),
         )

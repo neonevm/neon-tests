@@ -263,7 +263,7 @@ class EvmLoader(SolanaClient):
                 self.loader_id,
                 treasury_address,
                 treasury_buffer,
-                instruction.raw_transaction,
+                instruction,
                 additional_accounts,
                 system_program,
             )
@@ -346,7 +346,7 @@ class EvmLoader(SolanaClient):
         signer: Keypair = None,
         additional_signers: typing.List[Keypair] = None,
         system_program=sp.ID,
-    ) -> SendTransactionResp:
+    ) -> GetTransactionResp:
         signer = operator if signer is None else signer
         operator_balance_pubkey = self.get_operator_balance_pubkey(operator)
         trx = TransactionWithComputeBudget(operator)
@@ -490,11 +490,9 @@ class EvmLoader(SolanaClient):
                 if "ExitError" in log:
                     raise AssertionError(f"EVM Return error in logs: {receipt}")
             print(f"\n----Balances trx is executed index {index}----")
-
-            # print(f'Holder {self.get_solana_balance(holder)}')
-            # print(f'Tree account {self.get_solana_balance(tree_account)}')
+            print(f"Holder {self.get_solana_balance(storage_account)}")
             print(f"Treasury pool {self.get_solana_balance(treasury.account)}")
-            print(f"Operator {self.get_solana_balance(operator.pubkey())}")
+            print(f"Operator {self.get_operator_neon_balance(operator, self.sol_chain_id)}")
         return receipt
 
     def send_transaction_step_from_account(
@@ -917,7 +915,7 @@ class EvmLoader(SolanaClient):
         print(f"Holder {self.get_solana_balance(holder)}")
         print(f"Tree account {self.get_solana_balance(tree_account)}")
         print(f"Treasury pool {self.get_solana_balance(treasury.account)}")
-        print(f"Operator {self.get_solana_balance(operator.pubkey())}")
+        print(f"Operator {self.get_operator_neon_balance(operator, self.sol_chain_id)}")
 
         self.execute_transaction_steps_from_instruction_with_details(
             operator, treasury, holder, trx.encode(), additional_accounts, compute_unit_price=15, chain_id=chain_id

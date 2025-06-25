@@ -4,7 +4,7 @@ from solana.transaction import AccountMeta, Transaction, Instruction
 from utils.consts import TEST_INVOKE_ID
 from utils.instructions import (
     TransactionWithComputeBudget,
-    make_ExecuteTrxFromInstruction,
+    make_transaction_execute_from_instruction,
 )
 from utils.solana_client import SolanaClient
 from utils.web3client import NeonChainWeb3Client
@@ -34,7 +34,7 @@ class TestExternalCall:
         sender_initial_balance = evm_loader.get_neon_balance(sender_with_tokens.eth_address)
         receiver_initial_balance = evm_loader.get_neon_balance(session_user.eth_address)
 
-        instruction = make_ExecuteTrxFromInstruction(
+        instruction = make_transaction_execute_from_instruction(
             operator_keypair,
             operator_balance,
             holder_acc,
@@ -85,7 +85,7 @@ class TestExternalCall:
             session_user.balance_account_address,
         ]
 
-        instruction = make_ExecuteTrxFromInstruction(
+        instruction = make_transaction_execute_from_instruction(
             operator_keypair,
             operator_balance,
             holder_acc,

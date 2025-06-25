@@ -8,7 +8,10 @@ from solders.address_lookup_table_account import ID as SYS_ALT_PROGRAM_ID, deriv
 
 from utils.consts import ALT_UPDATER_ID
 from utils.solana_client import SolanaClient
-from integration.tests.neon_evm.utils.transaction_checks import check_transaction_logs_have_text
+from integration.tests.neon_evm.utils.transaction_checks import (
+    check_transaction_logs_have_text,
+    check_transaction_logs_have_not_text,
+)
 
 
 @pytest.mark.usefixtures("sol_client")
@@ -42,8 +45,7 @@ class TestAltUpdaterProgram:
         assert alt_info.value.data is not None
 
         check_transaction_logs_have_text(self.sol_client, receipt, "Instruction: CreateLookupTable")
-        with pytest.raises(AssertionError, match="Transaction logs don't contain 'Instruction: ExtendLookupTable'"):
-            check_transaction_logs_have_text(self.sol_client, receipt, "Instruction: ExtendLookupTable")
+        check_transaction_logs_have_not_text(self.sol_client, receipt, "Instruction: ExtendLookupTable")
 
     def test_alt_updater_create_alt_and_extend(self, solana_account):
         new_account = Keypair()
@@ -126,8 +128,7 @@ class TestAltUpdaterProgram:
         assert alt_info_upd.value.data != alt_info.value.data
 
         check_transaction_logs_have_text(self.sol_client, receipt, "Instruction: ExtendLookupTable")
-        with pytest.raises(AssertionError, match="Transaction logs don't contain 'Instruction: CreateLookupTable'"):
-            check_transaction_logs_have_text(self.sol_client, receipt, "Instruction: CreateLookupTable")
+        check_transaction_logs_have_not_text(self.sol_client, receipt, "Instruction: CreateLookupTable")
 
     def test_alt_updater_create_same_alt_twice(self, solana_account):
         slot = self.sol_client.get_slot().value
@@ -156,18 +157,15 @@ class TestAltUpdaterProgram:
         assert alt_info.value.data is not None
 
         check_transaction_logs_have_text(self.sol_client, receipt, "Instruction: CreateLookupTable")
-        with pytest.raises(AssertionError, match="Transaction logs don't contain 'Instruction: ExtendLookupTable'"):
-            check_transaction_logs_have_text(self.sol_client, receipt, "Instruction: ExtendLookupTable")
+        check_transaction_logs_have_not_text(self.sol_client, receipt, "Instruction: ExtendLookupTable")
 
         receipt_alt_unchanged = self.sol_client.send_tx_and_check_status_ok(trx, solana_account)
         alt_info_unchanged = self.sol_client.get_account_info(alt_address, commitment=Confirmed)
         assert alt_info_unchanged.value.owner == SYS_ALT_PROGRAM_ID
         assert alt_info_unchanged.value.data == alt_info.value.data
 
-        with pytest.raises(AssertionError, match="Transaction logs don't contain 'Instruction: CreateLookupTable'"):
-            check_transaction_logs_have_text(self.sol_client, receipt_alt_unchanged, "Instruction: CreateLookupTable")
-        with pytest.raises(AssertionError, match="Transaction logs don't contain 'Instruction: ExtendLookupTable'"):
-            check_transaction_logs_have_text(self.sol_client, receipt_alt_unchanged, "Instruction: ExtendLookupTable")
+        check_transaction_logs_have_not_text(self.sol_client, receipt_alt_unchanged, "Instruction: CreateLookupTable")
+        check_transaction_logs_have_not_text(self.sol_client, receipt_alt_unchanged, "Instruction: ExtendLookupTable")
 
     def test_alt_updater_invalid_insrtuction_data_size_mismatch(self, solana_account):
         slot = self.sol_client.get_slot().value

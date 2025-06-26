@@ -12,11 +12,11 @@ from solana.rpc.core import RPCException as SolanaRPCException
 from utils.consts import REMAPPING_ZEPPELIN
 from utils.evm_loader import EvmLoader
 from utils.instructions import (
-    make_WriteHolder,
-    make_CreateAccountWithSeed,
-    make_ExecuteTrxFromInstruction,
+    make_holder_write,
+    make_create_account_with_seed,
+    make_transaction_execute_from_instruction,
     TransactionWithComputeBudget,
-    make_CreateHolderAccount,
+    make_account_create_holder,
 )
 from utils.layouts import HOLDER_ACCOUNT_INFO_LAYOUT
 
@@ -49,7 +49,7 @@ def test_create_the_same_holder_account_by_another_user(operator_keypair, sessio
 
     trx = Transaction()
     trx.add(
-        make_CreateAccountWithSeed(
+        make_create_account_with_seed(
             session_user.solana_account.pubkey(),
             session_user.solana_account.pubkey(),
             seed,
@@ -57,7 +57,7 @@ def test_create_the_same_holder_account_by_another_user(operator_keypair, sessio
             128 * 1024,
             evm_loader.loader_id,
         ),
-        make_CreateHolderAccount(
+        make_account_create_holder(
             storage, session_user.solana_account.pubkey(), bytes(seed, "utf8"), evm_loader.loader_id
         ),
     )
@@ -178,7 +178,7 @@ def test_holder_write_integer_overflow(operator_keypair, holder_acc, evm_loader)
 
     trx = Transaction()
     trx.add(
-        make_WriteHolder(
+        make_holder_write(
             operator_keypair.pubkey(), evm_loader.loader_id, holder_acc, b"\x00" * 32, overflow_offset, b"\x00" * 1
         )
     )
@@ -190,7 +190,7 @@ def test_holder_write_account_size_overflow(operator_keypair, holder_acc, evm_lo
     overflow_offset = int(0xFFFFFFFF)
     trx = Transaction()
     trx.add(
-        make_WriteHolder(
+        make_holder_write(
             operator_keypair.pubkey(), evm_loader.loader_id, holder_acc, b"\x00" * 32, overflow_offset, b"\x00" * 1
         )
     )
@@ -225,7 +225,7 @@ def test_temporary_holder_acc_is_free(treasury_pool, sender_with_tokens, evm_loa
             owner=evm_loader.loader_id,
         )
     )
-    create_holder_instruction = make_CreateHolderAccount(
+    create_holder_instruction = make_account_create_holder(
         holder_pubkey, user_as_operator.pubkey(), bytes(seed, "utf8"), evm_loader.loader_id
     )
     trx.add(create_acc_with_seed_instr)
@@ -235,7 +235,7 @@ def test_temporary_holder_acc_is_free(treasury_pool, sender_with_tokens, evm_loa
     operator_balance_account = evm_loader.get_operator_balance_pubkey(user_as_operator)
 
     trx.add(
-        make_ExecuteTrxFromInstruction(
+        make_transaction_execute_from_instruction(
             user_as_operator,
             operator_balance_account,
             holder_pubkey,

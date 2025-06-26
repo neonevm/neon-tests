@@ -7,7 +7,7 @@ from solders.pubkey import Pubkey
 from utils.evm_loader import EVM_STEPS
 from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from utils.metaplex import ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID
-from utils.instructions import make_CreateAssociatedTokenIdempotent
+from utils.instructions import make_create_associated_token_idempotent
 from utils.helpers import bytes32_to_solana_pubkey, serialize_instruction
 from .utils.constants import TAG_FINALIZED_STATE, TAG_ACTIVE_STATE
 from .utils.ethereum import make_contract_call_trx
@@ -1094,7 +1094,7 @@ class TestAccountRevision:
         )
         payer = bytes32_to_solana_pubkey(payer_bytes32)
 
-        instruction = make_CreateAssociatedTokenIdempotent(
+        instruction = make_create_associated_token_idempotent(
             payer, sender_with_tokens.solana_account_address, Pubkey.from_string(environment.spl_neon_mint)
         )
         serialized_instructions = serialize_instruction(ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID, instruction)
@@ -1213,7 +1213,7 @@ class TestAccountRevision:
         )
         payer = bytes32_to_solana_pubkey(payer_bytes32)
 
-        instruction = make_CreateAssociatedTokenIdempotent(
+        instruction = make_create_associated_token_idempotent(
             payer, sender_with_tokens.solana_account_address, Pubkey.from_string(environment.spl_neon_mint)
         )
         serialized_instructions = serialize_instruction(ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID, instruction)

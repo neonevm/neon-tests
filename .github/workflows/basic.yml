@@ -171,6 +171,8 @@ jobs:
       DOCKER_PROJECT_NAME: "evm-tests-${{ github.run_number }}-${{ github.run_attempt }}"
     outputs:
       test-group : ${{ steps.step_fail.outputs.FAILED_TEST_GROUP  }}
+      error-log-exists: ${{ steps.copy-error-log.outputs.exists}}
+      allure_report_url: ${{ steps.generate-allure-report.outputs.allure_report_url }}
     steps:
       - uses: actions/checkout@v4
         if: ${{ env.NETWORK != 'devnet' }}
@@ -198,7 +200,28 @@ jobs:
         id: step_fail
         if: failure()
         run: echo "FAILED_TEST_GROUP=evm" >> $GITHUB_OUTPUT
+      - name: Copy click_cmd_err.log from the container
+        id: copy-error-log
+        if: always()
+        run: |
+          if docker cp ${{ env.DOCKER_PROJECT_NAME }}-tests-1:/opt/neon-tests/click_cmd_err.log ./click_cmd_err.log; then
+            echo "Copied click_cmd_err.log"
+            echo "exists=true" >> $GITHUB_OUTPUT
+            mv ./click_cmd_err.log ./click_cmd_err_evm.log
+            echo "Renamed click_cmd_err.log to click_cmd_err_evm.log"
+          else
+            echo "No error log to copy"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Upload click_cmd_err_evm.log to artifacts
+        if: always() && steps.copy-error-log.outputs.exists == 'true'
+        id: upload-error-log
+        uses: actions/upload-artifact@v4
+        with:
+          name: click-cmd-err-log-evm
+          path: click_cmd_err_evm.log
       - name: "Generate allure report"
+        id: generate-allure-report
         if: always() && env.NETWORK != 'devnet'
         uses: ./.github/actions/generate-allure-report
         with:
@@ -233,6 +256,8 @@ jobs:
       !contains(needs.*.result, 'cancelled')
     outputs:
       test-group: ${{ steps.step_fail.outputs.FAILED_TEST_GROUP  }}
+      error-log-exists: ${{ steps.copy-error-log.outputs.exists}}
+      allure_report_url: ${{ steps.generate-allure-report.outputs.allure_report_url }}
     steps:
       - uses: actions/checkout@v4
       - name: Log in to Docker Hub
@@ -284,6 +309,7 @@ jobs:
             --directory reports/cost_reports && \
           docker exec -i ${{ env.CONTAINER }} cat cost_reports.md >> $GITHUB_STEP_SUMMARY
       - name: "Generate allure report"
+        id: generate-allure-report
         if: always()
         uses: ./.github/actions/generate-allure-report
         with:
@@ -292,6 +318,26 @@ jobs:
           aws_access_key_id:  ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           tests_name: basic
+      - name: Copy click_cmd_err.log from the container
+        id: copy-error-log
+        if: always()
+        run: |
+          if docker cp ${{ env.CONTAINER }}:/opt/neon-tests/click_cmd_err.log ./click_cmd_err.log; then
+            echo "Copied click_cmd_err.log"
+            echo "exists=true" >> $GITHUB_OUTPUT
+            mv ./click_cmd_err.log ./click_cmd_err_proxy.log
+            echo "Renamed click_cmd_err.log to click_cmd_err_proxy.log"
+          else
+            echo "No error log to copy"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Upload click_cmd_err.log to artifacts
+        if: always() && steps.copy-error-log.outputs.exists == 'true'
+        id: upload-error-log
+        uses: actions/upload-artifact@v4
+        with:
+          name: click-cmd-err-log-proxy
+          path: click_cmd_err_proxy.log
       - name: Remove docker container
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}
@@ -317,7 +363,12 @@ jobs:
           gh_token: ${{ secrets.GHTOKEN }}
   send-notification:
     name: Send notification on failure
-    if: failure() && github.ref_name == 'develop'
+    if: |
+      always() &&
+      github.ref_name == 'develop' && (
+        contains(needs.*.result, 'failure') ||
+        contains(needs.*.result, 'cancelled')
+      )
     needs:
       - run-proxy-tests
       - run-evm-tests
@@ -327,10 +378,48 @@ jobs:
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
+      - name: Download click_cmd_err_evm.log
+        if: ${{ needs.run-evm-tests.outputs.error-log-exists == 'true'}}
+        uses: actions/download-artifact@v4
+        with:
+          name: click-cmd-err-log-evm
+      - name: Download click_cmd_err_proxy.log
+        if: ${{ needs.run-proxy-tests.outputs.error-log-exists == 'true'}}
+        uses: actions/download-artifact@v4
+        with:
+          name: click-cmd-err-log-proxy
+      - name: Rename or merge click_cmd_err logs
+        if: ${{ needs.run-evm-tests.outputs.error-log-exists == 'true' || needs.run-proxy-tests.outputs.error-log-exists == 'true' }}
+        shell: bash
+        run: |
+          OUTFILE="click_cmd_err.log"
+
+          if [[ -f click_cmd_err_evm.log && -f click_cmd_err_proxy.log ]]; then
+            echo "Both click_cmd_err_evm.log and click_cmd_err_proxy.log exist, merging..."
+            jq -s 'reduce .[] as $item ({}; . * $item)' click_cmd_err_evm.log click_cmd_err_proxy.log > "$OUTFILE"
+            cat "$OUTFILE"
+
+          elif [[ -f click_cmd_err_evm.log ]]; then
+            echo "Only click_cmd_err_evm.log exists, renaming..."
+            mv ./click_cmd_err_evm.log "$OUTFILE"
+
+          elif [[ -f click_cmd_err_proxy.log ]]; then
+            echo "Only click_cmd_err_proxy.log exists, renaming..."
+            mv ./click_cmd_err_proxy.log "$OUTFILE"
+
+          else
+            echo "No error logs found."
+          fi
       - name: Notify on failure
         run: |
           proxy_tests="${{ needs.run-proxy-tests.outputs.test-group }}"
           evm_tests="${{ needs.run-evm-tests.outputs.test-group }}"
           FAILED_TEST_GROUP="${proxy_tests:-evm_tests}"
           python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
-          -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group $FAILED_TEST_GROUP
+          -b ${{ env.BUILD_URL }} \
+          --network ${{ env.NETWORK }} \
+          --test-group $FAILED_TEST_GROUP \
+          --report-group evm \
+          --report-group basic \
+          --report-url ${{ needs.run-evm-tests.outputs.allure_report_url }} \
+          --report-url ${{ needs.run-proxy-tests.outputs.allure_report_url }}

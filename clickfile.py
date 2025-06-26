@@ -870,7 +870,9 @@ def upload_allure_report(name: TestGroup, network: EnvName, source: str = "./all
     "-n", "--network", type=click.Choice(EnvName), default=EnvName.DEVNET.value, help="In which stand run tests"
 )
 @click.option("--test-group", help="Name of the failed test group")
-def send_notification(url, build_url, network, test_group: str):
+@click.option("--report-url", multiple=True, help="Urls to Allure report")
+@click.option("--report-group", multiple=True, help="Test group of Allure report")
+def send_notification(url, build_url, network, test_group: str, report_url: tuple[str], report_group: tuple[str]):
     slack_notification = SlackNotification()
 
     # build info
@@ -885,19 +887,19 @@ def send_notification(url, build_url, network, test_group: str):
     else:
         failed_tests = test_group
 
-    # Allure report url
-    try:
-        with Path(ALLURE_REPORT_URL).open() as f:
-            allure_report_url = f.read()
-    except FileNotFoundError:
-        allure_report_url = ""
+    # Allure report urls
+    report_urls = []
+
+    for i, report_url_ in enumerate(report_url):
+        if report_url_:
+            report_urls.append({"name": report_group[i], "url": report_url_})
 
     # add combined block
     slack_notification.add_combined_block(
         build_info=build_info,
         network=network,
         failed_tests=failed_tests,
-        report_url=allure_report_url,
+        report_urls=report_urls,
         comments=error_log.read().comments,
     )
 
@@ -909,9 +911,9 @@ def send_notification(url, build_url, network, test_group: str):
     response = requests.post(url=url, data=payload)
     if response.status_code != 200:
         click.echo(f"Response status code: {response.status_code}")
-        click.echo(f"Response status code: {response.text}")
+        click.echo(f"Response text: {response.text}")
         click.echo(f"Payload: {payload}")
-        raise RuntimeError(f"Notification is not sent. Error: {response.text}")
+        raise RuntimeError("Notification is not sent")
 
 
 @cli.command(name="get-balances", help="Get operator balances in NEON and SOL")

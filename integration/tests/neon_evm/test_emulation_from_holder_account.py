@@ -192,6 +192,9 @@ class TestEmulateFromHolderAccount:
             emulate_result["exit_status"] == "revert"
         ), f"The 'exit_status' field is not revert. Result: {emulate_result}"
 
+        resp = evm_loader.execute_transaction_steps_from_account(operator_keypair, treasury_pool, holder_acc, accounts)
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x12")
+
     @pytest.mark.parametrize("write_tx_to_holder", [True, False])
     def test_emulate_from_holder_account_with_wrong_holder_account_tag(
         self,
@@ -200,9 +203,9 @@ class TestEmulateFromHolderAccount:
         rw_lock_contract,
         neon_api_client,
         evm_loader,
-        holder_acc,
         write_tx_to_holder,
     ):
+        holder_acc = evm_loader.create_holder(operator_keypair)
         if write_tx_to_holder:
             signed_tx = make_contract_call_trx(
                 evm_loader, session_user, rw_lock_contract, "unchange_storage(uint8,uint8)", [6, 12]

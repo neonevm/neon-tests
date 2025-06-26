@@ -673,7 +673,10 @@ jobs:
   swap-report:
     runs-on: ["gha-runner-scale-set"]
     needs: [ uniswap-v2, uniswap-v3, saddle, aave-v2, aave-v3, curve, robonomics, yearn, compound, curve-factory, pancake ]
-    if: always()
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
     env:
       SOLANA_URL: ${{ inputs.solana_url }}
       PROXY_URL: ${{ inputs.proxy_url }}

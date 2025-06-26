@@ -1,3 +1,4 @@
+import functools
 import typing as tp
 from hashlib import sha256
 
@@ -11,6 +12,7 @@ from spl.token.instructions import get_associated_token_address
 
 from utils.consts import COMPUTE_BUDGET_ID, InstructionTags
 from utils.types import TreasuryPool
+from .logger import log_text_to_allure_and_stdout
 from .metaplex import SYSVAR_RENT_PUBKEY
 
 DEFAULT_UNITS = 1_400_000
@@ -64,10 +66,33 @@ class TransactionWithComputeBudget(Transaction):
             self.add(ComputeBudget.set_compute_units_price(compute_unit_price, operator))
 
 
-def make_WriteHolder(
+def log_instruction_fields(title_prefix: str = ""):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            if hasattr(result, "program_id") and hasattr(result, "data") and hasattr(result, "accounts"):
+                program_id = result.program_id
+                data_hex = result.data.hex()
+                accounts = result.accounts
+
+                log_text = f"Program ID: {program_id}\n" f"Data (hex): {data_hex}\n" f"Accounts:\n"
+                for acc in accounts:
+                    log_text += f"  - pubkey: {acc.pubkey}, signer: {acc.is_signer}, writable: {acc.is_writable}\n"
+
+                log_text_to_allure_and_stdout(f"{title_prefix}Instruction Info", log_text)
+            return result
+
+        return wrapper
+
+    return decorator
+
+
+@log_instruction_fields("holder_write")
+def make_holder_write(
     operator: Pubkey, evm_loader_id: Pubkey, holder_account: Pubkey, hash_: bytes, offset: int, payload: bytes
 ):
-    d = bytes([0x26]) + hash_ + offset.to_bytes(8, byteorder="little") + payload
+    d = InstructionTags.HOLDER_WRITE + hash_ + offset.to_bytes(8, byteorder="little") + payload
 
     return Instruction(
         program_id=evm_loader_id,
@@ -79,7 +104,8 @@ def make_WriteHolder(
     )
 
 
-def make_ExecuteTrxFromInstruction(
+@log_instruction_fields("transaction_execute_from_instruction")
+def make_transaction_execute_from_instruction(
     operator: Keypair,
     operator_balance: Pubkey,
     holder_address: Pubkey,
@@ -89,14 +115,9 @@ def make_ExecuteTrxFromInstruction(
     message: bytes,
     additional_accounts: tp.List[Pubkey],
     system_program=sp.ID,
-    tag=0x3D,
+    tag=InstructionTags.TRANSACTION_EXECUTE_FROM_INSTRUCTION,
 ):
-    data = bytes([tag]) + treasury_buffer + message
-    print("make_ExecuteTrxFromInstruction accounts")
-    print("Holder: ", holder_address)
-    print("Operator: ", operator.pubkey())
-    print("Treasury: ", treasury_address)
-    print("Operator balance: ", operator_balance)
+    data = tag + treasury_buffer + message
     accounts = [
         AccountMeta(pubkey=holder_address, is_signer=False, is_writable=True),
         AccountMeta(pubkey=operator.pubkey(), is_signer=True, is_writable=True),
@@ -105,7 +126,6 @@ def make_ExecuteTrxFromInstruction(
         AccountMeta(system_program, is_signer=False, is_writable=True),
     ]
     for acc in additional_accounts:
-        print("Additional acc ", acc)
         accounts.append(
             AccountMeta(acc, is_signer=False, is_writable=True),
         )
@@ -113,7 +133,8 @@ def make_ExecuteTrxFromInstruction(
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 
 
-def make_ExecuteTrxFromAccount(
+@log_instruction_fields("transaction_execute_from_account")
+def make_transaction_execute_from_account(
     operator: Keypair,
     operator_balance: Pubkey,
     evm_loader_id: Pubkey,
@@ -123,13 +144,9 @@ def make_ExecuteTrxFromAccount(
     additional_accounts: tp.List[Pubkey],
     additional_signers: tp.List[Keypair] = None,
     system_program=sp.ID,
-    tag=0x33,
+    tag=InstructionTags.TRANSACTION_EXECUTE_FROM_ACCOUNT,
 ):
-    data = bytes([tag]) + treasury_buffer
-    print("make_ExecuteTrxFromInstruction accounts")
-    print("Operator: ", operator.pubkey())
-    print("Treasury: ", treasury_address)
-    print("Operator eth solana: ", operator_balance)
+    data = tag + treasury_buffer
     accounts = [
         AccountMeta(pubkey=holder_address, is_signer=False, is_writable=True),
         AccountMeta(pubkey=operator.pubkey(), is_signer=True, is_writable=True),
@@ -138,7 +155,6 @@ def make_ExecuteTrxFromAccount(
         AccountMeta(system_program, is_signer=False, is_writable=True),
     ]
     for acc in additional_accounts:
-        print("Additional acc ", acc)
         accounts.append(
             AccountMeta(acc, is_signer=False, is_writable=True),
         )
@@ -150,7 +166,8 @@ def make_ExecuteTrxFromAccount(
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 
 
-def make_ExecuteTrxFromAccountDataIterativeOrContinue(
+@log_instruction_fields("transaction_step_from_account")
+def make_transaction_step_from_account(
     step_count: int,
     operator: Keypair,
     operator_balance: Pubkey,
@@ -159,17 +176,13 @@ def make_ExecuteTrxFromAccountDataIterativeOrContinue(
     treasury,
     additional_accounts: tp.List[Pubkey],
     sys_program_id=sp.ID,
-    tag=0x35,
+    tag: InstructionTags = InstructionTags.TRANSACTION_STEP_FROM_ACCOUNT,
 ):
+    # can be used:
     # 0x35 - TransactionStepFromAccount
     # 0x36 - TransactionStepFromAccountNoChainId
-    data = tag.to_bytes(1, "little") + treasury.buffer + step_count.to_bytes(4, "little")
 
-    print("make_ExecuteTrxFromAccountDataIterativeOrContinue accounts")
-    print("Holder: ", holder_address)
-    print("Operator: ", operator.pubkey())
-    print("Treasury: ", treasury.account)
-    print("Operator eth solana: ", operator_balance)
+    data = tag + treasury.buffer + step_count.to_bytes(4, "little")
     accounts = [
         AccountMeta(pubkey=holder_address, is_signer=False, is_writable=True),
         AccountMeta(pubkey=operator.pubkey(), is_signer=True, is_writable=True),
@@ -179,7 +192,6 @@ def make_ExecuteTrxFromAccountDataIterativeOrContinue(
     ]
 
     for acc in additional_accounts:
-        print("Additional acc ", acc)
         accounts.append(
             AccountMeta(acc, is_signer=False, is_writable=True),
         )
@@ -187,7 +199,8 @@ def make_ExecuteTrxFromAccountDataIterativeOrContinue(
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 
 
-def make_PartialCallOrContinueFromRawEthereumTX(
+@log_instruction_fields("transaction_step_from_instruction")
+def make_transaction_step_from_instruction(
     index: int,
     step_count: int,
     instruction: bytes,
@@ -198,9 +211,9 @@ def make_PartialCallOrContinueFromRawEthereumTX(
     treasury: TreasuryPool,
     additional_accounts: tp.List[Pubkey],
     system_program=sp.ID,
-    tag=0x34,  # TransactionStepFromInstruction
+    tag: InstructionTags = InstructionTags.TRANSACTION_STEP_FROM_INSTRUCTION,
 ):
-    data = bytes([tag]) + treasury.buffer + step_count.to_bytes(4, "little") + index.to_bytes(4, "little") + instruction
+    data = tag + treasury.buffer + step_count.to_bytes(4, "little") + index.to_bytes(4, "little") + instruction
 
     accounts = [
         AccountMeta(pubkey=storage_address, is_signer=False, is_writable=True),
@@ -217,7 +230,8 @@ def make_PartialCallOrContinueFromRawEthereumTX(
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 
 
-def make_Cancel(
+@log_instruction_fields("Cancel")
+def make_cancel(
     evm_loader_id: Pubkey,
     storage_address: Pubkey,
     operator: Keypair,
@@ -225,7 +239,7 @@ def make_Cancel(
     hash_: bytes,
     additional_accounts: tp.List[Pubkey],
 ):
-    data = bytes([0x37]) + hash_
+    data = InstructionTags.CANCEL + hash_
 
     accounts = [
         AccountMeta(pubkey=storage_address, is_signer=False, is_writable=True),
@@ -241,7 +255,8 @@ def make_Cancel(
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 
 
-def make_DepositV03(
+@log_instruction_fields("Deposit")
+def make_deposit(
     ether_address: bytes,
     chain_id: int,
     balance_account: Pubkey,
@@ -253,7 +268,7 @@ def make_DepositV03(
     operator_pubkey: Pubkey,
     evm_loader_id: Pubkey,
 ) -> Instruction:
-    data = bytes([0x31]) + ether_address + chain_id.to_bytes(8, "little")
+    data = InstructionTags.DEPOSIT + ether_address + chain_id.to_bytes(8, "little")
 
     accounts = [
         AccountMeta(pubkey=mint, is_signer=False, is_writable=True),
@@ -269,7 +284,8 @@ def make_DepositV03(
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 
 
-def make_CreateAssociatedTokenIdempotent(payer: Pubkey, owner: Pubkey, mint: Pubkey) -> Instruction:
+@log_instruction_fields("create_associated_token_idempotent")
+def make_create_associated_token_idempotent(payer: Pubkey, owner: Pubkey, mint: Pubkey) -> Instruction:  # todo what
     """Creates a transaction instruction to create an associated token account.
 
     Returns:
@@ -291,7 +307,8 @@ def make_CreateAssociatedTokenIdempotent(payer: Pubkey, owner: Pubkey, mint: Pub
     )
 
 
-def make_CreateBalanceAccount(
+@log_instruction_fields("account_create_balance")
+def make_account_create_balance(
     evm_loader_id: Pubkey,
     sender_pubkey: Pubkey,
     ether_address: bytes,
@@ -299,9 +316,7 @@ def make_CreateBalanceAccount(
     contract_pubkey: Pubkey,
     chain_id,
 ) -> Instruction:
-    print("createBalanceAccount: {}".format(account_pubkey))
-
-    data = bytes([0x30]) + ether_address + chain_id.to_bytes(8, "little")
+    data = InstructionTags.ACCOUNT_CREATE_BALANCE + ether_address + chain_id.to_bytes(8, "little")
     return Instruction(
         program_id=evm_loader_id,
         data=data,
@@ -314,15 +329,16 @@ def make_CreateBalanceAccount(
     )
 
 
-def make_SyncNative(account: Pubkey):
+@log_instruction_fields("make_sync_native")
+def make_sync_native(account: Pubkey):  # todo what
     keys = [AccountMeta(pubkey=account, is_signer=False, is_writable=True)]
     data = bytes.fromhex("11")
     return Instruction(accounts=keys, program_id=TOKEN_PROGRAM_ID, data=data)
 
 
-def make_CreateAccountWithSeed(funding, base, seed, lamports, space, program):
+@log_instruction_fields("create_account_with_seed")
+def make_create_account_with_seed(funding, base, seed, lamports, space, program):  # todo
     created = Pubkey(sha256(bytes(base) + bytes(seed, "utf8") + bytes(program)).digest())
-    print(f"Created: {created}")
     return sp.create_account_with_seed(
         sp.CreateAccountWithSeedParams(
             from_pubkey=funding,
@@ -336,26 +352,28 @@ def make_CreateAccountWithSeed(funding, base, seed, lamports, space, program):
     )
 
 
-def make_CreateHolderAccount(account, operator, seed, evm_loader_id):
+@log_instruction_fields("account_create_holder")
+def make_account_create_holder(account, operator, seed, evm_loader_id):
     return Instruction(
         accounts=[
             AccountMeta(pubkey=account, is_signer=False, is_writable=True),
             AccountMeta(pubkey=operator, is_signer=True, is_writable=False),
         ],
         program_id=evm_loader_id,
-        data=bytes.fromhex("24") + len(seed).to_bytes(8, "little") + seed,
+        data=InstructionTags.HOLDER_CREATE + len(seed).to_bytes(8, "little") + seed,
     )
 
 
+@log_instruction_fields("WSOL")
 def make_wSOL(amount, solana_wallet, ata_address):
     tx = Transaction(fee_payer=solana_wallet)
     tx.add(sp.transfer(sp.TransferParams(from_pubkey=solana_wallet, to_pubkey=ata_address, lamports=amount)))
-    tx.add(make_SyncNative(ata_address))
-
+    tx.add(make_sync_native(ata_address))
     return tx
 
 
-def make_OperatorBalanceCreate(operator_keypair, operator_balance_pubkey, ether_bytes, chain_id, evm_loader_id):
+@log_instruction_fields("operator_create_balance")
+def make_operator_create_balance(operator_keypair, operator_balance_pubkey, ether_bytes, chain_id, evm_loader_id):
     tag = InstructionTags.OPERATOR_BALANCE_CREATE
     trx = Transaction()
     trx.add(
@@ -372,8 +390,10 @@ def make_OperatorBalanceCreate(operator_keypair, operator_balance_pubkey, ether_
     return trx
 
 
-def make_ScheduledTransactionCreate(signer, balance_pubkey, treasury, tree_account, pool, msg, evm_loader_id):
+@log_instruction_fields("ScheduledTransactionCreate")
+def make_scheduled_transaction_create(signer, balance_pubkey, treasury, tree_account, pool, msg, evm_loader_id):
     tag = InstructionTags.SCHEDULED_TRANSACTION_CREATE
+    data = tag + treasury.buffer + msg
     trx = Transaction()
     trx.add(
         Instruction(
@@ -386,13 +406,16 @@ def make_ScheduledTransactionCreate(signer, balance_pubkey, treasury, tree_accou
                 AccountMeta(pubkey=sp.ID, is_signer=False, is_writable=False),
             ],
             program_id=evm_loader_id,
-            data=tag + treasury.buffer + msg,
+            data=data,
         )
     )
     return trx
 
 
-def make_ScheduledTransactionCreateMultiple(signer, balance_pubkey, treasury, tree_account, pool, msg, evm_loader_id):
+@log_instruction_fields("scheduled_transaction_create_multiple")
+def make_scheduled_transaction_create_multiple(
+    signer, balance_pubkey, treasury, tree_account, pool, msg, evm_loader_id
+):
     tag = InstructionTags.SCHEDULED_TRANSACTION_CREATE_MULTIPLE
     data = tag + treasury.buffer + msg
     trx = Transaction()
@@ -413,7 +436,8 @@ def make_ScheduledTransactionCreateMultiple(signer, balance_pubkey, treasury, tr
     return trx
 
 
-def make_ScheduledTransactionStartFromAccount(
+@log_instruction_fields("scheduled_transaction_start_from_account")
+def make_scheduled_transaction_start_from_account(
     index: int,
     operator: Keypair,
     operator_balance: Pubkey,
@@ -433,7 +457,6 @@ def make_ScheduledTransactionStartFromAccount(
     ]
 
     for acc in additional_accounts:
-        print("Additional acc ", acc)
         accounts.append(
             AccountMeta(acc, is_signer=False, is_writable=True),
         )
@@ -441,7 +464,8 @@ def make_ScheduledTransactionStartFromAccount(
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 
 
-def make_ScheduledTransactionStartFromInstruction(
+@log_instruction_fields("scheduled_transaction_start_from_instruction")
+def make_scheduled_transaction_start_from_instruction(
     index, neon_trx, holder_address, tree_account, evm_loader_id, operator, operator_balance, additional_accounts
 ):
     tag = InstructionTags.SCHEDULED_TRANSACTION_START_FROM_INSTRUCTION
@@ -455,7 +479,6 @@ def make_ScheduledTransactionStartFromInstruction(
     ]
 
     for acc in additional_accounts:
-        print("Additional acc ", acc)
         accounts.append(
             AccountMeta(acc, is_signer=False, is_writable=True),
         )
@@ -463,7 +486,8 @@ def make_ScheduledTransactionStartFromInstruction(
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 
 
-def make_ScheduledTransactionDestroy(
+@log_instruction_fields("scheduled_transaction_destroy")
+def make_scheduled_transaction_destroy(
     signer: Pubkey, balance_account: Pubkey, treasury: TreasuryPool, tree_account: Pubkey, evm_loader_id: Pubkey
 ):
     data = InstructionTags.SCHEDULED_TRANSACTION_DESTROY + treasury.buffer
@@ -476,7 +500,8 @@ def make_ScheduledTransactionDestroy(
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 
 
-def make_ScheduledTransactionFinish(
+@log_instruction_fields("scheduled_transaction_finish")
+def make_scheduled_transaction_finish(
     operator: Pubkey, operator_balance: Pubkey, evm_loader_id: Pubkey, holder_address: Pubkey, tree_account: Pubkey
 ):
     data = InstructionTags.SCHEDULED_TRANSACTION_FINISH
@@ -489,7 +514,8 @@ def make_ScheduledTransactionFinish(
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 
 
-def make_ScheduledTransactionSkipFromInstruction(
+@log_instruction_fields("scheduled_transaction_skip_from_instruction")
+def make_scheduled_transaction_skip_from_instruction(
     index: int,
     neon_trx: bytes,
     operator: Keypair,
@@ -509,23 +535,13 @@ def make_ScheduledTransactionSkipFromInstruction(
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 
 
-def make_DeleteHolderAccount(signer: Pubkey, holder_account: Pubkey, evm_loader_id):
+@log_instruction_fields("make_delete_holder_account")
+def make_delete_holder_account(signer: Pubkey, holder_account: Pubkey, evm_loader_id):
     return Instruction(
         program_id=evm_loader_id,
-        data=bytes.fromhex("25"),
+        data=InstructionTags.HOLDER_DELETE,
         accounts=[
             AccountMeta(pubkey=holder_account, is_signer=False, is_writable=True),
             AccountMeta(pubkey=signer, is_signer=True, is_writable=True),
         ],
     )
-
-
-def get_compute_unit_price_eip_1559(
-    gas_price: int,
-    max_priority_fee_per_gas: int,
-) -> int:
-    """
-    :return: micro lamports
-    """
-    cu_price = max(1, int(max_priority_fee_per_gas * 1_000_000 * 5000.0 / (gas_price * DEFAULT_UNITS)))
-    return cu_price

@@ -40,7 +40,7 @@ from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
 from utils.evm_loader import EvmLoader
 from utils.helpers import serialize_instruction, wait_condition
 
-from utils.instructions import DEFAULT_UNITS, make_CreateAssociatedTokenIdempotent
+from utils.instructions import DEFAULT_UNITS, make_create_associated_token_idempotent
 from utils.layouts import COUNTER_ACCOUNT_LAYOUT
 from utils.metaplex import ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID, TOKEN_PROGRAM_ID
 from utils.solana_client import SolanaClient
@@ -152,7 +152,7 @@ class TestInteroperability:
         self, sender_with_tokens, solana_caller, evm_loader, solana_client, environment
     ):
         payer = solana_caller.get_payer()
-        instruction = make_CreateAssociatedTokenIdempotent(
+        instruction = make_create_associated_token_idempotent(
             payer, sender_with_tokens.solana_account_address, Pubkey.from_string(environment.spl_neon_mint)
         )
         resp = solana_caller.batch_execute(

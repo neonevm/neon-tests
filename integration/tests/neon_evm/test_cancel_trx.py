@@ -3,7 +3,7 @@ import solana
 from solana.transaction import Transaction
 
 from utils.evm_loader import EVM_STEPS
-from utils.instructions import make_Cancel
+from utils.instructions import make_cancel
 from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from .utils.constants import TAG_FINALIZED_STATE
 from .utils.ethereum import make_contract_call_trx
@@ -44,7 +44,7 @@ class TestCancelTrx:
         assert user_nonce_before_first_step + 1 == user_nonce_after_first_step
         trx = Transaction()
         trx.add(
-            make_Cancel(
+            make_cancel(
                 evm_loader.loader_id,
                 storage_account,
                 operator_keypair,
@@ -131,7 +131,7 @@ class TestCancelTrx:
 
         trx = Transaction()
         trx.add(
-            make_Cancel(
+            make_cancel(
                 evm_loader.loader_id,
                 storage_account,
                 operator_keypair,

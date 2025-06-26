@@ -41,6 +41,6 @@ class TestPyth:
         for pair, address in PYTH_DEVNET.items():
             contract = self.get_pyth_contract(address)
             price = contract.functions.latestAnswer().call()
-            assert price is not None
+            assert price > 0
             with allure.step(f"Pyth price for pair {pair} is {price}"):
                 pass

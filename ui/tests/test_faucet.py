@@ -15,7 +15,7 @@ from ui import libs
 from ui.pages import metamask, neon_faucet
 from utils.helpers import wait_condition
 
-NEON_FAUCET_URL = "https://neonfaucet.org/"
+NEON_FAUCET_URL = "https://faucet-ui.neontest.xyz/"
 DOCS_URL = "https://neonevm.org/docs/developing/utilities/faucet"
 WEBSITE_URL = "https://www.neonevm.org/"
 NEONPASS_URL = "https://neonpass.live/"
@@ -64,6 +64,19 @@ class TestFaucet:
         neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
         with context.expect_page() as new_tab_info:
             neon_faucet_page.help_button_click()
+        help_page = new_tab_info.value
+        help_page.wait_for_load_state()
+        actual_url = help_page.url
+        assert DOCS_URL in actual_url, (
+            f"Help button should open documentation at '{DOCS_URL}', " f"but actually opened '{actual_url}'"
+        )
+
+    def test_click_faq_button(self, context):
+        page = context.new_page()
+        page.goto(NEON_FAUCET_URL)
+        neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
+        with context.expect_page() as new_tab_info:
+            neon_faucet_page.faq_button_click()
         help_page = new_tab_info.value
         help_page.wait_for_load_state()
         actual_url = help_page.url
@@ -125,7 +138,7 @@ class TestFaucet:
         context.close()
 
 
-@pytest.mark.flaky(retries=3, retriy_delay=2)
+@pytest.mark.flaky(retries=3, retry_delay=2)
 class TestMetaMaskPipeLIne:
     """Tests NeonEVM proxy functionality via MetaMask"""
 

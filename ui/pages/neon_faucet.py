@@ -29,6 +29,8 @@ class NeonTestAirdropsPage(BasePage):
         "help_button": "//a[text()='Help']",
         "neon_website_button": "//a[text()='Neon Website']",
         "token_search_results": "//div[contains(@class,'overflow-y-auto')]/div",
+        "menu_button": "//div[@class='py-4']//*[name()='svg']",
+        "faq_link": "//a[text()=' FQA']",
     }
 
     def __init__(self, *args, **kwargs) -> None:
@@ -77,6 +79,11 @@ class NeonTestAirdropsPage(BasePage):
         self._choose_token(token)
         self._set_amount(amount)
         self.page.wait_for_selector(self.SELECTORS["limit_exceeded"])
+
+    @allure.step("Click 'FAQ' button")
+    def faq_button_click(self) -> None:
+        self.page.click(self.SELECTORS["menu_button"])
+        self.page.click(self.SELECTORS["faq_link"])
 
     @allure.step("Click 'Help' button")
     def help_button_click(self) -> None:

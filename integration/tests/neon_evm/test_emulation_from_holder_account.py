@@ -213,4 +213,4 @@ class TestEmulateFromHolderAccount:
             evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
         emulate_result = neon_api_client.emulate_from_holder(holder_acc)
         assert emulate_result["result"] == "error"
-        assert "invalid tag, expected 52" in emulate_result["error"]
+        assert "invalid status" in emulate_result["error"]

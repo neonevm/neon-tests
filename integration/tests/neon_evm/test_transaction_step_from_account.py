@@ -13,7 +13,7 @@ from utils.evm_loader import EVM_STEPS
 from utils.helpers import gen_hash_of_block
 from utils.instructions import (
     TransactionWithComputeBudget,
-    make_ExecuteTrxFromAccountDataIterativeOrContinue,
+    make_transaction_step_from_account,
 )
 from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from utils.types import TreasuryPool
@@ -1012,7 +1012,7 @@ class TestStepFromAccountChangingOperatorsDuringTrxRun:
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         trx = TransactionWithComputeBudget(operator_keypair)
         trx.add(
-            make_ExecuteTrxFromAccountDataIterativeOrContinue(
+            make_transaction_step_from_account(
                 1,
                 operator_keypair,
                 operator_balance_pubkey,

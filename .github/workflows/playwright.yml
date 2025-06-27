@@ -64,6 +64,7 @@ jobs:
             /bin/bash -c "export DEVNET_FAUCET_URL=${{ env.FAUCET_URL }} && export DEVNET_SOLANA_URL=${{ env.DEVNET_SOLANA_URL }} && \
             xvfb-run python3 ./clickfile.py run ui --network=${{ env.NETWORK }} --ui-item=faucet"
       - name: "Generate allure report"
+        id: generate-allure-report
         if: always()
         uses: ./.github/actions/generate-allure-report
         with:
@@ -79,8 +80,10 @@ jobs:
             python3 ./clickfile.py send-notification \
             -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
             -b ${{ env.BUILD_URL }} \
-            -n ${{ env.NETWORK }} \
-            --test-group ui
+            --network ${{ env.NETWORK }} \
+            --test-group ui \
+            --report-group ui \
+            --report-url ${{ steps.generate-allure-report.outputs.allure_report_url }}
       - name: Remove docker container
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}

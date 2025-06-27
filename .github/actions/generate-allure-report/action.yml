@@ -16,6 +16,11 @@ inputs:
   tests_name:
     description: 'basic/oz/economic/ui/evm'
     required: true
+outputs:
+  allure_report_url:
+    description: Allure report url
+    value: ${{ steps.output-allure-report-url.outputs.allure_report_url }}
+
 runs:
   using: composite
   steps:
@@ -45,6 +50,15 @@ runs:
         -e AWS_SECRET_ACCESS_KEY=${{ inputs.aws_secret_access_key }} \
         ${{ inputs.container }} \
         bash -c "python3 ./clickfile.py allure upload-report ${{ inputs.tests_name }} --network ${{ inputs.network }}"
+    - name: Save allure_report_url to outputs
+      id: output-allure-report-url
+      if: always()
+      shell: bash
+      run: |
+        if docker cp ${{ inputs.container }}:/opt/neon-tests/allure_report.url ./allure_report.url; then
+          url=$(cat allure_report.url)
+          echo "allure_report_url=$url" | tee -a $GITHUB_OUTPUT
+        fi
     - name: "Add result info to github page summary"
       if: always()
       shell: bash

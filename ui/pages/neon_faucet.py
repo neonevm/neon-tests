@@ -21,16 +21,19 @@ class NeonTestAirdropsPage(BasePage):
         "token_amount_input": "//input[@title='Token Amount']",
         "send_button": "//div[contains(@class, 'button--light')]",
         "transfer_success": "//h2[text()='Transfer Successful']",
-        "neonpass_button": "//a[text()='NeonPass']",
         "limit_exceeded": "//div[contains(text(),'Maximum limit for one airdrop is 100 tokens per minute')]",
         "install_wallet_msg": "//div[text()='Please install a wallet that supports NEON network']",
         "too_many_requests": "//p[text()='For security reasons, please wait a minute before making a new request']",
         "airdrop_enabled": "//div[not(contains(@class, 'button--disabled')) and span[text()='send test tokens']]",
-        "help_button": "//a[text()='Help']",
-        "neon_website_button": "//a[text()='Neon Website']",
         "token_search_results": "//div[contains(@class,'overflow-y-auto')]/div",
         "menu_button": "//div[@class='py-4']//*[name()='svg']",
         "faq_link": "//a[text()=' FQA']",
+        "docs_link": "//a[text()=' Docs']",
+        "twitter_link": "//a[text()=' Twitter']",
+        "discord_link": "//a[text()=' Discord Community']",
+        "about_neon_link": "//a[text()=' About Neon']",
+        "neonpass_link": "//a[text()=' NeonPass Bridge']",
+        "support_button": "//a[text()=' Support ']",
     }
 
     def __init__(self, *args, **kwargs) -> None:
@@ -80,22 +83,37 @@ class NeonTestAirdropsPage(BasePage):
         self._set_amount(amount)
         self.page.wait_for_selector(self.SELECTORS["limit_exceeded"])
 
+    @allure.step("Click 'Menu' dropdown")
+    def menu_dropdown_click(self) -> None:
+        self.page.click(self.SELECTORS["menu_button"])
+
     @allure.step("Click 'FAQ' button")
     def faq_button_click(self) -> None:
-        self.page.click(self.SELECTORS["menu_button"])
         self.page.click(self.SELECTORS["faq_link"])
 
-    @allure.step("Click 'Help' button")
-    def help_button_click(self) -> None:
-        self.page.click(self.SELECTORS["help_button"])
+    @allure.step("Click 'Docs' button")
+    def docs_button_click(self) -> None:
+        self.page.click(self.SELECTORS["docs_link"])
 
-    @allure.step("Click 'Neon Website' button")
-    def neon_website_button_click(self) -> None:
-        self.page.click(self.SELECTORS["neon_website_button"])
+    @allure.step("Click 'About Neon' button")
+    def about_neon_link_button_click(self) -> None:
+        self.page.click(self.SELECTORS["about_neon_link"])
+
+    @allure.step("Click 'Twitter' button")
+    def twitter_button_click(self) -> None:
+        self.page.click(self.SELECTORS["twitter_link"])
+
+    @allure.step("Click 'Discord' button")
+    def discord_button_click(self) -> None:
+        self.page.click(self.SELECTORS["discord_link"])
+
+    @allure.step("Click 'Support' button")
+    def support_button_click(self) -> None:
+        self.page.click(self.SELECTORS["support_button"])
 
     @allure.step("Click 'NeonPass' button")
     def neonpass_button_click(self) -> None:
-        self.page.click(self.SELECTORS["neonpass_button"])
+        self.page.click(self.SELECTORS["neonpass_link"])
 
     @allure.step("Check install wallet message")
     def install_wallet_message(self) -> None:

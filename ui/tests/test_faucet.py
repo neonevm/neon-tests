@@ -16,8 +16,11 @@ from ui.pages import metamask, neon_faucet
 from utils.helpers import wait_condition
 
 NEON_FAUCET_URL = "https://faucet-ui.neontest.xyz/"
-DOCS_URL = "https://neonevm.org/docs/developing/utilities/faucet"
-WEBSITE_URL = "https://www.neonevm.org/"
+FAQ_URL = "https://neonevm.org/docs/faq/neon-brief-faq"
+DOCS_URL = "https://neonevm.org/docs/quick_start"
+TWITTER_URL = "https://x.com/Neon_EVM"
+DISCORD_URL = "https://discord.com/invite/neonevm"
+WEBSITE_URL = "https://www.neonevm.org/blog"
 NEONPASS_URL = "https://neonpass.live/"
 
 """Neon Test Airdrops
@@ -58,25 +61,28 @@ def get_metamask_extension_id(context: BrowserContext) -> str:
 
 
 class TestFaucet:
-    def test_click_help_button(self, context):
-        page = context.new_page()
-        page.goto(NEON_FAUCET_URL)
-        neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
-        with context.expect_page() as new_tab_info:
-            neon_faucet_page.help_button_click()
-        help_page = new_tab_info.value
-        help_page.wait_for_load_state()
-        actual_url = help_page.url
-        assert DOCS_URL in actual_url, (
-            f"Help button should open documentation at '{DOCS_URL}', " f"but actually opened '{actual_url}'"
-        )
 
     def test_click_faq_button(self, context):
         page = context.new_page()
         page.goto(NEON_FAUCET_URL)
         neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
         with context.expect_page() as new_tab_info:
+            neon_faucet_page.menu_dropdown_click()
             neon_faucet_page.faq_button_click()
+        help_page = new_tab_info.value
+        help_page.wait_for_load_state()
+        actual_url = help_page.url
+        assert FAQ_URL in actual_url, (
+            f"Help button should open documentation at '{FAQ_URL}', " f"but actually opened '{actual_url}'"
+        )
+
+    def test_click_docs_button(self, context):
+        page = context.new_page()
+        page.goto(NEON_FAUCET_URL)
+        neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
+        with context.expect_page() as new_tab_info:
+            neon_faucet_page.menu_dropdown_click()
+            neon_faucet_page.docs_button_click()
         help_page = new_tab_info.value
         help_page.wait_for_load_state()
         actual_url = help_page.url
@@ -84,12 +90,13 @@ class TestFaucet:
             f"Help button should open documentation at '{DOCS_URL}', " f"but actually opened '{actual_url}'"
         )
 
-    def test_click_neon_website_button(self, context):
+    def test_click_about_neon_button(self, context):
         page = context.new_page()
         page.goto(NEON_FAUCET_URL)
         neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
         with context.expect_page() as new_tab_info:
-            neon_faucet_page.neon_website_button_click()
+            neon_faucet_page.menu_dropdown_click()
+            neon_faucet_page.about_neon_link_button_click()
         neon_website_page = new_tab_info.value
         neon_website_page.wait_for_load_state()
         actual_url = neon_website_page.url
@@ -97,11 +104,54 @@ class TestFaucet:
             f"Neon Website button should open '{WEBSITE_URL}', " f"but actually opened '{actual_url}'"
         )
 
+    def test_click_twitter_button(self, context):
+        page = context.new_page()
+        page.goto(NEON_FAUCET_URL)
+        neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
+        with context.expect_page() as new_tab_info:
+            neon_faucet_page.menu_dropdown_click()
+            neon_faucet_page.twitter_button_click()
+        neon_website_page = new_tab_info.value
+        neon_website_page.wait_for_load_state()
+        actual_url = neon_website_page.url
+        assert TWITTER_URL in neon_website_page.url, (
+            f"Neon Website button should open '{TWITTER_URL}', " f"but actually opened '{actual_url}'"
+        )
+
+    def test_click_discord_button(self, context):
+        page = context.new_page()
+        page.goto(NEON_FAUCET_URL)
+        neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
+        with context.expect_page() as new_tab_info:
+            neon_faucet_page.menu_dropdown_click()
+            neon_faucet_page.discord_button_click()
+        neon_website_page = new_tab_info.value
+        neon_website_page.wait_for_load_state()
+        actual_url = neon_website_page.url
+        assert DISCORD_URL in neon_website_page.url, (
+            f"Neon Website button should open '{DISCORD_URL}', " f"but actually opened '{actual_url}'"
+        )
+
+    def test_support_button(self, context):
+        page = context.new_page()
+        page.goto(NEON_FAUCET_URL)
+        neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
+        with context.expect_page() as new_tab_info:
+            neon_faucet_page.menu_dropdown_click()
+            neon_faucet_page.support_button_click()
+        neon_website_page = new_tab_info.value
+        neon_website_page.wait_for_load_state()
+        actual_url = neon_website_page.url
+        assert DISCORD_URL in neon_website_page.url, (
+            f"Neon Website button should open '{DISCORD_URL}', " f"but actually opened '{actual_url}'"
+        )
+
     def test_click_neonpass_button(self, context):
         page = context.new_page()
         page.goto(NEON_FAUCET_URL)
         neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
         with context.expect_page() as new_tab_info:
+            neon_faucet_page.menu_dropdown_click()
             neon_faucet_page.neonpass_button_click()
         neonpass_page = new_tab_info.value
         neonpass_page.wait_for_load_state()

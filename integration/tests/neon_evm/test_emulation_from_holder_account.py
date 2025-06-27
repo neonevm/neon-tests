@@ -194,6 +194,62 @@ class TestEmulateFromHolderAccount:
             expected_tag=TAG_FINALIZED_STATE,
         )
 
+    def test_emulate_from_holder_account_balance_account_changed(
+        self,
+        operator_keypair,
+        session_user,
+        transfers_contract,
+        neon_api_client,
+        evm_loader,
+        treasury_pool,
+        holder_acc,
+        sol_client,
+    ):
+        amount = 100000
+        evm_loader.deposit_neon(operator_keypair, session_user.eth_address, 3 * amount)
+
+        recipients = [evm_loader.make_new_user(operator_keypair), evm_loader.make_new_user(operator_keypair)]
+        recipients_eth_addresses = [rec.eth_address for rec in recipients]
+
+        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
+        signed_tx1 = make_contract_call_trx(
+            evm_loader,
+            session_user,
+            transfers_contract,
+            "transferNeon(uint256,address[])",
+            [amount, recipients_eth_addresses],
+            value=amount * 2,
+        )
+
+        accounts = [rec.balance_account_address for rec in recipients] + [
+            rec.solana_account_address for rec in recipients
+        ]
+        accounts += [
+            session_user.balance_account_address,
+            session_user.solana_account_address,
+            transfers_contract.balance_account_address,
+            transfers_contract.solana_address,
+        ]
+
+        evm_loader.write_transaction_to_holder_account(signed_tx1, holder_acc, operator_keypair)
+        evm_loader.send_transaction_step_from_account(
+            operator_keypair, operator_balance_pubkey, treasury_pool, holder_acc, accounts, EVM_STEPS, operator_keypair
+        )
+        emulate_result = neon_api_client.emulate_from_holder(holder_acc)
+        assert (
+            emulate_result["exit_status"] == "succeed"
+        ), f"The 'exit_status' field is not succeed. Result: {emulate_result}"
+
+        resp = evm_loader.execute_transaction_steps_from_account(operator_keypair, treasury_pool, holder_acc, accounts)
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
+
+        check_holder_account_tag(
+            solana_client=sol_client,
+            storage_account=holder_acc,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE,
+        )
+
     def test_emulate_from_holder_account_with_small_number_of_steps(
         self, operator_keypair, session_user, rw_lock_contract, neon_api_client, evm_loader, treasury_pool, holder_acc
     ):

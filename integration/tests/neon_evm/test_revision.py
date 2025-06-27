@@ -335,6 +335,7 @@ class TestAccountRevision:
         holder_acc,
         new_holder_acc,
         sol_client,
+        transfers_contract,
     ):
         sender1 = session_user
         sender2 = user_account
@@ -348,15 +349,12 @@ class TestAccountRevision:
             evm_loader.make_new_user(operator_keypair),
             evm_loader.make_new_user(operator_keypair),
         ]
-        contract = evm_loader.deploy_contract(
-            operator_keypair, session_user, "transfers", neon_api_client, treasury_pool
-        )
 
         recipients_eth_addresses = [rec.eth_address for rec in recipients]
         signed_tx1 = make_contract_call_trx(
             evm_loader,
             sender1,
-            contract,
+            transfers_contract,
             "transferNeon(uint256,address[])",
             [amount, recipients_eth_addresses],
             value=3 * amount,
@@ -365,7 +363,7 @@ class TestAccountRevision:
         signed_tx2 = make_contract_call_trx(
             evm_loader,
             sender2,
-            contract,
+            transfers_contract,
             "transferNeon(uint256,address[])",
             [amount, recipients_eth_addresses],
             value=3 * amount,
@@ -379,8 +377,8 @@ class TestAccountRevision:
             accounts += [
                 sender.balance_account_address,
                 sender.solana_account_address,
-                contract.balance_account_address,
-                contract.solana_address,
+                transfers_contract.balance_account_address,
+                transfers_contract.solana_address,
             ]
             operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
             return evm_loader.send_transaction_step_from_account(
@@ -506,20 +504,21 @@ class TestAccountRevision:
         evm_loader,
         holder_acc,
         new_holder_acc,
+        transfers_contract,
     ):
         amount = 1000000
         evm_loader.deposit_neon(operator_keypair, session_user.eth_address, 4 * amount)
         sender_balance_before = evm_loader.get_neon_balance(session_user.eth_address)
+
         recipients = [evm_loader.make_new_user(operator_keypair), evm_loader.make_new_user(operator_keypair)]
-        contract = evm_loader.deploy_contract(
-            operator_keypair, session_user, "transfers", neon_api_client, treasury_pool
-        )
-        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         recipients_eth_addresses = [rec.eth_address for rec in recipients]
+
+        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
+
         signed_tx1 = make_contract_call_trx(
             evm_loader,
             session_user,
-            contract,
+            transfers_contract,
             "transferNeon(uint256,address[])",
             [amount, recipients_eth_addresses],
             value=amount * 2,
@@ -530,8 +529,8 @@ class TestAccountRevision:
         accounts += [
             session_user.balance_account_address,
             session_user.solana_account_address,
-            contract.balance_account_address,
-            contract.solana_address,
+            transfers_contract.balance_account_address,
+            transfers_contract.solana_address,
         ]
 
         evm_loader.write_transaction_to_holder_account(signed_tx1, holder_acc, operator_keypair)
@@ -545,7 +544,7 @@ class TestAccountRevision:
         signed_tx2 = make_contract_call_trx(
             evm_loader,
             session_user,
-            contract,
+            transfers_contract,
             "transferNeon(uint256,address[])",
             [amount, recipients_eth_addresses],
             value=amount * 2,
@@ -591,23 +590,20 @@ class TestAccountRevision:
         evm_loader,
         new_holder_acc,
         holder_acc,
+        transfers_contract,
     ):
         sender = evm_loader.make_new_user(operator_keypair)
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
 
         recipient = session_user
-
         evm_loader.deposit_neon(operator_keypair, sender.eth_address, 1000000)
-        contract = evm_loader.deploy_contract(
-            operator_keypair, session_user, "transfers", neon_api_client, treasury_pool
-        )
 
         amount = evm_loader.get_neon_balance(sender.eth_address)
 
         signed_tx1 = make_contract_call_trx(
             evm_loader,
             sender,
-            contract,
+            transfers_contract,
             "transferNeon(uint256,address[])",
             [amount // 2, [recipient.eth_address]],
             value=amount // 2,
@@ -615,8 +611,8 @@ class TestAccountRevision:
         accounts = [
             sender.balance_account_address,
             sender.solana_account_address,
-            contract.balance_account_address,
-            contract.solana_address,
+            transfers_contract.balance_account_address,
+            transfers_contract.solana_address,
             recipient.balance_account_address,
             recipient.solana_account_address,
         ]
@@ -644,7 +640,7 @@ class TestAccountRevision:
         signed_tx2 = make_contract_call_trx(
             evm_loader,
             sender,
-            contract,
+            transfers_contract,
             "transferNeon(uint256,address[])",
             [amount, [recipient.eth_address]],
             value=amount,

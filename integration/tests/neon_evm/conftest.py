@@ -209,6 +209,17 @@ def calculator_contract(
 
 
 @pytest.fixture(scope="session")
+def transfers_contract(
+    evm_loader: EvmLoader,
+    neon_api_client: NeonApiClient,
+    operator_keypair: Keypair,
+    session_user: Caller,
+    treasury_pool: TreasuryPool,
+) -> Contract:
+    return evm_loader.deploy_contract(operator_keypair, session_user, "transfers", neon_api_client, treasury_pool)
+
+
+@pytest.fixture(scope="session")
 def calculator_caller_contract(
     evm_loader: EvmLoader,
     operator_keypair: Keypair,

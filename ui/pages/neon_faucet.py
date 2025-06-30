@@ -27,13 +27,14 @@ class NeonTestAirdropsPage(BasePage):
         "airdrop_enabled": "//div[not(contains(@class, 'button--disabled')) and span[text()='send test tokens']]",
         "token_search_results": "//div[contains(@class,'overflow-y-auto')]/div",
         "menu_button": "//div[@class='py-4']//*[name()='svg']",
-        "faq_link": "//a[text()=' FQA']",
+        "faq_link": "//a[text()=' FAQ']",
         "docs_link": "//a[text()=' Docs']",
         "twitter_link": "//a[text()=' Twitter']",
         "discord_link": "//a[text()=' Discord Community']",
         "about_neon_link": "//a[text()=' About Neon']",
-        "neonpass_link": "//a[text()=' NeonPass Bridge']",
+        "neonpass_link": "//a[text()=' NeonPass']",
         "support_button": "//a[text()=' Support ']",
+        "cookies_policy_link": "//a[text()='cookies policy']",
     }
 
     def __init__(self, *args, **kwargs) -> None:
@@ -114,6 +115,10 @@ class NeonTestAirdropsPage(BasePage):
     @allure.step("Click 'NeonPass' button")
     def neonpass_button_click(self) -> None:
         self.page.click(self.SELECTORS["neonpass_link"])
+
+    @allure.step("Click 'cookies policy' link")
+    def cookies_policy_link_click(self) -> None:
+        self.page.click(self.SELECTORS["cookies_policy_link"])
 
     @allure.step("Check install wallet message")
     def install_wallet_message(self) -> None:

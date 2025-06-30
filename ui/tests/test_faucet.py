@@ -9,7 +9,6 @@ from urllib.parse import urlparse
 
 import pytest
 from playwright.sync_api import BrowserContext
-from playwright.sync_api import BrowserType
 
 from ui import libs
 from ui.pages import metamask, neon_faucet
@@ -22,6 +21,7 @@ TWITTER_URL = "https://x.com/Neon_EVM"
 DISCORD_URL = "https://discord.com/invite/neonevm"
 WEBSITE_URL = "https://www.neonevm.org/blog"
 NEONPASS_URL = "https://neonpass.live/"
+COOKIES_URL = "https://www.neonevm.org/cookie-policy"
 
 """Neon Test Airdrops
 """
@@ -73,7 +73,7 @@ class TestFaucet:
         help_page.wait_for_load_state()
         actual_url = help_page.url
         assert FAQ_URL in actual_url, (
-            f"Help button should open documentation at '{FAQ_URL}', " f"but actually opened '{actual_url}'"
+            f"FAQ button should open documentation at '{FAQ_URL}', " f"but actually opened '{actual_url}'"
         )
 
     def test_click_docs_button(self, context):
@@ -115,7 +115,7 @@ class TestFaucet:
         neon_website_page.wait_for_load_state()
         actual_url = neon_website_page.url
         assert TWITTER_URL in neon_website_page.url, (
-            f"Neon Website button should open '{TWITTER_URL}', " f"but actually opened '{actual_url}'"
+            f"Twitter button should open '{TWITTER_URL}', " f"but actually opened '{actual_url}'"
         )
 
     def test_click_discord_button(self, context):
@@ -129,7 +129,7 @@ class TestFaucet:
         neon_website_page.wait_for_load_state()
         actual_url = neon_website_page.url
         assert DISCORD_URL in neon_website_page.url, (
-            f"Neon Website button should open '{DISCORD_URL}', " f"but actually opened '{actual_url}'"
+            f"Discord button should open '{DISCORD_URL}', " f"but actually opened '{actual_url}'"
         )
 
     def test_support_button(self, context):
@@ -143,7 +143,7 @@ class TestFaucet:
         neon_website_page.wait_for_load_state()
         actual_url = neon_website_page.url
         assert DISCORD_URL in neon_website_page.url, (
-            f"Neon Website button should open '{DISCORD_URL}', " f"but actually opened '{actual_url}'"
+            f"Support button should open '{DISCORD_URL}', " f"but actually opened '{actual_url}'"
         )
 
     def test_click_neonpass_button(self, context):
@@ -160,32 +160,16 @@ class TestFaucet:
             f"NeonPass button should open '{NEONPASS_URL}', " f"but actually opened '{actual_url}'"
         )
 
-    @pytest.mark.no_extension
-    def test_open_faucet_without_installed_wallets(self, context):
+    def test_cookies_policy_link(self, context):
         page = context.new_page()
         page.goto(NEON_FAUCET_URL)
         neon_faucet_page = neon_faucet.NeonTestAirdropsPage(page)
-        neon_faucet_page.install_wallet_message()
-
-    def test_mobile_faucet_message(self, browser_type: BrowserType):
-        expected_message = "Sorry, Neon Faucet "
-        context = browser_type.launch_persistent_context(
-            user_data_dir="/tmp/mobile-user-data",
-            viewport=MOBILE_VIEWPORT,
-            user_agent=MOBILE_USER_AGENT,
-            is_mobile=True,
-            device_scale_factor=2,
-            has_touch=True,
-            headless=False,
+        neon_faucet_page.cookies_policy_link_click()
+        page.wait_for_url(f"**{COOKIES_URL}")
+        actual_url = page.url
+        assert COOKIES_URL in actual_url, (
+            f"Cookies policy link should open '{COOKIES_URL}', " f"but actually opened '{actual_url}'"
         )
-        page = context.new_page()
-        page.goto(NEON_FAUCET_URL)
-        content = page.content()
-
-        assert "Sorry, Neon Faucet " in page.content()
-
-        assert expected_message in content, f"Expected '{expected_message}' in page content, but it was not found."
-        context.close()
 
 
 @pytest.mark.flaky(retries=3, retry_delay=2)

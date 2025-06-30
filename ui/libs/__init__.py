@@ -6,7 +6,7 @@ import sys
 import tarfile
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import six
 from playwright.sync_api import BrowserContext, Page
@@ -42,8 +42,8 @@ class TransactionFee:
 
 @dataclass
 class TransactionFeeType:
-    neon: TransactionFee = TransactionFee("Neon", "NEON")
-    sol: TransactionFee = TransactionFee("Solana", "SOL")
+    neon: TransactionFee = field(default_factory=TransactionFee)
+    sol: TransactionFee = field(default_factory=TransactionFee)
     none: TransactionFee = None
 
 
@@ -58,12 +58,13 @@ class PriorityFee:
 
 @dataclass
 class Tokens:
-    neon = Token("NEON", "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g")
-    wneon = Token("wNEON", "0x11adC2d986E334137b9ad0a0F290771F31e9517F")
+    neon = Token("Neon", "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g")
+    wneon = Token("WNEON", "0x11adC2d986E334137b9ad0a0F290771F31e9517F")
     sol = Token("SOL", "0xc7Fc9b46e479c5Cb42f6C458D1881e55E6B7986c")
     wsol = Token("wSOL", "0xc7Fc9b46e479c5Cb42f6C458D1881e55E6B7986c")
     usdt = Token("USDT", "0x6eEf939FC6e2B3F440dCbB72Ea81Cd63B5a519A5")
     usdc = Token("USDC", "0x512E48836Cd42F3eB6f50CEd9ffD81E0a7F15103")
+    btc = Token("BTC", "0x5651a868392595baf4aa83639aecf232a4603cd9")
 
 
 BASE_USER_DATA_DIR = "user_data"

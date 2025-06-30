@@ -36,30 +36,30 @@ from utils.logger import log_text_to_allure_and_stdout
 from utils.scheduled_trx import ScheduledTransaction
 from utils.neon_user import NeonUser
 from integration.tests.neon_evm.utils.constants import TREASURY_POOL_SEED
-from utils.consts import LAMPORT_PER_SOL
+from utils.consts import LAMPORT_PER_SOL, InstructionTags
 from utils.helpers import ether2bytes
 from utils.instructions import (
     TransactionWithComputeBudget,
-    make_ExecuteTrxFromInstruction,
-    make_WriteHolder,
-    make_ExecuteTrxFromAccount,
-    make_PartialCallOrContinueFromRawEthereumTX,
-    make_ExecuteTrxFromAccountDataIterativeOrContinue,
-    make_CreateBalanceAccount,
-    make_CreateAssociatedTokenIdempotent,
-    make_DepositV03,
+    make_transaction_execute_from_instruction,
+    make_holder_write,
+    make_transaction_execute_from_account,
+    make_transaction_step_from_instruction,
+    make_account_create_balance,
+    make_create_associated_token_idempotent,
+    make_deposit,
     make_wSOL,
-    make_OperatorBalanceCreate,
-    make_ScheduledTransactionCreate,
-    make_ScheduledTransactionStartFromAccount,
-    make_ScheduledTransactionFinish,
-    make_ScheduledTransactionDestroy,
-    make_ScheduledTransactionStartFromInstruction,
-    make_ScheduledTransactionCreateMultiple,
-    make_ScheduledTransactionSkipFromInstruction,
-    make_CreateAccountWithSeed,
-    make_CreateHolderAccount,
-    make_DeleteHolderAccount,
+    make_scheduled_transaction_create,
+    make_scheduled_transaction_start_from_account,
+    make_scheduled_transaction_finish,
+    make_scheduled_transaction_destroy,
+    make_scheduled_transaction_start_from_instruction,
+    make_scheduled_transaction_create_multiple,
+    make_scheduled_transaction_skip_from_instruction,
+    make_create_account_with_seed,
+    make_account_create_holder,
+    make_delete_holder_account,
+    make_operator_create_balance,
+    make_transaction_step_from_account,
 )
 from utils.layouts import (
     BALANCE_ACCOUNT_LAYOUT,
@@ -99,7 +99,7 @@ class EvmLoader(SolanaClient):
             contract_pubkey = Pubkey.from_string(self.ether2program(ether)[0])
             trx = Transaction()
             trx.add(
-                make_CreateBalanceAccount(
+                make_account_create_balance(
                     self.loader_id, sender.pubkey(), ether2bytes(ether), account_pubkey, contract_pubkey, chain_id
                 )
             )
@@ -212,7 +212,7 @@ class EvmLoader(SolanaClient):
         while len(rest):
             (part, rest) = (rest[:920], rest[920:])
             trx = Transaction()
-            trx.add(make_WriteHolder(operator.pubkey(), self.loader_id, holder_account, tx_hash, offset, part))
+            trx.add(make_holder_write(operator.pubkey(), self.loader_id, holder_account, tx_hash, offset, part))
             receipts.append(
                 self.send_transaction(
                     trx,
@@ -265,7 +265,7 @@ class EvmLoader(SolanaClient):
         operator_balance = self.get_operator_balance_pubkey(operator)
 
         trx.add(
-            make_ExecuteTrxFromInstruction(
+            make_transaction_execute_from_instruction(
                 operator,
                 operator_balance,
                 holder_acc,
@@ -295,7 +295,7 @@ class EvmLoader(SolanaClient):
 
         trx = TransactionWithComputeBudget(operator)
         trx.add(
-            make_ExecuteTrxFromAccount(
+            make_transaction_execute_from_account(
                 operator,
                 operator_balance,
                 self.loader_id,
@@ -325,7 +325,7 @@ class EvmLoader(SolanaClient):
         operator_balance_pubkey = self.get_operator_balance_pubkey(operator)
         trx = TransactionWithComputeBudget(operator)
         trx.add(
-            make_ExecuteTrxFromInstruction(
+            make_transaction_execute_from_instruction(
                 operator,
                 operator_balance_pubkey,
                 holder_address,
@@ -335,7 +335,7 @@ class EvmLoader(SolanaClient):
                 instruction.raw_transaction,
                 additional_accounts,
                 system_program,
-                tag=0x3E,
+                tag=InstructionTags.TRANSACTION_EXECUTE_FROM_INSTRUCTION_WITH_SOLANA_CALL,
             )
         )
         return self.send_tx(trx, signer)
@@ -356,7 +356,7 @@ class EvmLoader(SolanaClient):
         operator_balance_pubkey = self.get_operator_balance_pubkey(operator)
         trx = TransactionWithComputeBudget(operator)
         trx.add(
-            make_ExecuteTrxFromAccount(
+            make_transaction_execute_from_account(
                 operator,
                 operator_balance_pubkey,
                 self.loader_id,
@@ -366,7 +366,7 @@ class EvmLoader(SolanaClient):
                 additional_accounts,
                 additional_signers,
                 system_program,
-                tag=0x39,
+                tag=InstructionTags.TRANSACTION_EXECUTE_FROM_ACCOUNT_WITH_SOLANA_CALL,
             )
         )
 
@@ -387,7 +387,8 @@ class EvmLoader(SolanaClient):
         system_program=sp.ID,
         index=0,
         compute_unit_price=None,
-        tag=0x34,
+        # tag=0x34,
+        tag=InstructionTags.TRANSACTION_STEP_FROM_INSTRUCTION,
     ) -> GetTransactionResp:
         trx = TransactionWithComputeBudget(operator, compute_unit_price=compute_unit_price)
         if isinstance(instruction, SignedTransaction):
@@ -395,7 +396,7 @@ class EvmLoader(SolanaClient):
         else:
             raw_trx = instruction
         trx.add(
-            make_PartialCallOrContinueFromRawEthereumTX(
+            make_transaction_step_from_instruction(
                 index,
                 steps_count,
                 raw_trx,
@@ -468,11 +469,11 @@ class EvmLoader(SolanaClient):
         signer: Keypair,
         system_program=sp.ID,
         compute_unit_price=None,
-        tag=0x35,
+        tag=InstructionTags.TRANSACTION_STEP_FROM_ACCOUNT,
     ) -> GetTransactionResp:
         trx = TransactionWithComputeBudget(operator, compute_unit_price=compute_unit_price)
         trx.add(
-            make_ExecuteTrxFromAccountDataIterativeOrContinue(
+            make_transaction_step_from_account(
                 step_count=steps_count,
                 operator=operator,
                 operator_balance=operator_balance_pubkey,
@@ -552,7 +553,8 @@ class EvmLoader(SolanaClient):
                 additional_accounts,
                 EVM_STEPS,
                 signer,
-                tag=0x36,
+                # tag=0x36,
+                tag=InstructionTags.TRANSACTION_STEP_FROM_ACCOUNT_NO_CHAIN_ID,
             )
 
             if receipt.value.transaction.meta.err:
@@ -584,7 +586,7 @@ class EvmLoader(SolanaClient):
 
         trx = Transaction()
         trx.add(
-            make_CreateAssociatedTokenIdempotent(
+            make_create_associated_token_idempotent(
                 operator_keypair.pubkey(), operator_keypair.pubkey(), self.neon_token_mint_id
             ),
             spl.token.instructions.mint_to(
@@ -605,7 +607,7 @@ class EvmLoader(SolanaClient):
                     amount,
                 )
             ),
-            make_DepositV03(
+            make_deposit(
                 ether2bytes(ether_address),
                 self.chain_id,
                 balance_pubkey,
@@ -663,7 +665,7 @@ class EvmLoader(SolanaClient):
         )
 
         tx.add(
-            make_DepositV03(
+            make_deposit(
                 bytes.fromhex(neon_account[2:]),
                 chain_id,
                 balance_pubkey,
@@ -718,7 +720,7 @@ class EvmLoader(SolanaClient):
             chain_id = self.chain_id
 
         account = self.ether2operator_balance(operator_keypair, operator_ether, chain_id)
-        trx = make_OperatorBalanceCreate(
+        trx = make_operator_create_balance(
             operator_keypair, account, ether2bytes(operator_ether), chain_id, self.loader_id
         )
         self.send_tx(trx, operator_keypair)
@@ -738,7 +740,7 @@ class EvmLoader(SolanaClient):
         trx = Transaction()
         balance_account = self.create_balance_account(neon_user.neon_address, neon_user.solana_account, chain_id)
         trx.add(
-            make_ScheduledTransactionCreate(
+            make_scheduled_transaction_create(
                 neon_user.solana_account, balance_account, treasury, tree_account, pool, transaction, self.loader_id
             )
         )
@@ -768,7 +770,7 @@ class EvmLoader(SolanaClient):
         trx = Transaction()
         balance_account = self.create_balance_account(neon_user.neon_address, neon_user.solana_account, chain_id)
         trx.add(
-            make_ScheduledTransactionCreateMultiple(
+            make_scheduled_transaction_create_multiple(
                 neon_user.solana_account,
                 balance_account,
                 treasury,
@@ -791,7 +793,7 @@ class EvmLoader(SolanaClient):
         operator_balance = self.get_operator_balance_pubkey(operator, chain_id)
         trx = TransactionWithComputeBudget(operator, compute_unit_price=1000000)
         trx.add(
-            make_ScheduledTransactionStartFromAccount(
+            make_scheduled_transaction_start_from_account(
                 index, operator, operator_balance, self.loader_id, holder, tree_account, additional_accounts
             )
         )
@@ -813,7 +815,7 @@ class EvmLoader(SolanaClient):
         operator_balance = self.get_operator_balance_pubkey(operator, chain_id)
         trx = TransactionWithComputeBudget(operator, compute_unit_price=1000000)
         trx.add(
-            make_ScheduledTransactionStartFromInstruction(
+            make_scheduled_transaction_start_from_instruction(
                 neon_trx.index,
                 neon_trx.encode(),
                 holder,
@@ -873,7 +875,7 @@ class EvmLoader(SolanaClient):
         trx = TransactionWithComputeBudget(operator, compute_unit_price=1000000)
         operator_balance = self.get_operator_balance_pubkey(operator, chain_id)
         trx.add(
-            make_ScheduledTransactionFinish(
+            make_scheduled_transaction_finish(
                 operator.pubkey(), operator_balance, self.loader_id, holder_account, tree_account
             )
         )
@@ -889,7 +891,7 @@ class EvmLoader(SolanaClient):
         operator_balance_pubkey = self.get_operator_balance_pubkey(operator, chain_id)
         trx = TransactionWithComputeBudget(operator, compute_unit_price=1000000)
         trx.add(
-            make_ScheduledTransactionSkipFromInstruction(
+            make_scheduled_transaction_skip_from_instruction(
                 neon_trx.index,
                 neon_trx.encode(),
                 operator,
@@ -911,7 +913,7 @@ class EvmLoader(SolanaClient):
         trx = Transaction()
 
         trx.add(
-            make_ScheduledTransactionDestroy(
+            make_scheduled_transaction_destroy(
                 neon_user.solana_account.pubkey(),
                 neon_user.get_balance_account(chain_id),
                 treasury,
@@ -999,8 +1001,8 @@ class EvmLoader(SolanaClient):
         if self.get_solana_balance(storage) == 0:
             trx = Transaction()
             trx.add(
-                make_CreateAccountWithSeed(signer.pubkey(), signer.pubkey(), seed, fund, size, self.loader_id),
-                make_CreateHolderAccount(storage, signer.pubkey(), bytes(seed, "utf8"), self.loader_id),
+                make_create_account_with_seed(signer.pubkey(), signer.pubkey(), seed, fund, size, self.loader_id),
+                make_account_create_holder(storage, signer.pubkey(), bytes(seed, "utf8"), self.loader_id),
             )
             self.send_tx(trx, signer)
             return storage
@@ -1010,5 +1012,5 @@ class EvmLoader(SolanaClient):
     @allure.step("Delete holder account")
     def delete_holder(self, del_key: Pubkey, acc: Keypair, signer: Keypair):
         trx = Transaction()
-        trx.add(make_DeleteHolderAccount(acc.pubkey(), del_key, self.loader_id))
+        trx.add(make_delete_holder_account(acc.pubkey(), del_key, self.loader_id))
         return self.send_tx(trx, signer)

@@ -106,7 +106,7 @@ class TestSimulateSolana:
         sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         sol_tx.add(
-            instructions.make_ExecuteTrxFromAccount(
+            instructions.make_transaction_execute_from_account(
                 operator=operator_keypair,
                 operator_balance=operator_balance_pubkey,
                 evm_loader_id=evm_loader.loader_id,
@@ -166,7 +166,7 @@ class TestSimulateSolana:
         sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         sol_tx.add(
-            instructions.make_ExecuteTrxFromInstruction(
+            instructions.make_transaction_execute_from_instruction(
                 operator=operator_keypair,
                 operator_balance=operator_balance_pubkey,
                 holder_address=holder_acc,
@@ -244,7 +244,7 @@ class TestSimulateSolana:
             sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
             operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
             sol_tx.add(
-                instructions.make_ExecuteTrxFromAccountDataIterativeOrContinue(
+                instructions.make_transaction_step_from_account(
                     step_count=500,
                     operator=operator_keypair,
                     operator_balance=operator_balance_pubkey,
@@ -326,7 +326,7 @@ class TestSimulateSolana:
             sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
             operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
             sol_tx.add(
-                instructions.make_ExecuteTrxFromAccountDataIterativeOrContinue(
+                instructions.make_transaction_step_from_account(
                     step_count=500,
                     operator=operator_keypair,
                     operator_balance=operator_balance_pubkey,
@@ -393,7 +393,7 @@ class TestSimulateSolana:
             sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
             operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
             sol_tx.add(
-                instructions.make_PartialCallOrContinueFromRawEthereumTX(
+                instructions.make_transaction_step_from_instruction(
                     index=index,
                     step_count=500,
                     instruction=neon_signed_tx.raw_transaction,
@@ -449,7 +449,7 @@ class TestSimulateSolana:
         sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         sol_tx.add(
-            instructions.make_ExecuteTrxFromInstruction(
+            instructions.make_transaction_execute_from_instruction(
                 operator=operator_keypair,
                 operator_balance=operator_balance_pubkey,
                 holder_address=holder_acc,
@@ -528,7 +528,7 @@ class TestSimulateSolana:
             compute_unit_price=1000000,
         )
         start_scheduled_transaction_tx.add(
-            instructions.make_ScheduledTransactionStartFromAccount(
+            instructions.make_scheduled_transaction_start_from_account(
                 0,
                 operator_keypair,
                 operator_balance_pubkey,
@@ -565,7 +565,7 @@ class TestSimulateSolana:
             # Create a Solana transaction
             sol_tx = instructions.TransactionWithComputeBudget(operator_keypair, compute_unit_price=3929)
             sol_tx.add(
-                instructions.make_ExecuteTrxFromAccountDataIterativeOrContinue(
+                instructions.make_transaction_step_from_account(
                     step_count=500,
                     operator=operator_keypair,
                     operator_balance=operator_balance_pubkey,
@@ -592,7 +592,7 @@ class TestSimulateSolana:
         # Finish scheduled transaction steps (simulation and execution)
         finish_trx = instructions.TransactionWithComputeBudget(operator_keypair, compute_unit_price=1000000)
         finish_trx.add(
-            instructions.make_ScheduledTransactionFinish(
+            instructions.make_scheduled_transaction_finish(
                 operator_keypair.pubkey(),
                 operator_balance_pubkey,
                 evm_loader.loader_id,
@@ -620,7 +620,7 @@ class TestSimulateSolana:
         # Destroy tree account transaction steps (simulation and execution)
         destroy_trx = instructions.TransactionWithComputeBudget(operator_keypair)
         destroy_trx.add(
-            instructions.make_ScheduledTransactionDestroy(
+            instructions.make_scheduled_transaction_destroy(
                 signer=operator_keypair.pubkey(),
                 balance_account=neon_user_balance_account,
                 treasury=treasury_pool,

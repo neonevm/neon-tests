@@ -84,7 +84,7 @@ jobs:
             python3 ./clickfile.py run services --network ${{ env.NETWORK }} --numprocesses ${{ env.NUMPROCESSES }}"
       - name: "Generate allure report"
         if: always()
-        id: requirements
+        id: generate-allure-report
         uses: ./.github/actions/generate-allure-report
         with:
           container: ${{ env.CONTAINER }}
@@ -97,7 +97,9 @@ jobs:
         run: |
           docker exec -i ${{ env.CONTAINER }} \
             python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
-          -b ${{ env.BUILD_URL }} -n ${{ env.NETWORK }} --test-group services
+          -b ${{ env.BUILD_URL }} --network ${{ env.NETWORK }} --test-group services \
+          --report-group services \
+          --report-url ${{ steps.generate-allure-report.outputs.allure_report_url }}
       - name: Remove docker container
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}

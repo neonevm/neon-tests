@@ -56,11 +56,12 @@ def check_alt_off(web3_client, sol_client, receipt):
 @allure.step("Wait until ALT will be deleted")
 def wait_until_alt_deleted(web3_client, sol_client, receipt):
     alt = get_alt_by_neon_trx(web3_client, sol_client, receipt["transactionHash"].hex())
-    wait_condition(
-        lambda: not sol_client.account_exists(alt),
-        timeout_sec=10 * Time.MINUTE,
-        delay=3,
-    )
+    if alt is not None:
+        wait_condition(
+            lambda: not sol_client.account_exists(alt),
+            timeout_sec=10 * Time.MINUTE,
+            delay=3,
+        )
 
 
 @allure.step("Get gas used percent")

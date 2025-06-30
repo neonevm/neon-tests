@@ -58,15 +58,11 @@ NEON_PRECOMPILED = [
 
 
 SKIPPED_MODEXP_TESTS = [
-    "nagydani-2-square",
-    "nagydani-3-square",
-    "nagydani-4-square",
-    "nagydani-2-qube",
-    "nagydani-3-qube",
-    "nagydani-4-qube",
-    "nagydani-2-pow0x10001",
     "nagydani-3-pow0x10001",
     "nagydani-4-pow0x10001",
+    "nagydani-5-square",
+    "nagydani-5-qube",
+    "nagydani-5-pow0x10001",
 ]  # evm doesn't support mod exp operation with big values
 SKIPPED_BLACK2F_TESTS = ["vector 8"]  # NDEV-1961
 
@@ -112,6 +108,7 @@ class TestPrecompiledContracts:
 
     @pytest.mark.parametrize(**parametrized_data)
     def test_call_via_contract(self, precompiled_caller, address, input_data, expected, pytestconfig):
+
         if pytestconfig.getoption("--network") == "devnet" and address == "0x0000000000000000000000000000000000000005":
             pytest.skip("Doesn't work in devnet/mainnet")
         contract = precompiled_caller
@@ -155,19 +152,11 @@ class TestPrecompiledContracts:
         instruction_tx = self.web3_client.make_raw_tx(
             sender_account, address, data=input_data, amount=amount, estimate_gas=True
         )
-        if "modexp-nagydani-5" not in request.node.callspec.id:
-            receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
-            check_trx_is_success(self.web3_client, evm_loader, receipt["transactionHash"].hex())
+        receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
+        check_trx_is_success(self.web3_client, evm_loader, receipt["transactionHash"].hex())
 
-            if pytestconfig.getoption("--network") not in ["devnet"]:
-                assert self.web3_client.get_balance(address) - balance_before == amount
-        else:
-            # solana limits
-            try:
-                resp = self.web3_client.send_transaction(sender_account, instruction_tx)
-                assert resp["status"] == 0
-            except ValueError as exc:
-                assert "InvalidLength" in exc.args[0]["message"]
+        if pytestconfig.getoption("--network") not in ["devnet"]:
+            assert self.web3_client.get_balance(address) - balance_before == amount
 
     @pytest.mark.xdist_group("precompiled_contract_balance")
     def test_send_neon_without_data(self, pytestconfig, evm_loader):

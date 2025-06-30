@@ -10,7 +10,7 @@ from web3 import types
 from clickfile import EnvName
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import NeonEventType, SolanaInstruction
-from utils.models.result import NeonGetTransactionResult, SolanaByNeonTransaction
+from utils.models.result import NeonGetTransactionResult, SolanaByNeonTransaction, SolanaNeonProgramInstruction
 from utils.solana_client import SolanaClient
 from utils.solana_logs_helper import get_solana_trx_cancel_reason
 from utils.web3client import Web3Client
@@ -413,7 +413,8 @@ def assert_instructions(neon_trx_receipt: NeonGetTransactionResult):
     ]
     all_instructions = []
     for trx in neon_trx_receipt.result.solanaTransactions:
-        all_instructions.extend(trx.solanaInstructions)
+        if isinstance(trx.solanaInstructions[0], SolanaNeonProgramInstruction):
+            all_instructions.extend(trx.solanaInstructions)
     assert len(all_instructions) > 0
     for instruction in all_instructions:
         assert instruction.neonInstructionName in [

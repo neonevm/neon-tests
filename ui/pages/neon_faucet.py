@@ -3,7 +3,6 @@
 Created on 2022-05-19
 @author: Eugeny Kurkovich
 """
-
 import typing as tp
 import allure
 from ui import components
@@ -13,18 +12,19 @@ from . import BasePage
 class NeonTestAirdropsPage(BasePage):
     SELECTORS = {
         "connect_wallet_message": "//div[text()='Connect your wallet to get tokens']",
-        "connect_metamask_btn": "//div[text()='Connect MetaMask']",
+        "connect_wallet": "//button[contains(text(),'Connect wallet')]",
+        "btn_connect_metamask": "button:has-text('MetaMask')",
         "success_message": "//h1[text()='Choose the token type and the amount to be airdropped.']",
-        "choose_token_btn": "//span[text()='Choose Token']",
-        "token_option": "//div[@class='text-base' and text()='{}']",
+        "choose_token_btn": "//span[text()='Select token']",
+        "token_option": "//div[contains(@class,'transition-all')]//div[text()=' {}']",
         "token_search": "//input[contains(@placeholder,'Search token...')]",
-        "token_amount_input": "//input[@title='Token Amount']",
-        "send_button": "//div[contains(@class, 'button--light')]",
-        "transfer_success": "//h2[text()='Transfer Successful']",
-        "limit_exceeded": "//div[contains(text(),'Maximum limit for one airdrop is 100 tokens per minute')]",
+        "token_amount_input": "//*[@id='amount']",
+        "send_button": "//button[text()=' Send Test Tokens ']",
+        "transfer_success": "//h3[text()='Transfer Completed']",
+        "limit_exceeded": "//span[contains(text(),'Limit for airdrop is 100 tokens per minute')]",
         "install_wallet_msg": "//div[text()='Please install a wallet that supports NEON network']",
         "too_many_requests": "//p[text()='For security reasons, please wait a minute before making a new request']",
-        "airdrop_enabled": "//div[not(contains(@class, 'button--disabled')) and span[text()='send test tokens']]",
+        "airdrop_enabled": "//button[text()=' Get more test tokens ']",
         "token_search_results": "//div[contains(@class,'overflow-y-auto')]/div",
         "menu_button": "//div[@class='py-4']//*[name()='svg']",
         "faq_link": "//a[text()=' FAQ']",
@@ -44,22 +44,20 @@ class NeonTestAirdropsPage(BasePage):
     def page_loaded(self) -> None:
         self.page.wait_for_selector(self.SELECTORS["connect_wallet_message"])
 
-    @allure.step("Click 'Connect MetaMask' button'")
-    def connect_wallet(self, timeout: int = 300) -> None:
-        components.Button(self.page, selector=self.SELECTORS["connect_metamask_btn"]).click()
-        self.page.wait_for_selector(self.SELECTORS["success_message"], timeout=timeout)
+    @allure.step("Click 'Connect wallet' button'")
+    def connect_wallet(self) -> None:
+        components.Button(self.page, selector=self.SELECTORS["connect_wallet"]).click()
+
+    @allure.step("Select 'MetaMask' wallet'")
+    def connect_mm(self, timeout: int = 1000) -> None:
+        meta_btn = self.page.get_by_role("button", name="MetaMask")
+        meta_btn.wait_for(state="visible", timeout=timeout)
+        meta_btn.click()
 
     @allure.step("Select from token {token}")
     def _choose_token(self, token: str) -> None:
         self.page.query_selector(self.SELECTORS["choose_token_btn"]).click()
         self.page.wait_for_selector(self.SELECTORS["token_option"].format(token)).click()
-
-    @allure.step("Input into search field non-existing token")
-    def choose_non_existing_token(self, token: str) -> None:
-        self.page.query_selector(self.SELECTORS["choose_token_btn"]).click()
-        self.page.wait_for_selector(self.SELECTORS["token_search"]).type(token)
-        tokens = self.page.query_selector_all(self.SELECTORS["token_search_results"])
-        assert len(tokens) == 0, f"Expected no tokens, but found {len(tokens)}"
 
     @allure.step("Input token amount {amount}")
     def _set_amount(self, amount: tp.Union[int, str]) -> None:

@@ -42,18 +42,18 @@ class MetaMaskLoginPage(BasePage):
         return MetaMaskPopoverNewsPage(self.page)
 
 
-class MetaMaskConnectPage(BasePage):
-    def __init__(self, *args, **kwargs) -> None:
-        super(MetaMaskConnectPage, self).__init__(*args, **kwargs)
-
-    def page_loaded(self) -> None:
-        self.page.wait_for_selector("//*[text()='Connect with MetaMask']")
-
-    def next(self):
-        components.Button(self.page, text="Next").click()
-
-    def connect(self):
-        components.Button(self.page, text="Connect").click()
+# class MetaMaskConnectPage(BasePage):
+#     def __init__(self, *args, **kwargs) -> None:
+#         super(MetaMaskConnectPage, self).__init__(*args, **kwargs)
+#
+#     def page_loaded(self) -> None:
+#         self.page.wait_for_selector("//*[text()='Connect with MetaMask']")
+#
+#     def next(self):
+#         components.Button(self.page, text="Next").click()
+#
+#     def connect(self):
+#         components.Button(self.page, text="Connect").click()
 
 
 class MetaMaskPopoverNewsPage(BasePage):
@@ -75,6 +75,9 @@ class MetaMaskAccountsPage(BasePage):
         "account_list_item": "//button[contains(@class, 'multichain-account-list-item__account-name') and text()='{account}']",
         "asset_tab_button": "//*[@data-testid='home__asset-tab']/button",
         "activity_tab_button": "//button[text()='Activity']",
+        "next_button": "//button[text()='Next']",
+        "connect_button": "//button[text()='Connect']",
+        "select_wallets_checkbox": "//input[contains(@class, 'choose-account-list__header-check-box')]",
         "address_copy_button": "//button[@data-testid='address-copy-button-text']",
         "funds_protection_popup": "//h2[text()='Protect your funds']/following::button[text()='Got it']",
         "accounts_menu_header": "//header[text()='Select an account']",
@@ -152,6 +155,11 @@ class MetaMaskAccountsPage(BasePage):
         selector = self.SELECTORS["token_balance"].format(token=token.upper())
         balance_text = self.page.wait_for_selector(selector).text_content().split(" ")[0]
         return float(balance_text)
+
+    def select_all_accounts(self) -> None:
+        self.page.click(self.SELECTORS["select_wallets_checkbox"])
+        self.page.click(self.SELECTORS["next_button"])
+        self.page.click(self.SELECTORS["connect_button"])
 
     @property
     def neon_balance(self) -> float:

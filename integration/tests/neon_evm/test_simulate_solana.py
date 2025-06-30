@@ -709,7 +709,7 @@ class TestSimulateSolana:
         sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         sol_tx.add(
-            instructions.make_ExecuteTrxFromInstruction(
+            instructions.make_transaction_execute_from_instruction(
                 operator=operator_keypair,
                 operator_balance=operator_balance_pubkey,
                 holder_address=holder_acc,
@@ -820,7 +820,7 @@ class TestSimulateSolana:
         sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         sol_tx.add(
-            instructions.make_ExecuteTrxFromInstruction(
+            instructions.make_transaction_execute_from_instruction(
                 operator=operator_keypair,
                 operator_balance=operator_balance_pubkey,
                 holder_address=holder_acc,
@@ -939,7 +939,7 @@ class TestSimulateSolana:
         sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         sol_tx.add(
-            instructions.make_ExecuteTrxFromInstruction(
+            instructions.make_transaction_execute_from_instruction(
                 operator=operator_keypair,
                 operator_balance=operator_balance_pubkey,
                 holder_address=holder_acc,
@@ -1030,7 +1030,7 @@ class TestSimulateSolana:
         sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         sol_tx.add(
-            instructions.make_ExecuteTrxFromInstruction(
+            instructions.make_transaction_execute_from_instruction(
                 operator=operator_keypair,
                 operator_balance=operator_balance_pubkey,
                 holder_address=holder_acc,
@@ -1126,7 +1126,7 @@ class TestSimulateSolana:
         sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         sol_tx.add(
-            instructions.make_ExecuteTrxFromInstruction(
+            instructions.make_transaction_execute_from_instruction(
                 operator=operator_keypair,
                 operator_balance=operator_balance_pubkey,
                 holder_address=holder_acc,

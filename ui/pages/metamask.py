@@ -42,18 +42,18 @@ class MetaMaskLoginPage(BasePage):
         return MetaMaskPopoverNewsPage(self.page)
 
 
-# class MetaMaskConnectPage(BasePage):
-#     def __init__(self, *args, **kwargs) -> None:
-#         super(MetaMaskConnectPage, self).__init__(*args, **kwargs)
-#
-#     def page_loaded(self) -> None:
-#         self.page.wait_for_selector("//*[text()='Connect with MetaMask']")
-#
-#     def next(self):
-#         components.Button(self.page, text="Next").click()
-#
-#     def connect(self):
-#         components.Button(self.page, text="Connect").click()
+class MetaMaskConnectPage(BasePage):
+    def __init__(self, *args, **kwargs) -> None:
+        super(MetaMaskConnectPage, self).__init__(*args, **kwargs)
+
+    def page_loaded(self) -> None:
+        self.page.wait_for_selector("//*[text()='Connect with MetaMask']")
+
+    def next(self):
+        components.Button(self.page, text="Next").click()
+
+    def connect(self):
+        components.Button(self.page, text="Connect").click()
 
 
 class MetaMaskPopoverNewsPage(BasePage):

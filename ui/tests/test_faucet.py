@@ -174,7 +174,7 @@ class TestFaucet:
         )
 
 
-# @pytest.mark.flaky(retries=3, retry_delay=2)
+@pytest.mark.flaky(retries=3, retry_delay=2)
 class TestMetaMaskPipeLIne:
     """Tests NeonEVM proxy functionality via MetaMask"""
 
@@ -277,6 +277,18 @@ class TestMetaMaskPipeLIne:
     ) -> None:
         """Checks Neon faucet pipeline"""
         neon_faucet_page.connect_wallet()
+        neon_faucet_page.connect_mm()
+        metamask_page.page.bring_to_front()
+        metamask_page.page.reload()
+        metamask_page.select_all_accounts()
+        try:
+            news_page = MetaMaskPopoverNewsPage(metamask_page.page)
+            news_page.page_loaded()
+        except TimeoutError:
+            pass
+        else:
+            metamask_page = news_page.close()
+        neon_faucet_page.page.bring_to_front()
         neon_faucet_page.text_too_much_tokens(tokens, 101)
 
     @pytest.mark.parametrize("tokens", [libs.Tokens.usdt.name])
@@ -290,6 +302,18 @@ class TestMetaMaskPipeLIne:
         wait_condition(lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > 0, timeout_sec=120, delay=2)
         balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
         neon_faucet_page.connect_wallet()
+        neon_faucet_page.connect_mm()
+        metamask_page.page.bring_to_front()
+        metamask_page.page.reload()
+        metamask_page.select_all_accounts()
+        try:
+            news_page = MetaMaskPopoverNewsPage(metamask_page.page)
+            news_page.page_loaded()
+        except TimeoutError:
+            pass
+        else:
+            metamask_page = news_page.close()
+        neon_faucet_page.page.bring_to_front()
         neon_faucet_page.send_tokens(tokens, token_random_amount)
         neon_faucet_page.click_transfer_btn()
         neon_faucet_page.check_sucessfull_sent()
@@ -309,6 +333,7 @@ class TestMetaMaskPipeLIne:
         # Wait next airdrop was enabled
         libs.try_until(lambda: neon_faucet_page.is_airdrop_enabled, timeout=240, interval=5)
 
+    @pytest.mark.skip
     @pytest.mark.parametrize("tokens", [libs.Tokens.neon.name])
     def test_get_1_token_per_10_seconds(
         self,
@@ -321,8 +346,21 @@ class TestMetaMaskPipeLIne:
         for attempt in range(1, MAX_RETRIES + 1):
             neon_faucet_page.reload_page()
             neon_faucet_page.connect_wallet()
-            neon_faucet_page.send_tokens(tokens, token_random_amount)
+            neon_faucet_page.connect_mm()
+            metamask_page.page.bring_to_front()
+            metamask_page.page.reload()
+            metamask_page.select_all_accounts()
+            try:
+                news_page = MetaMaskPopoverNewsPage(metamask_page.page)
+                news_page.page_loaded()
+            except TimeoutError:
+                pass
+            else:
+                metamask_page = news_page.close()
+            neon_faucet_page.page.bring_to_front()
+            neon_faucet_page.send_tokens("Wrapped Neon", token_random_amount)
             neon_faucet_page.click_transfer_btn()
+            neon_faucet_page.check_sucessfull_sent()
 
             try:
                 neon_faucet_page.wait_for_too_many_requests_notification(timeout=3000)

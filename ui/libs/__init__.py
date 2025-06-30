@@ -6,7 +6,7 @@ import sys
 import tarfile
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import six
 from playwright.sync_api import BrowserContext, Page
@@ -42,8 +42,8 @@ class TransactionFee:
 
 @dataclass
 class TransactionFeeType:
-    neon: TransactionFee = field(default_factory=TransactionFee)
-    sol: TransactionFee = field(default_factory=TransactionFee)
+    neon: TransactionFee = TransactionFee("Neon", "NEON")
+    sol: TransactionFee = TransactionFee("Solana", "SOL")
     none: TransactionFee = None
 
 

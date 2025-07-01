@@ -75,10 +75,13 @@ class NeonApiClient:
         return requests.post(url=f"{self.url}/balance", json=body, headers=self.headers).json()
 
     @allure.step("Simulate Solana transaction")
-    def simulate_solana(self, blockhash: str, transactions: list[str]) -> requests.Response:
+    def simulate_solana(
+        self, blockhash: str, transactions: list[str], solana_overrides_params=None
+    ) -> requests.Response:
         body = {
             "blockhash": blockhash,
             "transactions": transactions,
+            "solana_overrides": solana_overrides_params,
         }
         return requests.post(url=f"{self.url}/simulate_solana", json=body, headers=self.headers)
 

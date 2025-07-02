@@ -42,7 +42,6 @@ class TestEmulateFromHolderAccount:
         evm_loader,
         treasury_pool,
         holder_acc,
-        sol_client,
     ):
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         signed_tx = make_contract_call_trx(
@@ -95,17 +94,17 @@ class TestEmulateFromHolderAccount:
             EVM_STEPS,
             operator_keypair,
         )
-        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x12")
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x12")
 
         check_holder_account_tag(
-            solana_client=sol_client,
+            solana_client=evm_loader,
             storage_account=holder_acc,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_FINALIZED_STATE,
         )
 
     def test_emulate_from_holder_account_contract_deploy(
-        self, operator_keypair, sender_with_tokens, neon_api_client, evm_loader, treasury_pool, holder_acc, sol_client
+        self, operator_keypair, sender_with_tokens, neon_api_client, evm_loader, treasury_pool, holder_acc
     ):
         def send_transaction_steps(holder_acc, accounts_from_emulation):
             operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
@@ -164,7 +163,7 @@ class TestEmulateFromHolderAccount:
         check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x12")
 
         check_holder_account_tag(
-            solana_client=sol_client,
+            solana_client=evm_loader,
             storage_account=holder_acc,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_FINALIZED_STATE,
@@ -178,7 +177,6 @@ class TestEmulateFromHolderAccount:
         evm_loader,
         treasury_pool,
         holder_acc,
-        sol_client,
         transfers_contract,
         solana_caller,
     ):
@@ -221,15 +219,14 @@ class TestEmulateFromHolderAccount:
         check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="contract balance less then needed")
 
         check_holder_account_tag(
-            solana_client=sol_client,
+            solana_client=evm_loader,
             storage_account=holder_acc,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_FINALIZED_STATE,
         )
 
         resource_addr = solana_caller.create_resource(session_user, b"q4ww", 8, 1000000000, COUNTER_ID)
-        matrix_size = 8
-        matrix = [[random.randint(1, 100) for _ in range(matrix_size)] for _ in range(matrix_size)]
+        matrix = [[random.randint(1, 100) for _ in range(8)] for _ in range(8)]
 
         instruction = Instruction(
             program_id=COUNTER_ID,
@@ -402,8 +399,7 @@ class TestEmulateFromHolderAccount:
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
 
         resource_addr = solana_caller.create_resource(sender_with_tokens, b"q245w", 8, 1000000000, COUNTER_ID)
-        matrix_size = 8
-        matrix = [[random.randint(1, 100) for _ in range(matrix_size)] for _ in range(matrix_size)]
+        matrix = [[random.randint(1, 100) for _ in range(8)] for _ in range(8)]
 
         instruction = Instruction(
             program_id=COUNTER_ID,
@@ -432,7 +428,7 @@ class TestEmulateFromHolderAccount:
 
         evm_loader.write_transaction_to_holder_account(signed_tx, new_holder_acc, operator_keypair)
 
-        for _ in range(15):
+        for _ in range(1):
             evm_loader.send_transaction_step_from_account(
                 operator_keypair,
                 operator_balance_pubkey,
@@ -442,13 +438,33 @@ class TestEmulateFromHolderAccount:
                 EVM_STEPS,
                 operator_keypair,
             )
+        emulate_result_after_1_step = neon_api_client.emulate_from_holder(new_holder_acc)
 
+        for _ in range(14):
+            evm_loader.send_transaction_step_from_account(
+                operator_keypair,
+                operator_balance_pubkey,
+                treasury_pool,
+                new_holder_acc,
+                accounts_from_emulation,
+                EVM_STEPS,
+                operator_keypair,
+            )
         emulate_result = neon_api_client.emulate_from_holder(new_holder_acc)
+
+        assert emulate_result["steps_executed"] == emulate_result_after_1_step["steps_executed"]
+        assert emulate_result["iterations"] == emulate_result_after_1_step["iterations"]
         assert emulate_result["external_solana_call"]
         assert emulate_result["exit_status"] == "succeed"
         assert not emulate_result["is_timestamp_number_used"]
         assert not emulate_result["reverts_before_solana_calls"]
         assert not emulate_result["reverts_after_solana_calls"]
+
+        accounts_after_emulation = []
+        for item in emulate_result["solana_accounts"]:
+            accounts_after_emulation.append(Pubkey.from_string(item["pubkey"]))
+
+        assert sorted(accounts_after_emulation) == sorted(accounts_from_emulation)
 
         resp = evm_loader.send_transaction_step_from_account(
             operator_keypair,

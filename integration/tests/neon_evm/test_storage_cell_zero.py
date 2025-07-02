@@ -20,7 +20,7 @@ class TestStorageCells:
     def test_save_zero(
         self,
         operator_keypair: Keypair,
-        user_account: Caller,
+        session_user: Caller,
         evm_loader: EvmLoader,
         treasury_pool: TreasuryPool,
         neon_api_client: NeonApiClient,
@@ -30,7 +30,7 @@ class TestStorageCells:
         # Deploy the contract
         contract: Contract = evm_loader.deploy_contract(
             operator=operator_keypair,
-            user=user_account,
+            user=session_user,
             contract_file_name="neon_evm/store_zeros.sol",
             neon_api_client=neon_api_client,
             treasury_pool=treasury_pool,
@@ -39,20 +39,19 @@ class TestStorageCells:
         )
 
         # Emulate contract function call transaction
-        emulate_result = neon_api_client.emulate_contract_call(
-            sender=user_account.eth_address.hex(),
+        emulate_accounts = neon_api_client.get_additional_accounts_by_emulation(
+            sender=session_user.eth_address.hex(),
             contract=contract.eth_address.hex(),
             function_signature=function_signature,
         )
 
         # Define the storage accounts
-        emulate_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
-        non_storage_accounts = (contract.solana_address, user_account.balance_account_address)
+        non_storage_accounts = (contract.solana_address, session_user.balance_account_address)
         storage_accounts = [acc for acc in emulate_accounts if acc not in non_storage_accounts]
 
         # Actually execute the transaction
         signed_tx = make_contract_call_trx(
-            evm_loader=evm_loader, user=user_account, contract=contract, function_signature=function_signature
+            evm_loader=evm_loader, user=session_user, contract=contract, function_signature=function_signature
         )
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 

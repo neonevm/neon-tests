@@ -20,8 +20,7 @@ from ..basic.helpers.assert_message import ErrorMessage
 
 
 class TestAccountRevision:
-
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def revision_contract(
         self, request, evm_loader, operator_keypair, sender_with_tokens, neon_api_client, treasury_pool
     ):
@@ -35,7 +34,7 @@ class TestAccountRevision:
             version="0.8.12",
         )
 
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def revision_contract_caller(
         self,
         request,
@@ -58,7 +57,7 @@ class TestAccountRevision:
             version="0.8.12",
         )
 
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def revision_with_solana_call_contract(
         self,
         request,
@@ -78,7 +77,7 @@ class TestAccountRevision:
             version="0.8.28",
         )
 
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def lender_contract(
         self, request, evm_loader, operator_keypair, sender_with_tokens, neon_api_client, treasury_pool
     ):
@@ -93,7 +92,7 @@ class TestAccountRevision:
             value=100000,
         )
 
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def borrower_contract(
         self, request, evm_loader, operator_keypair, sender_with_tokens, neon_api_client, treasury_pool
     ):
@@ -422,7 +421,6 @@ class TestAccountRevision:
         evm_loader,
         holder_acc,
         new_holder_acc,
-        sol_client,
     ):
         additional_accounts = [session_user.balance_account_address, rw_lock_contract.solana_address]
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
@@ -434,7 +432,14 @@ class TestAccountRevision:
             [3, 1],
         )
         acc_from_emulation = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
-        data_accounts = set(acc_from_emulation) - set(additional_accounts)
+        data_accounts = list(set(acc_from_emulation) - set(additional_accounts))
+        data_acc_revision_before = []
+        for acc in data_accounts:
+            if evm_loader.get_solana_balance(acc) > 0:
+                data_acc_revision_before.append(evm_loader.get_data_account_revision(acc))
+            else:
+                data_acc_revision_before.append(0)
+
         signed_tx1 = make_contract_call_trx(
             evm_loader, session_user, rw_lock_contract, "update_storage_map_with_salt(uint256,uint256)", [3, 1]
         )
@@ -472,7 +477,7 @@ class TestAccountRevision:
                 signed_tx2,
                 acc_from_emulation,
             )
-            check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")
+            check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
 
         resp = evm_loader.send_transaction_step_from_account(
             operator_keypair,
@@ -484,18 +489,20 @@ class TestAccountRevision:
             operator_keypair,
         )
 
-        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
         check_holder_account_tag(
-            solana_client=sol_client,
+            solana_client=evm_loader,
             storage_account=holder_acc,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_FINALIZED_STATE,
         )
-
+        data_acc_revision_after = []
         for acc in data_accounts:
             if evm_loader.get_solana_balance(acc) > 0:
-                data_acc_revision_after = evm_loader.get_data_account_revision(acc)
-                assert data_acc_revision_after == 3
+                data_acc_revision_after.append(evm_loader.get_data_account_revision(acc))
+            else:
+                data_acc_revision_after.append(0)
+        assert data_acc_revision_after == [r + 3 for r in data_acc_revision_before]
 
     def test_1_user_send_2_parallel_trx_with_neon_balance_change(
         self,

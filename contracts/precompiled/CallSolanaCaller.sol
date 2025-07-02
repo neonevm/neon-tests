@@ -92,6 +92,25 @@ contract CallSolanaCaller {
         emit LogInt(sum);
     }
 
+    function solanaCallInsideActionWithMatrixWithRevert(
+        uint[][] memory a,
+        uint64 lamports,
+        bytes calldata instruction
+    ) public {
+        numberToStore = 18;
+        uint sum = 0;
+        for (uint i = 0; i < a.length; i++) {
+            for (uint j = 0; j < a[i].length; j++) {
+                if (i == a.length / 2) {
+                    execute(lamports, instruction);
+                }
+                sum += a[i][j];
+            }
+        }
+        emit LogInt(sum);
+        require(false, "Revert after solana call");
+    }
+
     function batchExecuteInIterativeMode(
         uint256 actionsNumber,
         ExecuteArgs[] memory _args

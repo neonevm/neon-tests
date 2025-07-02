@@ -3,6 +3,7 @@ import pytest
 
 from solders.pubkey import Pubkey
 from solana.transaction import Instruction, AccountMeta
+from solana.rpc.core import RPCException
 from utils.helpers import serialize_instruction
 from utils.evm_loader import EVM_STEPS
 from utils.consts import REMAPPING_ZEPPELIN, COUNTER_ID
@@ -18,6 +19,20 @@ from .utils import ethereum as eth_utils
 
 
 class TestEmulateFromHolderAccount:
+    @pytest.fixture(scope="class")
+    def block_timestamp_contract(
+        self, evm_loader, operator_keypair, sender_with_tokens, neon_api_client, treasury_pool
+    ):
+        return evm_loader.deploy_contract(
+            operator_keypair,
+            sender_with_tokens,
+            "common/Block.sol",
+            neon_api_client,
+            treasury_pool,
+            contract_name="BlockTimestamp",
+            version="0.8.10",
+        )
+
     def test_emulate_from_holder_account_contract_function_call(
         self,
         operator_keypair,
@@ -35,7 +50,6 @@ class TestEmulateFromHolderAccount:
         )
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
         accounts = [
-            session_user.solana_account_address,
             session_user.balance_account_address,
             rw_lock_contract.solana_address,
         ]
@@ -59,8 +73,18 @@ class TestEmulateFromHolderAccount:
             operator_keypair,
         )
         emulate_result = neon_api_client.emulate_from_holder(holder_acc)
+
+        accounts_after_emulation = []
+        for item in emulate_result["solana_accounts"]:
+            accounts_after_emulation.append(Pubkey.from_string(item["pubkey"]))
+
+        assert sorted(accounts_after_emulation) == sorted(accounts)
         assert emulate_result["exit_status"] == "succeed"
         assert int(emulate_result["result"]) == 4
+        assert not emulate_result["external_solana_call"]
+        assert not emulate_result["reverts_before_solana_calls"]
+        assert not emulate_result["reverts_after_solana_calls"]
+        assert not emulate_result["is_timestamp_number_used"]
 
         resp = evm_loader.send_transaction_step_from_account(
             operator_keypair,
@@ -146,7 +170,7 @@ class TestEmulateFromHolderAccount:
             expected_tag=TAG_FINALIZED_STATE,
         )
 
-    def test_emulate_from_holder_account_failed_trx(
+    def test_emulate_from_holder_account_reverts_check(
         self,
         operator_keypair,
         session_user,
@@ -156,6 +180,7 @@ class TestEmulateFromHolderAccount:
         holder_acc,
         sol_client,
         transfers_contract,
+        solana_caller,
     ):
         recipients = [evm_loader.make_new_user(operator_keypair), evm_loader.make_new_user(operator_keypair)]
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
@@ -182,6 +207,11 @@ class TestEmulateFromHolderAccount:
             operator_keypair, operator_balance_pubkey, treasury_pool, holder_acc, accounts, EVM_STEPS, operator_keypair
         )
         emulate_result = neon_api_client.emulate_from_holder(holder_acc)
+        assert emulate_result["reverts_before_solana_calls"]
+        assert not emulate_result["external_solana_call"]
+        assert not emulate_result["reverts_after_solana_calls"]
+        assert not emulate_result["is_timestamp_number_used"]
+
         assert (
             emulate_result["exit_status"] == "revert"
         ), f"The 'exit_status' field is not revert. Result: {emulate_result}"
@@ -197,6 +227,103 @@ class TestEmulateFromHolderAccount:
             expected_tag=TAG_FINALIZED_STATE,
         )
 
+        resource_addr = solana_caller.create_resource(session_user, b"q4ww", 8, 1000000000, COUNTER_ID)
+        matrix_size = 8
+        matrix = [[random.randint(1, 100) for _ in range(matrix_size)] for _ in range(matrix_size)]
+
+        instruction = Instruction(
+            program_id=COUNTER_ID,
+            accounts=[
+                AccountMeta(resource_addr, is_signer=False, is_writable=True),
+            ],
+            data=bytes([0x1]),
+        )
+        serialized_instruction = serialize_instruction(COUNTER_ID, instruction)
+
+        signed_tx2 = make_contract_call_trx(
+            evm_loader,
+            session_user,
+            solana_caller.contract,
+            "solanaCallInsideActionWithMatrixWithRevert(uint256[][],uint64,bytes)",
+            [matrix, 0, serialized_instruction],
+        )
+        emulate_result = neon_api_client.emulate_contract_call(
+            session_user.eth_address.hex(),
+            solana_caller.contract.eth_address.hex(),
+            "solanaCallInsideActionWithMatrixWithRevert(uint256[][],uint64,bytes)",
+            [matrix, 0, serialized_instruction],
+        )
+        accounts_from_emulation = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
+
+        new_holder_acc = evm_loader.create_holder(operator_keypair)
+        evm_loader.write_transaction_to_holder_account(signed_tx2, new_holder_acc, operator_keypair)
+
+        for _ in range(1):
+            evm_loader.send_transaction_step_from_account(
+                operator_keypair,
+                operator_balance_pubkey,
+                treasury_pool,
+                new_holder_acc,
+                accounts_from_emulation,
+                EVM_STEPS,
+                operator_keypair,
+            )
+
+        emulate_result = neon_api_client.emulate_from_holder(new_holder_acc)
+        assert emulate_result["reverts_after_solana_calls"]
+        assert emulate_result["external_solana_call"]
+        assert not emulate_result["is_timestamp_number_used"]
+        assert not emulate_result["reverts_before_solana_calls"]
+        assert (
+            emulate_result["exit_status"] == "revert"
+        ), f"The 'exit_status' field is not revert. Result: {emulate_result}"
+
+        with pytest.raises(
+            RPCException,
+            match="Revert after Solana Call is not supported",
+        ):
+            resp = evm_loader.execute_transaction_steps_from_account(
+                operator_keypair, treasury_pool, new_holder_acc, accounts_from_emulation
+            )
+
+    def test_emulate_from_holder_account_timestamp_used_check(
+        self,
+        operator_keypair,
+        sender_with_tokens,
+        neon_api_client,
+        evm_loader,
+        treasury_pool,
+        block_timestamp_contract,
+    ):
+        holder_acc = evm_loader.create_holder(operator_keypair)
+        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
+
+        signed_tx = make_contract_call_trx(
+            evm_loader, sender_with_tokens, block_timestamp_contract, "getBlockTimestamp()"
+        )
+        evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
+        accounts = [
+            sender_with_tokens.balance_account_address,
+            block_timestamp_contract.solana_address,
+        ]
+
+        evm_loader.send_transaction_step_from_account(
+            operator_keypair,
+            operator_balance_pubkey,
+            treasury_pool,
+            holder_acc,
+            accounts,
+            EVM_STEPS,
+            operator_keypair,
+        )
+
+        emulate_result = neon_api_client.emulate_from_holder(holder_acc)
+        assert emulate_result["exit_status"] == "succeed"
+        assert emulate_result["is_timestamp_number_used"]
+        assert not emulate_result["external_solana_call"]
+        assert not emulate_result["reverts_before_solana_calls"]
+        assert not emulate_result["reverts_after_solana_calls"]
+
     def test_emulate_from_holder_account_balance_account_changed(
         self,
         operator_keypair,
@@ -206,7 +333,6 @@ class TestEmulateFromHolderAccount:
         evm_loader,
         treasury_pool,
         holder_acc,
-        sol_client,
     ):
         amount = 100000
         evm_loader.deposit_neon(operator_keypair, session_user.eth_address, 5 * amount)
@@ -248,12 +374,16 @@ class TestEmulateFromHolderAccount:
         assert (
             emulate_result["exit_status"] == "succeed"
         ), f"The 'exit_status' field is not succeed. Result: {emulate_result}"
+        assert not emulate_result["external_solana_call"]
+        assert not emulate_result["is_timestamp_number_used"]
+        assert not emulate_result["reverts_before_solana_calls"]
+        assert not emulate_result["reverts_after_solana_calls"]
 
         resp = evm_loader.execute_transaction_steps_from_account(operator_keypair, treasury_pool, holder_acc, accounts)
         check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
 
         check_holder_account_tag(
-            solana_client=sol_client,
+            solana_client=evm_loader,
             storage_account=holder_acc,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_FINALIZED_STATE,
@@ -271,7 +401,7 @@ class TestEmulateFromHolderAccount:
     ):
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
 
-        resource_addr = solana_caller.create_resource(sender_with_tokens, b"q4ww", 8, 1000000000, COUNTER_ID)
+        resource_addr = solana_caller.create_resource(sender_with_tokens, b"q245w", 8, 1000000000, COUNTER_ID)
         matrix_size = 8
         matrix = [[random.randint(1, 100) for _ in range(matrix_size)] for _ in range(matrix_size)]
 
@@ -314,7 +444,11 @@ class TestEmulateFromHolderAccount:
             )
 
         emulate_result = neon_api_client.emulate_from_holder(new_holder_acc)
+        assert emulate_result["external_solana_call"]
         assert emulate_result["exit_status"] == "succeed"
+        assert not emulate_result["is_timestamp_number_used"]
+        assert not emulate_result["reverts_before_solana_calls"]
+        assert not emulate_result["reverts_after_solana_calls"]
 
         resp = evm_loader.send_transaction_step_from_account(
             operator_keypair,

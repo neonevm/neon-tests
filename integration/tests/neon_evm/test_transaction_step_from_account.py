@@ -130,17 +130,18 @@ class TestTransactionStepFromAccount:
         signed_tx = make_contract_call_trx(
             evm_loader, sender_with_tokens, string_setter_contract, "set(string)", [text]
         )
+
+        additional_accounts = neon_api_client.get_additional_accounts_by_emulation(
+            sender_with_tokens.eth_address.hex(), string_setter_contract.eth_address.hex(), "set(string)", params=[text]
+        )
+
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 
         resp = evm_loader.execute_transaction_steps_from_account(
             operator_keypair,
             treasury_pool,
             holder_acc,
-            [
-                string_setter_contract.solana_address,
-                sender_with_tokens.solana_account_address,
-                sender_with_tokens.balance_account_address,
-            ],
+            additional_accounts,
         )
 
         check_holder_account_tag(

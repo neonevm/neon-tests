@@ -244,13 +244,13 @@ class TestEmulateFromHolderAccount:
             "solanaCallInsideActionWithMatrixWithRevert(uint256[][],uint64,bytes)",
             [matrix, 0, serialized_instruction],
         )
-        emulate_result = neon_api_client.emulate_contract_call(
+
+        accounts_from_emulation = neon_api_client.get_additional_accounts_by_emulation(
             session_user.eth_address.hex(),
             solana_caller.contract.eth_address.hex(),
             "solanaCallInsideActionWithMatrixWithRevert(uint256[][],uint64,bytes)",
-            [matrix, 0, serialized_instruction],
+            params=[matrix, 0, serialized_instruction],
         )
-        accounts_from_emulation = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
 
         new_holder_acc = evm_loader.create_holder(operator_keypair)
         evm_loader.write_transaction_to_holder_account(signed_tx2, new_holder_acc, operator_keypair)
@@ -418,13 +418,12 @@ class TestEmulateFromHolderAccount:
             [matrix, 0, serialized_instruction],
         )
 
-        emulate_result = neon_api_client.emulate_contract_call(
+        accounts_from_emulation = neon_api_client.get_additional_accounts_by_emulation(
             sender_with_tokens.eth_address.hex(),
             solana_caller.contract.eth_address.hex(),
             "solanaCallInsideActionWithMatrix(uint256[][],uint64,bytes)",
-            [matrix, 0, serialized_instruction],
+            params=[matrix, 0, serialized_instruction],
         )
-        accounts_from_emulation = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
 
         evm_loader.write_transaction_to_holder_account(signed_tx, new_holder_acc, operator_keypair)
 

@@ -12,7 +12,7 @@ from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 
 
 class TestBlockNumberAndTimestamp:
-    @pytest.fixture(scope="class", params=["BlockTimestamp", "BlockNumber"])
+    @pytest.fixture(scope="session", params=["BlockTimestamp", "BlockNumber"])
     def block_contract(self, request, evm_loader, operator_keypair, sender_with_tokens, neon_api_client, treasury_pool):
         name = request.param
         return evm_loader.deploy_contract(

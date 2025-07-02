@@ -431,7 +431,8 @@ def assert_instructions(neon_trx_receipt: NeonGetTransactionResult):
 def count_instructions(neon_trx_receipt: NeonGetTransactionResult):
     all_instructions = []
     for trx in neon_trx_receipt.result.solanaTransactions:
-        all_instructions.extend(trx.solanaInstructions)
+        if isinstance(trx.solanaInstructions[0], SolanaNeonProgramInstruction):
+            all_instructions.extend(trx.solanaInstructions)
     return Counter([instruction.neonInstructionName for instruction in all_instructions])
 
 

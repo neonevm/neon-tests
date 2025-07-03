@@ -460,7 +460,7 @@ def update_contracts_from_git(git_url: str, local_dir_name: str, branch="develop
 @cli.command(help="Download test contracts from neon-contracts repo")
 @click.option(
     "--branch",
-    default="main",
+    default="add/execute-without-lamports",
     help="neon_evm branch name. " "If branch doesn't exist, develop branch will be used",
 )
 @click.option("--with-uniswap", is_flag=True, default=False, required=False, help="Download uniswap-v3 contracts")

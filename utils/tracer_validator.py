@@ -61,7 +61,6 @@ class TracerValidator:
             assert tracer_response["result"]["error"] == error_message
         else:
             assert "error" not in tracer_response["result"]
-
         return True
 
     @staticmethod

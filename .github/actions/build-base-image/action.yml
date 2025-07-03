@@ -120,10 +120,11 @@ runs:
         delimiter=$(printf "%0.s-" {1..30})
         echo " ${delimiter} Build new docker image ${image_name} ${delimiter}"
 
+        # TODO get back MAIN branch after merge NDEV-3803
         docker build . --no-cache --tag ${image_name}:${{ inputs.image_tag }} \
             --file Dockerfile-base \
             --build-arg OZ_TAG=${{ inputs.oz_tag }} \
-            --build-arg CONTRACTS_BRANCH="main" \
+            --build-arg CONTRACTS_BRANCH="add/execute-without-lamports" \
             --build-arg DOCKER_HUB_ORG_NAME=${{env.DOCKER_HUB_ORG_NAME}}
 
         # Tag with branch name if available
@@ -131,14 +132,14 @@ runs:
           docker tag ${image_name}:${{ inputs.image_tag }} ${image_name}:${{ steps.feature_branch.outputs.feature_branch_tag }}
         fi
 
-        echo "${delimiter} Pushing image to Docker registry ${delimiter}"
+        echo "${delimiter} Pushing  image to Docker registry ${delimiter}"
         docker push --all-tags ${image_name}
 
     - name: Skip build notification
       if: steps.need_build.outputs.need_build == 'false'
       shell: bash
       run: |
-        echo "Skipping build as using existing image: ${{ steps.need_build.outputs.use_image }}"
+        echo "Skipping build as  using existing image: ${{ steps.need_build.outputs.use_image }}"
 
     - name: Set output
       id: set_output

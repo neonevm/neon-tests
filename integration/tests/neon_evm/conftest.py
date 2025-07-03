@@ -21,6 +21,8 @@ from .utils.neon_api_client import NeonApiClient
 from .utils.neon_api_rpc_client import NeonApiRpcClient
 from .utils.transaction_checks import check_transaction_logs_have_text
 
+from .utils.call_solana import SolanaCaller
+
 
 def prepare_operator(key_file: pathlib.Path | str, evm_loader: EvmLoader) -> Keypair:
     chain_ids = (evm_loader.sol_chain_id, evm_loader.chain_id)
@@ -217,6 +219,29 @@ def calculator_contract(
     treasury_pool: TreasuryPool,
 ) -> Contract:
     return evm_loader.deploy_contract(operator_keypair, session_user, "calculator", neon_api_client, treasury_pool)
+
+
+@pytest.fixture(scope="session")
+def transfers_contract(
+    evm_loader: EvmLoader,
+    neon_api_client: NeonApiClient,
+    operator_keypair: Keypair,
+    session_user: Caller,
+    treasury_pool: TreasuryPool,
+) -> Contract:
+    return evm_loader.deploy_contract(operator_keypair, session_user, "transfers", neon_api_client, treasury_pool)
+
+
+@pytest.fixture(scope="session")
+def solana_caller(
+    evm_loader: EvmLoader,
+    neon_api_client: NeonApiClient,
+    operator_keypair: Keypair,
+    session_user: Caller,
+    treasury_pool: TreasuryPool,
+    holder_acc: Pubkey,
+) -> SolanaCaller:
+    return SolanaCaller(operator_keypair, session_user, evm_loader, treasury_pool, holder_acc, neon_api_client)
 
 
 @pytest.fixture(scope="session")

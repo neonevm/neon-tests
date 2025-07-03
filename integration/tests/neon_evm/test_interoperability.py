@@ -17,8 +17,6 @@ from solders.system_program import ID as SYS_PROGRAM_ID
 from solana.transaction import Instruction, AccountMeta
 from spl.token.instructions import TransferParams, transfer
 
-from conftest import EnvironmentConfig
-from integration.tests.neon_evm.utils.call_solana import SolanaCaller
 from utils.solana_logs_helper import decode_logs
 from .utils.transaction_checks import check_holder_account_tag, check_transaction_logs_have_text
 
@@ -36,15 +34,11 @@ from utils.consts import (
     TRANSFER_TOKENS_ID,
 )
 
-from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
-from utils.evm_loader import EvmLoader
 from utils.helpers import serialize_instruction, wait_condition
 
 from utils.instructions import DEFAULT_UNITS, make_create_associated_token_idempotent
 from utils.layouts import COUNTER_ACCOUNT_LAYOUT
 from utils.metaplex import ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID, TOKEN_PROGRAM_ID
-from utils.solana_client import SolanaClient
-from utils.types import Caller, TreasuryPool
 
 
 def _create_mint_and_accounts(evm_loader, from_wallet, to_wallet, amount) -> tuple[Token, Pubkey, Pubkey]:
@@ -68,20 +62,6 @@ def _create_mint_and_accounts(evm_loader, from_wallet, to_wallet, amount) -> tup
 
 
 class TestInteroperability:
-    @pytest.fixture(scope="class")
-    def solana_caller(
-        self,
-        evm_loader: EvmLoader,
-        neon_api_client: NeonApiClient,
-        operator_keypair: Keypair,
-        session_user: Caller,
-        treasury_pool: TreasuryPool,
-        holder_acc: Pubkey,
-        environment: EnvironmentConfig,
-        solana_client: SolanaClient,
-    ) -> SolanaCaller:
-        return SolanaCaller(operator_keypair, session_user, evm_loader, treasury_pool, holder_acc, neon_api_client)
-
     def test_get_solana_address_by_neon_address(self, sender_with_tokens, solana_caller):
         sol_addr = solana_caller.get_solana_address_by_neon_address(sender_with_tokens.eth_address.hex())
         assert sol_addr == sender_with_tokens.solana_account_address

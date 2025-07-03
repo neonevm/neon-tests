@@ -43,7 +43,7 @@ class TestTraceTransactionMethod:
             assert tracer_response["result"][i]["action"]["callType"] == call_type
             assert tracer_response["result"][i]["subtraces"] == subtraces
 
-    def test_multiply_scheduled_tx(self, multiple_scheduled_tx_receipts):
+    def test_multiple_scheduled_tx(self, multiple_scheduled_tx_receipts):
         for receipt in multiple_scheduled_tx_receipts:
             tx_data = self.web3_client.get_transaction_by_hash(receipt["transactionHash"].hex())
             tracer_response = self.tracer_api.trace_transaction(receipt["transactionHash"].hex())
@@ -238,14 +238,14 @@ class TestTraceTransactionMethod:
         decoded_output = default_codec.decode(["string"], data_bytes)[0]
         assert decoded_output == expected_output, "Expected output doesn't match with actual output"
 
-    @pytest.mark.skip(reason="NDEV-3770")
     def test_canceled_transaction(self, canceled_tx_with_hash_receipt):
         tx_data = self.web3_client.get_transaction_by_hash(canceled_tx_with_hash_receipt["transactionHash"].hex())
         tracer_response = self.tracer_api.trace_transaction(canceled_tx_with_hash_receipt["transactionHash"].hex())
 
-        # todo  must work after NDEV-3770
         self.tracer_validator.check_trace_transaction_response(tracer_response, tx_data)
 
         assert tracer_response["result"][0]["action"]["callType"] == "stop"
         assert tx_data["from"].lower() == tracer_response["result"][0]["action"]["from"].lower()
+        assert tx_data["to"].lower() == tracer_response["result"][0]["action"]["to"].lower()
+        assert tx_data["input"].hex().lower() == tracer_response["result"][0]["action"]["input"].lower()[2:]
         assert tracer_response["result"][0]["action"]["gas"] == hex(tx_data["gas"])

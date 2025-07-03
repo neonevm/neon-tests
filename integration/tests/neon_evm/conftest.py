@@ -387,7 +387,7 @@ def erc20_for_spl(
     return token_mint, erc20_for_spl_address
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def neon_user(evm_loader: EvmLoader, bank_account, environment: EnvironmentConfig) -> Generator[NeonUser, None, None]:
     user = NeonUser(evm_loader_id=environment.evm_loader)
     lamports = 3 * LAMPORT_PER_SOL

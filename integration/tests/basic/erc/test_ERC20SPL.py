@@ -739,7 +739,7 @@ class TestERC20SPLMintable:
         assert user1_balance_after == user1_balance_before - sent_amount, "User1 balance is not correct"
         assert user2_balance_after == user2_balance_before + claim_amount, "User2 balance is not correct"
 
-    def test_solana_account_getter(self, erc20_spl_mintable, neon_user):
+    def test_solana_account_getter(self, erc20_spl_mintable):
         acc = self.accounts[0]
         solana_pubkey = erc20_spl_mintable.get_solana_account(acc.address)
 

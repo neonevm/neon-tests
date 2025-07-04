@@ -54,6 +54,11 @@ class NeonTestAirdropsPage(BasePage):
         meta_btn.wait_for(state="visible", timeout=timeout)
         meta_btn.click()
 
+    @allure.step("Connect wallet to Faucet")
+    def connect_wallet_to_faucet(self):
+        self.connect_wallet()
+        self.connect_mm()
+
     @allure.step("Select from token {token}")
     def _choose_token(self, token: str) -> None:
         self.page.query_selector(self.SELECTORS["choose_token_btn"]).click()

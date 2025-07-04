@@ -161,6 +161,18 @@ class MetaMaskAccountsPage(BasePage):
         self.page.click(self.SELECTORS["next_button"])
         self.page.click(self.SELECTORS["connect_button"])
 
+    def set_metamask(self) -> None:
+        self.page.bring_to_front()
+        self.page.reload()
+        self.select_all_accounts()
+        try:
+            news_page = MetaMaskPopoverNewsPage(self.page)
+            news_page.page_loaded()
+        except TimeoutError:
+            pass
+        else:
+            self.page = news_page.close()
+
     @property
     def neon_balance(self) -> float:
         self.switch_assets()

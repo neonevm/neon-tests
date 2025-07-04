@@ -13,7 +13,6 @@ from playwright.sync_api import TimeoutError
 
 from ui import libs
 from ui.pages import metamask, neon_faucet
-from ui.pages.metamask import MetaMaskPopoverNewsPage
 from ui.pages.navigation_target import NavigationTarget
 from ui.pages.constants import NEON_FAUCET_URL
 from ui.pages.neon_faucet import NeonTestAirdropsPage
@@ -115,18 +114,8 @@ class TestMetaMaskPipeLIne:
         """Checks Neon faucet pipeline"""
         wait_condition(lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > 0, timeout_sec=120, delay=2)
         balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
-        neon_faucet_page.connect_wallet()
-        neon_faucet_page.connect_mm()
-        metamask_page.page.bring_to_front()
-        metamask_page.page.reload()
-        metamask_page.select_all_accounts()
-        try:
-            news_page = MetaMaskPopoverNewsPage(metamask_page.page)
-            news_page.page_loaded()
-        except TimeoutError:
-            pass
-        else:
-            metamask_page = news_page.close()
+        neon_faucet_page.connect_wallet_to_faucet()
+        metamask_page.set_metamask()
         neon_faucet_page.page.bring_to_front()
         neon_faucet_page.send_tokens(tokens, token_random_amount)
         neon_faucet_page.click_transfer_btn()
@@ -156,18 +145,8 @@ class TestMetaMaskPipeLIne:
         """Checks Neon faucet pipeline"""
         wait_condition(lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > 0, timeout_sec=240, delay=2)
         balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
-        neon_faucet_page.connect_wallet()
-        neon_faucet_page.connect_mm()
-        metamask_page.page.bring_to_front()
-        metamask_page.page.reload()
-        metamask_page.select_all_accounts()
-        try:
-            news_page = MetaMaskPopoverNewsPage(metamask_page.page)
-            news_page.page_loaded()
-        except TimeoutError:
-            pass
-        else:
-            metamask_page = news_page.close()
+        neon_faucet_page.connect_wallet_to_faucet()
+        metamask_page.set_metamask()
         neon_faucet_page.page.bring_to_front()
         neon_faucet_page.send_tokens("Wrapped Neon", token_random_amount)
         neon_faucet_page.click_transfer_btn()
@@ -196,18 +175,8 @@ class TestMetaMaskPipeLIne:
         tokens: str,
     ) -> None:
         """Checks Neon faucet pipeline"""
-        neon_faucet_page.connect_wallet()
-        neon_faucet_page.connect_mm()
-        metamask_page.page.bring_to_front()
-        metamask_page.page.reload()
-        metamask_page.select_all_accounts()
-        try:
-            news_page = MetaMaskPopoverNewsPage(metamask_page.page)
-            news_page.page_loaded()
-        except TimeoutError:
-            pass
-        else:
-            metamask_page = news_page.close()
+        neon_faucet_page.connect_wallet_to_faucet()
+        metamask_page.set_metamask()
         neon_faucet_page.page.bring_to_front()
         neon_faucet_page.text_too_much_tokens(tokens, 101)
 
@@ -221,18 +190,8 @@ class TestMetaMaskPipeLIne:
         """Checks Neon faucet pipeline"""
         wait_condition(lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > 0, timeout_sec=120, delay=2)
         balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
-        neon_faucet_page.connect_wallet()
-        neon_faucet_page.connect_mm()
-        metamask_page.page.bring_to_front()
-        metamask_page.page.reload()
-        metamask_page.select_all_accounts()
-        try:
-            news_page = MetaMaskPopoverNewsPage(metamask_page.page)
-            news_page.page_loaded()
-        except TimeoutError:
-            pass
-        else:
-            metamask_page = news_page.close()
+        neon_faucet_page.connect_wallet_to_faucet()
+        metamask_page.set_metamask()
         neon_faucet_page.page.bring_to_front()
         neon_faucet_page.send_tokens(tokens, token_random_amount)
         neon_faucet_page.click_transfer_btn()
@@ -264,19 +223,8 @@ class TestMetaMaskPipeLIne:
         MAX_RETRIES = 3
         """Checks Neon faucet pipeline"""
         for attempt in range(1, MAX_RETRIES + 1):
-            neon_faucet_page.reload_page()
-            neon_faucet_page.connect_wallet()
-            neon_faucet_page.connect_mm()
-            metamask_page.page.bring_to_front()
-            metamask_page.page.reload()
-            metamask_page.select_all_accounts()
-            try:
-                news_page = MetaMaskPopoverNewsPage(metamask_page.page)
-                news_page.page_loaded()
-            except TimeoutError:
-                pass
-            else:
-                metamask_page = news_page.close()
+            neon_faucet_page.connect_wallet_to_faucet()
+            metamask_page.set_metamask()
             neon_faucet_page.page.bring_to_front()
             neon_faucet_page.send_tokens("Wrapped Neon", token_random_amount)
             neon_faucet_page.click_transfer_btn()

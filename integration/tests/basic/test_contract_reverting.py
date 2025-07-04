@@ -78,18 +78,11 @@ class TestContractReverting:
         with pytest.raises(web3.exceptions.ContractLogicError, match="execution reverted"):
             revert_contract.functions.doTrivialRevert().call()
 
-    def test_nested_contract_revert(self, revert_contract):
+    def test_nested_contract_revert(self, revert_contract_caller):
         sender_account = self.accounts[0]
-        contract, _ = self.web3_client.deploy_and_get_contract(
-            contract="common/Revert",
-            version="0.8.28",
-            contract_name="Caller",
-            account=sender_account,
-            constructor_args=[revert_contract.address],
-        )
         tx = self.web3_client.make_raw_tx(sender_account)
         with pytest.raises(web3.exceptions.ContractLogicError, match="execution reverted: Predefined revert happened"):
-            contract.functions.doStringBasedRevert().build_transaction(tx)
+            revert_contract_caller.functions.doStringBasedRevert().build_transaction(tx)
 
     def test_eth_call_revert(self, revert_contract):
         with pytest.raises(

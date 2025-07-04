@@ -12,15 +12,18 @@ from .utils.transaction_checks import check_holder_account_tag
 
 class TestCancelTrx:
     def test_cancel_trx(
-        self, operator_keypair, rw_lock_contract, user_account, treasury_pool, evm_loader, solana_client
+        self, operator_keypair, rw_lock_contract, session_user, treasury_pool, evm_loader, neon_api_client
     ):
         """EVM can cancel transaction and finalize storage account"""
         signed_tx = make_contract_call_trx(
-            evm_loader, user_account, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1]
+            evm_loader, session_user, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1]
+        )
+        additional_accounts = neon_api_client.get_additional_accounts_by_emulation(
+            session_user.eth_address.hex(), rw_lock_contract.eth_address.hex(), "unchange_storage(uint8,uint8)", [1, 1]
         )
 
         storage_account = evm_loader.create_holder(operator_keypair)
-        user_nonce_before_first_step = evm_loader.get_neon_nonce(user_account.eth_address)
+        user_nonce_before_first_step = evm_loader.get_neon_nonce(session_user.eth_address)
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
 
         receipt = evm_loader.send_transaction_step_from_instruction(
@@ -29,18 +32,14 @@ class TestCancelTrx:
             treasury_pool,
             storage_account,
             signed_tx,
-            [
-                rw_lock_contract.solana_address,
-                rw_lock_contract.balance_account_address,
-                user_account.balance_account_address,
-            ],
+            additional_accounts,
             1,
             operator_keypair,
         )
 
         assert receipt.value.transaction.meta.err is None
 
-        user_nonce_after_first_step = evm_loader.get_neon_nonce(user_account.eth_address)
+        user_nonce_after_first_step = evm_loader.get_neon_nonce(session_user.eth_address)
         assert user_nonce_before_first_step + 1 == user_nonce_after_first_step
         trx = Transaction()
         trx.add(
@@ -50,21 +49,17 @@ class TestCancelTrx:
                 operator_keypair,
                 operator_balance,
                 signed_tx.hash,
-                [
-                    rw_lock_contract.solana_address,
-                    rw_lock_contract.balance_account_address,
-                    user_account.balance_account_address,
-                ],
+                additional_accounts,
             )
         )
         evm_loader.send_tx(trx, operator_keypair)
         check_holder_account_tag(
-            solana_client,
+            evm_loader,
             storage_account=storage_account,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_FINALIZED_STATE,
         )
-        assert user_nonce_after_first_step == evm_loader.get_neon_nonce(user_account.eth_address)
+        assert user_nonce_after_first_step == evm_loader.get_neon_nonce(session_user.eth_address)
 
     @pytest.mark.parametrize("gas_limit", [10000, 15000, 16000])
     def test_cancel_after_out_of_gas(

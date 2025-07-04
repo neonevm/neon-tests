@@ -106,7 +106,6 @@ class TestTransactionStepFromAccountNoChainId:
         holder_acc,
         evm_loader,
         neon_api_client,
-        sol_client,
     ):
         transfer_amount = random.randint(1, 1000)
 
@@ -125,20 +124,21 @@ class TestTransactionStepFromAccountNoChainId:
             chain_id=None,
         )
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
-
+        additional_accounts = neon_api_client.get_additional_accounts_by_emulation(
+            sender_with_tokens.eth_address.hex(),
+            string_setter_contract.eth_address.hex(),
+            "set(string)",
+            params=[text],
+            value=transfer_amount,
+        )
         resp = evm_loader.execute_transaction_steps_from_account_no_chain_id(
             operator_keypair,
             treasury_pool,
             holder_acc,
-            [
-                string_setter_contract.solana_address,
-                string_setter_contract.balance_account_address,
-                sender_with_tokens.balance_account_address,
-                sender_with_tokens.solana_account_address,
-            ],
+            additional_accounts,
         )
 
-        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
 
         sender_balance_after = evm_loader.get_neon_balance(sender_with_tokens.eth_address)
         contract_balance_after = evm_loader.get_neon_balance(string_setter_contract.eth_address)

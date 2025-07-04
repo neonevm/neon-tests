@@ -134,17 +134,17 @@ class TestExecuteTrxFromInstruction:
         signed_tx = make_eth_transaction(
             evm_loader, string_setter_contract.eth_address, data, sender_with_tokens, transfer_amount
         )
+
+        emulate_result = neon_api_client.emulate_contract_call(
+            sender_with_tokens.eth_address.hex(),
+            string_setter_contract.eth_address.hex(),
+            "set(string)",
+            params=[text],
+            value=transfer_amount,
+        )
+        additional_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
         resp = evm_loader.execute_trx_from_instruction(
-            operator_keypair,
-            holder_acc,
-            treasury_pool.account,
-            treasury_pool.buffer,
-            signed_tx,
-            [
-                sender_with_tokens.balance_account_address,
-                string_setter_contract.balance_account_address,
-                string_setter_contract.solana_address,
-            ],
+            operator_keypair, holder_acc, treasury_pool.account, treasury_pool.buffer, signed_tx, additional_accounts
         )
 
         check_transaction_logs_have_text(solana_client=solana_client, trx=resp, text="exit_status=0x11")
@@ -455,7 +455,7 @@ class TestExecuteTrxFromInstruction:
         calculator_contract,
         treasury_pool,
         holder_acc,
-        solana_client,
+        neon_api_client,
     ):
         signed_tx = make_contract_call_trx(
             evm_loader, sender_with_tokens, calculator_caller_contract, "callCalculator()"
@@ -470,16 +470,18 @@ class TestExecuteTrxFromInstruction:
             v=signed_tx.v,
         )
 
+        additional_accounts = neon_api_client.get_additional_accounts_by_emulation(
+            sender_with_tokens.eth_address.hex(),
+            calculator_caller_contract.eth_address.hex(),
+            "callCalculator()",
+        )
+
         resp = evm_loader.execute_trx_from_instruction(
             operator_keypair,
             holder_acc,
             treasury_pool.account,
             treasury_pool.buffer,
             signed_tx_new,
-            [
-                sender_with_tokens.balance_account_address,
-                calculator_caller_contract.solana_address,
-                calculator_contract.solana_address,
-            ],
+            additional_accounts,
         )
-        check_transaction_logs_have_text(solana_client=solana_client, trx=resp, text="exit_status=0x12")
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x12")

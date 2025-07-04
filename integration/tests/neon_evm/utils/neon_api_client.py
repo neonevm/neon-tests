@@ -42,6 +42,7 @@ class NeonApiClient:
             "trace_config": trace_config,
         }
         resp = requests.post(url=f"{self.url}/emulate", json=body, headers=self.headers)
+
         log_text_to_allure_and_stdout("Emulate response", resp.text)
 
         if resp.status_code == 200:
@@ -49,15 +50,34 @@ class NeonApiClient:
         else:
             return resp.json()
 
+    @allure.step("Emulate transaction from holder account")
+    def emulate_from_holder(self, holder_pubkey: Pubkey, max_steps_to_execute=500000):
+        body = {"step_limit": max_steps_to_execute, "holder_pubkey": str(holder_pubkey)}
+        resp = requests.post(url=f"{self.url}/emulate_from_holder", json=body, headers=self.headers)
+        if resp.status_code == 200:
+            return resp.json()["value"]
+        else:
+            return resp.json()
+
     @allure.step("Emulate contract call")
-    def emulate_contract_call(self, sender, contract, function_signature, params=None, value="0x0", trace_config=None):
+    def emulate_contract_call(self, sender, contract, function_signature, params=None, value=0, trace_config=None):
         # does not work for tuple in params
         data = abi.function_signature_to_4byte_selector(function_signature)
-
+        if isinstance(value, int):
+            value = hex(value)
         if params is not None:
             types = function_signature.split("(")[1].split(")")[0].split(",")
             data += eth_abi.encode(types, params)
         return self.emulate(sender, contract, data, value=value, trace_config=trace_config)
+
+    def get_additional_accounts_by_emulation(
+        self, sender, contract, function_signature, params=None, value=0, trace_config=None
+    ):
+        result = self.emulate_contract_call(sender, contract, function_signature, params, value, trace_config)
+        if "solana_accounts" in result:
+            return [Pubkey.from_string(item["pubkey"]) for item in result["solana_accounts"]]
+        else:
+            raise ValueError(f"Emulation failed: {result}")
 
     def get_storage_at(self, contract_id, index="0x0") -> Dict:
         body = {"contract": contract_id, "index": index}
@@ -75,10 +95,13 @@ class NeonApiClient:
         return requests.post(url=f"{self.url}/balance", json=body, headers=self.headers).json()
 
     @allure.step("Simulate Solana transaction")
-    def simulate_solana(self, blockhash: str, transactions: list[str]) -> requests.Response:
+    def simulate_solana(
+        self, blockhash: str, transactions: list[str], solana_overrides_params=None
+    ) -> requests.Response:
         body = {
             "blockhash": blockhash,
             "transactions": transactions,
+            "solana_overrides": solana_overrides_params,
         }
         return requests.post(url=f"{self.url}/simulate_solana", json=body, headers=self.headers)
 

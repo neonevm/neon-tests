@@ -21,6 +21,8 @@ from .utils.neon_api_client import NeonApiClient
 from .utils.neon_api_rpc_client import NeonApiRpcClient
 from .utils.transaction_checks import check_transaction_logs_have_text
 
+from .utils.call_solana import SolanaCaller
+
 
 def prepare_operator(key_file: pathlib.Path | str, evm_loader: EvmLoader) -> Keypair:
     chain_ids = (evm_loader.sol_chain_id, evm_loader.chain_id)
@@ -65,7 +67,7 @@ def second_operator_keypair(index_of_process: int, evm_loader: EvmLoader) -> Key
     """
     Initialized solana keypair with balance. Get private key from cli or ./ci/operator-keypairs
     """
-    file_id = 20 + index_of_process
+    file_id = 12 + index_of_process
     key_file = pathlib.Path(f"{OPERATOR_KEYPAIR_PATH}/id{file_id}.json")
     allure.attach(
         f"current key_file {key_file}",
@@ -124,7 +126,7 @@ def new_holder_acc_2(operator_keypair: Keypair, evm_loader: EvmLoader) -> Pubkey
     return evm_loader.create_holder(operator_keypair)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def rw_lock_contract(
     evm_loader: EvmLoader,
     operator_keypair: Keypair,
@@ -135,7 +137,7 @@ def rw_lock_contract(
     return evm_loader.deploy_contract(operator_keypair, session_user, "rw_lock", neon_api_client, treasury_pool)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def rw_lock_caller(
     evm_loader: EvmLoader,
     operator_keypair: Keypair,
@@ -156,7 +158,7 @@ def rw_lock_caller(
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def string_setter_contract(
     evm_loader: EvmLoader,
     operator_keypair: Keypair,
@@ -167,7 +169,18 @@ def string_setter_contract(
     return evm_loader.deploy_contract(operator_keypair, session_user, "string_setter", neon_api_client, treasury_pool)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
+def hello_world_contract(
+    evm_loader: EvmLoader,
+    operator_keypair: Keypair,
+    session_user: Caller,
+    treasury_pool: TreasuryPool,
+    neon_api_client: NeonApiClient,
+) -> Contract:
+    return evm_loader.deploy_contract(operator_keypair, session_user, "hello_world", neon_api_client, treasury_pool)
+
+
+@pytest.fixture(scope="session")
 def basic_contract(
     evm_loader: EvmLoader,
     operator_keypair: Keypair,
@@ -185,7 +198,7 @@ def basic_contract(
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def spl_token_caller(operator_keypair, evm_loader, session_user, treasury_pool, neon_api_client) -> Contract:
     return evm_loader.deploy_contract(
         operator_keypair,
@@ -209,6 +222,29 @@ def calculator_contract(
 
 
 @pytest.fixture(scope="session")
+def transfers_contract(
+    evm_loader: EvmLoader,
+    neon_api_client: NeonApiClient,
+    operator_keypair: Keypair,
+    session_user: Caller,
+    treasury_pool: TreasuryPool,
+) -> Contract:
+    return evm_loader.deploy_contract(operator_keypair, session_user, "transfers", neon_api_client, treasury_pool)
+
+
+@pytest.fixture(scope="session")
+def solana_caller(
+    evm_loader: EvmLoader,
+    neon_api_client: NeonApiClient,
+    operator_keypair: Keypair,
+    session_user: Caller,
+    treasury_pool: TreasuryPool,
+    holder_acc: Pubkey,
+) -> SolanaCaller:
+    return SolanaCaller(operator_keypair, session_user, evm_loader, treasury_pool, holder_acc, neon_api_client)
+
+
+@pytest.fixture(scope="session")
 def calculator_caller_contract(
     evm_loader: EvmLoader,
     operator_keypair: Keypair,
@@ -228,6 +264,17 @@ def calculator_caller_contract(
         encoded_args=constructor_args,
         contract_name="calculatorCaller",
     )
+
+
+@pytest.fixture(scope="session")
+def solana_overrides_contract(
+    evm_loader: EvmLoader,
+    neon_api_client: NeonApiClient,
+    operator_keypair: Keypair,
+    session_user: Caller,
+    treasury_pool: TreasuryPool,
+) -> Contract:
+    return evm_loader.deploy_contract(operator_keypair, session_user, "solana_override", neon_api_client, treasury_pool)
 
 
 @pytest.fixture(scope="session")

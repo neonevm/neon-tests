@@ -10,7 +10,7 @@ import requests
 import solana.rpc.api
 import spl.token.client
 from solana.rpc import commitment
-from solana.rpc.commitment import Commitment, Confirmed
+from solana.rpc.commitment import Commitment, Confirmed, Processed
 from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
 from solders.keypair import Keypair
@@ -114,7 +114,7 @@ class SolanaClient(solana.rpc.api.Client):
 
     @allure.step("Send transaction and check status is Ok")
     def send_tx_and_check_status_ok(self, tx, *signers):
-        opts = TxOpts(skip_preflight=True, skip_confirmation=False)
+        opts = TxOpts(skip_preflight=True, skip_confirmation=False, preflight_commitment=Processed)
         sig = self.send_transaction(tx, *signers, opts=opts).value
         statuses_resp = self.confirm_transaction(sig, commitment=Confirmed)
         sig_status = json.loads(statuses_resp.to_json())
@@ -123,7 +123,7 @@ class SolanaClient(solana.rpc.api.Client):
         assert sig_status["result"]["value"][0]["status"] == {"Ok": None}, f"error:{sig_status}, receipt: {receipt}"
         return receipt
 
-    def send_tx(self, trx: Transaction, *signers: Keypair, wait_status=Confirmed) -> GetTransactionResp:
+    def send_tx(self, trx: Transaction, *signers: Keypair, wait_status=Processed) -> GetTransactionResp:
         result = self.send_transaction(
             trx, *signers, opts=TxOpts(skip_confirmation=True, preflight_commitment=wait_status)
         )

@@ -1,8 +1,9 @@
+import random
 import allure
 import base58
 import eth_abi
 from eth_utils import abi
-from solana.rpc.commitment import Finalized
+from solana.rpc.commitment import Finalized, Confirmed
 from solana.transaction import Transaction
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
@@ -16,6 +17,7 @@ from utils.types import TreasuryPool, Caller, Contract
 from .utils import ethereum as eth_utils
 from .utils.contract import get_contract_bin
 from .utils.neon_api_client import NeonApiClient
+from integration.tests.neon_evm.utils.transaction_checks import check_transaction_logs_have_text
 
 
 class TestSimulateSolana:
@@ -646,3 +648,530 @@ class TestSimulateSolana:
         # Compare simulation and execution results
         msg = f"Simulated: {simulated_compute_units}, executed: {actual_compute_units}"
         assert abs(simulated_compute_units - actual_compute_units) < 10, msg
+
+    def test_simulate_solana_with_solana_overrides_data_account(
+        self,
+        solana_overrides_contract: Contract,
+        sender_with_tokens: Caller,
+        neon_api_client: NeonApiClient,
+        operator_keypair: Keypair,
+        evm_loader: EvmLoader,
+        holder_acc: Pubkey,
+        treasury_pool: TreasuryPool,
+    ):
+        def execute_trx(function_signature, params, additional_accounts):
+            signed_tx = eth_utils.make_contract_call_trx(
+                evm_loader=evm_loader,
+                user=sender_with_tokens,
+                contract=solana_overrides_contract,
+                function_signature=function_signature,
+                params=params,
+            )
+
+            evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
+            resp = evm_loader.execute_transaction_steps_from_account(
+                operator_keypair, treasury_pool, holder_acc, additional_accounts
+            )
+            check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
+
+        update_b_function_signature = "update_b(uint256)"
+        # value = 239 is hardcoded in solidity contract to be checked with check_b() method
+        update_b_params = [239]
+
+        emulate_result = neon_api_client.emulate_contract_call(
+            sender=sender_with_tokens.eth_address.hex(),
+            contract=solana_overrides_contract.eth_address.hex(),
+            function_signature=update_b_function_signature,
+            params=update_b_params,
+        )
+        additional_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
+        execute_trx(update_b_function_signature, update_b_params, additional_accounts)
+
+        accounts = [
+            sender_with_tokens.balance_account_address,
+            solana_overrides_contract.solana_address,
+        ]
+        data_account = list(set(additional_accounts) - set(accounts))[0]
+        account_info_after_tx1 = evm_loader.get_account_info(data_account, commitment=Confirmed)
+
+        execute_trx(update_b_function_signature, [192], additional_accounts)
+        account_info_after_tx2 = evm_loader.get_account_info(data_account, commitment=Confirmed)
+
+        assert account_info_after_tx1.value.data != account_info_after_tx2.value.data
+
+        # Create Solana transaction
+        signed_tx_for_sol_tx = eth_utils.make_contract_call_trx(
+            evm_loader=evm_loader,
+            user=sender_with_tokens,
+            contract=solana_overrides_contract,
+            function_signature="check_b()",
+        )
+        sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
+        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
+        sol_tx.add(
+            instructions.make_transaction_execute_from_instruction(
+                operator=operator_keypair,
+                operator_balance=operator_balance_pubkey,
+                holder_address=holder_acc,
+                evm_loader_id=evm_loader.loader_id,
+                treasury_address=treasury_pool.account,
+                treasury_buffer=treasury_pool.buffer,
+                message=signed_tx_for_sol_tx.raw_transaction,
+                additional_accounts=[
+                    sender_with_tokens.balance_account_address,
+                    solana_overrides_contract.solana_address,
+                    data_account,
+                ],
+            )
+        )
+        sol_tx.sign(operator_keypair)
+
+        # Simulate the transaction
+        serialized_transaction = sol_tx.serialize()
+        hex_serialized_transaction = serialized_transaction.hex()
+        blockhash = base58.b58decode(str(evm_loader.get_latest_blockhash(Finalized).value.blockhash)).hex()
+
+        account_info_override = {
+            "lamports": account_info_after_tx1.value.lamports,
+            "data": account_info_after_tx1.value.data.hex(),
+            "owner": str(account_info_after_tx1.value.owner),
+            "executable": account_info_after_tx1.value.executable,
+            "rent_epoch": account_info_after_tx1.value.rent_epoch,
+        }
+
+        simulate_response = neon_api_client.simulate_solana(
+            blockhash=blockhash,
+            transactions=[hex_serialized_transaction],
+            solana_overrides_params={str(data_account): account_info_override},
+        )
+
+        simulated_transactions = simulate_response.json()["value"]["transactions"]
+
+        for simulated_transaction in simulated_transactions:
+            if simulated_transaction["error"]:
+                raise AssertionError(f"Error in sol trx: {simulated_transaction}")
+            assert "Program log: exit_status=0x11" in simulated_transaction["logs"]
+
+    def test_simulate_solana_with_solana_overrides_multiple_data_accounts(
+        self,
+        solana_overrides_contract: Contract,
+        sender_with_tokens: Caller,
+        neon_api_client: NeonApiClient,
+        operator_keypair: Keypair,
+        evm_loader: EvmLoader,
+        holder_acc: Pubkey,
+        treasury_pool: TreasuryPool,
+    ):
+        def execute_trx(function_signature, params, additional_accounts):
+            signed_tx = eth_utils.make_contract_call_trx(
+                evm_loader=evm_loader,
+                user=sender_with_tokens,
+                contract=solana_overrides_contract,
+                function_signature=function_signature,
+                params=params,
+            )
+
+            evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
+            resp = evm_loader.execute_transaction_steps_from_account(
+                operator_keypair, treasury_pool, holder_acc, additional_accounts
+            )
+            check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
+
+        function_signature = "update_data(uint256,uint256)"
+        # value = 123 is hardcoded in solidity contract to be checked with check_data(uint256) method
+        params = [3, 123]
+
+        emulate_result = neon_api_client.emulate_contract_call(
+            sender=sender_with_tokens.eth_address.hex(),
+            contract=solana_overrides_contract.eth_address.hex(),
+            function_signature=function_signature,
+            params=params,
+        )
+        additional_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
+        execute_trx(function_signature, params, additional_accounts)
+
+        accounts = [
+            sender_with_tokens.balance_account_address,
+            solana_overrides_contract.solana_address,
+        ]
+        data_accounts = list(set(additional_accounts) - set(accounts))
+
+        accounts_info_after_tx1 = []
+        for account in data_accounts:
+            accounts_info_after_tx1.append(evm_loader.get_account_info(account, commitment=Confirmed))
+
+        execute_trx(function_signature, [3, 398], additional_accounts)
+
+        accounts_info_after_tx2 = []
+        for account in data_accounts:
+            accounts_info_after_tx2.append(evm_loader.get_account_info(account, commitment=Confirmed))
+
+        for i in range(len(accounts_info_after_tx1)):
+            assert accounts_info_after_tx2[i].value.data != accounts_info_after_tx1[i].value.data
+
+        # Create Solana transaction
+        signed_tx_for_sol_tx = eth_utils.make_contract_call_trx(
+            evm_loader=evm_loader,
+            user=sender_with_tokens,
+            contract=solana_overrides_contract,
+            function_signature="check_data(uint256)",
+            params=[3],
+        )
+        sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
+        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
+        sol_tx.add(
+            instructions.make_transaction_execute_from_instruction(
+                operator=operator_keypair,
+                operator_balance=operator_balance_pubkey,
+                holder_address=holder_acc,
+                evm_loader_id=evm_loader.loader_id,
+                treasury_address=treasury_pool.account,
+                treasury_buffer=treasury_pool.buffer,
+                message=signed_tx_for_sol_tx.raw_transaction,
+                additional_accounts=[
+                    sender_with_tokens.balance_account_address,
+                    solana_overrides_contract.solana_address,
+                    data_accounts[0],
+                    data_accounts[1],
+                    data_accounts[2],
+                ],
+            )
+        )
+        sol_tx.sign(operator_keypair)
+
+        # Simulate the transaction
+        serialized_transaction = sol_tx.serialize()
+        hex_serialized_transaction = serialized_transaction.hex()
+        blockhash = base58.b58decode(str(evm_loader.get_latest_blockhash(Finalized).value.blockhash)).hex()
+
+        accounts_info_override = []
+        for account_info in accounts_info_after_tx1:
+            accounts_info_override.append(
+                {
+                    "lamports": account_info.value.lamports,
+                    "data": account_info.value.data.hex(),
+                    "owner": str(account_info.value.owner),
+                    "executable": account_info.value.executable,
+                    "rent_epoch": account_info.value.rent_epoch,
+                }
+            )
+
+        solana_overrides_params = {}
+        for i in range(len(data_accounts)):
+            solana_overrides_params[str(data_accounts[i])] = accounts_info_override[i]
+
+        simulate_response = neon_api_client.simulate_solana(
+            blockhash=blockhash,
+            transactions=[hex_serialized_transaction],
+            solana_overrides_params=solana_overrides_params,
+        )
+
+        simulated_transactions = simulate_response.json()["value"]["transactions"]
+
+        for simulated_transaction in simulated_transactions:
+            if simulated_transaction["error"]:
+                raise AssertionError(f"Error in sol trx: {simulated_transaction}")
+            assert "Program log: exit_status=0x11" in simulated_transaction["logs"]
+
+    def test_simulate_solana_with_solana_overrides_balance_account(
+        self,
+        solana_overrides_contract: Contract,
+        sender_with_tokens: Caller,
+        neon_api_client: NeonApiClient,
+        operator_keypair: Keypair,
+        evm_loader: EvmLoader,
+        holder_acc: Pubkey,
+        treasury_pool: TreasuryPool,
+        session_user: Caller,
+    ):
+        def execute_trx(function_signature, params, additional_accounts):
+            signed_tx = eth_utils.make_contract_call_trx(
+                evm_loader=evm_loader,
+                user=sender_with_tokens,
+                contract=solana_overrides_contract,
+                function_signature=function_signature,
+                params=params,
+            )
+
+            evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
+            resp = evm_loader.execute_transaction_steps_from_account(
+                operator_keypair, treasury_pool, holder_acc, additional_accounts
+            )
+            check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
+
+        recipient = session_user
+        recipient_balance_before = evm_loader.get_neon_balance(recipient.eth_address)
+        balance_account = solana_overrides_contract.balance_account_address
+        evm_loader.deposit_neon(operator_keypair, solana_overrides_contract.eth_address, 1000000)
+        amount = evm_loader.get_neon_balance(solana_overrides_contract.eth_address)
+
+        function_signature = "send_neon(address,uint256)"
+        params = [recipient.eth_address.hex(), amount // 2]
+
+        account_info_full_balance = evm_loader.get_account_info(balance_account, commitment=Confirmed)
+
+        emulate_result = neon_api_client.emulate_contract_call(
+            sender=sender_with_tokens.eth_address.hex(),
+            contract=solana_overrides_contract.eth_address.hex(),
+            function_signature=function_signature,
+            params=params,
+        )
+        additional_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
+        execute_trx(function_signature, params, additional_accounts)
+
+        recipient_balance_after = evm_loader.get_neon_balance(recipient.eth_address)
+        assert recipient_balance_after == recipient_balance_before + amount // 2
+
+        account_info_after_tx = evm_loader.get_account_info(balance_account, commitment=Confirmed)
+        assert account_info_full_balance.value.data != account_info_after_tx.value.data
+
+        contract_balance = evm_loader.get_neon_balance(solana_overrides_contract.eth_address)
+        assert contract_balance < amount
+
+        # Create Solana transaction
+        signed_tx_for_sol_tx = eth_utils.make_contract_call_trx(
+            evm_loader=evm_loader,
+            user=sender_with_tokens,
+            contract=solana_overrides_contract,
+            function_signature=function_signature,
+            params=[recipient.eth_address.hex(), amount],
+        )
+        sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
+        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
+        sol_tx.add(
+            instructions.make_transaction_execute_from_instruction(
+                operator=operator_keypair,
+                operator_balance=operator_balance_pubkey,
+                holder_address=holder_acc,
+                evm_loader_id=evm_loader.loader_id,
+                treasury_address=treasury_pool.account,
+                treasury_buffer=treasury_pool.buffer,
+                message=signed_tx_for_sol_tx.raw_transaction,
+                additional_accounts=additional_accounts,
+            )
+        )
+        sol_tx.sign(operator_keypair)
+
+        # Simulate the transaction
+        serialized_transaction = sol_tx.serialize()
+        hex_serialized_transaction = serialized_transaction.hex()
+        blockhash = base58.b58decode(str(evm_loader.get_latest_blockhash(Finalized).value.blockhash)).hex()
+
+        account_info_override = {
+            "lamports": account_info_full_balance.value.lamports,
+            "data": account_info_full_balance.value.data.hex(),
+            "owner": str(account_info_full_balance.value.owner),
+            "executable": account_info_full_balance.value.executable,
+            "rent_epoch": account_info_full_balance.value.rent_epoch,
+        }
+
+        simulate_response = neon_api_client.simulate_solana(
+            blockhash=blockhash,
+            transactions=[hex_serialized_transaction],
+            solana_overrides_params={str(balance_account): account_info_override},
+        )
+
+        simulated_transactions = simulate_response.json()["value"]["transactions"]
+        for simulated_transaction in simulated_transactions:
+            if simulated_transaction["error"]:
+                raise AssertionError(f"Error in sol trx: {simulated_transaction}")
+            assert "Program log: exit_status=0x11" in simulated_transaction["logs"]
+
+    def test_simulate_solana_with_solana_overrides_absent_field(
+        self,
+        solana_overrides_contract: Contract,
+        sender_with_tokens: Caller,
+        neon_api_client: NeonApiClient,
+        operator_keypair: Keypair,
+        evm_loader: EvmLoader,
+        holder_acc: Pubkey,
+        treasury_pool: TreasuryPool,
+    ):
+        function_signature = "update_b(uint256)"
+        params = [4021]
+
+        emulate_result = neon_api_client.emulate_contract_call(
+            sender=sender_with_tokens.eth_address.hex(),
+            contract=solana_overrides_contract.eth_address.hex(),
+            function_signature=function_signature,
+            params=params,
+        )
+        additional_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
+
+        signed_tx = eth_utils.make_contract_call_trx(
+            evm_loader=evm_loader,
+            user=sender_with_tokens,
+            contract=solana_overrides_contract,
+            function_signature=function_signature,
+            params=params,
+        )
+
+        evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
+        resp = evm_loader.execute_transaction_steps_from_account(
+            operator_keypair, treasury_pool, holder_acc, additional_accounts
+        )
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
+
+        accounts = [
+            sender_with_tokens.balance_account_address,
+            solana_overrides_contract.solana_address,
+        ]
+        data_account = list(set(additional_accounts) - set(accounts))[0]
+        account_info = evm_loader.get_account_info(data_account, commitment=Confirmed)
+
+        # Create Solana transaction
+        signed_tx_for_sol_tx = eth_utils.make_contract_call_trx(
+            evm_loader=evm_loader,
+            user=sender_with_tokens,
+            contract=solana_overrides_contract,
+            function_signature=function_signature,
+            params=params,
+        )
+        sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
+        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
+        sol_tx.add(
+            instructions.make_transaction_execute_from_instruction(
+                operator=operator_keypair,
+                operator_balance=operator_balance_pubkey,
+                holder_address=holder_acc,
+                evm_loader_id=evm_loader.loader_id,
+                treasury_address=treasury_pool.account,
+                treasury_buffer=treasury_pool.buffer,
+                message=signed_tx_for_sol_tx.raw_transaction,
+                additional_accounts=[
+                    sender_with_tokens.balance_account_address,
+                    solana_overrides_contract.solana_address,
+                    data_account,
+                ],
+            )
+        )
+        sol_tx.sign(operator_keypair)
+
+        # Simulate the transaction
+        serialized_transaction = sol_tx.serialize()
+        blockhash = base58.b58decode(str(evm_loader.get_latest_blockhash(Finalized).value.blockhash)).hex()
+
+        account_info_override = {
+            "lamports": account_info.value.lamports,
+            "data": account_info.value.data.hex(),
+            "owner": str(account_info.value.owner),
+            "executable": account_info.value.executable,
+            "rent_epoch": account_info.value.rent_epoch,
+        }
+        keys = ["lamports", "data", "owner", "executable", "rent_epoch"]
+        del account_info_override[random.SystemRandom().choice(keys)]
+
+        simulate_response = neon_api_client.simulate_solana(
+            blockhash=blockhash,
+            transactions=[serialized_transaction.hex()],
+            solana_overrides_params={str(data_account): account_info_override},
+        )
+        assert simulate_response.status_code == 400
+        assert "Json deserialize error: missing field" in simulate_response.text
+
+    def test_simulate_solana_compare_cu_with_solana_overrides_and_without(
+        self,
+        solana_overrides_contract: Contract,
+        sender_with_tokens: Caller,
+        neon_api_client: NeonApiClient,
+        operator_keypair: Keypair,
+        evm_loader: EvmLoader,
+        holder_acc: Pubkey,
+        treasury_pool: TreasuryPool,
+    ):
+        def execute_trx(function_signature, params, additional_accounts):
+            signed_tx = eth_utils.make_contract_call_trx(
+                evm_loader=evm_loader,
+                user=sender_with_tokens,
+                contract=solana_overrides_contract,
+                function_signature=function_signature,
+                params=params,
+            )
+
+            evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
+            resp = evm_loader.execute_transaction_steps_from_account(
+                operator_keypair, treasury_pool, holder_acc, additional_accounts
+            )
+            check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
+
+        function_signature = "update_b(uint256)"
+        params = [284]
+
+        emulate_result = neon_api_client.emulate_contract_call(
+            sender=sender_with_tokens.eth_address.hex(),
+            contract=solana_overrides_contract.eth_address.hex(),
+            function_signature=function_signature,
+            params=params,
+        )
+        additional_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
+        execute_trx(function_signature, params, additional_accounts)
+
+        accounts = [
+            sender_with_tokens.balance_account_address,
+            solana_overrides_contract.solana_address,
+        ]
+        data_account = list(set(additional_accounts) - set(accounts))[0]
+        account_info_after_tx1 = evm_loader.get_account_info(data_account, commitment=Confirmed)
+
+        execute_trx(function_signature, [125], additional_accounts)
+
+        # Create Solana transaction
+        signed_tx_for_sol_tx = eth_utils.make_contract_call_trx(
+            evm_loader=evm_loader,
+            user=sender_with_tokens,
+            contract=solana_overrides_contract,
+            function_signature=function_signature,
+            params=params,
+        )
+        sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
+        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
+        sol_tx.add(
+            instructions.make_transaction_execute_from_instruction(
+                operator=operator_keypair,
+                operator_balance=operator_balance_pubkey,
+                holder_address=holder_acc,
+                evm_loader_id=evm_loader.loader_id,
+                treasury_address=treasury_pool.account,
+                treasury_buffer=treasury_pool.buffer,
+                message=signed_tx_for_sol_tx.raw_transaction,
+                additional_accounts=[
+                    sender_with_tokens.balance_account_address,
+                    solana_overrides_contract.solana_address,
+                    data_account,
+                ],
+            )
+        )
+        sol_tx.sign(operator_keypair)
+
+        # Simulate the transaction
+        serialized_transaction = sol_tx.serialize()
+        hex_serialized_transaction = serialized_transaction.hex()
+        blockhash = base58.b58decode(str(evm_loader.get_latest_blockhash(Finalized).value.blockhash)).hex()
+
+        account_info_override = {
+            "lamports": account_info_after_tx1.value.lamports,
+            "data": account_info_after_tx1.value.data.hex(),
+            "owner": str(account_info_after_tx1.value.owner),
+            "executable": account_info_after_tx1.value.executable,
+            "rent_epoch": account_info_after_tx1.value.rent_epoch,
+        }
+
+        simulate_response_with_override = neon_api_client.simulate_solana(
+            blockhash=blockhash,
+            transactions=[hex_serialized_transaction],
+            solana_overrides_params={str(data_account): account_info_override},
+        )
+
+        simulate_response = neon_api_client.simulate_solana(
+            blockhash=blockhash,
+            transactions=[hex_serialized_transaction],
+        )
+
+        simulated_tx = simulate_response.json()["value"]["transactions"][0]
+        simulated_tx_with_overrides = simulate_response_with_override.json()["value"]["transactions"][0]
+
+        assert simulated_tx["error"] is None
+        assert "Program log: exit_status=0x11" in simulated_tx["logs"]
+        assert simulated_tx_with_overrides["error"] is None
+        assert "Program log: exit_status=0x11" in simulated_tx_with_overrides["logs"]
+        assert simulated_tx_with_overrides["executed_units"] < simulated_tx["executed_units"]

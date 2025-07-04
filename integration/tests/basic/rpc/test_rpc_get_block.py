@@ -117,9 +117,6 @@ class TestRpcGetBlock:
         EthGetBlockByHashResult(**response)
         assert "result" in response and response["result"] is None, "Result should be None"
 
-    @pytest.mark.xfail(
-        reason="NDEV-3072"
-    )  # fails on geth (returns a different error message), needs a fix, and refactor of Error32602
     @pytest.mark.parametrize("full_trx", [False, True])
     def test_eth_get_block_by_number_with_big_int(self, full_trx, json_rpc_client):
         """Verify implemented rpc calls work eth_getBlockByNumber"""

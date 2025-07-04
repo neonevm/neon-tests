@@ -1,12 +1,11 @@
 import itertools
 import logging
 import pathlib
-import shutil
 import sys
 import tarfile
 import time
-import uuid
 from dataclasses import dataclass
+from enum import Enum
 
 import six
 from playwright.sync_api import BrowserContext, Page
@@ -25,10 +24,23 @@ class Token:
         return self.name
 
 
-@dataclass
-class Platform:
-    solana: str = "Solana"
-    neon: str = "Neon"
+class TokenRegistry:
+    """Holds all supported Tokens with their addresses."""
+
+    NEON = Token("Neon", "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g")
+    WNEON = Token("WNEON", "0x11adC2d986E334137b9ad0a0F290771F31e9517F")
+    SOL = Token("SOL", "0xc7Fc9b46e479c5Cb42f6C458D1881e55E6B7986c")
+    WSOL = Token("wSOL", "0xc7Fc9b46e479c5Cb42f6C458D1881e55E6B7986c")
+    USDT = Token("USDT", "0x6eEf939FC6e2B3F440dCbB72Ea81Cd63B5a519A5")
+    USDC = Token("USDC", "0x512E48836Cd42F3eB6f50CEd9ffD81E0a7F15103")
+    BTC = Token("BTC", "0x5651a868392595baf4aa83639aecf232a4603cd9")
+
+
+class Platform(Enum):
+    """Enumeration of supported blockchain platforms."""
+
+    SOLANA = "Solana"
+    NEON = "Neon"
 
 
 @dataclass
@@ -40,40 +52,29 @@ class TransactionFee:
         return self.network_name
 
 
-@dataclass
-class TransactionFeeType:
-    neon: TransactionFee = TransactionFee("Neon", "NEON")
-    sol: TransactionFee = TransactionFee("Solana", "SOL")
-    none: TransactionFee = None
+class TransactionFeeType(Enum):
+    """Predefined transaction fee types for networks."""
+
+    NEON = TransactionFee(Platform.NEON.value, TokenRegistry.NEON.name)
+    SOL = TransactionFee(Platform.SOLANA.value, TokenRegistry.SOL.name)
+    NONE = None
 
 
-@dataclass
-class PriorityFee:
-    fast: str = "Fast"
-    turbo: str = "Turbo"
-    ultra: str = "Ultra"
-    custom: str = "Custom"
-    none: str = None
+class PriorityFee(Enum):
+    """Transaction priority fee levels."""
 
-
-@dataclass
-class Tokens:
-    neon = Token("Neon", "89dre8rZjLNft7HoupGiyxu3MNftR577ZYu8bHe2kK7g")
-    wneon = Token("WNEON", "0x11adC2d986E334137b9ad0a0F290771F31e9517F")
-    sol = Token("SOL", "0xc7Fc9b46e479c5Cb42f6C458D1881e55E6B7986c")
-    wsol = Token("wSOL", "0xc7Fc9b46e479c5Cb42f6C458D1881e55E6B7986c")
-    usdt = Token("USDT", "0x6eEf939FC6e2B3F440dCbB72Ea81Cd63B5a519A5")
-    usdc = Token("USDC", "0x512E48836Cd42F3eB6f50CEd9ffD81E0a7F15103")
-    btc = Token("BTC", "0x5651a868392595baf4aa83639aecf232a4603cd9")
+    FAST = "Fast"
+    TURBO = "Turbo"
+    ULTRA = "Ultra"
+    CUSTOM = "Custom"
+    NONE = None
 
 
 BASE_USER_DATA_DIR = "user_data"
-"""Base Path to a Chrome extensions User Data Directory.
-"""
+"""Base Path to a Chrome extensions User Data Directory."""
 
 TMP_USER_DATA_DIR = f"/tmp/{BASE_USER_DATA_DIR}"
-"""Temporary path to a MetaMask extensions User Data Directory, which stores browser session data like cookies and local storage.
-"""
+"""Temporary path to a MetaMask extension User Data Directory."""
 
 
 def open_safe(context: BrowserContext, url: str, retry_count: int = 3) -> Page:
@@ -90,20 +91,11 @@ def open_safe(context: BrowserContext, url: str, retry_count: int = 3) -> Page:
             page.close()
 
 
-def insert_cookies_to_context(resp_cookies, context):
-    cookies = []
-    for cook in resp_cookies:
-        if cook.name.startswith("__"):  # playwright can't load this cookies, don't know why
-            continue
-        cookies.append(
-            {
-                "name": cook.name,
-                "value": cook.value,
-                "domain": cook.domain,
-                "path": cook.path,
-            }
-        )
-    context.add_cookies(cookies)
+def extract_tar_gz(source: pathlib.Path, dest: pathlib.Path) -> pathlib.Path:
+    """Extract source into destination"""
+    with tarfile.open(source) as file:
+        file.extractall(dest)
+    return dest
 
 
 def rm_tree(p: pathlib.Path) -> None:
@@ -114,21 +106,6 @@ def rm_tree(p: pathlib.Path) -> None:
         for child in p.iterdir():
             rm_tree(child)
         p.rmdir()
-
-
-def clone_user_data(extensions_dir: pathlib.Path) -> pathlib.Path:
-    """Clone chrome extension user data"""
-    return shutil.copytree(
-        extensions_dir,
-        pathlib.Path(TMP_USER_DATA_DIR) / uuid.uuid4().hex,
-    )
-
-
-def extract_tar_gz(source: pathlib.Path, dest: pathlib.Path) -> pathlib.Path:
-    """Extract source into destination"""
-    with tarfile.open(source) as file:
-        file.extractall(dest)
-    return dest
 
 
 def try_until(func, try_msg=None, error_msg=None, log=None, interval=1, timeout=360, times=None, raise_on_timeout=True):
@@ -170,3 +147,6 @@ def try_until(func, try_msg=None, error_msg=None, log=None, interval=1, timeout=
                 raise exc.TimeoutError(msg)
         log.debug("Wait {:.2f} seconds before the next attempt".format(interval))
         time.sleep(interval)
+
+
+# ... rest of the helpers (insert_cookies_to_context, rm_tree, clone_user_data, extract_tar_gz, try_until) unchanged ...

@@ -12,7 +12,9 @@ from playwright.sync_api import BrowserContext
 from playwright.sync_api import TimeoutError
 
 from ui import libs
+from ui.libs import TokenRegistry
 from ui.pages import metamask, neon_faucet
+from ui.pages.metamask import MetaMaskAccountsPage
 from ui.pages.navigation_target import NavigationTarget
 from ui.pages.constants import NEON_FAUCET_URL
 from ui.pages.neon_faucet import NeonTestAirdropsPage
@@ -104,38 +106,50 @@ class TestMetaMaskPipeLIne:
         yield neon_faucet.NeonTestAirdropsPage(page)
         page.close()
 
-    @pytest.mark.parametrize("tokens", [libs.Tokens.neon.name])
-    def test_get_neon_tokens_from_faucet(
+    @pytest.mark.parametrize(
+        "token_name",
+        [
+            TokenRegistry.NEON.name,
+            TokenRegistry.USDT.name,
+        ],
+    )
+    def test_get_tokens_from_faucet(
         self,
-        metamask_page: metamask.MetaMaskAccountsPage,
-        neon_faucet_page: neon_faucet.NeonTestAirdropsPage,
-        tokens: str,
+        metamask_page: MetaMaskAccountsPage,
+        neon_faucet_page: NeonTestAirdropsPage,
+        token_name: str,
     ) -> None:
-        """Checks Neon faucet pipeline"""
-        wait_condition(lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > 0, timeout_sec=120, delay=2)
-        balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
+        """Checks Neon faucet pipeline for various tokens."""
+        wait_condition(
+            lambda: metamask_page.get_balance(token_name) > 0,
+            timeout_sec=120,
+            delay=2,
+        )
+        balance_before = metamask_page.get_balance(token_name)
         neon_faucet_page.connect_wallet_to_faucet()
         metamask_page.set_metamask()
         neon_faucet_page.page.bring_to_front()
-        neon_faucet_page.send_tokens(tokens, token_random_amount)
+        neon_faucet_page.send_tokens(token_name, token_random_amount)
         neon_faucet_page.click_transfer_btn()
         neon_faucet_page.check_sucessfull_sent()
         wait_condition(
-            lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > balance_before_airdrop_test,
+            lambda: metamask_page.get_balance(token_name) > balance_before,
             timeout_sec=240,
             delay=2,
         )
         libs.try_until(
-            lambda: balance_before_airdrop_test + token_random_amount
-            == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
+            lambda: metamask_page.get_balance(token_name) == balance_before + token_random_amount,
             timeout=240,
             interval=5,
-            error_msg=f"{tokens} balance was not changed after airdrop",
+            error_msg=f"{token_name} balance did not change by {token_random_amount}",
         )
-        # Wait next airdrop was enabled
-        libs.try_until(lambda: neon_faucet_page.is_airdrop_enabled, timeout=240, interval=5)
+        libs.try_until(
+            lambda: neon_faucet_page.is_airdrop_enabled,
+            timeout=240,
+            interval=5,
+        )
 
-    @pytest.mark.parametrize("tokens", [libs.Tokens.wneon.name])
+    @pytest.mark.parametrize("tokens", [libs.TokenRegistry.WNEON.name])
     def test_get_spl_token_from_faucet(
         self,
         metamask_page: metamask.MetaMaskAccountsPage,
@@ -167,7 +181,7 @@ class TestMetaMaskPipeLIne:
         # Wait next airdrop was enabled
         libs.try_until(lambda: neon_faucet_page.is_airdrop_enabled, timeout=360, interval=5)
 
-    @pytest.mark.parametrize("tokens", [libs.Tokens.neon.name])
+    @pytest.mark.parametrize("tokens", [libs.TokenRegistry.NEON.name])
     def test_101_token_request(
         self,
         metamask_page: metamask.MetaMaskAccountsPage,
@@ -180,39 +194,7 @@ class TestMetaMaskPipeLIne:
         neon_faucet_page.page.bring_to_front()
         neon_faucet_page.text_too_much_tokens(tokens, 101)
 
-    @pytest.mark.parametrize("tokens", [libs.Tokens.usdt.name])
-    def test_get_usdt_tokens_from_faucet(
-        self,
-        metamask_page: metamask.MetaMaskAccountsPage,
-        neon_faucet_page: neon_faucet.NeonTestAirdropsPage,
-        tokens: str,
-    ) -> None:
-        """Checks Neon faucet pipeline"""
-        wait_condition(lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > 0, timeout_sec=120, delay=2)
-        balance_before_airdrop_test = int(getattr(metamask_page, f"{tokens.lower()}_balance"))
-        neon_faucet_page.connect_wallet_to_faucet()
-        metamask_page.set_metamask()
-        neon_faucet_page.page.bring_to_front()
-        neon_faucet_page.send_tokens(tokens, token_random_amount)
-        neon_faucet_page.click_transfer_btn()
-        neon_faucet_page.check_sucessfull_sent()
-        # wait new balance
-        wait_condition(
-            lambda: int(getattr(metamask_page, f"{tokens.lower()}_balance")) > balance_before_airdrop_test,
-            timeout_sec=240,
-            delay=2,
-        )
-        libs.try_until(
-            lambda: balance_before_airdrop_test + token_random_amount
-            == int(getattr(metamask_page, f"{tokens.lower()}_balance")),
-            timeout=240,
-            interval=5,
-            error_msg=f"{tokens} balance was not changed after airdrop",
-        )
-        # Wait next airdrop was enabled
-        libs.try_until(lambda: neon_faucet_page.is_airdrop_enabled, timeout=240, interval=5)
-
-    @pytest.mark.parametrize("tokens", [libs.Tokens.neon.name])
+    @pytest.mark.parametrize("tokens", [libs.TokenRegistry.NEON.name])
     def test_get_1_token_per_10_seconds(
         self,
         metamask_page: metamask.MetaMaskAccountsPage,

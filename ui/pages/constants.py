@@ -1,0 +1,8 @@
+NEON_FAUCET_URL = "https://faucet-ui.neontest.xyz/"
+FAQ_URL = "https://neonevm.org/docs/faq/neon-brief-faq"
+DOCS_URL = "https://neonevm.org/docs/quick_start"
+TWITTER_URL = "https://x.com/Neon_EVM"
+DISCORD_URL = "https://discord.com/invite/neonevm"
+WEBSITE_URL = "https://www.neonevm.org/blog"
+NEONPASS_URL = "https://neonpass.live/"
+COOKIES_URL = "https://www.neonevm.org/cookie-policy"

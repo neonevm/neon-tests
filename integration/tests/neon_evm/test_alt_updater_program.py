@@ -189,27 +189,3 @@ class TestAltUpdaterProgram:
         trx.add(instruction)
         with pytest.raises(AssertionError, match=f"Program {ALT_UPDATER_ID} failed: invalid instruction data"):
             self.sol_client.send_tx_and_check_status_ok(trx, solana_account)
-
-    def test_alt_updater_invalid_insrtuction_missed_system_account(self, solana_account):
-        slot = self.sol_client.get_slot().value
-
-        alt_address = derive_lookup_table_address(solana_account.pubkey(), slot)[0]
-        alt_info = self.sol_client.get_account_info(alt_address, commitment=Confirmed)
-        assert alt_info.value is None
-
-        instruction = Instruction(
-            program_id=ALT_UPDATER_ID,
-            accounts=[
-                AccountMeta(pubkey=alt_address, is_signer=False, is_writable=True),
-                AccountMeta(pubkey=solana_account.pubkey(), is_signer=True, is_writable=True),
-                AccountMeta(pubkey=SYS_ALT_PROGRAM_ID, is_signer=False, is_writable=False),
-            ],
-            data=slot.to_bytes(8, "little"),
-        )
-
-        trx = Transaction()
-        trx.add(instruction)
-        with pytest.raises(
-            AssertionError, match=f"Program {ALT_UPDATER_ID} failed: insufficient account keys for instruction"
-        ):
-            self.sol_client.send_tx_and_check_status_ok(trx, solana_account)

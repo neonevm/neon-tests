@@ -212,7 +212,6 @@ class TestMetaMaskPipeLIne:
         # Wait next airdrop was enabled
         libs.try_until(lambda: neon_faucet_page.is_airdrop_enabled, timeout=240, interval=5)
 
-    @pytest.mark.skip
     @pytest.mark.parametrize("tokens", [libs.Tokens.neon.name])
     def test_get_1_token_per_10_seconds(
         self,

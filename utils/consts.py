@@ -119,3 +119,9 @@ class InstructionTags(bytes, Enum):
     CONFIG_GET_PROPERTY_BY_NAME = b"\xA5"
     CONFIG_GET_STATUS = b"\xA6"
     CONFIG_GET_VERSION = b"\xA7"
+
+
+class NeonTxExitStatus(str, Enum):
+    SUCCESS_WITH_CHANGES = "0x11"
+    SUCCESS_NO_CHANGES = "0x12"
+    REVERT = "0xD0"

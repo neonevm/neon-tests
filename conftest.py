@@ -8,6 +8,7 @@ import sys
 from dataclasses import dataclass
 from typing import Optional, Dict, Generator
 
+import allure
 import base58
 import pytest
 from _pytest.config import Config
@@ -19,10 +20,11 @@ from allure_commons.model2 import TestResult, StatusDetails
 from solana.rpc.commitment import Confirmed
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
+from web3.middleware import ExtraDataToPOAMiddleware
 from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
 from spl.token.client import Token as SplToken
 
-import allure
+from integration.tests.neon_evm.utils.constants import ACCOUNT_SEED_VERSION
 from utils import create_allure_environment_opts, setup_logging
 from utils.accounts import EthAccounts
 from utils.consts import LAMPORT_PER_SOL, EnvName, TEST_GROUPS
@@ -54,7 +56,7 @@ class EnvironmentConfig:
     default_cu_price: int | None = None
     neonpass_url: str = ""
     ws_subscriber_url: str = ""
-    account_seed_version: str = "\3"
+    account_seed_version: str = ACCOUNT_SEED_VERSION.decode("latin1")
     neon_core_api_url: Optional[str] = None
     neon_core_api_rpc_url: Optional[str] = None
 
@@ -251,7 +253,7 @@ def web3_client_session(
         tracer_url=environment.tracer_url,
     )
     if env_name is EnvName.GETH:
-        client._web3.middleware_onion.inject(geth_poa_middleware, layer=0)  # noqa
+        client._web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
     return client
 
 

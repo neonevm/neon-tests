@@ -23,7 +23,11 @@ markers = [
     "neon_only: tests for Neon functionality",
     "eip_1559: tests covering EIP-1559 functionality",
     "need_eip1559_blocks: values passed to this marker will be used by fixture eip1559_setup",
-    "cost_report: enables Cost Report data collection for this test"
+    "cost_report: enables Cost Report data collection for this test",
+    "deterministic_index_of_process: value is passed to fixtures deterministic_operator_keypair and deterministic_treasury_pool for distinct but always the same operator and treasury pool",
+    "deterministic_sender_with_tokens_index: value is passed to fixture deterministic_sender_with_tokens for a distinct but always the same account",
+    "deterministic_user_index: value is passed to fixture deterministic_user for a distinct but always the same account",
+    "deterministic_holder_acc_seed: value is passed to fixture deterministic_holder_acc for a distinct but always the same account"
 ]
 asyncio_mode = "auto"
 addopts = "--alluredir=allure-results"

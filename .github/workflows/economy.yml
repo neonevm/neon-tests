@@ -106,6 +106,7 @@ jobs:
         run: |
           docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py run economy --network ${{ env.NETWORK }} --case "${{ github.event.inputs.pytest_k}}" --marker "${{ github.event.inputs.pytest_m}}"
       - name: "Generate allure report"
+        id: generate-allure-report
         uses: ./.github/actions/generate-allure-report
         if: always()
         with:
@@ -120,7 +121,9 @@ jobs:
           docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py send-notification \
             -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
             -b ${{ env.BUILD_URL }} \
-            --test-group economy
+            --test-group economy \
+            --report-group economy \
+            --report-url ${{ steps.generate-allure-report.outputs.allure_report_url }}
       - name: Remove docker container
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}

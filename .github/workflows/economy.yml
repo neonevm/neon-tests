@@ -67,6 +67,9 @@ jobs:
     outputs:
       proxy_ip: ${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}
       solana_ip: ${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}
+      docker_ca_cert: ${{ steps.prepare_terraform.outputs.docker_ca_cert }}
+      docker_cert: ${{ steps.prepare_terraform.outputs.docker_cert }}
+      docker_key: ${{ steps.prepare_terraform.outputs.docker_key }}
       network: ${{ env.NETWORK }}
 
   tests:

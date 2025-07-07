@@ -1,4 +1,4 @@
-NEON_FAUCET_URL = "https://faucet-ui.neontest.xyz/"
+NEON_FAUCET_URL = "https://neonfaucet.org/"
 FAQ_URL = "https://neonevm.org/docs/faq/neon-brief-faq"
 DOCS_URL = "https://neonevm.org/docs/quick_start"
 TWITTER_URL = "https://x.com/Neon_EVM"

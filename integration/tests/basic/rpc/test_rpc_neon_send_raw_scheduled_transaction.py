@@ -12,15 +12,19 @@ from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateReques
 class TestNeonRPCSendRAWTransaction:
 
     def test_two_transactions_in_params(
-        self, web3_client_sol, json_sol_rpc_client, neon_user, common_contract, evm_loader, treasury_pool
+        self, web3_client_sol, json_sol_rpc_client, neon_user_for_session, common_contract, evm_loader, treasury_pool
     ):
         data = decode_function_signature("setNumber(uint256)", [18])
-        trx_estimate_obj = ScheduledTrxEstimateRequest(neon_user.checksum_address, common_contract.address, data)
-        estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), [trx_estimate_obj])
+        trx_estimate_obj = ScheduledTrxEstimateRequest(
+            neon_user_for_session.checksum_address, common_contract.address, data
+        )
+        estimate_result = web3_client_sol.estimate_scheduled(
+            neon_user_for_session.solana_account.pubkey(), [trx_estimate_obj]
+        )
 
         tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
-        evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
+        evm_loader.create_tree_account(neon_user_for_session, treasury_pool, tx.encode())
 
         resp = json_sol_rpc_client.send_rpc(
             method="neon_sendRawScheduledTransaction", params=[tx.encode().hex(), tx.encode().hex()]

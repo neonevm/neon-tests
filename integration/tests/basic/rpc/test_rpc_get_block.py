@@ -173,7 +173,7 @@ class TestRpcGetBlock:
         self,
         json_rpc_client,
         web3_client_sol,
-        neon_user,
+        neon_user_for_session,
         common_contract,
         evm_loader,
         treasury_pool,
@@ -182,12 +182,16 @@ class TestRpcGetBlock:
         full_trx,
     ):
         data = decode_function_signature("setNumber(uint256)", [18])
-        trx_estimate_obj = ScheduledTrxEstimateRequest(neon_user.checksum_address, common_contract.address, data)
-        estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), [trx_estimate_obj])
+        trx_estimate_obj = ScheduledTrxEstimateRequest(
+            neon_user_for_session.checksum_address, common_contract.address, data
+        )
+        estimate_result = web3_client_sol.estimate_scheduled(
+            neon_user_for_session.solana_account.pubkey(), [trx_estimate_obj]
+        )
 
         tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
-        tree_account = evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
+        tree_account = evm_loader.create_tree_account(neon_user_for_session, treasury_pool, tx.encode())
 
         response = web3_client_sol.send_scheduled_transaction(tx, check_result=True)
         EthResult(**response)
@@ -214,9 +218,9 @@ class TestRpcGetBlock:
             )
             assert scheduled_trx_from_resp["type"] == "0x80"
             assert scheduled_trx_from_resp["scheduledIndex"] == "0x0"
-            assert scheduled_trx_from_resp["scheduledPayer"] == neon_user.checksum_address
+            assert scheduled_trx_from_resp["scheduledPayer"] == neon_user_for_session.checksum_address
             # TODO uncomment the following lines after bug https://neonlabs.atlassian.net/browse/NDEV-3675 is fixed
-            # assert scheduled_trx_from_resp["scheduledSolanaPayer"] == str(neon_user.solana_account.pubkey())
+            # assert scheduled_trx_from_resp["scheduledSolanaPayer"] == str(neon_user_for_session.solana_account.pubkey())
             #
             # sol_sig_list = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
             # assert scheduled_trx_from_resp["scheduledSolanaSignature"] in sol_sig_list["result"]

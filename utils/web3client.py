@@ -16,10 +16,12 @@ from solders.instruction import Instruction
 from solders.pubkey import Pubkey
 from web3.contract import Contract
 from web3.exceptions import TransactionNotFound
+from web3.types import TxReceipt
 
 from utils import helpers
 from utils.consts import InputTestConstants, Unit
 from utils.helpers import decode_function_signature, case_snake_to_camel
+from utils.logger import log_text_to_allure_and_stdout
 from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateRequest
 from utils.types import TransactionType
 
@@ -49,7 +51,6 @@ class Web3Client:
             return "NEON"
 
     @property
-    @allure.step("Get chain id")
     def chain_id(self):
         if self._chain_id is None:
             self._chain_id = self._web3.eth.chain_id
@@ -148,6 +149,8 @@ class Web3Client:
         block: BlockIdentifier = "pending",
     ):
         address = address if isinstance(address, str) else address.address
+        nonce = self._web3.eth.get_transaction_count(address, block)
+        log_text_to_allure_and_stdout("Nonce", f"Address: {address}, Nonce: {nonce}")
         return self._web3.eth.get_transaction_count(address, block)
 
     @allure.step("Deploy contract")
@@ -247,11 +250,12 @@ class Web3Client:
         return transaction
 
     @allure.step("Wait for transaction receipt for {tx_hash}")
-    def wait_for_transaction_receipt(self, tx_hash, timeout=120) -> web3.types.TxReceipt:
+    def wait_for_transaction_receipt(self, tx_hash, timeout=120) -> TxReceipt | None:
         try:
             return self._web3.eth.wait_for_transaction_receipt(tx_hash, timeout=timeout)
         except web3.exceptions.TimeExhausted as e:
             pytest.fail(f"Transaction {tx_hash} was not executed within {timeout} seconds. Error: {str(e)}")
+            return None
 
     @allure.step("Send transaction")
     def send_transaction(

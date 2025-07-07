@@ -121,6 +121,7 @@ class SolanaClient(solana.rpc.api.Client):
         receipt = self.get_transaction(sig)
         log_text_to_allure_and_stdout("Solana trx receipt", str(receipt))
         assert sig_status["result"]["value"][0]["status"] == {"Ok": None}, f"error:{sig_status}, receipt: {receipt}"
+        return receipt
 
     def send_tx(self, trx: Transaction, *signers: Keypair, wait_status=Processed) -> GetTransactionResp:
         result = self.send_transaction(

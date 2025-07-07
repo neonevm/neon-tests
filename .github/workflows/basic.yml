@@ -342,7 +342,7 @@ jobs:
         if: always()
         run: docker rm -f ${{ env.CONTAINER }}
   destroy:
-    name: Destroy stand
+    name: Destroy proxy stand
     runs-on: ["gha-runner-scale-set"]
     needs: [ prepare-env-proxy, run-proxy-tests ]
     if: |

@@ -49,7 +49,7 @@ def json_rpc_client(environment: EnvironmentConfig) -> JsonRPCSession:
 
 
 @pytest.fixture(scope="session")
-def json_sol_rpc_client(environment: EnvironmentConfig) -> JsonRPCSession:
+def json_sol_rpc_client(environment: EnvironmentConfig) -> JsonRPCSession | None:
     if "sol" in environment.network_ids:
         return JsonRPCSession(f"{environment.proxy_url}/sol")
 
@@ -648,7 +648,7 @@ def multiple_actions_erc721(web3_client, accounts):
 
 
 @pytest.fixture(scope="class")
-def call_solana_caller(accounts, web3_client):
+def call_solana_caller(accounts, web3_client) -> Contract:
     contract, _ = web3_client.deploy_and_get_contract("precompiled/CallSolanaCaller.sol", "0.8.28", accounts[0])
     return contract
 

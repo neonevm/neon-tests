@@ -10,11 +10,10 @@ import pyperclip3 as clipboard
 from playwright._impl._errors import TimeoutError
 
 from ui import components
-from ui import libs
 from ui.constants import PLATFORM_NETWORKS
+from ui.libs import TokenRegistry
 from ui.pages import phantom
 from . import BasePage
-from ..libs import Token
 
 
 class MetaMaskWelcomePage(BasePage):
@@ -75,6 +74,9 @@ class MetaMaskAccountsPage(BasePage):
         "account_list_item": "//button[contains(@class, 'multichain-account-list-item__account-name') and text()='{account}']",
         "asset_tab_button": "//*[@data-testid='home__asset-tab']/button",
         "activity_tab_button": "//button[text()='Activity']",
+        "next_button": "//button[text()='Next']",
+        "connect_button": "//button[text()='Connect']",
+        "select_wallets_checkbox": "//input[contains(@class, 'choose-account-list__header-check-box')]",
         "address_copy_button": "//button[@data-testid='address-copy-button-text']",
         "funds_protection_popup": "//h2[text()='Protect your funds']/following::button[text()='Got it']",
         "accounts_menu_header": "//header[text()='Select an account']",
@@ -153,40 +155,52 @@ class MetaMaskAccountsPage(BasePage):
         balance_text = self.page.wait_for_selector(selector).text_content().split(" ")[0]
         return float(balance_text)
 
+    def select_all_accounts(self) -> None:
+        self.page.click(self.SELECTORS["select_wallets_checkbox"])
+        self.page.click(self.SELECTORS["next_button"])
+        self.page.click(self.SELECTORS["connect_button"])
+
+    def set_metamask(self) -> None:
+        self.page.bring_to_front()
+        self.page.reload()
+        self.select_all_accounts()
+        try:
+            news_page = MetaMaskPopoverNewsPage(self.page)
+            news_page.page_loaded()
+        except TimeoutError:
+            pass
+        else:
+            self.page = news_page.close()
+
     @property
     def neon_balance(self) -> float:
-        self.switch_assets()
-        return self._get_balance(self.active_account, libs.Tokens.neon.name)
+        return self.get_balance(TokenRegistry.NEON)
 
     @property
     def sol_balance(self) -> float:
-        self.switch_assets()
-        return self._get_balance(self.active_account, libs.Tokens.sol.name)
+        return self.get_balance(TokenRegistry.SOL.name)
 
     @property
     def wsol_balance(self) -> float:
-        self.switch_assets()
-        return self._get_balance(self.active_account, libs.Tokens.sol.name)
+        return self.get_balance(TokenRegistry.WSOL.name)
 
     @property
     def usdt_balance(self) -> float:
-        self.switch_assets()
-        return self._get_balance(self.active_account, libs.Tokens.usdt.name)
+        return self.get_balance(TokenRegistry.USDT.name)
 
     @property
     def usdc_balance(self) -> float:
-        self.switch_assets()
-        return self._get_balance(self.active_account, libs.Tokens.usdc.name)
+        return self.get_balance(TokenRegistry.USDC.name)
 
     @property
     def wneon_balance(self) -> float:
-        self.switch_assets()
-        return self._get_balance(self.active_account, libs.Tokens.wneon.name)
+        return self.get_balance(TokenRegistry.WNEON.name)
 
     @allure.step("Get balance in the wallet")
-    def get_balance(self, token: Token) -> float:
-        balance = float(getattr(self, f"{token.name.lower()}_balance"))
-        allure.attach(f"{token.name.lower()} balance: {balance}", "balance", allure.attachment_type.TEXT)
+    def get_balance(self, token) -> float:
+        token_name = token.name if hasattr(token, "name") else token
+        balance = self._get_balance(self.active_account, token_name)
+        allure.attach(f"{token_name.lower()} balance: {balance}", "balance", allure.attachment_type.TEXT)
         return balance
 
     def change_network(self, network: str) -> None:

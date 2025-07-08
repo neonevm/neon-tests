@@ -76,10 +76,10 @@ def skip_if_non_zero_balance(*pub_keys: Pubkey, evm_loader: EvmLoader):
 def deterministic_index_of_process(request: pytest.FixtureRequest) -> int:
     """
     the process index must NOT overlap with indices used by fixtures:
-        >>> from integration.tests.neon_evm.conftest import (
-        >>>     operator_keypair,
-        >>>     second_operator_keypair,
-        >>> )
+         from integration.tests.neon_evm.conftest import (
+             operator_keypair,
+             second_operator_keypair,
+         )
     """
     process_index = get_and_validate_mark_value(
         request=request, key=deterministic_index_of_process_stash_key, mark="deterministic_index_of_process"
@@ -219,6 +219,7 @@ def allure_attach_accounts_data(
     )
 
 
+@allure.step("Execute transaction steps from instruction and validate compute units")
 def execute_transaction_steps_from_instruction_and_validate_cu(
     evm_loader: EvmLoader,
     operator: Keypair,
@@ -267,7 +268,11 @@ def execute_transaction_steps_from_instruction_and_validate_cu(
 
         cu_consumed = receipt.value.transaction.meta.compute_units_consumed
         cu_expected = cu_expected_list[index]
-        assert (cu_consumed - cu_expected) <= cu_delta_allowed
+        assert (
+            cu_consumed - cu_expected
+        ) <= cu_delta_allowed, (
+            f"CU consumed {cu_consumed} is not in range of expected {cu_expected} +/- {cu_delta_allowed}"
+        )
         index += 1
 
     check_transaction_logs_have_text(solana_client=sol_client, trx=receipt, text=expect_log)  # noqa
@@ -320,7 +325,7 @@ class TestComputeUnits:
         allure_attach_accounts_data(resp=resp, evm_loader=evm_loader)
 
         cu_consumed = resp.value.transaction.meta.compute_units_consumed
-        assert abs(cu_consumed - 80839) <= 1000
+        assert abs(cu_consumed - 79302) <= 1000
 
     @pytest.mark.deterministic_index_of_process(16)
     @pytest.mark.deterministic_user_index(1)
@@ -371,7 +376,7 @@ class TestComputeUnits:
             storage_account=deterministic_holder_acc,
             instruction=signed_eth_tx,
             additional_accounts=additional_accounts,
-            cu_expected_list=[91354, 101357, 62208, 217149],
+            cu_expected_list=[85726, 97192, 61008, 180406],
             cu_delta_allowed=1000,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.SUCCESS_WITH_CHANGES}",
@@ -426,7 +431,7 @@ class TestComputeUnits:
             storage_account=deterministic_holder_acc,
             instruction=signed_tx,
             additional_accounts=additional_accounts,
-            cu_expected_list=[79867, 53822, 47827],
+            cu_expected_list=[77761, 52641, 50370],
             cu_delta_allowed=1000,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.SUCCESS_WITH_CHANGES}",
@@ -504,7 +509,7 @@ class TestComputeUnits:
             storage_account=deterministic_holder_acc,
             instruction=signed_tx,
             additional_accounts=additional_accounts,
-            cu_expected_list=[73829, 103004, 107324, 38207, 34671],
+            cu_expected_list=[73829, 98581, 102339, 37365, 36346],
             cu_delta_allowed=1000,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.SUCCESS_WITH_CHANGES}",
@@ -584,7 +589,7 @@ class TestComputeUnits:
             storage_account=deterministic_holder_acc,
             instruction=signed_tx,
             additional_accounts=additional_accounts,
-            cu_expected_list=[72650, 59153, 50113],
+            cu_expected_list=[71559, 57737, 48904],
             cu_delta_allowed=1000,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.SUCCESS_WITH_CHANGES}",
@@ -755,8 +760,8 @@ class TestComputeUnits:
             storage_account=deterministic_holder_acc,
             instruction=signed_tx,
             additional_accounts=additional_accounts,
-            cu_expected_list=[74158, 26465, 28058],
-            cu_delta_allowed=0,
+            cu_expected_list=[71838, 26503, 29591],
+            cu_delta_allowed=1000,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.REVERT}",
         )

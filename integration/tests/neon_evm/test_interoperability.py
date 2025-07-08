@@ -481,23 +481,23 @@ class TestInteroperability:
         )
         serialized_instruction = serialize_instruction(COUNTER_ID, instruction)
 
-        signed_tx = make_contract_call_trx(
+        signed_tx1 = make_contract_call_trx(
             evm_loader,
             sender_with_tokens,
             solana_caller.contract,
-            "solanaCallInsideActionWithMatrix(uint256[][],uint64,bytes)",
-            [matrix, 0, serialized_instruction],
+            "solanaCallInsideActionWithMatrix(uint256,uint256[][],uint64,bytes)",
+            [6, matrix, 0, serialized_instruction],
         )
 
         emulate_result = neon_api_client.emulate_contract_call(
             sender_with_tokens.eth_address.hex(),
             solana_caller.contract.eth_address.hex(),
-            "solanaCallInsideActionWithMatrix(uint256[][],uint64,bytes)",
-            [matrix, 0, serialized_instruction],
+            "solanaCallInsideActionWithMatrix(uint256,uint256[][],uint64,bytes)",
+            [6, matrix, 0, serialized_instruction],
         )
         accounts_from_emulation = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
 
-        evm_loader.write_transaction_to_holder_account(signed_tx, new_holder_acc_2, operator_keypair)
+        evm_loader.write_transaction_to_holder_account(signed_tx1, new_holder_acc_2, operator_keypair)
 
         for _ in range(9):
             evm_loader.send_transaction_step_from_account(
@@ -510,8 +510,20 @@ class TestInteroperability:
                 operator_keypair,
             )
 
-        resp = solana_caller.execute(
-            program_id=COUNTER_ID, instruction=instruction, sender=sender_with_tokens, holder_acc=new_holder_acc
+        signed_tx2 = make_contract_call_trx(
+            evm_loader,
+            sender_with_tokens,
+            solana_caller.contract,
+            "solanaCallInsideActionWithMatrix(uint256,uint256[][],uint64,bytes)",
+            [7, matrix, 0, serialized_instruction],
+        )
+        evm_loader.write_transaction_to_holder_account(signed_tx2, new_holder_acc, operator_keypair)
+
+        resp = evm_loader.execute_transaction_steps_from_account(
+            operator_keypair,
+            treasury_pool,
+            new_holder_acc,
+            accounts_from_emulation,
         )
         check_transaction_logs_have_text(evm_loader, trx=resp, text="exit_status=0x11")
 

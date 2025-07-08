@@ -3,6 +3,7 @@ import string
 
 import pytest
 import eth_abi
+import solders.system_program as sp
 from eth_account.datastructures import SignedTransaction
 from eth_keys import keys as eth_keys
 from eth_utils import abi, to_text
@@ -313,7 +314,7 @@ class TestExecuteTrxFromInstruction:
     ):
         signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
         fake_operator = Keypair()
-        with pytest.raises(SolanaRPCException, match=InstructionAsserts.ACC_NOT_FOUND):
+        with pytest.raises(SolanaRPCException, match=InstructionAsserts.INCORRECT_OPERATOR):
             evm_loader.execute_trx_from_instruction(
                 fake_operator,
                 holder_acc,
@@ -355,9 +356,7 @@ class TestExecuteTrxFromInstruction:
     ):
         signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
         fake_sys_program_id = Keypair().pubkey()
-        with pytest.raises(
-            SolanaRPCException, match=str.format(InstructionAsserts.INVALID_PUBLIC_KEY, fake_sys_program_id)
-        ):
+        with pytest.raises(SolanaRPCException, match=str.format(InstructionAsserts.ACCOUNT_NOT_FOUND, sp.ID)):
             evm_loader.execute_trx_from_instruction(
                 operator_keypair,
                 holder_acc,

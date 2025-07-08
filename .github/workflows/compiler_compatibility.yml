@@ -145,10 +145,10 @@ jobs:
         uses: ./.github/actions/destroy-tf-stand
         with:
           ci_stands_key_hcloud: ${{ secrets.CI_STANDS_KEY_HCLOUD }}
-          instance_public_ipv4: ${{ needs.prepare-env-proxy.outputs.proxy_ip }}
-          docker_ca_cert: ${{ needs.prepare-env-proxy.outputs.docker_ca_cert }}
-          docker_cert: ${{ needs.prepare-env-proxy.outputs.docker_cert }}
-          docker_key: ${{ needs.prepare-env-proxy.outputs.docker_key }}
+          instance_public_ipv4: ${{ needs.prepare-env.outputs.proxy_ip }}
+          docker_ca_cert: ${{ needs.prepare-env.outputs.docker_ca_cert }}
+          docker_cert: ${{ needs.prepare-env.outputs.docker_cert }}
+          docker_key: ${{ needs.prepare-env.outputs.docker_key }}
           aws_secret_access_key_id: ${{ secrets.CI_AWS_ACCESS_KEY }}
           aws_default_region: "eu-central-1"
           aws_secret_access_key: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}

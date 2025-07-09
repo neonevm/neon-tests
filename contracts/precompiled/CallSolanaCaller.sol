@@ -88,11 +88,12 @@ contract CallSolanaCaller {
     }
 
     function solanaCallInsideActionWithMatrix(
+        uint256 _numberToStore,
         uint[][] memory a,
         uint64 lamports,
         bytes calldata instruction
     ) public {
-        numberToStore = 18;
+        numberToStore = _numberToStore;
         uint sum = 0;
         for (uint i = 0; i < a.length; i++) {
             for (uint j = 0; j < a[i].length; j++) {
@@ -106,11 +107,12 @@ contract CallSolanaCaller {
     }
 
     function solanaCallInsideActionWithMatrixWithRevert(
+        uint256 _numberToStore,
         uint[][] memory a,
         uint64 lamports,
         bytes calldata instruction
     ) public {
-        numberToStore = 18;
+        numberToStore = _numberToStore;
         uint sum = 0;
         for (uint i = 0; i < a.length; i++) {
             for (uint j = 0; j < a[i].length; j++) {

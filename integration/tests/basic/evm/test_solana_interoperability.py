@@ -527,7 +527,7 @@ class TestSolanaInteroperability:
 
         tx = self.web3_client.make_raw_tx(sender.address)
         instruction_tx = call_solana_caller.functions.solanaCallInsideActionWithMatrix(
-            matrix, lamports, serialized
+            1, matrix, lamports, serialized
         ).build_transaction(tx)
         resp = self.web3_client.send_transaction(sender, instruction_tx)
         assert resp["status"] == 1

@@ -154,7 +154,7 @@ class TestMultiplyChains:
 
     @pytest.mark.multipletokens
     def test_deploy_contract_by_one_user_to_different_chains(
-        self, web3_client_sol, solana_account, web3_client, pytestconfig, alice, bob
+        self, web3_client_sol, solana_account, web3_client, alice, bob
     ):
         # to make test stable we should have the same nonces on both chains at the start
         while web3_client_sol.get_nonce(alice) > web3_client.get_nonce(alice):

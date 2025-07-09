@@ -323,7 +323,7 @@ def treasury_pool(evm_loader: EvmLoader, pytestconfig, index_of_process, bank_ac
 
 @pytest.fixture(scope="session")
 def treasury_pool_new(evm_loader, pytestconfig) -> TreasuryPool:
-    index = 3
+    index = 3333
     address = evm_loader.create_treasury_pool_address(index)
     index_buf = index.to_bytes(4, "little")
     if pytestconfig.getoption("--network") not in ["mainnet", "devnet"]:

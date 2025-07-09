@@ -49,6 +49,10 @@ contract Counter {
     function bigString(string memory text) public {
         bytes memory _baseBytes = bytes(text);
     }
+    function bigStringIterative(string memory text) public {
+        moreInstructionWithLogs(0, 1000);
+        bytes memory _baseBytes = bytes(text);
+    }
 }
 
 

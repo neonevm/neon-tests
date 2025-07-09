@@ -1,6 +1,4 @@
 import pytest
-from eth_utils import keccak
-from eth_abi import abi
 from solana.transaction import AccountMeta, Instruction
 
 import allure
@@ -11,9 +9,10 @@ from integration.tests.basic.helpers.rpc_checks import (
     assert_solana_trxs_in_neon_receipt,
     count_instructions,
 )
+from integration.tests.economy.const import BIG_STRING
 from utils.accounts import EthAccounts
-from utils.consts import COUNTER_ID, ZERO_ADDRESS
-from utils.helpers import gen_hash_of_block, generate_text, serialize_instruction, get_selectors
+from utils.consts import COUNTER_ID
+from utils.helpers import gen_hash_of_block, generate_text, serialize_instruction
 from utils.models.result import NeonGetTransactionResult
 from utils.solana_client import SolanaClient
 from utils.web3client import NeonChainWeb3Client
@@ -126,26 +125,14 @@ class TestInstruction:
         assert "TxExecFromAccount" in count_instructions(validated_response).keys()
         assert_solana_trxs_in_neon_receipt(json_rpc_client, resp["transactionHash"], validated_response)
 
-    def test_step_from_account(self, json_rpc_client, diamond):
+    def test_step_from_account(self, json_rpc_client, counter_contract):
         sender_account = self.accounts[0]
+        tx = self.web3_client.make_raw_tx(sender_account)
+        instruction_tx = counter_contract.functions.bigStringIterative(BIG_STRING).build_transaction(tx)
 
-        new_facet, _ = self.web3_client.deploy_and_get_contract(
-            "EIPs/EIP2535/facets/Test1Facet",
-            "0.8.10",
-            sender_account,
-            contract_name="Test1Facet",
-        )
-        facet_cuts = [(new_facet.address, 0, get_selectors(new_facet.abi))]
-        calldata = keccak(text="diamondCut((address,uint8,bytes4[])[],address,bytes)")[:4] + abi.encode(
-            ["(address,uint8,bytes4[])[]", "address", "bytes"],
-            [facet_cuts, ZERO_ADDRESS, b"0x"],
-        )
-
-        tx = self.web3_client.make_raw_tx(sender_account, diamond.address, 0, data=calldata, estimate_gas=True)
-        resp = self.web3_client.send_transaction(sender_account, tx)
+        resp = self.web3_client.send_transaction(sender_account, instruction_tx)
         response = json_rpc_client.get_neon_trx_receipt(resp["transactionHash"])
         validated_response = NeonGetTransactionResult(**response)
-
         assert_instructions(validated_response)
         assert "TxStepFromAccount" in count_instructions(validated_response).keys()
         assert_solana_trxs_in_neon_receipt(json_rpc_client, resp["transactionHash"], validated_response)

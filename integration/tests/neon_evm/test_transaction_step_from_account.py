@@ -3,6 +3,7 @@ import string
 
 import eth_abi
 import pytest
+import solders.system_program as sp
 from eth_keys import keys as eth_keys
 from eth_utils import abi, to_text, to_int
 from solana.rpc.core import RPCException as SolanaRPCException
@@ -421,7 +422,7 @@ class TestTransactionStepFromAccount:
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 
         fake_operator = Keypair()
-        with pytest.raises(SolanaRPCException, match=InstructionAsserts.ACC_NOT_FOUND):
+        with pytest.raises(SolanaRPCException, match=InstructionAsserts.INCORRECT_OPERATOR):
             evm_loader.execute_transaction_steps_from_account(
                 fake_operator,
                 treasury_pool,
@@ -460,7 +461,7 @@ class TestTransactionStepFromAccount:
         fake_sys_program_id = Keypair().pubkey()
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 
-        error = str.format(InstructionAsserts.INVALID_PUBLIC_KEY, fake_sys_program_id)
+        error = str.format(InstructionAsserts.ACCOUNT_NOT_FOUND, sp.ID)
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
         with pytest.raises(SolanaRPCException, match=error):
             evm_loader.send_transaction_step_from_account(

@@ -5,6 +5,7 @@ import eth_abi
 import pytest
 import rlp
 import solana
+import solders.system_program as sp
 from eth_account.datastructures import SignedTransaction
 from eth_keys import keys as eth_keys
 from eth_utils import abi, to_text, to_int
@@ -423,7 +424,7 @@ class TestTransactionStepFromInstruction:
     def test_incorrect_operator_account(self, sender_with_tokens, evm_loader, treasury_pool, session_user, holder_acc):
         signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
         fake_operator = Keypair()
-        with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.ACC_NOT_FOUND):
+        with pytest.raises(solana.rpc.core.RPCException, match=InstructionAsserts.INCORRECT_OPERATOR):
             evm_loader.execute_transaction_steps_from_instruction(
                 fake_operator,
                 treasury_pool,
@@ -461,9 +462,7 @@ class TestTransactionStepFromInstruction:
         signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
         fake_sys_program_id = Keypair().pubkey()
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
-        with pytest.raises(
-            solana.rpc.core.RPCException, match=str.format(InstructionAsserts.INVALID_PUBLIC_KEY, fake_sys_program_id)
-        ):
+        with pytest.raises(solana.rpc.core.RPCException, match=str.format(InstructionAsserts.ACCOUNT_NOT_FOUND, sp.ID)):
             evm_loader.send_transaction_step_from_instruction(
                 operator_keypair,
                 operator_balance,

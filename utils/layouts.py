@@ -41,6 +41,16 @@ BALANCE_ACCOUNT_LAYOUT = Struct(
     "trx_count" / Int64ul,
     "balance" / Bytes(32),
     "revision" / Int32ul,
+)
+
+BALANCE_ACCOUNT_WITH_SOLANA_ADDRESS_LAYOUT = Struct(
+    "type" / Int8ul,
+    "header_version" / Int8ul,
+    "address" / Bytes(20),
+    "chain_id" / Int64ul,
+    "trx_count" / Int64ul,
+    "balance" / Bytes(32),
+    "revision" / Int32ul,
     "solana_address" / Bytes(32),
 )
 

@@ -1394,7 +1394,7 @@ class TestEconomics:
 
         tx = self.web3_client.make_raw_tx(sender.address)
         instruction_tx = call_solana_caller.functions.solanaCallInsideActionWithMatrix(
-            matrix, 0, serialized
+            1, matrix, 0, serialized
         ).build_transaction(tx)
         resp = self.web3_client.send_transaction(sender, instruction_tx)
         assert resp["status"] == 1

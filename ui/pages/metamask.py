@@ -163,7 +163,10 @@ class MetaMaskAccountsPage(BasePage):
     def set_metamask(self) -> None:
         self.page.bring_to_front()
         self.page.reload()
-        self.select_all_accounts()
+        checkbox_selector = self.SELECTORS["select_wallets_checkbox"]
+        if self.page.query_selector(checkbox_selector) is not None:
+            self.select_all_accounts()
+
         try:
             news_page = MetaMaskPopoverNewsPage(self.page)
             news_page.page_loaded()

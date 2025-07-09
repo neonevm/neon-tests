@@ -869,12 +869,12 @@ class EvmLoader(SolanaClient):
         treasury,
         additional_accounts,
         chain_id: int | str | None = "",
-    ):
+    ) -> GetTransactionResp:
         if chain_id == "":
             chain_id = self.sol_chain_id
 
         self.start_scheduled_trx_from_instruction(trx, operator, holder, tree_account, additional_accounts, chain_id)
-        self.execute_transaction_steps_from_instruction(
+        return self.execute_transaction_steps_from_instruction(
             operator, treasury, holder, trx.encode(), additional_accounts, compute_unit_price=15, chain_id=chain_id
         )
 

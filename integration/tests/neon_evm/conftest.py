@@ -203,6 +203,47 @@ def basic_contract(
 
 
 @pytest.fixture(scope="session")
+def revert_contract(
+    evm_loader: EvmLoader,
+    neon_api_client: NeonApiClient,
+    operator_keypair: Keypair,
+    session_user: Caller,
+    treasury_pool: TreasuryPool,
+) -> Contract:
+    return evm_loader.deploy_contract(
+        operator_keypair,
+        session_user,
+        "common/Revert",
+        neon_api_client,
+        treasury_pool,
+        version="0.8.28",
+        contract_name="TrivialRevert",
+    )
+
+
+@pytest.fixture(scope="function")
+def revert_contract_caller(
+    evm_loader: EvmLoader,
+    operator_keypair: Keypair,
+    session_user: Caller,
+    treasury_pool: TreasuryPool,
+    neon_api_client: NeonApiClient,
+    revert_contract,
+) -> Contract:
+    contraction_args = eth_abi.encode(["address"], [revert_contract.eth_address.hex()])
+    return evm_loader.deploy_contract(
+        operator_keypair,
+        session_user,
+        "common/Revert",
+        neon_api_client,
+        treasury_pool,
+        version="0.8.28",
+        encoded_args=contraction_args,
+        contract_name="Caller",
+    )
+
+
+@pytest.fixture(scope="function")
 def spl_token_caller(operator_keypair, evm_loader, session_user, treasury_pool, neon_api_client) -> Contract:
     return evm_loader.deploy_contract(
         operator_keypair,

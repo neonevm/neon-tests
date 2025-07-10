@@ -71,7 +71,7 @@ def second_operator_keypair(index_of_process: int, evm_loader: EvmLoader) -> Key
     """
     Initialized solana keypair with balance. Get private key from cli or ./ci/operator-keypairs
     """
-    file_id = index_of_process + index_of_process_increment + 1
+    file_id = index_of_process + index_of_process_increment + 12
     key_file = pathlib.Path(f"{OPERATOR_KEYPAIR_PATH}/id{file_id}.json")
     allure.attach(
         f"current key_file {key_file}",
@@ -193,12 +193,7 @@ def basic_contract(
     neon_api_client: NeonApiClient,
 ) -> Contract:
     return evm_loader.deploy_contract(
-        operator_keypair,
-        session_user,
-        "common/Common",
-        neon_api_client,
-        treasury_pool,
-        version="0.8.12",
+        operator_keypair, session_user, "common/Common", neon_api_client, treasury_pool, version="0.8.12"
     )
 
 
@@ -246,12 +241,7 @@ def revert_contract_caller(
 @pytest.fixture(scope="function")
 def spl_token_caller(operator_keypair, evm_loader, session_user, treasury_pool, neon_api_client) -> Contract:
     return evm_loader.deploy_contract(
-        operator_keypair,
-        session_user,
-        "precompiled/SplTokenCaller",
-        neon_api_client,
-        treasury_pool,
-        version="0.8.28",
+        operator_keypair, session_user, "precompiled/SplTokenCaller", neon_api_client, treasury_pool, version="0.8.28"
     )
 
 
@@ -354,16 +344,17 @@ def multiple_actions_erc20(
         contract_file_name="EIPs/ERC20/MultipleActions",
         neon_api_client=neon_api_client,
         treasury_pool=treasury_pool,
+        encoded_args=encoded_args,
         contract_name="MultipleActionsERC20",
         version="0.8.28",
-        encoded_args=encoded_args,
         import_remappings=REMAPPING_ZEPPELIN,
     )
 
 
 @pytest.fixture(scope="session")
-def neon_rpc_client(environment: EnvironmentConfig) -> NeonApiRpcClient:
-    return NeonApiRpcClient(url=environment.neon_core_api_rpc_url, chain_id=environment.network_ids["neon"])
+def neon_rpc_client(environment: EnvironmentConfig) -> Generator[NeonApiRpcClient, Any, Any]:
+    with NeonApiRpcClient(url=environment.neon_core_api_rpc_url, chain_id=environment.network_ids["neon"]) as client:
+        yield client
 
 
 @pytest.fixture(scope="session")

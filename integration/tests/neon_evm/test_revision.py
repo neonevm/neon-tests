@@ -87,9 +87,9 @@ class TestAccountRevision:
             "neon_evm/flash_loan/lender.sol",
             neon_api_client,
             treasury_pool,
+            value=100000,
             contract_name="LoanLender",
             version="0.8.12",
-            value=100000,
         )
 
     @pytest.fixture(scope="session")
@@ -674,12 +674,7 @@ class TestAccountRevision:
     ):
         holder_acc = evm_loader.create_holder(operator_keypair)
         contract = evm_loader.deploy_contract(
-            operator_keypair,
-            sender_with_tokens,
-            "transfers",
-            neon_api_client,
-            treasury_pool,
-            value=1000,
+            operator_keypair, sender_with_tokens, "transfers", neon_api_client, treasury_pool, value=1000
         )
         sender_balance_before = evm_loader.get_neon_balance(sender_with_tokens.eth_address)
 

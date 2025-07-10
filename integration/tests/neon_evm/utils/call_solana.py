@@ -29,9 +29,9 @@ class SolanaCaller:
             operator=operator_keypair,
             user=owner,
             contract_file_name="precompiled/CallSolanaCaller",
-            contract_name="CallSolanaCaller",
             neon_api_client=neon_api_client,
             treasury_pool=treasury_pool,
+            contract_name="CallSolanaCaller",
             version="0.8.28",
         )
 

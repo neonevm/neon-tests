@@ -38,6 +38,14 @@ METAPLEX_ADDRESS = "0xff00000000000000000000000000000000000005"
 CALL_SOLANA_ADDRESS = "0xFF00000000000000000000000000000000000006"
 SOLANA_NATIVE_ADDRESS = "0xfF00000000000000000000000000000000000007"
 
+PAYMENT_FOR_TREE_ACCOUNT_DELETING = 10_000  # Paid by neon_user for tree_acc deleting. Do not depend on trx_count
+TRX_EXECUTION_PRICE = 5_000  # Standard fee for trx execution in solana. Paid by neon_user fox tree_acc creation
+LAMPORT_TO_INNER_SOL = 10**9  # Exchange coefficient from outer sol to inner sol
+OPERATOR_FEE_TO_NEON = 5_000  # Paid by operator to treasury account per iteration. Fee for trx execution inside Neon
+TREE_ACCOUNT_BALANCE_STRUCT_ENLARGEMENT_COST = (
+    222_720  # Cost of enlarging balance account struct during tree_acc creation +32 bytes
+)
+
 
 class Time:
     MINUTE = 60

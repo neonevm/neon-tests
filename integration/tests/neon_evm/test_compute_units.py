@@ -341,11 +341,7 @@ class TestComputeUnits:
         sol_client: SolanaClient,
     ):
         rw_lock = evm_loader.deploy_contract(
-            deterministic_operator_keypair,
-            deterministic_user,
-            "rw_lock",
-            neon_api_client,
-            deterministic_treasury_pool,
+            deterministic_operator_keypair, deterministic_user, "rw_lock", neon_api_client, deterministic_treasury_pool
         )
 
         constructor_args = eth_abi.encode(["address"], [rw_lock.eth_address.hex()])
@@ -451,31 +447,31 @@ class TestComputeUnits:
         sol_client: SolanaClient,
     ):
         contract_a = evm_loader.deploy_contract(
+            operator=deterministic_operator_keypair,
+            user=deterministic_user,
             contract_file_name="common/NestedCallsChecker",
+            neon_api_client=neon_api_client,
+            treasury_pool=deterministic_treasury_pool,
             contract_name="A",
             version="0.8.12",
-            operator=deterministic_operator_keypair,
-            user=deterministic_user,
-            neon_api_client=neon_api_client,
-            treasury_pool=deterministic_treasury_pool,
         )
         contract_b = evm_loader.deploy_contract(
+            operator=deterministic_operator_keypair,
+            user=deterministic_user,
             contract_file_name="common/NestedCallsChecker",
+            neon_api_client=neon_api_client,
+            treasury_pool=deterministic_treasury_pool,
             contract_name="B",
             version="0.8.12",
-            operator=deterministic_operator_keypair,
-            user=deterministic_user,
-            neon_api_client=neon_api_client,
-            treasury_pool=deterministic_treasury_pool,
         )
         contract_c = evm_loader.deploy_contract(
-            contract_file_name="common/NestedCallsChecker",
-            contract_name="C",
-            version="0.8.12",
             operator=deterministic_operator_keypair,
             user=deterministic_user,
+            contract_file_name="common/NestedCallsChecker",
             neon_api_client=neon_api_client,
             treasury_pool=deterministic_treasury_pool,
+            contract_name="C",
+            version="0.8.12",
         )
 
         contract_b_checksum_address = to_checksum_address("0x" + contract_b.eth_address.hex())
@@ -732,9 +728,9 @@ class TestComputeUnits:
             operator=deterministic_operator_keypair,
             user=deterministic_user,
             contract_file_name="common/ExpectedErrorsChecker",
-            contract_name="A",
             neon_api_client=neon_api_client,
             treasury_pool=deterministic_treasury_pool,
+            contract_name="A",
             version="0.8.12",
         )
         function_signature = "method1"

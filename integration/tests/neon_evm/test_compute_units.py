@@ -84,7 +84,7 @@ def deterministic_index_of_process(request: pytest.FixtureRequest) -> int:
     process_index = get_and_validate_mark_value(
         request=request, key=deterministic_index_of_process_stash_key, mark="deterministic_index_of_process"
     )
-    assert 15 <= process_index <= 21, "Use values from 15 to 21"
+    assert 34 <= process_index <= 40, "Use values from 34 to 40"
     return process_index
 
 
@@ -279,7 +279,7 @@ def execute_transaction_steps_from_instruction_and_validate_cu(
 
 
 class TestComputeUnits:
-    @pytest.mark.deterministic_index_of_process(15)
+    @pytest.mark.deterministic_index_of_process(34)
     @pytest.mark.deterministic_sender_with_tokens_index(0)
     @pytest.mark.deterministic_user_index(0)
     @pytest.mark.deterministic_holder_acc_seed(0)
@@ -325,9 +325,9 @@ class TestComputeUnits:
         allure_attach_accounts_data(resp=resp, evm_loader=evm_loader)
 
         cu_consumed = resp.value.transaction.meta.compute_units_consumed
-        assert abs(cu_consumed - 79302) <= 1000
+        assert abs(cu_consumed - 78051) <= 1000
 
-    @pytest.mark.deterministic_index_of_process(16)
+    @pytest.mark.deterministic_index_of_process(35)
     @pytest.mark.deterministic_user_index(1)
     @pytest.mark.deterministic_holder_acc_seed(1)
     def test_iterative_with_many_accounts(
@@ -372,13 +372,13 @@ class TestComputeUnits:
             storage_account=deterministic_holder_acc,
             instruction=signed_eth_tx,
             additional_accounts=additional_accounts,
-            cu_expected_list=[85726, 97192, 61008, 180406],
+            cu_expected_list=[99817, 111277, 75095, 194746],
             cu_delta_allowed=1000,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.SUCCESS_WITH_CHANGES}",
         )
 
-    @pytest.mark.deterministic_index_of_process(17)
+    @pytest.mark.deterministic_index_of_process(36)
     @pytest.mark.deterministic_user_index(2)
     @pytest.mark.deterministic_holder_acc_seed(2)
     @pytest.mark.deterministic_sender_with_tokens_index(2)
@@ -427,13 +427,13 @@ class TestComputeUnits:
             storage_account=deterministic_holder_acc,
             instruction=signed_tx,
             additional_accounts=additional_accounts,
-            cu_expected_list=[77761, 52641, 50370],
+            cu_expected_list=[74730, 49604, 47633],
             cu_delta_allowed=1000,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.SUCCESS_WITH_CHANGES}",
         )
 
-    @pytest.mark.deterministic_index_of_process(18)
+    @pytest.mark.deterministic_index_of_process(37)
     @pytest.mark.deterministic_user_index(3)
     @pytest.mark.deterministic_holder_acc_seed(3)
     def test_nested_calls(
@@ -505,13 +505,13 @@ class TestComputeUnits:
             storage_account=deterministic_holder_acc,
             instruction=signed_tx,
             additional_accounts=additional_accounts,
-            cu_expected_list=[73829, 98581, 102339, 37365, 36346],
+            cu_expected_list=[73722, 98384, 102143, 37167, 36457],
             cu_delta_allowed=1000,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.SUCCESS_WITH_CHANGES}",
         )
 
-    @pytest.mark.deterministic_index_of_process(19)
+    @pytest.mark.deterministic_index_of_process(38)
     @pytest.mark.deterministic_user_index(4)
     @pytest.mark.deterministic_holder_acc_seed(4)
     @pytest.mark.deterministic_sender_with_tokens_index(4)
@@ -585,13 +585,13 @@ class TestComputeUnits:
             storage_account=deterministic_holder_acc,
             instruction=signed_tx,
             additional_accounts=additional_accounts,
-            cu_expected_list=[71559, 57737, 48904],
+            cu_expected_list=[71369, 57543, 49001],
             cu_delta_allowed=1000,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.SUCCESS_WITH_CHANGES}",
         )
 
-    @pytest.mark.deterministic_index_of_process(20)
+    @pytest.mark.deterministic_index_of_process(39)
     @pytest.mark.deterministic_sender_with_tokens_index(5)
     @pytest.mark.deterministic_holder_acc_seed(5)
     def test_scheduled_transaction(
@@ -669,7 +669,7 @@ class TestComputeUnits:
             operator=deterministic_operator_keypair,
             chain_id=evm_loader.sol_chain_id,
         )
-        cu_expected_list = [27420, 29282]
+        cu_expected_list = [29729, 31196]
         done = False
         i = 0
 
@@ -711,7 +711,7 @@ class TestComputeUnits:
             text=f"exit_status={NeonTxExitStatus.SUCCESS_WITH_CHANGES}",
         )
 
-    @pytest.mark.deterministic_index_of_process(21)
+    @pytest.mark.deterministic_index_of_process(40)
     @pytest.mark.deterministic_user_index(6)
     @pytest.mark.deterministic_holder_acc_seed(6)
     def test_negative(
@@ -756,7 +756,7 @@ class TestComputeUnits:
             storage_account=deterministic_holder_acc,
             instruction=signed_tx,
             additional_accounts=additional_accounts,
-            cu_expected_list=[71838, 26503, 29591],
+            cu_expected_list=[70367, 25032, 28429],
             cu_delta_allowed=1000,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.REVERT}",

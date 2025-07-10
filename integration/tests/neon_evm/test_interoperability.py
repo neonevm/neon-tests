@@ -187,7 +187,7 @@ class TestInteroperability:
         else:
             params = (COUNTER_ID, instruction)
 
-        for i in range(instruction_count):
+        for _ in range(instruction_count):
             call_params.append(params)
         resp = solana_caller.batch_execute(call_params, sender_with_tokens, is_iterative=is_iterative)
 
@@ -216,7 +216,7 @@ class TestInteroperability:
         else:
             params = (COUNTER_ID, instruction)
 
-        for i in range(instruction_count):
+        for _ in range(instruction_count):
             call_params.append(params)
 
         with pytest.raises(
@@ -542,6 +542,78 @@ class TestInteroperability:
         check_holder_account_tag(
             solana_client=evm_loader,
             storage_account=new_holder_acc_2,
+            layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
+            expected_tag=TAG_FINALIZED_STATE,
+        )
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
+
+    def test_iterative_transaction_executing_by_2_operators(
+        self,
+        sender_with_tokens,
+        solana_caller,
+        evm_loader,
+        holder_acc,
+        neon_api_client,
+        operator_keypair,
+        second_operator_keypair,
+        treasury_pool,
+    ):
+        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
+        operator_balance = evm_loader.get_solana_balance(operator_balance_pubkey)
+        second_operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(second_operator_keypair)
+        second_operator_balance = evm_loader.get_solana_balance(second_operator_balance_pubkey)
+
+        if second_operator_balance >= operator_balance:
+            amount = second_operator_balance - operator_balance + 10
+            evm_loader.request_airdrop(operator_balance_pubkey, amount * 10**9, commitment=Confirmed)
+
+        salt = b"1235"
+        resource_addr = solana_caller.create_resource(sender_with_tokens, salt, 8, 1000000000, COUNTER_ID)
+        instruction = Instruction(
+            program_id=COUNTER_ID,
+            accounts=[
+                AccountMeta(resource_addr, is_signer=False, is_writable=True),
+            ],
+            data=bytes([0x1]),
+        )
+
+        iterations = 20
+        signed_tx = make_contract_call_trx(
+            evm_loader,
+            sender_with_tokens,
+            solana_caller.contract,
+            "batchExecuteInIterativeModeWithoutLamport(uint256,bytes[])",
+            [iterations, [serialize_instruction(COUNTER_ID, instruction)]],
+        )
+
+        emulate_result = neon_api_client.emulate_contract_call(
+            sender_with_tokens.eth_address.hex(),
+            solana_caller.contract.eth_address.hex(),
+            "batchExecuteInIterativeModeWithoutLamport(uint256,bytes[])",
+            [iterations, [serialize_instruction(COUNTER_ID, instruction)]],
+        )
+
+        accounts_from_emulation = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
+        evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
+
+        for _ in range(4):
+            evm_loader.send_transaction_step_from_account(
+                operator_keypair,
+                operator_balance_pubkey,
+                treasury_pool,
+                holder_acc,
+                accounts_from_emulation,
+                EVM_STEPS,
+                operator_keypair,
+            )
+
+        resp = evm_loader.execute_transaction_steps_from_account(
+            second_operator_keypair, treasury_pool, holder_acc, accounts_from_emulation
+        )
+
+        check_holder_account_tag(
+            solana_client=evm_loader,
+            storage_account=holder_acc,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_FINALIZED_STATE,
         )

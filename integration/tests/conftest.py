@@ -195,7 +195,6 @@ def neon_user(
     bank_account,
     environment: EnvironmentConfig,
     web3_client_sol: NeonChainWeb3Client,
-    withdraw_contract_sol_chain,
     treasury_pool,
 ) -> tp.Generator[NeonUser, None, None]:
     user = NeonUser(evm_loader_id=environment.evm_loader)

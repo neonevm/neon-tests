@@ -498,6 +498,7 @@ class TestSimulateSolana:
         basic_contract: Contract,
         neon_user: NeonUser,
     ):
+        evm_loader.create_balance_account(neon_user.checksum_address, neon_user.solana_account, evm_loader.sol_chain_id)
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address)
         contract_data = 18
         data = abi.function_signature_to_4byte_selector("setNumber(uint256)") + eth_abi.encode(

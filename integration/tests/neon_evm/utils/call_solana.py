@@ -5,6 +5,7 @@ from solders.pubkey import Pubkey
 from integration.tests.neon_evm.utils.ethereum import make_eth_transaction, make_contract_call_trx
 from integration.tests.neon_evm.utils.transaction_checks import check_transaction_logs_have_text
 from utils.consts import SOLANA_CALL_PRECOMPILED_ID
+from utils.evm_loader import EvmLoader
 from utils.helpers import bytes32_to_solana_pubkey, serialize_instruction
 from utils.metaplex import SYSTEM_PROGRAM_ID
 
@@ -14,7 +15,7 @@ class SolanaCaller:
         self,
         operator_keypair,
         owner,
-        evm_loader,
+        evm_loader: EvmLoader,
         treasury_pool,
         holder_acc,
         neon_api_client,
@@ -65,7 +66,7 @@ class SolanaCaller:
         addr = self.neon_api_client.call_contract_get_function(sender, self.contract, "getExtAuthority(bytes32)", args)
         return bytes32_to_solana_pubkey(addr)
 
-    def execute(self, program_id, instruction, lamports=None, holder_acc=None, sender=None, additional_accounts=None):
+    def execute(self, program_id, instruction, lamports=None, holder_acc=None, sender=None):
         sender = self.owner if sender is None else sender
         holder_acc = self.holder_acc if holder_acc is None else holder_acc
         serialized_instructions = serialize_instruction(program_id, instruction)
@@ -92,7 +93,6 @@ class SolanaCaller:
                 self.contract.solana_address,
                 program_id,
             ]
-            + (additional_accounts or [])
             + self._get_all_pubkeys_from_instructions([instruction]),
         )
         return resp
@@ -105,7 +105,6 @@ class SolanaCaller:
         lamports=None,
         holder_acc=None,
         sender=None,
-        additional_accounts=None,
     ):
         sender = self.owner if sender is None else sender
         holder_acc = self.holder_acc if holder_acc is None else holder_acc
@@ -140,13 +139,11 @@ class SolanaCaller:
                 self.contract.solana_address,
                 program_id,
             ]
-            + (additional_accounts or [])
             + self._get_all_pubkeys_from_instructions([instruction]),
         )
         return resp
 
-    def batch_execute(self, call_params, sender=None, additional_accounts=None, additional_signers=None):
-        execute_params = []
+    def batch_execute(self, call_params, sender=None, additional_signers=None, is_iterative=False):
         # call_params = [(program_id, lamports, instruction), ...]
         if len(call_params[0]) == 2:  # check lamport
             method_signature = "batchExecuteWithoutLamports(bytes[])"
@@ -175,18 +172,26 @@ class SolanaCaller:
             ]
             + [item[0] for item in call_params]
             + self._get_all_pubkeys_from_instructions([item[-1] for item in call_params])
-            + (additional_accounts or [])
         )
-
-        resp = self.evm_loader.execute_trx_from_account_with_solana_call(
-            self.operator_keypair,
-            self.holder_acc,
-            self.treasury_pool.account,
-            self.treasury_pool.buffer,
-            accounts,
-            self.operator_keypair,
-            additional_signers,
-        )
+        if is_iterative:
+            resp = self.evm_loader.execute_transaction_steps_from_account(
+                self.operator_keypair,
+                self.treasury_pool,
+                self.holder_acc,
+                accounts,
+                self.operator_keypair,
+                additional_signers=additional_signers,
+            )
+        else:
+            resp = self.evm_loader.execute_trx_from_account_with_solana_call(
+                self.operator_keypair,
+                self.holder_acc,
+                self.treasury_pool.account,
+                self.treasury_pool.buffer,
+                accounts,
+                self.operator_keypair,
+                additional_signers=additional_signers,
+            )
         return resp
 
     def get_resource_address(self, salt, sender):

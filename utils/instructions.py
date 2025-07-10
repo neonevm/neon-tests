@@ -175,6 +175,7 @@ def make_transaction_step_from_account(
     holder_address: Pubkey,
     treasury,
     additional_accounts: tp.List[Pubkey],
+    additional_signers: tp.List[Keypair] = None,
     sys_program_id=sp.ID,
     tag: InstructionTags = InstructionTags.TRANSACTION_STEP_FROM_ACCOUNT,
 ):
@@ -195,6 +196,11 @@ def make_transaction_step_from_account(
         accounts.append(
             AccountMeta(acc, is_signer=False, is_writable=True),
         )
+    if additional_signers:
+        for acc in additional_signers:
+            accounts.append(
+                AccountMeta(acc.pubkey(), is_signer=True, is_writable=True),
+            )
 
     return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
 

@@ -147,7 +147,7 @@ class Web3Client:
         self,
         address: tp.Union[eth_account.signers.local.LocalAccount, str],
         block: BlockIdentifier = "pending",
-    ):
+    ) -> web3.types.Nonce:
         address = address if isinstance(address, str) else address.address
         nonce = self._web3.eth.get_transaction_count(address, block)
         log_text_to_allure_and_stdout("Nonce", f"Address: {address}, Nonce: {nonce}")

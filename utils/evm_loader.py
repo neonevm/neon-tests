@@ -469,6 +469,7 @@ class EvmLoader(SolanaClient):
         signer: Keypair,
         system_program=sp.ID,
         compute_unit_price=None,
+        additional_signers: typing.List[Keypair] = None,
         tag=InstructionTags.TRANSACTION_STEP_FROM_ACCOUNT,
     ) -> GetTransactionResp:
         trx = TransactionWithComputeBudget(operator, compute_unit_price=compute_unit_price)
@@ -481,11 +482,13 @@ class EvmLoader(SolanaClient):
                 holder_address=storage_account,
                 treasury=treasury,
                 additional_accounts=additional_accounts,
+                additional_signers=additional_signers,
                 sys_program_id=system_program,
                 tag=tag,
             )
         )
-        return self.send_tx(trx, signer)
+        signers = [signer, *additional_signers] if additional_signers else [signer]
+        return self.send_tx(trx, *signers)
 
     @allure.step("Execute transaction steps from account")
     def execute_transaction_steps_from_account(
@@ -498,6 +501,7 @@ class EvmLoader(SolanaClient):
         compute_unit_price=None,
         chain_id: int | None = None,
         check_invalid_revision=False,
+        additional_signers: typing.List[Keypair] = None,
     ) -> GetTransactionResp:
         chain_id = chain_id or self.chain_id
 
@@ -518,6 +522,7 @@ class EvmLoader(SolanaClient):
                 EVM_STEPS,
                 signer,
                 compute_unit_price=compute_unit_price,
+                additional_signers=additional_signers,
             )
 
             if receipt.value.transaction.meta.err:

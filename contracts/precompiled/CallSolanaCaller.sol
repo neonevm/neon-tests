@@ -134,6 +134,14 @@ contract CallSolanaCaller {
         batchExecute(_args);
     }
 
+    function batchExecuteInIterativeModeWithoutLamport(
+        uint256 actionsNumber,
+        bytes[] memory _args
+    ) public {
+        doIterativeActions(actionsNumber);
+        batchExecuteWithoutLamports( _args);
+    }
+
     function sendTokensAndExecuteInIterativeMode(
         uint256 actionsNumber,
         uint64 lamports,

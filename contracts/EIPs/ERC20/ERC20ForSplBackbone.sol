@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {ISPLTokenProgram} from "../../precompiled/ISPLTokenProgram.sol";
-import {IMetaplexProgram} from "../../precompiled/IMetaplexProgram.sol";
-import {ICallSolana} from "../../precompiled/ICallSolana.sol";
-import {ISolanaNative} from "../../precompiled/ISolanaNative.sol";
-import {QueryAccount} from "../../precompiled/QueryAccount.sol";
+import {ISPLTokenProgram} from "../../external/neon-contracts/contracts/precompiles/ISPLTokenProgram.sol";
+import {IMetaplexProgram} from "../../external/neon-contracts/contracts/precompiles/IMetaplexProgram.sol";
+import {ICallSolana} from "../../external/neon-contracts/contracts/precompiles/ICallSolana.sol";
+
+import {ISolanaNative} from "../../external/neon-contracts/contracts/precompiles/ISolanaNative.sol";
+import {QueryAccount} from "../../external/neon-contracts/contracts/precompiles/QueryAccount.sol";
 
 
 /// @title ERC20ForSplBackbone

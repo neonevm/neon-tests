@@ -6,6 +6,7 @@ import pytest
 from eth_utils import abi
 
 from eth_keys import keys as eth_keys
+from solana.constants import LAMPORTS_PER_SOL
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 from solana.rpc.commitment import Confirmed
@@ -247,7 +248,7 @@ class TestInteroperability:
 
     def test_transfer_sol_without_cpi(self, solana_caller, sender_with_tokens, evm_loader):
         amount = random.randint(1, 1000000)
-        sender = evm_loader.create_account(sender_with_tokens.solana_account, 0, TRANSFER_SOL_ID, lamports=100 * 10**9)
+        sender = evm_loader.create_account(sender_with_tokens.solana_account, 0, TRANSFER_SOL_ID, lamports=1 * 10**9)
         recipient = evm_loader.create_account(sender_with_tokens.solana_account, 0, TRANSFER_SOL_ID)
 
         instruction = Instruction(
@@ -469,7 +470,6 @@ class TestInteroperability:
     ):
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
 
-        # resource_addr = solana_caller.create_resource(sender_with_tokens, b"qqww", 8, 1000000000, COUNTER_ID)
         matrix_size = 8
         matrix = [[random.randint(1, 100) for _ in range(matrix_size)] for _ in range(matrix_size)]
 
@@ -557,22 +557,19 @@ class TestInteroperability:
         operator_keypair,
         second_operator_keypair,
         treasury_pool,
+        counter_resource_address,
     ):
-        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
-        operator_balance = evm_loader.get_solana_balance(operator_balance_pubkey)
-        second_operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(second_operator_keypair)
-        second_operator_balance = evm_loader.get_solana_balance(second_operator_balance_pubkey)
-
+        operator_balance = evm_loader.get_solana_balance(operator_keypair.pubkey())
+        second_operator_balance = evm_loader.get_solana_balance(second_operator_keypair.pubkey())
+        # the first operator should have bigger balance than the second one for the current case
         if second_operator_balance >= operator_balance:
-            amount = second_operator_balance - operator_balance + 10
-            evm_loader.request_airdrop(operator_balance_pubkey, amount * 10**9, commitment=Confirmed)
+            amount = second_operator_balance - operator_balance + 1 * LAMPORTS_PER_SOL
+            evm_loader.request_airdrop(operator_keypair.pubkey(), amount, commitment=Confirmed)
 
-        salt = b"1235"
-        resource_addr = solana_caller.create_resource(sender_with_tokens, salt, 8, 1000000000, COUNTER_ID)
         instruction = Instruction(
             program_id=COUNTER_ID,
             accounts=[
-                AccountMeta(resource_addr, is_signer=False, is_writable=True),
+                AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
             ],
             data=bytes([0x1]),
         )
@@ -586,16 +583,15 @@ class TestInteroperability:
             [iterations, [serialize_instruction(COUNTER_ID, instruction)]],
         )
 
-        emulate_result = neon_api_client.emulate_contract_call(
+        accounts_from_emulation = neon_api_client.get_additional_accounts_by_emulation(
             sender_with_tokens.eth_address.hex(),
             solana_caller.contract.eth_address.hex(),
             "batchExecuteInIterativeModeWithoutLamport(uint256,bytes[])",
             [iterations, [serialize_instruction(COUNTER_ID, instruction)]],
         )
 
-        accounts_from_emulation = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
-
+        operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         for _ in range(4):
             evm_loader.send_transaction_step_from_account(
                 operator_keypair,

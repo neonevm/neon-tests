@@ -72,7 +72,7 @@ class TestMultipleScheduledTrx:
             tx1, operator_keypair, holder_acc2, tree_account, treasury_pool, additional_accounts
         )
         evm_loader.finish_scheduled_trx(operator_keypair, tree_account, holder_acc2)
-        evm_loader.destroy_tree_account(neon_user, treasury_pool, tree_account)
+        evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
         assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
 
     # ┌───────┐  ┌──────┐
@@ -142,7 +142,7 @@ class TestMultipleScheduledTrx:
         tree_account_data = neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce)
         assert tree_account_data.transactions[0].is_failed()
         assert tree_account_data.transactions[1].is_skipped()
-        evm_loader.destroy_tree_account(neon_user, treasury_pool, tree_account)
+        evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
         assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
 
     #  ┌──────┐
@@ -205,7 +205,7 @@ class TestMultipleScheduledTrx:
             evm_loader.finish_scheduled_trx(operator_keypair, tree_account, holder_acc)
         tree_account_data = neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce)
         assert tree_account_data.all_transactions_successful()
-        evm_loader.destroy_tree_account(neon_user, treasury_pool, tree_account)
+        evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
         assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
 
     def test_deploy_and_call_contract(
@@ -284,7 +284,7 @@ class TestMultipleScheduledTrx:
         tree_account_data = neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce)
 
         assert tree_account_data.all_transactions_successful()
-        evm_loader.destroy_tree_account(neon_user, treasury_pool, tree_account)
+        evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
         assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
 
     def test_call_precompiled_by_scheduled_trx(
@@ -334,5 +334,5 @@ class TestMultipleScheduledTrx:
         )
         evm_loader.finish_scheduled_trx(operator_keypair, tree_account, holder_acc)
         assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).all_transactions_successful()
-        evm_loader.destroy_tree_account(neon_user, treasury_pool, tree_account)
+        evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
         assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []

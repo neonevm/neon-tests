@@ -281,16 +281,16 @@ class TestNeonRPCBaseCalls:
     def test_neon_estimate_gas_with_preparatory_solana_transactions_positive(
         self,
         web3_client_sol: Web3Client,
-        neon_user_for_session: NeonUser,
+        neon_user: NeonUser,
         erc20_spl_mintable: ERC20Wrapper,
         evm_loader: EvmLoader,
         default_cu_price: int,
     ):
         amount = 1_000
-        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user_for_session.checksum_address, amount)
+        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user.checksum_address, amount)
 
         neon_user_ata = get_associated_token_address(
-            neon_user_for_session.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
+            neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
         )
         erc20_spl_mintable_solana_address = Pubkey.from_string(
             evm_loader.ether2program(erc20_spl_mintable.contract.address)[0]
@@ -300,8 +300,8 @@ class TestNeonRPCBaseCalls:
         trx = Transaction()
         trx.add(
             create_associated_token_account(
-                neon_user_for_session.solana_account.pubkey(),
-                neon_user_for_session.solana_account.pubkey(),
+                neon_user.solana_account.pubkey(),
+                neon_user.solana_account.pubkey(),
                 erc20_spl_mintable.token_mint_pubkey,
             )
         )
@@ -313,7 +313,7 @@ class TestNeonRPCBaseCalls:
                     program_id=TOKEN_PROGRAM_ID,
                     source=neon_user_ata,
                     delegate=erc20_spl_mintable_solana_address,
-                    owner=neon_user_for_session.solana_account.pubkey(),
+                    owner=neon_user.solana_account.pubkey(),
                     amount=amount,
                 )
             )
@@ -325,7 +325,7 @@ class TestNeonRPCBaseCalls:
             args=[erc20_spl_mintable.owner.address, bytes(neon_user_ata), amount],
         )
         raw_tx = self.web3_client.make_raw_tx(
-            from_=neon_user_for_session.checksum_address,
+            from_=neon_user.checksum_address,
             to=erc20_spl_mintable.address,
             data=data,
         )
@@ -362,17 +362,17 @@ class TestNeonRPCBaseCalls:
     def test_neon_estimate_gas_with_preparatory_solana_transactions_invalid_preparatory(
         self,
         web3_client_sol: Web3Client,
-        neon_user_for_session: NeonUser,
+        neon_user: NeonUser,
         erc20_spl_mintable: ERC20Wrapper,
         evm_loader: EvmLoader,
         default_cu_price: int,
     ):
         wrong_user = NeonUser(evm_loader.loader_id)
         amount = 1_000
-        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user_for_session.checksum_address, amount)
+        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user.checksum_address, amount)
 
         neon_user_ata = get_associated_token_address(
-            neon_user_for_session.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
+            neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
         )
         erc20_spl_mintable_solana_address = Pubkey.from_string(
             evm_loader.ether2program(erc20_spl_mintable.contract.address)[0]
@@ -382,8 +382,8 @@ class TestNeonRPCBaseCalls:
         trx = Transaction()
         trx.add(
             create_associated_token_account(
-                neon_user_for_session.solana_account.pubkey(),
-                neon_user_for_session.solana_account.pubkey(),
+                neon_user.solana_account.pubkey(),
+                neon_user.solana_account.pubkey(),
                 erc20_spl_mintable.token_mint_pubkey,
             )
         )
@@ -407,7 +407,7 @@ class TestNeonRPCBaseCalls:
             args=[erc20_spl_mintable.owner.address, bytes(neon_user_ata), amount],
         )
         raw_tx = self.web3_client.make_raw_tx(
-            from_=neon_user_for_session.checksum_address,
+            from_=neon_user.checksum_address,
             to=erc20_spl_mintable.address,
             data=data,
         )
@@ -424,16 +424,16 @@ class TestNeonRPCBaseCalls:
     def test_neon_estimate_gas_with_preparatory_solana_transactions_invalid_tx(
         self,
         web3_client_sol: Web3Client,
-        neon_user_for_session: NeonUser,
+        neon_user: NeonUser,
         erc20_spl_mintable: ERC20Wrapper,
         evm_loader: EvmLoader,
         default_cu_price: int,
     ):
         amount = 1_000
-        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user_for_session.checksum_address, amount)
+        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user.checksum_address, amount)
 
         neon_user_ata = get_associated_token_address(
-            neon_user_for_session.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
+            neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
         )
         erc20_spl_mintable_solana_address = Pubkey.from_string(
             evm_loader.ether2program(erc20_spl_mintable.contract.address)[0]
@@ -443,8 +443,8 @@ class TestNeonRPCBaseCalls:
         trx = Transaction()
         trx.add(
             create_associated_token_account(
-                neon_user_for_session.solana_account.pubkey(),
-                neon_user_for_session.solana_account.pubkey(),
+                neon_user.solana_account.pubkey(),
+                neon_user.solana_account.pubkey(),
                 erc20_spl_mintable.token_mint_pubkey,
             )
         )
@@ -456,7 +456,7 @@ class TestNeonRPCBaseCalls:
                     program_id=TOKEN_PROGRAM_ID,
                     source=neon_user_ata,
                     delegate=erc20_spl_mintable_solana_address,
-                    owner=neon_user_for_session.solana_account.pubkey(),
+                    owner=neon_user.solana_account.pubkey(),
                     amount=amount,
                 )
             )
@@ -464,7 +464,7 @@ class TestNeonRPCBaseCalls:
 
         # actual transaction that has to be estimated - invalid data
         raw_tx = self.web3_client.make_raw_tx(
-            from_=neon_user_for_session.checksum_address,
+            from_=neon_user.checksum_address,
             to=erc20_spl_mintable.address,
             data="invalid",
         )

@@ -31,14 +31,12 @@ from utils.scheduled_trx import ScheduledTrxEstimateRequest
 @pytest.mark.neon_only
 class TestNeonRPCEstimateScheduledGas:
 
-    def test_estimate_one_transaction(self, web3_client_sol, neon_user_for_session, common_contract, evm_loader):
+    def test_estimate_one_transaction(self, web3_client_sol, neon_user, common_contract, evm_loader):
 
         data = decode_function_signature("setNumber(uint256)", [18])
-        trx_estimate_obj = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, common_contract.address, data
-        )
+        trx_estimate_obj = ScheduledTrxEstimateRequest(neon_user.checksum_address, common_contract.address, data)
         resp = web3_client_sol.estimate_scheduled(
-            neon_user_for_session.solana_account.pubkey(), [trx_estimate_obj], check_result=False
+            neon_user.solana_account.pubkey(), [trx_estimate_obj], check_result=False
         )
 
         EstimateScheduledGas(**resp)
@@ -48,7 +46,7 @@ class TestNeonRPCEstimateScheduledGas:
             len(result["gasList"]) == 1
         ), f'Amount of transactions must be 1, but actual amount = {len(result["gasList"])}'
 
-        nonce = web3_client_sol.get_nonce(neon_user_for_session.checksum_address)
+        nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
         assert result["nonce"] == hex(nonce)
         assert result["maxFeePerGas"] > result["maxPriorityFeePerGas"], (
             f"maxFeePerGas must be greater than maxPriorityFeePerGas, "
@@ -60,23 +58,23 @@ class TestNeonRPCEstimateScheduledGas:
             len(result["accountList"]) == 6
         ), f'Amount of accounts must be 6, but actual amount = {len(result["accountList"])}'
 
-        balance_account = str(neon_user_for_session.get_balance_account(chain_id))
+        balance_account = str(neon_user.get_balance_account(chain_id))
         treasury_index = int(result["treasuryIndex"], 16)
         treasury_address = str(evm_loader.create_treasury_pool_address(treasury_index))
 
         tree_account = evm_loader.create_tree_account_address(
-            neon_user_for_session.neon_address, nonce.to_bytes(8, "little"), chain_id
+            neon_user.neon_address, nonce.to_bytes(8, "little"), chain_id
         )
         authority_pool = Pubkey.find_program_address([b"Deposit"], evm_loader.loader_id)[0]
 
-        assert result["accountList"][0] == str(neon_user_for_session.solana_account.pubkey())
+        assert result["accountList"][0] == str(neon_user.solana_account.pubkey())
         assert result["accountList"][1] == balance_account
         assert result["accountList"][2] == treasury_address
         assert result["accountList"][3] == str(tree_account)
         assert result["accountList"][4] == str(authority_pool)
         assert result["accountList"][5] == str(sp.ID)
 
-    def test_send_multiple_transactions(self, web3_client_sol, neon_user_for_session, common_contract, evm_loader):
+    def test_send_multiple_transactions(self, web3_client_sol, neon_user, common_contract, evm_loader):
         transaction_rate = 4
         chain_id = web3_client_sol.chain_id
 
@@ -84,15 +82,15 @@ class TestNeonRPCEstimateScheduledGas:
         trx_estimate_obj_list = []
         for i in range(transaction_rate):
             trx_estimate_obj_list.append(
-                ScheduledTrxEstimateRequest(neon_user_for_session.checksum_address, common_contract.address, data)
+                ScheduledTrxEstimateRequest(neon_user.checksum_address, common_contract.address, data)
             )
 
-        resp = web3_client_sol.estimate_scheduled(neon_user_for_session.solana_account.pubkey(), trx_estimate_obj_list)
+        resp = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), trx_estimate_obj_list)
         assert (
             len(resp["gasList"]) == transaction_rate
         ), f"Amount of transactions must be 1, but actual amount = {transaction_rate}"
 
-        nonce = web3_client_sol.get_nonce(neon_user_for_session.checksum_address)
+        nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
         assert resp["nonce"] == hex(nonce)
         assert resp["maxFeePerGas"] > resp["maxPriorityFeePerGas"], (
             f"maxFeePerGas must be greater than maxPriorityFeePerGas, "
@@ -104,16 +102,16 @@ class TestNeonRPCEstimateScheduledGas:
             len(resp["accountList"]) == 6
         ), f'Amount of accounts must be 6, but actual amount = {len(resp["accountList"])}'
 
-        balance_account = str(neon_user_for_session.get_balance_account(chain_id))
+        balance_account = str(neon_user.get_balance_account(chain_id))
         treasury_index = int(resp["treasuryIndex"], 16)
         treasury_address = str(evm_loader.create_treasury_pool_address(treasury_index))
 
         tree_account = evm_loader.create_tree_account_address(
-            neon_user_for_session.neon_address, nonce.to_bytes(8, "little"), chain_id
+            neon_user.neon_address, nonce.to_bytes(8, "little"), chain_id
         )
         authority_pool = Pubkey.find_program_address([b"Deposit"], evm_loader.loader_id)[0]
 
-        assert resp["accountList"][0] == str(neon_user_for_session.solana_account.pubkey())
+        assert resp["accountList"][0] == str(neon_user.solana_account.pubkey())
         assert resp["accountList"][1] == balance_account
         assert resp["accountList"][2] == treasury_address
         assert resp["accountList"][3] == str(tree_account)
@@ -123,7 +121,7 @@ class TestNeonRPCEstimateScheduledGas:
     def test_one_of_multiply_transactions_failed(
         self,
         web3_client_sol,
-        neon_user_for_session,
+        neon_user,
         revert_contract_caller,
         event_caller_contract,
         common_contract,
@@ -134,18 +132,16 @@ class TestNeonRPCEstimateScheduledGas:
         trx_estimate_obj_list = []
         for i in range(transaction_rate):
             trx_estimate_obj_list.append(
-                ScheduledTrxEstimateRequest(neon_user_for_session.checksum_address, common_contract.address, data)
+                ScheduledTrxEstimateRequest(neon_user.checksum_address, common_contract.address, data)
             )
 
         data_fail_tx = abi.function_signature_to_4byte_selector("doAssert()")
         trx_estimate_obj_list.append(
-            ScheduledTrxEstimateRequest(
-                neon_user_for_session.checksum_address, revert_contract_caller.address, data_fail_tx.hex()
-            )
+            ScheduledTrxEstimateRequest(neon_user.checksum_address, revert_contract_caller.address, data_fail_tx.hex())
         )
 
         resp = web3_client_sol.estimate_scheduled(
-            neon_user_for_session.solana_account.pubkey(), trx_estimate_obj_list, check_result=False
+            neon_user.solana_account.pubkey(), trx_estimate_obj_list, check_result=False
         )
 
         assert "error" in resp, "error field not in response"
@@ -156,8 +152,8 @@ class TestNeonRPCEstimateScheduledGas:
             Error3.EXECUTION_REVERTED in resp["error"]["message"]
         ), f"message must be {Error3.EXECUTION_REVERTED}, got - {resp['error']['message']}"
 
-    def test_no_transactions_in_request(self, web3_client_sol, neon_user_for_session, common_contract, evm_loader):
-        resp = web3_client_sol.estimate_scheduled(neon_user_for_session.solana_account.pubkey(), [], check_result=False)
+    def test_no_transactions_in_request(self, web3_client_sol, neon_user, common_contract, evm_loader):
+        resp = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), [], check_result=False)
 
         assert "error" in resp, "error field not in response"
         assert "code" in resp["error"]
@@ -165,25 +161,23 @@ class TestNeonRPCEstimateScheduledGas:
         assert Error32602.CODE == resp["error"]["code"]
         assert Error32602.INVALID_TRANSACTIONID == resp["error"]["message"]
 
-    def test_send_value_greater_than_balance(
-        self, web3_client_sol, neon_user_for_session, evm_loader, event_caller_sol_chain
-    ):
+    def test_send_value_greater_than_balance(self, web3_client_sol, neon_user, evm_loader, event_caller_sol_chain):
         evm_loader.deposit_wrapped_sol_from_solana_to_neon(
-            neon_user_for_session.solana_account,
-            "0x" + neon_user_for_session.neon_address.hex(),
+            neon_user.solana_account,
+            "0x" + neon_user.neon_address.hex(),
             int(1 * LAMPORT_PER_SOL),
         )
 
-        balance = web3_client_sol.get_balance(neon_user_for_session.checksum_address)
+        balance = web3_client_sol.get_balance(neon_user.checksum_address)
         call_data = decode_function_signature("indexedArgs()")
         value = balance + 10
 
         trx_estimate_obj = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, event_caller_sol_chain.address, call_data, value=value
+            neon_user.checksum_address, event_caller_sol_chain.address, call_data, value=value
         )
 
         resp = web3_client_sol.estimate_scheduled(
-            neon_user_for_session.solana_account.pubkey(), [trx_estimate_obj], check_result=False
+            neon_user.solana_account.pubkey(), [trx_estimate_obj], check_result=False
         )
 
         assert "error" in resp, "error field not in response"
@@ -220,15 +214,11 @@ class TestNeonRPCEstimateScheduledGas:
             len(resp["accountList"]) == 6
         ), f'Amount of accounts must be 6, but actual amount = {len(resp["accountList"])}'
 
-    def test_no_function_in_called_contract(
-        self, web3_client_sol, neon_user_for_session, revert_contract_caller, evm_loader
-    ):
+    def test_no_function_in_called_contract(self, web3_client_sol, neon_user, revert_contract_caller, evm_loader):
         data = decode_function_signature("setNumber(uint256)", [18])
-        trx_estimate_obj = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, revert_contract_caller.address, data
-        )
+        trx_estimate_obj = ScheduledTrxEstimateRequest(neon_user.checksum_address, revert_contract_caller.address, data)
         resp = web3_client_sol.estimate_scheduled(
-            neon_user_for_session.solana_account.pubkey(), [trx_estimate_obj], check_result=False
+            neon_user.solana_account.pubkey(), [trx_estimate_obj], check_result=False
         )
 
         assert "error" in resp, "error field not in response"
@@ -239,14 +229,10 @@ class TestNeonRPCEstimateScheduledGas:
             Error3.EXECUTION_REVERTED == resp["error"]["message"]
         ), f"error message must be {Error3.EXECUTION_REVERTED}"
 
-    def test_wrong_chain_id(self, web3_client, web3_client_sol, neon_user_for_session, common_contract):
+    def test_wrong_chain_id(self, web3_client, web3_client_sol, neon_user, common_contract):
         data = decode_function_signature("setNumber(uint256)", [18])
-        trx_estimate_obj = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, common_contract.address, data
-        )
-        resp = web3_client.estimate_scheduled(
-            neon_user_for_session.solana_account.pubkey(), [trx_estimate_obj], check_result=False
-        )
+        trx_estimate_obj = ScheduledTrxEstimateRequest(neon_user.checksum_address, common_contract.address, data)
+        resp = web3_client.estimate_scheduled(neon_user.solana_account.pubkey(), [trx_estimate_obj], check_result=False)
 
         assert "error" in resp, "error field not in response"
         assert "code" in resp["error"]
@@ -269,7 +255,7 @@ class TestNeonRPCEstimateScheduledGas:
     def test_wrong_format_field(
         self,
         json_rpc_client,
-        neon_user_for_session,
+        neon_user,
         common_contract,
         field,
         invalid_value,
@@ -278,9 +264,7 @@ class TestNeonRPCEstimateScheduledGas:
     ):
 
         data = decode_function_signature("setNumber(uint256)", [18])
-        trx_estimate_obj = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, common_contract.address, data
-        )
+        trx_estimate_obj = ScheduledTrxEstimateRequest(neon_user.checksum_address, common_contract.address, data)
 
         tx = {
             "fromAddress": trx_estimate_obj.from_address,
@@ -289,22 +273,20 @@ class TestNeonRPCEstimateScheduledGas:
             "value": trx_estimate_obj.value,
             field: invalid_value,
         }
-        params = {"scheduledSolanaPayer": str(neon_user_for_session.solana_account.pubkey()), "transactions": [tx]}
+        params = {"scheduledSolanaPayer": str(neon_user.solana_account.pubkey()), "transactions": [tx]}
 
         resp = json_rpc_client.send_rpc(method="neon_estimateScheduledGas", params=params)
         assert "error" in resp, "error field not in response"
         assert resp["error"]["code"] == error_code, f"error code must be {error_code} "
         assert resp["error"]["message"] == error_msg, f"error message must be {error_msg}"
 
-    def test_one_transaction_no_child(self, web3_client_sol, neon_user_for_session, common_contract):
+    def test_one_transaction_no_child(self, web3_client_sol, neon_user, common_contract):
         data = decode_function_signature("setNumber(uint256)", [18])
         trx_estimate = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, common_contract.address, data, child_transaction="0xFFFF"
+            neon_user.checksum_address, common_contract.address, data, child_transaction="0xFFFF"
         )
         trx_estimate_obj_list = [trx_estimate]
-        estimate_result = web3_client_sol.estimate_scheduled(
-            neon_user_for_session.solana_account.pubkey(), trx_estimate_obj_list
-        )
+        estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), trx_estimate_obj_list)
 
         assert len(estimate_result["gasList"]) == 1
         assert is_hex(estimate_result["gasList"][0])
@@ -312,7 +294,7 @@ class TestNeonRPCEstimateScheduledGas:
     def test_wrong_transactions_order_in_request(
         self,
         web3_client_sol,
-        neon_user_for_session,
+        neon_user,
         erc20_spl_mintable,
         evm_loader,
     ):
@@ -321,39 +303,39 @@ class TestNeonRPCEstimateScheduledGas:
         # │ s=0   │  │ s=1  │  │ s=2   │
         # └───────┘  └──────┘  └───────┘
         recipient = NeonUser(evm_loader.loader_id)
-        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user_for_session.checksum_address, 800)
+        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user.checksum_address, 800)
         top_up_in_trx = 400
         amount_to_recipient = 400
 
         data_0 = data_2 = decode_function_signature(
             "transferFrom(address,address,uint256)",
-            [erc20_spl_mintable.owner.address, neon_user_for_session.checksum_address, top_up_in_trx],
+            [erc20_spl_mintable.owner.address, neon_user.checksum_address, top_up_in_trx],
         )
         data_1 = decode_function_signature(
             "transfer(address,uint256)", [recipient.checksum_address, amount_to_recipient]
         )
 
         trx_estimate_0 = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, erc20_spl_mintable.address, data_0, child_transaction=hex(1)
+            neon_user.checksum_address, erc20_spl_mintable.address, data_0, child_transaction=hex(1)
         )
         trx_estimate_1 = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, erc20_spl_mintable.address, data_1, child_transaction=hex(2)
+            neon_user.checksum_address, erc20_spl_mintable.address, data_1, child_transaction=hex(2)
         )
         trx_estimate_2 = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, erc20_spl_mintable.address, data_2, child_transaction="0xFFFF"
+            neon_user.checksum_address, erc20_spl_mintable.address, data_2, child_transaction="0xFFFF"
         )
 
         trx_estimate_obj_list = [trx_estimate_2, trx_estimate_0, trx_estimate_1]
 
         estimate_result = web3_client_sol.estimate_scheduled(
-            neon_user_for_session.solana_account.pubkey(), trx_estimate_obj_list, check_result=False
+            neon_user.solana_account.pubkey(), trx_estimate_obj_list, check_result=False
         )
 
         assert estimate_result["error"]["code"] == Error32603.CODE
         assert estimate_result["error"]["message"] == Error32603.INTERNAL_ERROR
         assert estimate_result["error"]["data"]["errors"][0] == "childTransaction 1 in 1 should be more than 1"
 
-    def test_non_existent_child_idx(self, web3_client_sol, neon_user_for_session, evm_loader, common_contract):
+    def test_non_existent_child_idx(self, web3_client_sol, neon_user, evm_loader, common_contract):
         # ┌──────┐  ┌───────┐
         # ┤ t0 ✓ │─>│ t1 ✓  ├
         # │ s=1  │  │ s=2   │
@@ -363,16 +345,16 @@ class TestNeonRPCEstimateScheduledGas:
         data_1 = decode_function_signature("setNumber(uint256)", [2007])
 
         trx_estimate_0 = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, common_contract.address, data_0, child_transaction=hex(1)
+            neon_user.checksum_address, common_contract.address, data_0, child_transaction=hex(1)
         )
         trx_estimate_1 = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, common_contract.address, data_1, child_transaction=hex(2)
+            neon_user.checksum_address, common_contract.address, data_1, child_transaction=hex(2)
         )
 
         trx_estimate_obj_list = [trx_estimate_0, trx_estimate_1]
 
         estimate_result = web3_client_sol.estimate_scheduled(
-            neon_user_for_session.solana_account.pubkey(), trx_estimate_obj_list, check_result=False
+            neon_user.solana_account.pubkey(), trx_estimate_obj_list, check_result=False
         )
 
         assert estimate_result["error"]["code"] == Error32603.CODE
@@ -380,9 +362,7 @@ class TestNeonRPCEstimateScheduledGas:
         assert estimate_result["error"]["data"]["errors"][0] == "childTransaction 2 in 1 should be less than 2"
 
     @pytest.mark.parametrize("value", (1.0, "1.0", "first", "", 0))
-    def test_invalid_type_child_transaction_field(
-        self, web3_client_sol, neon_user_for_session, evm_loader, common_contract, value
-    ):
+    def test_invalid_type_child_transaction_field(self, web3_client_sol, neon_user, evm_loader, common_contract, value):
         # ┌──────┐  ┌───────┐
         # ┤ t0 ✓ │─>│ t1 ✓  ├
         # │ s=1  │  │ s=2   │
@@ -391,16 +371,16 @@ class TestNeonRPCEstimateScheduledGas:
         data_1 = decode_function_signature("setNumber(uint256)", [2007])
 
         trx_estimate_0 = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, common_contract.address, data_0, child_transaction=value
+            neon_user.checksum_address, common_contract.address, data_0, child_transaction=value
         )
         trx_estimate_1 = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, common_contract.address, data_1, child_transaction="0xFFFF"
+            neon_user.checksum_address, common_contract.address, data_1, child_transaction="0xFFFF"
         )
 
         trx_estimate_obj_list = [trx_estimate_0, trx_estimate_1]
 
         estimate_result = web3_client_sol.estimate_scheduled(
-            neon_user_for_session.solana_account.pubkey(), trx_estimate_obj_list, check_result=False
+            neon_user.solana_account.pubkey(), trx_estimate_obj_list, check_result=False
         )
 
         assert estimate_result["error"]["code"] == Error32602.CODE
@@ -408,7 +388,7 @@ class TestNeonRPCEstimateScheduledGas:
         assert "Value error" in estimate_result["error"]["data"]["errors"][0]
 
     def test_estimate_child_transaction_reverted(
-        self, web3_client_sol, neon_user_for_session, evm_loader, revert_contract, common_contract
+        self, web3_client_sol, neon_user, evm_loader, revert_contract, common_contract
     ):
         # ┌──────┐  ┌───────────┐
         # ┤ t0 ✓ │─>│ t1, revert├
@@ -419,16 +399,16 @@ class TestNeonRPCEstimateScheduledGas:
         data_1 = decode_function_signature("doAssert()")
 
         trx_estimate_0 = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, common_contract.address, data_0, child_transaction=hex(1)
+            neon_user.checksum_address, common_contract.address, data_0, child_transaction=hex(1)
         )
         trx_estimate_1 = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, revert_contract.address, data_1, child_transaction="0xFFFF"
+            neon_user.checksum_address, revert_contract.address, data_1, child_transaction="0xFFFF"
         )
 
         trx_estimate_obj_list = [trx_estimate_0, trx_estimate_1]
 
         estimate_result = web3_client_sol.estimate_scheduled(
-            neon_user_for_session.solana_account.pubkey(), trx_estimate_obj_list, check_result=False
+            neon_user.solana_account.pubkey(), trx_estimate_obj_list, check_result=False
         )
 
         assert estimate_result["error"]["code"] == Error3.CODE
@@ -485,15 +465,13 @@ class TestNeonRPCEstimateScheduledGas:
         assert_fields_are_hex(resp, ["chainId", "maxFeePerGas", "maxPriorityFeePerGas", "nonce", "treasuryIndex"])
 
     def test_estimate_transfer_trx_without_approval_in_preparatory_sol_trx_list(
-        self, web3_client_sol, neon_user_for_session, erc20_spl_mintable, evm_loader, treasury_pool
+        self, web3_client_sol, neon_user, erc20_spl_mintable, evm_loader, treasury_pool
     ):
         recipient = NeonUser(evm_loader.loader_id)
         ata_amount = 1_000
-        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user_for_session.checksum_address, ata_amount)
+        erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user.checksum_address, ata_amount)
 
-        my_ata = get_associated_token_address(
-            neon_user_for_session.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
-        )
+        my_ata = get_associated_token_address(neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey)
 
         data1 = decode_function_signature(
             "transferSolanaFrom(address,bytes32,uint64)",
@@ -501,36 +479,26 @@ class TestNeonRPCEstimateScheduledGas:
         )
         data2 = decode_function_signature("transfer(address,uint256)", [recipient.checksum_address, ata_amount])
 
-        trx_estimate_obj1 = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, erc20_spl_mintable.address, data1
-        )
-        trx_estimate_obj2 = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, erc20_spl_mintable.address, data2
-        )
+        trx_estimate_obj1 = ScheduledTrxEstimateRequest(neon_user.checksum_address, erc20_spl_mintable.address, data1)
+        trx_estimate_obj2 = ScheduledTrxEstimateRequest(neon_user.checksum_address, erc20_spl_mintable.address, data2)
 
         resp = web3_client_sol.estimate_scheduled(
-            neon_user_for_session.solana_account.pubkey(), [trx_estimate_obj1, trx_estimate_obj2], check_result=False
+            neon_user.solana_account.pubkey(), [trx_estimate_obj1, trx_estimate_obj2], check_result=False
         )
         assert "execution reverted" in resp["error"]["message"], "Error message is not correct"
 
     @pytest.mark.parametrize("case, value", [("wrong_data", "-"), ("wrong_accounts", []), ("wrong_instructions", [])])
     def test_wrong_params_value_estimate_with_preparatory_solana_transactions(
-        self, neon_user_for_session, json_sol_rpc_client, case, value, common_contract
+        self, neon_user, json_sol_rpc_client, case, value, common_contract
     ):
         trx = Transaction()
-        trx.add(
-            sync_native(
-                SyncNativeParams(program_id=TOKEN_PROGRAM_ID, account=neon_user_for_session.solana_account.pubkey())
-            )
-        )
+        trx.add(sync_native(SyncNativeParams(program_id=TOKEN_PROGRAM_ID, account=neon_user.solana_account.pubkey())))
 
         data1 = decode_function_signature("setTextAndReceiveValue(uint256)", [1998])
 
-        trx_estimate_obj1 = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, common_contract.address, data1
-        )
+        trx_estimate_obj1 = ScheduledTrxEstimateRequest(neon_user.checksum_address, common_contract.address, data1)
 
-        solana_payer = neon_user_for_session.solana_account.pubkey()
+        solana_payer = neon_user.solana_account.pubkey()
         trx_list_estimate = [trx_estimate_obj1]
         preparatory_solana_trxs = trx.instructions
         transactions = []
@@ -574,26 +542,22 @@ class TestNeonRPCEstimateScheduledGas:
         assert "Value error" in resp["error"]["data"]["errors"][0]
 
     def test_estimate_with_preparatory_failed_solana_transaction(
-        self, web3_client_sol, neon_user_for_session, evm_loader, common_contract
+        self, web3_client_sol, neon_user, evm_loader, common_contract
     ):
 
         trx = Transaction()
         trx.add(
             sync_native(
-                SyncNativeParams(
-                    program_id=ASSOCIATED_TOKEN_PROGRAM_ID, account=neon_user_for_session.solana_account.pubkey()
-                )
+                SyncNativeParams(program_id=ASSOCIATED_TOKEN_PROGRAM_ID, account=neon_user.solana_account.pubkey())
             )
         )
 
         data1 = decode_function_signature("setTextAndReceiveValue(uint256)", [1998])
 
-        trx_estimate_obj1 = ScheduledTrxEstimateRequest(
-            neon_user_for_session.checksum_address, common_contract.address, data1
-        )
+        trx_estimate_obj1 = ScheduledTrxEstimateRequest(neon_user.checksum_address, common_contract.address, data1)
 
         resp = web3_client_sol.estimate_scheduled(
-            neon_user_for_session.solana_account.pubkey(),
+            neon_user.solana_account.pubkey(),
             [
                 trx_estimate_obj1,
             ],

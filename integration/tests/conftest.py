@@ -153,7 +153,7 @@ def accounts(request, accounts_session, web3_client_session, pytestconfig: Confi
 
 
 @pytest.fixture(scope="session")
-def neon_user_for_session(
+def neon_user(
     evm_loader: EvmLoader,
     bank_account,
     environment: EnvironmentConfig,
@@ -191,7 +191,7 @@ def neon_user_no_sols(pytestconfig, bank_account, faucet, environment) -> NeonUs
 
 
 @pytest.fixture(scope="function")
-def neon_user(
+def neon_user_func_scope(
     evm_loader: EvmLoader,
     bank_account,
     environment: EnvironmentConfig,

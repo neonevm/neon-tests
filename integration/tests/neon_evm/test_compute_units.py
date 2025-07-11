@@ -703,7 +703,9 @@ class TestComputeUnits:
             i += 1
 
         evm_loader.finish_scheduled_trx(deterministic_operator_keypair, tree_account, deterministic_holder_acc)
-        evm_loader.destroy_tree_account(deterministic_neon_user, deterministic_treasury_pool, tree_account)
+        evm_loader.destroy_tree_account(
+            deterministic_operator_keypair, deterministic_neon_user, deterministic_treasury_pool, tree_account
+        )
 
         check_transaction_logs_have_text(
             solana_client=sol_client,

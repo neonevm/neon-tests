@@ -896,7 +896,7 @@ class EvmLoader(SolanaClient):
                 operator.pubkey(), operator_balance, self.loader_id, holder_account, tree_account
             )
         )
-        return self.send_tx(trx, operator)
+        return self.send_tx_and_check_status_ok(trx, operator)
 
     @allure.step("Skip scheduled transaction from instruction")
     def skip_scheduled_trx_from_instruction(
@@ -922,23 +922,22 @@ class EvmLoader(SolanaClient):
 
     @allure.step("Destroy tree account")
     def destroy_tree_account(
-        self, neon_user: NeonUser, treasury, tree_account, chain_id: int | None = ""
+        self, operator: Keypair, tree_acc_payer: NeonUser, treasury, tree_account, chain_id: int | None = ""
     ) -> GetTransactionResp:
         if chain_id == "":
             chain_id = self.sol_chain_id
 
         trx = Transaction()
-
         trx.add(
             make_scheduled_transaction_destroy(
-                neon_user.solana_account.pubkey(),
-                neon_user.get_balance_account(chain_id),
+                operator.pubkey(),
+                tree_acc_payer.get_balance_account(chain_id),
                 treasury,
                 tree_account,
                 self.loader_id,
             )
         )
-        return self.send_tx(trx, neon_user.solana_account)
+        return self.send_tx_and_check_status_ok(trx, operator)
 
     @allure.step("Deploy contract")
     def deploy_contract(

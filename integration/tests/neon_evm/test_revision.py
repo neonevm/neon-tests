@@ -1036,7 +1036,6 @@ class TestAccountRevision:
         neon_api_client,
         revision_with_solana_call_contract,
         session_user,
-        sol_client,
         sender_with_tokens,
         environment,
     ):
@@ -1058,14 +1057,13 @@ class TestAccountRevision:
             value=10 * amount,
         )
 
-        emulate_result = neon_api_client.emulate_contract_call(
+        accounts_from_emulation1 = neon_api_client.get_additional_accounts_by_emulation(
             sender_with_tokens.eth_address.hex(),
             revision_with_solana_call_contract.eth_address.hex(),
             "transferNeonSeveralTimes(uint256,address)",
             [10, recipient.eth_address],
             value=hex(10 * amount),
         )
-        accounts_from_emulation1 = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
 
         evm_loader.write_transaction_to_holder_account(signed_tx1, holder1, operator_keypair)
 
@@ -1107,14 +1105,13 @@ class TestAccountRevision:
             value=2 * amount,
         )
 
-        emulate_result = neon_api_client.emulate_contract_call(
+        accounts_from_emulation2 = neon_api_client.get_additional_accounts_by_emulation(
             sender_with_tokens.eth_address.hex(),
             revision_with_solana_call_contract.eth_address.hex(),
             "transferNeonAndCallSolana(uint64,bytes,uint256,address)",
             [2039280, serialized_instructions, amount, recipient.eth_address],
             value=hex(2 * amount),
         )
-        accounts_from_emulation2 = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
 
         evm_loader.write_transaction_to_holder_account(signed_tx2, holder2, operator_keypair)
 
@@ -1122,7 +1119,7 @@ class TestAccountRevision:
         resp2 = evm_loader.execute_transaction_steps_from_account(
             operator_keypair, treasury_pool, holder2, accounts_from_emulation2
         )
-        check_transaction_logs_have_text(solana_client=sol_client, trx=resp2, text="exit_status=0x11")
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp2, text="exit_status=0x11")
 
         payer_info = evm_loader.get_account_info(payer, commitment=Confirmed)
         assert payer_info.value is None
@@ -1131,7 +1128,7 @@ class TestAccountRevision:
         resp1 = evm_loader.execute_transaction_steps_from_account(
             operator_keypair, treasury_pool, holder1, accounts_from_emulation1, check_invalid_revision=True
         )
-        check_transaction_logs_have_text(solana_client=sol_client, trx=resp1, text="exit_status=0x11")
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp1, text="exit_status=0x11")
 
         recipient_balance_after_trx1_rerun = evm_loader.get_neon_balance(recipient.eth_address)
         assert recipient_balance_after_trx1_rerun == recipient_balance_before_trx2 + 2 * amount + 10 * amount

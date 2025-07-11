@@ -58,7 +58,9 @@ def get_solana_trx_cancel_reason(web3_client: Web3Client, solana_client, trx_has
     sol_trxs = web3_client.get_solana_trx_by_neon(trx_hash)["result"]
     cancel_sol_trx_hash = sol_trxs[-1]
 
-    last_trx = solana_client.get_transaction(Signature.from_string(cancel_sol_trx_hash), commitment=Confirmed)
+    last_trx = solana_client.get_transaction(
+        Signature.from_string(cancel_sol_trx_hash), commitment=Confirmed, max_supported_transaction_version=0
+    )
     if "Program log: Instruction: Cancel Transaction" in last_trx.value.transaction.meta.log_messages:
         cancel_data = last_trx.value.transaction.transaction.message.instructions[-1].data
         return base58.b58decode(cancel_data)

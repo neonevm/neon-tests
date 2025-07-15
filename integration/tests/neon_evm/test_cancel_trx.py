@@ -1,9 +1,7 @@
 import pytest
-import solana
-from solana.transaction import Transaction
+from solana.rpc.core import RPCException
 
 from utils.evm_loader import EVM_STEPS
-from utils.instructions import make_cancel
 from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from .utils.constants import TAG_FINALIZED_STATE
 from .utils.ethereum import make_contract_call_trx
@@ -12,7 +10,7 @@ from .utils.transaction_checks import check_holder_account_tag
 
 class TestCancelTrx:
     def test_cancel_trx(
-        self, operator_keypair, rw_lock_contract, session_user, treasury_pool, evm_loader, neon_api_client
+        self, operator_keypair, rw_lock_contract, session_user, treasury_pool, evm_loader, neon_api_client, holder_acc
     ):
         """EVM can cancel transaction and finalize storage account"""
         signed_tx = make_contract_call_trx(
@@ -22,7 +20,6 @@ class TestCancelTrx:
             session_user.eth_address.hex(), rw_lock_contract.eth_address.hex(), "unchange_storage(uint8,uint8)", [1, 1]
         )
 
-        storage_account = evm_loader.create_holder(operator_keypair)
         user_nonce_before_first_step = evm_loader.get_neon_nonce(session_user.eth_address)
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
 
@@ -30,7 +27,7 @@ class TestCancelTrx:
             operator_keypair,
             operator_balance,
             treasury_pool,
-            storage_account,
+            holder_acc,
             signed_tx,
             additional_accounts,
             1,
@@ -41,21 +38,10 @@ class TestCancelTrx:
 
         user_nonce_after_first_step = evm_loader.get_neon_nonce(session_user.eth_address)
         assert user_nonce_before_first_step + 1 == user_nonce_after_first_step
-        trx = Transaction()
-        trx.add(
-            make_cancel(
-                evm_loader.loader_id,
-                storage_account,
-                operator_keypair,
-                operator_balance,
-                signed_tx.hash,
-                additional_accounts,
-            )
-        )
-        evm_loader.send_tx(trx, operator_keypair)
+        evm_loader.send_cancel_transaction(operator_keypair, holder_acc, additional_accounts, signed_tx.hash)
         check_holder_account_tag(
             evm_loader,
-            storage_account=storage_account,
+            storage_account=holder_acc,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_FINALIZED_STATE,
         )
@@ -71,7 +57,7 @@ class TestCancelTrx:
         evm_loader,
         neon_api_client,
         gas_limit,
-        solana_client,
+        holder_acc,
     ):
         """If after some iterations there is not enough neon to cancel, the cancel
         instruction can still be executed, and as many neons as possible will be charged
@@ -86,63 +72,43 @@ class TestCancelTrx:
             gas_price=1,
         )
 
-        storage_account = evm_loader.create_holder(operator_keypair)
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
         user_neon_balance_before = evm_loader.get_neon_balance(sender_with_tokens.eth_address)
-
+        additional_accounts = [
+            rw_lock_contract.solana_address,
+            rw_lock_contract.balance_account_address,
+            sender_with_tokens.balance_account_address,
+        ]
         # first successful iteration
         receipt = evm_loader.send_transaction_step_from_instruction(
             operator_keypair,
             operator_balance,
             treasury_pool,
-            storage_account,
+            holder_acc,
             signed_tx,
-            [
-                rw_lock_contract.solana_address,
-                rw_lock_contract.balance_account_address,
-                sender_with_tokens.balance_account_address,
-            ],
+            additional_accounts,
             1,
             operator_keypair,
         )
 
         assert receipt.value.transaction.meta.err is None
         if gas_limit - 5000 < 5000:
-            with pytest.raises(solana.rpc.core.RPCException, match="Out of Gas"):
+            with pytest.raises(RPCException, match="Out of Gas"):
                 evm_loader.send_transaction_step_from_instruction(
                     operator_keypair,
                     operator_balance,
                     treasury_pool,
-                    storage_account,
+                    holder_acc,
                     signed_tx,
-                    [
-                        rw_lock_contract.solana_address,
-                        rw_lock_contract.balance_account_address,
-                        sender_with_tokens.balance_account_address,
-                    ],
+                    additional_accounts,
                     EVM_STEPS,
                     operator_keypair,
                 )
 
-        trx = Transaction()
-        trx.add(
-            make_cancel(
-                evm_loader.loader_id,
-                storage_account,
-                operator_keypair,
-                operator_balance,
-                signed_tx.hash,
-                [
-                    rw_lock_contract.solana_address,
-                    rw_lock_contract.balance_account_address,
-                    sender_with_tokens.balance_account_address,
-                ],
-            )
-        )
-        evm_loader.send_tx(trx, operator_keypair)
+        evm_loader.send_cancel_transaction(operator_keypair, holder_acc, additional_accounts, signed_tx.hash)
         check_holder_account_tag(
-            solana_client,
-            storage_account=storage_account,
+            evm_loader,
+            storage_account=holder_acc,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_FINALIZED_STATE,
         )

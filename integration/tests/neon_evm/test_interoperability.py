@@ -461,7 +461,7 @@ class TestInteroperability:
         sender_with_tokens,
         solana_caller,
         evm_loader,
-        new_holder_acc_2,
+        second_holder_acc,
         holder_acc,
         neon_api_client,
         operator_keypair,
@@ -498,14 +498,14 @@ class TestInteroperability:
         )
         accounts_from_emulation = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
 
-        evm_loader.write_transaction_to_holder_account(signed_tx1, new_holder_acc_2, operator_keypair)
+        evm_loader.write_transaction_to_holder_account(signed_tx1, second_holder_acc, operator_keypair)
 
         for _ in range(9):
             evm_loader.send_transaction_step_from_account(
                 operator_keypair,
                 operator_balance_pubkey,
                 treasury_pool,
-                new_holder_acc_2,
+                second_holder_acc,
                 accounts_from_emulation,
                 EVM_STEPS,
                 operator_keypair,
@@ -530,18 +530,18 @@ class TestInteroperability:
 
         check_holder_account_tag(
             solana_client=evm_loader,
-            storage_account=new_holder_acc_2,
+            storage_account=second_holder_acc,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_ACTIVE_STATE,
         )
 
         evm_loader.execute_transaction_steps_from_account(
-            operator_keypair, treasury_pool, new_holder_acc_2, accounts_from_emulation, check_invalid_revision=True
+            operator_keypair, treasury_pool, second_holder_acc, accounts_from_emulation, check_invalid_revision=True
         )
 
         check_holder_account_tag(
             solana_client=evm_loader,
-            storage_account=new_holder_acc_2,
+            storage_account=second_holder_acc,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_FINALIZED_STATE,
         )

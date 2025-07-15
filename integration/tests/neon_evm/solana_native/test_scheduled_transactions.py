@@ -22,8 +22,8 @@ class TestScheduledTrx:
         basic_contract,
         neon_api_client,
         operator_keypair,
+        holder_acc,
     ):
-        holder_acc = evm_loader.create_holder(operator_keypair)
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, evm_loader.sol_chain_id)
         contract_data = 18
         data = abi.function_signature_to_4byte_selector("setNumber(uint256)") + eth_abi.encode(
@@ -63,8 +63,8 @@ class TestScheduledTrx:
         basic_contract,
         neon_api_client: NeonApiClient,
         operator_keypair,
+        holder_acc,
     ):
-        holder_acc = evm_loader.create_holder(operator_keypair)
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, evm_loader.sol_chain_id)
         contract_data = 18
         data = abi.function_signature_to_4byte_selector("setNumber(uint256)") + eth_abi.encode(
@@ -202,6 +202,7 @@ class TestScheduledTrx:
         neon_api_client,
         operator_keypair,
         sender_with_wsol,
+        holder_acc,
     ):
         contract = evm_loader.deploy_contract(
             operator_keypair,
@@ -217,7 +218,6 @@ class TestScheduledTrx:
             "0x" + neon_user.neon_address.hex(),
             int(1 * LAMPORT_PER_SOL),
         )
-        holder_acc = evm_loader.create_holder(operator_keypair)
         nonce = evm_loader.get_neon_nonce(account=neon_user.neon_address, chain_id=evm_loader.sol_chain_id)
         data = abi.function_signature_to_4byte_selector("donate1000()")
         amount = 10000

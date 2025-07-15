@@ -343,7 +343,6 @@ def account_with_all_tokens(
     eth_bank_account,
     withdraw_contract_sol_chain,
     neon_mint,
-    operator_keypair,
     bank_account: Keypair | None,
 ) -> tp.Generator[LocalAccount, None, None]:
     neon_account = web3_client_session.create_account_with_balance(faucet, bank_account=eth_bank_account)

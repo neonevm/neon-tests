@@ -57,7 +57,7 @@ def operator_keypair(index_of_process: int, evm_loader: EvmLoader) -> Keypair:
     """
     Initialized solana keypair with balance. Get private keys from ci/operator-keypairs
     """
-    key_file = pathlib.Path(f"{OPERATOR_KEYPAIR_PATH}/id{index_of_process+index_of_process_increment}.json")
+    key_file = pathlib.Path(f"{OPERATOR_KEYPAIR_PATH}/id{index_of_process + index_of_process_increment}.json")
     allure.attach(
         f"current key_file {key_file}",
         "Operator key",
@@ -120,13 +120,13 @@ def holder_acc(operator_keypair: Keypair, evm_loader: EvmLoader) -> Pubkey:
     return evm_loader.create_holder(operator_keypair)
 
 
-@pytest.fixture(scope="function")
-def new_holder_acc(operator_keypair: Keypair, evm_loader: EvmLoader) -> Pubkey:
+@pytest.fixture(scope="session")
+def second_holder_acc(operator_keypair: Keypair, evm_loader: EvmLoader) -> Pubkey:
     return evm_loader.create_holder(operator_keypair)
 
 
 @pytest.fixture(scope="function")
-def new_holder_acc_2(operator_keypair: Keypair, evm_loader: EvmLoader) -> Pubkey:
+def temp_holder_acc(operator_keypair: Keypair, evm_loader: EvmLoader) -> Pubkey:
     return evm_loader.create_holder(operator_keypair)
 
 

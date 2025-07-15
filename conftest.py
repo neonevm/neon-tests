@@ -194,8 +194,8 @@ def env_name(pytestconfig: Config) -> EnvName:
 
 
 @pytest.fixture(scope="session")
-def operator_keypair() -> Keypair:
-    with open("operator-keypair.json", "r") as key:
+def token_owner_keypair() -> Keypair:
+    with open("multichain-token-owner.json", "r") as key:
         secret_key = json.load(key)
         return Keypair.from_bytes(secret_key)
 
@@ -318,16 +318,6 @@ def treasury_pool(evm_loader: EvmLoader, pytestconfig, index_of_process, bank_ac
         if balance < LAMPORT_PER_SOL:
             amount = LAMPORT_PER_SOL - balance
             evm_loader.send_sol(bank_account, address, amount)
-    return TreasuryPool(index, address, index_buf)
-
-
-@pytest.fixture(scope="session")
-def treasury_pool_new(evm_loader, pytestconfig) -> TreasuryPool:
-    index = 3333
-    address = evm_loader.create_treasury_pool_address(index)
-    index_buf = index.to_bytes(4, "little")
-    if pytestconfig.getoption("--network") not in ["mainnet", "devnet"]:
-        evm_loader.request_airdrop(address, 10000 * 10**9, commitment=Confirmed)
     return TreasuryPool(index, address, index_buf)
 
 

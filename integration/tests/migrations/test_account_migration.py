@@ -198,9 +198,7 @@ def print_solana_accounts_info(sol_client, accounts, action):
 
 class TestAccountMigration:
     @pytest.fixture(scope="function")
-    def check_operator_balance(
-        self, web3_client, sol_client, operator_keypair, solana_account, neon_price, sol_price, request, operator
-    ):
+    def check_operator_balance(self, web3_client, sol_client, solana_account, neon_price, sol_price, request, operator):
         print("test case name:", request.node.name)
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(web3_client)

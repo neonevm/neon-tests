@@ -343,6 +343,7 @@ def account_with_all_tokens(
     eth_bank_account,
     withdraw_contract_sol_chain,
     neon_mint,
+    token_owner_keypair,
     bank_account: Keypair | None,
 ) -> tp.Generator[LocalAccount, None, None]:
     neon_account = web3_client_session.create_account_with_balance(faucet, bank_account=eth_bank_account)
@@ -360,11 +361,7 @@ def account_with_all_tokens(
         )
     token_mint = Pubkey.from_string(MULTITOKEN_MINTS_USDT)
 
-    evm_loader.mint_spl_to(
-        token_mint,
-        solana_account,
-        1000000000000000,
-    )
+    evm_loader.mint_spl_to(token_mint, solana_account, 1000000000000000, token_owner_keypair)
 
     evm_loader.send_token_from_solana_to_neon(
         solana_account,

@@ -57,6 +57,7 @@ from utils.instructions import (
     make_delete_holder_account,
     make_operator_create_balance,
     make_transaction_step_from_account,
+    make_cancel,
 )
 from utils.layouts import (
     BALANCE_ACCOUNT_LAYOUT,
@@ -1029,3 +1030,26 @@ class EvmLoader(SolanaClient):
         trx = Transaction()
         trx.add(make_delete_holder_account(acc.pubkey(), del_key, self.loader_id))
         return self.send_tx(trx, signer)
+
+    @allure.step("Send cancel transaction")
+    def send_cancel_transaction(
+        self,
+        operator_keypair: Keypair,
+        holder_acc: Pubkey,
+        additional_accounts,
+        trx_hash: Union[bytes, str],
+    ) -> GetTransactionResp:
+        operator_balance = self.get_operator_balance_pubkey(operator_keypair)
+
+        trx = Transaction()
+        trx.add(
+            make_cancel(
+                self.loader_id,
+                holder_acc,
+                operator_keypair,
+                operator_balance,
+                trx_hash,
+                additional_accounts,
+            )
+        )
+        return self.send_tx_and_check_status_ok(trx, operator_keypair)

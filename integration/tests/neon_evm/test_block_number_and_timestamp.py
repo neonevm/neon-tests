@@ -33,13 +33,11 @@ class TestBlockNumberAndTimestamp:
         neon_api_client,
         evm_loader,
         sender_with_tokens,
-        sol_client,
+        holder_acc,
     ):
         """
         This test repeats the proxy's logic of reemulation with account info overrides and block overrides.
         """
-        holder = evm_loader.create_holder(operator_keypair)
-
         params = [4, 123]
         func_signature = "addDataToMapping(uint256,uint256)"
 
@@ -53,7 +51,7 @@ class TestBlockNumberAndTimestamp:
         )
 
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
-        evm_loader.write_transaction_to_holder_account(signed_tx, holder, operator_keypair)
+        evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 
         def get_account_override(eth_account):
             sender_address = eth_account.eth_address.hex()
@@ -64,7 +62,7 @@ class TestBlockNumberAndTimestamp:
             }
 
         def get_block_params():
-            block_params = neon_api_client.get_holder(holder)["value"]["block_params"]
+            block_params = neon_api_client.get_holder(holder_acc)["value"]["block_params"]
             block_timestamp, block_number = int(block_params[0], 16), int(block_params[1], 16)
 
             return {"number": block_number, "time": block_timestamp}
@@ -78,7 +76,7 @@ class TestBlockNumberAndTimestamp:
             operator_keypair,
             operator_balance_pubkey,
             treasury_pool,
-            holder,
+            holder_acc,
             initial_accounts,
             EVM_STEPS,
             operator_keypair,
@@ -98,11 +96,11 @@ class TestBlockNumberAndTimestamp:
 
         # Fetch new account list that depends on the re-emulation.
         new_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
-        evm_loader.execute_transaction_steps_from_account(operator_keypair, treasury_pool, holder, new_accounts)
+        evm_loader.execute_transaction_steps_from_account(operator_keypair, treasury_pool, holder_acc, new_accounts)
 
         check_holder_account_tag(
-            solana_client=sol_client,
-            storage_account=holder,
+            solana_client=evm_loader,
+            storage_account=holder_acc,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_FINALIZED_STATE,
         )
@@ -116,7 +114,7 @@ class TestBlockNumberAndTimestamp:
         neon_api_client,
         treasury_pool,
         holder_acc,
-        new_holder_acc,
+        second_holder_acc,
     ):
         """Check that all steps with timestamp is restarted
         with new value of timestamp/timeblock after changing revisions
@@ -150,9 +148,9 @@ class TestBlockNumberAndTimestamp:
             block_contract,
             func_signature,
         )
-        evm_loader.write_transaction_to_holder_account(signed_tx2, new_holder_acc, operator_keypair)
+        evm_loader.write_transaction_to_holder_account(signed_tx2, second_holder_acc, operator_keypair)
         resp = evm_loader.execute_transaction_steps_from_account(
-            operator_keypair, treasury_pool, new_holder_acc, emulated_accounts
+            operator_keypair, treasury_pool, second_holder_acc, emulated_accounts
         )
         check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
 

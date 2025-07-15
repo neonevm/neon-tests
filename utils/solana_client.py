@@ -1,5 +1,4 @@
 import json
-import pathlib
 import time
 import typing as tp
 import uuid
@@ -175,15 +174,10 @@ class SolanaClient(solana.rpc.api.Client):
         return response.json()
 
     @allure.step("Mint SPL tokens to account")
-    def mint_spl_to(self, mint: Pubkey, dest: Keypair, amount: int, authority: tp.Optional[Keypair] = None):
+    def mint_spl_to(self, mint: Pubkey, dest: Keypair, amount: int, authority: Keypair):
         token_account = get_associated_token_address(dest.pubkey(), mint)
 
         self.create_associate_token_acc(dest, dest, mint)
-
-        if authority is None:
-            operator_path = pathlib.Path(__file__).parent.parent / "operator-keypair.json"
-            with open(operator_path, "r") as f:
-                authority = Keypair.from_bytes(json.load(f))
 
         token = spl.token.client.Token(self, mint, TOKEN_PROGRAM_ID, authority)
         token.payer = authority

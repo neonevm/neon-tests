@@ -53,7 +53,7 @@ class TestDeposit:
 
     @pytest.mark.multipletokens
     def test_create_and_transfer_new_token_from_solana_to_neon(
-        self, solana_account, web3_client_usdt, operator_keypair, evm_loader
+        self, solana_account, web3_client_usdt, token_owner_keypair, evm_loader
     ):
         amount = 5000
         new_sol_account = Keypair()
@@ -62,7 +62,7 @@ class TestDeposit:
         new_account = self.accounts.create_account()
 
         evm_loader.deposit_neon_like_tokens_from_solana_to_neon(
-            token_mint, new_sol_account, new_account, web3_client_usdt.chain_id, operator_keypair, amount
+            token_mint, new_sol_account, new_account, web3_client_usdt.chain_id, token_owner_keypair, amount
         )
         usdt_balance_after = web3_client_usdt.get_balance(new_account)
         assert usdt_balance_after == amount * 1000000000000

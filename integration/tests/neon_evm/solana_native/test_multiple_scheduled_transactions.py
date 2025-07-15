@@ -67,11 +67,10 @@ class TestMultipleScheduledTrx:
 
         evm_loader.finish_scheduled_trx(operator_keypair, tree_account, holder_acc)
 
-        holder_acc2 = evm_loader.create_holder(operator_keypair)
         evm_loader.execute_scheduled_trx_from_instruction(
-            tx1, operator_keypair, holder_acc2, tree_account, treasury_pool, additional_accounts
+            tx1, operator_keypair, holder_acc, tree_account, treasury_pool, additional_accounts
         )
-        evm_loader.finish_scheduled_trx(operator_keypair, tree_account, holder_acc2)
+        evm_loader.finish_scheduled_trx(operator_keypair, tree_account, holder_acc)
         evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
         assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
 

@@ -743,55 +743,54 @@ class TestTransactionStepFromAccountParallelRuns:
         evm_loader,
         operator_keypair,
         treasury_pool,
-        new_holder_acc,
-        sol_client,
+        holder_acc,
+        second_holder_acc,
     ):
         signed_tx = make_contract_call_trx(
             evm_loader, session_user, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1]
         )
-        evm_loader.write_transaction_to_holder_account(signed_tx, new_holder_acc, operator_keypair)
+        evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
         operator_balance = evm_loader.get_operator_balance_pubkey(operator_keypair)
 
-        def send_transaction_steps(holder_acc, contract):
+        def send_transaction_steps(holder, contract):
             evm_loader.send_transaction_step_from_account(
                 operator_keypair,
                 operator_balance,
                 treasury_pool,
-                holder_acc,
+                holder,
                 [session_user.balance_account_address, session_user.solana_account_address, contract.solana_address],
                 500,
                 operator_keypair,
             )
 
-        send_transaction_steps(new_holder_acc, rw_lock_contract)
+        send_transaction_steps(holder_acc, rw_lock_contract)
 
         signed_tx2 = make_contract_call_trx(evm_loader, session_user, string_setter_contract, "get()")
-        holder_acc2 = evm_loader.create_holder(operator_keypair)
-        evm_loader.write_transaction_to_holder_account(signed_tx2, holder_acc2, operator_keypair)
+        evm_loader.write_transaction_to_holder_account(signed_tx2, second_holder_acc, operator_keypair)
 
-        send_transaction_steps(holder_acc2, string_setter_contract)
-        send_transaction_steps(new_holder_acc, rw_lock_contract)
-        send_transaction_steps(holder_acc2, string_setter_contract)
-        send_transaction_steps(new_holder_acc, rw_lock_contract)
-        send_transaction_steps(holder_acc2, string_setter_contract)
+        send_transaction_steps(second_holder_acc, string_setter_contract)
+        send_transaction_steps(holder_acc, rw_lock_contract)
+        send_transaction_steps(second_holder_acc, string_setter_contract)
+        send_transaction_steps(holder_acc, rw_lock_contract)
+        send_transaction_steps(second_holder_acc, string_setter_contract)
 
         check_holder_account_tag(
-            solana_client=sol_client,
-            storage_account=new_holder_acc,
+            solana_client=evm_loader,
+            storage_account=holder_acc,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_FINALIZED_STATE,
         )
         check_holder_account_tag(
-            solana_client=sol_client,
-            storage_account=holder_acc2,
+            solana_client=evm_loader,
+            storage_account=second_holder_acc,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_ACTIVE_STATE,
         )
 
-        send_transaction_steps(holder_acc2, string_setter_contract)
+        send_transaction_steps(second_holder_acc, string_setter_contract)
         check_holder_account_tag(
-            solana_client=sol_client,
-            storage_account=holder_acc2,
+            solana_client=evm_loader,
+            storage_account=second_holder_acc,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_FINALIZED_STATE,
         )
@@ -804,37 +803,37 @@ class TestTransactionStepFromAccountParallelRuns:
         evm_loader,
         operator_keypair,
         treasury_pool,
-        new_holder_acc,
+        holder_acc,
+        second_holder_acc,
     ):
         signed_tx = make_contract_call_trx(
             evm_loader, second_session_user, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1]
         )
-        evm_loader.write_transaction_to_holder_account(signed_tx, new_holder_acc, operator_keypair)
+        evm_loader.write_transaction_to_holder_account(signed_tx, second_holder_acc, operator_keypair)
         signed_tx2 = make_contract_call_trx(
             evm_loader, session_user, rw_lock_contract, "unchange_storage(uint8,uint8)", [2, 2]
         )
-        holder_acc2 = evm_loader.create_holder(operator_keypair)
-        evm_loader.write_transaction_to_holder_account(signed_tx2, holder_acc2, operator_keypair)
+        evm_loader.write_transaction_to_holder_account(signed_tx2, holder_acc, operator_keypair)
 
-        def send_transaction_steps(user, holder_acc):
+        def send_transaction_steps(user, holder):
             operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
             evm_loader.send_transaction_step_from_account(
                 operator_keypair,
                 operator_balance_pubkey,
                 treasury_pool,
-                holder_acc,
+                holder,
                 [user.solana_account_address, user.balance_account_address, rw_lock_contract.solana_address],
                 EVM_STEPS,
                 operator_keypair,
             )
 
-        send_transaction_steps(second_session_user, new_holder_acc)
-        send_transaction_steps(session_user, holder_acc2)
-        send_transaction_steps(second_session_user, new_holder_acc)
-        send_transaction_steps(session_user, holder_acc2)
-        send_transaction_steps(second_session_user, new_holder_acc)
-        send_transaction_steps(session_user, holder_acc2)
-        for holder in (new_holder_acc, holder_acc2):
+        send_transaction_steps(second_session_user, second_holder_acc)
+        send_transaction_steps(session_user, holder_acc)
+        send_transaction_steps(second_session_user, second_holder_acc)
+        send_transaction_steps(session_user, holder_acc)
+        send_transaction_steps(second_session_user, second_holder_acc)
+        send_transaction_steps(session_user, holder_acc)
+        for holder in (second_holder_acc, holder_acc):
             check_holder_account_tag(
                 solana_client=evm_loader,
                 storage_account=holder,
@@ -850,7 +849,7 @@ class TestTransactionStepFromAccountParallelRuns:
         operator_keypair,
         treasury_pool,
         holder_acc,
-        new_holder_acc,
+        second_holder_acc,
         neon_api_client,
         rw_lock_caller,
     ):
@@ -864,13 +863,13 @@ class TestTransactionStepFromAccountParallelRuns:
 
         evm_loader.write_transaction_to_holder_account(signed_tx1, holder_acc, operator_keypair)
 
-        def send_transaction_steps(holder_acc, additional_accounts):
+        def send_transaction_steps(holder, additional_accounts):
             operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
             evm_loader.send_transaction_step_from_account(
                 operator_keypair,
                 operator_balance_pubkey,
                 treasury_pool,
-                holder_acc,
+                holder,
                 additional_accounts,
                 EVM_STEPS,
                 operator_keypair,
@@ -882,11 +881,11 @@ class TestTransactionStepFromAccountParallelRuns:
         additional_accounts_trx2 = neon_api_client.get_additional_accounts_by_emulation(
             session_user.eth_address.hex(), rw_lock_caller.eth_address.hex(), "get_text()"
         )
-        evm_loader.write_transaction_to_holder_account(signed_tx2, new_holder_acc, operator_keypair)
+        evm_loader.write_transaction_to_holder_account(signed_tx2, second_holder_acc, operator_keypair)
 
-        send_transaction_steps(new_holder_acc, additional_accounts_trx2)
+        send_transaction_steps(second_holder_acc, additional_accounts_trx2)
         send_transaction_steps(holder_acc, additional_accounts_trx1)
-        send_transaction_steps(new_holder_acc, additional_accounts_trx2)
+        send_transaction_steps(second_holder_acc, additional_accounts_trx2)
 
         evm_loader.execute_transaction_steps_from_account(
             operator_keypair, treasury_pool, holder_acc, additional_accounts_trx1
@@ -894,11 +893,11 @@ class TestTransactionStepFromAccountParallelRuns:
         evm_loader.execute_transaction_steps_from_account(
             operator_keypair,
             treasury_pool,
-            new_holder_acc,
+            second_holder_acc,
             additional_accounts_trx2,
         )
 
-        for holder_acc in (holder_acc, new_holder_acc):
+        for holder_acc in (holder_acc, second_holder_acc):
             check_holder_account_tag(
                 solana_client=evm_loader,
                 storage_account=holder_acc,
@@ -974,7 +973,7 @@ class TestStepFromAccountChangingOperatorsDuringTrxRun:
         operator_keypair,
         second_operator_keypair,
         treasury_pool,
-        new_holder_acc,
+        holder_acc,
         neon_api_client,
     ):
         text = "text"
@@ -984,7 +983,7 @@ class TestStepFromAccountChangingOperatorsDuringTrxRun:
         additional_accounts = neon_api_client.get_additional_accounts_by_emulation(
             session_user.eth_address.hex(), rw_lock_contract.eth_address.hex(), "update_storage_str(string)", [text]
         )
-        evm_loader.write_transaction_to_holder_account(signed_tx, new_holder_acc, operator_keypair)
+        evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         trx = TransactionWithComputeBudget(operator_keypair)
         trx.add(
@@ -993,7 +992,7 @@ class TestStepFromAccountChangingOperatorsDuringTrxRun:
                 operator_keypair,
                 operator_balance_pubkey,
                 evm_loader.loader_id,
-                new_holder_acc,
+                holder_acc,
                 treasury_pool,
                 additional_accounts,
             )
@@ -1005,7 +1004,7 @@ class TestStepFromAccountChangingOperatorsDuringTrxRun:
             second_operator_keypair,
             second_operator_balance,
             treasury_pool,
-            new_holder_acc,
+            holder_acc,
             additional_accounts,
             EVM_STEPS,
             second_operator_keypair,
@@ -1014,7 +1013,7 @@ class TestStepFromAccountChangingOperatorsDuringTrxRun:
             second_operator_keypair,
             second_operator_balance,
             treasury_pool,
-            new_holder_acc,
+            holder_acc,
             additional_accounts,
             1,
             second_operator_keypair,

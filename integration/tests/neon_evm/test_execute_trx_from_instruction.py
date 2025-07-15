@@ -328,14 +328,11 @@ class TestExecuteTrxFromInstruction:
                 ],
             )
 
-    def test_operator_is_not_in_white_list(
-        self, sender_with_tokens, evm_loader, treasury_pool, session_user, holder_acc, sol_client
-    ):
+    def test_operator_is_not_in_white_list(self, sender_with_tokens, evm_loader, treasury_pool, session_user):
         # check any user can send transactions through "execute transaction from instruction" instruction with own holder
 
         signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
         holder_acc = evm_loader.create_holder(sender_with_tokens.solana_account)
-
         resp = evm_loader.execute_trx_from_instruction(
             sender_with_tokens.solana_account,
             holder_acc,
@@ -349,7 +346,7 @@ class TestExecuteTrxFromInstruction:
             ],
             sender_with_tokens.solana_account,
         )
-        check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x11")
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
 
     def test_incorrect_system_program(
         self, sender_with_tokens, operator_keypair, evm_loader, treasury_pool, session_user, holder_acc

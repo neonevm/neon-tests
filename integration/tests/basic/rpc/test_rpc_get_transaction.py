@@ -390,7 +390,7 @@ class TestRpcGetTransaction:
 
         tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
-        evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
+        tree_account = evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
 
         web3_client_sol.send_scheduled_transaction(tx, check_result=True)
         # tx_receipt = web3_client_sol.wait_for_transaction_receipt(tx.hash(), timeout=180)
@@ -412,6 +412,8 @@ class TestRpcGetTransaction:
         # ), f"waited {result['scheduledSolanaPayer']}, got {str(neon_user.solana_account.pubkey())}"
         # transactions_with_sig = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
         # assert result["scheduledSolanaSignature"] in transactions_with_sig["result"]
+
+        wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=120, delay=2)
 
     @pytest.mark.neon_only
     @pytest.mark.parametrize(
@@ -492,7 +494,14 @@ class TestRpcGetTransaction:
     @pytest.mark.parametrize("method", ["neon_getTransactionReceipt", "eth_getTransactionReceipt"])
     @pytest.mark.neon_only
     def test_get_scheduled_transaction_receipt(
-        self, method, json_rpc_client, neon_user, common_contract, web3_client_sol, evm_loader, treasury_pool
+        self,
+        method,
+        json_rpc_client,
+        neon_user,
+        common_contract,
+        web3_client_sol,
+        evm_loader,
+        treasury_pool,
     ):
         data = decode_function_signature("setNumber(uint256)", [18])
         trx_estimate_obj = ScheduledTrxEstimateRequest(neon_user.checksum_address, common_contract.address, data)
@@ -533,7 +542,14 @@ class TestRpcGetTransaction:
     @pytest.mark.parametrize("method", ["neon_getTransactionReceipt", "eth_getTransactionReceipt"])
     @pytest.mark.neon_only
     def test_get_multiple_scheduled_transaction_receipt(
-        self, json_rpc_client, neon_user, common_contract, web3_client_sol, evm_loader, treasury_pool, method
+        self,
+        json_rpc_client,
+        neon_user,
+        common_contract,
+        web3_client_sol,
+        evm_loader,
+        treasury_pool,
+        method,
     ):
         nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
 

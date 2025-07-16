@@ -8,7 +8,7 @@ from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 from spl.token.client import Token
 from spl.token.constants import TOKEN_PROGRAM_ID
-from spl.token.instructions import get_associated_token_address, create_associated_token_account, approve, ApproveParams
+from spl.token.instructions import approve, ApproveParams
 from web3.types import TxReceipt
 
 from . import web3client, stats_collector
@@ -243,15 +243,12 @@ class ERC20Wrapper:
             self.transfer(self.owner, recipient.checksum_address, pda_amount)  # PDA top up
 
         if ata_amount is not None:
-            ata_account = get_associated_token_address(recipient.solana_account.pubkey(), self.token_mint_pubkey)
+            ata_account = evm_loader.create_associate_token_acc(
+                recipient.solana_account, recipient.solana_account, self.token_mint_pubkey
+            )
             solana_contract_account = Pubkey.from_string(evm_loader.ether2program(self.contract.address)[0])
 
             trx = Transaction()
-            trx.add(
-                create_associated_token_account(
-                    recipient.solana_account.pubkey(), recipient.solana_account.pubkey(), self.token_mint_pubkey
-                )
-            )
             approve_ata_amount = approve_ata_amount or ata_amount
             trx.add(
                 approve(

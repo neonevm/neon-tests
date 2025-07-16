@@ -152,7 +152,7 @@ def accounts(request, accounts_session, web3_client_session, pytestconfig: Confi
 
 
 @pytest.fixture(scope="session")
-def neon_user_for_session(
+def neon_user(
     evm_loader: EvmLoader,
     bank_account,
     environment: EnvironmentConfig,
@@ -161,7 +161,7 @@ def neon_user_for_session(
     treasury_pool,
 ) -> tp.Generator[NeonUser, None, None]:
     user = NeonUser(evm_loader_id=environment.evm_loader)
-    lamports = 2 * LAMPORT_PER_SOL
+    lamports = 3 * LAMPORT_PER_SOL
 
     if environment.use_bank:
         evm_loader.send_sol(bank_account, user.solana_account.pubkey(), lamports)
@@ -190,7 +190,7 @@ def neon_user_no_sols(pytestconfig, bank_account, faucet, environment) -> NeonUs
 
 
 @pytest.fixture(scope="function")
-def neon_user(
+def neon_user_func_scope(
     evm_loader: EvmLoader,
     bank_account,
     environment: EnvironmentConfig,

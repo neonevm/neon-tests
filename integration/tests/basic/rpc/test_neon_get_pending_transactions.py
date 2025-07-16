@@ -1,7 +1,10 @@
+import pytest
+
 from eth_utils import abi
 
 from utils.helpers import decode_function_signature, wait_condition
 from utils.scheduled_trx import ScheduledTransaction, CreateTreeAccMultipleData, ScheduledTrxEstimateRequest
+from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 
 
 class TestRPCNeonGetPendingTransactions:
@@ -17,8 +20,8 @@ class TestRPCNeonGetPendingTransactions:
 
         tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
 
-        evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
-
+        tree_account = evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
+        check_trx_is_success(web3_client_sol, evm_loader, tx.hash().hex())
         expected_status = "Done"
         wait_condition(
             lambda: web3_client_sol.get_pending_transactions(neon_user.checksum_address)[nonce][0]["status"]
@@ -27,6 +30,9 @@ class TestRPCNeonGetPendingTransactions:
             timeout_sec=60,
         )
 
+        wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=120, delay=2)
+
+    @pytest.mark.skip(reason="NDEV-3840")
     def test_neon_get_pending_scheduled_transaction_no_tx_body(
         self, web3_client_sol, neon_user, common_contract, evm_loader, treasury_pool
     ):
@@ -37,12 +43,12 @@ class TestRPCNeonGetPendingTransactions:
         estimate_result = web3_client_sol.estimate_scheduled(neon_user.solana_account.pubkey(), [trx_estimate_obj])
 
         tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
-
         tree_acc_data = CreateTreeAccMultipleData(
             nonce=nonce,
         )
         tree_acc_data.add_trx(tx, 0xFFFF, 0)
-        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data)
+        tree_account = evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data)
+
         expected_status = "NoTransactionBody"
         wait_condition(
             lambda: web3_client_sol.get_pending_transactions(neon_user.checksum_address)[nonce][0]["status"]
@@ -51,6 +57,38 @@ class TestRPCNeonGetPendingTransactions:
             delay=2,
             log=10,
         )
+
+        wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=120, delay=2)
+
+    def test_neon_get_pending_scheduled_transaction_no_tx_body_new_user(
+        self, web3_client_sol, neon_user_func_scope, common_contract, evm_loader, treasury_pool
+    ):
+        nonce = hex(web3_client_sol.get_nonce(neon_user_func_scope.checksum_address))
+        data = decode_function_signature("setNumber(uint256)", [18])
+
+        trx_estimate_obj = ScheduledTrxEstimateRequest(
+            neon_user_func_scope.checksum_address, common_contract.address, data
+        )
+        estimate_result = web3_client_sol.estimate_scheduled(
+            neon_user_func_scope.solana_account.pubkey(), [trx_estimate_obj]
+        )
+
+        tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
+        tree_acc_data = CreateTreeAccMultipleData(
+            nonce=nonce,
+        )
+        tree_acc_data.add_trx(tx, 0xFFFF, 0)
+        tree_account = evm_loader.create_tree_account_multiple(neon_user_func_scope, treasury_pool, tree_acc_data.data)
+
+        expected_status = "NoTransactionBody"
+        wait_condition(
+            lambda: web3_client_sol.get_pending_transactions(neon_user_func_scope.checksum_address)[nonce][0]["status"]
+            == expected_status,
+            timeout_sec=60,
+            delay=2,
+            log=10,
+        )
+        wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=120, delay=2)
 
     def test_multiple_scheduled_trx_with_failed_trx_skipped_and_wait_for_parent_tx(
         self,
@@ -131,7 +169,7 @@ class TestRPCNeonGetPendingTransactions:
         tree_acc_data.add_trx(tx2, 3, 0)
         tree_acc_data.add_trx(tx3, 0xFFFF, 1)
 
-        evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data)
+        tree_account = evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data)
 
         web3_client_sol.send_all_scheduled_transactions([tx0, tx1])  # dont send tx2
 
@@ -147,3 +185,11 @@ class TestRPCNeonGetPendingTransactions:
         assert pending_trx[hex(nonce)][2]["status"] == "NoTransactionBody"
         assert pending_trx[hex(nonce)][3]["status"] == "WaitForParentTransactions"
         assert pending_trx[hex(nonce)][0]["hash"][2:] == tx0.hash().hex()
+
+        web3_client_sol.send_all_scheduled_transactions([tx2, tx3])
+        resp3 = web3_client_sol.wait_for_transaction_receipt(tx2.hash())
+        assert resp3["status"] == 1
+        resp4 = web3_client_sol.wait_for_transaction_receipt(tx3.hash())
+        assert resp4["status"] == 1
+
+        wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=120, delay=2)

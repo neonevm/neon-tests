@@ -423,8 +423,27 @@ def erc20_for_spl(
     return token_mint, erc20_for_spl_address
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def neon_user(evm_loader: EvmLoader, bank_account, environment: EnvironmentConfig) -> Generator[NeonUser, None, None]:
+    user = NeonUser(evm_loader_id=environment.evm_loader)
+    lamports = 3 * LAMPORT_PER_SOL
+
+    if environment.use_bank:
+        evm_loader.send_sol(bank_account, user.solana_account.pubkey(), lamports)
+    else:
+        evm_loader.request_airdrop(
+            pubkey=user.solana_account.pubkey(),
+            lamports=lamports,
+            commitment=Confirmed,
+        )
+
+    yield user
+
+
+@pytest.fixture(scope="function")
+def neon_user_func_scope(
+    evm_loader: EvmLoader, bank_account, environment: EnvironmentConfig
+) -> Generator[NeonUser, None, None]:
     user = NeonUser(evm_loader_id=environment.evm_loader)
     lamports = 3 * LAMPORT_PER_SOL
 

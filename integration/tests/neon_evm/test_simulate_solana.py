@@ -496,16 +496,15 @@ class TestSimulateSolana:
         treasury_pool: TreasuryPool,
         session_user: Caller,
         basic_contract: Contract,
-        neon_user: NeonUser,
+        neon_user_func_scope: NeonUser,
     ):
-        evm_loader.create_balance_account(neon_user.checksum_address, neon_user.solana_account, evm_loader.sol_chain_id)
-        nonce = evm_loader.get_neon_nonce(neon_user.neon_address)
+        nonce = evm_loader.get_neon_nonce(neon_user_func_scope.neon_address)
         contract_data = 18
         data = abi.function_signature_to_4byte_selector("setNumber(uint256)") + eth_abi.encode(
             ["uint256"], [contract_data]
         )
         tx = ScheduledTransaction(
-            neon_user.neon_address,
+            neon_user_func_scope.neon_address,
             None,
             nonce,
             0,
@@ -514,9 +513,9 @@ class TestSimulateSolana:
             call_data=data,
             chain_id=evm_loader.sol_chain_id,
         )
-        tree_account = evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
+        tree_account = evm_loader.create_tree_account(neon_user_func_scope, treasury_pool, tx.encode())
         evm_loader.write_transaction_to_holder_account(tx.encode(), holder_acc, operator_keypair)
-        neon_user_balance_account = neon_user.get_balance_account(evm_loader.sol_chain_id)
+        neon_user_balance_account = neon_user_func_scope.get_balance_account(evm_loader.sol_chain_id)
         additional_accounts = [basic_contract.solana_address, neon_user_balance_account]
 
         simulated_compute_units = actual_compute_units = 0

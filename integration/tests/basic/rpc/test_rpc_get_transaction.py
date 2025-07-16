@@ -438,7 +438,6 @@ class TestRpcGetTransaction:
         method,
     ):
         nonce = web3_client_sol.get_nonce(neon_user.checksum_address)
-        print("MY NONCE: ", nonce)
         call_data = decode_function_signature("doAssert()")
         gas_limit = 3000000
         max_priority_fee_per_gas = 2500000000

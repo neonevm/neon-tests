@@ -115,10 +115,7 @@ def test_successful_single_trx_with_outer_deposit(
     )
     exec_trx_cost = gas_used_exec * tx_0.max_fee_per_gas
 
-    expected_neon_operator_balance = (
-        operator_balance_initial_inner + exec_trx_cost + PAYMENT_FOR_TRX_FINISHING * trx_count
-    )
-    # expected_neon_operator_balance = operator_balance_initial_inner + exec_trx_cost #uncomment after fix NDEV-3838
+    expected_neon_operator_balance = operator_balance_initial_inner + exec_trx_cost
 
     assert (
         operator_balance_trx_finished_inner == expected_neon_operator_balance

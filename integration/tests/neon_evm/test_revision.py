@@ -711,17 +711,18 @@ class TestAccountRevision:
         )
         check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
 
-        for _ in range(2):
-            resp = evm_loader.send_transaction_step_from_account(
-                operator_keypair,
-                operator_balance_pubkey,
-                treasury_pool,
-                holder_acc,
-                accounts,
-                EVM_STEPS,
-                operator_keypair,
-            )
+        # To finish after RESET we only need one interation, because there are no state change
+        resp = evm_loader.send_transaction_step_from_account(
+            operator_keypair,
+            operator_balance_pubkey,
+            treasury_pool,
+            holder_acc,
+            accounts,
+            EVM_STEPS,
+            operator_keypair,
+        )
 
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="RESET")
         check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
         check_holder_account_tag(
             solana_client=evm_loader,
@@ -872,7 +873,7 @@ class TestAccountRevision:
         check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
         # finish first tx
         resp = None
-        for i in range(3):
+        for i in range(2):
             resp = evm_loader.send_transaction_step_from_account(
                 operator_keypair,
                 operator_balance_pubkey,

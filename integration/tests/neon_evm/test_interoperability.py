@@ -165,7 +165,6 @@ class TestInteroperability:
         sender_with_tokens,
         solana_caller,
         evm_loader,
-        solana_client,
         lamports_amount,
         is_iterative,
         counter_resource_address,
@@ -192,18 +191,17 @@ class TestInteroperability:
             call_params.append(params)
         resp = solana_caller.batch_execute(call_params, sender_with_tokens, is_iterative=is_iterative)
 
-        check_transaction_logs_have_text(solana_client, trx=resp, text="exit_status=0x11")
+        check_transaction_logs_have_text(evm_loader, trx=resp, text="exit_status=0x11")
 
         info2: bytes = evm_loader.get_solana_account_data(counter_resource_address, COUNTER_ACCOUNT_LAYOUT.sizeof())
         counter_value_after = COUNTER_ACCOUNT_LAYOUT.parse(info2)
         assert counter_value_after.count - counter_value_before.count == instruction_count
 
-    @pytest.mark.parametrize("lamports_amount", [1000000000, None])
+    @pytest.mark.parametrize("lamports_amount", [None, 1000000000])
     def test_limit_of_simple_instr_in_one_trx(
-        self, sender_with_tokens, solana_caller, lamports_amount, counter_resource_address
+        self, sender_with_tokens, evm_loader, lamports_amount, solana_caller, counter_resource_address
     ):
         instruction_count = 40
-
         instruction = Instruction(
             program_id=COUNTER_ID,
             accounts=[
@@ -220,10 +218,10 @@ class TestInteroperability:
         for _ in range(instruction_count):
             call_params.append(params)
 
-        with pytest.raises(
-            RPCException, match=r"failed: exceeded CUs meter at BPF instruction|Computational budget exceeded"
-        ):
-            solana_caller.batch_execute(call_params, sender_with_tokens)
+        resp = solana_caller.batch_execute(call_params, sender_with_tokens, skip_preflight=True)
+        check_transaction_logs_have_text(
+            solana_client=evm_loader, trx=resp, text="failed: exceeded CUs meter at BPF instruction"
+        )
 
     def test_transfer_sol_with_cpi(self, sender_with_tokens, solana_caller, evm_loader, solana_client):
         recipient = evm_loader.create_account(sender_with_tokens.solana_account, 0, TRANSFER_SOL_ID)
@@ -490,13 +488,12 @@ class TestInteroperability:
             [600000, matrix, 0, serialized_instruction],
         )
 
-        emulate_result = neon_api_client.emulate_contract_call(
+        accounts_from_emulation = neon_api_client.get_additional_accounts_by_emulation(
             sender_with_tokens.eth_address.hex(),
             solana_caller.contract.eth_address.hex(),
             "solanaCallInsideActionWithMatrix(uint256,uint256[][],uint64,bytes)",
             [600000, matrix, 0, serialized_instruction],
         )
-        accounts_from_emulation = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
 
         evm_loader.write_transaction_to_holder_account(signed_tx1, second_holder_acc, operator_keypair)
 

@@ -7,12 +7,6 @@ HOLDER_ACCOUNT_INFO_LAYOUT = Struct(
     "owner" / Bytes(32),
     "hash" / Bytes(32),
     "len" / Int64ul,
-    # Technicall, heap_offset is not a part of Holder's Header and is located at a fixed
-    # memory location after the Header with some padding.
-    # But, since heap_offset is located strictly before the Buffer, we can
-    # treat at as a part of the Header.
-    # "_padding" / Bytes(24),
-    "heap_offset" / Int64ul,
 )
 
 

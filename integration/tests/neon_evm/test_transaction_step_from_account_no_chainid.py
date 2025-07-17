@@ -175,7 +175,7 @@ class TestTransactionStepFromAccountNoChainId:
         )
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 
-        error = re.escape("invalid chainId")
+        error = re.escape("Invalid Chain ID")
         with pytest.raises(solana.rpc.core.RPCException, match=error):
             evm_loader.execute_transaction_steps_from_account_no_chain_id(
                 operator_keypair,

@@ -143,7 +143,9 @@ class SolanaCaller:
         )
         return resp
 
-    def batch_execute(self, call_params, sender=None, additional_signers=None, is_iterative=False):
+    def batch_execute(
+        self, call_params, sender=None, additional_signers=None, is_iterative=False, skip_preflight=False
+    ):
         # call_params = [(program_id, lamports, instruction), ...]
         if len(call_params[0]) == 2:  # check lamport
             method_signature = "batchExecuteWithoutLamports(bytes[])"
@@ -191,6 +193,7 @@ class SolanaCaller:
                 accounts,
                 self.operator_keypair,
                 additional_signers=additional_signers,
+                skip_preflight=skip_preflight,
             )
         return resp
 

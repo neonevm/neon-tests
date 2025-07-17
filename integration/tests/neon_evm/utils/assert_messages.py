@@ -1,5 +1,5 @@
 class InstructionAsserts:
-    INVALID_CHAIN_ID = "invalid chainId"
+    INVALID_CHAIN_ID = "Invalid Chain ID"
     INVALID_NONCE = "Invalid Nonce"
     TRX_ALREADY_FINALIZED = "Transaction already finalized"
     INSUFFICIENT_FUNDS = "Insufficient balance"

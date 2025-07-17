@@ -62,15 +62,6 @@ class TestEmulateFromHolderAccount:
             EVM_STEPS,
             operator_keypair,
         )
-        evm_loader.send_transaction_step_from_account(
-            operator_keypair,
-            operator_balance_pubkey,
-            treasury_pool,
-            holder_acc,
-            accounts,
-            EVM_STEPS,
-            operator_keypair,
-        )
         emulate_result = neon_api_client.emulate_from_holder(holder_acc)
 
         accounts_after_emulation = []

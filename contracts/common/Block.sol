@@ -35,7 +35,7 @@ contract BlockTimestamp is CarefulMath {
 
     function callIterativeTrx() public payable {
         uint256 timestamp_before = block.timestamp;
-        for (uint256 i = 0; i < 800; i++) {
+        for (uint256 i = 0; i < 500; i++) {
             a = a + block.timestamp;
         }
         emit Result(block.timestamp);
@@ -121,7 +121,7 @@ contract BlockNumber is CarefulMath {
 
     function callIterativeTrx() public payable {
         uint256 b = 1223;
-        for (uint256 i = 0; i < 1000; i++) {
+        for (uint256 i = 0; i < 500; i++) {
             a = a + block.number;
         }
         emit Result(block.number);

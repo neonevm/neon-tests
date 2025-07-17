@@ -13,6 +13,7 @@ contract CallSolanaCaller {
     }
     mapping(uint256 => Data) public dataMap;
     uint256 public numberToStore;
+    uint256 public numberToStore2;
 
     struct ExecuteArgs {
         uint64 lamports;
@@ -93,7 +94,7 @@ contract CallSolanaCaller {
         uint64 lamports,
         bytes calldata instruction
     ) public {
-        numberToStore = _numberToStore;
+        numberToStore2 = _numberToStore;
         uint sum = 0;
         for (uint i = 0; i < a.length; i++) {
             for (uint j = 0; j < a[i].length; j++) {
@@ -112,7 +113,7 @@ contract CallSolanaCaller {
         uint64 lamports,
         bytes calldata instruction
     ) public {
-        numberToStore = _numberToStore;
+        numberToStore2 = _numberToStore;
         uint sum = 0;
         for (uint i = 0; i < a.length; i++) {
             for (uint j = 0; j < a[i].length; j++) {

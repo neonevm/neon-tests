@@ -350,7 +350,7 @@ class TestSolanaInteroperability:
     def test_limit_of_simple_instr_in_one_trx(self, call_solana_caller, counter_resource_address: bytes):
         sender = self.accounts[0]
         call_params = []
-        limit = 32
+        limit = 34
 
         for _ in range(limit):
             instruction = Instruction(

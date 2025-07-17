@@ -352,6 +352,7 @@ class EvmLoader(SolanaClient):
         signer: Keypair = None,
         additional_signers: typing.List[Keypair] = None,
         system_program=sp.ID,
+        skip_preflight=False,
     ) -> GetTransactionResp:
         signer = operator if signer is None else signer
         operator_balance_pubkey = self.get_operator_balance_pubkey(operator)
@@ -372,7 +373,7 @@ class EvmLoader(SolanaClient):
         )
 
         signers = [signer, *additional_signers] if additional_signers else [signer]
-        return self.send_tx(trx, *signers)
+        return self.send_tx(trx, *signers, skip_preflight=skip_preflight)
 
     @allure.step("Send transaction step from instruction")
     def send_transaction_step_from_instruction(

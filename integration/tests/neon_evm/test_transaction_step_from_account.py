@@ -770,9 +770,6 @@ class TestTransactionStepFromAccountParallelRuns:
 
         send_transaction_steps(second_holder_acc, string_setter_contract)
         send_transaction_steps(holder_acc, rw_lock_contract)
-        send_transaction_steps(second_holder_acc, string_setter_contract)
-        send_transaction_steps(holder_acc, rw_lock_contract)
-        send_transaction_steps(second_holder_acc, string_setter_contract)
 
         check_holder_account_tag(
             solana_client=evm_loader,
@@ -831,8 +828,7 @@ class TestTransactionStepFromAccountParallelRuns:
         send_transaction_steps(session_user, holder_acc)
         send_transaction_steps(second_session_user, second_holder_acc)
         send_transaction_steps(session_user, holder_acc)
-        send_transaction_steps(second_session_user, second_holder_acc)
-        send_transaction_steps(session_user, holder_acc)
+
         for holder in (second_holder_acc, holder_acc):
             check_holder_account_tag(
                 solana_client=evm_loader,
@@ -853,12 +849,11 @@ class TestTransactionStepFromAccountParallelRuns:
         neon_api_client,
         rw_lock_caller,
     ):
+        function_signature = "update_storage(uint256)"
 
-        signed_tx1 = make_contract_call_trx(
-            evm_loader, session_user, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1]
-        )
+        signed_tx1 = make_contract_call_trx(evm_loader, session_user, rw_lock_contract, function_signature, [6])
         additional_accounts_trx1 = neon_api_client.get_additional_accounts_by_emulation(
-            session_user.eth_address.hex(), rw_lock_contract.eth_address.hex(), "unchange_storage(uint8,uint8)", [1, 1]
+            session_user.eth_address.hex(), rw_lock_contract.eth_address.hex(), function_signature, [6]
         )
 
         evm_loader.write_transaction_to_holder_account(signed_tx1, holder_acc, operator_keypair)
@@ -877,24 +872,20 @@ class TestTransactionStepFromAccountParallelRuns:
 
         send_transaction_steps(holder_acc, additional_accounts_trx1)
 
-        signed_tx2 = make_contract_call_trx(evm_loader, session_user, rw_lock_caller, "get_text()")
+        signed_tx2 = make_contract_call_trx(evm_loader, session_user, rw_lock_caller, function_signature, [7])
         additional_accounts_trx2 = neon_api_client.get_additional_accounts_by_emulation(
-            session_user.eth_address.hex(), rw_lock_caller.eth_address.hex(), "get_text()"
+            session_user.eth_address.hex(), rw_lock_caller.eth_address.hex(), function_signature, [7]
         )
         evm_loader.write_transaction_to_holder_account(signed_tx2, second_holder_acc, operator_keypair)
 
         send_transaction_steps(second_holder_acc, additional_accounts_trx2)
         send_transaction_steps(holder_acc, additional_accounts_trx1)
-        send_transaction_steps(second_holder_acc, additional_accounts_trx2)
 
         evm_loader.execute_transaction_steps_from_account(
-            operator_keypair, treasury_pool, holder_acc, additional_accounts_trx1
+            operator_keypair, treasury_pool, second_holder_acc, additional_accounts_trx2
         )
         evm_loader.execute_transaction_steps_from_account(
-            operator_keypair,
-            treasury_pool,
-            second_holder_acc,
-            additional_accounts_trx2,
+            operator_keypair, treasury_pool, holder_acc, additional_accounts_trx1
         )
 
         for holder_acc in (holder_acc, second_holder_acc):

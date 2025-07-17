@@ -96,7 +96,7 @@ def operator(environment: EnvironmentConfig, web3_client_session: NeonChainWeb3C
 
 
 @pytest.fixture(scope="session")
-def eth_bank_account(pytestconfig: Config, web3_client_session) -> tp.Generator[Keypair | None, None, None]:
+def eth_bank_account(pytestconfig: Config, web3_client_session) -> tp.Generator[LocalAccount | None, None, None]:
     account = None
     if pytestconfig.environment.eth_bank_account != "":
         account = web3_client_session.eth.account.from_key(pytestconfig.environment.eth_bank_account)

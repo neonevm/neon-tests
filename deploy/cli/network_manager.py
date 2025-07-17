@@ -3,6 +3,8 @@ import os
 import pathlib
 from collections import defaultdict
 
+from utils.consts import EnvName
+
 NETWORK_NAME = os.environ.get("NETWORK", "full_test_suite")
 EXPANDED_ENVS = [
     "PROXY_URL",
@@ -26,7 +28,7 @@ class NetworkManager:
                 environments[self.network_name]["network_ids"] = {"neon": os.environ.get("NETWORK_ID", "")}
                 self._networks.update(environments)
 
-            if self.network_name in ["devnet", "tracer_ci"]:
+            if self.network_name in [EnvName.DEVNET, EnvName.DEVNET_2, EnvName.TRACER_CI]:
                 if "DEVNET_PROXY_URL" in os.environ and os.environ["DEVNET_PROXY_URL"]:
                     self._networks[self.network_name]["proxy_url"] = os.environ.get("DEVNET_PROXY_URL")
                 if "DEVNET_FAUCET_URL" in os.environ and os.environ["DEVNET_FAUCET_URL"]:

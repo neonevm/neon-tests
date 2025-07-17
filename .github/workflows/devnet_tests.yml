@@ -2,8 +2,17 @@ name: "Devnet tests"
 on:
   schedule:
     - cron: "0 2 * * 0,1,2,3,4,5"
+    - cron: "0 3 * * 0,1,2,3,4,5"
   workflow_dispatch:
     inputs:
+      network:
+        type: choice
+        default: devnet
+        required: true
+        description: "Network"
+        options:
+          - devnet
+          - devnet-2
       numprocesses:
         type: choice
         default: 8
@@ -26,21 +35,50 @@ on:
         required: false
         description: "Filter tests by mark: pytest -m ..."
 env:
-  NETWORK: devnet
   NUMPROCESSES: ${{ github.event.inputs.numprocesses || 8 }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   DEVNET_SOLANA_URL: "${{ secrets.SOLANA_URL }}"
-  DEVNET_FAUCET_URL: "${{ secrets.DEVNET_FAUCET_URL }}"
-  DEVNET_PROXY_URL: "${{ secrets.DEVNET_PROXY_URL }}"
   IMAGE:  ${{ github.repository_owner }}/neon_tests
   DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
 jobs:
+  set-network:
+    runs-on: ubuntu-latest
+    outputs:
+      network: ${{ steps.set-network.outputs.network }}
+      proxy_url: ${{ steps.set-env-vars.outputs.proxy_url }}
+      faucet_url: ${{ steps.set-env-vars.outputs.faucet_url }}
+      bank_private_key: ${{ steps.set-env-vars.outputs.bank_private_key }}
+    steps:
+      - name: Set network
+        id: set-network
+        run: |
+          if [ -n "${{ github.event.inputs.network }}" ]; then
+            echo "network=${{ github.event.inputs.network }}" | tee -a $GITHUB_OUTPUT
+          elif [ "${{ github.event.schedule }}" == '0 2 * * 0,1,2,3,4,5' ]; then
+            echo "network=devnet" | tee -a $GITHUB_OUTPUT
+          else
+            echo "network=devnet-2" | tee -a $GITHUB_OUTPUT
+          fi
   run-proxy-tests:
     name: Run basic tests
     runs-on: ["gha-runner-scale-set-large"]
+    needs:
+      - set-network
     env:
       CONTAINER: basic-tests-${{ github.run_id }}
+      NETWORK: ${{ needs.set-network.outputs.network }}
     steps:
+      - name: Set secrets based on network
+        run: |
+          if [ ${{ env.NETWORK }} = "devnet" ]; then
+            echo "DEVNET_PROXY_URL=${{ secrets.DEVNET_PROXY_URL }}" >> $GITHUB_ENV
+            echo "DEVNET_FAUCET_URL=${{ secrets.DEVNET_FAUCET_URL }}" >> $GITHUB_ENV
+            echo "BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }}" >> $GITHUB_ENV
+          else
+            echo "DEVNET_PROXY_URL=${{ secrets.DEVNET_PROXY_URL_2 }}" >> $GITHUB_ENV
+            echo "DEVNET_FAUCET_URL=${{ secrets.DEVNET_FAUCET_URL_2 }}" >> $GITHUB_ENV
+            echo "BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY_2 }}" >> $GITHUB_ENV
+          fi
       - uses: actions/checkout@v4
       - name: Install python requirements
         id: requirements
@@ -53,7 +91,11 @@ jobs:
       - name: Set test version
         id: test_image_tag
         run: |
-          test_image_tag=`python ./clickfile.py get-stand-proxy-version -n ${{ env.NETWORK }}`
+          if [ ${{ env.NETWORK }} = "devnet-2" ]; then
+            test_image_tag="latest"
+          else
+            test_image_tag=`python ./clickfile.py get-stand-proxy-version -n ${{ env.NETWORK }}`
+          fi
           echo "Test image tag: $test_image_tag"
           echo "value=$test_image_tag" >> $GITHUB_OUTPUT
       - name: Run docker container
@@ -63,7 +105,7 @@ jobs:
           docker network inspect custom-network >/dev/null 2>&1 || \
           docker network create --driver bridge --opt com.docker.network.driver.mtu=1400 custom-network
           docker run -i -d -e CI -e GITHUB_RUN_ID -e GITHUB_WORKFLOW \
-            -e BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }} \
+            -e BANK_PRIVATE_KEY \
             -e DEVNET_SOLANA_URL \
             -e DEVNET_PROXY_URL \
             -e DEVNET_FAUCET_URL \

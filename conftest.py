@@ -8,7 +8,6 @@ import sys
 from dataclasses import dataclass
 from typing import Optional, Dict, Generator
 
-import allure
 import base58
 import pytest
 from _pytest.config import Config
@@ -20,10 +19,11 @@ from allure_commons.model2 import TestResult, StatusDetails
 from solana.rpc.commitment import Confirmed
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
-from web3.middleware import ExtraDataToPOAMiddleware
-from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
 from spl.token.client import Token as SplToken
+from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
+from web3.middleware import ExtraDataToPOAMiddleware
 
+import allure
 from integration.tests.neon_evm.utils.constants import ACCOUNT_SEED_VERSION
 from utils import create_allure_environment_opts, setup_logging
 from utils.accounts import EthAccounts
@@ -168,7 +168,7 @@ def pytest_configure(config: Config):
     assert network_name in environments, f"Environment {network_name} doesn't exist in envs.json"
     env = environments[network_name]
     env["name"] = EnvName(network_name)
-    if network_name in ["devnet", "tracer_ci"]:
+    if network_name in [EnvName.DEVNET, EnvName.DEVNET_2, EnvName.TRACER_CI]:
         if "DEVNET_SOLANA_URL" in os.environ and os.environ["DEVNET_SOLANA_URL"]:
             env["solana_url"] = os.environ.get("DEVNET_SOLANA_URL")
         if "DEVNET_PROXY_URL" in os.environ and os.environ["DEVNET_PROXY_URL"]:
@@ -283,7 +283,7 @@ def accounts_session(pytestconfig: Config, web3_client_session, faucet, eth_bank
 def bank_account(pytestconfig: Config, sol_client_session: SolanaClient) -> Generator[Keypair | None, None, None]:
     account = None
     if pytestconfig.environment.use_bank:
-        if pytestconfig.getoption("--network") == "devnet":
+        if "devnet" in pytestconfig.getoption("--network"):
             private_key = os.environ.get("BANK_PRIVATE_KEY")
         elif pytestconfig.getoption("--network") == "mainnet":
             private_key = os.environ.get("BANK_PRIVATE_KEY_MAINNET")

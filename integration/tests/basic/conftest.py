@@ -8,7 +8,7 @@ def pytest_collection_modifyitems(config, items):
     deselected_marks = []
     network_name = config.getoption("--network")
 
-    if network_name == "devnet":
+    if "devnet" in network_name:
         deselected_marks.append("only_stands")
     else:
         deselected_marks.append("only_devnet")

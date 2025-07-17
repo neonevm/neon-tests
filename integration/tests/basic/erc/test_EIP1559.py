@@ -383,7 +383,7 @@ class TestEIP1559:
         gas_price = self.web3_client.neon_gas_price()
         min_acceptable_price = gas_price["minAcceptableGasPrice"]
         min_executable_price = gas_price["minExecutableGasPrice"]
-        assert min_executable_price > min_acceptable_price, "Wrong Proxy configuration"
+        assert min_executable_price > min_acceptable_price, "Wrong Proxy configuration: DEFAULT_CU_PRICE"
 
         # Do the same as Metamask
         max_priority_fee_per_gas = int(min_acceptable_price, 16) + 1

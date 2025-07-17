@@ -73,6 +73,7 @@ class Unit(Enum):
 class EnvName(str, Enum):
     MAINNET = "mainnet"
     DEVNET = "devnet"
+    DEVNET_2 = "devnet-2"
     TESTNET = "testnet"
     LOCAL = "local"
     TERRAFORM = "terraform"

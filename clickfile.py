@@ -1114,11 +1114,11 @@ def compare_dapp_results(
 @click.option("--evm_tag", required=True)
 @click.option("--proxy_tag", required=True)
 @click.option("--version_branch", required=True)
-@click.option("--acc_count", type=int, help="Allowed absolute number of acceptable increase")
-@click.option("--trx_count", type=int, help="Allowed absolute number of acceptable increase")
-@click.option("--gas_estimated", type=int, help="Allowed absolute number of acceptable increase")
-@click.option("--gas_used", type=int, help="Allowed absolute number of acceptable increase")
-@click.option("--compute_units", type=int, help="Allowed absolute number of acceptable increase")
+@click.option("--acc_count", type=int, help="Allowed acc_count increase")
+@click.option("--trx_count", type=int, help="Allowed trx_count increase")
+@click.option("--gas_estimated", type=int, help="Allowed gas_estimated increase")
+@click.option("--gas_used", type=int, help="Allowed gas_used increase")
+@click.option("--compute_units", type=int, help="Allowed compute_units increase")
 @click.option("--output", type=str, help="Path to the JSON file where detected failures are saved")
 def validate_cost_reports(
     repo: RepoType,

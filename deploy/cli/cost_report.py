@@ -278,18 +278,18 @@ def validate_cost_reports(
 ):
     """
     Compares the cost report data for <repo>:<evm_tag|proxy_tag|version_branch>
-    with previous report data based on acceptable absolute increases in metrics.
+    with previous report data based on acceptable increases in metrics.
     Any detected increases exceeding the allowed thresholds are saved to the <output> file.
 
     :param repo: Repository name.
     :param evm_tag: EVM tag of the report data.
     :param proxy_tag: Proxy tag of the report data.
-    :param version_branch: Maximum acceptable absolute increase in the metric version_branch.
-    :param acc_count: Maximum acceptable absolute increase in the metric acc_count.
-    :param trx_count: Maximum acceptable absolute increase in the metric trx_count.
-    :param gas_estimated: Maximum acceptable absolute increase in the metric gas_estimated.
-    :param gas_used: Maximum acceptable absolute increase in the metric gas_used.
-    :param compute_units: Maximum acceptable absolute increase in the metric compute_units.
+    :param version_branch: Version branch.
+    :param acc_count: Maximum acceptable increase in acc_count.
+    :param trx_count: Maximum acceptable increase in trx_count.
+    :param gas_estimated: Maximum acceptable increase in gas_estimated.
+    :param gas_used: Maximum acceptable increase in gas_used.
+    :param compute_units: Maximum acceptable increase in compute_units.
     :param output: Path to the JSON file where detected failures are saved.
     """
     db = PostgresTestResultsHandler()
@@ -314,7 +314,7 @@ def validate_cost_reports(
     all_metric_names = "acc_count", "trx_count", "gas_estimated", "gas_used", "compute_units"
     dapp_names = historical_data["dapp_name"].unique()
 
-    failure = TypedDict("failure", {"dapp": str, "action": str, "metric": str, "DIFFERENCE": int})
+    failure = TypedDict("failure", {"dapp": str, "action": str, "metric": str, "INCREASE": int})
     failures: list[failure] = []
 
     for dapp_name in dapp_names:
@@ -339,7 +339,7 @@ def validate_cost_reports(
                             "dapp": dapp_name,
                             "action": action,
                             "metric": metric_name,
-                            "DIFFERENCE": actual_change,
+                            "INCREASE": actual_change,
                         }
                         failures.append(failure_dict)
 

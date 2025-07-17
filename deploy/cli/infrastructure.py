@@ -1,24 +1,22 @@
+import logging
 import os
+import pathlib
 import re
 import subprocess
 import sys
-import typing as tp
-import pathlib
-import logging
 import time
+import typing as tp
 
 from paramiko.client import SSHClient
+from python_terraform import Terraform
 from scp import SCPClient
 from solana.rpc.commitment import Confirmed
-
-from deploy.cli.network_manager import NetworkManager
-
 from solana.transaction import Signature
-from deploy.cli import faucet as faucet_cli
-from utils.web3client import NeonChainWeb3Client
-from utils.solana_client import SolanaClient
-from python_terraform import Terraform
 
+from deploy.cli import faucet as faucet_cli
+from deploy.cli.network_manager import NetworkManager
+from utils.solana_client import SolanaClient
+from utils.web3client import NeonChainWeb3Client
 
 TFSTATE_BUCKET = os.environ.get("TFSTATE_BUCKET")
 TFSTATE_REGION = os.environ.get("TFSTATE_REGION")
@@ -200,6 +198,8 @@ def prepare_accounts(network_name, count, amount) -> tp.List:
 
 
 def get_solana_accounts_transactions_compute_units(eth_transaction):
+    print("**********************************************************************")
+    print(f"Neon transaction {eth_transaction}")
     network = os.environ.get("NETWORK")
     network_manager = NetworkManager(network)
     solana_url = network_manager.get_network_param(network, "solana_url")
@@ -217,6 +217,7 @@ def get_solana_accounts_transactions_compute_units(eth_transaction):
     print(f"get_transaction({trx}): {tr}")
 
     solana_transaction_hashes = trx["result"]
+    print(f"trx_count ({len(solana_transaction_hashes)}): {solana_transaction_hashes}")
     compute_units = 0
 
     for solana_transaction_hash in solana_transaction_hashes:
@@ -225,10 +226,15 @@ def get_solana_accounts_transactions_compute_units(eth_transaction):
             max_supported_transaction_version=0,
             commitment=Confirmed,
         )
-        compute_units += int(solana_transaction.value.transaction.meta.compute_units_consumed)
+        compute_units_consumed = int(solana_transaction.value.transaction.meta.compute_units_consumed)
+        compute_units += compute_units_consumed
+        print(f"Compute units {solana_transaction_hash}: {compute_units_consumed}")
 
     if tr.value.transaction.transaction.message.address_table_lookups:
         alt = tr.value.transaction.transaction.message.address_table_lookups
+        print(f"Atl: {alt}")
         return len(alt[0].writable_indexes) + len(alt[0].readonly_indexes), len(trx["result"]), compute_units
     else:
+        account_keys = tr.value.transaction.transaction.message.account_keys
+        print(f"Account keys ({len(account_keys)}): {account_keys}")
         return len(tr.value.transaction.transaction.message.account_keys), len(trx["result"]), compute_units

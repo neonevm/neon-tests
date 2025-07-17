@@ -1,5 +1,4 @@
 import eth_abi
-import pytest
 from eth_utils import abi
 
 from solders.pubkey import Pubkey
@@ -22,7 +21,6 @@ from utils.solana_logs_helper import get_total_gas_used
 from utils.types import Contract
 
 
-# Test should be fixed after NDEV-3838
 def test_successful_single_trx_with_outer_deposit(
     neon_user_func_scope, evm_loader, operator_keypair, treasury_pool, basic_contract, neon_api_client, holder_acc
 ):
@@ -63,9 +61,7 @@ def test_successful_single_trx_with_outer_deposit(
     )
     neon_user_balance_diff = neon_user_balance_initial_outer - neon_user_balance_after_tree_created_outer
     estimated_trx_cost = tx_0.gas_limit * tx_0.max_fee_per_gas
-    neon_user_additional_payments = (
-        PAYMENT_FOR_TREE_ACCOUNT_DELETING  # + PAYMENT_FOR_TRX_FINISHING * trx_count  # uncomment after fix NDEV-3838
-    )
+    neon_user_additional_payments = PAYMENT_FOR_TREE_ACCOUNT_DELETING + PAYMENT_FOR_TRX_FINISHING * trx_count
 
     expected_neon_user_balance_diff = (
         estimated_trx_cost / LAMPORT_TO_INNER_SOL
@@ -152,7 +148,6 @@ def test_successful_single_trx_with_outer_deposit(
     )
 
 
-@pytest.mark.skip(reason="NDEV-3838")
 def test_success_two_trx_with_inner_deposit(
     neon_user_func_scope,
     neon_api_client,
@@ -169,7 +164,8 @@ def test_success_two_trx_with_inner_deposit(
     # tree_acc: two scheduled trx in tree acc
 
     trx_count = 2
-    iter_per_trx = 2
+    iter_per_trx1 = 2
+    iter_per_trx2 = 1
     gas_limit = 30_000_000
     max_fee_per_gas = 3_000_000_000
 
@@ -205,6 +201,7 @@ def test_success_two_trx_with_inner_deposit(
     additional_accounts_deploy = [Pubkey.from_string(item["pubkey"]) for item in emulate_deploy["solana_accounts"]]
 
     data_call = abi.function_signature_to_4byte_selector("getNumber()")
+
     tx0 = ScheduledTransaction(
         neon_user_func_scope.neon_address,
         None,
@@ -329,16 +326,15 @@ def test_success_two_trx_with_inner_deposit(
         f"Expected {expected_neon_user_balance_remainder}, but got {neon_user_inner_balance_tree_destroyed},"
         f"Delta {(neon_user_inner_balance_tree_destroyed - expected_neon_user_balance_remainder) / LAMPORT_TO_INNER_SOL}"
     )
-    expected_treasury_pool_balance = (
-        treasury_pool_balance_initial_outer + OPERATOR_FEE_TO_NEON * iter_per_trx * trx_count
+    expected_treasury_pool_balance = treasury_pool_balance_initial_outer + OPERATOR_FEE_TO_NEON * (
+        iter_per_trx1 + iter_per_trx2
     )
     assert treasury_pool_balance_tree_destroyed == expected_treasury_pool_balance, (
         f"Treasury pool balance is failed. "
-        f"DELTA {treasury_pool_balance_initial_outer - expected_treasury_pool_balance}"
+        f"DELTA {treasury_pool_balance_tree_destroyed - expected_treasury_pool_balance}"
     )
 
 
-@pytest.mark.skip(reason="NDEV-3838")
 def test_failed_trx_with_outer_deposit(
     neon_user_func_scope,
     neon_api_client,
@@ -353,7 +349,7 @@ def test_failed_trx_with_outer_deposit(
     # user_balance: outer deposit non zero
     # tree_acc: two scheduled trx in tree acc
     trx_count = 1
-    iter_per_trx = 2
+    iter_per_trx = 1
 
     evm_loader.create_balance_account(
         neon_user_func_scope.checksum_address, neon_user_func_scope.solana_account, evm_loader.sol_chain_id
@@ -448,16 +444,13 @@ def test_failed_trx_with_outer_deposit(
         f"Delta {(neon_user_inner_balance_tree_destroyed - expected_neon_user_balance_remainder) / LAMPORT_TO_INNER_SOL}"
     )
 
-    expected_treasury_pool_balance = (
-        treasury_pool_balance_initial_outer + OPERATOR_FEE_TO_NEON * iter_per_trx * trx_count
-    )
+    expected_treasury_pool_balance = treasury_pool_balance_initial_outer + OPERATOR_FEE_TO_NEON * iter_per_trx
     assert treasury_pool_balance_tree_destroyed == expected_treasury_pool_balance, (
         f"Treasury pool balance is failed. "
         f"DELTA {treasury_pool_balance_initial_outer - expected_treasury_pool_balance}"
     )
 
 
-@pytest.mark.skip(reason="NDEV-3838")
 def test_skipped_trx_with_outer_deposit(
     neon_user, evm_loader, operator_keypair, treasury_pool, basic_contract, neon_api_client, holder_acc
 ):
@@ -467,7 +460,7 @@ def test_skipped_trx_with_outer_deposit(
 
     trx_count = 2
     count_of_skipped_trx = 1
-    iter_per_trx = 2
+    iter_per_trx = 1
 
     evm_loader.create_balance_account(neon_user.checksum_address, neon_user.solana_account, evm_loader.sol_chain_id)
     operator_balance_initial_inner = evm_loader.get_operator_neon_balance(operator_keypair, evm_loader.sol_chain_id)

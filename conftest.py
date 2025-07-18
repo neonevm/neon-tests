@@ -323,7 +323,7 @@ def treasury_pool(evm_loader: EvmLoader, pytestconfig, index_of_process, bank_ac
 
 @pytest.fixture(scope="session")
 def index_of_process(worker_id) -> int:
-    if worker_id in ("master", "gw1"):
-        return 1
+    if worker_id == "master":
+        return 0
     match = re.search(r"gw(\d+)", worker_id)
     return int(match.group(1))

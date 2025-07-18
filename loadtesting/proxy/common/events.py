@@ -14,15 +14,15 @@ from locust.runners import WorkerRunner
 from locust.event import EventHook
 
 from utils import operator
-from utils.web3client import NeonChainWeb3Client
-
+from utils.evm_loader import EvmLoader
+from utils.web3client import NeonChainWeb3Client, Web3Client
 
 LOG = logging.getLogger(__name__)
 
 
-def get_token_balance(op: operator.Operator) -> tp.Dict:
+def get_token_balance(op: operator.Operator, w3_client: Web3Client) -> tp.Dict:
     """Return tokens balance"""
-    return dict(neon=op.get_token_balance(), sol=op.get_solana_balance())
+    return dict(neon=op.get_token_balance(w3_client), sol=op.get_solana_balance())
 
 
 def execute_before(*attrs) -> tp.Callable:
@@ -59,15 +59,18 @@ def operator_economy_pre_balance(environment, **kwargs):
     if isinstance(environment.runner, WorkerRunner):
         return
     LOG.info("Get operator balances")
-    op = operator.Operator(
-        environment.credentials["proxy_url"],
-        environment.credentials["solana_url"],
-        environment.credentials["spl_neon_mint"],
-        web3_client=NeonChainWeb3Client(environment.credentials["proxy_url"]),
-        evm_loader=environment.credentials["evm_loader"],
+    w3client = NeonChainWeb3Client(environment.credentials["proxy_url"])
+    evm_loader = EvmLoader(
+        program_id=environment.credentials["evm_loader"],
+        endpoint=environment.credentials["solana_url"],
+        neon_chain_id=environment.credentials["network_ids"]["neon"],
+        sol_chain_id=environment.credentials["network_ids"]["sol"],
+        neon_token_mint_str=environment.credentials["spl_neon_mint"],
     )
+
+    op = operator.Operator(evm_loader)
     environment.op = op
-    environment.pre_balance = get_token_balance(op)
+    environment.pre_balance = get_token_balance(op, w3client)
 
 
 @events.test_stop.add_listener
@@ -77,7 +80,9 @@ def operator_economy_balance(environment, **kwargs):
     if isinstance(environment.runner, WorkerRunner):
         return
     LOG.info("Get operator balances")
-    balance = get_token_balance(environment.op)
+    w3client = NeonChainWeb3Client(environment.credentials["proxy_url"])
+
+    balance = get_token_balance(environment.op, w3client)
     operator_balance = tabulate.tabulate(
         [
             ["NEON", environment.pre_balance["neon"], balance["neon"]],

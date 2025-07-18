@@ -85,14 +85,8 @@ def web3_client_usdt(environment: EnvironmentConfig) -> tp.Union[Web3Client, Non
 
 
 @pytest.fixture(scope="session")
-def operator(environment: EnvironmentConfig, web3_client_session: NeonChainWeb3Client) -> Operator:
-    return Operator(
-        environment.proxy_url,
-        environment.solana_url,
-        environment.spl_neon_mint,
-        web3_client_session,
-        environment.evm_loader,
-    )
+def operator(evm_loader: EvmLoader) -> Operator:
+    return Operator(evm_loader)
 
 
 @pytest.fixture(scope="session")
@@ -208,7 +202,6 @@ def neon_user_func_scope(
             lamports=lamports,
             commitment=commitment.Confirmed,
         )
-
     yield user
 
     if environment.use_bank:
@@ -218,6 +211,21 @@ def neon_user_func_scope(
         #         user, bank_account, withdraw_contract_sol_chain, evm_loader, web3_client_sol, treasury_pool
         #     )
         evm_loader.drain_sol(from_=user.solana_account, to=bank_account.pubkey())
+
+
+@pytest.fixture(scope="function")
+def neon_user_with_sols_inside_neon(
+    evm_loader: EvmLoader,
+    neon_user_func_scope,
+) -> tp.Generator[NeonUser, None, None]:
+    user = neon_user_func_scope
+    lamports = 0.1 * LAMPORT_PER_SOL
+    evm_loader.deposit_wrapped_sol_from_solana_to_neon(
+        user.solana_account,
+        user.checksum_address,
+        int(lamports),
+    )
+    yield user
 
 
 @pytest.fixture(scope="session")

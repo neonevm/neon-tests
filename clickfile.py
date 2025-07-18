@@ -21,6 +21,7 @@ from deploy.cli import cost_report
 from utils.accounts import EthAccounts
 from utils.consts import EnvName, TEST_GROUPS, EXTERNAL_CONTRACT_PATH
 from utils.error_log import error_log
+from utils.evm_loader import EvmLoader
 from utils.faucet import Faucet
 from utils.slack_notification import SlackNotification
 from utils.types import RepoType, TestGroup
@@ -130,11 +131,18 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
         network_manager = NetworkManager()
         network = network_manager.get_network_object(args[0])
         w3client = web3client.NeonChainWeb3Client(network["proxy_url"])
+        evm_loader = EvmLoader(
+            program_id=network["evm_loader"],
+            endpoint=network["solana_url"],
+            neon_chain_id=network["network_ids"]["neon"],
+            sol_chain_id=network["network_ids"]["sol"],
+            neon_token_mint_str=network["spl_neon_mint"],
+        )
 
         def get_tokens_balances(operator: Operator) -> tp.Dict:
             """Return tokens balances"""
             return dict(
-                neon=w3client.to_main_currency(operator.get_token_balance()),
+                neon=w3client.to_main_currency(operator.get_token_balance(w3client)),
                 sol=operator.get_solana_balance() / 1_000_000_000,
             )
 
@@ -142,13 +150,7 @@ def check_profitability(func: tp.Callable) -> tp.Callable:
             return dict(map(lambda i: (i[0], str(i[1])), d.items()))
 
         if os.environ.get("OZ_BALANCES_REPORT_FLAG") is not None:
-            op = Operator(
-                network["proxy_url"],
-                network["solana_url"],
-                network["spl_neon_mint"],
-                web3_client=w3client,
-                evm_loader=network["evm_loader"],
-            )
+            op = Operator(evm_loader)
             pre = get_tokens_balances(op)
             try:
                 func(*args, **kwargs)
@@ -551,7 +553,7 @@ def run(
     DST_ALLURE_CATEGORIES.parent.mkdir()
 
     commands = {
-        "economy": "py.test integration/tests/economy/test_economics.py",
+        "economy": "py.test integration/tests/economy",
         "basic": "py.test integration/tests/basic --dist loadgroup",
         "tracer": "py.test -n 5 integration/tests/tracer --dist loadscope",
         "services": "py.test integration/tests/services",
@@ -914,21 +916,6 @@ def send_notification(url, build_url, network, test_group: str, report_url: tupl
         click.echo(f"Response text: {response.text}")
         click.echo(f"Payload: {payload}")
         raise RuntimeError("Notification is not sent")
-
-
-@cli.command(name="get-balances", help="Get operator balances in NEON and SOL")
-@click.option("-n", "--network", default=EnvName.LOCAL, type=str, help="In which stand run tests")
-def get_operator_balances(network: str):
-    network_manager = NetworkManager()
-    net = network_manager.get_network_object(network)
-    operator = Operator(net["proxy_url"], net["solana_url"], net["spl_neon_mint"], evm_loader=net["evm_loader"])
-    neon_balance = operator.get_token_balance()
-    sol_balance = operator.get_solana_balance()
-    print(
-        f'Operator balances ({len(net["operator_keys"])}):\n'
-        f"NEON: {neon_balance}\n"
-        f"SOL: {sol_balance / 1_000_000_000}"
-    )
 
 
 @cli.group("infra", help="Manage test infrastructure")

@@ -219,9 +219,15 @@ class TestInteroperability:
             call_params.append(params)
 
         resp = solana_caller.batch_execute(call_params, sender_with_tokens, skip_preflight=True)
-        check_transaction_logs_have_text(
-            solana_client=evm_loader, trx=resp, text="failed: exceeded CUs meter at BPF instruction"
-        )
+        logs = decode_logs(resp.value.transaction.meta.log_messages)
+        expected_errors = [
+            "failed: exceeded CUs meter at BPF instruction",
+            "failed: Computational budget exceeded",
+        ]
+
+        assert any(
+            err_msg in logs for err_msg in expected_errors
+        ), f"Expected one of the following errors in logs {logs}, but none were found: {expected_errors}"
 
     def test_transfer_sol_with_cpi(self, sender_with_tokens, solana_caller, evm_loader, solana_client):
         recipient = evm_loader.create_account(sender_with_tokens.solana_account, 0, TRANSFER_SOL_ID)

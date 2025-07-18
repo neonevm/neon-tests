@@ -35,14 +35,13 @@ def prepare_operator(key_file: pathlib.Path | str, evm_loader: EvmLoader) -> Key
 
     if operator_balance <= 0:
         evm_loader.request_airdrop(account.pubkey(), 1000 * 10**9, commitment=Confirmed)
+    operator_ether = eth_keys.PrivateKey(account.secret()[:32]).public_key.to_canonical_address()
 
-        operator_ether = eth_keys.PrivateKey(account.secret()[:32]).public_key.to_canonical_address()
-        for chain_id in chain_ids:
-            ether_balance_pubkey = evm_loader.ether2operator_balance(account, operator_ether, chain_id)
-            acc_info = evm_loader.get_account_info(ether_balance_pubkey, commitment=Confirmed)
-            if acc_info.value is None:
-                evm_loader.create_operator_balance_account(account, operator_ether, chain_id)
-
+    for chain_id in chain_ids:
+        ether_balance_pubkey = evm_loader.ether2operator_balance(account, operator_ether, chain_id)
+        acc_info = evm_loader.get_account_info(ether_balance_pubkey, commitment=Confirmed)
+        if acc_info.value is None:
+            evm_loader.create_operator_balance_account(account, operator_ether, chain_id)
     return account
 
 

@@ -947,7 +947,7 @@ def define_stand_env_by_branch(current_branch, head_branch, base_branch):
     elif head_branch:
         if is_branch_exist(PROXY_GITHUB_URL, head_branch):
             proxy_tag = head_branch
-        elif is_image_exist(f"{DOCKER_HUB_ORG_NAME}/neon-proxy.py", f"evm-triggered-{current_branch}"):
+        elif is_image_exist(f"{DOCKER_HUB_ORG_NAME}/neon-proxy.py", f"evm-triggered-{head_branch}"):
             proxy_tag = f"evm-triggered-{head_branch}"
         else:
             proxy_tag = ""

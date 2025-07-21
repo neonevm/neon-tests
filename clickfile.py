@@ -417,6 +417,16 @@ def requirements(dep):
         install_ui_requirements()
 
 
+def is_image_exist(image, tag):
+    response = requests.get(
+        url=f"https://registry.hub.docker.com/v2/repositories/{DOCKER_HUB_ORG_NAME}/{image}/tags/{tag}"
+    )
+    print(
+        f"https://registry.hub.docker.com/v2/repositories/{DOCKER_HUB_ORG_NAME}/{image}/tags/{tag} response: {response.status_code}"
+    )
+    return response.status_code == 200
+
+
 def is_branch_exist(endpoint, branch):
     if branch:
         response = requests.get(f"{endpoint}/branches/{branch}")
@@ -928,12 +938,22 @@ def define_stand_env_by_branch(current_branch, head_branch, base_branch):
     proxy_tag, evm_tag, faucet_tag = "", "", ""
 
     if "/merge" not in current_branch and current_branch != "develop":
-        proxy_tag = current_branch if is_branch_exist(PROXY_GITHUB_URL, current_branch) else ""
+        if is_branch_exist(PROXY_GITHUB_URL, current_branch):
+            proxy_tag = current_branch
+        elif is_image_exist(f"{DOCKER_HUB_ORG_NAME}/neon-proxy.py", f"evm-triggered-{current_branch}"):
+            proxy_tag = f"evm-triggered-{current_branch}"
+        else:
+            proxy_tag = ""
         evm_tag = current_branch if is_branch_exist(NEON_EVM_GITHUB_URL, current_branch) else ""
         faucet_tag = current_branch if is_branch_exist(FAUCET_GITHUB_URL, current_branch) else ""
 
     elif head_branch:
-        proxy_tag = head_branch if is_branch_exist(PROXY_GITHUB_URL, head_branch) else ""
+        if is_branch_exist(PROXY_GITHUB_URL, head_branch):
+            proxy_tag = head_branch
+        elif is_image_exist(f"{DOCKER_HUB_ORG_NAME}/neon-proxy.py", f"evm-triggered-{current_branch}"):
+            proxy_tag = f"evm-triggered-{head_branch}"
+        else:
+            proxy_tag = ""
         evm_tag = head_branch if is_branch_exist(NEON_EVM_GITHUB_URL, head_branch) else ""
         faucet_tag = head_branch if is_branch_exist(FAUCET_GITHUB_URL, head_branch) else ""
 

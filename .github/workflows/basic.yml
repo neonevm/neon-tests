@@ -101,6 +101,12 @@ jobs:
             --base_branch "${{ github.base_ref }}" \
             --param "evm_branch")
 
+          proxy_branch=$(python3 ./clickfile.py infra get-stand-param \
+            --current_branch "${{ github.ref_name }}" \
+            --head_branch "${{ github.head_ref }}" \
+            --base_branch "${{ github.base_ref }}" \
+            --param "proxy_branch")
+
           echo "evm_tag=$env_tag"
           echo "evm_tag=$env_tag" >> $GITHUB_OUTPUT
           echo "evm_branch=$evm_branch"

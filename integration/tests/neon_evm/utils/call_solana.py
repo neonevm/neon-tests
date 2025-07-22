@@ -18,19 +18,19 @@ class SolanaCaller:
         evm_loader: EvmLoader,
         treasury_pool,
         holder_acc,
-        neon_api_client,
+        neon_rpc_client,
     ) -> None:
         self.operator_keypair = operator_keypair
         self.owner = owner
         self.evm_loader = evm_loader
         self.treasury_pool = treasury_pool
         self.holder_acc = holder_acc
-        self.neon_api_client = neon_api_client
+        self.neon_rpc_client = neon_rpc_client
         self.contract = evm_loader.deploy_contract(
             operator=operator_keypair,
             user=owner,
             contract_file_name="precompiled/CallSolanaCaller",
-            neon_api_client=neon_api_client,
+            neon_rpc_client=neon_rpc_client,
             treasury_pool=treasury_pool,
             contract_name="CallSolanaCaller",
             version="0.8.28",
@@ -38,32 +38,32 @@ class SolanaCaller:
 
     def get_neon_address(self, eth_address):
         args = eth_abi.encode(["address"], [eth_address])
-        addr = self.neon_api_client.call_contract_get_function(
+        addr = self.neon_rpc_client.call_contract_get_function(
             self.owner, self.contract, "getNeonAddress(address)", args
         )
         return addr
 
     def get_payer(self):
-        payer_bytes32 = self.neon_api_client.call_contract_get_function(self.owner, self.contract, "getPayer()")
+        payer_bytes32 = self.neon_rpc_client.call_contract_get_function(self.owner, self.contract, "getPayer()")
         return bytes32_to_solana_pubkey(payer_bytes32)
 
     def get_solana_address_by_neon_address(self, neon_address):
         args = eth_abi.encode(["address"], [neon_address])
-        sol_addr = self.neon_api_client.call_contract_get_function(
+        sol_addr = self.neon_rpc_client.call_contract_get_function(
             self.owner, self.contract, "getNeonAddress(address)", args
         )
         return bytes32_to_solana_pubkey(sol_addr)
 
     def get_solana_PDA(self, program_id, seeds) -> Pubkey:
         args = eth_abi.encode(["bytes32", "bytes"], [bytes(program_id), seeds])
-        addr = self.neon_api_client.call_contract_get_function(
+        addr = self.neon_rpc_client.call_contract_get_function(
             self.owner, self.contract, "getSolanaPDA(bytes32,bytes)", args
         )
         return bytes32_to_solana_pubkey(addr)
 
     def get_eth_ext_authority(self, salt, sender) -> Pubkey:
         args = eth_abi.encode(["bytes32"], [salt])
-        addr = self.neon_api_client.call_contract_get_function(sender, self.contract, "getExtAuthority(bytes32)", args)
+        addr = self.neon_rpc_client.call_contract_get_function(sender, self.contract, "getExtAuthority(bytes32)", args)
         return bytes32_to_solana_pubkey(addr)
 
     def execute(self, program_id, instruction, lamports=None, holder_acc=None, sender=None):
@@ -200,7 +200,7 @@ class SolanaCaller:
     def get_resource_address(self, salt, sender):
         encoded_args = eth_abi.encode(["bytes32"], [salt])
 
-        resource_address = self.neon_api_client.call_contract_get_function(
+        resource_address = self.neon_rpc_client.call_contract_get_function(
             sender, self.contract, "getResourceAddress(bytes32)", encoded_args
         )
         return bytes32_to_solana_pubkey(resource_address)

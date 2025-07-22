@@ -91,7 +91,7 @@ class TestExecuteTrxFromInstruction:
         sender_with_tokens: Caller,
         string_setter_contract: Contract,
         evm_loader,
-        neon_api_client,
+        neon_rpc_client,
         holder_acc,
         solana_client,
     ):
@@ -111,7 +111,7 @@ class TestExecuteTrxFromInstruction:
 
         check_transaction_logs_have_text(solana_client=solana_client, trx=resp, text="exit_status=0x11")
         assert text in to_text(
-            neon_api_client.call_contract_get_function(sender_with_tokens, string_setter_contract, "get()")
+            neon_rpc_client.call_contract_get_function(sender_with_tokens, string_setter_contract, "get()")
         )
 
     def test_call_contract_function_with_neon_transfer(
@@ -120,7 +120,7 @@ class TestExecuteTrxFromInstruction:
         treasury_pool,
         sender_with_tokens: Caller,
         evm_loader,
-        neon_api_client,
+        neon_rpc_client,
         string_setter_contract,
         holder_acc,
         solana_client,
@@ -136,7 +136,7 @@ class TestExecuteTrxFromInstruction:
             evm_loader, string_setter_contract.eth_address, data, sender_with_tokens, transfer_amount
         )
 
-        emulate_result = neon_api_client.emulate_contract_call(
+        emulate_result = neon_rpc_client.emulate_contract_call(
             sender_with_tokens.eth_address.hex(),
             string_setter_contract.eth_address.hex(),
             "set(string)",
@@ -151,7 +151,7 @@ class TestExecuteTrxFromInstruction:
         check_transaction_logs_have_text(solana_client=solana_client, trx=resp, text="exit_status=0x11")
 
         assert text in to_text(
-            neon_api_client.call_contract_get_function(sender_with_tokens, string_setter_contract, "get()")
+            neon_rpc_client.call_contract_get_function(sender_with_tokens, string_setter_contract, "get()")
         )
 
         sender_balance_after = evm_loader.get_neon_balance(sender_with_tokens.eth_address)
@@ -451,7 +451,7 @@ class TestExecuteTrxFromInstruction:
         calculator_contract,
         treasury_pool,
         holder_acc,
-        neon_api_client,
+        neon_rpc_client,
     ):
         signed_tx = make_contract_call_trx(
             evm_loader, sender_with_tokens, calculator_caller_contract, "callCalculator()"
@@ -466,7 +466,7 @@ class TestExecuteTrxFromInstruction:
             v=signed_tx.v,
         )
 
-        additional_accounts = neon_api_client.get_additional_accounts_by_emulation(
+        additional_accounts = neon_rpc_client.get_additional_accounts_by_emulation(
             sender_with_tokens.eth_address.hex(),
             calculator_caller_contract.eth_address.hex(),
             "callCalculator()",

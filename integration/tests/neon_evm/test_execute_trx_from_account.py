@@ -58,7 +58,7 @@ class TestExecuteTrxFromAccount:
         treasury_pool,
         evm_loader,
         sender_with_tokens,
-        neon_api_client,
+        neon_rpc_client,
     ):
         contract = create_contract_address(sender_with_tokens, evm_loader)
 

@@ -21,13 +21,13 @@ from .utils import ethereum as eth_utils
 class TestEmulateFromHolderAccount:
     @pytest.fixture(scope="class")
     def block_timestamp_contract(
-        self, evm_loader, operator_keypair, sender_with_tokens, neon_api_client, treasury_pool
+        self, evm_loader, operator_keypair, sender_with_tokens, neon_rpc_client, treasury_pool
     ):
         return evm_loader.deploy_contract(
             operator_keypair,
             sender_with_tokens,
             "common/Block.sol",
-            neon_api_client,
+            neon_rpc_client,
             treasury_pool,
             contract_name="BlockTimestamp",
             version="0.8.10",
@@ -38,7 +38,7 @@ class TestEmulateFromHolderAccount:
         operator_keypair,
         session_user,
         rw_lock_contract,
-        neon_api_client,
+        neon_rpc_client,
         evm_loader,
         treasury_pool,
         holder_acc,
@@ -62,7 +62,7 @@ class TestEmulateFromHolderAccount:
             EVM_STEPS,
             operator_keypair,
         )
-        emulate_result = neon_api_client.emulate_from_holder(holder_acc)
+        emulate_result = neon_rpc_client.emulate_from_holder(holder_acc)
 
         accounts_after_emulation = []
         for item in emulate_result["solana_accounts"]:
@@ -95,7 +95,7 @@ class TestEmulateFromHolderAccount:
         )
 
     def test_emulate_from_holder_account_contract_deploy(
-        self, operator_keypair, sender_with_tokens, neon_api_client, evm_loader, treasury_pool, holder_acc
+        self, operator_keypair, sender_with_tokens, neon_rpc_client, evm_loader, treasury_pool, holder_acc
     ):
         def send_transaction_steps(holder_acc, accounts_from_emulation):
             operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
@@ -121,7 +121,7 @@ class TestEmulateFromHolderAccount:
             import_remappings=REMAPPING_ZEPPELIN,
         )
 
-        emulate_result = neon_api_client.emulate(
+        emulate_result = neon_rpc_client.emulate(
             sender_with_tokens.eth_address.hex(),
             contract=None,
             data=contract_code,
@@ -145,7 +145,7 @@ class TestEmulateFromHolderAccount:
         send_transaction_steps(holder_acc, additional_accounts)
         send_transaction_steps(holder_acc, additional_accounts)
 
-        emulate_result = neon_api_client.emulate_from_holder(holder_acc)
+        emulate_result = neon_rpc_client.emulate_from_holder(holder_acc)
         assert emulate_result["exit_status"] == "succeed"
 
         resp = evm_loader.execute_transaction_steps_from_account(
@@ -164,7 +164,7 @@ class TestEmulateFromHolderAccount:
         self,
         operator_keypair,
         session_user,
-        neon_api_client,
+        neon_rpc_client,
         evm_loader,
         treasury_pool,
         holder_acc,
@@ -196,7 +196,7 @@ class TestEmulateFromHolderAccount:
         evm_loader.send_transaction_step_from_account(
             operator_keypair, operator_balance_pubkey, treasury_pool, holder_acc, accounts, EVM_STEPS, operator_keypair
         )
-        emulate_result = neon_api_client.emulate_from_holder(holder_acc)
+        emulate_result = neon_rpc_client.emulate_from_holder(holder_acc)
         assert emulate_result["reverts_before_solana_calls"]
         assert not emulate_result["external_solana_call"]
         assert not emulate_result["reverts_after_solana_calls"]
@@ -237,7 +237,7 @@ class TestEmulateFromHolderAccount:
             [1, matrix, 0, serialized_instruction],
         )
 
-        accounts_from_emulation = neon_api_client.get_additional_accounts_by_emulation(
+        accounts_from_emulation = neon_rpc_client.get_additional_accounts_by_emulation(
             session_user.eth_address.hex(),
             solana_caller.contract.eth_address.hex(),
             "solanaCallInsideActionWithMatrixWithRevert(uint256,uint256[][],uint64,bytes)",
@@ -256,7 +256,7 @@ class TestEmulateFromHolderAccount:
             operator_keypair,
         )
 
-        emulate_result = neon_api_client.emulate_from_holder(second_holder_acc)
+        emulate_result = neon_rpc_client.emulate_from_holder(second_holder_acc)
         assert emulate_result["reverts_after_solana_calls"]
         assert emulate_result["external_solana_call"]
         assert not emulate_result["is_timestamp_number_used"]
@@ -280,7 +280,7 @@ class TestEmulateFromHolderAccount:
         self,
         operator_keypair,
         sender_with_tokens,
-        neon_api_client,
+        neon_rpc_client,
         evm_loader,
         treasury_pool,
         block_timestamp_contract,
@@ -307,7 +307,7 @@ class TestEmulateFromHolderAccount:
             operator_keypair,
         )
 
-        emulate_result = neon_api_client.emulate_from_holder(temp_holder_acc)
+        emulate_result = neon_rpc_client.emulate_from_holder(temp_holder_acc)
         assert emulate_result["exit_status"] == "succeed"
         assert emulate_result["is_timestamp_number_used"]
         assert not emulate_result["external_solana_call"]
@@ -319,7 +319,7 @@ class TestEmulateFromHolderAccount:
         operator_keypair,
         session_user,
         transfers_contract,
-        neon_api_client,
+        neon_rpc_client,
         evm_loader,
         treasury_pool,
         holder_acc,
@@ -360,7 +360,7 @@ class TestEmulateFromHolderAccount:
         evm_loader.send_transaction_step_from_account(
             operator_keypair, operator_balance_pubkey, treasury_pool, holder_acc, accounts, EVM_STEPS, operator_keypair
         )
-        emulate_result = neon_api_client.emulate_from_holder(holder_acc)
+        emulate_result = neon_rpc_client.emulate_from_holder(holder_acc)
         assert (
             emulate_result["exit_status"] == "succeed"
         ), f"The 'exit_status' field is not succeed. Result: {emulate_result}"
@@ -385,7 +385,7 @@ class TestEmulateFromHolderAccount:
         operator_keypair,
         solana_caller,
         sender_with_tokens,
-        neon_api_client,
+        neon_rpc_client,
         holder_acc,
         treasury_pool,
     ):
@@ -411,7 +411,7 @@ class TestEmulateFromHolderAccount:
             [3, matrix, 0, serialized_instruction],
         )
 
-        accounts_from_emulation = neon_api_client.get_additional_accounts_by_emulation(
+        accounts_from_emulation = neon_rpc_client.get_additional_accounts_by_emulation(
             sender_with_tokens.eth_address.hex(),
             solana_caller.contract.eth_address.hex(),
             "solanaCallInsideActionWithMatrix(uint256,uint256[][],uint64,bytes)",
@@ -430,7 +430,7 @@ class TestEmulateFromHolderAccount:
                 EVM_STEPS,
                 operator_keypair,
             )
-        emulate_result_after_1_step = neon_api_client.emulate_from_holder(holder_acc)
+        emulate_result_after_1_step = neon_rpc_client.emulate_from_holder(holder_acc)
 
         for _ in range(14):
             evm_loader.send_transaction_step_from_account(
@@ -442,7 +442,7 @@ class TestEmulateFromHolderAccount:
                 EVM_STEPS,
                 operator_keypair,
             )
-        emulate_result = neon_api_client.emulate_from_holder(holder_acc)
+        emulate_result = neon_rpc_client.emulate_from_holder(holder_acc)
 
         assert emulate_result["steps_executed"] == emulate_result_after_1_step["steps_executed"]
         assert emulate_result["iterations"] == emulate_result_after_1_step["iterations"]
@@ -478,7 +478,7 @@ class TestEmulateFromHolderAccount:
         )
 
     def test_emulate_from_holder_account_with_small_number_of_steps(
-        self, operator_keypair, session_user, rw_lock_contract, neon_api_client, evm_loader, treasury_pool, holder_acc
+        self, operator_keypair, session_user, rw_lock_contract, neon_rpc_client, evm_loader, treasury_pool, holder_acc
     ):
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
         signed_tx = make_contract_call_trx(
@@ -501,7 +501,7 @@ class TestEmulateFromHolderAccount:
             operator_keypair,
         )
 
-        emulate_result = neon_api_client.emulate_from_holder(holder_acc, max_steps_to_execute=5)
+        emulate_result = neon_rpc_client.emulate_from_holder(holder_acc, max_steps_to_execute=5)
         assert (
             emulate_result["exit_status"] == "revert"
         ), f"The 'exit_status' field is not revert. Result: {emulate_result}"
@@ -515,7 +515,7 @@ class TestEmulateFromHolderAccount:
         operator_keypair,
         session_user,
         rw_lock_contract,
-        neon_api_client,
+        neon_rpc_client,
         evm_loader,
         write_tx_to_holder,
         temp_holder_acc,
@@ -525,6 +525,5 @@ class TestEmulateFromHolderAccount:
                 evm_loader, session_user, rw_lock_contract, "unchange_storage(uint8,uint8)", [6, 12]
             )
             evm_loader.write_transaction_to_holder_account(signed_tx, temp_holder_acc, operator_keypair)
-        emulate_result = neon_api_client.emulate_from_holder(temp_holder_acc)
-        assert emulate_result["result"] == "error"
-        assert "invalid status" in emulate_result["error"]
+        emulate_result = neon_rpc_client.emulate_from_holder(temp_holder_acc)
+        assert "invalid status" in emulate_result["message"]

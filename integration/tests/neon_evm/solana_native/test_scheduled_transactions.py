@@ -5,7 +5,7 @@ from eth_utils import abi, to_int
 from solders.pubkey import Pubkey
 
 from integration.tests.neon_evm.utils.assert_messages import InstructionAsserts
-from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
+from integration.tests.neon_evm.utils.neon_api_rpc_client import NeonApiRpcClient
 from utils.consts import LAMPORT_PER_SOL
 from utils.helpers import wait_condition
 from utils.neon_user import NeonUser
@@ -20,7 +20,7 @@ class TestScheduledTrx:
         neon_user: NeonUser,
         treasury_pool,
         basic_contract,
-        neon_api_client,
+        neon_rpc_client,
         operator_keypair,
         holder_acc,
     ):
@@ -40,7 +40,7 @@ class TestScheduledTrx:
             chain_id=evm_loader.sol_chain_id,
         )
         tree_account = evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
-        transaction_tree_data = neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce)
+        transaction_tree_data = neon_rpc_client.get_transaction_tree(neon_user.neon_address.hex(), nonce)
         assert transaction_tree_data.get_transaction_count() == 1
 
         evm_loader.write_transaction_to_holder_account(tx.encode(), holder_acc, operator_keypair)
@@ -53,7 +53,7 @@ class TestScheduledTrx:
         )
         evm_loader.finish_scheduled_trx(operator_keypair, tree_account, holder_acc)
         evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
-        assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).get_transaction_count() == 0
+        assert neon_rpc_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).get_transaction_count() == 0
 
     def test_execute_scheduled_trx_from_instruction(
         self,
@@ -61,7 +61,7 @@ class TestScheduledTrx:
         neon_user: NeonUser,
         treasury_pool,
         basic_contract,
-        neon_api_client: NeonApiClient,
+        neon_rpc_client: NeonApiRpcClient,
         operator_keypair,
         holder_acc,
     ):
@@ -82,7 +82,7 @@ class TestScheduledTrx:
         )
 
         tree_account = evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
-        assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).get_transaction_count() == 1
+        assert neon_rpc_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).get_transaction_count() == 1
 
         additional_accounts = [
             basic_contract.solana_address,
@@ -93,14 +93,14 @@ class TestScheduledTrx:
         )
 
         data = abi.function_signature_to_4byte_selector("getNumber()")
-        result = neon_api_client.emulate(
+        result = neon_rpc_client.emulate(
             neon_user.neon_address.hex(), contract=basic_contract.eth_address.hex(), data=data
         )
         assert to_int(hexstr=result["result"]) == contract_data
 
         evm_loader.finish_scheduled_trx(operator_keypair, tree_account, holder_acc)
         evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
-        assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).get_transaction_count() == 0
+        assert neon_rpc_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).get_transaction_count() == 0
 
     def test_scheduled_trx_wrong_index(
         self, evm_loader, neon_user: NeonUser, treasury_pool, basic_contract, operator_keypair, holder_acc
@@ -127,7 +127,7 @@ class TestScheduledTrx:
         evm_loader,
         neon_user: NeonUser,
         treasury_pool,
-        neon_api_client: NeonApiClient,
+        neon_rpc_client: NeonApiRpcClient,
         operator_keypair,
         sender_with_wsol,
     ):
@@ -135,7 +135,7 @@ class TestScheduledTrx:
             operator_keypair,
             sender_with_wsol,
             "transfers",
-            neon_api_client,
+            neon_rpc_client,
             treasury_pool,
             chain_id=evm_loader.sol_chain_id,
         )
@@ -166,13 +166,13 @@ class TestScheduledTrx:
         treasury_pool,
         operator_keypair,
         sender_with_wsol,
-        neon_api_client,
+        neon_rpc_client,
     ):
         contract = evm_loader.deploy_contract(
             operator_keypair,
             sender_with_wsol,
             "transfers",
-            neon_api_client,
+            neon_rpc_client,
             treasury_pool,
             chain_id=evm_loader.sol_chain_id,
         )
@@ -199,7 +199,7 @@ class TestScheduledTrx:
         evm_loader,
         neon_user: NeonUser,
         treasury_pool,
-        neon_api_client,
+        neon_rpc_client,
         operator_keypair,
         sender_with_wsol,
         holder_acc,
@@ -208,7 +208,7 @@ class TestScheduledTrx:
             operator_keypair,
             sender_with_wsol,
             "transfers",
-            neon_api_client,
+            neon_rpc_client,
             treasury_pool,
             chain_id=evm_loader.sol_chain_id,
         )
@@ -251,7 +251,7 @@ class TestScheduledTrx:
         assert treasury_balance_diff > 0
         assert user_balance_diff > 0
 
-        emulate_result = neon_api_client.emulate(
+        emulate_result = neon_rpc_client.emulate(
             neon_user.neon_address.hex(),
             contract.eth_address.hex(),
             data,

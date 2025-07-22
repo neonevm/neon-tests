@@ -14,14 +14,14 @@ from utils.types import Contract
 class TestAccountList:
 
     def test_all_accounts_sent_in_last_iteration(
-        self, session_user, evm_loader, operator_keypair, treasury_pool, holder_acc, neon_api_client, sol_client
+        self, session_user, evm_loader, operator_keypair, treasury_pool, holder_acc, neon_rpc_client, sol_client
     ):
 
         contract: Contract = evm_loader.deploy_contract(
             operator=operator_keypair,
             user=session_user,
             contract_file_name="neon_evm/out_of_contract_scope.sol",
-            neon_api_client=neon_api_client,
+            neon_rpc_client=neon_rpc_client,
             treasury_pool=treasury_pool,
             contract_name="SaveNumber",
             version="0.8.12",
@@ -30,7 +30,7 @@ class TestAccountList:
         signed_tx = make_contract_call_trx(evm_loader, session_user, contract, "saveNumberToVar(uint256)", params=[5])
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 
-        emulate_result = neon_api_client.emulate_contract_call(
+        emulate_result = neon_rpc_client.emulate_contract_call(
             session_user.eth_address.hex(), contract.eth_address.hex(), "saveNumberToVar(uint256)", params=[5]
         )
 
@@ -83,13 +83,13 @@ class TestAccountList:
         check_transaction_logs_have_text(solana_client=sol_client, trx=trx_final, text="exit_status=0x11")
 
     def test_account_list_with_blockhash(
-        self, evm_loader, session_user, operator_keypair, treasury_pool, holder_acc, neon_api_client, sol_client
+        self, evm_loader, session_user, operator_keypair, treasury_pool, holder_acc, neon_rpc_client, sol_client
     ):
         contract: Contract = evm_loader.deploy_contract(
             operator=operator_keypair,
             user=session_user,
             contract_file_name="opcodes/BlockHash.sol",
-            neon_api_client=neon_api_client,
+            neon_rpc_client=neon_rpc_client,
             treasury_pool=treasury_pool,
             contract_name="BlockHashTest",
             version="0.8.10",
@@ -97,7 +97,7 @@ class TestAccountList:
         slot = evm_loader.get_slot().value
         signed_tx = make_contract_call_trx(evm_loader, session_user, contract, "getValues(uint256)", params=[slot])
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
-        emulate_result = neon_api_client.emulate_contract_call(
+        emulate_result = neon_rpc_client.emulate_contract_call(
             session_user.eth_address.hex(), contract.eth_address.hex(), "getValues(uint256)", params=[slot]
         )
         acc_from_emulation = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]

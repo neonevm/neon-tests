@@ -26,7 +26,7 @@ class TestMultipleScheduledTrx:
         treasury_pool,
         holder_acc,
         operator_keypair,
-        neon_api_client,
+        neon_rpc_client,
     ):
 
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, evm_loader.sol_chain_id)
@@ -72,7 +72,7 @@ class TestMultipleScheduledTrx:
         )
         evm_loader.finish_scheduled_trx(operator_keypair, tree_account, holder_acc)
         evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
-        assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
+        assert neon_rpc_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
 
     # ┌───────┐  ┌──────┐
     # │ t0 x  ├─>┤ t1 ✓ │
@@ -86,7 +86,7 @@ class TestMultipleScheduledTrx:
         treasury_pool,
         holder_acc,
         operator_keypair,
-        neon_api_client,
+        neon_rpc_client,
     ):
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, evm_loader.sol_chain_id)
         contract_data = 18
@@ -118,7 +118,7 @@ class TestMultipleScheduledTrx:
         tree_acc_data.add_trx(tx1, 0xFFFF, 1)
 
         tree_account = evm_loader.create_tree_account_multiple(neon_user, treasury_pool, tree_acc_data.data)
-        emulate_result = neon_api_client.emulate(
+        emulate_result = neon_rpc_client.emulate(
             neon_user.neon_address.hex(),
             basic_contract.eth_address.hex(),
             data.hex(),
@@ -138,11 +138,11 @@ class TestMultipleScheduledTrx:
             )
 
         evm_loader.skip_scheduled_trx_from_instruction(tx1, operator_keypair, tree_account, holder_acc)
-        tree_account_data = neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce)
+        tree_account_data = neon_rpc_client.get_transaction_tree(neon_user.neon_address.hex(), nonce)
         assert tree_account_data.transactions[0].is_failed()
         assert tree_account_data.transactions[1].is_skipped()
         evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
-        assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
+        assert neon_rpc_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
 
     #  ┌──────┐
     #  │ t0 ✓ │
@@ -164,7 +164,7 @@ class TestMultipleScheduledTrx:
         treasury_pool,
         holder_acc,
         operator_keypair,
-        neon_api_client,
+        neon_rpc_client,
     ):
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, evm_loader.sol_chain_id)
         contract_data = 18
@@ -202,16 +202,16 @@ class TestMultipleScheduledTrx:
                 trx, operator_keypair, holder_acc, tree_account, treasury_pool, additional_accounts
             )
             evm_loader.finish_scheduled_trx(operator_keypair, tree_account, holder_acc)
-        tree_account_data = neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce)
+        tree_account_data = neon_rpc_client.get_transaction_tree(neon_user.neon_address.hex(), nonce)
         assert tree_account_data.all_transactions_successful()
         evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
-        assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
+        assert neon_rpc_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
 
     def test_deploy_and_call_contract(
         self,
         evm_loader,
         neon_user,
-        neon_api_client,
+        neon_rpc_client,
         treasury_pool,
         operator_keypair,
         holder_acc,
@@ -224,7 +224,7 @@ class TestMultipleScheduledTrx:
         )
         caller_contract: Contract = create_contract_address(neon_user.neon_address, evm_loader)
 
-        emulate_deploy = neon_api_client.emulate(
+        emulate_deploy = neon_rpc_client.emulate(
             neon_user.neon_address.hex(),
             contract=None,
             data=contract_code,
@@ -280,17 +280,17 @@ class TestMultipleScheduledTrx:
             tx1, operator_keypair, holder_acc, tree_account, treasury_pool, additional_accounts_call
         )
         evm_loader.finish_scheduled_trx(operator_keypair, tree_account, holder_acc)
-        tree_account_data = neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce)
+        tree_account_data = neon_rpc_client.get_transaction_tree(neon_user.neon_address.hex(), nonce)
 
         assert tree_account_data.all_transactions_successful()
         evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
-        assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
+        assert neon_rpc_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
 
     def test_call_precompiled_by_scheduled_trx(
         self,
         evm_loader,
         neon_user,
-        neon_api_client,
+        neon_rpc_client,
         treasury_pool,
         operator_keypair,
         holder_acc,
@@ -299,7 +299,7 @@ class TestMultipleScheduledTrx:
         nonce = evm_loader.get_neon_nonce(neon_user.neon_address, evm_loader.sol_chain_id)
 
         data = abi.function_signature_to_4byte_selector("initializeMint(uint8)") + eth_abi.encode(["uint8"], [9])
-        emulate_result = neon_api_client.emulate(
+        emulate_result = neon_rpc_client.emulate(
             neon_user.neon_address.hex(),
             contract=spl_token_caller.eth_address.hex(),
             data=data,
@@ -332,6 +332,6 @@ class TestMultipleScheduledTrx:
             tx0, operator_keypair, holder_acc, tree_account, treasury_pool, additional_accounts
         )
         evm_loader.finish_scheduled_trx(operator_keypair, tree_account, holder_acc)
-        assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).all_transactions_successful()
+        assert neon_rpc_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).all_transactions_successful()
         evm_loader.destroy_tree_account(operator_keypair, neon_user, treasury_pool, tree_account)
-        assert neon_api_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []
+        assert neon_rpc_client.get_transaction_tree(neon_user.neon_address.hex(), nonce).transactions == []

@@ -51,9 +51,9 @@ class TreeAccount:
     transactions: List[TreeAccountTransaction]
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "TreeAccount":
-        transactions = [TreeAccountTransaction.from_dict(tx) for tx in data["value"]["transactions"]]
-        value = data["value"]
+    def from_dict(cls, data: Dict[str, Any]):
+        transactions = [TreeAccountTransaction.from_dict(tx) for tx in data["result"]["transactions"]]
+        value = data["result"]
         return cls(
             result=data["result"],
             status=value["status"],

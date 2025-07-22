@@ -3,7 +3,7 @@ from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 
 from integration.tests.neon_evm.utils.ethereum import make_contract_call_trx
-from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
+from integration.tests.neon_evm.utils.neon_api_rpc_client import NeonApiRpcClient
 from utils.evm_loader import EvmLoader
 from utils.types import Contract, Caller, TreasuryPool
 
@@ -23,7 +23,7 @@ class TestStorageCells:
         session_user: Caller,
         evm_loader: EvmLoader,
         treasury_pool: TreasuryPool,
-        neon_api_client: NeonApiClient,
+        neon_rpc_client: NeonApiRpcClient,
         holder_acc: Pubkey,
         function_signature: str,
     ):
@@ -32,14 +32,14 @@ class TestStorageCells:
             operator=operator_keypair,
             user=session_user,
             contract_file_name="neon_evm/store_zeros.sol",
-            neon_api_client=neon_api_client,
+            neon_rpc_client=neon_rpc_client,
             treasury_pool=treasury_pool,
             contract_name="saveZeros",
             version="0.8.12",
         )
 
         # Emulate contract function call transaction
-        emulate_accounts = neon_api_client.get_additional_accounts_by_emulation(
+        emulate_accounts = neon_rpc_client.get_additional_accounts_by_emulation(
             sender=session_user.eth_address.hex(),
             contract=contract.eth_address.hex(),
             function_signature=function_signature,

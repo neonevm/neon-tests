@@ -1,13 +1,18 @@
+import allure
 import eth_abi
 from eth_utils import abi
 from requests import Response, Session
 from solders.pubkey import Pubkey
 
+from utils.models.tree_account import TreeAccount
+from utils.types import Caller, Contract
+
 
 class NeonApiRpcClient:
-    def __init__(self, url: str, chain_id: int) -> None:
+    def __init__(self, url: str, chain_id: int, sol_chain_id: int) -> None:
         self.url = url
         self.chain_id = chain_id
+        self.sol_chain_id = sol_chain_id
         self.session = Session()
         self.session.headers.update({"Content-Type": "application/json"})
 
@@ -43,6 +48,7 @@ class NeonApiRpcClient:
         params = {"account": [{"address": ether, "chain_id": chain_id}]}
         return self._make_request("balance", params)
 
+    @allure.step("Emulate transaction")
     def emulate(
         self,
         sender,
@@ -68,6 +74,7 @@ class NeonApiRpcClient:
         }
         return self._make_request("emulate", params)
 
+    @allure.step("Emulate contract call")
     def emulate_contract_call(
         self, sender, contract, function_signature, params=None, value=0, trace_config=None
     ) -> Response:
@@ -80,6 +87,20 @@ class NeonApiRpcClient:
             data += eth_abi.encode(types, params)
         return self.emulate(sender, contract, data, value=value, trace_config=trace_config)
 
+    @allure.step("Emulate transaction from holder account")
+    def emulate_from_holder(self, holder_pubkey: Pubkey, max_steps_to_execute=500000):
+        params = {"step_limit": max_steps_to_execute, "holder_pubkey": str(holder_pubkey)}
+        return self._make_request("emulate_from_holder", params)
+
+    def get_additional_accounts_by_emulation(
+        self, sender, contract, function_signature, params=None, value=0, trace_config=None
+    ):
+        result = self.emulate_contract_call(sender, contract, function_signature, params, value, trace_config)
+        if "solana_accounts" in result:
+            return [Pubkey.from_string(item["pubkey"]) for item in result["solana_accounts"]]
+        else:
+            raise ValueError(f"Emulation failed: {result}")
+
     def get_contract(self, address) -> Response:
         params = {"contract": address}
         return self._make_request("contract", params)
@@ -91,3 +112,36 @@ class NeonApiRpcClient:
     def get_config(self) -> Response:
         params = {}
         return self._make_request("config", params)
+
+    @allure.step("Simulate Solana transaction")
+    def simulate_solana(self, blockhash: str, transactions: list[str], solana_overrides_params=None) -> Response:
+        params = {
+            "blockhash": blockhash,
+            "transactions": transactions,
+            "solana_overrides": solana_overrides_params,
+        }
+        return self._make_request("simulate_solana", params)
+
+    def call_contract_get_function(self, sender, contract, function_signature: str, args=None):
+        data = abi.function_signature_to_4byte_selector(function_signature)
+        if args is not None:
+            data += args
+        result = self.emulate(sender.eth_address.hex(), contract.eth_address.hex(), data)
+        return result["result"]
+
+    def get_steps_count(self, from_acc, to, data) -> int:
+        if isinstance(to, (Caller, Contract)):
+            to = to.eth_address.hex()
+        result = self.emulate(from_acc.eth_address.hex(), to, data)
+        return result["steps_executed"]
+
+    def get_transaction_tree(self, address, nonce, chain_id: int | None = None) -> TreeAccount:
+        if not chain_id:
+            chain_id = self.sol_chain_id
+
+        if isinstance(address, Pubkey):
+            address = bytes(address).hex()
+        params = {"origin": {"address": address, "chain_id": chain_id}, "nonce": nonce}
+        body = {"jsonrpc": "2.0", "id": 1, "method": "transaction_tree", "params": [params]}
+        response = self.session.post(url=self.url, json=body).json()
+        return TreeAccount.from_dict(response)

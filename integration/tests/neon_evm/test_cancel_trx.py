@@ -10,13 +10,13 @@ from .utils.transaction_checks import check_holder_account_tag
 
 class TestCancelTrx:
     def test_cancel_trx(
-        self, operator_keypair, rw_lock_contract, session_user, treasury_pool, evm_loader, neon_api_client, holder_acc
+        self, operator_keypair, rw_lock_contract, session_user, treasury_pool, evm_loader, neon_rpc_client, holder_acc
     ):
         """EVM can cancel transaction and finalize storage account"""
         signed_tx = make_contract_call_trx(
             evm_loader, session_user, rw_lock_contract, "unchange_storage(uint8,uint8)", [1, 1]
         )
-        additional_accounts = neon_api_client.get_additional_accounts_by_emulation(
+        additional_accounts = neon_rpc_client.get_additional_accounts_by_emulation(
             session_user.eth_address.hex(), rw_lock_contract.eth_address.hex(), "unchange_storage(uint8,uint8)", [1, 1]
         )
 
@@ -55,7 +55,7 @@ class TestCancelTrx:
         sender_with_tokens,
         treasury_pool,
         evm_loader,
-        neon_api_client,
+        neon_rpc_client,
         gas_limit,
         holder_acc,
     ):

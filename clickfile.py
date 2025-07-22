@@ -951,7 +951,7 @@ def define_stand_env_by_branch(current_branch, head_branch, base_branch):
         if triggered_image_exist:
             proxy_tag = f"evm-triggered-{head_branch}"
         elif branch_exists:
-            proxy_tag = current_branch
+            proxy_tag = head_branch
         else:
             proxy_tag = ""
         evm_tag = head_branch if is_branch_exist(NEON_EVM_GITHUB_URL, head_branch) else ""

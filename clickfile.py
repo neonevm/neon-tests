@@ -936,18 +936,22 @@ def define_stand_env_by_branch(current_branch, head_branch, base_branch):
 
     if "/merge" not in current_branch and current_branch != "develop":
         branch_exists = is_branch_exist(PROXY_GITHUB_URL, current_branch)
-        image_exist = is_image_exist("neon-proxy.py", f"evm-triggered-{current_branch}")
-        if branch_exists or image_exist:
+        triggered_image_exist = is_image_exist("neon-proxy.py", f"evm-triggered-{current_branch}")
+        if triggered_image_exist:
             proxy_tag = f"evm-triggered-{current_branch}"
+        elif branch_exists:
+            proxy_tag = current_branch
         else:
             proxy_tag = ""
         evm_tag = current_branch if is_branch_exist(NEON_EVM_GITHUB_URL, current_branch) else ""
         faucet_tag = current_branch if is_branch_exist(FAUCET_GITHUB_URL, current_branch) else ""
     elif head_branch:
         branch_exists = is_branch_exist(PROXY_GITHUB_URL, head_branch)
-        image_exist = is_image_exist("neon-proxy.py", f"evm-triggered-{head_branch}")
-        if branch_exists or image_exist:
+        triggered_image_exist = is_image_exist("neon-proxy.py", f"evm-triggered-{head_branch}")
+        if triggered_image_exist:
             proxy_tag = f"evm-triggered-{head_branch}"
+        elif branch_exists:
+            proxy_tag = current_branch
         else:
             proxy_tag = ""
         evm_tag = head_branch if is_branch_exist(NEON_EVM_GITHUB_URL, head_branch) else ""

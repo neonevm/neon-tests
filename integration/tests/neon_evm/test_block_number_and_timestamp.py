@@ -13,13 +13,13 @@ from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 
 class TestBlockNumberAndTimestamp:
     @pytest.fixture(scope="session", params=["BlockTimestamp", "BlockNumber"])
-    def block_contract(self, request, evm_loader, operator_keypair, sender_with_tokens, neon_api_client, treasury_pool):
+    def block_contract(self, request, evm_loader, operator_keypair, sender_with_tokens, neon_rpc_client, treasury_pool):
         name = request.param
         return evm_loader.deploy_contract(
             operator_keypair,
             sender_with_tokens,
             "common/Block.sol",
-            neon_api_client,
+            neon_rpc_client,
             treasury_pool,
             contract_name=name,
             version="0.8.10",
@@ -30,7 +30,7 @@ class TestBlockNumberAndTimestamp:
         block_contract,
         operator_keypair,
         treasury_pool,
-        neon_api_client,
+        neon_rpc_client,
         evm_loader,
         sender_with_tokens,
         holder_acc,
@@ -41,7 +41,7 @@ class TestBlockNumberAndTimestamp:
         params = [4, 123]
         func_signature = "addDataToMapping(uint256,uint256)"
 
-        emulate_result = neon_api_client.emulate_contract_call(
+        emulate_result = neon_rpc_client.emulate_contract_call(
             sender_with_tokens.eth_address.hex(), block_contract.eth_address.hex(), func_signature, params=params
         )
         # Accounts to execute the first iteration.
@@ -55,14 +55,14 @@ class TestBlockNumberAndTimestamp:
 
         def get_account_override(eth_account):
             sender_address = eth_account.eth_address.hex()
-            sender_account_info = neon_api_client.get_balance(sender_address)["value"][0]
+            sender_account_info = neon_rpc_client.get_balance(sender_address)[0]
 
             return {
                 sender_address: {"nonce": sender_account_info["trx_count"], "balance": sender_account_info["balance"]}
             }
 
         def get_block_params():
-            block_params = neon_api_client.get_holder(holder_acc)["value"]["block_params"]
+            block_params = neon_rpc_client.get_holder(holder_acc)["block_params"]
             block_timestamp, block_number = int(block_params[0], 16), int(block_params[1], 16)
 
             return {"number": block_number, "time": block_timestamp}
@@ -86,7 +86,7 @@ class TestBlockNumberAndTimestamp:
         block_params = get_block_params()
 
         # Reemulate after the first iteration
-        emulate_result = neon_api_client.emulate_contract_call(
+        emulate_result = neon_rpc_client.emulate_contract_call(
             sender_with_tokens.eth_address.hex(),
             block_contract.eth_address.hex(),
             func_signature,
@@ -111,7 +111,7 @@ class TestBlockNumberAndTimestamp:
         operator_keypair,
         evm_loader,
         sender_with_tokens,
-        neon_api_client,
+        neon_rpc_client,
         treasury_pool,
         holder_acc,
         second_holder_acc,
@@ -121,7 +121,7 @@ class TestBlockNumberAndTimestamp:
         """
         func_signature = "accrueInterest()"
 
-        emulate_result = neon_api_client.emulate_contract_call(
+        emulate_result = neon_rpc_client.emulate_contract_call(
             sender_with_tokens.eth_address.hex(), block_contract.eth_address.hex(), func_signature
         )
         emulated_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]

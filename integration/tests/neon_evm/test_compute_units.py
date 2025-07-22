@@ -19,7 +19,7 @@ from solders.rpc.responses import GetTransactionResp
 from integration.tests.basic.evm.test_spl_token import DECIMALS, NAME, SYMBOL
 from integration.tests.neon_evm.conftest import prepare_operator
 from integration.tests.neon_evm.utils.ethereum import make_eth_transaction, make_contract_call_trx
-from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
+from integration.tests.neon_evm.utils.neon_api_rpc_client import NeonApiRpcClient
 from integration.tests.neon_evm.utils.transaction_checks import check_transaction_logs_have_text
 from utils.consts import LAMPORT_PER_SOL, NeonTxExitStatus, OPERATOR_KEYPAIR_PATH
 from utils.evm_loader import EvmLoader, EVM_STEPS
@@ -337,11 +337,11 @@ class TestComputeUnits:
         deterministic_operator_keypair: Keypair,
         deterministic_treasury_pool: TreasuryPool,
         deterministic_holder_acc: Pubkey,
-        neon_api_client: NeonApiClient,
+        neon_rpc_client: NeonApiRpcClient,
         sol_client: SolanaClient,
     ):
         rw_lock = evm_loader.deploy_contract(
-            deterministic_operator_keypair, deterministic_user, "rw_lock", neon_api_client, deterministic_treasury_pool
+            deterministic_operator_keypair, deterministic_user, "rw_lock", neon_rpc_client, deterministic_treasury_pool
         )
 
         constructor_args = eth_abi.encode(["address"], [rw_lock.eth_address.hex()])
@@ -349,7 +349,7 @@ class TestComputeUnits:
             deterministic_operator_keypair,
             deterministic_user,
             "rw_lock",
-            neon_api_client,
+            neon_rpc_client,
             deterministic_treasury_pool,
             encoded_args=constructor_args,
             contract_name="rw_lock_caller",
@@ -360,7 +360,7 @@ class TestComputeUnits:
         )
 
         data = decode_function_signature("update_storage_map(uint256)", [15])
-        emulate_result = neon_api_client.emulate(
+        emulate_result = neon_rpc_client.emulate(
             deterministic_user.eth_address.hex(), rw_lock_caller_contract.eth_address.hex(), data[2:]
         )
         additional_accounts = [Pubkey.from_string(acc["pubkey"]) for acc in emulate_result["solana_accounts"]]
@@ -389,14 +389,14 @@ class TestComputeUnits:
         deterministic_treasury_pool: TreasuryPool,
         deterministic_sender_with_tokens: Caller,
         deterministic_holder_acc: Pubkey,
-        neon_api_client: NeonApiClient,
+        neon_rpc_client: NeonApiRpcClient,
         sol_client: SolanaClient,
     ):
         contract = evm_loader.deploy_contract(
             operator=deterministic_operator_keypair,
             user=deterministic_sender_with_tokens,
             contract_file_name="string_setter",
-            neon_api_client=neon_api_client,
+            neon_rpc_client=neon_rpc_client,
             treasury_pool=deterministic_treasury_pool,
         )
         function_signature = "set(string)"
@@ -412,7 +412,7 @@ class TestComputeUnits:
         )
 
         data = decode_function_signature(function_signature, params)
-        emulate_result = neon_api_client.emulate(
+        emulate_result = neon_rpc_client.emulate(
             sender=deterministic_sender_with_tokens.eth_address.hex(),
             contract=contract.eth_address.hex(),
             data=data[2:],
@@ -443,14 +443,14 @@ class TestComputeUnits:
         deterministic_operator_keypair: Keypair,
         deterministic_treasury_pool: TreasuryPool,
         deterministic_holder_acc: Pubkey,
-        neon_api_client: NeonApiClient,
+        neon_rpc_client: NeonApiRpcClient,
         sol_client: SolanaClient,
     ):
         contract_a = evm_loader.deploy_contract(
             operator=deterministic_operator_keypair,
             user=deterministic_user,
             contract_file_name="common/NestedCallsChecker",
-            neon_api_client=neon_api_client,
+            neon_rpc_client=neon_rpc_client,
             treasury_pool=deterministic_treasury_pool,
             contract_name="A",
             version="0.8.12",
@@ -459,7 +459,7 @@ class TestComputeUnits:
             operator=deterministic_operator_keypair,
             user=deterministic_user,
             contract_file_name="common/NestedCallsChecker",
-            neon_api_client=neon_api_client,
+            neon_rpc_client=neon_rpc_client,
             treasury_pool=deterministic_treasury_pool,
             contract_name="B",
             version="0.8.12",
@@ -468,7 +468,7 @@ class TestComputeUnits:
             operator=deterministic_operator_keypair,
             user=deterministic_user,
             contract_file_name="common/NestedCallsChecker",
-            neon_api_client=neon_api_client,
+            neon_rpc_client=neon_rpc_client,
             treasury_pool=deterministic_treasury_pool,
             contract_name="C",
             version="0.8.12",
@@ -492,7 +492,7 @@ class TestComputeUnits:
             "method1(address,address)", [contract_b_checksum_address, contract_c_checksum_address]
         )
 
-        emulate_result = neon_api_client.emulate(
+        emulate_result = neon_rpc_client.emulate(
             deterministic_user.eth_address.hex(), contract_a.eth_address.hex(), data[2:]
         )
 
@@ -523,7 +523,7 @@ class TestComputeUnits:
         deterministic_treasury_pool: TreasuryPool,
         deterministic_holder_acc: Pubkey,
         deterministic_sender_with_tokens: Caller,
-        neon_api_client: NeonApiClient,
+        neon_rpc_client: NeonApiRpcClient,
         sol_client: SolanaClient,
         web3_client,
         accounts,
@@ -552,7 +552,7 @@ class TestComputeUnits:
             operator=deterministic_operator_keypair,
             user=deterministic_user,
             contract_file_name="precompiled/SplTokenCaller",
-            neon_api_client=neon_api_client,
+            neon_rpc_client=neon_rpc_client,
             treasury_pool=deterministic_treasury_pool,
             contract_name="SplTokenCaller",
             version="0.8.28",
@@ -570,7 +570,7 @@ class TestComputeUnits:
 
         data = decode_function_signature(function_signature, params)
 
-        emulate_result = neon_api_client.emulate(
+        emulate_result = neon_rpc_client.emulate(
             sender=deterministic_sender_with_tokens.eth_address.hex(),
             contract=contract.eth_address.hex(),
             data=data[2:],
@@ -601,7 +601,7 @@ class TestComputeUnits:
         deterministic_operator_keypair: Keypair,
         deterministic_treasury_pool: TreasuryPool,
         deterministic_holder_acc: Pubkey,
-        neon_api_client: NeonApiClient,
+        neon_rpc_client: NeonApiRpcClient,
         sol_client: SolanaClient,
     ):
         deterministic_neon_user = NeonUser(
@@ -613,7 +613,7 @@ class TestComputeUnits:
             operator=deterministic_operator_keypair,
             user=deterministic_sender_with_tokens,
             contract_file_name="common/Common",
-            neon_api_client=neon_api_client,
+            neon_rpc_client=neon_rpc_client,
             treasury_pool=deterministic_treasury_pool,
             version="0.8.12",
         )
@@ -642,7 +642,7 @@ class TestComputeUnits:
             treasury=deterministic_treasury_pool,
             transaction=tx.encode(),
         )
-        transaction_tree_data = neon_api_client.get_transaction_tree(
+        transaction_tree_data = neon_rpc_client.get_transaction_tree(
             address=deterministic_neon_user.neon_address.hex(),
             nonce=nonce,
         )
@@ -725,14 +725,14 @@ class TestComputeUnits:
         deterministic_operator_keypair: Keypair,
         deterministic_treasury_pool: TreasuryPool,
         deterministic_holder_acc: Pubkey,
-        neon_api_client: NeonApiClient,
+        neon_rpc_client: NeonApiRpcClient,
         sol_client: SolanaClient,
     ):
         contract = evm_loader.deploy_contract(
             operator=deterministic_operator_keypair,
             user=deterministic_user,
             contract_file_name="common/ExpectedErrorsChecker",
-            neon_api_client=neon_api_client,
+            neon_rpc_client=neon_rpc_client,
             treasury_pool=deterministic_treasury_pool,
             contract_name="A",
             version="0.8.12",
@@ -746,7 +746,7 @@ class TestComputeUnits:
         )
 
         data = decode_function_signature(function_signature)
-        emulate_result = neon_api_client.emulate(
+        emulate_result = neon_rpc_client.emulate(
             sender=deterministic_user.eth_address.hex(),
             contract=contract.eth_address.hex(),
             data=data[2:],

@@ -101,6 +101,12 @@ jobs:
             --base_branch "${{ github.base_ref }}" \
             --param "evm_branch")
 
+          proxy_tag=$(python3 ./clickfile.py infra get-stand-param \
+            --current_branch "${{ github.ref_name }}" \
+            --head_branch "${{ github.head_ref }}" \
+            --base_branch "${{ github.base_ref }}" \
+            --param "proxy_tag")
+
           proxy_branch=$(python3 ./clickfile.py infra get-stand-param \
             --current_branch "${{ github.ref_name }}" \
             --head_branch "${{ github.head_ref }}" \
@@ -111,11 +117,14 @@ jobs:
           echo "evm_tag=$env_tag" >> $GITHUB_OUTPUT
           echo "evm_branch=$evm_branch"
           echo "evm_branch=$evm_branch" >> $GITHUB_OUTPUT
+          echo "proxy_tag=$proxy_tag"
+          echo "proxy_tag=$proxy_tag" >> $GITHUB_OUTPUT
           echo "proxy_branch=$proxy_branch"
           echo "proxy_branch=$proxy_branch" >> $GITHUB_OUTPUT
     outputs:
       evm_tag: ${{ steps.share.outputs.evm_tag }}
       evm_branch: ${{ steps.share.outputs.evm_branch }}
+      proxy_tag: ${{ steps.share.outputs.proxy_tag }}
       proxy_branch: ${{ steps.share.outputs.proxy_branch }}
 
   dockerize:
@@ -160,6 +169,7 @@ jobs:
           dockerhub_org_name: ${{ github.repository_owner }}
           devnet_solana_url: "${{ secrets.SOLANA_URL }}"
           neonevm_commit: ${{ needs.share-tags.outputs.evm_tag }}
+          revision: ${{ needs.share-tags.outputs.proxy_tag }}
           proxy_branch: ${{ needs.share-tags.outputs.proxy_branch }}
     outputs:
       proxy_ip: ${{ steps.prepare_terraform.outputs.instance_public_ip_v4 }}

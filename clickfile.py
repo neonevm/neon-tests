@@ -972,7 +972,7 @@ def define_stand_env_by_branch(current_branch, head_branch, base_branch):
     faucet_tag = "latest" if not faucet_tag else faucet_tag
 
     evm_branch = evm_tag if evm_tag != "latest" else "develop"
-    proxy_branch = proxy_tag if proxy_tag != "latest" else "develop"
+    proxy_branch = proxy_tag if proxy_tag != "latest" and "evm-triggered-" not in proxy_tag else "develop"
 
     return {
         "evm_tag": evm_tag,

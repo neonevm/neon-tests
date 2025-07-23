@@ -417,6 +417,13 @@ def requirements(dep):
         install_ui_requirements()
 
 
+def is_image_exist(image, tag):
+    response = requests.get(
+        url=f"https://registry.hub.docker.com/v2/repositories/{DOCKER_HUB_ORG_NAME}/{image}/tags/{tag}"
+    )
+    return response.status_code == 200
+
+
 def is_branch_exist(endpoint, branch):
     if branch:
         response = requests.get(f"{endpoint}/branches/{branch}")
@@ -928,12 +935,25 @@ def define_stand_env_by_branch(current_branch, head_branch, base_branch):
     proxy_tag, evm_tag, faucet_tag = "", "", ""
 
     if "/merge" not in current_branch and current_branch != "develop":
-        proxy_tag = current_branch if is_branch_exist(PROXY_GITHUB_URL, current_branch) else ""
+        branch_exists = is_branch_exist(PROXY_GITHUB_URL, current_branch)
+        triggered_image_exist = is_image_exist("neon-proxy.py", f"evm-triggered-{current_branch}")
+        if triggered_image_exist:
+            proxy_tag = f"evm-triggered-{current_branch}"
+        elif branch_exists:
+            proxy_tag = current_branch
+        else:
+            proxy_tag = ""
         evm_tag = current_branch if is_branch_exist(NEON_EVM_GITHUB_URL, current_branch) else ""
         faucet_tag = current_branch if is_branch_exist(FAUCET_GITHUB_URL, current_branch) else ""
-
     elif head_branch:
-        proxy_tag = head_branch if is_branch_exist(PROXY_GITHUB_URL, head_branch) else ""
+        branch_exists = is_branch_exist(PROXY_GITHUB_URL, head_branch)
+        triggered_image_exist = is_image_exist("neon-proxy.py", f"evm-triggered-{head_branch}")
+        if triggered_image_exist:
+            proxy_tag = f"evm-triggered-{head_branch}"
+        elif branch_exists:
+            proxy_tag = head_branch
+        else:
+            proxy_tag = ""
         evm_tag = head_branch if is_branch_exist(NEON_EVM_GITHUB_URL, head_branch) else ""
         faucet_tag = head_branch if is_branch_exist(FAUCET_GITHUB_URL, head_branch) else ""
 
@@ -956,7 +976,7 @@ def define_stand_env_by_branch(current_branch, head_branch, base_branch):
     faucet_tag = "latest" if not faucet_tag else faucet_tag
 
     evm_branch = evm_tag if evm_tag != "latest" else "develop"
-    proxy_branch = proxy_tag if proxy_tag != "latest" else "develop"
+    proxy_branch = proxy_tag if proxy_tag != "latest" and "evm-triggered-" not in proxy_tag else "develop"
 
     return {
         "evm_tag": evm_tag,

@@ -177,15 +177,15 @@ class NeonProxyTasksSet(TaskSet):
             neon_token_mint_str=self.credentials["spl_neon_mint"],
         )
 
-        index = 2
-        self.evm_loader.create_treasury_pool_address(index)
-        address = self.evm_loader.create_treasury_pool_address(index)
-        index_buf = index.to_bytes(4, "little")
-        balance = self.evm_loader.get_solana_balance(address)
-
-        if balance < 5 * LAMPORT_PER_SOL:
-            self.evm_loader.request_airdrop(address, 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed)
-        self.treasury_pool = TreasuryPool(index, address, index_buf)
+        if self.network not in ["devnet"]:
+            index = 2
+            self.evm_loader.create_treasury_pool_address(index)
+            address = self.evm_loader.create_treasury_pool_address(index)
+            index_buf = index.to_bytes(4, "little")
+            balance = self.evm_loader.get_solana_balance(address)
+            if balance < 5 * LAMPORT_PER_SOL:
+                self.evm_loader.request_airdrop(address, 5 * LAMPORT_PER_SOL, commitment=commitment.Confirmed)
+            self.treasury_pool = TreasuryPool(index, address, index_buf)
 
     def task_block_number(self) -> None:
         """Check the number of the most recent block"""

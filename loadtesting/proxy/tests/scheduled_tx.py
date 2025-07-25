@@ -46,7 +46,7 @@ def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwarg
         key = base58.b58decode(private_key)
         bank_account = Keypair.from_bytes(key)
 
-    account_manager = EthAccounts(web3_client, faucet, bank_account)
+    account_manager = EthAccounts(web3_client, faucet, None)
 
     neon_user_balance = int(10**12 / neon_users)
     environment.contract_info = {}
@@ -80,7 +80,7 @@ def prepare_one_contract_for_scheduled_trx(environment: env.Environment, **kwarg
         environment.evm_loader,
         solana_account=solana_account,
         mintable=True,
-        bank_account=bank_account,
+        bank_account=None,
         owner=eth_account,
     )
 

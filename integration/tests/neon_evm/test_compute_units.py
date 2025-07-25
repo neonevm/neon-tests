@@ -325,7 +325,7 @@ class TestComputeUnits:
         allure_attach_accounts_data(resp=resp, evm_loader=evm_loader)
 
         cu_consumed = resp.value.transaction.meta.compute_units_consumed
-        assert abs(cu_consumed - 76872) <= 1000
+        assert abs(cu_consumed - 74524) <= 1000
 
     @pytest.mark.deterministic_index_of_process(35)
     @pytest.mark.deterministic_user_index(1)
@@ -372,7 +372,7 @@ class TestComputeUnits:
             storage_account=deterministic_holder_acc,
             instruction=signed_eth_tx,
             additional_accounts=additional_accounts,
-            cu_expected_list=[101998, 111277, 75095, 194746],
+            cu_expected_list=[98923, 110000, 72875, 190963],
             cu_delta_allowed=1000,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.SUCCESS_WITH_CHANGES}",
@@ -427,7 +427,7 @@ class TestComputeUnits:
             storage_account=deterministic_holder_acc,
             instruction=signed_tx,
             additional_accounts=additional_accounts,
-            cu_expected_list=[76298, 49604, 47633],
+            cu_expected_list=[73621, 49604, 45626],
             cu_delta_allowed=1000,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.SUCCESS_WITH_CHANGES}",
@@ -505,7 +505,7 @@ class TestComputeUnits:
             storage_account=deterministic_holder_acc,
             instruction=signed_tx,
             additional_accounts=additional_accounts,
-            cu_expected_list=[76334, 98384, 102143, 43520, 36457],
+            cu_expected_list=[73188, 98384, 99043, 43520, 36457],
             cu_delta_allowed=1000,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.SUCCESS_WITH_CHANGES}",
@@ -585,7 +585,7 @@ class TestComputeUnits:
             storage_account=deterministic_holder_acc,
             instruction=signed_tx,
             additional_accounts=additional_accounts,
-            cu_expected_list=[74088, 57543, 50095],
+            cu_expected_list=[70842, 56236, 50095],
             cu_delta_allowed=1000,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.SUCCESS_WITH_CHANGES}",
@@ -760,7 +760,7 @@ class TestComputeUnits:
             storage_account=deterministic_holder_acc,
             instruction=signed_tx,
             additional_accounts=additional_accounts,
-            cu_expected_list=[72246, 31454, 28429],
+            cu_expected_list=[70039, 31454, 28429],
             cu_delta_allowed=1000,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.REVERT}",

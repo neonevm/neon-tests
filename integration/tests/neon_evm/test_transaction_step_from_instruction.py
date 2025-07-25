@@ -964,7 +964,7 @@ class TestStepFromInstructionWithChangedRLPTrx:
             s=signed_tx.s,
             v=signed_tx.v,
         )
-        with pytest.raises(RPCException, match="Program log: RLP error: RlpIncorrectListLen"):
+        with pytest.raises(RPCException, match="Program log: RLP error: unexpected length"):
             evm_loader.execute_transaction_steps_from_instruction(
                 operator_keypair,
                 treasury_pool,
@@ -991,7 +991,7 @@ class TestStepFromInstructionWithChangedRLPTrx:
             s=signed_tx.s,
             v=signed_tx.v,
         )
-        with pytest.raises(RPCException, match="Program log: RLP error: RlpInconsistentLengthAndData"):
+        with pytest.raises(RPCException, match="Program log: RLP error: unexpected length"):
             evm_loader.execute_transaction_steps_from_instruction(
                 operator_keypair,
                 treasury_pool,

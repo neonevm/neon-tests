@@ -1,8 +1,8 @@
 import logging
 import os
-import re
 import pathlib
 import random
+import re
 import string
 import typing
 import typing as tp
@@ -17,16 +17,16 @@ from eth_abi import abi, decode
 from eth_abi.exceptions import InsufficientDataBytes
 from eth_utils import keccak
 from semantic_version import Version
-
+from solana.rpc.commitment import Confirmed
 from solcx import link_code
 from solders.pubkey import Pubkey
 from solders.rpc.responses import GetTransactionResp
-from web3 import Web3
-from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateRequest
-from solana.rpc.commitment import Confirmed
-from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
 from spl.token.client import Token as SplToken
+from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
 from spl.token.instructions import get_associated_token_address
+from web3 import Web3
+
+from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateRequest
 
 T = tp.TypeVar("T")
 
@@ -150,12 +150,12 @@ def decode_function_with_structure_in_arg_signature(function_name: str, args=Non
     data = keccak(text=function_name)[:4]
     if args is not None:
         match = re.search(r"\(\((.*?)\)\)", function_name)
-    if match:
-        inner = match.group(1)
-        types = inner.split(",")
-    else:
-        print("No match found")
-    data += abi.encode(types, args)
+        if match:
+            inner = match.group(1)
+            types = inner.split(",")
+            data += abi.encode(types, args)
+        else:
+            print("No match found")
     return "0x" + data.hex()
 
 
@@ -256,6 +256,17 @@ def serialize_instruction(program_id: Pubkey, instruction) -> bytes:
 
     serialized += len(instruction.data).to_bytes(8, "little") + instruction.data
     return serialized
+
+
+def serialize_instruction_struct(instruction) -> tuple[bytes, list[tuple[bytes, bool, bool]], bytes]:
+    serialized_prog_id: bytes = solana_pubkey_to_bytes32(instruction["program_id"])
+
+    serialized_accounts = []
+    for key in instruction["accounts"]:
+        serialized_accounts.append((solana_pubkey_to_bytes32(key.pubkey), key.is_signer, key.is_writable))
+
+    serialized_data = len(instruction["instruction_data"]).to_bytes(8, "little") + instruction["instruction_data"]
+    return serialized_prog_id, serialized_accounts, serialized_data
 
 
 def case_snake_to_camel(snake_str: str) -> str:
@@ -379,3 +390,32 @@ def withdraw_neon_to_solana_sol_sign(
 
     balance_withdraw_from_after = web3_client_sol.get_balance(withdraw_from.checksum_address)
     assert balance_withdraw_from_after != amount
+
+
+def parse_signature_types(signature: str) -> list[str]:
+    # Remove function name and outer parentheses
+    arg_str = signature[signature.find("(") + 1 : signature.rfind(")")]
+    result = []
+    current = []
+    depth = 0
+
+    i = 0
+    while i < len(arg_str):
+        char = arg_str[i]
+
+        if char == "," and depth == 0:
+            if current:
+                result.append("".join(current).strip())
+                current = []
+        else:
+            if char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+            current.append(char)
+        i += 1
+
+    if current:
+        result.append("".join(current).strip())
+
+    return result

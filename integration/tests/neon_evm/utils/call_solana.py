@@ -6,7 +6,7 @@ from integration.tests.neon_evm.utils.ethereum import make_eth_transaction, make
 from integration.tests.neon_evm.utils.transaction_checks import check_transaction_logs_have_text
 from utils.consts import SOLANA_CALL_PRECOMPILED_ID
 from utils.evm_loader import EvmLoader
-from utils.helpers import bytes32_to_solana_pubkey, serialize_instruction
+from utils.helpers import bytes32_to_solana_pubkey, serialize_instruction, serialize_instruction_struct
 from utils.metaplex import SYSTEM_PROGRAM_ID
 
 
@@ -195,6 +195,68 @@ class SolanaCaller:
                 additional_signers=additional_signers,
                 skip_preflight=skip_preflight,
             )
+        return resp
+
+    def execute_with_instruction_struct(self, instruction, holder_acc=None, sender=None):
+        sender = sender or self.owner
+        holder_acc = holder_acc or self.holder_acc
+        serialized_instruction = serialize_instruction_struct(instruction)
+
+        signed_tx = make_contract_call_trx(
+            evm_loader=self.evm_loader,
+            user=sender,
+            contract=self.contract,
+            function_signature="execute((bytes32,(bytes32,bool,bool)[],bytes))",
+            params=[serialized_instruction],
+        )
+
+        resp = self.evm_loader.execute_trx_from_instruction_with_solana_call(
+            self.operator_keypair,
+            holder_acc,
+            self.treasury_pool.account,
+            self.treasury_pool.buffer,
+            signed_tx,
+            [
+                sender.balance_account_address,
+                sender.solana_account_address,
+                SOLANA_CALL_PRECOMPILED_ID,
+                self.contract.balance_account_address,
+                self.contract.solana_address,
+                instruction["program_id"],
+            ]
+            + [acc.pubkey for acc in instruction["accounts"]],
+        )
+        return resp
+
+    def execute_with_lamports_and_instruction_struct(self, instruction, lamports, holder_acc=None, sender=None):
+        sender = sender or self.owner
+        holder_acc = holder_acc or self.holder_acc
+        serialized_instruction = serialize_instruction_struct(instruction)
+
+        signed_tx = make_contract_call_trx(
+            evm_loader=self.evm_loader,
+            user=sender,
+            contract=self.contract,
+            function_signature="execute(uint64,(bytes32,(bytes32,bool,bool)[],bytes))",
+            params=[lamports, serialized_instruction],
+        )
+
+        resp = self.evm_loader.execute_trx_from_instruction_with_solana_call(
+            self.operator_keypair,
+            holder_acc,
+            self.treasury_pool.account,
+            self.treasury_pool.buffer,
+            signed_tx,
+            [
+                sender.balance_account_address,
+                sender.solana_account_address,
+                SOLANA_CALL_PRECOMPILED_ID,
+                self.contract.balance_account_address,
+                self.contract.solana_address,
+                instruction["program_id"],
+            ]
+            + [acc.pubkey for acc in instruction["accounts"]],
+        )
         return resp
 
     def get_resource_address(self, salt, sender):

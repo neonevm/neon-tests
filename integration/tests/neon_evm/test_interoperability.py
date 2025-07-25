@@ -2,31 +2,21 @@ import random
 
 import eth_abi
 import pytest
-
-from eth_utils import abi
-
+import spl.token.client
 from eth_keys import keys as eth_keys
+from eth_utils import abi
 from solana.constants import LAMPORTS_PER_SOL
-from solders.keypair import Keypair
-from solders.pubkey import Pubkey
 from solana.rpc.commitment import Confirmed
 from solana.rpc.core import RPCException
 from solana.rpc.types import TxOpts
-import spl.token.client
-from spl.token.client import Token
-from solders.system_program import ID as SYS_PROGRAM_ID
-
 from solana.transaction import Instruction, AccountMeta
+from solders.keypair import Keypair
+from solders.pubkey import Pubkey
+from solders.system_program import ID as SYS_PROGRAM_ID
+from spl.token.client import Token
 from spl.token.instructions import TransferParams, transfer
 
-from utils.solana_logs_helper import decode_logs
-from .utils.transaction_checks import check_holder_account_tag, check_transaction_logs_have_text
-
 from integration.tests.neon_evm.utils.ethereum import make_eth_transaction, make_contract_call_trx
-
-from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
-from .utils.constants import TAG_FINALIZED_STATE, TAG_ACTIVE_STATE
-from utils.evm_loader import EVM_STEPS
 from utils.consts import (
     MEMO_PROGRAM_ID,
     COMPUTE_BUDGET_ID,
@@ -35,12 +25,15 @@ from utils.consts import (
     TRANSFER_SOL_ID,
     TRANSFER_TOKENS_ID,
 )
-
+from utils.evm_loader import EVM_STEPS
 from utils.helpers import serialize_instruction
-
 from utils.instructions import DEFAULT_UNITS, make_create_associated_token_idempotent, make_account_create_balance
 from utils.layouts import COUNTER_ACCOUNT_LAYOUT
+from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from utils.metaplex import ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID, TOKEN_PROGRAM_ID
+from utils.solana_logs_helper import decode_logs
+from .utils.constants import TAG_FINALIZED_STATE, TAG_ACTIVE_STATE
+from .utils.transaction_checks import check_holder_account_tag, check_transaction_logs_have_text
 
 
 @pytest.fixture(scope="session")
@@ -104,6 +97,36 @@ class TestInteroperability:
             data=bytes.fromhex("02") + DEFAULT_UNITS.to_bytes(4, "little"),
         )
         resp = solana_caller.execute(COMPUTE_BUDGET_ID, instruction, lamports_amount, sender=sender_with_tokens)
+        check_transaction_logs_have_text(solana_client, trx=resp, text="exit_status=0x11")
+
+    def test_execute_with_instruction_struct(
+        self,
+        sender_with_tokens,
+        solana_caller,
+        solana_client,
+    ):
+        instruction_struct = {
+            "program_id": COMPUTE_BUDGET_ID,
+            "accounts": [AccountMeta(sender_with_tokens.solana_account_address, is_signer=False, is_writable=False)],
+            "instruction_data": bytes.fromhex("02") + DEFAULT_UNITS.to_bytes(4, "little"),
+        }
+        resp = solana_caller.execute_with_instruction_struct(instruction_struct, sender=sender_with_tokens)
+        check_transaction_logs_have_text(solana_client, trx=resp, text="exit_status=0x11")
+
+    def test_execute_with_lamports_and_instruction_struct(
+        self,
+        sender_with_tokens,
+        solana_caller,
+        solana_client,
+    ):
+        instruction_struct = {
+            "program_id": COMPUTE_BUDGET_ID,
+            "accounts": [AccountMeta(sender_with_tokens.solana_account_address, is_signer=False, is_writable=False)],
+            "instruction_data": bytes.fromhex("02") + DEFAULT_UNITS.to_bytes(4, "little"),
+        }
+        resp = solana_caller.execute_with_lamports_and_instruction_struct(
+            instruction_struct, lamports=0, sender=sender_with_tokens
+        )
         check_transaction_logs_have_text(solana_client, trx=resp, text="exit_status=0x11")
 
     def test_execute_from_instruction_for_call_memo(

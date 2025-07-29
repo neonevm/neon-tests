@@ -110,12 +110,12 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
-        uses: ./.github/actions/python-requirements
+        uses: ./.github/actions/dapps-requirements
 
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK}}
+          python3 ./infra_cli.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch uniswap v2 tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -167,12 +167,12 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
-        uses: ./.github/actions/python-requirements
+        uses: ./.github/actions/dapps-requirements
 
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK}}
+          python3 ./infra_cli.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch uniswap v3 tests
         if: ${{ steps.accounts.outcome == 'success'}}
@@ -223,12 +223,12 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
-        uses: ./.github/actions/python-requirements
+        uses: ./.github/actions/dapps-requirements
 
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK}}
+          python3 ./infra_cli.py infra gen-accounts -c 4 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch saddle tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -280,12 +280,12 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
-        uses: ./.github/actions/python-requirements
+        uses: ./.github/actions/dapps-requirements
 
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 5 -a 20000 -n ${{env.NETWORK}}
+          python3 ./infra_cli.py infra gen-accounts -c 5 -a 20000 -n ${{env.NETWORK}}
 
       - name: Launch aave-v2 tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -331,12 +331,12 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
-        uses: ./.github/actions/python-requirements
+        uses: ./.github/actions/dapps-requirements
 
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 12 -a 20000 -n ${{env.NETWORK}}
+          python3 ./infra_cli.py infra gen-accounts -c 12 -a 20000 -n ${{env.NETWORK}}
 
       - name: Launch aave-v3 tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -382,12 +382,12 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
-        uses: ./.github/actions/python-requirements
+        uses: ./.github/actions/dapps-requirements
 
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 8 -a 10000 -n ${{env.NETWORK}}
+          python3 ./infra_cli.py infra gen-accounts -c 8 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch curve tests
         id: curve
@@ -433,7 +433,7 @@ jobs:
           ref: develop
       - name: Install python requirements
         id: requirements
-        uses: ./.github/actions/python-requirements
+        uses: ./.github/actions/dapps-requirements
 
       - name: Run deployment
         timeout-minutes: 10
@@ -470,12 +470,12 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
-        uses: ./.github/actions/python-requirements
+        uses: ./.github/actions/dapps-requirements
 
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 2 -a 10000 -n ${{env.NETWORK}}
+          python3 ./infra_cli.py infra gen-accounts -c 2 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch compound tests
         id: compound
@@ -527,12 +527,12 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
-        uses: ./.github/actions/python-requirements
+        uses: ./.github/actions/dapps-requirements
 
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK}}
+          python3 ./infra_cli.py infra gen-accounts -c 3 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch robonomics tests
         if: ${{ steps.accounts.outcome == 'success' }}
@@ -581,12 +581,12 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
-        uses: ./.github/actions/python-requirements
+        uses: ./.github/actions/dapps-requirements
 
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 10 -a 10000 -n ${{env.NETWORK}}
+          python3 ./infra_cli.py infra gen-accounts -c 10 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch yearn tests
         id: yearn
@@ -638,12 +638,12 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Install python requirements
         id: requirements
-        uses: ./.github/actions/python-requirements
+        uses: ./.github/actions/dapps-requirements
 
       - name: Prepare accounts
         id: accounts
         run: |
-          python3 ./clickfile.py infra gen-accounts -c 8 -a 10000 -n ${{env.NETWORK}}
+          python3 ./infra_cli.py infra gen-accounts -c 8 -a 10000 -n ${{env.NETWORK}}
 
       - name: Launch Pancake tests
         if: ${{ steps.accounts.outcome == 'success'}}
@@ -695,7 +695,7 @@ jobs:
         uses: ksivamuthu/actions-setup-gh-cli@v3
       - name: Install python requirements
         id: requirements
-        uses: ./.github/actions/python-requirements
+        uses: ./.github/actions/dapps-requirements
       - uses: actions/download-artifact@v4
         continue-on-error: true
         with:
@@ -755,7 +755,7 @@ jobs:
         id: save-cost-report-to-db
         if: ${{ inputs.repo == 'evm' || inputs.repo == 'proxy' }}
         run: |
-          python3 ./clickfile.py dapps save_dapps_cost_report_to_db \
+          python3 ./dapps_cli.py dapps save_dapps_cost_report_to_db \
           --directory=reports \
           --repo="${{inputs.repo}}" \
           --evm_tag="${{inputs.evm_tag}}" \
@@ -777,7 +777,7 @@ jobs:
         id: compare-cost-reports
         if: ${{ steps.set-do-compare-reports.outputs.compare == 'true' && steps.save-cost-report-to-db.outcome == 'success' }}
         run: |
-          python3 ./clickfile.py dapps compare_dapp_cost_reports \
+          python3 ./dapps_cli.py dapps compare_dapp_cost_reports \
           	--repo "${{inputs.repo}}" \
             --evm_tag="${{inputs.evm_tag}}" \
             --proxy_tag="${{inputs.proxy_tag}}" \
@@ -813,7 +813,7 @@ jobs:
         id: dump-cost-reports-to-markdown
         if: ${{ steps.set-do-compare-reports.outputs.compare == 'false' || steps.save-cost-reports-zip-url.outcome != 'success' }}
         run: |
-          python3 ./clickfile.py dapps save_dapps_cost_report_to_md \
+          python3 ./dapps_cli.py dapps save_dapps_cost_report_to_md \
           	--directory reports
       - name: "Add cost_reports.zip download link or Cost Reports markdown tables to summary"
         if: ${{ steps.dump-cost-reports-to-markdown.outcome == 'success' || steps.save-cost-reports-zip-url.outcome == 'success'  }}
@@ -822,7 +822,7 @@ jobs:
       - name: "Add PR comment with cost report data"
         if: ${{ inputs.pr_url_for_report != '' && inputs.pr_url_for_report !='/comments' }}
         run: |
-          python3 ./clickfile.py dapps add_pr_comment \
+          python3 ./dapps_cli.py dapps add_pr_comment \
           --pr_url_for_report="${{ inputs.pr_url_for_report }}" \
           --token="${{ secrets.GHTOKEN }}" \
           --md_file cost_reports.md \
@@ -831,7 +831,7 @@ jobs:
         id: validate-cost-report
         if: ${{ steps.set-do-compare-reports.outputs.compare == 'true' && steps.save-cost-report-to-db.outcome == 'success' }}
         run: |
-          python3 ./clickfile.py dapps validate_cost_reports \
+          python3 ./dapps_cli.py dapps validate_cost_reports \
             --repo "${{ inputs.repo }}" \
             --evm_tag="${{ inputs.evm_tag }}" \
             --proxy_tag="${{ inputs.proxy_tag }}" \
@@ -881,7 +881,7 @@ jobs:
       - name: "Add PR comment if cost report validation has any issues"
         if: ${{ steps.validate-cost-report.outputs.has_errors == 'true' && inputs.pr_url_for_report != '' && inputs.pr_url_for_report !='/comments' }}
         run: |
-          python3 ./clickfile.py dapps add_pr_comment \
+          python3 ./dapps_cli.py dapps add_pr_comment \
             --pr_url_for_report="${{ inputs.pr_url_for_report }}" \
             --token="${{ secrets.GHTOKEN }}" \
             --md_file cost_report_validation_issues.md \

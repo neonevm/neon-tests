@@ -8,11 +8,13 @@ from typing import TypedDict, Literal
 
 import click
 import pandas as pd
+from solana.rpc.commitment import Confirmed
+from solana.transaction import Signature
 
-from deploy.cli.infrastructure import get_solana_accounts_transactions_compute_units
 from deploy.cli.network_manager import NetworkManager
 from deploy.test_results_db.db_handler import PostgresTestResultsHandler
 from deploy.test_results_db.test_results_handler import TestResultsHandler
+from utils.solana_client import SolanaClient
 from utils.types import RepoType
 from utils.web3client import NeonChainWeb3Client
 
@@ -346,3 +348,46 @@ def validate_cost_reports(
     if failures:
         df = pd.DataFrame(failures)
         md = df.to_markdown(output, index=False)
+
+
+def get_solana_accounts_transactions_compute_units(eth_transaction):
+    print("**********************************************************************")
+    print(f"Neon transaction {eth_transaction}")
+    network = os.environ.get("NETWORK")
+    network_manager = NetworkManager(network)
+    solana_url = network_manager.get_network_param(network, "solana_url")
+    proxy_url = network_manager.get_network_param(network, "proxy_url")
+    sol_client = SolanaClient(solana_url)
+    web3_client = NeonChainWeb3Client(proxy_url)
+    trx = web3_client.get_solana_trx_by_neon(eth_transaction)
+    print(f"neon_getSolanaTransactionByNeonTransaction(eth_transaction={eth_transaction}): {trx}")
+    print(f"minimum_ledger_slot={sol_client.get_minimum_ledger_slot()}")
+    print(f"first_available_block={sol_client.get_first_available_block()}")
+    print(f"get_slot={sol_client.get_slot()}")
+    tr = sol_client.get_transaction(
+        Signature.from_string(trx["result"][0]), max_supported_transaction_version=0, commitment=Confirmed
+    )
+    print(f"get_transaction({trx}): {tr}")
+
+    solana_transaction_hashes = trx["result"]
+    print(f"trx_count ({len(solana_transaction_hashes)}): {solana_transaction_hashes}")
+    compute_units = 0
+
+    for solana_transaction_hash in solana_transaction_hashes:
+        solana_transaction = sol_client.get_transaction(
+            tx_sig=Signature.from_string(solana_transaction_hash),
+            max_supported_transaction_version=0,
+            commitment=Confirmed,
+        )
+        compute_units_consumed = int(solana_transaction.value.transaction.meta.compute_units_consumed)
+        compute_units += compute_units_consumed
+        print(f"Compute units {solana_transaction_hash}: {compute_units_consumed}")
+
+    if tr.value.transaction.transaction.message.address_table_lookups:
+        alt = tr.value.transaction.transaction.message.address_table_lookups
+        print(f"Atl: {alt}")
+        return len(alt[0].writable_indexes) + len(alt[0].readonly_indexes), len(trx["result"]), compute_units
+    else:
+        account_keys = tr.value.transaction.transaction.message.account_keys
+        print(f"Account keys ({len(account_keys)}): {account_keys}")
+        return len(tr.value.transaction.transaction.message.account_keys), len(trx["result"]), compute_units

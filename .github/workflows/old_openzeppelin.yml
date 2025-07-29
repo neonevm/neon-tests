@@ -119,7 +119,7 @@ jobs:
         if: failure() && github.ref_name == 'develop'
         run: |
           docker exec -i ${{ env.CONTAINER }} \
-            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+            python3 ./reports_cli.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
             -b ${{ env.BUILD_URL }} -n ${{ needs.prepare-env.outputs.network }} --test-group "oz neon-release-v3.4-solc0.7" \
             --report-group "oz neon-release-v3.4-solc0.7" \
             --report-url ${{ steps.generate-allure-report.outputs.allure_report_url }}
@@ -175,7 +175,7 @@ jobs:
         if: failure() && github.ref_name == 'develop'
         run: |
           docker exec -i ${{ env.CONTAINER }} \
-            python3 ./clickfile.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+            python3 ./reports_cli.py send-notification -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
           -b ${{ env.BUILD_URL }} -n ${{ needs.prepare-env.outputs.network }} --test-group "oz neon-release-v2.5-solc0.5" \
           --report-group "oz neon-release-v2.5-solc0.5" \
           --report-url ${{ steps.generate-allure-report.outputs.allure_report_url }}

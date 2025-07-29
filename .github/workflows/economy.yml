@@ -118,7 +118,7 @@ jobs:
       - name: Notify on failure
         if: failure() && github.ref_name == 'develop'
         run: |
-          docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py send-notification \
+          docker exec -i ${{ env.CONTAINER }} python3 ./reports_cli.py send-notification \
             -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
             -b ${{ env.BUILD_URL }} \
             --test-group economy \

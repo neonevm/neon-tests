@@ -10,19 +10,14 @@ import subprocess
 import sys
 import time
 import typing as tp
-from collections import defaultdict
 from multiprocessing.dummy import Pool
 from pathlib import Path
-from urllib.parse import urlparse
 
 import pytest
 
-from deploy.cli import cost_report
 from utils.consts import EnvName, TEST_GROUPS, EXTERNAL_CONTRACT_PATH
-from utils.error_log import error_log
 from utils.evm_loader import EvmLoader
-from utils.slack_notification import SlackNotification
-from utils.types import RepoType, TestGroup
+from utils.types import TestGroup
 
 try:
     import click
@@ -34,18 +29,15 @@ except ImportError:
     sys.exit(1)
 
 try:
-    from deploy.cli.github_api_client import GithubClient
     from deploy.cli.network_manager import NetworkManager
-
+    from utils.error_log import error_log
     from utils import create_allure_environment_opts, time_measure
     from deploy.cli import infrastructure
     from utils import web3client
-    from utils import cloud
     from utils.operator import Operator
     from utils.prices import get_sol_price_with_retry
     from utils.helpers import wait_condition
     from utils.apiclient import JsonRPCSession
-
 except ImportError:
     print("Please run ./clickfile.py requirements to install all requirements")
 
@@ -680,248 +672,6 @@ def analyze_openzeppelin_results():
             print("OpenZeppelin tests passed")
 
 
-# Base locust options
-locust_credentials = click.option(
-    "-c",
-    "--credentials",
-    type=str,
-    help="Relative path to credentials. Default repo root/envs.json",
-    show_default=True,
-)
-
-locust_host = click.option(
-    "-h",
-    "--host",
-    default=EnvName.LOCAL,
-    type=str,
-    help="In which stand run tests.",
-    show_default=True,
-)
-
-locust_users = click.option(
-    "-u",
-    "--users",
-    default=50,
-    type=int,
-    help="Peak number of concurrent Locust users.",
-    show_default=True,
-)
-
-locust_rate = click.option(
-    "-r",
-    "--spawn-rate",
-    default=1,
-    type=int,
-    help="Rate to spawn users at (users per second)",
-    show_default=True,
-)
-
-locust_run_time = click.option(
-    "-t",
-    "--run-time",
-    type=int,
-    help="Stop after the specified amount of time, e.g. (300s, 20m, 3h, 1h30m, etc.). "
-    "Only used together without Locust Web UI. [default: always run]",
-)
-
-locust_tags = click.option(
-    "-T",
-    "--tag",
-    type=str,
-    multiple=True,
-    help="tag to include in the test, so only tasks " "with any matching tags will be executed",
-)
-
-locust_headless = click.option(
-    "--web-ui/--headless",
-    " /-w",
-    default=True,
-    help="Enable the web interface. " "If UI is enabled, go to http://0.0.0.0:8089/ [default: `Web UI is enabled`]",
-)
-
-
-@cli.group()
-@click.pass_context
-def locust(ctx):
-    """Commands for load test manipulation."""
-
-
-@locust.command("run", help="Run `neon` pipeline performance test")
-@locust_credentials
-@locust_host
-@locust_users
-@locust_rate
-@locust_run_time
-@locust_tags
-@locust_headless
-@click.option(
-    "-f",
-    "--locustfile",
-    type=click.Choice(["proxy", "synthetic", "tracerapi"]),
-    default="proxy",
-    help="Load test type. It's sub-folder name to import.",
-    show_default=True,
-)
-@click.option(
-    "--neon-rpc",
-    type=str,
-    help="NEON RPC entry point.",
-    show_default=True,
-)
-def run_load(credentials, host, users, spawn_rate, run_time, tag, web_ui, locustfile, neon_rpc):
-    """Run `Neon` pipeline performance test
-
-    path it's sub-folder and file name  `loadtesting/locustfile.py`.
-    """
-    base_path = Path(__file__).parent
-    path = base_path / f"loadtesting/{locustfile}/locustfile.py"
-    if not (path.exists() and path.is_file()):
-        raise FileNotFoundError(f"path doe's not exists. {path.resolve()}")
-    command = f"locust -f {path.as_posix()} --host={host} --users={users} --spawn-rate={spawn_rate}"
-    if credentials:
-        command += f" --credentials={credentials}"
-    elif locustfile == "tracerapi":
-        command += f" --credentials={base_path.absolute()}/loadtesting/tracerapi/envs.json"
-    if run_time:
-        command += f" --run-time={run_time}"
-    if neon_rpc and locustfile == "tracerapi":
-        command += f" --neon-rpc={neon_rpc}"
-    if tag:
-        command += f" --tags {' '.join(tag)}"
-    if not web_ui:
-        command += " --headless"
-
-    cmd = subprocess.run(command, shell=True)
-
-    if cmd.returncode != 0:
-        sys.exit(cmd.returncode)
-
-
-@locust.command("prepare", help="Run preparation stage for `tracer api` performance test")
-@locust_credentials
-@locust_host
-@locust_users
-@locust_rate
-@locust_run_time
-@locust_tags
-def prepare(credentials, host, users, spawn_rate, run_time, tag):
-    """Run `Preparation stage` for trace api performance test"""
-    base_path = Path(__file__).parent
-    path = base_path / "loadtesting/tracerapi/prepare_data/locustfile.py"
-    if not (path.exists() and path.is_file()):
-        raise FileNotFoundError(f"path doe's not exists. {path.resolve()}")
-    command = f"locust -f {path.absolute()} --host={host} --users={users} --spawn-rate={spawn_rate} --headless"
-    if credentials:
-        command += f" --credentials={credentials}"
-    else:
-        command += f" --credentials={base_path.absolute()}/envs.json"
-    if run_time:
-        command += f" --run-time={run_time}"
-    else:
-        command += " --run-time=120"
-    if tag:
-        command += f" --tags {' '.join(tag)}"
-    else:
-        command += " --tags prepare"
-
-    cmd = subprocess.run(command, shell=True)
-
-    if cmd.returncode != 0:
-        sys.exit(cmd.returncode)
-
-
-@cli.group("allure")
-@click.pass_context
-def allure_cli(ctx):
-    """Commands for load test manipulation."""
-
-
-@allure_cli.command("upload-report", help="Upload allure history")
-@click.argument("name", type=click.Choice(TEST_GROUPS))
-@click.option("-n", "--network", default=EnvName.DEVNET, type=EnvName, help="In which stand run tests")
-@click.option(
-    "-s",
-    "--source",
-    default="./allure-report",
-    type=click.Path(file_okay=False, dir_okay=True),
-)
-def upload_allure_report(name: TestGroup, network: EnvName, source: str = "./allure-report"):
-    branch = os.environ.get("GITHUB_REF_NAME")
-    build_id = os.environ.get("GITHUB_RUN_NUMBER")
-    path = Path(name) / network.value / branch
-    cloud.upload(source, path / build_id)
-    report_url = f"http://neon-test-allure.s3-website.eu-central-1.amazonaws.com/{path / build_id}"
-
-    with open(ALLURE_REPORT_URL, "w") as f:
-        f.write(report_url)
-
-    with open("/tmp/index.html", "w") as f:
-        f.write(
-            f"""<!DOCTYPE html><meta charset="utf-8"><meta http-equiv="refresh" content="0; URL={report_url}">
-        <meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
-        """
-        )
-
-    cloud.upload("/tmp/index.html", path)
-    print(f"Allure report link: {report_url}")
-
-    with open("allure_report_info", "w") as f:
-        f.write(f"🔗 Allure [report]({report_url})\n")
-
-
-@cli.command(help="Send notification to slack")
-@click.option("-u", "--url", help="slack app endpoint url.")
-@click.option("-b", "--build_url", help="github action test build url.")
-@click.option(
-    "-n", "--network", type=click.Choice(EnvName), default=EnvName.DEVNET.value, help="In which stand run tests"
-)
-@click.option("--test-group", help="Name of the failed test group")
-@click.option("--report-url", multiple=True, help="Urls to Allure report")
-@click.option("--report-group", multiple=True, help="Test group of Allure report")
-def send_notification(url, build_url, network, test_group: str, report_url: tuple[str], report_group: tuple[str]):
-    slack_notification = SlackNotification()
-
-    # build info
-    parsed_build_url = urlparse(build_url).path.split("/")
-    build_id = parsed_build_url[-1]
-    build_info = {"id": build_id, "url": build_url}
-
-    # failed tests group or count if available
-    failed_count_by_group: defaultdict[TestGroup, int] = error_log.get_count_by_group()
-    if failed_count_by_group:
-        failed_tests = "\n".join(f"{group}: {count}" for group, count in failed_count_by_group.items())
-    else:
-        failed_tests = test_group
-
-    # Allure report urls
-    report_urls = []
-
-    for i, report_url_ in enumerate(report_url):
-        if report_url_:
-            report_urls.append({"name": report_group[i], "url": report_url_})
-
-    # add combined block
-    slack_notification.add_combined_block(
-        build_info=build_info,
-        network=network,
-        failed_tests=failed_tests,
-        report_urls=report_urls,
-        comments=error_log.read().comments,
-    )
-
-    # add the divider
-    slack_notification.add_divider()
-
-    # send the notification
-    payload = slack_notification.model_dump_json()
-    response = requests.post(url=url, data=payload)
-    if response.status_code != 200:
-        click.echo(f"Response status code: {response.status_code}")
-        click.echo(f"Response text: {response.text}")
-        click.echo(f"Payload: {payload}")
-        raise RuntimeError("Notification is not sent")
-
-
 @cli.group("infra", help="Manage test infrastructure")
 def infra():
     pass
@@ -999,38 +749,6 @@ def get_stand_param(current_branch, head_branch, base_branch, param):
     return env[param]
 
 
-@infra.command(name="deploy", help="Deploy test infrastructure")
-@click.option("--current_branch", help="Branch of neon-tests repository")
-@click.option("--head_branch", default="", help="Feature branch name")
-@click.option("--base_branch", default="", help="Target branch of the pull request")
-@click.option("--use-real-price", required=False, default="0", help="Remove CONST_GAS_PRICE from proxy")
-@click.option("--devnet-solana-url", required=True, help="Solana devnet url")
-def deploy(current_branch, head_branch, base_branch, devnet_solana_url, use_real_price):
-    # use feature branch or version tag as tag for proxy, evm and faucet images or use latest
-    env = define_stand_env_by_branch(current_branch, head_branch, base_branch)
-    use_real_price = True if use_real_price == "1" else False
-
-    infrastructure.deploy_infrastructure(
-        env["evm_tag"],
-        env["proxy_tag"],
-        env["faucet_tag"],
-        env["evm_branch"],
-        env["proxy_branch"],
-        devnet_solana_url,
-        use_real_price,
-    )
-
-
-@infra.command(name="destroy", help="Destroy test infrastructure")
-def destroy():
-    infrastructure.destroy_infrastructure()
-
-
-@infra.command(name="download-logs", help="Download remote docker logs")
-def download_logs():
-    infrastructure.download_remote_docker_logs()
-
-
 @infra.command(name="gen-accounts", help="Setup accounts with balance")
 @click.option("-c", "--count", default=2, help="How many users prepare")
 @click.option("-a", "--amount", default=10000, help="How many airdrop")
@@ -1047,122 +765,8 @@ def print_network_param(network, param):
     print(network_manager.get_network_param(network, param))
 
 
-infra.add_command(deploy, "deploy")
-infra.add_command(destroy, "destroy")
-infra.add_command(download_logs, "download-logs")
 infra.add_command(prepare_accounts, "gen-accounts")
 infra.add_command(print_network_param, "print-network-param")
-
-
-@cli.group("dapps", help="Manage dapps")
-def dapps():
-    pass
-
-
-@dapps.command("save_dapps_cost_report_to_db", help="Save dApps Cost Report to db")
-@click.option("-d", "--directory", default="reports", help="Directory with reports")
-@click.option("--repo", type=click.Choice(tp.get_args(RepoType)), required=True)
-@click.option("--evm_tag", required=True)
-@click.option("--proxy_tag", required=True)
-@click.option("--evm_commit_sha", required=True)
-@click.option("--proxy_commit_sha", required=True)
-def save_dapps_cost_report_to_db(
-    directory: str,
-    repo: RepoType,
-    evm_tag: str,
-    proxy_tag: str,
-    evm_commit_sha: str,
-    proxy_commit_sha: str,
-):
-    cost_report.save_dapps_cost_report_to_db(
-        directory=directory,
-        repo=repo,
-        evm_tag=evm_tag,
-        proxy_tag=proxy_tag,
-        evm_commit_sha=evm_commit_sha,
-        proxy_commit_sha=proxy_commit_sha,
-        version_branch_template=VERSION_BRANCH_TEMPLATE,
-    )
-
-
-@dapps.command("save_dapps_cost_report_to_md", help="Save dApps Cost Report to cost_reports.md")
-@click.option("-d", "--directory", default="reports", help="Directory with reports")
-def save_dapps_cost_report_to_md(directory: str):
-    cost_report.save_dapps_cost_report_to_md(directory=directory)
-
-
-@dapps.command("compare_dapp_cost_reports", help="Compare dApp results")
-@click.option("--repo", type=click.Choice(tp.get_args(RepoType)), required=True)
-@click.option("--evm_tag", required=True)
-@click.option("--proxy_tag", required=True)
-@click.option("--version_branch", required=True)
-@click.option("--history_depth_limit", type=int, help="How many runs to include into statistical analysis")
-def compare_dapp_results(
-    repo: RepoType,
-    evm_tag: str,
-    proxy_tag: str,
-    version_branch: str,
-    history_depth_limit: int,
-):
-    cost_report.compare_dapp_results(
-        repo=repo,
-        evm_tag=evm_tag,
-        proxy_tag=proxy_tag,
-        version_branch=version_branch,
-        history_depth_limit=history_depth_limit,
-    )
-
-
-@dapps.command("validate_cost_reports", help="Validate cost reports data")
-@click.option("--repo", type=click.Choice(tp.get_args(RepoType)), required=True)
-@click.option("--evm_tag", required=True)
-@click.option("--proxy_tag", required=True)
-@click.option("--version_branch", required=True)
-@click.option("--acc_count", type=int, help="Allowed acc_count increase")
-@click.option("--trx_count", type=int, help="Allowed trx_count increase")
-@click.option("--gas_estimated", type=int, help="Allowed gas_estimated increase")
-@click.option("--gas_used", type=int, help="Allowed gas_used increase")
-@click.option("--compute_units", type=int, help="Allowed compute_units increase")
-@click.option("--output", type=str, help="Path to the JSON file where detected failures are saved")
-def validate_cost_reports(
-    repo: RepoType,
-    evm_tag: str,
-    proxy_tag: str,
-    version_branch: str,
-    acc_count: int,
-    trx_count: int,
-    gas_estimated: int,
-    gas_used: int,
-    compute_units: int,
-    output: str,
-):
-    cost_report.validate_cost_reports(
-        repo=repo,
-        evm_tag=evm_tag,
-        proxy_tag=proxy_tag,
-        version_branch=version_branch,
-        acc_count=acc_count,
-        trx_count=trx_count,
-        gas_estimated=gas_estimated,
-        gas_used=gas_used,
-        compute_units=compute_units,
-        output=output,
-    )
-
-
-@dapps.command("add_pr_comment", help="Add PR comment with dApp cost reports")
-@click.option("--pr_url_for_report", default="", help="Url to send the report as comment for PR")
-@click.option("--token", default="", help="github token")
-@click.option("--md_file", help="File with markdown for the comment")
-@click.option("--title", default="", help="Comment title")
-def add_pr_comment(pr_url_for_report: str, token: str, md_file: str, title: str):
-    gh_client = GithubClient(token=token)
-    gh_client.delete_last_comment(pr_url=pr_url_for_report, title=title)
-
-    with open(md_file) as f:
-        markdown = f.read()
-
-    gh_client.add_comment_to_pr(url=pr_url_for_report, msg=markdown, title=title)
 
 
 @cli.command(help="Get proxy version for the specified network")

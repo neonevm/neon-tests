@@ -526,4 +526,12 @@ class TestEmulateFromHolderAccount:
             )
             evm_loader.write_transaction_to_holder_account(signed_tx, temp_holder_acc, operator_keypair)
         emulate_result = neon_rpc_client.emulate_from_holder(temp_holder_acc)
-        assert "invalid status" in emulate_result["message"]
+        assert f"Account invalid status {temp_holder_acc}." in emulate_result["message"]
+
+    def test_emulate_from_holder_account_with_wrong_account(
+        self,
+        session_user,
+        neon_rpc_client,
+    ):
+        emulate_result = neon_rpc_client.emulate_from_holder(session_user.solana_account_address)
+        assert f"Account not found {session_user.solana_account_address}." in emulate_result["message"]

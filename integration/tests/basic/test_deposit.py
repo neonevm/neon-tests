@@ -38,7 +38,7 @@ class TestDeposit:
         tx = self.web3_client.make_raw_tx(sender_account, amount=web3.Web3.to_wei(amount, "ether"))
         instruction_tx = withdraw_contract.functions.withdraw(bytes(solana_account.pubkey())).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
-        assert receipt["status"] == 1
+        assert receipt["status"] == 11
 
         evm_loader.send_token_from_solana_to_neon(
             solana_account,

@@ -49,7 +49,7 @@ runs:
         -e AWS_ACCESS_KEY_ID=${{ inputs.aws_access_key_id }} \
         -e AWS_SECRET_ACCESS_KEY=${{ inputs.aws_secret_access_key }} \
         ${{ inputs.container }} \
-        bash -c "python3 ./clickfile.py allure upload-report ${{ inputs.tests_name }} --network ${{ inputs.network }}"
+        bash -c "python3 ./reports_cli.py allure upload-report ${{ inputs.tests_name }} --network ${{ inputs.network }}"
     - name: Save allure_report_url to outputs
       id: output-allure-report-url
       if: always()

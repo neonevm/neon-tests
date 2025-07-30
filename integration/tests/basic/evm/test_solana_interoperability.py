@@ -750,7 +750,6 @@ class TestSolanaInteroperability:
         balance_after = self.web3_client.get_balance(call_solana_caller.address)
         assert balance_after == balance_before + 10
 
-    @pytest.mark.skip(reason="https://neonlabs.atlassian.net/browse/NDEV-3773")
     def test_call_solana_from_contract_constructor(
         self, counter_resource_address, call_solana_caller, web3_client, get_counter_value
     ):

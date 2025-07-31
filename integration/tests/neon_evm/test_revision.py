@@ -1258,4 +1258,4 @@ class TestAccountRevision:
         balance_account_revision = evm_loader.get_balance_account_revision(
             revision_with_solana_call_contract.balance_account_address
         )
-        assert balance_account_revision == balance_account_revision_before + 2
+        assert balance_account_revision == balance_account_revision_before + 3

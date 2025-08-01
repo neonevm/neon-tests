@@ -2,8 +2,8 @@ name: "Old OpenZeppelin with previous versions of solc"
 run-name: "Old OpenZeppelin / ${{ github.event.inputs.network || 'terraform' }} / ${{ github.event.inputs.jobsNumber || '8' }} jobs"
 
 on:
-  schedule:
-    - cron: "0 4 1 * *"
+#  schedule:
+#    - cron: "0 4 1 * *"
   workflow_dispatch:
     inputs:
       network:

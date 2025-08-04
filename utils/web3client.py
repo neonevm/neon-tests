@@ -12,16 +12,20 @@ import requests
 import web3.types
 from eth_abi import abi
 from eth_typing import BlockIdentifier
+from hexbytes import HexBytes
 from solders.instruction import Instruction
 from solders.pubkey import Pubkey
 from web3.contract import Contract
 from web3.exceptions import TransactionNotFound
 from web3.types import TxReceipt
 
+from integration.tests.basic.helpers.basic import SolanaInstruction
 from utils import helpers
+from utils.apiclient import JsonRPCSession
 from utils.consts import InputTestConstants, Unit
 from utils.helpers import decode_function_signature, case_snake_to_camel
 from utils.logger import log_text_to_allure_and_stdout
+from utils.models.result import NeonGetTransactionResult, SolanaNeonProgramInstruction
 from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateRequest
 from utils.types import TransactionType
 
@@ -38,6 +42,7 @@ class Web3Client:
         session = requests.Session()
         session.keep_alive = False
         self._web3 = web3.Web3(web3.HTTPProvider(proxy_url, session=session, request_kwargs={"timeout": 30}))
+        self.json_rpc_client = JsonRPCSession(proxy_url)
 
     def __getattr__(self, item):
         return getattr(self._web3, item)
@@ -56,58 +61,29 @@ class Web3Client:
             self._chain_id = self._web3.eth.chain_id
         return self._chain_id
 
-    @allure.step("Get evm info")
-    def _get_evm_info(self, method):
-        resp = requests.post(
-            self._proxy_url,
-            json={"jsonrpc": "2.0", "method": method, "params": [], "id": 1},
-        )
-        resp.raise_for_status()
-        try:
-            body = resp.json()
-            return body
-        except json.JSONDecodeError as e:
-            raise RuntimeError(f"Failed to decode EVM error {e} info: {resp.text}")
-
     @allure.step("Get proxy version")
     def get_proxy_version(self):
-        return self._get_evm_info("neon_proxyVersion")
+        return self.json_rpc_client.send_rpc("neon_proxyVersion")
 
     @allure.step("Get cli version")
     def get_neon_core_version(self):
-        return self._get_evm_info("neon_coreVersion")
+        return self.json_rpc_client.send_rpc("neon_coreVersion")
 
     @allure.step("Get neon version")
     def get_neon_versions(self):
-        return self._get_evm_info("neon_versions")
+        return self.json_rpc_client.send_rpc("neon_versions")
 
     @allure.step("Get evm version")
     def get_evm_version(self):
-        return self._get_evm_info("web3_clientVersion")
+        return self.json_rpc_client.send_rpc("web3_clientVersion")
 
     @allure.step("Get neon emulate")
     def get_neon_emulate(self, params):
-        return requests.post(
-            self._proxy_url,
-            json={
-                "jsonrpc": "2.0",
-                "method": "neon_emulate",
-                "params": [params],
-                "id": 0,
-            },
-        ).json()
+        return self.json_rpc_client.get_neon_emulate(params)
 
     @allure.step("Get solana trx by neon")
     def get_solana_trx_by_neon(self, tr_id: str):
-        return requests.post(
-            self._proxy_url,
-            json={
-                "jsonrpc": "2.0",
-                "method": "neon_getSolanaTransactionByNeonTransaction",
-                "params": [tr_id],
-                "id": 0,
-            },
-        ).json()
+        return self.json_rpc_client.get_solana_trx_by_neon(tr_id)
 
     @allure.step("Get transaction by hash")
     def get_transaction_by_hash(self, transaction_hash):
@@ -275,15 +251,7 @@ class Web3Client:
         trx: ScheduledTransaction,
         check_result: bool = True,
     ):
-        resp = requests.post(
-            self._proxy_url,
-            json={
-                "jsonrpc": "2.0",
-                "method": "neon_sendRawScheduledTransaction",
-                "params": [trx.encode().hex()],
-                "id": 0,
-            },
-        ).json()
+        resp = self.json_rpc_client.send_neon_scheduled_transaction(trx.encode().hex())
         if check_result:
             assert "result" in resp, f"Failed to send scheduled transaction: {resp}"
         return resp
@@ -581,15 +549,7 @@ class Web3Client:
         return gas_used_in_tx
 
     def neon_gas_price(self):
-        resp = requests.post(
-            self._proxy_url,
-            json={
-                "jsonrpc": "2.0",
-                "method": "neon_gasPrice",
-                "params": [],
-                "id": 0,
-            },
-        ).json()
+        resp = self.json_rpc_client.get_neon_gas_price()
         return resp["result"]
 
     def get_token_usd_gas_price(self):
@@ -609,29 +569,37 @@ class Web3Client:
         max_priority_fee_per_gas = max_fee_per_gas - base_fee_per_gas
         return max_priority_fee_per_gas, max_fee_per_gas
 
+    def get_neon_trx_receipt(self, trx_hash: str | HexBytes) -> dict:
+        if isinstance(trx_hash, HexBytes):
+            trx_hash = trx_hash.hex()
+        return self.json_rpc_client.get_neon_trx_receipt(trx_hash)
+
+    @allure.step("Check if transaction is iterative")
     def is_trx_iterative(self, trx_hash: str) -> bool:
-        resp = requests.post(
-            self._proxy_url,
-            json={
-                "jsonrpc": "2.0",
-                "method": "neon_getSolanaTransactionByNeonTransaction",
-                "params": [trx_hash],
-                "id": 0,
-            },
-        ).json()
-        return len(resp["result"]) > 1
+        response = self.json_rpc_client.get_neon_trx_receipt(trx_hash)
+        validated_response = NeonGetTransactionResult(**response)
+
+        covered_instructions = [
+            SolanaInstruction.TxStepFromData,
+            SolanaInstruction.TxStepFromAccountNoChainId,
+            SolanaInstruction.TxStepFromAccount,
+        ]
+        all_instructions = []
+        for trx in validated_response.result.solanaTransactions:
+            if isinstance(trx.solanaInstructions[0], SolanaNeonProgramInstruction):
+                all_instructions.extend(trx.solanaInstructions)
+        trx_instruction_names = [inst.neonInstructionName for inst in all_instructions]
+        assert len(all_instructions) > 0
+
+        for instruction in all_instructions:
+            if instruction.neonInstructionName in [inst.inst_name for inst in covered_instructions]:
+                return True
+        log_text_to_allure_and_stdout("All instructions in trx", str(trx_instruction_names))
+        return False
 
     @allure.step("Get pending transactions")
     def get_pending_transactions(self, user_address: str) -> str:
-        resp = requests.post(
-            self._proxy_url,
-            json={
-                "jsonrpc": "2.0",
-                "method": "neon_getPendingTransactions",
-                "params": [user_address],
-                "id": 0,
-            },
-        ).json()
+        resp = self.json_rpc_client.get_neon_pending_transactions(user_address)
         assert "result" in resp, f"Failed to get pending transactions: {resp}"
         return resp["result"]
 
@@ -676,16 +644,7 @@ class Web3Client:
         if preparatory_solana_trxs:
             instructions = self._pack_preparatory_solana_instructions(preparatory_solana_trxs)
             params["preparatorySolanaTransactions"] = [{"instructions": instructions}]
-        json = {
-            "jsonrpc": "2.0",
-            "method": "neon_estimateScheduledGas",
-            "params": [params],
-            "id": 0,
-        }
-        resp = requests.post(
-            self._proxy_url,
-            json=json,
-        ).json()
+        resp = self.json_rpc_client.get_neon_estimate_scheduled_gas(params)
         if check_result:
             assert "result" in resp, f"Failed to estimate transactions: {resp}"
             return resp["result"]
@@ -704,18 +663,11 @@ class Web3Client:
         if preparatory_solana_instructions:
             instructions = self._pack_preparatory_solana_instructions(preparatory_solana_instructions)
             params["preparatorySolanaTransactions"] = [{"instructions": instructions}]
-
-        resp = requests.post(
-            self._proxy_url,
-            json={
-                "jsonrpc": "2.0",
-                "method": "neon_estimateGas",
-                "params": [raw_tx, params],
-                "id": 0,
-            },
-        )
-        resp.raise_for_status()
-        return resp.json()
+        response = self.json_rpc_client.get_neon_estimate_gas(raw_tx, params)
+        if "result" in response:
+            return response["result"]
+        else:
+            return response["error"]
 
 
 class NeonChainWeb3Client(Web3Client):

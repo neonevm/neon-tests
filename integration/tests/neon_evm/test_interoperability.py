@@ -38,7 +38,12 @@ from utils.consts import (
 
 from utils.helpers import serialize_instruction
 
-from utils.instructions import DEFAULT_UNITS, make_create_associated_token_idempotent, make_account_create_balance
+from utils.instructions import (
+    DEFAULT_UNITS,
+    make_create_associated_token_idempotent,
+    make_account_create_balance,
+    make_increment_counter,
+)
 from utils.layouts import COUNTER_ACCOUNT_LAYOUT
 from utils.metaplex import ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID, TOKEN_PROGRAM_ID
 
@@ -174,13 +179,7 @@ class TestInteroperability:
         info1: bytes = evm_loader.get_solana_account_data(counter_resource_address, COUNTER_ACCOUNT_LAYOUT.sizeof())
         counter_value_before = COUNTER_ACCOUNT_LAYOUT.parse(info1)
 
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(counter_resource_address)
         call_params = []
         if lamports_amount is not None:
             params = (COUNTER_ID, 0, instruction)
@@ -202,13 +201,7 @@ class TestInteroperability:
         self, sender_with_tokens, evm_loader, lamports_amount, solana_caller, counter_resource_address
     ):
         instruction_count = 40
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(counter_resource_address)
         call_params = []
         if lamports_amount is not None:
             params = (COUNTER_ID, 0, instruction)
@@ -379,13 +372,7 @@ class TestInteroperability:
             contract_name="CommonCaller",
             version="0.8.3",
         )
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(counter_resource_address)
 
         serialized_instructions = serialize_instruction(COUNTER_ID, instruction)
         calldata = abi.function_signature_to_4byte_selector("execute(uint64,bytes)") + eth_abi.encode(
@@ -477,13 +464,7 @@ class TestInteroperability:
         matrix_size = 8
         matrix = [[random.randint(1, 100) for _ in range(matrix_size)] for _ in range(matrix_size)]
 
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(counter_resource_address)
         serialized_instruction = serialize_instruction(COUNTER_ID, instruction)
 
         signed_tx1 = make_contract_call_trx(
@@ -569,13 +550,7 @@ class TestInteroperability:
             amount = second_operator_balance - operator_balance + 1 * LAMPORTS_PER_SOL
             evm_loader.request_airdrop(operator_keypair.pubkey(), amount, commitment=Confirmed)
 
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(counter_resource_address)
 
         iterations = 20
         signed_tx = make_contract_call_trx(

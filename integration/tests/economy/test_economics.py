@@ -11,9 +11,10 @@ from eth_account.signers.local import LocalAccount
 from solana.constants import LAMPORTS_PER_SOL
 from solders.keypair import Keypair as SolanaAccount
 from solana.rpc.types import Commitment
-from solders.instruction import AccountMeta, Instruction
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
+
+from utils.instructions import make_increment_counter
 from utils.solana_interoperability_helper import prepare_transfer_spl_data
 
 from web3.contract import Contract
@@ -1377,7 +1378,7 @@ class TestEconomics:
 
     def test_solana_interoperability_call_inside_iterative_actions(
         self,
-        counter_resource_address: bytes,
+        counter_resource_address: Pubkey,
         call_solana_caller,
         web3_client,
         sol_price,
@@ -1389,13 +1390,7 @@ class TestEconomics:
         matrix_length = 8
         matrix = [[random.randint(1, 100) for _ in range(matrix_length)] for _ in range(matrix_length)]
 
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(Pubkey(counter_resource_address), is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(counter_resource_address)
         serialized = serialize_instruction(COUNTER_ID, instruction)
 
         sol_balance_before = operator.get_solana_balance()

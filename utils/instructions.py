@@ -10,7 +10,7 @@ from solders.system_program import ID as SYS_PROGRAM_ID
 from spl.token.constants import ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address
 
-from utils.consts import COMPUTE_BUDGET_ID, InstructionTags
+from utils.consts import COMPUTE_BUDGET_ID, InstructionTags, COUNTER_ID
 from utils.types import TreasuryPool
 from .logger import log_text_to_allure_and_stdout
 from .metaplex import SYSVAR_RENT_PUBKEY
@@ -550,4 +550,14 @@ def make_delete_holder_account(signer: Pubkey, holder_account: Pubkey, evm_loade
             AccountMeta(pubkey=holder_account, is_signer=False, is_writable=True),
             AccountMeta(pubkey=signer, is_signer=True, is_writable=True),
         ],
+    )
+
+
+def make_increment_counter(counter_resource_address: Pubkey) -> Instruction:
+    return Instruction(
+        program_id=COUNTER_ID,
+        accounts=[
+            AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
+        ],
+        data=bytes([0x1]),
     )

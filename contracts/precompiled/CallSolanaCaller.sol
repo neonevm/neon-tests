@@ -6,11 +6,13 @@ pragma abicoder v2;
 
 contract CallSolanaCaller {
     ICallSolana constant _callSolana =
-        ICallSolana(0xFF00000000000000000000000000000000000006);
+    ICallSolana(0xFF00000000000000000000000000000000000006);
+
     struct Data {
         uint256 value1;
         uint256 value2;
     }
+
     mapping(uint256 => Data) public dataMap;
     uint256 public numberToStore;
     uint256 public numberToStore2;
@@ -30,6 +32,7 @@ contract CallSolanaCaller {
         bytes32 salt;
         bytes instruction;
     }
+
     event LogBytes(bytes32 value);
     event LogStr(string value);
     event LogInt(uint value);
@@ -140,7 +143,7 @@ contract CallSolanaCaller {
         bytes[] memory _args
     ) public {
         doIterativeActions(actionsNumber);
-        batchExecuteWithoutLamports( _args);
+        batchExecuteWithoutLamports(_args);
     }
 
     function sendTokensAndExecuteInIterativeMode(
@@ -153,9 +156,13 @@ contract CallSolanaCaller {
 
     function doIterativeActions(uint actionsNumber) public {
         // some actions to make the call iterative
+        uint a = 0;
         for (uint256 i = 0; i < actionsNumber; i++) {
             Data memory newData = Data({value1: 1, value2: 2});
             dataMap[i] = newData;
+            for (uint256 i = 0; i < 200; i++) {
+                a = a + 256 / 2;
+            }
         }
     }
 

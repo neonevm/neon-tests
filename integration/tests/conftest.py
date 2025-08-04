@@ -656,14 +656,14 @@ def call_solana_caller(accounts, web3_client) -> Contract:
 
 
 @pytest.fixture(scope="class")
-def counter_resource_address(call_solana_caller, accounts, web3_client) -> tp.Generator[bytes, None, None]:
+def counter_resource_address(call_solana_caller, accounts, web3_client) -> Pubkey:
     tx = web3_client.make_raw_tx(accounts[0].address)
     salt = web3_client.text_to_bytes32("".join(random.choices(string.ascii_letters, k=5)))
     instruction_tx = call_solana_caller.functions.createResource(salt, 8, 100000, bytes(COUNTER_ID)).build_transaction(
         tx
     )
     web3_client.send_transaction(accounts[0], instruction_tx)
-    yield call_solana_caller.functions.getResourceAddress(salt).call()
+    return Pubkey.from_bytes(call_solana_caller.functions.getResourceAddress(salt).call())
 
 
 @pytest.fixture(scope="class")

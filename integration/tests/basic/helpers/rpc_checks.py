@@ -436,8 +436,8 @@ def count_instructions(neon_trx_receipt: NeonGetTransactionResult):
     return Counter([instruction.neonInstructionName for instruction in all_instructions])
 
 
-def assert_solana_trxs_in_neon_receipt(rpc_client, trx_hash, neon_receipt: NeonGetTransactionResult):
-    response = rpc_client.get_solana_trx_by_neon(trx_hash)
+def assert_solana_trxs_in_neon_receipt(web3_client: Web3Client, trx_hash, neon_receipt: NeonGetTransactionResult):
+    response = web3_client.get_solana_trx_by_neon(trx_hash.hex())
     solana_transactions = SolanaByNeonTransaction(**response)
 
     solana_trxs_by_neon = [trx.solanaTransactionSignature for trx in neon_receipt.result.solanaTransactions]

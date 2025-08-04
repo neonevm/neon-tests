@@ -11,7 +11,6 @@ from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.basic import Tag
 from integration.tests.basic.helpers.errors import Error32602
 from utils.accounts import EthAccounts
-from utils.apiclient import JsonRPCSession
 from utils.cu_cost_packed import CuCostPktData
 from utils.models.error import EthError32602
 from utils.models.result import EthEstimateGas, EthResult
@@ -193,7 +192,6 @@ class TestRpcEstimateGas:
     def test_compute_unit_price_malicious_manipulation(
         self,
         web3_client: NeonChainWeb3Client,
-        json_rpc_client: JsonRPCSession,
         sol_client: SolanaClient,
         default_cu_price: int,
         cu_price_coefficient,
@@ -204,10 +202,7 @@ class TestRpcEstimateGas:
         sender = self.accounts[1]
         receiver = self.accounts[0]
         raw_tx = web3_client.make_raw_tx(sender, receiver, amount=100000, estimate_gas=True)
-        neon_gas_estimate = json_rpc_client.send_rpc(
-            method="neon_estimateGas",
-            params=[raw_tx, {"showGasDetails": True}],
-        )["result"]
+        neon_gas_estimate = self.web3_client.neon_estimate_gas(raw_tx, show_gas_details=True)
 
         gas = (
             neon_gas_estimate["gasTransactionSizeUsed"]
@@ -224,7 +219,7 @@ class TestRpcEstimateGas:
 
         eth_receipt = web3_client.send_transaction(account=sender, transaction=raw_tx)
         eth_tx_hash = eth_receipt["transactionHash"]
-        neon_receipt = json_rpc_client.get_neon_trx_receipt(eth_tx_hash)["result"]
+        neon_receipt = self.web3_client.get_neon_trx_receipt(eth_tx_hash)["result"]
         solana_lamport_expense_total = 0
         neon_gas_used_total = 0
 

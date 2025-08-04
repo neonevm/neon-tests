@@ -38,8 +38,8 @@ class TestBlockNumberAndTimestamp:
         """
         This test repeats the proxy's logic of reemulation with account info overrides and block overrides.
         """
-        params = [4, 123]
-        func_signature = "addDataToMapping(uint256,uint256)"
+        params = [4, 123, 20]
+        func_signature = "addDataToMapping(uint256,uint256,uint256)"
 
         emulate_result = neon_rpc_client.emulate_contract_call(
             sender_with_tokens.eth_address.hex(), block_contract.eth_address.hex(), func_signature, params=params

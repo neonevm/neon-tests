@@ -311,10 +311,8 @@ def bank_account(pytestconfig: Config, sol_client_session: SolanaClient) -> Gene
 
 @pytest.fixture(scope="session")
 def faucet_refund_account(pytestconfig: Config):
-    account = None
     if "devnet" in pytestconfig.getoption("--network"):
-        account = os.environ.get("FAUCET_REFUND_ADDRESS")
-    return account
+        return os.environ.get("FAUCET_REFUND_ADDRESS")
 
 
 @pytest.fixture(scope="session")

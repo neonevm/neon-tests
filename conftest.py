@@ -53,7 +53,6 @@ class EnvironmentConfig:
     neon_erc20wrapper_address: str
     use_bank: bool
     eth_bank_account: str
-    faucet_refund_address: str
     default_cu_price: int | None = None
     neonpass_url: str = ""
     ws_subscriber_url: str = ""
@@ -176,14 +175,10 @@ def pytest_configure(config: Config):
             env["proxy_url"] = os.environ.get("DEVNET_PROXY_URL")
         if "DEVNET_FAUCET_URL" in os.environ and os.environ["DEVNET_FAUCET_URL"]:
             env["faucet_url"] = os.environ.get("DEVNET_FAUCET_URL")
-        if "FAUCET_REFUND_ADDRESS" in os.environ and os.environ["FAUCET_REFUND_ADDRESS"]:
-            env["faucet_refund_address"] = os.environ.get("FAUCET_REFUND_ADDRESS")
     if "use_bank" not in env:
         env["use_bank"] = False
     if "eth_bank_account" not in env:
         env["eth_bank_account"] = ""
-    if "faucet_refund_address" not in env:
-        env["faucet_refund_address"] = ""
 
     if network_name == "terraform":
         env["solana_url"] = env["solana_url"].replace("<solana_ip>", os.environ.get("SOLANA_IP"))
@@ -273,7 +268,7 @@ def faucet(environment: EnvironmentConfig, web3_client_session: NeonChainWeb3Cli
 
 
 @pytest.fixture(scope="session")
-def accounts_session(pytestconfig: Config, web3_client_session, faucet, eth_bank_account):
+def accounts_session(pytestconfig: Config, web3_client_session, faucet, eth_bank_account, faucet_refund_account):
     accounts = EthAccounts(web3_client_session, faucet, eth_bank_account)
     yield accounts
     if pytestconfig.getoption("--network") == "mainnet":
@@ -287,7 +282,7 @@ def accounts_session(pytestconfig: Config, web3_client_session, faucet, eth_bank
                 with allure.step(
                     f"Restoring eth account balance from {item.key.hex()} account to faucet refund account"
                 ):
-                    web3_client_session.send_all_neons(item, pytestconfig.environment.faucet_refund_address)
+                    web3_client_session.send_all_neons(item, faucet_refund_account)
 
     accounts_session._accounts = []
 
@@ -312,6 +307,14 @@ def bank_account(pytestconfig: Config, sol_client_session: SolanaClient) -> Gene
     if pytestconfig.environment.use_bank:
         spl_token = SplToken(sol_client_session, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID, account)
         spl_token.close_account(account=ata, dest=account.pubkey(), authority=account)
+
+
+@pytest.fixture(scope="session")
+def faucet_refund_account(pytestconfig: Config):
+    account = None
+    if "devnet" in pytestconfig.getoption("--network"):
+        account = os.environ.get("FAUCET_REFUND_ADDRESS")
+    return account
 
 
 @pytest.fixture(scope="session")

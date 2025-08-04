@@ -38,7 +38,7 @@ env:
   NUMPROCESSES: ${{ github.event.inputs.numprocesses || 8 }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   DEVNET_SOLANA_URL: "${{ secrets.SOLANA_URL }}"
-  FAUCET_REFUND_ADDRESS: ${{ secrets.FAUCET_REFUND_ADDRESS }}
+  FAUCET_REFUND_ADDRESS: "${{ secrets.FAUCET_REFUND_ADDRESS }}"
   IMAGE:  ${{ github.repository_owner }}/neon_tests
   DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
 jobs:

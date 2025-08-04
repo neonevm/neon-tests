@@ -53,6 +53,7 @@ class EnvironmentConfig:
     neon_erc20wrapper_address: str
     use_bank: bool
     eth_bank_account: str
+    faucet_refund_address: str
     default_cu_price: int | None = None
     neonpass_url: str = ""
     ws_subscriber_url: str = ""
@@ -175,10 +176,14 @@ def pytest_configure(config: Config):
             env["proxy_url"] = os.environ.get("DEVNET_PROXY_URL")
         if "DEVNET_FAUCET_URL" in os.environ and os.environ["DEVNET_FAUCET_URL"]:
             env["faucet_url"] = os.environ.get("DEVNET_FAUCET_URL")
+        if "FAUCET_REFUND_ADDRESS" in os.environ and os.environ["FAUCET_REFUND_ADDRESS"]:
+            env["faucet_refund_address"] = os.environ.get("FAUCET_REFUND_ADDRESS")
     if "use_bank" not in env:
         env["use_bank"] = False
     if "eth_bank_account" not in env:
         env["eth_bank_account"] = ""
+    if "faucet_refund_address" not in env:
+        env["faucet_refund_address"] = ""
 
     if network_name == "terraform":
         env["solana_url"] = env["solana_url"].replace("<solana_ip>", os.environ.get("SOLANA_IP"))
@@ -276,6 +281,14 @@ def accounts_session(pytestconfig: Config, web3_client_session, faucet, eth_bank
             for item in accounts.accounts_collector:
                 with allure.step(f"Restoring eth account balance from {item.key.hex()} account"):
                     web3_client_session.send_all_neons(item, eth_bank_account)
+    if pytestconfig.getoption("--network") == "devnet":
+        if len(accounts.accounts_collector) > 0:
+            for item in accounts.accounts_collector:
+                with allure.step(
+                    f"Restoring eth account balance from {item.key.hex()} account to faucet refund account"
+                ):
+                    web3_client_session.send_all_neons(item, pytestconfig.environment.faucet_refund_address)
+
     accounts_session._accounts = []
 
 

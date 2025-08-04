@@ -56,6 +56,7 @@ env:
   DEVNET_SOLANA_URL: "${{ secrets.SOLANA_URL }}"
   DEVNET_PROXY_URL: "${{ secrets.DEVNET_PROXY_URL }}"
   DEVNET_FAUCET_URL: "${{ secrets.DEVNET_FAUCET_URL }}"
+  FAUCET_REFUND_ADDRESS: ${{ secrets.FAUCET_REFUND_ADDRESS }}
   IMAGE:  ${{ github.repository_owner }}/neon_tests
   BASE_IMAGE: ${{ github.repository_owner }}/neon_tests_base
   DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
@@ -288,7 +289,7 @@ jobs:
             -e ETH_BANK_PRIVATE_KEY_MAINNET=${{ secrets.ETH_BANK_PRIVATE_KEY_MAINNET }} \
             -e BANK_PRIVATE_KEY_MAINNET=${{ secrets.BANK_PRIVATE_KEY_MAINNET }} \
             -e BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }} \
-            -e FAUCET_REFUND_ADDRESS=${{ secrets.FAUCET_REFUND_ADDRESS }} \
+            -e FAUCET_REFUND_ADDRESS \
             -e DEVNET_SOLANA_URL \
             -e DEVNET_FAUCET_URL \
             -e DEVNET_PROXY_URL \

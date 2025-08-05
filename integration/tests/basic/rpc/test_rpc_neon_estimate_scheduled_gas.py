@@ -564,5 +564,5 @@ class TestNeonRPCEstimateScheduledGas:
             preparatory_solana_trxs=trx.instructions,
             check_result=False,
         )
-        assert resp["error"]["code"] == Error32000.CODE
-        assert Error32000.SOLANA_SIMULATOR_ERROR in resp["error"]["message"], "wrong error message"
+        assert resp["error"]["code"] == Error32603.CODE
+        assert Error32603.INTERNAL_ERROR in resp["error"]["message"], "wrong error message"

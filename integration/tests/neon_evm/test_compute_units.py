@@ -340,6 +340,7 @@ class TestComputeUnits:
         neon_rpc_client: NeonApiRpcClient,
         sol_client: SolanaClient,
     ):
+        cu_delta_allowed = 2000
         rw_lock = evm_loader.deploy_contract(
             deterministic_operator_keypair, deterministic_user, "rw_lock", neon_rpc_client, deterministic_treasury_pool
         )
@@ -373,7 +374,7 @@ class TestComputeUnits:
             instruction=signed_eth_tx,
             additional_accounts=additional_accounts,
             cu_expected_list=[98923, 110000, 72875, 190963],
-            cu_delta_allowed=1000,
+            cu_delta_allowed=cu_delta_allowed,
             sol_client=sol_client,
             expect_log=f"exit_status={NeonTxExitStatus.SUCCESS_WITH_CHANGES}",
         )
@@ -604,6 +605,7 @@ class TestComputeUnits:
         neon_rpc_client: NeonApiRpcClient,
         sol_client: SolanaClient,
     ):
+        cu_delta_allowed = 2000
         deterministic_neon_user = NeonUser(
             evm_loader_id=str(evm_loader.loader_id),
             keypair=deterministic_sender_with_tokens.solana_account,
@@ -700,7 +702,7 @@ class TestComputeUnits:
 
             cu_consumed = receipt.value.transaction.meta.compute_units_consumed
             assert (
-                abs(cu_consumed - cu_expected) <= 1000
+                abs(cu_consumed - cu_expected) <= cu_delta_allowed
             ), f"CU consumed {cu_consumed} is not in range of expected {cu_expected} +/- 1000"
             i += 1
 

@@ -4,6 +4,8 @@ import allure
 import pytest
 from solana.transaction import Transaction
 from solders.pubkey import Pubkey
+from solders.rpc.responses import GetTransactionResp
+from solders.signature import Signature
 from solders.token.associated import get_associated_token_address
 from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import create_associated_token_account, approve, ApproveParams
@@ -83,7 +85,9 @@ class TestNeonRPCBaseCalls:
         response = json_rpc_client.send_rpc(method="neon_getSolanaTransactionByNeonTransaction", params=params)
         assert "result" in response
         sol_tx = response["result"][0]
-        assert sol_client.wait_transaction(sol_tx) is not None
+        assert sol_client.get_transaction(
+            Signature.from_string(sol_tx), max_supported_transaction_version=0
+        ) != GetTransactionResp(None)
 
     def test_neon_get_solana_transaction_by_neon_transaction_list_of_tx(self, json_rpc_client, sol_client):
         sender_account = self.accounts[0]
@@ -94,7 +98,9 @@ class TestNeonRPCBaseCalls:
         result = response["result"]
         assert len(result) == 5
         for tx in result:
-            assert sol_client.wait_transaction(tx) is not None
+            assert sol_client.get_transaction(
+                Signature.from_string(tx), max_supported_transaction_version=0
+            ) != GetTransactionResp(None)
 
     @pytest.mark.parametrize(
         "params",
@@ -121,7 +127,7 @@ class TestNeonRPCBaseCalls:
         assert "error" not in response
         assert len(response["result"]) == 0, "expected empty result for non existent transaction request"
 
-    def test_neon_get_native_token_list(self, pytestconfig, json_rpc_client):
+    def test_neon_get_native_token_list(self, environment, json_rpc_client):
         response = json_rpc_client.send_rpc(method="neon_getNativeTokenList")
         assert "error" not in response
         for item in response["result"]:
@@ -137,8 +143,8 @@ class TestNeonRPCBaseCalls:
         assert "NEON" in tokens, f"NEON token is not in the list: {tokens}"
         for item in response["result"]:
             if item["tokenName"] == "NEON":
-                assert item["tokenMint"] == pytestconfig.environment.spl_neon_mint
-                assert item["tokenChainId"] == hex(pytestconfig.environment.network_ids["neon"])
+                assert item["tokenMint"] == environment.spl_neon_mint
+                assert item["tokenChainId"] == hex(environment.network_ids["neon"])
 
     def test_neon_estimate_gas_iterative_tx(
         self,

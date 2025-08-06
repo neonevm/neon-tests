@@ -1,3 +1,4 @@
+import re
 import typing as tp
 from enum import Enum
 from pathlib import Path
@@ -46,6 +47,8 @@ OPERATOR_FEE_TO_NEON = 5_000  # Paid by operator to treasury account per iterati
 TREE_ACCOUNT_BALANCE_STRUCT_ENLARGEMENT_COST = (
     222_720  # Cost of enlarging balance account struct during tree_acc creation +32 bytes
 )
+
+GITHUB_TAG_PATTERN = re.compile(r"^[vt]\d{1,2}\.\d{1,2}\.\d{1,2}$")
 
 
 class Time:

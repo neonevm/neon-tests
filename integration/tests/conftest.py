@@ -17,7 +17,7 @@ from solders.pubkey import Pubkey
 from web3.contract import Contract
 from web3.types import TxReceipt
 
-from clickfile import EnvName
+from cli.commands.common import EnvName
 from conftest import EnvironmentConfig
 from utils.accounts import EthAccounts
 from utils.apiclient import JsonRPCSession

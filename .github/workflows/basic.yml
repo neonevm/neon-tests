@@ -153,7 +153,6 @@ jobs:
     runs-on: ["gha-runner-scale-set"]
     needs:
       - share-tags
-    if: always()
     steps:
       - uses: actions/checkout@v4
       - name: "Prepare terraform stand"
@@ -394,6 +393,8 @@ jobs:
       - name: Install python requirements
         id: requirements
         uses: ./.github/actions/python-requirements
+        with:
+          scope: slack
       - name: Download click_cmd_err_evm.log
         if: ${{ needs.run-evm-tests.outputs.error-log-exists == 'true'}}
         uses: actions/download-artifact@v4

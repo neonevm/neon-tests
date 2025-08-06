@@ -4,25 +4,21 @@ import requests
 import typing as tp
 import urllib.parse
 
-from utils.helpers import wait_condition
-from utils.web3client import NeonChainWeb3Client
-
 
 class Faucet:
     def __init__(
         self,
         faucet_url: str,
-        web3_client: NeonChainWeb3Client,
+        web3_client=None,
         session: tp.Optional[tp.Any] = None,
     ):
         self._url = faucet_url
         self._session = session or requests.Session()
-        self.web3_client = web3_client
+        # self.web3_client = web3_client
 
     def request_neon(self, address: str, amount: int = 100) -> requests.Response:
         assert address.startswith("0x"), "Invalid address format"
         url = urllib.parse.urljoin(self._url, "request_neon")
-        balance_before = self.web3_client.get_balance(address)
 
         max_retries = 5
         retry_delay = 3  # seconds
@@ -41,5 +37,4 @@ class Faucet:
                 else:
                     raise RuntimeError("Failed to request neon after {} attempts: {}".format(max_retries, str(e)))
 
-        wait_condition(lambda: self.web3_client.get_balance(address) > balance_before)
         return response

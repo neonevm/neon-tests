@@ -7,7 +7,7 @@ from hexbytes import HexBytes
 from solders.pubkey import Pubkey
 from web3 import types
 
-from clickfile import EnvName
+from utils.consts import EnvName
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import NeonEventType, SolanaInstruction
 from utils.models.result import NeonGetTransactionResult, SolanaByNeonTransaction, SolanaNeonProgramInstruction

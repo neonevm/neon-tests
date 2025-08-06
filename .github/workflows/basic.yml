@@ -157,6 +157,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: "Prepare terraform stand"
+        if: ${{ env.NETWORK == 'terraform' }}
         id: prepare_terraform
         uses: ./.github/actions/create-tf-stand
         with:

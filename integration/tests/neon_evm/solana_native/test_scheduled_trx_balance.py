@@ -360,7 +360,7 @@ def test_failed_trx_with_outer_deposit(
     treasury_pool_balance_initial_outer = evm_loader.get_solana_balance(treasury_pool.account)
 
     nonce = evm_loader.get_neon_nonce(neon_user_func_scope.neon_address, evm_loader.sol_chain_id)
-    call_data = decode_function_signature("doTrivialRevertAferIterativeActions();")
+    call_data = decode_function_signature("doTrivialRevertAfterIterativeActions();")
     tx0 = ScheduledTransaction(
         neon_user_func_scope.neon_address,
         None,
@@ -452,7 +452,7 @@ def test_failed_trx_with_outer_deposit(
 
 
 def test_skipped_trx_with_outer_deposit(
-    neon_user, evm_loader, operator_keypair, treasury_pool, basic_contract, neon_rpc_client, holder_acc
+    neon_user_func_scope, evm_loader, operator_keypair, treasury_pool, basic_contract, neon_rpc_client, holder_acc
 ):
     # trx_status: skipped
     # user_balance: only outer deposit
@@ -461,6 +461,7 @@ def test_skipped_trx_with_outer_deposit(
     trx_count = 2
     count_of_skipped_trx = 1
     iter_per_trx = 1
+    neon_user = neon_user_func_scope
 
     evm_loader.create_balance_account(neon_user.checksum_address, neon_user.solana_account, evm_loader.sol_chain_id)
     operator_balance_initial_inner = evm_loader.get_operator_neon_balance(operator_keypair, evm_loader.sol_chain_id)

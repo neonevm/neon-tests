@@ -18,7 +18,7 @@ from utils.instructions import (
     TransactionWithComputeBudget,
     make_account_create_holder,
 )
-from utils.layouts import HOLDER_ACCOUNT_INFO_LAYOUT
+from utils.neon_layouts.layouts import HOLDER_ACCOUNT_INFO_LAYOUT
 
 from .utils.assert_messages import InstructionAsserts
 from .utils.ethereum import make_eth_transaction, make_contract_call_trx, make_deployment_transaction

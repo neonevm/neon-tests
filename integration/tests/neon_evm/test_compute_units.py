@@ -671,7 +671,7 @@ class TestComputeUnits:
             operator=deterministic_operator_keypair,
             chain_id=evm_loader.sol_chain_id,
         )
-        cu_expected_list = [29729, 29579]
+        cu_expected_list = [29729, 28033]
         done = False
         i = 0
 

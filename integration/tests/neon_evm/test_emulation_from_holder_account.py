@@ -8,7 +8,7 @@ from solana.rpc.core import RPCException
 from utils.helpers import serialize_instruction
 from utils.evm_loader import EVM_STEPS
 from utils.consts import REMAPPING_ZEPPELIN, COUNTER_ID
-from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
+from utils.neon_layouts.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from .utils.constants import TAG_FINALIZED_STATE
 from .utils.contract import get_contract_bin
 from .utils.ethereum import make_contract_call_trx

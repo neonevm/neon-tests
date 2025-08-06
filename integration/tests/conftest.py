@@ -25,11 +25,12 @@ from utils.consts import COUNTER_ID, LAMPORT_PER_SOL, MULTITOKEN_MINTS_USDT, REM
 from utils.erc20 import ERC20
 from utils.erc20wrapper import ERC20Wrapper
 from utils.evm_loader import EvmLoader
-from utils.helpers import decode_function_signature, get_selectors, withdraw_neon_to_solana_eth_sign
+from utils.helpers import decode_function_signature, get_selectors, withdraw_neon_to_solana_eth_sign, gen_hash_of_block
 from utils.neon_user import NeonUser
 from utils.operator import Operator
 from utils.prices import get_sol_price_with_retry
 from utils.solana_client import SolanaClient
+from utils.solana_data_for_neon_trx_helper import get_accounts_for_container_by_emulation
 from utils.types import TransactionType
 from utils.web3client import NeonChainWeb3Client, Web3Client
 from .basic.helpers.chains import make_nonce_the_biggest_for_chain
@@ -834,6 +835,45 @@ def alt_contract(accounts, web3_client):
     return contract
 
 
+@pytest.fixture(scope="class")
+def storage_resize_checker_containerized(web3_client, accounts, evm_loader, operator, treasury_pool):
+    contract, _ = web3_client.deploy_and_get_contract(
+        "common/StorageResizeChecker", "0.8.20", contract_name="Caller", account=accounts[0]
+    )
+
+    # container preparation
+    caller_sol_address = evm_loader.ether2program(contract.address[2:])
+
+    tx = web3_client.make_raw_tx(accounts[0], amount=1000)
+    instruction_tx = contract.functions.callAndChange(gen_hash_of_block(1000)).build_transaction(tx)
+    resp = web3_client.send_transaction(accounts[0], instruction_tx)
+    assert resp["status"] == 1
+
+    acc_for_container = get_accounts_for_container_by_emulation(
+        web3_client, evm_loader, instruction_tx, accounts[0], caller_sol_address
+    )
+    acc_for_container = [acc for acc in acc_for_container if acc != evm_loader.ether2balance(accounts[0].address[2:])]
+    evm_loader.assemble_container(
+        operator=operator.operator_keypairs[0],
+        treasury=treasury_pool,
+        container_address=caller_sol_address,
+    )
+    evm_loader.allocate_container(
+        operator.operator_keypairs[0],
+        treasury_pool,
+        caller_sol_address,
+        5000,
+    )
+    evm_loader.assemble_container(
+        operator=operator.operator_keypairs[0],
+        treasury=treasury_pool,
+        container_address=caller_sol_address,
+        accounts=acc_for_container,
+    )
+
+    return contract
+
+
 @pytest.fixture(scope="session")
-def default_cu_price(pytestconfig: Config) -> int | None:
-    return pytestconfig.environment.default_cu_price  # must be equal to compose.proxy.environment.DEFAULT_CU_PRICE
+def default_cu_price(environment: EnvironmentConfig) -> int | None:
+    return environment.default_cu_price  # must be equal to compose.proxy.environment.DEFAULT_CU_PRICE

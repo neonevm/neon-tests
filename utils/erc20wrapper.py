@@ -246,7 +246,7 @@ class ERC20Wrapper:
             ata_account = evm_loader.create_associate_token_acc(
                 recipient.solana_account, recipient.solana_account, self.token_mint_pubkey
             )
-            solana_contract_account = Pubkey.from_string(evm_loader.ether2program(self.contract.address)[0])
+            solana_contract_account = evm_loader.ether2program(self.contract.address)
 
             trx = Transaction()
             approve_ata_amount = approve_ata_amount or ata_amount

@@ -14,7 +14,7 @@ contract rw_lock {
         uint n = 0;
 
         while (n < resize){
-            data[msg.sender][len+n] = uint256(len+n);
+            data[msg.sender][n] = uint256(len+n) + 1;
             n = n + 1;
         }
         len = len + resize;

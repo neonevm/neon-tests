@@ -450,7 +450,7 @@ def failed_scheduled_tx_receipt(
 def reverted_iterative_tx_receipt(accounts, web3_client, revert_contract_caller):
     sender_account = accounts[0]
     tx = web3_client.make_raw_tx(sender_account, gas=10000000)
-    instruction_tx = revert_contract_caller.functions.doTrivialRevertAferIterativeActions().build_transaction(tx)
+    instruction_tx = revert_contract_caller.functions.doTrivialRevertAfterIterativeActions().build_transaction(tx)
     receipt = web3_client.send_transaction(sender_account, instruction_tx)
     assert receipt["status"] == 0
     return receipt

@@ -62,7 +62,7 @@ class TestDebugTraceComplexTransactions:
     def test_trace_iterative_tx_reverted_status(self, revert_contract_caller):
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account, gas=10000000)
-        instruction_tx = revert_contract_caller.functions.doTrivialRevertAferIterativeActions().build_transaction(tx)
+        instruction_tx = revert_contract_caller.functions.doTrivialRevertAfterIterativeActions().build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 0
 

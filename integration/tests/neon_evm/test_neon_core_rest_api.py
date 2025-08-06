@@ -86,13 +86,13 @@ def test_emulate_with_small_amount_of_steps(neon_api_client, session_user):
 
 @pytest.mark.parametrize("contract_name", ["BlockTimestamp", "BlockNumber"])
 def test_emulate_call_contract_with_block_timestamp_number(
-    contract_name, neon_api_client, operator_keypair, treasury_pool, evm_loader, session_user
+    contract_name, neon_api_client, operator_keypair, treasury_pool, evm_loader, session_user, neon_rpc_client
 ):
     contract = evm_loader.deploy_contract(
         operator_keypair,
         session_user,
         "common/Block.sol",
-        neon_api_client,
+        neon_rpc_client,
         treasury_pool,
         contract_name=contract_name,
         version="0.8.10",

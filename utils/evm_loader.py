@@ -30,10 +30,9 @@ from spl.token.instructions import (
 from integration.tests.neon_evm.utils.constants import TREASURY_POOL_SEED
 from integration.tests.neon_evm.utils.contract import get_contract_bin
 from integration.tests.neon_evm.utils.ethereum import create_contract_address, make_deployment_transaction
-from integration.tests.neon_evm.utils.neon_api_client import NeonApiClient
 from integration.tests.neon_evm.utils.neon_api_rpc_client import NeonApiRpcClient
 from integration.tests.neon_evm.utils.transaction_checks import check_transaction_logs_have_text
-from utils.consts import LAMPORT_PER_SOL, InstructionTags
+from utils.consts import LAMPORT_PER_SOL, InstructionTags, AccountType, ExecuteTrxTypes
 from utils.helpers import ether2bytes
 from utils.instructions import (
     TransactionWithComputeBudget,
@@ -58,14 +57,15 @@ from utils.instructions import (
     make_operator_create_balance,
     make_transaction_step_from_account,
     make_cancel,
+    make_container_allocate,
+    make_container_assemble,
 )
-from utils.layouts import (
-    BALANCE_ACCOUNT_LAYOUT,
-    CONTRACT_ACCOUNT_LAYOUT,
-    STORAGE_CELL_LAYOUT,
-    OPERATOR_BALANCE_ACCOUNT_LAYOUT,
-)
+from utils.neon_layouts.balance_account import BalanceAccount
 from utils.logger import log_text_to_allure_and_stdout
+from utils.neon_layouts.contract_account import ContractAccount
+from utils.neon_layouts.operator_balance_account import OperatorBalanceAccount
+from utils.neon_layouts.storage_account import StorageAccount
+from utils.neon_layouts.typed_neon_account import TypedNeonAccount
 from utils.neon_user import NeonUser
 from utils.scheduled_trx import ScheduledTransaction
 from utils.solana_client import SolanaClient
@@ -97,7 +97,7 @@ class EvmLoader(SolanaClient):
 
         account_pubkey = self.ether2balance(ether, chain_id)
         if not self.account_exists(account_pubkey):
-            contract_pubkey = Pubkey.from_string(self.ether2program(ether)[0])
+            contract_pubkey = self.ether2program(ether)
             trx = Transaction()
             trx.add(
                 make_account_create_balance(
@@ -143,23 +143,19 @@ class EvmLoader(SolanaClient):
         chain_id = chain_id or self.chain_id
         solana_address = self.ether2balance(account, chain_id)
         if self.account_exists(solana_address):
-            info: bytes = self.get_solana_account_data(solana_address, BALANCE_ACCOUNT_LAYOUT.sizeof())
-            layout = BALANCE_ACCOUNT_LAYOUT.parse(info)
-            return layout.trx_count
+            info: bytes = self.get_solana_account_data(solana_address)
+            return BalanceAccount(info).trx_count
         else:
             return 0
 
     @allure.step("Get Solana account data")
-    def get_solana_account_data(self, account: Union[str, Pubkey, Keypair], expected_length: int) -> bytes:
+    def get_solana_account_data(self, account: Union[str, Pubkey, Keypair]) -> bytes:
         if isinstance(account, Keypair):
             account = account.pubkey()
         info = self.get_account_info(account, commitment=Confirmed)
         info = info.value
         if info is None:
             raise Exception("Can't get information about {}".format(account))
-        if len(info.data) < expected_length:
-            msg = "len(data)({}) < expected_length({})".format(len(info.data), expected_length)
-            raise Exception("Wrong data length for account data {}, {}".format(account, msg))
         return info.data
 
     @allure.step("Get Neon balance for account {account} in chain {chain_id}")
@@ -168,32 +164,37 @@ class EvmLoader(SolanaClient):
 
         balance_address = self.ether2balance(account, chain_id)
 
-        info: bytes = self.get_solana_account_data(balance_address, BALANCE_ACCOUNT_LAYOUT.sizeof())
-        layout = BALANCE_ACCOUNT_LAYOUT.parse(info)
-
-        return int.from_bytes(layout.balance, byteorder="little")
+        info: bytes = self.get_solana_account_data(balance_address)
+        return BalanceAccount(info).balance
 
     def get_operator_neon_balance(self, operator: Keypair, chain_id: int | None = None) -> int:
         chain_id = chain_id or self.chain_id
-
         balance_address = self.get_operator_balance_pubkey(operator, chain_id)
-
-        info: bytes = self.get_solana_account_data(balance_address, OPERATOR_BALANCE_ACCOUNT_LAYOUT.sizeof())
-        layout = OPERATOR_BALANCE_ACCOUNT_LAYOUT.parse(info)
-
-        return int.from_bytes(layout.balance, byteorder="little")
+        info: bytes = self.get_solana_account_data(balance_address)
+        return OperatorBalanceAccount(info).balance
 
     def get_contract_account_revision(self, address):
-        account_data = self.get_solana_account_data(address, CONTRACT_ACCOUNT_LAYOUT.sizeof())
-        return CONTRACT_ACCOUNT_LAYOUT.parse(account_data).revision
+        account_data = self.get_solana_account_data(address)
+        return ContractAccount(account_data).revision
 
     def get_balance_account_revision(self, address):
-        account_data = self.get_solana_account_data(address, BALANCE_ACCOUNT_LAYOUT.sizeof())
-        return BALANCE_ACCOUNT_LAYOUT.parse(account_data).revision
+        account_data = self.get_solana_account_data(address)
+        return BalanceAccount(account_data).revision
 
     def get_data_account_revision(self, address):
-        account_data = self.get_solana_account_data(address, STORAGE_CELL_LAYOUT.sizeof())
-        return STORAGE_CELL_LAYOUT.parse(account_data).revision
+        account_data = self.get_solana_account_data(address)
+        return StorageAccount(account_data).revision
+
+    @allure.step("Filter Neon accounts by type {account_type}")
+    def filter_neon_accounts_by_type(self, accounts: tp.List[Pubkey], account_type: AccountType) -> tp.List[Pubkey]:
+        filtered_accounts = []
+        for account in accounts:
+            if self.account_exists(account):
+                account_data = self.get_solana_account_data(account)
+                if TypedNeonAccount(account_data).type == account_type:
+                    filtered_accounts.append(account)
+        log_text_to_allure_and_stdout("Filtered accounts by type", str(filtered_accounts))
+        return filtered_accounts
 
     @allure.step("Write transaction to holder account {holder_account}")
     def write_transaction_to_holder_account(
@@ -226,9 +227,9 @@ class EvmLoader(SolanaClient):
         for rcpt in receipts:
             self.confirm_transaction(rcpt.value, commitment=Confirmed)
 
-    def ether2program(self, ether: tp.Union[str, bytes]) -> tp.Tuple[str, int]:
+    def ether2program(self, ether: tp.Union[str, bytes]) -> Pubkey:
         items = Pubkey.find_program_address([self.account_seed_version, ether2bytes(ether)], self.loader_id)
-        return str(items[0]), items[1]
+        return items[0]
 
     def ether2balance(self, address: tp.Union[str, bytes], chain_id: int | None = None) -> Pubkey:
         chain_id = chain_id or self.chain_id
@@ -577,10 +578,14 @@ class EvmLoader(SolanaClient):
 
     @allure.step("Deposit NEON tokens to Solana")
     def deposit_neon(
-        self, operator_keypair: Keypair, ether_address: Union[str, bytes], amount: int
+        self,
+        operator_keypair: Keypair,
+        ether_address: Union[str, bytes],
+        amount: int,
+        container_address: Pubkey | None = None,
     ) -> GetTransactionResp:
         balance_pubkey = self.ether2balance(ether_address)
-        contract_pubkey = Pubkey.from_string(self.ether2program(ether_address)[0])
+        contract_pubkey = self.ether2program(ether_address)
 
         evm_token_authority = Pubkey.find_program_address([b"Deposit"], self.loader_id)[0]
         evm_pool_key = get_associated_token_address(evm_token_authority, self.neon_token_mint_id)
@@ -625,6 +630,7 @@ class EvmLoader(SolanaClient):
                 spl.token.constants.TOKEN_PROGRAM_ID,
                 operator_keypair.pubkey(),
                 self.loader_id,
+                container_address,
             ),
         )
 
@@ -638,7 +644,7 @@ class EvmLoader(SolanaClient):
         if self.get_solana_balance(key_pair.pubkey()) == 0:
             self.request_airdrop(key_pair.pubkey(), 1000 * 10**9, commitment=Confirmed)
         caller_ether = eth_keys.PrivateKey(key_pair.secret()[:32]).public_key.to_canonical_address()
-        solana_account_address = self.ether2program(caller_ether)[0]
+        solana_account_address = self.ether2program(caller_ether)
         balance_account_address = self.ether2balance(caller_ether)
         ata = get_associated_token_address(balance_account_address, self.neon_token_mint_id)
 
@@ -647,7 +653,7 @@ class EvmLoader(SolanaClient):
 
         user = Caller(
             solana_account=key_pair,
-            solana_account_address=Pubkey.from_string(solana_account_address),
+            solana_account_address=solana_account_address,
             balance_account_address=balance_account_address,
             eth_address=caller_ether,
             token_address=ata,
@@ -661,7 +667,7 @@ class EvmLoader(SolanaClient):
         if isinstance(neon_account, LocalAccount):
             neon_account = neon_account.address
         balance_pubkey = self.ether2balance(neon_account, chain_id)
-        contract_pubkey = Pubkey.from_string(self.ether2program(neon_account)[0])
+        contract_pubkey = self.ether2program(neon_account)
         associated_token_address = get_associated_token_address(solana_account.pubkey(), mint)
         authority_pool = Pubkey.find_program_address([b"Deposit"], self.loader_id)[0]
         pool = get_associated_token_address(authority_pool, mint)
@@ -947,7 +953,7 @@ class EvmLoader(SolanaClient):
         operator: Keypair,
         user: Caller,
         contract_file_name: tp.Union[pathlib.Path, str],
-        neon_rpc_client: NeonApiRpcClient | NeonApiClient,
+        neon_rpc_client: NeonApiRpcClient,
         treasury_pool: TreasuryPool,
         chain_id: int | str | None = "",
         value: int = 0,
@@ -1054,3 +1060,70 @@ class EvmLoader(SolanaClient):
             )
         )
         return self.send_tx_and_check_status_ok(trx, operator_keypair)
+
+    @allure.step("Allocate container")
+    def allocate_container(self, operator, treasury, container_address, size):
+        trx = Transaction()
+        trx.add(make_container_allocate(operator, treasury, container_address, size, self.loader_id))
+        return self.send_tx_and_check_status_ok(trx, operator)
+
+    @allure.step("Assemble container")
+    def assemble_container(self, operator, treasury, container_address, accounts=None):
+        trx = Transaction()
+        trx.add(make_container_assemble(operator, treasury, container_address, self.loader_id, accounts))
+        return self.send_tx_and_check_status_ok(trx, operator)
+
+    def execute_neon_trx(
+        self,
+        instruction_type: str,
+        signed_trx: SignedTransaction,
+        operator: Keypair,
+        holder_acc: Pubkey,
+        treasury: TreasuryPool,
+        additional_accounts: list,
+    ) -> GetTransactionResp:
+        if instruction_type == ExecuteTrxTypes.ITERATIVE_FROM_INSTRUCTION:
+            return self.execute_transaction_steps_from_instruction(
+                operator=operator,
+                treasury=treasury,
+                storage_account=holder_acc,
+                instruction=signed_trx,
+                additional_accounts=additional_accounts,
+            )
+        elif instruction_type == ExecuteTrxTypes.ITERATIVE_FROM_ACCOUNT:
+            self.write_transaction_to_holder_account(signed_trx, holder_acc, operator)
+            return self.execute_transaction_steps_from_account(
+                operator=operator,
+                treasury=treasury,
+                storage_account=holder_acc,
+                additional_accounts=additional_accounts,
+            )
+        elif instruction_type == ExecuteTrxTypes.NON_ITERATIVE_FROM_INSTRUCTION:
+            return self.execute_trx_from_instruction(
+                operator=operator,
+                holder_acc=holder_acc,
+                treasury_address=treasury.account,
+                treasury_buffer=treasury.buffer,
+                instruction=signed_trx,
+                additional_accounts=additional_accounts,
+            )
+        elif instruction_type == ExecuteTrxTypes.NON_ITERATIVE_FROM_ACCOUNT:
+            self.write_transaction_to_holder_account(signed_trx, holder_acc, operator)
+            return self.execute_trx_from_account(
+                operator=operator,
+                holder_acc=holder_acc,
+                treasury_address=treasury.account,
+                treasury_buffer=treasury.buffer,
+                additional_accounts=additional_accounts,
+                signer=operator,
+            )
+        elif instruction_type == ExecuteTrxTypes.ITERATIVE_FROM_ACCOUNT_NO_CHAIN_ID:
+            self.write_transaction_to_holder_account(signed_trx, holder_acc, operator)
+            return self.execute_transaction_steps_from_account_no_chain_id(
+                operator=operator,
+                treasury=treasury,
+                storage_account=holder_acc,
+                additional_accounts=additional_accounts,
+            )
+        else:
+            raise ValueError(f"Unsupported instruction type: {instruction_type}")

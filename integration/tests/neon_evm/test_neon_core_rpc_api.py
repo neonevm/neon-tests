@@ -20,7 +20,7 @@ def test_get_storage_at(neon_rpc_client, hello_world_contract):
 
 def test_get_balance(neon_rpc_client, session_user, evm_loader):
     result = neon_rpc_client.get_balance(session_user.eth_address.hex())
-    assert str(session_user.balance_account_address) == result[0]["solana_address"]
+    assert str(session_user.balance_account_address) == result["solana_address"]
     assert evm_loader.get_account_info(session_user.solana_account.pubkey()).value is not None
 
 

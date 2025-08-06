@@ -66,7 +66,7 @@ def pytest_addoption(parser: Parser):
         "--network",
         action="store",
         choices=[env.value for env in EnvName],  # noqa
-        default="devnet",
+        default="local",
         help="Which stand use",
     )
     parser.addoption(
@@ -285,7 +285,7 @@ def bank_account(pytestconfig: Config, sol_client_session: SolanaClient) -> Gene
     if pytestconfig.environment.use_bank:
         if "devnet" in pytestconfig.getoption("--network"):
             private_key = os.environ.get("BANK_PRIVATE_KEY")
-        elif pytestconfig.getoption("--network") == "mainnet":
+        elif pytestconfig.getoption("--network") == EnvName.MAINNET:
             private_key = os.environ.get("BANK_PRIVATE_KEY_MAINNET")
         else:
             raise ValueError("set BANK_PRIVATE_KEY or BANK_PRIVATE_KEY_MAINNET env variable")
@@ -305,13 +305,13 @@ def bank_account(pytestconfig: Config, sol_client_session: SolanaClient) -> Gene
 def treasury_pool(evm_loader: EvmLoader, pytestconfig, index_of_process, bank_account) -> TreasuryPool:
     index = index_of_process
     evm_loader.create_treasury_pool_address(index)
-    if pytestconfig.getoption("--network") == "mainnet":
+    if pytestconfig.getoption("--network") == EnvName.MAINNET:
         address = Pubkey.from_string(os.environ.get("MAINNET_TREASURY_POOL_ADDRESS"))
     else:
         address = evm_loader.create_treasury_pool_address(index)
     index_buf = index.to_bytes(4, "little")
     balance = evm_loader.get_solana_balance(address)
-    if pytestconfig.getoption("--network") not in ["mainnet", "devnet"]:
+    if pytestconfig.getoption("--network") not in [EnvName.MAINNET, EnvName.DEVNET]:
         if balance < 5 * LAMPORT_PER_SOL:
             evm_loader.request_airdrop(address, 5 * LAMPORT_PER_SOL, commitment=Confirmed)
     else:

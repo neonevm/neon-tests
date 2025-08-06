@@ -24,7 +24,7 @@ from .utils.transaction_checks import check_holder_account_tag, check_transactio
 
 from integration.tests.neon_evm.utils.ethereum import make_eth_transaction, make_contract_call_trx
 
-from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
+from utils.neon_layouts.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from .utils.constants import TAG_FINALIZED_STATE, TAG_ACTIVE_STATE
 from utils.evm_loader import EVM_STEPS
 from utils.consts import (
@@ -44,7 +44,7 @@ from utils.instructions import (
     make_account_create_balance,
     make_increment_counter,
 )
-from utils.layouts import COUNTER_ACCOUNT_LAYOUT
+from utils.neon_layouts.layouts import COUNTER_ACCOUNT_LAYOUT
 from utils.metaplex import ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID, TOKEN_PROGRAM_ID
 
 
@@ -176,7 +176,7 @@ class TestInteroperability:
     ):
         instruction_count = 10
 
-        info1: bytes = evm_loader.get_solana_account_data(counter_resource_address, COUNTER_ACCOUNT_LAYOUT.sizeof())
+        info1: bytes = evm_loader.get_solana_account_data(counter_resource_address)
         counter_value_before = COUNTER_ACCOUNT_LAYOUT.parse(info1)
 
         instruction = make_increment_counter(counter_resource_address)
@@ -192,7 +192,7 @@ class TestInteroperability:
 
         check_transaction_logs_have_text(evm_loader, trx=resp, text="exit_status=0x11")
 
-        info2: bytes = evm_loader.get_solana_account_data(counter_resource_address, COUNTER_ACCOUNT_LAYOUT.sizeof())
+        info2: bytes = evm_loader.get_solana_account_data(counter_resource_address)
         counter_value_after = COUNTER_ACCOUNT_LAYOUT.parse(info2)
         assert counter_value_after.count - counter_value_before.count == instruction_count
 
@@ -424,7 +424,7 @@ class TestInteroperability:
         caller_ether = eth_keys.PrivateKey(key.secret()[:32]).public_key.to_canonical_address()
 
         account_pubkey = evm_loader.ether2balance(caller_ether)
-        contract_pubkey = Pubkey.from_string(evm_loader.ether2program(caller_ether)[0])
+        contract_pubkey = evm_loader.ether2program(caller_ether)
 
         neon_instruction = make_account_create_balance(
             evm_loader.loader_id,

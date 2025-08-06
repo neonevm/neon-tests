@@ -7,7 +7,6 @@ from eth_utils import abi
 
 from Crypto.Hash import keccak
 from eth_account.datastructures import SignedTransaction
-from solders.pubkey import Pubkey
 from web3.auto import w3
 
 from utils.logger import log_text_to_allure_and_stdout
@@ -31,10 +30,10 @@ def create_contract_address(
     user_nonce = evm_loader.get_neon_nonce(user, chain_id)
     contract_eth_address = keccak.new(digest_bits=256).update(pack([user, user_nonce or None])).digest()[-20:]
 
-    contract_solana_address, _ = evm_loader.ether2program(contract_eth_address)
+    contract_solana_address = evm_loader.ether2program(contract_eth_address)
     contract_neon_address = evm_loader.ether2balance(contract_eth_address, chain_id)
 
-    contract = Contract(contract_eth_address, Pubkey.from_string(contract_solana_address), contract_neon_address)
+    contract = Contract(contract_eth_address, contract_solana_address, contract_neon_address)
     log_text_to_allure_and_stdout("Created contract addresses", str(contract))
 
     return contract

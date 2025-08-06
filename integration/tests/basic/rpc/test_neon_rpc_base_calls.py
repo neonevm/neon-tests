@@ -292,9 +292,7 @@ class TestNeonRPCBaseCalls:
         neon_user_ata = get_associated_token_address(
             neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
         )
-        erc20_spl_mintable_solana_address = Pubkey.from_string(
-            evm_loader.ether2program(erc20_spl_mintable.contract.address)[0]
-        )
+        erc20_spl_mintable_solana_address = evm_loader.ether2program(erc20_spl_mintable.contract.address)
 
         # preparatory Solana Transactions: create ATA and approve
         trx = Transaction()
@@ -374,9 +372,7 @@ class TestNeonRPCBaseCalls:
         neon_user_ata = get_associated_token_address(
             neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
         )
-        erc20_spl_mintable_solana_address = Pubkey.from_string(
-            evm_loader.ether2program(erc20_spl_mintable.contract.address)[0]
-        )
+        erc20_spl_mintable_solana_address = evm_loader.ether2program(erc20_spl_mintable.contract.address)
 
         # preparatory Solana Transactions: create ATA and approve
         trx = Transaction()
@@ -435,9 +431,7 @@ class TestNeonRPCBaseCalls:
         neon_user_ata = get_associated_token_address(
             neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
         )
-        erc20_spl_mintable_solana_address = Pubkey.from_string(
-            evm_loader.ether2program(erc20_spl_mintable.contract.address)[0]
-        )
+        erc20_spl_mintable_solana_address = evm_loader.ether2program(erc20_spl_mintable.contract.address)
 
         # preparatory Solana Transactions: create ATA and approve
         trx = Transaction()

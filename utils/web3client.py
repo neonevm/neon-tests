@@ -475,7 +475,7 @@ class Web3Client:
                 max_priority_fee_per_gas=max_priority_fee_per_gas,
                 max_fee_per_gas=max_fee_per_gas,
             )
-        return self.send_transaction(account=from_, transaction=transaction, timeout=180)
+        return self.send_transaction(account=from_, transaction=transaction)
 
     @allure.step("Send tokens under EIP-1559")
     def send_tokens_eip_1559(

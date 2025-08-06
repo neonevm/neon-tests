@@ -8,7 +8,7 @@ from integration.tests.neon_evm.utils.transaction_checks import (
     check_transaction_logs_have_text,
 )
 from utils.evm_loader import EVM_STEPS
-from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
+from utils.neon_layouts.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 
 
 class TestBlockNumberAndTimestamp:
@@ -55,7 +55,7 @@ class TestBlockNumberAndTimestamp:
 
         def get_account_override(eth_account):
             sender_address = eth_account.eth_address.hex()
-            sender_account_info = neon_rpc_client.get_balance(sender_address)[0]
+            sender_account_info = neon_rpc_client.get_balance(sender_address)
 
             return {
                 sender_address: {"nonce": sender_account_info["trx_count"], "balance": sender_account_info["balance"]}

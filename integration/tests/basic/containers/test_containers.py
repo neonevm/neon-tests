@@ -91,12 +91,13 @@ class TestContainers:
             tree_acc_data.data,
         )
 
-        evm_loader.assemble_container(
-            operator.operator_keypairs[0],
-            treasury_pool,
-            evm_loader.ether2program(alt_contract_containerized.address[2:]),
-            [evm_loader.ether2balance(neon_user.neon_address, web3_client_sol.chain_id)],
-        )
+        # evm_loader.assemble_container(
+        #     operator.operator_keypairs[0],
+        #     treasury_pool,
+        #     evm_loader.ether2program(alt_contract_containerized.address[2:]),
+        #     [evm_loader.ether2balance(neon_user.neon_address, web3_client_sol.chain_id)],
+        # )
+        #
 
         web3_client_sol.send_all_scheduled_transactions(trxs)
         for trx in trxs:

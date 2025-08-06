@@ -276,7 +276,7 @@ class TestERC20SPL:
         receipt = erc20_contract.transfer(erc20_contract.owner, new_account.address, 100)
         precompiled_addresses = [METAPLEX_ADDRESS, SPL_TOKEN_ADDRESS, CALL_SOLANA_ADDRESS, SOLANA_NATIVE_ADDRESS]
         for precompiled_address in precompiled_addresses:
-            program_address = evm_loader.ether2program(precompiled_address[2:])[0]
+            program_address = evm_loader.ether2program(precompiled_address[2:])
             assert_solana_address_was_not_used_in_trx(
                 receipt["transactionHash"].hex(), program_address, self.web3_client, evm_loader
             )

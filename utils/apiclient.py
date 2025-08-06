@@ -4,7 +4,6 @@ import time
 import typing as tp
 
 import allure
-from hexbytes import HexBytes
 from requests import Session
 
 
@@ -47,16 +46,33 @@ class JsonRPCSession(Session):
         response = self.send_rpc("eth_getCode", [contract_address, "latest"])
         return response["result"]
 
-    def get_neon_trx_receipt(self, trx_hash: HexBytes) -> tp.Dict:
-        return self.send_rpc("neon_getTransactionReceipt", params=[trx_hash.hex()])
+    def get_neon_trx_receipt(self, trx_hash: str) -> tp.Dict:
+        return self.send_rpc("neon_getTransactionReceipt", params=[trx_hash])
 
-    def get_solana_trx_by_neon(self, trx_hash: HexBytes) -> tp.Dict:
-        return self.send_rpc("neon_getSolanaTransactionByNeonTransaction", params=[trx_hash.hex()])
+    def get_solana_trx_by_neon(self, trx_hash: str) -> tp.Dict:
+        return self.send_rpc("neon_getSolanaTransactionByNeonTransaction", params=[trx_hash])
 
+    def get_neon_gas_price(self) -> tp.Dict:
+        return self.send_rpc("neon_gasPrice", params=[])
 
-def wait_finalized_block(rpc_client: JsonRPCSession, block_num: int):
-    fin_block_num = block_num - 32
-    while block_num > fin_block_num:
-        time.sleep(1)
-        response = rpc_client.send_rpc("neon_finalizedBlockNumber", [])
-        fin_block_num = int(response["result"], 16)
+    def get_neon_pending_transactions(self, user_address):
+        return self.send_rpc("neon_getPendingTransactions", params=[user_address])
+
+    def get_neon_estimate_scheduled_gas(self, params):
+        return self.send_rpc("neon_estimateScheduledGas", params=[params])
+
+    def get_neon_estimate_gas(self, raw_tx, params):
+        return self.send_rpc("neon_estimateGas", params=[raw_tx, params])
+
+    def get_neon_emulate(self, params):
+        return self.send_rpc("neon_emulate", params=[params])
+
+    def send_neon_scheduled_transaction(self, trx_hash) -> tp.Dict:
+        return self.send_rpc("neon_sendRawScheduledTransaction", params=[trx_hash])
+
+    def wait_finalized_block(self, block_num: int):
+        fin_block_num = block_num - 32
+        while block_num > fin_block_num:
+            time.sleep(1)
+            response = self.send_rpc("neon_finalizedBlockNumber", [])
+            fin_block_num = int(response["result"], 16)

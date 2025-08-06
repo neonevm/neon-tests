@@ -7,7 +7,7 @@ from hexbytes import HexBytes
 from solders.pubkey import Pubkey
 from web3 import types
 
-from clickfile import EnvName
+from utils.consts import EnvName
 from integration.tests.basic.helpers.assert_message import AssertMessage
 from integration.tests.basic.helpers.basic import NeonEventType, SolanaInstruction
 from utils.models.result import NeonGetTransactionResult, SolanaByNeonTransaction, SolanaNeonProgramInstruction
@@ -436,8 +436,8 @@ def count_instructions(neon_trx_receipt: NeonGetTransactionResult):
     return Counter([instruction.neonInstructionName for instruction in all_instructions])
 
 
-def assert_solana_trxs_in_neon_receipt(rpc_client, trx_hash, neon_receipt: NeonGetTransactionResult):
-    response = rpc_client.get_solana_trx_by_neon(trx_hash)
+def assert_solana_trxs_in_neon_receipt(web3_client: Web3Client, trx_hash, neon_receipt: NeonGetTransactionResult):
+    response = web3_client.get_solana_trx_by_neon(trx_hash.hex())
     solana_transactions = SolanaByNeonTransaction(**response)
 
     solana_trxs_by_neon = [trx.solanaTransactionSignature for trx in neon_receipt.result.solanaTransactions]
@@ -446,11 +446,11 @@ def assert_solana_trxs_in_neon_receipt(rpc_client, trx_hash, neon_receipt: NeonG
 
 @allure.step("Assert that {solana_address} was not used in the transaction")
 def assert_solana_address_was_not_used_in_trx(
-    neon_trx: str, solana_address: str, web3_client: Web3Client, sol_client: SolanaClient
+    neon_trx: str, solana_address: Pubkey, web3_client: Web3Client, sol_client: SolanaClient
 ):
     sol_trx = web3_client.get_solana_trx_by_neon(neon_trx)["result"][0]
     sol_accounts = sol_client.get_account_keys_for_transaction(sol_trx)
-    assert Pubkey.from_string(solana_address) not in sol_accounts, f"Address {solana_address} is in the account list"
+    assert solana_address not in sol_accounts, f"Address {solana_address} is in the account list"
 
 
 @allure.step("Check the transaction is success")

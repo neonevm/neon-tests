@@ -21,6 +21,10 @@ contract MultipleActionsERC20 {
         );
     }
 
+    function getErc20Address() public view returns (address) {
+        return address(erc20);
+    }
+
     function balance(address who) public view returns (uint256) {
         return erc20.balanceOf(who);
     }

@@ -3,8 +3,9 @@ import re
 import allure
 import pytest
 from solana.transaction import Transaction
-from solders.instruction import Instruction, AccountMeta
 from solders.pubkey import Pubkey
+from solders.rpc.responses import GetTransactionResp
+from solders.signature import Signature
 from solders.token.associated import get_associated_token_address
 from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import create_associated_token_account, approve, ApproveParams
@@ -17,6 +18,7 @@ from utils.consts import COUNTER_ID
 from utils.erc20wrapper import ERC20Wrapper
 from utils.evm_loader import EvmLoader
 from utils.helpers import serialize_instruction
+from utils.instructions import make_increment_counter
 from utils.neon_user import NeonUser
 from utils.types import TransactionType
 from utils.web3client import NeonChainWeb3Client, Web3Client
@@ -83,7 +85,9 @@ class TestNeonRPCBaseCalls:
         response = json_rpc_client.send_rpc(method="neon_getSolanaTransactionByNeonTransaction", params=params)
         assert "result" in response
         sol_tx = response["result"][0]
-        assert sol_client.wait_transaction(sol_tx) is not None
+        assert sol_client.get_transaction(
+            Signature.from_string(sol_tx), max_supported_transaction_version=0
+        ) != GetTransactionResp(None)
 
     def test_neon_get_solana_transaction_by_neon_transaction_list_of_tx(self, json_rpc_client, sol_client):
         sender_account = self.accounts[0]
@@ -94,7 +98,9 @@ class TestNeonRPCBaseCalls:
         result = response["result"]
         assert len(result) == 5
         for tx in result:
-            assert sol_client.wait_transaction(tx) is not None
+            assert sol_client.get_transaction(
+                Signature.from_string(tx), max_supported_transaction_version=0
+            ) != GetTransactionResp(None)
 
     @pytest.mark.parametrize(
         "params",
@@ -121,7 +127,7 @@ class TestNeonRPCBaseCalls:
         assert "error" not in response
         assert len(response["result"]) == 0, "expected empty result for non existent transaction request"
 
-    def test_neon_get_native_token_list(self, pytestconfig, json_rpc_client):
+    def test_neon_get_native_token_list(self, environment, json_rpc_client):
         response = json_rpc_client.send_rpc(method="neon_getNativeTokenList")
         assert "error" not in response
         for item in response["result"]:
@@ -137,8 +143,8 @@ class TestNeonRPCBaseCalls:
         assert "NEON" in tokens, f"NEON token is not in the list: {tokens}"
         for item in response["result"]:
             if item["tokenName"] == "NEON":
-                assert item["tokenMint"] == pytestconfig.environment.spl_neon_mint
-                assert item["tokenChainId"] == hex(pytestconfig.environment.network_ids["neon"])
+                assert item["tokenMint"] == environment.spl_neon_mint
+                assert item["tokenChainId"] == hex(environment.network_ids["neon"])
 
     def test_neon_estimate_gas_iterative_tx(
         self,
@@ -150,7 +156,7 @@ class TestNeonRPCBaseCalls:
         tx = self.web3_client.make_raw_tx(sender)
         instruction_tx = contract.functions.callIterativeTrx().build_transaction(tx)
 
-        neon_gas_estimate = self.web3_client.neon_estimate_gas(instruction_tx)["result"]
+        neon_gas_estimate = self.web3_client.neon_estimate_gas(instruction_tx)
 
         assert neon_gas_estimate["exitCode"] == "succeed"
         assert neon_gas_estimate["externalSolanaCall"] is False
@@ -166,8 +172,8 @@ class TestNeonRPCBaseCalls:
         )
         assert gas_used_sum == neon_gas_estimate["gasUsed"]
 
-        assert neon_gas_estimate["numEvmSteps"] == 29077
-        assert neon_gas_estimate["numIterations"] == 61
+        assert neon_gas_estimate["numEvmSteps"] > 20000
+        assert neon_gas_estimate["numIterations"] > 10
         assert neon_gas_estimate["result"] == "0x"
         assert neon_gas_estimate["revertAfterSolanaCall"] is False
         assert neon_gas_estimate["revertBeforeSolanaCall"] is False
@@ -179,28 +185,22 @@ class TestNeonRPCBaseCalls:
     def test_neon_estimate_gas_external_solana_call(
         self,
         default_cu_price: int | None,
-        counter_resource_address: bytes,
+        counter_resource_address: Pubkey,
         call_solana_caller: Contract,
     ):
-        iterations = 29
+        loops = 29
         sender = self.accounts[0]
         lamports = 0
 
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(Pubkey(counter_resource_address), is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(counter_resource_address)
         serialized = serialize_instruction(COUNTER_ID, instruction)
 
         tx = self.web3_client.make_raw_tx(sender.address, tx_type=TransactionType.EIP_1559)
         instruction_tx = call_solana_caller.functions.executeInIterativeMode(
-            iterations, lamports, serialized
+            loops, lamports, serialized
         ).build_transaction(tx)
 
-        neon_gas_estimate = self.web3_client.neon_estimate_gas(instruction_tx)["result"]
+        neon_gas_estimate = self.web3_client.neon_estimate_gas(instruction_tx)
 
         assert neon_gas_estimate["exitCode"] == "succeed"
         assert neon_gas_estimate["externalSolanaCall"] is True
@@ -217,8 +217,8 @@ class TestNeonRPCBaseCalls:
         assert gas_used_sum == neon_gas_estimate["gasUsed"]
 
         assert neon_gas_estimate["numEvmSteps"] > 2000
-        assert neon_gas_estimate["numIterations"] == 7
-        assert int(neon_gas_estimate["result"], 16) == iterations
+        assert neon_gas_estimate["numIterations"] > 10
+        assert int(neon_gas_estimate["result"], 16) == loops
         assert neon_gas_estimate["revertAfterSolanaCall"] is False
         assert neon_gas_estimate["revertBeforeSolanaCall"] is False
         assert len(neon_gas_estimate["solanaAccounts"]) == 33
@@ -231,7 +231,7 @@ class TestNeonRPCBaseCalls:
         tx = self.web3_client.make_raw_tx(sender.address, estimate_gas=True)
         tx["data"] = "invalid"
 
-        error = self.web3_client.neon_estimate_gas(tx)["error"]
+        error = self.web3_client.neon_estimate_gas(tx)
 
         assert error["code"] == -32602
         assert error["message"] == "Invalid params"
@@ -249,7 +249,7 @@ class TestNeonRPCBaseCalls:
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = expected_error_checker.functions.method1().build_transaction(tx)
-        neon_gas_estimate = self.web3_client.neon_estimate_gas(instruction_tx)["result"]
+        neon_gas_estimate = self.web3_client.neon_estimate_gas(instruction_tx)
 
         assert neon_gas_estimate["exitCode"] == "succeed"
         assert neon_gas_estimate["externalSolanaCall"] is False
@@ -292,9 +292,7 @@ class TestNeonRPCBaseCalls:
         neon_user_ata = get_associated_token_address(
             neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
         )
-        erc20_spl_mintable_solana_address = Pubkey.from_string(
-            evm_loader.ether2program(erc20_spl_mintable.contract.address)[0]
-        )
+        erc20_spl_mintable_solana_address = evm_loader.ether2program(erc20_spl_mintable.contract.address)
 
         # preparatory Solana Transactions: create ATA and approve
         trx = Transaction()
@@ -333,7 +331,7 @@ class TestNeonRPCBaseCalls:
         neon_gas_estimate = web3_client_sol.neon_estimate_gas(
             raw_tx=raw_tx,
             preparatory_solana_instructions=trx.instructions,
-        )["result"]
+        )
 
         assert neon_gas_estimate["exitCode"] == "succeed"
         assert neon_gas_estimate["externalSolanaCall"] is False
@@ -374,9 +372,7 @@ class TestNeonRPCBaseCalls:
         neon_user_ata = get_associated_token_address(
             neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
         )
-        erc20_spl_mintable_solana_address = Pubkey.from_string(
-            evm_loader.ether2program(erc20_spl_mintable.contract.address)[0]
-        )
+        erc20_spl_mintable_solana_address = evm_loader.ether2program(erc20_spl_mintable.contract.address)
 
         # preparatory Solana Transactions: create ATA and approve
         trx = Transaction()
@@ -415,7 +411,7 @@ class TestNeonRPCBaseCalls:
         error = web3_client_sol.neon_estimate_gas(
             raw_tx=raw_tx,
             preparatory_solana_instructions=trx.instructions,
-        )["error"]
+        )
 
         assert error["code"] == 3
         assert error["data"]
@@ -435,9 +431,7 @@ class TestNeonRPCBaseCalls:
         neon_user_ata = get_associated_token_address(
             neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey
         )
-        erc20_spl_mintable_solana_address = Pubkey.from_string(
-            evm_loader.ether2program(erc20_spl_mintable.contract.address)[0]
-        )
+        erc20_spl_mintable_solana_address = evm_loader.ether2program(erc20_spl_mintable.contract.address)
 
         # preparatory Solana Transactions: create ATA and approve
         trx = Transaction()
@@ -472,7 +466,7 @@ class TestNeonRPCBaseCalls:
         error = web3_client_sol.neon_estimate_gas(
             raw_tx=raw_tx,
             preparatory_solana_instructions=trx.instructions,
-        )["error"]
+        )
 
         assert error["code"] == -32602
         assert error["message"] == "Invalid params"

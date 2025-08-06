@@ -40,7 +40,7 @@ contract Caller {
         return myRevert.doTrivialRevert();
     }
 
-    function doTrivialRevertAferIterativeActions() public view {
+    function doTrivialRevertAfterIterativeActions() public view {
         uint x = 0;
         uint y = 3000;
         uint z = x;

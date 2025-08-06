@@ -651,7 +651,7 @@ class TestSimulateSolana:
 
     def test_simulate_solana_with_solana_overrides_data_account(
         self,
-        solana_overrides_contract: Contract,
+        storage_checker_contract: Contract,
         sender_with_tokens: Caller,
         neon_rpc_client: NeonApiRpcClient,
         operator_keypair: Keypair,
@@ -663,7 +663,7 @@ class TestSimulateSolana:
             signed_tx = eth_utils.make_contract_call_trx(
                 evm_loader=evm_loader,
                 user=sender_with_tokens,
-                contract=solana_overrides_contract,
+                contract=storage_checker_contract,
                 function_signature=function_signature,
                 params=params,
             )
@@ -680,7 +680,7 @@ class TestSimulateSolana:
 
         emulate_result = neon_rpc_client.emulate_contract_call(
             sender=sender_with_tokens.eth_address.hex(),
-            contract=solana_overrides_contract.eth_address.hex(),
+            contract=storage_checker_contract.eth_address.hex(),
             function_signature=update_b_function_signature,
             params=update_b_params,
         )
@@ -689,7 +689,7 @@ class TestSimulateSolana:
 
         accounts = [
             sender_with_tokens.balance_account_address,
-            solana_overrides_contract.solana_address,
+            storage_checker_contract.solana_address,
         ]
         data_account = list(set(additional_accounts) - set(accounts))[0]
         account_info_after_tx1 = evm_loader.get_account_info(data_account, commitment=Confirmed)
@@ -703,7 +703,7 @@ class TestSimulateSolana:
         signed_tx_for_sol_tx = eth_utils.make_contract_call_trx(
             evm_loader=evm_loader,
             user=sender_with_tokens,
-            contract=solana_overrides_contract,
+            contract=storage_checker_contract,
             function_signature="check_b()",
         )
         sol_tx = instructions.TransactionWithComputeBudget(operator_keypair)
@@ -719,7 +719,7 @@ class TestSimulateSolana:
                 message=signed_tx_for_sol_tx.raw_transaction,
                 additional_accounts=[
                     sender_with_tokens.balance_account_address,
-                    solana_overrides_contract.solana_address,
+                    storage_checker_contract.solana_address,
                     data_account,
                 ],
             )
@@ -754,7 +754,7 @@ class TestSimulateSolana:
 
     def test_simulate_solana_with_solana_overrides_multiple_data_accounts(
         self,
-        solana_overrides_contract: Contract,
+        storage_checker_contract: Contract,
         sender_with_tokens: Caller,
         neon_rpc_client: NeonApiRpcClient,
         operator_keypair: Keypair,
@@ -766,7 +766,7 @@ class TestSimulateSolana:
             signed_tx = eth_utils.make_contract_call_trx(
                 evm_loader=evm_loader,
                 user=sender_with_tokens,
-                contract=solana_overrides_contract,
+                contract=storage_checker_contract,
                 function_signature=function_signature,
                 params=params,
             )
@@ -783,7 +783,7 @@ class TestSimulateSolana:
 
         emulate_result = neon_rpc_client.emulate_contract_call(
             sender=sender_with_tokens.eth_address.hex(),
-            contract=solana_overrides_contract.eth_address.hex(),
+            contract=storage_checker_contract.eth_address.hex(),
             function_signature=function_signature,
             params=params,
         )
@@ -792,7 +792,7 @@ class TestSimulateSolana:
 
         accounts = [
             sender_with_tokens.balance_account_address,
-            solana_overrides_contract.solana_address,
+            storage_checker_contract.solana_address,
         ]
         data_accounts = list(set(additional_accounts) - set(accounts))
 
@@ -813,7 +813,7 @@ class TestSimulateSolana:
         signed_tx_for_sol_tx = eth_utils.make_contract_call_trx(
             evm_loader=evm_loader,
             user=sender_with_tokens,
-            contract=solana_overrides_contract,
+            contract=storage_checker_contract,
             function_signature="check_data(uint256)",
             params=[3],
         )
@@ -830,7 +830,7 @@ class TestSimulateSolana:
                 message=signed_tx_for_sol_tx.raw_transaction,
                 additional_accounts=[
                     sender_with_tokens.balance_account_address,
-                    solana_overrides_contract.solana_address,
+                    storage_checker_contract.solana_address,
                     data_accounts[0],
                     data_accounts[1],
                     data_accounts[2],
@@ -875,7 +875,7 @@ class TestSimulateSolana:
 
     def test_simulate_solana_with_solana_overrides_balance_account(
         self,
-        solana_overrides_contract: Contract,
+        storage_checker_contract: Contract,
         sender_with_tokens: Caller,
         neon_rpc_client: NeonApiRpcClient,
         operator_keypair: Keypair,
@@ -888,7 +888,7 @@ class TestSimulateSolana:
             signed_tx = eth_utils.make_contract_call_trx(
                 evm_loader=evm_loader,
                 user=sender_with_tokens,
-                contract=solana_overrides_contract,
+                contract=storage_checker_contract,
                 function_signature=function_signature,
                 params=params,
             )
@@ -901,9 +901,9 @@ class TestSimulateSolana:
 
         recipient = session_user
         recipient_balance_before = evm_loader.get_neon_balance(recipient.eth_address)
-        balance_account = solana_overrides_contract.balance_account_address
-        evm_loader.deposit_neon(operator_keypair, solana_overrides_contract.eth_address, 1000000)
-        amount = evm_loader.get_neon_balance(solana_overrides_contract.eth_address)
+        balance_account = storage_checker_contract.balance_account_address
+        evm_loader.deposit_neon(operator_keypair, storage_checker_contract.eth_address, 1000000)
+        amount = evm_loader.get_neon_balance(storage_checker_contract.eth_address)
 
         function_signature = "send_neon(address,uint256)"
         params = [recipient.eth_address.hex(), amount // 2]
@@ -912,7 +912,7 @@ class TestSimulateSolana:
 
         emulate_result = neon_rpc_client.emulate_contract_call(
             sender=sender_with_tokens.eth_address.hex(),
-            contract=solana_overrides_contract.eth_address.hex(),
+            contract=storage_checker_contract.eth_address.hex(),
             function_signature=function_signature,
             params=params,
         )
@@ -925,14 +925,14 @@ class TestSimulateSolana:
         account_info_after_tx = evm_loader.get_account_info(balance_account, commitment=Confirmed)
         assert account_info_full_balance.value.data != account_info_after_tx.value.data
 
-        contract_balance = evm_loader.get_neon_balance(solana_overrides_contract.eth_address)
+        contract_balance = evm_loader.get_neon_balance(storage_checker_contract.eth_address)
         assert contract_balance < amount
 
         # Create Solana transaction
         signed_tx_for_sol_tx = eth_utils.make_contract_call_trx(
             evm_loader=evm_loader,
             user=sender_with_tokens,
-            contract=solana_overrides_contract,
+            contract=storage_checker_contract,
             function_signature=function_signature,
             params=[recipient.eth_address.hex(), amount],
         )
@@ -979,7 +979,7 @@ class TestSimulateSolana:
 
     def test_simulate_solana_with_solana_overrides_absent_field(
         self,
-        solana_overrides_contract: Contract,
+        storage_checker_contract: Contract,
         sender_with_tokens: Caller,
         neon_rpc_client: NeonApiRpcClient,
         operator_keypair: Keypair,
@@ -992,7 +992,7 @@ class TestSimulateSolana:
 
         emulate_result = neon_rpc_client.emulate_contract_call(
             sender=sender_with_tokens.eth_address.hex(),
-            contract=solana_overrides_contract.eth_address.hex(),
+            contract=storage_checker_contract.eth_address.hex(),
             function_signature=function_signature,
             params=params,
         )
@@ -1001,7 +1001,7 @@ class TestSimulateSolana:
         signed_tx = eth_utils.make_contract_call_trx(
             evm_loader=evm_loader,
             user=sender_with_tokens,
-            contract=solana_overrides_contract,
+            contract=storage_checker_contract,
             function_signature=function_signature,
             params=params,
         )
@@ -1014,7 +1014,7 @@ class TestSimulateSolana:
 
         accounts = [
             sender_with_tokens.balance_account_address,
-            solana_overrides_contract.solana_address,
+            storage_checker_contract.solana_address,
         ]
         data_account = list(set(additional_accounts) - set(accounts))[0]
         account_info = evm_loader.get_account_info(data_account, commitment=Confirmed)
@@ -1023,7 +1023,7 @@ class TestSimulateSolana:
         signed_tx_for_sol_tx = eth_utils.make_contract_call_trx(
             evm_loader=evm_loader,
             user=sender_with_tokens,
-            contract=solana_overrides_contract,
+            contract=storage_checker_contract,
             function_signature=function_signature,
             params=params,
         )
@@ -1040,7 +1040,7 @@ class TestSimulateSolana:
                 message=signed_tx_for_sol_tx.raw_transaction,
                 additional_accounts=[
                     sender_with_tokens.balance_account_address,
-                    solana_overrides_contract.solana_address,
+                    storage_checker_contract.solana_address,
                     data_account,
                 ],
             )
@@ -1071,7 +1071,7 @@ class TestSimulateSolana:
 
     def test_simulate_solana_compare_cu_with_solana_overrides_and_without(
         self,
-        solana_overrides_contract: Contract,
+        storage_checker_contract: Contract,
         sender_with_tokens: Caller,
         neon_rpc_client: NeonApiRpcClient,
         operator_keypair: Keypair,
@@ -1083,7 +1083,7 @@ class TestSimulateSolana:
             signed_tx = eth_utils.make_contract_call_trx(
                 evm_loader=evm_loader,
                 user=sender_with_tokens,
-                contract=solana_overrides_contract,
+                contract=storage_checker_contract,
                 function_signature=function_signature,
                 params=params,
             )
@@ -1099,7 +1099,7 @@ class TestSimulateSolana:
 
         emulate_result = neon_rpc_client.emulate_contract_call(
             sender=sender_with_tokens.eth_address.hex(),
-            contract=solana_overrides_contract.eth_address.hex(),
+            contract=storage_checker_contract.eth_address.hex(),
             function_signature=function_signature,
             params=params,
         )
@@ -1108,7 +1108,7 @@ class TestSimulateSolana:
 
         accounts = [
             sender_with_tokens.balance_account_address,
-            solana_overrides_contract.solana_address,
+            storage_checker_contract.solana_address,
         ]
         data_account = list(set(additional_accounts) - set(accounts))[0]
         account_info_after_tx1 = evm_loader.get_account_info(data_account, commitment=Confirmed)
@@ -1119,7 +1119,7 @@ class TestSimulateSolana:
         signed_tx_for_sol_tx = eth_utils.make_contract_call_trx(
             evm_loader=evm_loader,
             user=sender_with_tokens,
-            contract=solana_overrides_contract,
+            contract=storage_checker_contract,
             function_signature=function_signature,
             params=params,
         )
@@ -1136,7 +1136,7 @@ class TestSimulateSolana:
                 message=signed_tx_for_sol_tx.raw_transaction,
                 additional_accounts=[
                     sender_with_tokens.balance_account_address,
-                    solana_overrides_contract.solana_address,
+                    storage_checker_contract.solana_address,
                     data_account,
                 ],
             )

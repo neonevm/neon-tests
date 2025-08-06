@@ -12,7 +12,7 @@ from playwright.sync_api import Page
 from playwright.sync_api import Playwright
 from playwright.sync_api import sync_playwright
 
-from clickfile import create_allure_environment_opts
+from cli.commands.common import create_allure_environment_opts
 
 
 def create_persistent_context(

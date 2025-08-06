@@ -422,7 +422,7 @@ class TestNeonRPCEstimateScheduledGas:
         erc20_spl_mintable.approve(erc20_spl_mintable.owner, neon_user.checksum_address, ata_amount)
 
         my_ata = get_associated_token_address(neon_user.solana_account.pubkey(), erc20_spl_mintable.token_mint_pubkey)
-        solana_contract_account = Pubkey.from_string(evm_loader.ether2program(erc20_spl_mintable.contract.address)[0])
+        solana_contract_account = evm_loader.ether2program(erc20_spl_mintable.contract.address)
 
         trx = Transaction()
         trx.add(
@@ -564,5 +564,5 @@ class TestNeonRPCEstimateScheduledGas:
             preparatory_solana_trxs=trx.instructions,
             check_result=False,
         )
-        assert resp["error"]["code"] == Error32000.CODE
-        assert Error32000.SOLANA_SIMULATOR_ERROR in resp["error"]["message"], "wrong error message"
+        assert resp["error"]["code"] == Error32603.CODE
+        assert Error32603.INTERNAL_ERROR in resp["error"]["message"], "wrong error message"

@@ -142,17 +142,6 @@ class SolanaClient(solana.rpc.api.Client):
             self.send_tx_and_check_status_ok(trx, payer)
         return ata
 
-    @allure.step("Wait for transaction")
-    def wait_transaction(self, tx):
-        try:
-            wait_condition(
-                lambda: self.get_transaction(Signature.from_string(tx), max_supported_transaction_version=0)
-                != GetTransactionResp(None)
-            )
-        except TimeoutError:
-            return None
-        return self.get_transaction(Signature.from_string(tx), max_supported_transaction_version=0)
-
     @allure.step("Check if account exists")
     def account_exists(self, account_address: Pubkey) -> bool:
         account_info = self.get_account_info(account_address, commitment=Confirmed)

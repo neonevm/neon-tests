@@ -10,4 +10,5 @@ A main repository for all types of tests in NEON for Proxy and EVM.
 3. [Useful tips](docs/useful.md)
 4. [dApps testing](docs/dapps.md)
 5. [Information about basic tests](docs/tests/basic.md)
-6. [Curve compiled contracts for load tests](contracts/curve/README.md)
+6. [K6 Performance Testing](docs/k6.md)
+7. [Curve compiled contracts for load tests](contracts/curve/README.md)

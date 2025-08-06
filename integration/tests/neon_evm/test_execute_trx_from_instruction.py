@@ -62,7 +62,7 @@ class TestExecuteTrxFromInstruction:
         recipient = Keypair()
 
         recipient_ether = eth_keys.PrivateKey(recipient.secret()[:32]).public_key.to_canonical_address()
-        recipient_solana_address, _ = evm_loader.ether2program(recipient_ether)
+        recipient_solana_address = evm_loader.ether2program(recipient_ether)
         recipient_balance_address = evm_loader.ether2balance(recipient_ether)
         amount = 10
         signed_tx = make_eth_transaction(evm_loader, recipient_ether, None, sender_with_tokens, amount)
@@ -75,7 +75,7 @@ class TestExecuteTrxFromInstruction:
             [
                 sender_with_tokens.balance_account_address,
                 recipient_balance_address,
-                Pubkey.from_string(recipient_solana_address),
+                recipient_solana_address,
             ],
         )
 
@@ -377,12 +377,11 @@ class TestExecuteTrxFromInstruction:
     ):
         key = Keypair()
         caller_ether = eth_keys.PrivateKey(key.secret()[:32]).public_key.to_canonical_address()
-        caller, caller_nonce = evm_loader.ether2program(caller_ether)
-        caller_token = get_associated_token_address(
-            Pubkey.from_string(caller), Pubkey.from_string(environment.spl_neon_mint)
-        )
+        caller = evm_loader.ether2program(caller_ether)
+        balance_account = evm_loader.ether2balance(caller_ether)
+        caller_token = get_associated_token_address(caller, Pubkey.from_string(environment.spl_neon_mint))
 
-        operator_without_money = Caller(key, Pubkey.from_string(caller), caller_ether, caller_nonce, caller_token)
+        operator_without_money = Caller(key, caller, balance_account, caller_ether, caller_token)
 
         signed_tx = make_eth_transaction(evm_loader, session_user.eth_address, None, sender_with_tokens, 1)
         with pytest.raises(

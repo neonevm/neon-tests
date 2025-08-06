@@ -31,7 +31,7 @@ class TestLogs:
         assert event_logs[0].event == "NonArgs"
 
     @pytest.mark.mainnet
-    def test_all_types_args_event(self, event_caller_contract, json_rpc_client):
+    def test_all_types_args_event(self, event_caller_contract):
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account)
         number = random.randint(1, 5)
@@ -54,10 +54,10 @@ class TestLogs:
         assert event_logs[0].args.b == bytes_array
         assert event_logs[0].args.bol == bol
         assert event_logs[0].event == "AllTypes"
-        response = json_rpc_client.get_neon_trx_receipt(resp["transactionHash"])
+        response = self.web3_client.get_neon_trx_receipt(resp["transactionHash"])
         assert_log_field_in_neon_trx_receipt(response, 1)
 
-    def test_indexed_args_event(self, event_caller_contract, json_rpc_client):
+    def test_indexed_args_event(self, event_caller_contract):
         amount = random.randint(1, 100)
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account, amount=amount)
@@ -71,10 +71,10 @@ class TestLogs:
         assert event_logs[0].args.value == amount
         assert event_logs[0].event == "IndexedArgs"
 
-        response = json_rpc_client.get_neon_trx_receipt(resp["transactionHash"])
+        response = self.web3_client.get_neon_trx_receipt(resp["transactionHash"])
         assert_log_field_in_neon_trx_receipt(response, 1)
 
-    def test_non_indexed_args_event(self, event_caller_contract, json_rpc_client):
+    def test_non_indexed_args_event(self, event_caller_contract):
         amount = random.randint(1, 100)
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account, amount=amount)
@@ -86,10 +86,10 @@ class TestLogs:
         assert len(event_logs[0].args) == 1
         assert event_logs[0].args.hello == "world"
         assert event_logs[0].event == "NonIndexedArg"
-        response = json_rpc_client.get_neon_trx_receipt(resp["transactionHash"])
+        response = self.web3_client.get_neon_trx_receipt(resp["transactionHash"])
         assert_log_field_in_neon_trx_receipt(response, 1)
 
-    def test_unnamed_args_event(self, event_caller_contract, json_rpc_client):
+    def test_unnamed_args_event(self, event_caller_contract):
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = event_caller_contract.functions.unnamedArg("hello").build_transaction(tx)
@@ -99,10 +99,10 @@ class TestLogs:
         assert len(event_logs) == 1
         assert len(event_logs[0].args) == 1
         assert event_logs[0].event == "UnnamedArg"
-        response = json_rpc_client.get_neon_trx_receipt(resp["transactionHash"])
+        response = self.web3_client.get_neon_trx_receipt(resp["transactionHash"])
         assert_log_field_in_neon_trx_receipt(response, 1)
 
-    def test_big_args_count(self, event_caller_contract, json_rpc_client):
+    def test_big_args_count(self, event_caller_contract):
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = event_caller_contract.functions.bigArgsCount("hello").build_transaction(tx)
@@ -113,10 +113,10 @@ class TestLogs:
         assert len(event_logs[0].args) == 10
         assert event_logs[0].event == "BigArgsCount"
 
-        response = json_rpc_client.get_neon_trx_receipt(resp["transactionHash"])
+        response = self.web3_client.get_neon_trx_receipt(resp["transactionHash"])
         assert_log_field_in_neon_trx_receipt(response, 1)
 
-    def test_several_events_in_one_trx(self, event_caller_contract, json_rpc_client):
+    def test_several_events_in_one_trx(self, event_caller_contract):
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = event_caller_contract.functions.emitThreeEvents().build_transaction(tx)
@@ -128,10 +128,10 @@ class TestLogs:
         assert event1_logs[0].event == "IndexedArgs"
         assert event2_logs[0].event == "NonIndexedArg"
         assert event3_logs[0].event == "AllTypes"
-        response = json_rpc_client.get_neon_trx_receipt(resp["transactionHash"])
+        response = self.web3_client.get_neon_trx_receipt(resp["transactionHash"])
         assert_log_field_in_neon_trx_receipt(response, 3)
 
-    def test_many_the_same_events_in_one_trx(self, event_caller_contract, json_rpc_client):
+    def test_many_the_same_events_in_one_trx(self, event_caller_contract):
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account, gas=0)
         changes_count = 20
@@ -142,7 +142,7 @@ class TestLogs:
         assert len(event_logs) == changes_count
         for log in event_logs:
             assert log.event == "NonIndexedArg"
-        response = json_rpc_client.get_neon_trx_receipt(resp["transactionHash"])
+        response = self.web3_client.get_neon_trx_receipt(resp["transactionHash"])
         assert_log_field_in_neon_trx_receipt(response, changes_count)
 
     def test_event_logs_deleted_if_trx_was_canceled(self, event_caller_contract):

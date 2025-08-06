@@ -2,7 +2,7 @@ import pytest
 from solana.rpc.core import RPCException
 
 from utils.evm_loader import EVM_STEPS
-from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
+from utils.neon_layouts.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from .utils.constants import TAG_FINALIZED_STATE
 from .utils.ethereum import make_contract_call_trx
 from .utils.transaction_checks import check_holder_account_tag

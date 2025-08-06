@@ -5,7 +5,7 @@ import solana
 import pytest
 from eth_utils import to_text
 
-from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
+from utils.neon_layouts.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from .utils.assert_messages import InstructionAsserts
 from .utils.constants import TAG_FINALIZED_STATE
 from .utils.ethereum import (
@@ -44,7 +44,6 @@ class TestTransactionStepFromAccountNoChainId:
                 session_user.solana_account_address,
                 session_user.balance_account_address,
                 sender_with_tokens.balance_account_address,
-                sender_with_tokens.solana_account_address,
             ],
         )
 

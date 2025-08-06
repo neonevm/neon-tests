@@ -66,3 +66,7 @@ STORAGE_CELL_LAYOUT = Struct(
 COUNTER_ACCOUNT_LAYOUT = Struct(
     "count" / Int64ul,
 )
+
+TYPED_NEON_ACCOUNT_LAYOUT = Struct(
+    "type" / Int8ul,
+)

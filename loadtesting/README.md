@@ -9,9 +9,7 @@ Python 3.6 or later, if you dont already have it.
 1. cd /Users/user_name/NeonLabs/neon-tests/
    pip install -U locust==2.8.3
    or
-   pip install -U -r ./deploy/requirements/click.txt -r ./deploy/requirements/prod.txt
-   or
-   ./clickfile.py requirements
+   pip install -U -r ./deploy/requirements/click.txt -r ./deploy/requirements/tests.txt -r ./deploy/requirements/load.txt
 2. export NEON_CRED=envs.json
    or --credentials=envs.json as locust command line argument
 3. locust -f ./loadtesting/locustfile.py --headless --host=local -t 60 -u 10 -r 10 --logfile run.log

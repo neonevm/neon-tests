@@ -5,7 +5,7 @@ from solana.rpc.core import RPCException as SolanaRPCException
 from solana.rpc.commitment import Confirmed
 from solders.pubkey import Pubkey
 from utils.evm_loader import EVM_STEPS
-from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
+from utils.neon_layouts.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from utils.metaplex import ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID
 from utils.instructions import make_create_associated_token_idempotent
 from utils.helpers import bytes32_to_solana_pubkey, serialize_instruction

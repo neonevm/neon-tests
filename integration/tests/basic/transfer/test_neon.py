@@ -2,6 +2,7 @@ import typing as tp
 
 import pytest
 import allure
+
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from utils.consts import Unit
 from utils.web3client import NeonChainWeb3Client
@@ -62,7 +63,15 @@ class TestNeonTransfer:
         sender_account = self.accounts[0]
         sender_balance = self.web3_client.get_balance(sender_account)
 
-        self.web3_client.send_neon(sender_account, sender_balance, amount=1)
+        self.web3_client.send_neon(sender_account, sender_account, amount=1)
+        assert sender_balance > self.web3_client.get_balance(sender_account)
+
+    def test_send_token_to_empty_to_field(self):
+        """Send token without recipient (to=None)"""
+        sender_account = self.accounts[0]
+        sender_balance = self.web3_client.get_balance(sender_account)
+
+        self.web3_client.send_neon(sender_account, to=None, amount=1)
         assert sender_balance > self.web3_client.get_balance(sender_account)
 
     def test_erc_1820_transfer_transaction(self):

@@ -1,6 +1,6 @@
 import json
 import pathlib
-from typing import Tuple, Any, Generator
+from typing import Any, Generator
 
 import allure
 import eth_abi
@@ -301,14 +301,14 @@ def calculator_caller_contract(
 
 
 @pytest.fixture(scope="session")
-def solana_overrides_contract(
+def storage_checker_contract(
     evm_loader: EvmLoader,
     neon_rpc_client: NeonApiRpcClient,
     operator_keypair: Keypair,
     session_user: Caller,
     treasury_pool: TreasuryPool,
 ) -> Contract:
-    return evm_loader.deploy_contract(operator_keypair, session_user, "solana_override", neon_rpc_client, treasury_pool)
+    return evm_loader.deploy_contract(operator_keypair, session_user, "storage_checker", neon_rpc_client, treasury_pool)
 
 
 @pytest.fixture(scope="session")
@@ -392,23 +392,21 @@ def erc20_for_spl(
     treasury_pool,
     neon_rpc_client,
     holder_acc,
-    proxy_contract,
-    sol_client,
-) -> Tuple[Any, Any]:
+    erc20_for_spl_factory_contract,
+) -> Contract:
+    func_signature = "createErc20ForSplMintable(string,string,uint8,address)"
+    func_args = ["Test", "TTT", 9, sender_with_tokens.eth_address.hex()]
     emulate_result = neon_rpc_client.emulate_contract_call(
         sender_with_tokens.eth_address.hex(),
-        proxy_contract.eth_address.hex(),
-        "deploy(string,string,string,uint8)",
-        ["Test", "TTT", "http://uri.com", 9],
+        erc20_for_spl_factory_contract.eth_address.hex(),
+        func_signature,
+        func_args,
     )
     additional_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
     signed_tx = make_contract_call_trx(
-        evm_loader,
-        sender_with_tokens,
-        proxy_contract,
-        "deploy(string,string,string,uint8)",
-        ["Test", "TTT", "http://uri.com", 9],
+        evm_loader, sender_with_tokens, erc20_for_spl_factory_contract, func_signature, func_args
     )
+
     evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 
     resp = evm_loader.execute_transaction_steps_from_account(
@@ -418,45 +416,59 @@ def erc20_for_spl(
         additional_accounts,
     )
 
-    check_transaction_logs_have_text(solana_client=sol_client, trx=resp, text="exit_status=0x12")
+    check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x12")
     byte_data = bytes.fromhex(emulate_result["result"])
-    decoded_data = eth_abi.decode(["bytes32", "address"], byte_data)
-    token_mint = decoded_data[0]
-    erc20_for_spl_address = decoded_data[1]
-    return token_mint, erc20_for_spl_address
+    contract_eth_address = eth_abi.decode(["address"], byte_data)[0]
+
+    contract_solana_address = evm_loader.ether2program(contract_eth_address)
+    contract_balance_address = evm_loader.ether2balance(contract_eth_address, evm_loader.chain_id)
+
+    contract = Contract(bytes.fromhex(contract_eth_address[2:]), contract_solana_address, contract_balance_address)
+    function_signature = "mint(address,uint256)"
+    emulate_accounts = neon_rpc_client.get_additional_accounts_by_emulation(
+        sender=sender_with_tokens.eth_address.hex(),
+        contract=contract.eth_address.hex(),
+        function_signature=function_signature,
+        params=[sender_with_tokens.eth_address.hex(), 1000000000],  # 1 token in wei,
+    )
+    signed_tx = make_contract_call_trx(
+        evm_loader, sender_with_tokens, contract, function_signature, [sender_with_tokens.eth_address.hex(), 1000000000]
+    )
+    resp = evm_loader.execute_transaction_steps_from_instruction(
+        operator_keypair,
+        treasury_pool,
+        holder_acc,
+        signed_tx,
+        emulate_accounts,
+    )
+    check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
+
+    return contract
 
 
 @pytest.fixture(scope="session")
-def neon_user(evm_loader: EvmLoader, bank_account, environment: EnvironmentConfig) -> Generator[NeonUser, None, None]:
-    user = NeonUser(evm_loader_id=environment.evm_loader)
+def neon_user(evm_loader: EvmLoader, bank_account) -> Generator[NeonUser, None, None]:
+    user = NeonUser(evm_loader_id=evm_loader.loader_id)
     lamports = 3 * LAMPORT_PER_SOL
 
-    if environment.use_bank:
-        evm_loader.send_sol(bank_account, user.solana_account.pubkey(), lamports)
-    else:
-        evm_loader.request_airdrop(
-            pubkey=user.solana_account.pubkey(),
-            lamports=lamports,
-            commitment=Confirmed,
-        )
+    evm_loader.request_airdrop(
+        pubkey=user.solana_account.pubkey(),
+        lamports=lamports,
+        commitment=Confirmed,
+    )
 
     yield user
 
 
 @pytest.fixture(scope="function")
-def neon_user_func_scope(
-    evm_loader: EvmLoader, bank_account, environment: EnvironmentConfig
-) -> Generator[NeonUser, None, None]:
-    user = NeonUser(evm_loader_id=environment.evm_loader)
+def neon_user_func_scope(evm_loader: EvmLoader, bank_account) -> Generator[NeonUser, None, None]:
+    user = NeonUser(evm_loader_id=evm_loader.loader_id)
     lamports = 3 * LAMPORT_PER_SOL
 
-    if environment.use_bank:
-        evm_loader.send_sol(bank_account, user.solana_account.pubkey(), lamports)
-    else:
-        evm_loader.request_airdrop(
-            pubkey=user.solana_account.pubkey(),
-            lamports=lamports,
-            commitment=Confirmed,
-        )
+    evm_loader.request_airdrop(
+        pubkey=user.solana_account.pubkey(),
+        lamports=lamports,
+        commitment=Confirmed,
+    )
 
     yield user

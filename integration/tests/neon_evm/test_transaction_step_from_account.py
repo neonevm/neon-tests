@@ -16,7 +16,7 @@ from utils.instructions import (
     TransactionWithComputeBudget,
     make_transaction_step_from_account,
 )
-from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
+from utils.neon_layouts.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from utils.types import TreasuryPool
 
 from .utils.assert_messages import InstructionAsserts
@@ -218,7 +218,7 @@ class TestTransactionStepFromAccount:
         # recipient account should be created
         recipient = Keypair()
         recipient_ether = eth_keys.PrivateKey(recipient.secret()[:32]).public_key.to_canonical_address()
-        recipient_solana_address, _ = evm_loader.ether2program(recipient_ether)
+        recipient_solana_address = evm_loader.ether2program(recipient_ether)
         recipient_balance_address = evm_loader.ether2balance(recipient_ether)
         amount = 10
         signed_tx = make_eth_transaction(evm_loader, recipient_ether, None, sender_with_tokens, amount)
@@ -229,7 +229,7 @@ class TestTransactionStepFromAccount:
             treasury_pool,
             holder_acc,
             [
-                Pubkey.from_string(recipient_solana_address),
+                recipient_solana_address,
                 recipient_balance_address,
                 sender_with_tokens.solana_account_address,
                 sender_with_tokens.balance_account_address,

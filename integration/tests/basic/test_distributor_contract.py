@@ -42,14 +42,13 @@ class TestDistributorContract:
         web3_client: NeonChainWeb3Client,
         contract: Contract,
     ):
-        nonce = web3_client.get_nonce(signer)
 
         for name, account in wallets.items():
             address = bytes.fromhex(account.address[2:])
-            raw_tx = contract.functions.set_address(name, address).build_transaction({"nonce": nonce})
+            tx = web3_client.make_raw_tx(from_=signer)
+            raw_tx = contract.functions.set_address(name, address).build_transaction(tx)
             receipt = web3_client.send_transaction(account=signer, transaction=raw_tx)
             assert receipt["status"] == 1
-            nonce += 1
 
     @staticmethod
     def generate_wallets(accounts: EthAccounts) -> dict[str, LocalAccount]:

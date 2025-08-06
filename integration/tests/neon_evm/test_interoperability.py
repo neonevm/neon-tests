@@ -166,7 +166,7 @@ class TestInteroperability:
         }
 
         response = solana_caller.execute_with_seed_and_instruction_struct(
-            seed, instruction_struct, lamports=lamports_amount, sender=sender_with_tokens
+            seed, instruction_struct, lamports=lamports_amount, sender=sender_with_tokens, is_data_serialized=True
         )
         check_transaction_logs_have_text(solana_client, trx=response, text="exit_status=0x11")
         assert int(mint.get_balance(to_token_account, commitment=Confirmed).value.amount) == amount

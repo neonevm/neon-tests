@@ -235,11 +235,21 @@ class SolanaCaller:
         )
 
     def execute_with_seed_and_instruction_struct(
-        self, seed, instruction, lamports=None, holder_acc=None, sender=None, additional_signers=None
+        self,
+        seed,
+        instruction,
+        lamports=None,
+        holder_acc=None,
+        sender=None,
+        additional_signers=None,
+        is_data_serialized=False,
     ):
         sender = sender or self.owner
         holder_acc = holder_acc or self.holder_acc
+
         serialized_prog_id, serialized_accounts, serialized_data = serialize_instruction_struct(instruction)
+        if is_data_serialized:
+            serialized_data = instruction["instruction_data"]
 
         if lamports is not None:
             function_signature = "executeWithSeed(uint64,bytes32,(bytes32,(bytes32,bool,bool)[],bytes))"

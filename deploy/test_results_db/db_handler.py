@@ -13,6 +13,8 @@ from sqlalchemy.sql import func
 from deploy.test_results_db.table_models.base import Base
 from deploy.test_results_db.table_models.cost_report import CostReport
 from deploy.test_results_db.table_models.dapp_data import DappData
+
+from utils.consts import GITHUB_TAG_PATTERN
 from utils.types import RepoType
 
 
@@ -113,7 +115,6 @@ class PostgresTestResultsHandler:
         :param limit:
         :return:
         """
-        from clickfile import GITHUB_TAG_PATTERN
 
         assert re.fullmatch(GITHUB_TAG_PATTERN, tag)
         tag_column = CostReport.neon_evm_tag if repo == "evm" else CostReport.proxy_tag
@@ -157,7 +158,6 @@ class PostgresTestResultsHandler:
         :param previous_tags: ["latest] or ["v3.1.x"] or ["v3.1.0", "v3.1.1", ...]
         :param order_by:
         """
-        from clickfile import GITHUB_TAG_PATTERN
 
         tag_column = CostReport.neon_evm_tag if repo == "evm" else CostReport.proxy_tag
 
@@ -267,7 +267,6 @@ class PostgresTestResultsHandler:
         tags: list[str],
         order_by: tp.Literal["timestamp", "branch_name"],
     ) -> Query:
-        from clickfile import GITHUB_TAG_PATTERN
 
         query: Query = self.session.query(CostReport).filter(
             CostReport.repo == repo,

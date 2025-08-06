@@ -455,7 +455,6 @@ class TestEIP1559:
     @pytest.mark.only_stands
     def test_compute_unit_price_estimated_value(
         self,
-        json_rpc_client: JsonRPCSession,
         sol_client: SolanaClient,
         default_cu_price: int,
     ):
@@ -484,10 +483,7 @@ class TestEIP1559:
         )
 
         eth_gas_estimate = tx_params["gas"]
-        neon_gas_estimate = json_rpc_client.send_rpc(
-            method="neon_estimateGas",
-            params=[tx_params, {"showGasDetails": True}],
-        )["result"]
+        neon_gas_estimate = self.web3_client.neon_estimate_gas(tx_params, show_gas_details=True)
 
         gas = (
             neon_gas_estimate["gasTransactionSizeUsed"]

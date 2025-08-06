@@ -5,7 +5,7 @@ from solana.rpc.core import RPCException as SolanaRPCException
 from solana.rpc.commitment import Confirmed
 from solders.pubkey import Pubkey
 from utils.evm_loader import EVM_STEPS
-from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
+from utils.neon_layouts.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from utils.metaplex import ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID
 from utils.instructions import make_create_associated_token_idempotent
 from utils.helpers import bytes32_to_solana_pubkey, serialize_instruction
@@ -1142,7 +1142,6 @@ class TestAccountRevision:
         )
         assert balance_account_revision_after == balance_account_revision + 2
 
-    @pytest.mark.skip(reason="https://neonlabs.atlassian.net/browse/NDEV-3773")
     def test_revision_changed_by_non_iterative_second_trx_with_solana_call(
         self,
         evm_loader,
@@ -1164,6 +1163,11 @@ class TestAccountRevision:
         amount1 = 10000
         amount2 = amount1 // 2
 
+        balance_account_revision_before = evm_loader.get_balance_account_revision(
+            revision_with_solana_call_contract.balance_account_address
+        )
+        recipient_balance_before = evm_loader.get_neon_balance(recipient.eth_address)
+
         signed_tx1 = make_contract_call_trx(
             evm_loader,
             sender_with_tokens,
@@ -1183,9 +1187,6 @@ class TestAccountRevision:
 
         accounts_from_emulation1 = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
         evm_loader.write_transaction_to_holder_account(signed_tx1, holder1, operator_keypair)
-        balance_account_revision_before = evm_loader.get_balance_account_revision(
-            revision_with_solana_call_contract.balance_account_address
-        )
 
         for _ in range(25):
             evm_loader.send_transaction_step_from_account(
@@ -1204,8 +1205,6 @@ class TestAccountRevision:
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_ACTIVE_STATE,
         )
-
-        recipient_balance_before_trx2 = evm_loader.get_neon_balance(recipient.eth_address)
 
         payer_bytes32 = neon_rpc_client.call_contract_get_function(
             sender_with_tokens, revision_with_solana_call_contract, "getPayer()"
@@ -1251,9 +1250,12 @@ class TestAccountRevision:
             operator_keypair, treasury_pool, holder1, accounts_from_emulation1
         )
         check_transaction_logs_have_text(solana_client=sol_client, trx=resp1, text="exit_status=0x11")
+
+        assert recipient_balance_before + 2 * amount2 + 10 * amount1 == evm_loader.get_neon_balance(
+            recipient.eth_address
+        )
+        assert evm_loader.get_neon_balance(revision_with_solana_call_contract.eth_address) == 0
         balance_account_revision = evm_loader.get_balance_account_revision(
             revision_with_solana_call_contract.balance_account_address
         )
-        assert recipient_balance_before_trx2 == evm_loader.get_neon_balance(recipient.eth_address) + 2 * amount2
-        assert evm_loader.get_neon_balance(revision_with_solana_call_contract.eth_address) == 0
-        assert balance_account_revision == balance_account_revision_before + 2
+        assert balance_account_revision == balance_account_revision_before + 3

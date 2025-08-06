@@ -2,11 +2,11 @@ import random
 import allure
 import pytest
 from polling2 import TimeoutException
-from solana.transaction import AccountMeta, Instruction
 from solders.pubkey import Pubkey
 
 from utils.helpers import serialize_instruction
 from utils.consts import COUNTER_ID
+from utils.instructions import make_increment_counter
 from utils.models.result import EthGetBlockByHashResult
 from utils.scheduled_trx import ScheduledTransaction, ScheduledTrxEstimateRequest, CreateTreeAccMultipleData
 from utils.tracer_validator import TracerValidator
@@ -16,7 +16,7 @@ from utils.accounts import EthAccounts
 from utils.tracer_client import TracerClient
 
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
-from utils.helpers import wait_condition, decode_function_signature
+from utils.helpers import decode_function_signature
 
 tracer_params = {"tracer": "callTracer", "tracerConfig": {"withLog": True}}
 
@@ -37,11 +37,7 @@ class TestDebugTraceComplexTransactions:
         instruction_tx = counter_contract.functions.moreInstruction(0, 3000).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
 
-        wait_condition(
-            lambda: self.web3_client.is_trx_iterative(receipt["transactionHash"].hex()) is True,
-            timeout_sec=120,
-        )
-
+        assert self.web3_client.is_trx_iterative(receipt["transactionHash"].hex())
         response = self.tracer_api.debug_trace_transaction(receipt["transactionHash"].hex())
         assert self.tracer_validator.check_tracer_struct_log(response)
         # TODO: create a template of the response and compare fileds and structure
@@ -53,10 +49,7 @@ class TestDebugTraceComplexTransactions:
         instruction_tx = counter_contract.functions.moreInstruction(0, 3000).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
 
-        wait_condition(
-            lambda: self.web3_client.is_trx_iterative(receipt["transactionHash"].hex()) is True,
-            timeout_sec=120,
-        )
+        assert self.web3_client.is_trx_iterative(receipt["transactionHash"].hex())
         tx_data = self.web3_client.get_transaction_by_hash(receipt["transactionHash"].hex())
 
         response = self.tracer_api.debug_trace_transaction(
@@ -69,14 +62,11 @@ class TestDebugTraceComplexTransactions:
     def test_trace_iterative_tx_reverted_status(self, revert_contract_caller):
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account, gas=10000000)
-        instruction_tx = revert_contract_caller.functions.doTrivialRevertAferIterativeActions().build_transaction(tx)
+        instruction_tx = revert_contract_caller.functions.doTrivialRevertAfterIterativeActions().build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 0
 
-        wait_condition(
-            lambda: self.web3_client.is_trx_iterative(receipt["transactionHash"].hex()) is True,
-            timeout_sec=120,
-        )
+        assert self.web3_client.is_trx_iterative(receipt["transactionHash"].hex())
 
         tx_data = self.web3_client.get_transaction_by_hash(receipt["transactionHash"].hex())
 
@@ -102,10 +92,7 @@ class TestDebugTraceComplexTransactions:
         ).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
 
-        wait_condition(
-            lambda: self.web3_client.is_trx_iterative(receipt["transactionHash"].hex()) is True,
-            timeout_sec=120,
-        )
+        assert self.web3_client.is_trx_iterative(receipt["transactionHash"].hex())
 
         tx_data = self.web3_client.get_transaction_by_hash(receipt["transactionHash"].hex())
         response = self.tracer_api.debug_trace_transaction(
@@ -122,10 +109,7 @@ class TestDebugTraceComplexTransactions:
         instruction_tx = counter_contract.functions.moreInstruction(0, 3000).build_transaction(tx)
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
 
-        wait_condition(
-            lambda: self.web3_client.is_trx_iterative(receipt["transactionHash"].hex()) is True,
-            timeout_sec=120,
-        )
+        assert self.web3_client.is_trx_iterative(receipt["transactionHash"].hex())
 
         tx_data = self.web3_client.get_transaction_by_hash(receipt["transactionHash"].hex())
         response = self.tracer_api.debug_trace_transaction(
@@ -142,10 +126,7 @@ class TestDebugTraceComplexTransactions:
         instruction_tx = counter_contract_sol_chain.functions.moreInstruction(0, 3000).build_transaction(tx)
         receipt = web3_client_sol.send_transaction(sender_account, instruction_tx)
 
-        wait_condition(
-            lambda: web3_client_sol.is_trx_iterative(receipt["transactionHash"].hex()) is True,
-            timeout_sec=120,
-        )
+        assert web3_client_sol.is_trx_iterative(receipt["transactionHash"].hex())
 
         tx_data = self.web3_client.get_transaction_by_hash(receipt["transactionHash"].hex())
         response = self.tracer_api.debug_trace_transaction(
@@ -389,19 +370,11 @@ class TestDebugTraceComplexTransactions:
 
         assert "Tracing Skip Scheduled Transaction is not supported" in str(exc_info.value)
 
-    def test_trace_solana_interoperability_contract(
-        self, call_solana_caller, counter_resource_address: bytes, pytestconfig
-    ):
+    def test_trace_solana_interoperability_contract(self, call_solana_caller, counter_resource_address: Pubkey):
         sender = self.accounts[0]
         lamports = 0
 
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(Pubkey(counter_resource_address), is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(counter_resource_address)
         serialized = serialize_instruction(COUNTER_ID, instruction)
 
         tx = self.web3_client.make_raw_tx(sender.address)
@@ -420,7 +393,7 @@ class TestDebugTraceComplexTransactions:
         assert self.tracer_validator.check_call_tracer_type(resp, tx_data)
 
     def test_trace_solana_interoperability_iterative_actions_and_multiple_solana_calls(
-        self, counter_resource_address: bytes, call_solana_caller
+        self, counter_resource_address: Pubkey, call_solana_caller
     ):
         iterations = 20
         solana_calls = 5
@@ -428,15 +401,9 @@ class TestDebugTraceComplexTransactions:
 
         call_params = []
         sender = self.accounts[0]
+        instruction = make_increment_counter(counter_resource_address)
+        serialized = serialize_instruction(COUNTER_ID, instruction)
         for _ in range(solana_calls):
-            instruction = Instruction(
-                program_id=COUNTER_ID,
-                accounts=[
-                    AccountMeta(Pubkey(counter_resource_address), is_signer=False, is_writable=True),
-                ],
-                data=bytes([0x1]),
-            )
-            serialized = serialize_instruction(COUNTER_ID, instruction)
             call_params.append((lamports, serialized))
 
         tx = self.web3_client.make_raw_tx(sender.address)
@@ -446,10 +413,7 @@ class TestDebugTraceComplexTransactions:
         receipt = self.web3_client.send_transaction(sender, instruction_tx)
         assert receipt["status"] == 1
 
-        wait_condition(
-            lambda: self.web3_client.is_trx_iterative(receipt["transactionHash"].hex()) is True,
-            timeout_sec=60,
-        )
+        assert self.web3_client.is_trx_iterative(receipt["transactionHash"].hex())
 
         tx_data = self.web3_client.get_transaction_by_hash(receipt["transactionHash"].hex())
         resp = self.tracer_api.debug_trace_call(tx_data)

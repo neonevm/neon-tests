@@ -1,3 +1,4 @@
+import re
 import typing as tp
 from enum import Enum
 from pathlib import Path
@@ -46,6 +47,8 @@ OPERATOR_FEE_TO_NEON = 5_000  # Paid by operator to treasury account per iterati
 TREE_ACCOUNT_BALANCE_STRUCT_ENLARGEMENT_COST = (
     222_720  # Cost of enlarging balance account struct during tree_acc creation +32 bytes
 )
+
+GITHUB_TAG_PATTERN = re.compile(r"^[vt]\d{1,2}\.\d{1,2}\.\d{1,2}$")
 
 
 class Time:
@@ -130,9 +133,31 @@ class InstructionTags(bytes, Enum):
     CONFIG_GET_PROPERTY_BY_NAME = b"\xA5"
     CONFIG_GET_STATUS = b"\xA6"
     CONFIG_GET_VERSION = b"\xA7"
+    CONTAINER_ALLOCATE = b"\x50"
+    CONTAINER_ASSEMBLE = b"\x51"
 
 
 class NeonTxExitStatus(str, Enum):
     SUCCESS_WITH_CHANGES = "0x11"
     SUCCESS_NO_CHANGES = "0x12"
     REVERT = "0xD0"
+
+
+class AccountType(int, Enum):
+    EMPTY = 0
+    HOLDER = 52
+    STORAGE = 43
+    USER_BALANCE = 60
+    CONTRACT = 70
+    OPERATOR_BALANCE = 80
+    TREE_ACCOUNT = 90
+    CONTAINER = 100
+    REFERENCE = 110
+
+
+class ExecuteTrxTypes(str, Enum):
+    ITERATIVE_FROM_INSTRUCTION = InstructionTags.TRANSACTION_STEP_FROM_INSTRUCTION
+    ITERATIVE_FROM_ACCOUNT = InstructionTags.TRANSACTION_STEP_FROM_ACCOUNT
+    ITERATIVE_FROM_ACCOUNT_NO_CHAIN_ID = InstructionTags.TRANSACTION_STEP_FROM_ACCOUNT_NO_CHAIN_ID
+    NON_ITERATIVE_FROM_INSTRUCTION = InstructionTags.TRANSACTION_EXECUTE_FROM_INSTRUCTION
+    NON_ITERATIVE_FROM_ACCOUNT = InstructionTags.TRANSACTION_EXECUTE_FROM_ACCOUNT

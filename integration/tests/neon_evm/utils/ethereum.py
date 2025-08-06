@@ -3,13 +3,12 @@ import typing as tp
 
 import allure
 import eth_abi
+from eth_utils import abi
+
 from Crypto.Hash import keccak
 from eth_account.datastructures import SignedTransaction
-from eth_utils import abi
-from solders.pubkey import Pubkey
 from web3.auto import w3
 
-from utils.helpers import parse_signature_types
 from utils.logger import log_text_to_allure_and_stdout
 from utils.types import Caller, Contract
 from .contract import get_contract_bin
@@ -31,10 +30,10 @@ def create_contract_address(
     user_nonce = evm_loader.get_neon_nonce(user, chain_id)
     contract_eth_address = keccak.new(digest_bits=256).update(pack([user, user_nonce or None])).digest()[-20:]
 
-    contract_solana_address, _ = evm_loader.ether2program(contract_eth_address)
+    contract_solana_address = evm_loader.ether2program(contract_eth_address)
     contract_neon_address = evm_loader.ether2balance(contract_eth_address, chain_id)
 
-    contract = Contract(contract_eth_address, Pubkey.from_string(contract_solana_address), contract_neon_address)
+    contract = Contract(contract_eth_address, contract_solana_address, contract_neon_address)
     log_text_to_allure_and_stdout("Created contract addresses", str(contract))
 
     return contract
@@ -148,7 +147,7 @@ def make_contract_call_trx(
     data = abi.function_signature_to_4byte_selector(function_signature)
 
     if params is not None:
-        types = parse_signature_types(function_signature)
+        types = function_signature.split("(")[1].split(")")[0].split(",")
         data += eth_abi.encode(types, params)
 
     if isinstance(contract, Contract):

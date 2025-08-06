@@ -1,6 +1,6 @@
 import allure
 
-from clickfile import EnvName
+from utils.consts import EnvName
 from utils.accounts import EthAccounts
 from utils.web3client import NeonChainWeb3Client
 

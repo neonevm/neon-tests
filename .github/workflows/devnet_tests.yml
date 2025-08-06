@@ -2,7 +2,7 @@ name: "Devnet tests"
 on:
   schedule:
     - cron: "0 2 * * 0,1,2,3,4,5"
-    - cron: "0 3 * * 0,1,2,3,4,5"
+  #  - cron: "0 3 * * 0,1,2,3,4,5"
   workflow_dispatch:
     inputs:
       network:
@@ -94,7 +94,7 @@ jobs:
           if [ ${{ env.NETWORK }} = "devnet-2" ]; then
             test_image_tag="latest"
           else
-            test_image_tag=`python ./clickfile.py get-stand-proxy-version -n ${{ env.NETWORK }}`
+            test_image_tag=`python ./clickfile.py infra get-stand-proxy-version -n ${{ env.NETWORK }}`
           fi
           echo "Test image tag: $test_image_tag"
           echo "value=$test_image_tag" >> $GITHUB_OUTPUT

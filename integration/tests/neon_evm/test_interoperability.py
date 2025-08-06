@@ -2,21 +2,31 @@ import random
 
 import eth_abi
 import pytest
-import spl.token.client
-from eth_keys import keys as eth_keys
+
 from eth_utils import abi
+
+from eth_keys import keys as eth_keys
 from solana.constants import LAMPORTS_PER_SOL
+from solders.keypair import Keypair
+from solders.pubkey import Pubkey
 from solana.rpc.commitment import Confirmed
 from solana.rpc.core import RPCException
 from solana.rpc.types import TxOpts
-from solana.transaction import Instruction, AccountMeta
-from solders.keypair import Keypair
-from solders.pubkey import Pubkey
-from solders.system_program import ID as SYS_PROGRAM_ID
+import spl.token.client
 from spl.token.client import Token
+from solders.system_program import ID as SYS_PROGRAM_ID
+
+from solana.transaction import Instruction, AccountMeta
 from spl.token.instructions import TransferParams, transfer
 
+from utils.solana_logs_helper import decode_logs
+from .utils.transaction_checks import check_holder_account_tag, check_transaction_logs_have_text
+
 from integration.tests.neon_evm.utils.ethereum import make_eth_transaction, make_contract_call_trx
+
+from utils.neon_layouts.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
+from .utils.constants import TAG_FINALIZED_STATE, TAG_ACTIVE_STATE
+from utils.evm_loader import EVM_STEPS
 from utils.consts import (
     MEMO_PROGRAM_ID,
     COMPUTE_BUDGET_ID,
@@ -25,15 +35,17 @@ from utils.consts import (
     TRANSFER_SOL_ID,
     TRANSFER_TOKENS_ID,
 )
-from utils.evm_loader import EVM_STEPS
+
 from utils.helpers import serialize_instruction
-from utils.instructions import DEFAULT_UNITS, make_create_associated_token_idempotent, make_account_create_balance
-from utils.layouts import COUNTER_ACCOUNT_LAYOUT
-from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
+
+from utils.instructions import (
+    DEFAULT_UNITS,
+    make_create_associated_token_idempotent,
+    make_account_create_balance,
+    make_increment_counter,
+)
+from utils.neon_layouts.layouts import COUNTER_ACCOUNT_LAYOUT
 from utils.metaplex import ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID, TOKEN_PROGRAM_ID
-from utils.solana_logs_helper import decode_logs
-from .utils.constants import TAG_FINALIZED_STATE, TAG_ACTIVE_STATE
-from .utils.transaction_checks import check_holder_account_tag, check_transaction_logs_have_text
 
 
 @pytest.fixture(scope="session")
@@ -98,78 +110,6 @@ class TestInteroperability:
         )
         resp = solana_caller.execute(COMPUTE_BUDGET_ID, instruction, lamports_amount, sender=sender_with_tokens)
         check_transaction_logs_have_text(solana_client, trx=resp, text="exit_status=0x11")
-
-    def test_execute_with_instruction_struct(
-        self,
-        sender_with_tokens,
-        solana_caller,
-        solana_client,
-    ):
-        instruction_struct = {
-            "program_id": COMPUTE_BUDGET_ID,
-            "accounts": [AccountMeta(sender_with_tokens.solana_account_address, is_signer=False, is_writable=False)],
-            "instruction_data": bytes.fromhex("02") + DEFAULT_UNITS.to_bytes(4, "little"),
-        }
-        resp = solana_caller.execute_with_instruction_struct(instruction_struct, sender=sender_with_tokens)
-        check_transaction_logs_have_text(solana_client, trx=resp, text="exit_status=0x11")
-
-    def test_execute_with_lamports_and_instruction_struct(
-        self, sender_with_tokens, solana_caller, solana_client, counter_resource_address, evm_loader
-    ):
-        info1: bytes = evm_loader.get_solana_account_data(counter_resource_address, COUNTER_ACCOUNT_LAYOUT.sizeof())
-        counter_value_before = COUNTER_ACCOUNT_LAYOUT.parse(info1)
-
-        instruction_struct = {
-            "program_id": COUNTER_ID,
-            "accounts": [
-                AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
-            ],
-            "instruction_data": bytes([0x1]),
-        }
-
-        resp = solana_caller.execute_with_instruction_struct(instruction_struct, lamports=0, sender=sender_with_tokens)
-        check_transaction_logs_have_text(solana_client, trx=resp, text="exit_status=0x11")
-
-        info2: bytes = evm_loader.get_solana_account_data(counter_resource_address, COUNTER_ACCOUNT_LAYOUT.sizeof())
-        counter_value_after = COUNTER_ACCOUNT_LAYOUT.parse(info2)
-        assert counter_value_after.count == counter_value_before.count + 1
-
-    @pytest.mark.parametrize("lamports_amount", [0, None])
-    def test_execute_with_seed_and_instruction_struct(
-        self, sender_with_tokens, solana_caller, solana_client, evm_loader, lamports_amount
-    ):
-        from_wallet = sender_with_tokens
-        to_wallet = Keypair()
-        amount = 100000
-        mint, from_token_account, to_token_account = _create_mint_and_accounts(
-            evm_loader, from_wallet.solana_account, to_wallet, amount
-        )
-        seed = b"myseedfor"
-        authority = solana_caller.get_eth_ext_authority(seed, from_wallet)
-
-        mint.set_authority(
-            from_token_account,
-            from_wallet.solana_account,
-            spl.token.instructions.AuthorityType.ACCOUNT_OWNER,
-            authority,
-            opts=TxOpts(skip_confirmation=False, skip_preflight=True),
-        )
-
-        instruction = transfer(
-            TransferParams(TOKEN_PROGRAM_ID, from_token_account, to_token_account, authority, amount)
-        )
-
-        instruction_struct = {
-            "program_id": TOKEN_PROGRAM_ID,
-            "accounts": instruction.accounts,
-            "instruction_data": instruction.data,
-        }
-
-        response = solana_caller.execute_with_seed_and_instruction_struct(
-            seed, instruction_struct, lamports=lamports_amount, sender=sender_with_tokens, is_data_serialized=True
-        )
-        check_transaction_logs_have_text(solana_client, trx=response, text="exit_status=0x11")
-        assert int(mint.get_balance(to_token_account, commitment=Confirmed).value.amount) == amount
 
     def test_execute_from_instruction_for_call_memo(
         self, sender_with_tokens, neon_rpc_client, operator_keypair, evm_loader, treasury_pool, holder_acc
@@ -236,16 +176,10 @@ class TestInteroperability:
     ):
         instruction_count = 10
 
-        info1: bytes = evm_loader.get_solana_account_data(counter_resource_address, COUNTER_ACCOUNT_LAYOUT.sizeof())
+        info1: bytes = evm_loader.get_solana_account_data(counter_resource_address)
         counter_value_before = COUNTER_ACCOUNT_LAYOUT.parse(info1)
 
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(counter_resource_address)
         call_params = []
         if lamports_amount is not None:
             params = (COUNTER_ID, 0, instruction)
@@ -258,7 +192,7 @@ class TestInteroperability:
 
         check_transaction_logs_have_text(evm_loader, trx=resp, text="exit_status=0x11")
 
-        info2: bytes = evm_loader.get_solana_account_data(counter_resource_address, COUNTER_ACCOUNT_LAYOUT.sizeof())
+        info2: bytes = evm_loader.get_solana_account_data(counter_resource_address)
         counter_value_after = COUNTER_ACCOUNT_LAYOUT.parse(info2)
         assert counter_value_after.count - counter_value_before.count == instruction_count
 
@@ -267,13 +201,7 @@ class TestInteroperability:
         self, sender_with_tokens, evm_loader, lamports_amount, solana_caller, counter_resource_address
     ):
         instruction_count = 40
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(counter_resource_address)
         call_params = []
         if lamports_amount is not None:
             params = (COUNTER_ID, 0, instruction)
@@ -444,13 +372,7 @@ class TestInteroperability:
             contract_name="CommonCaller",
             version="0.8.3",
         )
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(counter_resource_address)
 
         serialized_instructions = serialize_instruction(COUNTER_ID, instruction)
         calldata = abi.function_signature_to_4byte_selector("execute(uint64,bytes)") + eth_abi.encode(
@@ -502,7 +424,7 @@ class TestInteroperability:
         caller_ether = eth_keys.PrivateKey(key.secret()[:32]).public_key.to_canonical_address()
 
         account_pubkey = evm_loader.ether2balance(caller_ether)
-        contract_pubkey = Pubkey.from_string(evm_loader.ether2program(caller_ether)[0])
+        contract_pubkey = evm_loader.ether2program(caller_ether)
 
         neon_instruction = make_account_create_balance(
             evm_loader.loader_id,
@@ -542,13 +464,7 @@ class TestInteroperability:
         matrix_size = 8
         matrix = [[random.randint(1, 100) for _ in range(matrix_size)] for _ in range(matrix_size)]
 
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(counter_resource_address)
         serialized_instruction = serialize_instruction(COUNTER_ID, instruction)
 
         signed_tx1 = make_contract_call_trx(
@@ -634,13 +550,7 @@ class TestInteroperability:
             amount = second_operator_balance - operator_balance + 1 * LAMPORTS_PER_SOL
             evm_loader.request_airdrop(operator_keypair.pubkey(), amount, commitment=Confirmed)
 
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(counter_resource_address)
 
         iterations = 20
         signed_tx = make_contract_call_trx(

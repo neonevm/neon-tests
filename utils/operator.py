@@ -9,7 +9,7 @@ from eth_keys import keys as eth_keys
 
 from utils.consts import OPERATOR_KEYPAIR_PATH
 from utils.evm_loader import EvmLoader
-from utils.layouts import OPERATOR_BALANCE_ACCOUNT_LAYOUT
+from utils.neon_layouts.operator_balance_account import OperatorBalanceAccount
 from utils.web3client import Web3Client
 
 
@@ -63,7 +63,6 @@ class Operator:
         for operator in self.operator_keypairs:
             token_addr = self.get_operator_balance_account(operator, w3_client)
             info: bytes = self.evm_loader.get_account_info(token_addr, commitment=Commitment("confirmed")).value.data
-            layout = OPERATOR_BALANCE_ACCOUNT_LAYOUT.parse(info)
-            amount = int.from_bytes(layout.balance, byteorder="little")
+            amount = OperatorBalanceAccount(info).balance
             balances.append(amount)
         return sum(balances)

@@ -11,8 +11,8 @@ from .steps import (
     assert_profit,
     check_alt_off,
     calculate_additional_expenses,
+    sum_balances,
 )
-from .test_economics import sum_balances
 
 from ..basic.helpers.rpc_checks import check_trx_is_success
 
@@ -133,7 +133,7 @@ class TestScheduledTransactionEconomics:
 
         sol_balance_before = operator.get_solana_balance()
         token_balance_before = operator.get_token_balance(web3_client_sol)
-        tokens_volume_before = sum_balances(web3_client_sol, operator, neon_user_with_sols_inside_neon)
+        tokens_volume_before = sum_balances(web3_client_sol, operator, [neon_user_with_sols_inside_neon])
 
         trx_estimate_obj_list = []
         for i in range(trx_count):
@@ -177,7 +177,7 @@ class TestScheduledTransactionEconomics:
         sol_balance_after = operator.get_solana_balance()
         token_balance_after = operator.get_token_balance(web3_client_sol)
 
-        tokens_volume_after = sum_balances(web3_client_sol, operator, neon_user_with_sols_inside_neon)
+        tokens_volume_after = sum_balances(web3_client_sol, operator, [neon_user_with_sols_inside_neon])
         diff_volume = tokens_volume_before - tokens_volume_after
         assert diff_volume == 0, f"tokens volume not same, diff={diff_volume}"
 
@@ -611,7 +611,6 @@ class TestScheduledTransactionEconomics:
         evm_loader,
         operator,
         sol_price,
-        sol_client,
     ):
         user = neon_user_func_scope
         evm_loader.create_balance_account(user.neon_address, user.solana_account, evm_loader.sol_chain_id)
@@ -637,7 +636,7 @@ class TestScheduledTransactionEconomics:
         for i in range(trx_count):
             trxs.append(ScheduledTransaction.from_estimate_result(i, trx_estimate_obj_list[i], estimate_result))
 
-        call_data = decode_function_signature("doTrivialRevertAferIterativeActions()")
+        call_data = decode_function_signature("doTrivialRevertAfterIterativeActions()")
         tx1 = ScheduledTransaction(
             user.neon_address,
             None,
@@ -676,7 +675,7 @@ class TestScheduledTransactionEconomics:
         web3_client_sol.send_all_scheduled_transactions(trxs)
         receipt = web3_client_sol.wait_for_transaction_receipt(trxs[-1].hash(), timeout=180)
         wait_condition(lambda: not evm_loader.account_exists(tree_acc), timeout_sec=120, delay=2)
-        check_alt_off(web3_client_sol, sol_client, receipt)
+        check_alt_off(web3_client_sol, evm_loader, receipt)
 
         sol_balance_after = operator.get_solana_balance()
         token_balance_after = operator.get_token_balance(web3_client_sol)

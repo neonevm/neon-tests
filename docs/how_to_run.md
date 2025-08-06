@@ -6,6 +6,8 @@ Then you need to install dependencies for the CLI utility:
 
 ```bash
 pip3 install -r deploy/requirements/click.txt
+pip3 install -r deploy/requirements/tests.txt
+pip3 install -r deploy/requirements/ui.txt
 ```
 
 After this, you can use from the project root directory:
@@ -15,19 +17,11 @@ After this, you can use from the project root directory:
 ```
 
 This file contains a lot of utilities to work with this repository, such as:
-1. update deps
-2. install pre-commit-hook
-3. download test contracts
+1. install pre-commit-hook
+2. download test contracts
 3. run different tests
 4. prepare data and stand for run tests
 
-
-## Install dependencies
-
-Please use clickfile.py to install deps because our web3 has conflicts with solana package, and this problem is resolved in:
-```bash
-./clickfile.py requirements
-```
 
 
 ## Install Pre-commit hooks

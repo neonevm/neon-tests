@@ -8,7 +8,7 @@ from integration.tests.neon_evm.utils.transaction_checks import (
     check_transaction_logs_have_text,
     check_holder_account_tag,
 )
-from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
+from utils.neon_layouts.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from utils.types import Caller
 
 
@@ -73,7 +73,6 @@ class TestExecuteTrxFromAccount:
             [
                 contract.solana_address,
                 contract.balance_account_address,
-                sender_with_tokens.solana_account_address,
                 sender_with_tokens.balance_account_address,
             ],
             operator_keypair,

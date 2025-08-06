@@ -8,7 +8,7 @@ from integration.tests.neon_evm.utils.transaction_checks import (
     check_transaction_logs_have_text,
 )
 from utils.evm_loader import EVM_STEPS
-from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
+from utils.neon_layouts.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 
 
 class TestBlockNumberAndTimestamp:
@@ -38,8 +38,8 @@ class TestBlockNumberAndTimestamp:
         """
         This test repeats the proxy's logic of reemulation with account info overrides and block overrides.
         """
-        params = [4, 123]
-        func_signature = "addDataToMapping(uint256,uint256)"
+        params = [4, 123, 20]
+        func_signature = "addDataToMapping(uint256,uint256,uint256)"
 
         emulate_result = neon_rpc_client.emulate_contract_call(
             sender_with_tokens.eth_address.hex(), block_contract.eth_address.hex(), func_signature, params=params
@@ -55,7 +55,7 @@ class TestBlockNumberAndTimestamp:
 
         def get_account_override(eth_account):
             sender_address = eth_account.eth_address.hex()
-            sender_account_info = neon_rpc_client.get_balance(sender_address)[0]
+            sender_account_info = neon_rpc_client.get_balance(sender_address)
 
             return {
                 sender_address: {"nonce": sender_account_info["trx_count"], "balance": sender_account_info["balance"]}

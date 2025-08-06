@@ -31,11 +31,11 @@ ENV VIRTUAL_ENV=/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 RUN uv pip install -r /opt/click.txt
+RUN uv pip install -r /opt/tests.txt
+RUN uv pip install -r /opt/ui.txt
 
 WORKDIR /opt/neon-tests
 ADD ./ /opt/neon-tests
-
-RUN python3 ./clickfile.py requirements -d all
 
 ARG DOCKER_HUB_ORG_NAME
 ENV DOCKER_HUB_ORG_NAME=${DOCKER_HUB_ORG_NAME}

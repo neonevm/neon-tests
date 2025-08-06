@@ -3,7 +3,7 @@ import pytest
 import allure
 from web3.types import TxReceipt
 
-from clickfile import EnvName
+from utils.consts import EnvName
 from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.basic import Tag
 from integration.tests.basic.helpers.errors import Error32602

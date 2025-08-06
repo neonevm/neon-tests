@@ -1,13 +1,14 @@
 import random
 import pytest
 
+from deepdiff import DeepDiff
 from solders.pubkey import Pubkey
 from solana.transaction import Instruction, AccountMeta
 from solana.rpc.core import RPCException
 from utils.helpers import serialize_instruction
 from utils.evm_loader import EVM_STEPS
 from utils.consts import REMAPPING_ZEPPELIN, COUNTER_ID
-from utils.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
+from utils.neon_layouts.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from .utils.constants import TAG_FINALIZED_STATE
 from .utils.contract import get_contract_bin
 from .utils.ethereum import make_contract_call_trx
@@ -47,6 +48,14 @@ class TestEmulateFromHolderAccount:
         signed_tx = make_contract_call_trx(
             evm_loader, session_user, rw_lock_contract, "unchange_storage(uint8,uint8)", [2, 2]
         )
+
+        emulate_result = neon_rpc_client.emulate_contract_call(
+            session_user.eth_address.hex(),
+            rw_lock_contract.eth_address.hex(),
+            "unchange_storage(uint8,uint8)",
+            params=[2, 2],
+        )
+
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
         accounts = [
             session_user.balance_account_address,
@@ -62,19 +71,20 @@ class TestEmulateFromHolderAccount:
             EVM_STEPS,
             operator_keypair,
         )
-        emulate_result = neon_rpc_client.emulate_from_holder(holder_acc)
+        emulate_from_holder_result = neon_rpc_client.emulate_from_holder(holder_acc)
+        assert DeepDiff(emulate_result, emulate_from_holder_result, ignore_order=True) == {}
 
         accounts_after_emulation = []
-        for item in emulate_result["solana_accounts"]:
+        for item in emulate_from_holder_result["solana_accounts"]:
             accounts_after_emulation.append(Pubkey.from_string(item["pubkey"]))
 
         assert sorted(accounts_after_emulation) == sorted(accounts)
-        assert emulate_result["exit_status"] == "succeed"
-        assert int(emulate_result["result"]) == 4
-        assert not emulate_result["external_solana_call"]
-        assert not emulate_result["reverts_before_solana_calls"]
-        assert not emulate_result["reverts_after_solana_calls"]
-        assert not emulate_result["is_timestamp_number_used"]
+        assert emulate_from_holder_result["exit_status"] == "succeed"
+        assert int(emulate_from_holder_result["result"]) == 4
+        assert not emulate_from_holder_result["external_solana_call"]
+        assert not emulate_from_holder_result["reverts_before_solana_calls"]
+        assert not emulate_from_holder_result["reverts_after_solana_calls"]
+        assert not emulate_from_holder_result["is_timestamp_number_used"]
 
         resp = evm_loader.send_transaction_step_from_account(
             operator_keypair,
@@ -346,6 +356,14 @@ class TestEmulateFromHolderAccount:
             value=amount * 5,
         )
 
+        emulate_result = neon_rpc_client.emulate_contract_call(
+            session_user.eth_address.hex(),
+            transfers_contract.eth_address.hex(),
+            "transferNeon(uint256,address[])",
+            [amount, recipients_eth_addresses],
+            value=hex(amount * 5),
+        )
+
         accounts = [rec.balance_account_address for rec in recipients] + [
             rec.solana_account_address for rec in recipients
         ]
@@ -360,14 +378,15 @@ class TestEmulateFromHolderAccount:
         evm_loader.send_transaction_step_from_account(
             operator_keypair, operator_balance_pubkey, treasury_pool, holder_acc, accounts, EVM_STEPS, operator_keypair
         )
-        emulate_result = neon_rpc_client.emulate_from_holder(holder_acc)
+        emulate_result_from_holder = neon_rpc_client.emulate_from_holder(holder_acc)
+        assert DeepDiff(emulate_result, emulate_result_from_holder, ignore_order=True) == {}
         assert (
-            emulate_result["exit_status"] == "succeed"
-        ), f"The 'exit_status' field is not succeed. Result: {emulate_result}"
-        assert not emulate_result["external_solana_call"]
-        assert not emulate_result["is_timestamp_number_used"]
-        assert not emulate_result["reverts_before_solana_calls"]
-        assert not emulate_result["reverts_after_solana_calls"]
+            emulate_result_from_holder["exit_status"] == "succeed"
+        ), f"The 'exit_status' field is not succeed. Result: {emulate_result_from_holder}"
+        assert not emulate_result_from_holder["external_solana_call"]
+        assert not emulate_result_from_holder["is_timestamp_number_used"]
+        assert not emulate_result_from_holder["reverts_before_solana_calls"]
+        assert not emulate_result_from_holder["reverts_after_solana_calls"]
 
         resp = evm_loader.execute_transaction_steps_from_account(operator_keypair, treasury_pool, holder_acc, accounts)
         check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
@@ -410,13 +429,14 @@ class TestEmulateFromHolderAccount:
             "solanaCallInsideActionWithMatrix(uint256,uint256[][],uint64,bytes)",
             [3, matrix, 0, serialized_instruction],
         )
-
-        accounts_from_emulation = neon_rpc_client.get_additional_accounts_by_emulation(
+        emulate_result = neon_rpc_client.emulate_contract_call(
             sender_with_tokens.eth_address.hex(),
             solana_caller.contract.eth_address.hex(),
             "solanaCallInsideActionWithMatrix(uint256,uint256[][],uint64,bytes)",
             params=[3, matrix, 0, serialized_instruction],
         )
+
+        accounts_from_emulation = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
 
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 
@@ -442,18 +462,21 @@ class TestEmulateFromHolderAccount:
                 EVM_STEPS,
                 operator_keypair,
             )
-        emulate_result = neon_rpc_client.emulate_from_holder(holder_acc)
+        emulate_result_after_15_steps = neon_rpc_client.emulate_from_holder(holder_acc)
 
-        assert emulate_result["steps_executed"] == emulate_result_after_1_step["steps_executed"]
-        assert emulate_result["iterations"] == emulate_result_after_1_step["iterations"]
-        assert emulate_result["external_solana_call"]
-        assert emulate_result["exit_status"] == "succeed"
-        assert not emulate_result["is_timestamp_number_used"]
-        assert not emulate_result["reverts_before_solana_calls"]
-        assert not emulate_result["reverts_after_solana_calls"]
+        assert DeepDiff(emulate_result, emulate_result_after_1_step, ignore_order=True) == {}
+        assert DeepDiff(emulate_result, emulate_result_after_15_steps, ignore_order=True) == {}
+
+        assert emulate_result_after_15_steps["steps_executed"] == emulate_result_after_1_step["steps_executed"]
+        assert emulate_result_after_15_steps["iterations"] == emulate_result_after_1_step["iterations"]
+        assert emulate_result_after_15_steps["external_solana_call"]
+        assert emulate_result_after_15_steps["exit_status"] == "succeed"
+        assert not emulate_result_after_15_steps["is_timestamp_number_used"]
+        assert not emulate_result_after_15_steps["reverts_before_solana_calls"]
+        assert not emulate_result_after_15_steps["reverts_after_solana_calls"]
 
         accounts_after_emulation = []
-        for item in emulate_result["solana_accounts"]:
+        for item in emulate_result_after_15_steps["solana_accounts"]:
             accounts_after_emulation.append(Pubkey.from_string(item["pubkey"]))
 
         assert sorted(accounts_after_emulation) == sorted(accounts_from_emulation)
@@ -526,4 +549,12 @@ class TestEmulateFromHolderAccount:
             )
             evm_loader.write_transaction_to_holder_account(signed_tx, temp_holder_acc, operator_keypair)
         emulate_result = neon_rpc_client.emulate_from_holder(temp_holder_acc)
-        assert "invalid status" in emulate_result["message"]
+        assert f"Account invalid status {temp_holder_acc}." in emulate_result["message"]
+
+    def test_emulate_from_holder_account_with_wrong_account(
+        self,
+        session_user,
+        neon_rpc_client,
+    ):
+        emulate_result = neon_rpc_client.emulate_from_holder(session_user.solana_account_address)
+        assert f"Account not found {session_user.solana_account_address}." in emulate_result["message"]

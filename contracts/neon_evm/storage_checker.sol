@@ -1,12 +1,16 @@
 pragma solidity >=0.5.12;
 
-contract solana_override {
+contract storage_checker {
     bytes32[64] public a;
-    uint256 public b = 0;
+    uint256 public b = 0; // sell 65
+    uint256 public c = 0; // sell 66
     mapping(address => mapping(uint256 => uint256)) public data;
 
     function update_b(uint256 value) public {
         b = value;
+    }
+    function update_c(uint256 value) public {
+        c = value;
     }
 
     function check_b() public view {

@@ -9,7 +9,6 @@ from integration.tests.basic.helpers import rpc_checks
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 from utils.accounts import EthAccounts
-from utils.apiclient import wait_finalized_block
 from utils.solana_client import SolanaClient
 from utils.web3client import NeonChainWeb3Client
 
@@ -179,7 +178,7 @@ class TestNonce:
         allure.attach(json.dumps(response, indent=2), name="response", attachment_type=allure.attachment_type.JSON)
         receipt = self.web3_client.wait_for_transaction_receipt(response["result"])
         block_num = receipt["blockNumber"]
-        wait_finalized_block(json_rpc_client, block_num)
+        json_rpc_client.wait_finalized_block(block_num)
 
         response = json_rpc_client.send_rpc("eth_sendRawTransaction", params)
         assert ErrorMessage.ALREADY_KNOWN.value in response["error"]["message"]
@@ -215,7 +214,7 @@ class TestNonce:
         assert "result" in response and response["result"], f"Response doesn't have result field: {response}"
         receipt = self.web3_client.wait_for_transaction_receipt(response["result"])
         block_num = receipt["blockNumber"]
-        wait_finalized_block(json_rpc_client, block_num)
+        json_rpc_client.wait_finalized_block(block_num)
 
         transaction = self.web3_client.make_raw_tx(
             sender_account, recipient_account, amount=2, nonce=nonce, estimate_gas=True

@@ -114,20 +114,62 @@ class TestInteroperability:
         check_transaction_logs_have_text(solana_client, trx=resp, text="exit_status=0x11")
 
     def test_execute_with_lamports_and_instruction_struct(
-        self,
-        sender_with_tokens,
-        solana_caller,
-        solana_client,
+        self, sender_with_tokens, solana_caller, solana_client, counter_resource_address, evm_loader
     ):
+        info1: bytes = evm_loader.get_solana_account_data(counter_resource_address, COUNTER_ACCOUNT_LAYOUT.sizeof())
+        counter_value_before = COUNTER_ACCOUNT_LAYOUT.parse(info1)
+
         instruction_struct = {
-            "program_id": COMPUTE_BUDGET_ID,
-            "accounts": [AccountMeta(sender_with_tokens.solana_account_address, is_signer=False, is_writable=False)],
-            "instruction_data": bytes.fromhex("02") + DEFAULT_UNITS.to_bytes(4, "little"),
+            "program_id": COUNTER_ID,
+            "accounts": [
+                AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
+            ],
+            "instruction_data": bytes([0x1]),
         }
-        resp = solana_caller.execute_with_lamports_and_instruction_struct(
-            instruction_struct, lamports=0, sender=sender_with_tokens
-        )
+
+        resp = solana_caller.execute_with_instruction_struct(instruction_struct, lamports=0, sender=sender_with_tokens)
         check_transaction_logs_have_text(solana_client, trx=resp, text="exit_status=0x11")
+
+        info2: bytes = evm_loader.get_solana_account_data(counter_resource_address, COUNTER_ACCOUNT_LAYOUT.sizeof())
+        counter_value_after = COUNTER_ACCOUNT_LAYOUT.parse(info2)
+        assert counter_value_after.count == counter_value_before.count + 1
+
+    @pytest.mark.parametrize("lamports_amount", [0, None])
+    def test_execute_with_seed_and_instruction_struct(
+        self, sender_with_tokens, solana_caller, solana_client, evm_loader, lamports_amount
+    ):
+        from_wallet = sender_with_tokens
+        to_wallet = Keypair()
+        amount = 100000
+        mint, from_token_account, to_token_account = _create_mint_and_accounts(
+            evm_loader, from_wallet.solana_account, to_wallet, amount
+        )
+        seed = b"myseedfor"
+        authority = solana_caller.get_eth_ext_authority(seed, from_wallet)
+
+        mint.set_authority(
+            from_token_account,
+            from_wallet.solana_account,
+            spl.token.instructions.AuthorityType.ACCOUNT_OWNER,
+            authority,
+            opts=TxOpts(skip_confirmation=False, skip_preflight=True),
+        )
+
+        instruction = transfer(
+            TransferParams(TOKEN_PROGRAM_ID, from_token_account, to_token_account, authority, amount)
+        )
+
+        instruction_struct = {
+            "program_id": TOKEN_PROGRAM_ID,
+            "accounts": instruction.accounts,
+            "instruction_data": instruction.data,
+        }
+
+        response = solana_caller.execute_with_seed_and_instruction_struct(
+            seed, instruction_struct, lamports=lamports_amount, sender=sender_with_tokens
+        )
+        check_transaction_logs_have_text(solana_client, trx=response, text="exit_status=0x11")
+        assert int(mint.get_balance(to_token_account, commitment=Confirmed).value.amount) == amount
 
     def test_execute_from_instruction_for_call_memo(
         self, sender_with_tokens, neon_rpc_client, operator_keypair, evm_loader, treasury_pool, holder_acc

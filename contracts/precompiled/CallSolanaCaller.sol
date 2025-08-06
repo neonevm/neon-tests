@@ -272,6 +272,27 @@ contract CallSolanaCaller {
         emit LogBytes(returnData);
     }
 
+    function executeWithSeed(
+        uint64 lamports,
+        bytes32 salt,
+        ICallSolana.Instruction memory instruction
+    ) public {
+        bytes32 returnData = bytes32(
+            _callSolana.executeWithSeed(lamports, salt, instruction)
+        );
+        emit LogBytes(returnData);
+    }
+
+    function executeWithSeed(
+        bytes32 salt,
+        ICallSolana.Instruction memory instruction
+    ) public {
+        bytes32 returnData = bytes32(
+            _callSolana.executeWithSeed(salt, instruction)
+        );
+        emit LogBytes(returnData);
+    }
+
     function getReturnData() public returns (bytes32, bytes memory) {
         return _callSolana.getReturnData();
     }

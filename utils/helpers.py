@@ -265,7 +265,7 @@ def serialize_instruction_struct(instruction) -> tuple[bytes, list[tuple[bytes, 
     for key in instruction["accounts"]:
         serialized_accounts.append((solana_pubkey_to_bytes32(key.pubkey), key.is_signer, key.is_writable))
 
-    serialized_data = len(instruction["instruction_data"]).to_bytes(8, "little") + instruction["instruction_data"]
+    serialized_data = instruction["instruction_data"]
     return serialized_prog_id, serialized_accounts, serialized_data
 
 

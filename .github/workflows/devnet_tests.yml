@@ -38,6 +38,7 @@ env:
   NUMPROCESSES: ${{ github.event.inputs.numprocesses || 8 }}
   BUILD_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   DEVNET_SOLANA_URL: "${{ secrets.SOLANA_URL }}"
+  FAUCET_REFUND_ADDRESS: "${{ secrets.FAUCET_REFUND_ADDRESS }}"
   IMAGE:  ${{ github.repository_owner }}/neon_tests
   DOCKER_HUB_ORG_NAME: ${{ github.repository_owner }}
 jobs:
@@ -74,6 +75,7 @@ jobs:
             echo "DEVNET_PROXY_URL=${{ secrets.DEVNET_PROXY_URL }}" >> $GITHUB_ENV
             echo "DEVNET_FAUCET_URL=${{ secrets.DEVNET_FAUCET_URL }}" >> $GITHUB_ENV
             echo "BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }}" >> $GITHUB_ENV
+            echo "FAUCET_REFUND_ADDRESS=${{ secrets.FAUCET_REFUND_ADDRESS }}" >> $GITHUB_ENV
           else
             echo "DEVNET_PROXY_URL=${{ secrets.DEVNET_PROXY_URL_2 }}" >> $GITHUB_ENV
             echo "DEVNET_FAUCET_URL=${{ secrets.DEVNET_FAUCET_URL_2 }}" >> $GITHUB_ENV
@@ -109,6 +111,7 @@ jobs:
             -e DEVNET_SOLANA_URL \
             -e DEVNET_PROXY_URL \
             -e DEVNET_FAUCET_URL \
+            -e FAUCET_REFUND_ADDRESS \
             --name=${{ env.CONTAINER }} --network=custom-network ${{ env.IMAGE }}:${{ steps.test_image_tag.outputs.value }} /bin/bash
       - name: Run basic proxy tests
         timeout-minutes: 120

@@ -205,8 +205,9 @@ class TestRpcBaseCalls:
         assert "error" not in response
         assert rpc_checks.is_hex(response["result"]), f"Invalid response result {response['result']}"
         EthResult(**response)
+        self.web3_client.wait_for_transaction_receipt(response["result"])
 
-    def test_eth_sendRawTransaction_max_size(self, json_rpc_client):
+    def test_eth_send_raw_transaction_max_size(self, json_rpc_client):
         """Validate max size for transaction, 127 KB"""
 
         size = 126 * 1024
@@ -222,7 +223,7 @@ class TestRpcBaseCalls:
         assert rpc_checks.is_hex(response["result"]), f"Invalid response result {response['result']}"
         EthResult(**response)
 
-    def test_eth_sendRawTransaction_max_contract_size(self, json_rpc_client):
+    def test_eth_send_raw_transaction_max_contract_size(self, json_rpc_client):
         new_account = self.accounts.create_account()
 
         """Validate max size for contract, 24 KB"""

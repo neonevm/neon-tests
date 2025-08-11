@@ -775,6 +775,7 @@ class EvmLoader(SolanaClient):
         tree_account_create_data,
         mint: Pubkey = WRAPPED_SOL_MINT,
         payer_nonce=None,
+        balance_acc_in_container: Pubkey | None = None,
         chain_id: int | None = "",
     ):
         if chain_id == "":
@@ -786,9 +787,12 @@ class EvmLoader(SolanaClient):
         authority_pool = self.create_get_authority_address()
         tree_account = self.create_tree_account_address(neon_user.neon_address, payer_nonce, chain_id)
         pool = get_associated_token_address(authority_pool, mint)
+        if balance_acc_in_container is None:
+            balance_account = self.create_balance_account(neon_user.neon_address, neon_user.solana_account, chain_id)
+        else:
+            balance_account = balance_acc_in_container
 
         trx = Transaction()
-        balance_account = self.create_balance_account(neon_user.neon_address, neon_user.solana_account, chain_id)
         trx.add(
             make_scheduled_transaction_create_multiple(
                 neon_user.solana_account,

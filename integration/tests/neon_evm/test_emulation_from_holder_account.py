@@ -3,11 +3,11 @@ import pytest
 
 from deepdiff import DeepDiff
 from solders.pubkey import Pubkey
-from solana.transaction import Instruction, AccountMeta
 from solana.rpc.core import RPCException
 from utils.helpers import serialize_instruction
 from utils.evm_loader import EVM_STEPS
 from utils.consts import REMAPPING_ZEPPELIN, COUNTER_ID
+from utils.instructions import make_increment_counter
 from utils.neon_layouts.layouts import FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT
 from .utils.constants import TAG_FINALIZED_STATE
 from .utils.contract import get_contract_bin
@@ -230,13 +230,8 @@ class TestEmulateFromHolderAccount:
         resource_addr = solana_caller.create_resource(session_user, b"q4ww", 8, 1000000000, COUNTER_ID)
         matrix = [[random.randint(1, 100) for _ in range(8)] for _ in range(8)]
 
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(resource_addr, is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(resource_addr)
+
         serialized_instruction = serialize_instruction(COUNTER_ID, instruction)
 
         signed_tx2 = make_contract_call_trx(
@@ -413,13 +408,7 @@ class TestEmulateFromHolderAccount:
         resource_addr = solana_caller.create_resource(sender_with_tokens, b"q245w", 8, 1000000000, COUNTER_ID)
         matrix = [[random.randint(1, 100) for _ in range(8)] for _ in range(8)]
 
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(resource_addr, is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(resource_addr)
         serialized_instruction = serialize_instruction(COUNTER_ID, instruction)
 
         signed_tx = make_contract_call_trx(
@@ -440,16 +429,15 @@ class TestEmulateFromHolderAccount:
 
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 
-        for _ in range(1):
-            evm_loader.send_transaction_step_from_account(
-                operator_keypair,
-                operator_balance_pubkey,
-                treasury_pool,
-                holder_acc,
-                accounts_from_emulation,
-                EVM_STEPS,
-                operator_keypair,
-            )
+        evm_loader.send_transaction_step_from_account(
+            operator_keypair,
+            operator_balance_pubkey,
+            treasury_pool,
+            holder_acc,
+            accounts_from_emulation,
+            EVM_STEPS,
+            operator_keypair,
+        )
         emulate_result_after_1_step = neon_rpc_client.emulate_from_holder(holder_acc)
 
         for _ in range(14):

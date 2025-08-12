@@ -222,8 +222,8 @@ class SolanaCaller:
             SOLANA_CALL_PRECOMPILED_ID,
             self.contract.balance_account_address,
             self.contract.solana_address,
-            instruction["program_id"],
-        ] + [acc.pubkey for acc in instruction["accounts"]]
+            instruction.program_id,
+        ] + [acc.pubkey for acc in instruction.accounts]
 
         return self.evm_loader.execute_trx_from_instruction_with_solana_call(
             self.operator_keypair,
@@ -270,8 +270,8 @@ class SolanaCaller:
             SOLANA_CALL_PRECOMPILED_ID,
             self.contract.balance_account_address,
             self.contract.solana_address,
-            instruction["program_id"],
-        ] + [acc.pubkey for acc in instruction["accounts"]]
+            instruction.program_id,
+        ] + [acc.pubkey for acc in instruction.accounts]
 
         return self.evm_loader.execute_transaction_steps_from_account(
             self.operator_keypair,

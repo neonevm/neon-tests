@@ -117,30 +117,27 @@ class TestInteroperability:
         solana_caller,
         solana_client,
     ):
-        instruction_struct = {
-            "program_id": COMPUTE_BUDGET_ID,
-            "accounts": [AccountMeta(sender_with_tokens.solana_account_address, is_signer=False, is_writable=False)],
-            "instruction_data": bytes.fromhex("02") + DEFAULT_UNITS.to_bytes(4, "little"),
-        }
-        resp = solana_caller.execute_with_instruction_struct(instruction_struct, sender=sender_with_tokens)
+        instruction = Instruction(
+            program_id=COMPUTE_BUDGET_ID,
+            accounts=[AccountMeta(sender_with_tokens.solana_account_address, is_signer=False, is_writable=False)],
+            data=bytes.fromhex("02") + DEFAULT_UNITS.to_bytes(4, "little"),
+        )
+        resp = solana_caller.execute_with_instruction_struct(instruction, sender=sender_with_tokens)
         check_transaction_logs_have_text(solana_client, trx=resp, text="exit_status=0x11")
 
     def test_execute_with_lamports_and_instruction_struct(
         self, sender_with_tokens, solana_caller, solana_client, counter_resource_address, evm_loader
     ):
-
         info1: bytes = evm_loader.get_solana_account_data(counter_resource_address)
         counter_value_before = COUNTER_ACCOUNT_LAYOUT.parse(info1)
 
-        instruction_struct = {
-            "program_id": COUNTER_ID,
-            "accounts": [
-                AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
-            ],
-            "instruction_data": bytes([0x1]),
-        }
+        instruction = Instruction(
+            program_id=COUNTER_ID,
+            accounts=[AccountMeta(counter_resource_address, is_signer=False, is_writable=True)],
+            data=bytes([0x1]),
+        )
 
-        resp = solana_caller.execute_with_instruction_struct(instruction_struct, lamports=0, sender=sender_with_tokens)
+        resp = solana_caller.execute_with_instruction_struct(instruction, lamports=0, sender=sender_with_tokens)
         check_transaction_logs_have_text(solana_client, trx=resp, text="exit_status=0x11")
 
         info2: bytes = evm_loader.get_solana_account_data(counter_resource_address)
@@ -172,14 +169,8 @@ class TestInteroperability:
             TransferParams(TOKEN_PROGRAM_ID, from_token_account, to_token_account, authority, amount)
         )
 
-        instruction_struct = {
-            "program_id": TOKEN_PROGRAM_ID,
-            "accounts": instruction.accounts,
-            "instruction_data": instruction.data,
-        }
-
         response = solana_caller.execute_with_seed_and_instruction_struct(
-            seed, instruction_struct, lamports=lamports_amount, sender=sender_with_tokens
+            seed, instruction, lamports=lamports_amount, sender=sender_with_tokens
         )
         check_transaction_logs_have_text(solana_client, trx=response, text="exit_status=0x11")
         assert int(mint.get_balance(to_token_account, commitment=Confirmed).value.amount) == amount

@@ -6,7 +6,7 @@ from integration.tests.neon_evm.utils.ethereum import make_eth_transaction, make
 from integration.tests.neon_evm.utils.transaction_checks import check_transaction_logs_have_text
 from utils.consts import SOLANA_CALL_PRECOMPILED_ID
 from utils.evm_loader import EvmLoader
-from utils.helpers import bytes32_to_solana_pubkey, serialize_instruction
+from utils.helpers import bytes32_to_solana_pubkey, serialize_instruction, serialize_instruction_struct
 from utils.metaplex import SYSTEM_PROGRAM_ID
 
 
@@ -196,6 +196,91 @@ class SolanaCaller:
                 skip_preflight=skip_preflight,
             )
         return resp
+
+    def execute_with_instruction_struct(self, instruction, lamports=None, holder_acc=None, sender=None):
+        sender = sender or self.owner
+        holder_acc = holder_acc or self.holder_acc
+        serialized_prog_id, serialized_accounts, serialized_data = serialize_instruction_struct(instruction)
+        if lamports is not None:
+            function_signature = "execute(uint64,(bytes32,(bytes32,bool,bool)[],bytes))"
+            params = [lamports, (serialized_prog_id, serialized_accounts, serialized_data)]
+        else:
+            function_signature = "execute((bytes32,(bytes32,bool,bool)[],bytes))"
+            params = [(serialized_prog_id, serialized_accounts, serialized_data)]
+
+        signed_tx = make_contract_call_trx(
+            evm_loader=self.evm_loader,
+            user=sender,
+            contract=self.contract,
+            function_signature=function_signature,
+            params=params,
+        )
+
+        accounts = [
+            sender.balance_account_address,
+            sender.solana_account_address,
+            SOLANA_CALL_PRECOMPILED_ID,
+            self.contract.balance_account_address,
+            self.contract.solana_address,
+            instruction.program_id,
+        ] + [acc.pubkey for acc in instruction.accounts]
+
+        return self.evm_loader.execute_trx_from_instruction_with_solana_call(
+            self.operator_keypair,
+            holder_acc,
+            self.treasury_pool.account,
+            self.treasury_pool.buffer,
+            signed_tx,
+            accounts,
+        )
+
+    def execute_with_seed_and_instruction_struct(
+        self,
+        seed,
+        instruction,
+        lamports=None,
+        holder_acc=None,
+        sender=None,
+        additional_signers=None,
+    ):
+        sender = sender or self.owner
+        holder_acc = holder_acc or self.holder_acc
+
+        serialized_prog_id, serialized_accounts, serialized_data = serialize_instruction_struct(instruction)
+
+        if lamports is not None:
+            function_signature = "executeWithSeed(uint64,bytes32,(bytes32,(bytes32,bool,bool)[],bytes))"
+            params = [lamports, seed, (serialized_prog_id, serialized_accounts, serialized_data)]
+        else:
+            function_signature = "executeWithSeed(bytes32,(bytes32,(bytes32,bool,bool)[],bytes))"
+            params = [seed, (serialized_prog_id, serialized_accounts, serialized_data)]
+
+        signed_tx = make_contract_call_trx(
+            evm_loader=self.evm_loader,
+            user=sender,
+            contract=self.contract,
+            function_signature=function_signature,
+            params=params,
+        )
+
+        self.evm_loader.write_transaction_to_holder_account(signed_tx, self.holder_acc, self.operator_keypair)
+        accounts = [
+            sender.balance_account_address,
+            sender.solana_account_address,
+            SOLANA_CALL_PRECOMPILED_ID,
+            self.contract.balance_account_address,
+            self.contract.solana_address,
+            instruction.program_id,
+        ] + [acc.pubkey for acc in instruction.accounts]
+
+        return self.evm_loader.execute_transaction_steps_from_account(
+            self.operator_keypair,
+            self.treasury_pool,
+            self.holder_acc,
+            accounts,
+            self.operator_keypair,
+            additional_signers=additional_signers,
+        )
 
     def get_resource_address(self, salt, sender):
         encoded_args = eth_abi.encode(["bytes32"], [salt])

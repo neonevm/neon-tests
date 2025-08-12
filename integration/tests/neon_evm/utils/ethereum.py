@@ -4,6 +4,7 @@ import typing as tp
 import allure
 import eth_abi
 from eth_utils import abi
+from utils.helpers import parse_signature_types
 
 from Crypto.Hash import keccak
 from eth_account.datastructures import SignedTransaction
@@ -147,7 +148,7 @@ def make_contract_call_trx(
     data = abi.function_signature_to_4byte_selector(function_signature)
 
     if params is not None:
-        types = function_signature.split("(")[1].split(")")[0].split(",")
+        types = parse_signature_types(function_signature)
         data += eth_abi.encode(types, params)
 
     if isinstance(contract, Contract):

@@ -2,6 +2,7 @@ pragma solidity ^0.8.28;
 
 import {Storage} from "../common/StorageSoliditySource.sol";
 import {ICallSolana} from "../external/neon-contracts/contracts/precompiles/ICallSolana.sol";
+
 pragma abicoder v2;
 
 contract CallSolanaCaller {
@@ -56,6 +57,20 @@ contract CallSolanaCaller {
         numberToStore = 190;
         bytes32 returnData = bytes32(
             _callSolana.execute(instruction)
+        );
+        emit LogBytes(returnData);
+    }
+
+    function execute(ICallSolana.Instruction memory instruction) public {
+        bytes32 returnData = bytes32(
+            _callSolana.execute(instruction)
+        );
+        emit LogBytes(returnData);
+    }
+
+    function execute(uint64 lamports, ICallSolana.Instruction memory instruction) public {
+        bytes32 returnData = bytes32(
+            _callSolana.execute(lamports, instruction)
         );
         emit LogBytes(returnData);
     }
@@ -257,6 +272,27 @@ contract CallSolanaCaller {
     function executeWithSeed(
         bytes32 salt,
         bytes calldata instruction
+    ) public {
+        bytes32 returnData = bytes32(
+            _callSolana.executeWithSeed(salt, instruction)
+        );
+        emit LogBytes(returnData);
+    }
+
+    function executeWithSeed(
+        uint64 lamports,
+        bytes32 salt,
+        ICallSolana.Instruction memory instruction
+    ) public {
+        bytes32 returnData = bytes32(
+            _callSolana.executeWithSeed(lamports, salt, instruction)
+        );
+        emit LogBytes(returnData);
+    }
+
+    function executeWithSeed(
+        bytes32 salt,
+        ICallSolana.Instruction memory instruction
     ) public {
         bytes32 returnData = bytes32(
             _callSolana.executeWithSeed(salt, instruction)

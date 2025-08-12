@@ -2,12 +2,14 @@ import random
 
 import allure
 import pytest
-from solders.instruction import Instruction, AccountMeta
 from solders.pubkey import Pubkey
 
+from integration.tests.basic.helpers.rpc_checks import check_trx_is_success
 from utils.accounts import EthAccounts
 from utils.consts import COUNTER_ID
-from utils.helpers import serialize_instruction
+from utils.helpers import serialize_instruction, decode_function_signature, wait_condition
+from utils.instructions import make_increment_counter
+from utils.scheduled_trx import ScheduledTrxEstimateRequest, CreateTreeAccMultipleData, ScheduledTransaction
 from utils.web3client import NeonChainWeb3Client
 
 
@@ -72,13 +74,7 @@ class TestContainerizedAccounts:
         matrix_length = 15
         matrix = [[random.randint(1, 100) for _ in range(matrix_length)] for _ in range(matrix_length)]
 
-        instruction = Instruction(
-            program_id=COUNTER_ID,
-            accounts=[
-                AccountMeta(counter_resource_address, is_signer=False, is_writable=True),
-            ],
-            data=bytes([0x1]),
-        )
+        instruction = make_increment_counter(counter_resource_address)
         serialized = serialize_instruction(COUNTER_ID, instruction)
 
         tx = self.web3_client.make_raw_tx(sender.address)
@@ -89,3 +85,82 @@ class TestContainerizedAccounts:
 
         resp = self.web3_client.send_transaction(sender, instruction_tx)
         assert resp["status"] == 0, resp
+
+    def test_call_scheduled_trx_by_neon_user_in_container(
+        self, neon_user_func_scope, alt_contract_containerized, treasury_pool, web3_client_sol, evm_loader, operator
+    ):
+        func_name = "fill(uint256)"
+        data = decode_function_signature(func_name, [14])
+
+        def send_scheduled_trx(balance_acc_in_container):
+            trx_estimate_obj = ScheduledTrxEstimateRequest(
+                neon_user_func_scope.checksum_address, alt_contract_containerized.address, data
+            )
+
+            estimate_result = web3_client_sol.estimate_scheduled(
+                neon_user_func_scope.solana_account.pubkey(), [trx_estimate_obj]
+            )
+            trx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
+
+            tree_acc_data = CreateTreeAccMultipleData(
+                nonce=estimate_result["nonce"],
+                max_fee_per_gas=estimate_result["maxFeePerGas"],
+                max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
+            )
+
+            tree_acc_data.add_trx(trx, 0xFFFF, 0)
+            tree_account = evm_loader.create_tree_account_multiple(
+                neon_user_func_scope,
+                treasury_pool,
+                tree_acc_data.data,
+                payer_nonce=int(estimate_result["nonce"], 16),
+                balance_acc_in_container=balance_acc_in_container,
+            )
+            web3_client_sol.send_scheduled_transaction(trx)
+            check_trx_is_success(web3_client_sol, evm_loader, trx.hash().hex(), timeout=120)
+            wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=120, delay=2)
+
+        send_scheduled_trx(balance_acc_in_container=None)
+        container_address = evm_loader.ether2program(alt_contract_containerized.address[2:])
+        evm_loader.assemble_container(
+            operator.operator_keypairs[0],
+            treasury_pool,
+            container_address,
+            [evm_loader.ether2balance(neon_user_func_scope.neon_address, web3_client_sol.chain_id)],
+        )
+        send_scheduled_trx(balance_acc_in_container=container_address)
+
+    def test_assemble_container_after_creating_tree_acc_before_sending_trx(
+        self, neon_user_func_scope, alt_contract_containerized, treasury_pool, web3_client_sol, evm_loader, operator
+    ):
+        func_name = "fill(uint256)"
+        data = decode_function_signature(func_name, [14])
+        trx_estimate_obj = ScheduledTrxEstimateRequest(
+            neon_user_func_scope.checksum_address, alt_contract_containerized.address, data
+        )
+
+        estimate_result = web3_client_sol.estimate_scheduled(
+            neon_user_func_scope.solana_account.pubkey(), [trx_estimate_obj]
+        )
+        trx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
+
+        tree_acc_data = CreateTreeAccMultipleData(
+            nonce=estimate_result["nonce"],
+            max_fee_per_gas=estimate_result["maxFeePerGas"],
+            max_priority_fee_per_gas=estimate_result["maxPriorityFeePerGas"],
+        )
+
+        tree_acc_data.add_trx(trx, 0xFFFF, 0)
+        tree_account = evm_loader.create_tree_account_multiple(
+            neon_user_func_scope, treasury_pool, tree_acc_data.data, payer_nonce=int(estimate_result["nonce"], 16)
+        )
+
+        evm_loader.assemble_container(
+            operator.operator_keypairs[0],
+            treasury_pool,
+            evm_loader.ether2program(alt_contract_containerized.address[2:]),
+            [evm_loader.ether2balance(neon_user_func_scope.neon_address, web3_client_sol.chain_id)],
+        )
+        web3_client_sol.send_scheduled_transaction(trx)
+        check_trx_is_success(web3_client_sol, evm_loader, trx.hash().hex(), timeout=120)
+        wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=120, delay=2)

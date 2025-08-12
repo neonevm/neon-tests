@@ -499,7 +499,7 @@ class TestScheduledTransactionEconomics:
         operator_inner_balance_before = operator.get_token_balance(web3_client_sol)
         operator_sol_balance_before = operator.get_solana_balance()
 
-        tokens_volume_before = sum_balances(web3_client_sol, operator, user, event_caller_sol_chain)
+        tokens_volume_before = sum_balances(web3_client_sol, operator, [user, event_caller_sol_chain])
         call_data = decode_function_signature("indexedArgs()")
         value = 10000
         trx_estimate_obj = ScheduledTrxEstimateRequest(

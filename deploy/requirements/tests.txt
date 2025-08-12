@@ -1,5 +1,6 @@
 -r click.txt
 -r cost-report.txt
+-r slack.txt
 
 pytest==8.3.5
 pytest-retry==1.7.0

@@ -524,7 +524,7 @@ class TestScheduledTransactionEconomics:
         operator_inner_balance_after = operator.get_token_balance(web3_client_sol)
         operator_sol_balance_after = operator.get_solana_balance()
 
-        tokens_volume_after = sum_balances(web3_client_sol, operator, user, event_caller_sol_chain)
+        tokens_volume_after = sum_balances(web3_client_sol, operator, [user, event_caller_sol_chain])
 
         diff_volume = tokens_volume_before - tokens_volume_after
         assert diff_volume == 0, f"tokens volume not same, diff={diff_volume}"

@@ -5,8 +5,8 @@ import "../external/neon-contracts/contracts/precompiles/ISPLTokenProgram.sol";
 
 
 contract SplTokenCaller {
-
-    ISPLTokenProgram constant _splToken = ISPLTokenProgram(0xFf00000000000000000000000000000000000004);
+    address public constant SPL_TOKEN_ADDRESS = 0xFf00000000000000000000000000000000000004;
+    ISPLTokenProgram constant _splToken = ISPLTokenProgram(SPL_TOKEN_ADDRESS);
 
     event LogBytes(bytes32 value);
     event LogStr(string value);
@@ -59,6 +59,12 @@ contract SplTokenCaller {
         bytes32 toSolana = _splToken.findAccount(_salt(to));
 
         _splToken.transfer(fromSolana, toSolana, uint64(amount));
+    }
+
+    function transferByLowLevelCall(address from, address to, uint amount) public {
+        bytes32 fromSolana = _splToken.findAccount(_salt(from));
+        bytes32 toSolana = _splToken.findAccount(_salt(to));
+        (bool success, bytes memory result) = SPL_TOKEN_ADDRESS.call(abi.encodeWithSignature("transfer(bytes32,bytes32,uint64)", fromSolana, toSolana, uint64(amount)));
     }
 
     function burn(bytes32 mint, address account, uint amount) public {

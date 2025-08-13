@@ -107,3 +107,17 @@ def test_emulate_call_contract_with_block_timestamp_number(
 
     assert result["exit_status"] == "succeed", f"The 'exit_status' field is not succeed. Result: {result}"
     assert result["is_timestamp_number_used"], f"Timestamp number is not used. Result: {result}"
+
+
+def test_emulate_call_contract_with_account_limitation_positive(
+    neon_api_client, operator_keypair, treasury_pool, evm_loader, alt_contract, session_user
+):
+    result = neon_api_client.emulate_contract_call(
+        session_user.eth_address.hex(),
+        contract=alt_contract.eth_address.hex(),
+        function_signature="fill(uint256)",
+        params=[150],
+        account_limit=150,
+    )
+    assert len(result["solana_accounts"]) < 150
+    assert result["exit_status"] == "succeed", f"The 'exit_status' field is not succeed. Result: {result}"

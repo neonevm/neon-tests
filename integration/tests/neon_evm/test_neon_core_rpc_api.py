@@ -2,6 +2,7 @@ import base58
 import pytest
 from eth_utils import abi, to_text
 
+from utils.helpers import decode_error_output
 from .utils.contract import get_contract_bin
 
 
@@ -107,3 +108,24 @@ def test_emulate_call_contract_with_block_timestamp_number(
 
     assert result["exit_status"] == "succeed", f"The 'exit_status' field is not succeed. Result: {result}"
     assert result["is_timestamp_number_used"], f"Timestamp number is not used. Result: {result}"
+
+
+@pytest.mark.parametrize("contract_mapping_data_count", [75, 200])
+def test_emulate_call_contract_with_account_limitation_negative(
+    alt_contract,
+    session_user,
+    contract_mapping_data_count,
+    neon_rpc_client,
+):
+    account_limit = 68
+    result = neon_rpc_client.emulate_contract_call(
+        session_user.eth_address.hex(),
+        contract=alt_contract.eth_address.hex(),
+        function_signature="fill(uint256)",
+        params=[contract_mapping_data_count],
+        account_limit=account_limit,
+    )
+    assert (
+        result["exit_status"] == "revert"
+    ), f"The trx is not reverted with account_limit={account_limit}. Trx account count is {len(result['solana_accounts'])}"
+    assert f"Too many accounts: {account_limit + 1} > {account_limit}" in decode_error_output(result["result"])

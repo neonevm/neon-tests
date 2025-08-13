@@ -2,8 +2,7 @@ import allure
 import pytest
 import web3
 import web3.exceptions
-from eth_abi import abi
-from eth_utils import is_hex, keccak
+from eth_utils import is_hex
 from solders.keypair import Keypair
 from solana.rpc.commitment import Confirmed
 from solana.rpc.types import TxOpts
@@ -11,7 +10,7 @@ from solana.transaction import Transaction
 
 from integration.tests.basic.helpers.assert_message import ErrorMessage
 from utils.consts import ZERO_HASH
-from utils.helpers import gen_hash_of_block
+from utils.helpers import gen_hash_of_block, decode_function_signature
 from utils.metaplex import create_metadata_instruction_data, create_metadata_instruction
 from utils.accounts import EthAccounts
 from utils.solana_client import SolanaClient
@@ -50,7 +49,8 @@ class TestPrecompiledSplToken:
     accounts: EthAccounts
     sol_client: SolanaClient
 
-    def get_account(self, contract, account):
+    @staticmethod
+    def get_account(contract, account):
         mint_acc = contract.functions.findAccount(account.address).call()
         account_info = Account(contract.functions.getAccount(mint_acc).call())
         return account_info
@@ -107,23 +107,22 @@ class TestPrecompiledSplToken:
     @pytest.fixture(scope="class")
     def bob(self, spl_token_caller, token_mint, accounts):
         user = accounts.create_account()
-        tx = {
-            "from": user.address,
-            "nonce": self.web3_client.eth.get_transaction_count(user.address),
-            "gasPrice": self.web3_client.gas_price(),
-        }
+        tx = self.web3_client.make_raw_tx(user)
         instruction_tx = spl_token_caller.functions.initializeAccount(user.address, token_mint).build_transaction(tx)
         self.web3_client.send_transaction(user, instruction_tx)
+        amount = 10000
+        tx = self.web3_client.make_raw_tx(user)
+        instruction_tx = spl_token_caller.functions.mintTo(user.address, amount, token_mint).build_transaction(tx)
+
+        self.web3_client.send_transaction(user, instruction_tx)
+
         return user
 
     @pytest.fixture(scope="class")
     def alice(self, spl_token_caller, token_mint, faucet, eth_bank_account):
         account = self.web3_client.create_account_with_balance(faucet, bank_account=eth_bank_account)
-        tx = {
-            "from": account.address,
-            "nonce": self.web3_client.eth.get_transaction_count(account.address),
-            "gasPrice": self.web3_client.gas_price(),
-        }
+        tx = self.web3_client.make_raw_tx(account)
+
         instruction_tx = spl_token_caller.functions.initializeAccount(account.address, token_mint).build_transaction(tx)
         self.web3_client.send_transaction(account, instruction_tx)
         return account
@@ -204,9 +203,8 @@ class TestPrecompiledSplToken:
                 tx
             )
         try:
-            calldata = keccak(text="initializeAccount(address,bytes32)")[:4] + abi.encode(
-                ["address", "bytes32"],
-                [sender_account.address, bytes(acc.pubkey())],
+            calldata = decode_function_signature(
+                "initializeAccount(address,bytes32)", [sender_account.address, bytes(acc.pubkey())]
             )
             tx = self.web3_client.make_raw_tx(
                 sender_account, spl_token_caller.address, data=calldata, gas=1000000, estimate_gas=False
@@ -251,10 +249,7 @@ class TestPrecompiledSplToken:
         with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_ACC_DATA.value):
             spl_token_caller.functions.closeAccount(non_initialized_acc.address).build_transaction(tx)
         try:
-            calldata = keccak(text="closeAccount(address)")[:4] + abi.encode(
-                ["address"],
-                [non_initialized_acc.address],
-            )
+            calldata = decode_function_signature("closeAccount(address)", [non_initialized_acc.address])
             tx = self.web3_client.make_raw_tx(
                 non_initialized_acc, spl_token_caller.address, data=calldata, gas=1000000, estimate_gas=False
             )
@@ -282,10 +277,7 @@ class TestPrecompiledSplToken:
         with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_ACC_DATA.value):
             spl_token_caller.functions.freeze(token_mint, non_initialized_acc.address).build_transaction(tx)
         try:
-            calldata = keccak(text="freeze(bytes32,address)")[:4] + abi.encode(
-                ["bytes32", "address"],
-                [token_mint, non_initialized_acc.address],
-            )
+            calldata = decode_function_signature("freeze(bytes32,address)", [token_mint, non_initialized_acc.address])
             tx = self.web3_client.make_raw_tx(
                 non_initialized_acc, spl_token_caller.address, data=calldata, gas=1000000, estimate_gas=False
             )
@@ -314,9 +306,8 @@ class TestPrecompiledSplToken:
         with pytest.raises(web3.exceptions.ContractLogicError, match="custom program error: 0x10"):
             spl_token_caller.functions.freeze(non_initialized_token_mint, new_account.address).build_transaction(tx)
         try:
-            calldata = keccak(text="freeze(bytes32,address)")[:4] + abi.encode(
-                ["bytes32", "address"],
-                [non_initialized_token_mint, new_account.address],
+            calldata = decode_function_signature(
+                "freeze(bytes32,address)", [non_initialized_token_mint, new_account.address]
             )
             tx = self.web3_client.make_raw_tx(
                 new_account, spl_token_caller.address, data=calldata, gas=1000000, estimate_gas=False
@@ -331,10 +322,7 @@ class TestPrecompiledSplToken:
         with pytest.raises(web3.exceptions.ContractLogicError, match="custom program error: 0x3"):
             spl_token_caller.functions.freeze(non_initialized_token_mint, bob.address).build_transaction(tx)
         try:
-            calldata = keccak(text="freeze(bytes32,address)")[:4] + abi.encode(
-                ["bytes32", "address"],
-                [non_initialized_token_mint, bob.address],
-            )
+            calldata = decode_function_signature("freeze(bytes32,address)", [non_initialized_token_mint, bob.address])
             tx = self.web3_client.make_raw_tx(
                 bob, spl_token_caller.address, data=calldata, gas=1000000, estimate_gas=False
             )
@@ -348,10 +336,7 @@ class TestPrecompiledSplToken:
         with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_ACC_DATA.value):
             spl_token_caller.functions.thaw(token_mint, non_initialized_acc.address).build_transaction(tx)
         try:
-            calldata = keccak(text="thaw(bytes32,address)")[:4] + abi.encode(
-                ["bytes32", "address"],
-                [token_mint, non_initialized_acc.address],
-            )
+            calldata = decode_function_signature("thaw(bytes32,address)", [token_mint, non_initialized_acc.address])
             tx = self.web3_client.make_raw_tx(
                 non_initialized_acc, spl_token_caller.address, data=calldata, gas=1000000, estimate_gas=False
             )
@@ -365,10 +350,7 @@ class TestPrecompiledSplToken:
         with pytest.raises(web3.exceptions.ContractLogicError, match="custom program error: 0xd"):
             spl_token_caller.functions.thaw(token_mint, bob.address).build_transaction(tx)
         try:
-            calldata = keccak(text="thaw(bytes32,address)")[:4] + abi.encode(
-                ["bytes32", "address"],
-                [token_mint, bob.address],
-            )
+            calldata = decode_function_signature("thaw(bytes32,address)", [token_mint, bob.address])
             tx = self.web3_client.make_raw_tx(
                 bob, spl_token_caller.address, data=calldata, gas=1000000, estimate_gas=False
             )
@@ -378,21 +360,21 @@ class TestPrecompiledSplToken:
             assert "Error: Invalid account state for operation" in str(e)
 
     def test_mint_to(self, spl_token_caller, token_mint, bob):
+        balance_before = self.get_account(spl_token_caller, bob).amount
         amount = 100
         tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.mintTo(bob.address, amount, token_mint).build_transaction(tx)
         receipt = self.web3_client.send_transaction(bob, instruction_tx)
         assert receipt["status"] == 1
-        assert self.get_account(spl_token_caller, bob).amount == amount
+        assert self.get_account(spl_token_caller, bob).amount == amount + balance_before
 
     def test_mint_to_non_initialized_acc(self, spl_token_caller, token_mint, non_initialized_acc):
         tx = self.web3_client.make_raw_tx(non_initialized_acc)
         with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_ACC_DATA.value):
             spl_token_caller.functions.mintTo(non_initialized_acc.address, 100, token_mint).build_transaction(tx)
         try:
-            calldata = keccak(text="mintTo(bytes32,bytes32,uint64)")[:4] + abi.encode(
-                ["address", "uint64", "bytes32"],
-                [non_initialized_acc.address, 100, token_mint],
+            calldata = decode_function_signature(
+                "mintTo(address,uint256,bytes32)", [non_initialized_acc.address, 100, token_mint]
             )
             tx = self.web3_client.make_raw_tx(
                 non_initialized_acc, spl_token_caller.address, data=calldata, gas=1000000, estimate_gas=False
@@ -417,9 +399,8 @@ class TestPrecompiledSplToken:
                 tx
             )
         try:
-            calldata = keccak(text="mintTo(bytes32,bytes32,uint64)")[:4] + abi.encode(
-                ["address", "uint64", "bytes32"],
-                [new_account.address, 100, non_initialized_token_mint],
+            calldata = decode_function_signature(
+                "mintTo(address,uint256,bytes32)", [new_account.address, 100, non_initialized_token_mint]
             )
             tx = self.web3_client.make_raw_tx(
                 new_account, spl_token_caller.address, data=calldata, gas=1000000, estimate_gas=False
@@ -431,11 +412,6 @@ class TestPrecompiledSplToken:
 
     def test_transfer(self, spl_token_caller, token_mint, bob, alice):
         amount = 100
-
-        tx = self.web3_client.make_raw_tx(bob)
-        instruction_tx = spl_token_caller.functions.mintTo(bob.address, amount, token_mint).build_transaction(tx)
-
-        self.web3_client.send_transaction(bob, instruction_tx)
 
         b1_before = self.get_account(spl_token_caller, bob).amount
         b2_before = self.get_account(spl_token_caller, alice).amount
@@ -451,17 +427,13 @@ class TestPrecompiledSplToken:
 
     def test_transfer_to_non_initialized_acc(self, spl_token_caller, token_mint, bob, non_initialized_acc):
         amount = 100
-        tx = self.web3_client.make_raw_tx(bob)
-        instruction_tx = spl_token_caller.functions.mintTo(bob.address, amount, token_mint).build_transaction(tx)
-        self.web3_client.send_transaction(bob, instruction_tx)
 
         tx = self.web3_client.make_raw_tx(bob)
         with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_ACC_DATA.value):
             spl_token_caller.functions.transfer(bob.address, non_initialized_acc.address, amount).build_transaction(tx)
         try:
-            calldata = keccak(text="transfer(address,address,uint64)")[:4] + abi.encode(
-                ["address", "address", "uint64"],
-                [bob.address, non_initialized_acc.address, 100],
+            calldata = decode_function_signature(
+                "transfer(address,address,uint64)", [bob.address, non_initialized_acc.address, amount]
             )
             tx = self.web3_client.make_raw_tx(
                 bob, spl_token_caller.address, data=calldata, gas=1000000, estimate_gas=False
@@ -471,18 +443,22 @@ class TestPrecompiledSplToken:
         except ValueError as e:
             assert ErrorMessage.INVALID_ACC_DATA.value in str(e)
 
-    def test_transfer_with_incorrect_signer(self, spl_token_caller, token_mint, bob, alice):
+    def test_failed_transfer_low_level_call(
+        self, spl_token_caller, token_mint, bob, non_initialized_acc, json_rpc_client
+    ):
         amount = 100
 
-        tx = self.web3_client.make_raw_tx(bob)
-        instruction_tx = spl_token_caller.functions.mintTo(bob.address, amount, token_mint).build_transaction(tx)
+        tx = self.web3_client.make_raw_tx(bob, gas=10000000)
+        instruction_tx = spl_token_caller.functions.transferByLowLevelCall(
+            bob.address, non_initialized_acc.address, amount
+        ).build_transaction(tx)
+        response = json_rpc_client.send_rpc(method="eth_estimateGas", params=[dict(instruction_tx)])
+        assert "error" in response
+        assert response["error"]["code"] == 3
+        assert "External call fails" in response["error"]["message"]
 
-        self.web3_client.send_transaction(bob, instruction_tx)
-
-        tx = self.web3_client.make_raw_tx(bob)
-        instruction_tx = spl_token_caller.functions.transfer(bob.address, alice.address, amount).build_transaction(tx)
-        with pytest.raises(TypeError, match=r"from field must match key's .*, but it was "):
-            self.web3_client.send_transaction(alice, instruction_tx)
+        resp = self.web3_client.send_transaction(bob, instruction_tx)
+        assert resp["status"] == 0, "Transaction should fail"
 
     def test_transfer_more_than_balance(self, spl_token_caller, token_mint, bob, alice):
         transfer_amount = self.get_account(spl_token_caller, bob).amount + 1
@@ -491,9 +467,8 @@ class TestPrecompiledSplToken:
         with pytest.raises(web3.exceptions.ContractLogicError, match="custom program error: 0x1"):
             spl_token_caller.functions.transfer(bob.address, alice.address, transfer_amount).build_transaction(tx)
         try:
-            calldata = keccak(text="transfer(address,address,uint64)")[:4] + abi.encode(
-                ["address", "address", "uint64"],
-                [bob.address, alice.address, transfer_amount],
+            calldata = decode_function_signature(
+                "transfer(address,address,uint64)", [bob.address, alice.address, transfer_amount]
             )
             tx = self.web3_client.make_raw_tx(
                 bob, spl_token_caller.address, data=calldata, gas=1000000, estimate_gas=False
@@ -505,10 +480,6 @@ class TestPrecompiledSplToken:
 
     def test_burn(self, spl_token_caller, token_mint, bob):
         amount = 100
-        tx = self.web3_client.make_raw_tx(bob)
-        instruction_tx = spl_token_caller.functions.mintTo(bob.address, amount, token_mint).build_transaction(tx)
-
-        self.web3_client.send_transaction(bob, instruction_tx)
 
         balance_before = self.get_account(spl_token_caller, bob).amount
         tx = self.web3_client.make_raw_tx(bob)
@@ -523,9 +494,8 @@ class TestPrecompiledSplToken:
         with pytest.raises(web3.exceptions.ContractLogicError, match=ErrorMessage.INVALID_ACC_DATA.value):
             spl_token_caller.functions.burn(token_mint, non_initialized_acc.address, 10).build_transaction(tx)
         try:
-            calldata = keccak(text="burn(bytes32,address,uint64)")[:4] + abi.encode(
-                ["bytes32", "address", "uint64"],
-                [token_mint, non_initialized_acc.address, 10],
+            calldata = decode_function_signature(
+                "burn(bytes32,address,uint64)", [token_mint, non_initialized_acc.address, 10]
             )
             tx = self.web3_client.make_raw_tx(
                 non_initialized_acc, spl_token_caller.address, data=calldata, gas=1000000, estimate_gas=False
@@ -542,10 +512,7 @@ class TestPrecompiledSplToken:
         with pytest.raises(web3.exceptions.ContractLogicError, match="custom program error: 0x1"):
             spl_token_caller.functions.burn(token_mint, bob.address, amount).build_transaction(tx)
         try:
-            calldata = keccak(text="burn(bytes32,address,uint64)")[:4] + abi.encode(
-                ["bytes32", "address", "uint64"],
-                [token_mint, bob.address, amount],
-            )
+            calldata = decode_function_signature("burn(bytes32,address,uint64)", [token_mint, bob.address, amount])
             tx = self.web3_client.make_raw_tx(
                 bob, spl_token_caller.address, data=calldata, gas=1000000, estimate_gas=False
             )
@@ -556,10 +523,6 @@ class TestPrecompiledSplToken:
 
     def test_approve_and_revoke(self, spl_token_caller, token_mint, bob, alice):
         amount = 100
-
-        tx = self.web3_client.make_raw_tx(bob)
-        instruction_tx = spl_token_caller.functions.mintTo(bob.address, amount, token_mint).build_transaction(tx)
-        self.web3_client.send_transaction(bob, instruction_tx)
 
         tx = self.web3_client.make_raw_tx(bob)
         instruction_tx = spl_token_caller.functions.approve(bob.address, alice.address, amount).build_transaction(tx)

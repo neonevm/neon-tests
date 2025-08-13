@@ -244,8 +244,7 @@ class TestAccountRevision:
                 data_acc_revision = evm_loader.get_data_account_revision(acc)
                 assert data_acc_revision == 1
 
-    # TODO: add case (4, 0) after fixing NDEV-2698
-    @pytest.mark.parametrize("storage_data_len, expected_count_data_acc", [(60, 1)])
+    @pytest.mark.parametrize("storage_data_len, expected_count_data_acc", [(4, 0), (60, 1)])
     def test_2_users_call_one_contract_with_the_same_storages(
         self,
         user_account,
@@ -259,7 +258,6 @@ class TestAccountRevision:
         session_user,
         storage_data_len,
         expected_count_data_acc,
-        sol_client,
     ):
         user1 = session_user
         user2 = user_account
@@ -269,6 +267,7 @@ class TestAccountRevision:
         text2 = "b" * storage_data_len
         cell_count = (storage_data_len + 31) // 32
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
+        func_signature = "update_storage_str(string)"
 
         def send_transaction_steps(holder_account, accounts):
             return evm_loader.send_transaction_step_from_account(
@@ -281,20 +280,18 @@ class TestAccountRevision:
                 operator_keypair,
             )
 
-        emulate_result1 = neon_rpc_client.emulate_contract_call(
-            user1.eth_address.hex(), rw_lock_contract.eth_address.hex(), "update_storage_str(string)", [text1]
+        acc_from_emulation1 = neon_rpc_client.get_additional_accounts_by_emulation(
+            user1.eth_address.hex(), rw_lock_contract.eth_address.hex(), func_signature, [text1]
         )
 
-        acc_from_emulation1 = [Pubkey.from_string(item["pubkey"]) for item in emulate_result1["solana_accounts"]]
-        signed_tx1 = make_contract_call_trx(evm_loader, user1, rw_lock_contract, "update_storage_str(string)", [text1])
+        signed_tx1 = make_contract_call_trx(evm_loader, user1, rw_lock_contract, func_signature, [text1])
 
         evm_loader.write_transaction_to_holder_account(signed_tx1, holder1, operator_keypair)
 
-        emulate_result2 = neon_rpc_client.emulate_contract_call(
-            user2.eth_address.hex(), rw_lock_contract.eth_address.hex(), "update_storage_str(string)", [text2]
+        acc_from_emulation2 = neon_rpc_client.get_additional_accounts_by_emulation(
+            user2.eth_address.hex(), rw_lock_contract.eth_address.hex(), func_signature, [text2]
         )
-        acc_from_emulation2 = [Pubkey.from_string(item["pubkey"]) for item in emulate_result2["solana_accounts"]]
-        signed_tx2 = make_contract_call_trx(evm_loader, user2, rw_lock_contract, "update_storage_str(string)", [text2])
+        signed_tx2 = make_contract_call_trx(evm_loader, user2, rw_lock_contract, func_signature, [text2])
         evm_loader.write_transaction_to_holder_account(signed_tx2, holder2, operator_keypair)
 
         send_transaction_steps(holder1, acc_from_emulation1)
@@ -304,8 +301,8 @@ class TestAccountRevision:
         resp1 = send_transaction_steps(holder1, acc_from_emulation1)
         send_transaction_steps(holder2, acc_from_emulation2)
 
-        check_transaction_logs_have_text(solana_client=sol_client, trx=resp1, text="exit_status=0x11")
-
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp1, text="exit_status=0x11")
+        data_account = None
         if expected_count_data_acc > 0:
             additional_accounts = [
                 user1.balance_account_address,
@@ -318,9 +315,9 @@ class TestAccountRevision:
 
         # repeat steps for second user because revision for data accounts is changed
         resp2 = send_transaction_steps(holder2, acc_from_emulation2)
-        check_transaction_logs_have_text(solana_client=sol_client, trx=resp2, text="exit_status=0x11")
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp2, text="exit_status=0x11")
 
-        if expected_count_data_acc > 0:
+        if data_account:
             data_acc_revision_after_user2_finished = evm_loader.get_data_account_revision(data_account)
             assert data_acc_revision_after_user2_finished == (cell_count * 2)
 
@@ -334,7 +331,6 @@ class TestAccountRevision:
         evm_loader,
         holder_acc,
         second_holder_acc,
-        sol_client,
         transfers_contract,
     ):
         sender1 = session_user
@@ -397,9 +393,9 @@ class TestAccountRevision:
         resp1 = send_transaction_steps(holder1, sender1)
 
         send_transaction_steps(holder2, sender2)
-        check_transaction_logs_have_text(solana_client=sol_client, trx=resp1, text="exit_status=0x11")
+        check_transaction_logs_have_text(solana_client=evm_loader, trx=resp1, text="exit_status=0x11")
         check_holder_account_tag(
-            solana_client=sol_client,
+            solana_client=evm_loader,
             storage_account=holder1,
             layout=FINALIZED_STORAGE_ACCOUNT_INFO_LAYOUT,
             expected_tag=TAG_FINALIZED_STATE,

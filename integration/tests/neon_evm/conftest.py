@@ -137,7 +137,9 @@ def rw_lock_contract(
     session_user: Caller,
     treasury_pool: TreasuryPool,
 ) -> Contract:
-    return evm_loader.deploy_contract(operator_keypair, session_user, "rw_lock", neon_rpc_client, treasury_pool)
+    return evm_loader.deploy_contract(
+        operator_keypair, session_user, "rw_lock", neon_rpc_client, treasury_pool, version="0.8.28"
+    )
 
 
 @pytest.fixture(scope="session")
@@ -472,3 +474,23 @@ def neon_user_func_scope(evm_loader: EvmLoader, bank_account) -> Generator[NeonU
     )
 
     yield user
+
+
+@pytest.fixture(scope="session")
+def alt_contract(
+    evm_loader: EvmLoader,
+    operator_keypair: Keypair,
+    session_user: Caller,
+    treasury_pool: TreasuryPool,
+    neon_api_client: NeonApiClient,
+) -> Contract:
+    contract = evm_loader.deploy_contract(
+        operator_keypair,
+        session_user,
+        "common/ALT",
+        neon_api_client,
+        treasury_pool,
+        version="0.8.10",
+        encoded_args=eth_abi.encode(["uint256"], [8]),
+    )
+    return contract

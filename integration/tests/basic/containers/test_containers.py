@@ -35,7 +35,7 @@ class TestContainers:
     ):
         container_address = evm_loader.ether2program(alt_contract_containerized.address[2:])
         sender = accounts[3]
-        for n in [50, 75, 100, 125, 150]:
+        for n in [35, 50, 75, 100, 125]:
             tx = self.web3_client.make_raw_tx(sender)
             instruction_tx = alt_contract_containerized.functions.fill(n).build_transaction(tx)
             sol_accounts = get_accounts_for_container_by_emulation(
@@ -45,7 +45,7 @@ class TestContainers:
             evm_loader.assemble_container(operator.operator_keypairs[0], treasury_pool, container_address, sol_accounts)
 
         tx = self.web3_client.make_raw_tx(sender)
-        instruction_tx = alt_contract_containerized.functions.fill(175).build_transaction(tx)
+        instruction_tx = alt_contract_containerized.functions.fill(150).build_transaction(tx)
         self.web3_client.send_transaction(sender, instruction_tx)
 
     def test_scheduled_trx_with_container(

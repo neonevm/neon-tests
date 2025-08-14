@@ -46,7 +46,7 @@ def distributor_contract(web3_client, accounts):
 @pytest.fixture(scope="class")
 def alt_contract_containerized(accounts, web3_client, evm_loader, operator, treasury_pool):
     contract, _ = web3_client.deploy_and_get_contract(
-        "common/ALT", "0.8.10", account=accounts[1], constructor_args=[50]
+        "common/ALT", "0.8.10", account=accounts[1], constructor_args=[20]
     )
 
     container_address = evm_loader.ether2program(contract.address[2:])

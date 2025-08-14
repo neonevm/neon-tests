@@ -45,17 +45,13 @@ class TestNeonRPCSendRAWTransaction:
 
         tree_account = evm_loader.create_tree_account(neon_user, treasury_pool, tx.encode())
 
-        web3_client_sol.send_scheduled_transaction(tx, check_result=False)
-        resp_for_second_sent_no_waiting = web3_client_sol.send_scheduled_transaction(tx, check_result=False)
-        assert (
-            "error" not in resp_for_second_sent_no_waiting
-        ), "must not be error for second sending the same transaction without waiting"
-
-        web3_client_sol.wait_for_transaction_receipt(tx.hash(), timeout=180)  # wait until first tx finished
-        resp_after_waiting = web3_client_sol.send_scheduled_transaction(tx, check_result=False)
-        assert "error" not in resp_after_waiting
-
+        web3_client_sol.send_scheduled_transaction(tx)
+        web3_client_sol.wait_for_transaction_receipt(tx.hash(), timeout=180)
         wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=120, delay=2)
+
+        resp_after_waiting = web3_client_sol.send_scheduled_transaction(tx, check_result=False)
+        assert "error" in resp_after_waiting
+        assert "unknown transaction hash" in resp_after_waiting["error"]["message"]
 
     def test_no_tree_account_for_trx(self, web3_client_sol, neon_user, common_contract, evm_loader, treasury_pool):
         data = decode_function_signature("setNumber(uint256)", [18])

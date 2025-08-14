@@ -1015,7 +1015,7 @@ class TestStepFromAccountChangingOperatorsDuringTrxRun:
         self,
         operator_keypair,
         second_operator_keypair,
-        sender_with_tokens,
+        user_account,
         evm_loader,
         treasury_pool,
         holder_acc,
@@ -1023,15 +1023,15 @@ class TestStepFromAccountChangingOperatorsDuringTrxRun:
         erc20_for_spl_factory_contract,
     ):
         func_signature = "createErc20ForSplMintable(string,string,uint8,address)"
-        func_args = ["Test", "TTT", 9, sender_with_tokens.eth_address.hex()]
+        func_args = ["Test", "TTT", 9, user_account.eth_address.hex()]
         additional_accounts = neon_rpc_client.get_additional_accounts_by_emulation(
-            sender_with_tokens.eth_address.hex(),
+            user_account.eth_address.hex(),
             erc20_for_spl_factory_contract.eth_address.hex(),
             func_signature,
             func_args,
         )
         signed_tx = make_contract_call_trx(
-            evm_loader, sender_with_tokens, erc20_for_spl_factory_contract, func_signature, func_args
+            evm_loader, user_account, erc20_for_spl_factory_contract, func_signature, func_args
         )
 
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)

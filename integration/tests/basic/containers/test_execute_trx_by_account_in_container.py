@@ -23,7 +23,7 @@ class TestContainerizedAccounts:
     def test_call_contract_in_container_by_acc_in_container(
         self, distributor_contract, evm_loader, treasury_pool, operator
     ):
-        acc_in_container = self.accounts[1]
+        acc_in_container = self.accounts[6]
         balance_before = self.web3_client.get_balance(acc_in_container.address)
 
         sender = self.accounts[0]

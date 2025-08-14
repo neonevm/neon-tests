@@ -544,7 +544,6 @@ class TestNeonRPCEstimateScheduledGas:
     def test_estimate_with_preparatory_failed_solana_transaction(
         self, web3_client_sol, neon_user, evm_loader, common_contract
     ):
-
         trx = Transaction()
         trx.add(
             sync_native(
@@ -564,5 +563,5 @@ class TestNeonRPCEstimateScheduledGas:
             preparatory_solana_trxs=trx.instructions,
             check_result=False,
         )
-        assert resp["error"]["code"] == Error32603.CODE
-        assert Error32603.INTERNAL_ERROR in resp["error"]["message"], "wrong error message"
+        assert resp["error"]["code"] == 117
+        assert "invalid instruction data" in resp["error"]["message"], "wrong error message"

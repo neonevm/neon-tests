@@ -664,6 +664,7 @@ class Web3Client:
             instructions = self._pack_preparatory_solana_instructions(preparatory_solana_instructions)
             params["preparatorySolanaTransactions"] = [{"instructions": instructions}]
         response = self.json_rpc_client.get_neon_estimate_gas(raw_tx, params)
+        log_text_to_allure_and_stdout("neon_estimateGas response", str(response))
         if "result" in response:
             return response["result"]
         else:

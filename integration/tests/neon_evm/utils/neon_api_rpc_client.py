@@ -1,9 +1,11 @@
 import json
+from typing import Tuple
 
 import allure
 import eth_abi
 from eth_utils import abi
 from requests import Session
+from solders.instruction import Instruction
 from solders.pubkey import Pubkey
 
 from utils.logger import log_text_to_allure_and_stdout
@@ -38,7 +40,6 @@ class NeonApiRpcClient:
 
         resp_data = response.json()
         log_text_to_allure_and_stdout("Response from Neon API", str(resp_data))
-
         if "result" in resp_data:
             return resp_data["result"]
 
@@ -86,7 +87,6 @@ class NeonApiRpcClient:
     def emulate_contract_call(
         self, sender, contract, function_signature, params=None, value=0, trace_config=None, account_limit=64
     ) -> json:
-
         data = abi.function_signature_to_4byte_selector(function_signature)
         if isinstance(value, int):
             value = hex(value)
@@ -122,11 +122,25 @@ class NeonApiRpcClient:
         return self._make_request("config", params)
 
     @allure.step("Simulate Solana transaction")
-    def simulate_solana(self, blockhash: str, transactions: list[str], solana_overrides_params=None) -> json:
+    def simulate_solana(self, instructions: Tuple[Instruction, ...], accounts_overrides=None) -> json:
+        instruction_list = []
+        for instr in instructions:
+            instruction_list.append(
+                {
+                    "program_id": str(instr.program_id),
+                    "accounts": [
+                        {"pubkey": str(acc.pubkey), "is_signer": acc.is_signer, "is_writable": acc.is_writable}
+                        for acc in instr.accounts
+                    ],
+                    "data": instr.data.hex().upper(),
+                }
+            )
+
         params = {
-            "blockhash": blockhash,
-            "transactions": transactions,
-            "solana_overrides": solana_overrides_params,
+            "compute_units": 1400000,
+            "heap_size": 256 * 1024,
+            "instructions": instruction_list,
+            "accounts_overrides": accounts_overrides,
         }
         return self._make_request("simulate_solana", params)
 
@@ -135,6 +149,7 @@ class NeonApiRpcClient:
         if args is not None:
             data += args
         result = self.emulate(sender.eth_address.hex(), contract.eth_address.hex(), data)
+
         return result["result"]
 
     def get_steps_count(self, from_acc, to, data) -> int:

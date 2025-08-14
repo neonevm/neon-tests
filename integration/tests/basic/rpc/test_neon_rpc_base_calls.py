@@ -413,9 +413,9 @@ class TestNeonRPCBaseCalls:
             preparatory_solana_instructions=trx.instructions,
         )
 
-        assert error["code"] == 3
+        assert error["code"] == 117
         assert error["data"]
-        assert "execution reverted" in error["message"].lower()
+        assert "Owner does not match" in error["message"]
 
     def test_neon_estimate_gas_with_preparatory_solana_transactions_invalid_tx(
         self,

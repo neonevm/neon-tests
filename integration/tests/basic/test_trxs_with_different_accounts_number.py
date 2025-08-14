@@ -85,5 +85,5 @@ class TestTrxsWithDifferentAccountsCount:
         tx = web3_client.make_raw_tx(from_=accounts[1], gas=10000000)
         tx = alt_contract.functions.fill(accounts_quantity).build_transaction(tx)
         response = json_rpc_client.send_rpc(method="eth_estimateGas", params=[dict(tx)])
-        assert response["error"]["code"] == 3 or response["error"]["code"] == -32000
-        assert "Too many accounts" in response["error"]["message"]
+        assert response["error"]["code"] == 3
+        assert "too many accounts" in response["error"]["message"].lower()

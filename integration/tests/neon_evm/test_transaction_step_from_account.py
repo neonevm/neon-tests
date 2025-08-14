@@ -1024,13 +1024,12 @@ class TestStepFromAccountChangingOperatorsDuringTrxRun:
     ):
         func_signature = "createErc20ForSplMintable(string,string,uint8,address)"
         func_args = ["Test", "TTT", 9, sender_with_tokens.eth_address.hex()]
-        emulate_result = neon_rpc_client.emulate_contract_call(
+        additional_accounts = neon_rpc_client.get_additional_accounts_by_emulation(
             sender_with_tokens.eth_address.hex(),
             erc20_for_spl_factory_contract.eth_address.hex(),
             func_signature,
             func_args,
         )
-        additional_accounts = [Pubkey.from_string(item["pubkey"]) for item in emulate_result["solana_accounts"]]
         signed_tx = make_contract_call_trx(
             evm_loader, sender_with_tokens, erc20_for_spl_factory_contract, func_signature, func_args
         )
@@ -1038,46 +1037,20 @@ class TestStepFromAccountChangingOperatorsDuringTrxRun:
         evm_loader.write_transaction_to_holder_account(signed_tx, holder_acc, operator_keypair)
 
         operator_balance_pubkey = evm_loader.get_operator_balance_pubkey(operator_keypair)
-        second_operator_balance = evm_loader.get_operator_balance_pubkey(second_operator_keypair)
 
-        evm_loader.send_transaction_step_from_account(
-            operator_keypair,
-            operator_balance_pubkey,
-            treasury_pool,
-            holder_acc,
-            additional_accounts,
-            EVM_STEPS,
-            operator_keypair,
-        )
+        for _ in range(2):
+            evm_loader.send_transaction_step_from_account(
+                operator_keypair,
+                operator_balance_pubkey,
+                treasury_pool,
+                holder_acc,
+                additional_accounts,
+                EVM_STEPS,
+                operator_keypair,
+            )
 
-        evm_loader.send_transaction_step_from_account(
-            operator_keypair,
-            operator_balance_pubkey,
-            treasury_pool,
-            holder_acc,
-            additional_accounts,
-            emulate_result["steps_executed"],
-            operator_keypair,
-        )
-
-        evm_loader.send_transaction_step_from_account(
-            second_operator_keypair,
-            second_operator_balance,
-            treasury_pool,
-            holder_acc,
-            additional_accounts,
-            EVM_STEPS,
-            second_operator_keypair,
-        )
-
-        resp = evm_loader.send_transaction_step_from_account(
-            second_operator_keypair,
-            second_operator_balance,
-            treasury_pool,
-            holder_acc,
-            additional_accounts,
-            EVM_STEPS,
-            second_operator_keypair,
+        resp = evm_loader.execute_transaction_steps_from_account(
+            second_operator_keypair, treasury_pool, holder_acc, additional_accounts
         )
 
         check_holder_account_tag(

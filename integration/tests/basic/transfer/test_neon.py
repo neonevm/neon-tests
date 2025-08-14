@@ -40,7 +40,7 @@ class TestNeonTransfer:
         sender_balance = self.web3_client.get_balance(sender_account)
         recipient_balance = self.web3_client.get_balance(recipient_account)
 
-        with pytest.raises(Exception, match=ErrorMessage.INSUFFICIENT_FUNDS.value):
+        with pytest.raises(Exception, match=ErrorMessage.INSUFFICIENT_FUNDS_FOR_TRANSFER.value):
             self.web3_client.send_neon(sender_account, recipient_account, amount, gas=35000)
 
         assert sender_balance == self.web3_client.get_balance(sender_account)
@@ -52,7 +52,7 @@ class TestNeonTransfer:
         recipient_account = self.web3_client.create_account()
         sender_balance = self.web3_client.get_balance(sender_account, Unit.ETHER)
 
-        with pytest.raises(Exception, match=ErrorMessage.INSUFFICIENT_FUNDS.value):
+        with pytest.raises(Exception, match=ErrorMessage.INSUFFICIENT_FUNDS_FOR_TRANSFER.value):
             self.web3_client.send_neon(sender_account, recipient_account, amount=sender_balance)
 
         assert sender_balance == self.web3_client.get_balance(sender_account, Unit.ETHER)

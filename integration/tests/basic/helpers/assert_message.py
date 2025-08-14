@@ -3,7 +3,8 @@ from enum import Enum
 
 class ErrorMessage(Enum):
     NEGATIVE_VALUE = "Resulting wei value must be between 1 and "
-    INSUFFICIENT_FUNDS = "insufficient funds for transfer"
+    INSUFFICIENT_FUNDS_FOR_TRANSFER = "insufficient funds for transfer"
+    INSUFFICIENT_FUNDS = "Insufficient funds"
     INSUFFICIENT_BALANCE = "Insufficient balance for transfer"
     GAS_OVERFLOW = "gas uint64 overflow"
     GAS_LIMIT_REACHED = "gas limit reached"
@@ -33,6 +34,11 @@ class ErrorMessage(Enum):
     APPROVE_TO_CALLER_ERC721 = "execution reverted: ERC721: approve to caller"
     INCORRECT_PROGRAM_ID = "incorrect program id for instruction"
     INVALID_ACC_DATA = "invalid account data for instruction"
+
+    TOKEN_MINT_CANNOT_FREEZE = "This token mint cannot freeze accounts"
+    ACCOUNT_NOT_ASSOCIATED_WITH_MINT = "Account not associated with this Mint"
+    STATE_IS_INVALID = "State is invalid"
+    OWNER_DOES_NOT_MATCH = "Owner does not match"
 
 
 class AssertMessage(Enum):

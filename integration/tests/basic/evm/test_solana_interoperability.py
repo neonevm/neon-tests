@@ -429,7 +429,7 @@ class TestSolanaInteroperability:
 
     @pytest.mark.parametrize("iterative_trx", [True, False])
     def test_failed_low_level_solana_call(
-        self, call_solana_caller, sol_client, solana_account, json_rpc_client, iterative_trx
+        self, call_solana_caller, sol_client, solana_account, iterative_trx, json_rpc_client
     ):
         sender = self.accounts[0]
         from_wallet = solana_account
@@ -451,7 +451,7 @@ class TestSolanaInteroperability:
         response = json_rpc_client.send_rpc(method="eth_estimateGas", params=[dict(instruction_tx)])
         assert "error" in response
         assert response["error"]["code"] == 3
-        assert "External call fails" in response["error"]["message"]
+        assert "execution reverted" in response["error"]["message"]
 
         resp = self.web3_client.send_transaction(sender, instruction_tx)
         assert resp["status"] == 0, "Transaction should fail"
@@ -474,7 +474,7 @@ class TestSolanaInteroperability:
 
         with pytest.raises(
             web3.exceptions.ContractLogicError,
-            match="Too many accounts",
+            match=r"[T,t]oo many accounts",
         ):
             call_solana_caller.functions.executeInIterativeMode(loop_count, lamports, serialized).build_transaction(tx)
 

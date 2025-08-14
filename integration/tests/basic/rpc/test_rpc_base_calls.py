@@ -12,6 +12,7 @@ from integration.tests.basic.helpers.rpc_checks import (
     hex_str_consists_not_only_of_zeros,
     is_hex,
 )
+from utils import helpers
 from utils.accounts import EthAccounts
 from utils.helpers import cryptohex, gen_hash_of_block, wait_condition
 from utils.models.error import EthError, EthError32602, NotSupportedMethodError
@@ -82,6 +83,33 @@ class TestRpcBaseCalls:
         response = json_rpc_client.send_rpc("eth_call")
         assert "error" in response, "Error not in response"
         EthError(**response)
+
+    def test_eth_call_with_empty_params(self, json_rpc_client):
+        """Verify implemented rpc calls work eth_call with empty params"""
+        params = [
+            {},
+            Tag.LATEST.value,
+        ]
+        response = json_rpc_client.send_rpc("eth_call", params)
+
+        assert "error" not in response, "Error not in response"
+        assert response["result"] == "0x", f"Invalid response result, `{response['result']}`"
+
+    def test_eth_call_contract_deployment(self, json_rpc_client):
+        """Verify implemented rpc calls work eth_call with contract deployment"""
+        contract_interface = helpers.get_contract_interface(
+            contract="common/Counter",
+            version="0.8.10",
+        )
+
+        transaction = self.web3_client.make_raw_tx(
+            from_=self.accounts[0],
+            data="0x" + contract_interface["bin"],
+            estimate_gas=True,
+        )
+        response = json_rpc_client.send_rpc("eth_call", params=[transaction, Tag.LATEST.value])
+        assert "error" not in response, "Error not in response"
+        assert "result" in response, "Result not in response"
 
     @pytest.mark.mainnet
     @pytest.mark.parametrize("tag", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST])

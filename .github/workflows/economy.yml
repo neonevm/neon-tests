@@ -120,6 +120,7 @@ jobs:
         run: |
           docker exec -i ${{ env.CONTAINER }} python3 ./clickfile.py send-notification \
             -u ${{ secrets.SLACK_QA_CHANNEL_URL }} \
+            --network ${{ env.NETWORK }} \
             -b ${{ env.BUILD_URL }} \
             --test-group economy \
             --report-group economy \

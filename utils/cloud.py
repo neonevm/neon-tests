@@ -1,4 +1,6 @@
 import os
+import subprocess
+
 import boto3
 import pathlib
 import mimetypes
@@ -39,3 +41,21 @@ def upload(source, destination, bucket=NEON_TESTS_BUCKET_NAME):
 def list_bucket(directory, bucket=NEON_TESTS_BUCKET_NAME):
     result = client.list_objects_v2(Bucket=bucket, Prefix=str(directory))
     return result.get("Contents", [])
+
+
+def sync_allure_report_to_s3(source_dir: str, path: pathlib.Path):
+    dest_uri = f"s3://{NEON_TESTS_BUCKET_NAME}/{path}"
+    env = os.environ.copy()
+    env["AWS_MAX_CONCURRENCY"] = env.get("AWS_MAX_CONCURRENCY", "64")
+
+    cmd = [
+        "aws",
+        "s3",
+        "sync",
+        source_dir,
+        dest_uri,
+        "--only-show-errors",
+        "--delete",
+        "--no-progress",
+    ]
+    subprocess.run(cmd, check=True, env=env)

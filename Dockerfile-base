@@ -18,6 +18,13 @@ RUN apt update && \
     add-apt-repository ppa:deadsnakes/ppa && apt update && \
     apt install -y python3.10 python3.10-distutils nodejs build-essential
 
+RUN apt-get update && apt-get install -y -qq curl unzip ca-certificates \
+ && curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip \
+ && unzip -q /tmp/awscliv2.zip -d /tmp \
+ && /tmp/aws/install \
+ && rm -rf /var/lib/apt/lists/* /tmp/aws /tmp/awscliv2.zip
+
+
 RUN update-alternatives --install /usr/bin/python3 python /usr/bin/python3.10 2
 RUN update-alternatives --install /usr/bin/python3 python /usr/bin/python3.8 1
 

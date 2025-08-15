@@ -28,7 +28,8 @@ def upload_allure_report(name: TestGroup, network: EnvName, source: str = "./all
     branch = os.environ.get("GITHUB_REF_NAME")
     build_id = os.environ.get("GITHUB_RUN_NUMBER")
     path = Path(name) / network.value / branch
-    cloud.upload(source, path / build_id)
+    cloud.sync_allure_report_to_s3(source, path / build_id)
+
     report_url = f"http://neon-test-allure.s3-website.eu-central-1.amazonaws.com/{path / build_id}"
 
     with open(ALLURE_REPORT_URL, "w") as f:

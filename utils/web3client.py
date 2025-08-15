@@ -172,7 +172,8 @@ class Web3Client:
         data: tp.Optional[tp.Union[str, bytes]] = None,
         estimate_gas=False,
         tx_type: TransactionType = TransactionType.LEGACY,
-    ) -> dict:
+    ) -> web3.types.TxParams:
+        transaction: web3.types.TxParams
         if tx_type is TransactionType.LEGACY:
             if isinstance(from_, eth_account.signers.local.LocalAccount):
                 transaction = {"from": from_.address}
@@ -185,13 +186,13 @@ class Web3Client:
                 if isinstance(to, str):
                     transaction["to"] = to
             if amount:
-                transaction["value"] = amount
+                transaction["value"] = web3.types.Wei(amount)
             if data:
                 transaction["data"] = data
             if nonce is None:
                 transaction["nonce"] = self.get_nonce(from_)
             else:
-                transaction["nonce"] = nonce
+                transaction["nonce"] = web3.types.Nonce(nonce)
 
             if chain_id == "auto":
                 transaction["chainId"] = self.chain_id
@@ -237,7 +238,7 @@ class Web3Client:
     def send_transaction(
         self,
         account: eth_account.signers.local.LocalAccount,
-        transaction: tp.Dict,
+        transaction: tp.Union[tp.Dict, web3.types.TxParams],
         timeout: int = 120,
     ) -> web3.types.TxReceipt:
         signed_tx = self._web3.eth.account.sign_transaction(transaction, account.key)
@@ -298,7 +299,7 @@ class Web3Client:
             kwargs.update({arg_name: arg_value})
 
         # Initialize parameters with a default value "type": 2 for EIP-1559 transactions
-        params = {"type": TransactionType.EIP_1559}
+        params: web3.types.TxParams = {"type": TransactionType.EIP_1559}
 
         # Map parameters with 'auto' value to their corresponding values
         if base_fee_per_gas == "auto":
@@ -330,7 +331,7 @@ class Web3Client:
             params[camel_case] = param_value
 
         # params keys validation happens here
-        return web3.types.TxParams(params)
+        return params
 
     @allure.step("Deploy and get contract")
     def deploy_and_get_contract(
@@ -407,7 +408,7 @@ class Web3Client:
     @allure.step("Call function at address")
     def call_function_at_address(self, contract_address, signature, args, result_types):
         calldata = decode_function_signature(signature, args)
-        tx = {
+        tx: web3.types.TxParams = {
             "data": calldata,
             "to": contract_address,
         }
@@ -507,7 +508,7 @@ class Web3Client:
             base_fee_multiplier=base_fee_multiplier,
         )
 
-        receipt = self.send_transaction(account=from_, transaction=tx_params, timeout=timeout)
+        receipt = self.send_transaction(account=from_, transaction=dict(tx_params), timeout=timeout)
         return receipt
 
     @allure.step("Send all neons from one account to another")
@@ -518,15 +519,17 @@ class Web3Client:
         gas: tp.Optional[int] = None,
         gas_price: tp.Optional[int] = None,
         nonce: int = None,
-    ) -> web3.types.TxReceipt:
+    ):
         value = self.get_balance(from_.address)
         transaction = self.make_raw_tx(
             from_, to, amount=value, gas=gas, gas_price=gas_price, nonce=nonce, estimate_gas=True
         )
-        transaction["value"] = float(value) - float(transaction["gas"] * transaction["gasPrice"] * 1.1)
+        transaction["value"] = web3.types.Wei(
+            int(float(value) - float(transaction["gas"] * transaction["gasPrice"] * 1.1))
+        )
 
         if transaction["value"] > 0:
-            transaction["value"] = web3.Web3.to_wei(transaction["value"], Unit.WEI)
+            transaction["value"] = web3.Web3.to_wei(transaction["value"], Unit.WEI.value)
             signed_tx = self.eth.account.sign_transaction(transaction, from_.key)
             tx = self.eth.send_raw_transaction(signed_tx.raw_transaction)
             self.wait_for_transaction_receipt(tx)
@@ -544,8 +547,8 @@ class Web3Client:
 
     @allure.step("Calculate trx gas")
     def calculate_trx_gas(self, tx_receipt: web3.types.TxReceipt) -> int:
-        tx = self._web3.eth.get_transaction(tx_receipt.transactionHash)
-        gas_used_in_tx = tx_receipt.gasUsed * tx["gasPrice"]
+        tx = self._web3.eth.get_transaction(tx_receipt["transactionHash"])
+        gas_used_in_tx = tx_receipt["gasUsed"] * tx["gasPrice"]
         return gas_used_in_tx
 
     def neon_gas_price(self):
@@ -654,7 +657,7 @@ class Web3Client:
     @allure.step("neon_estimateGas")
     def neon_estimate_gas(
         self,
-        raw_tx: dict,
+        raw_tx: tp.Union[dict, web3.types.TxParams],
         preparatory_solana_instructions: tp.Tuple[Instruction, ...] = None,
         show_gas_details: bool = True,
     ) -> dict:

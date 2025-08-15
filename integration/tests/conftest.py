@@ -5,6 +5,7 @@ import random
 import string
 import time
 import typing as tp
+from typing import Any, Generator
 
 import allure
 import pytest
@@ -24,6 +25,7 @@ from utils.apiclient import JsonRPCSession
 from utils.consts import COUNTER_ID, LAMPORT_PER_SOL, MULTITOKEN_MINTS_USDT, REMAPPING_ZEPPELIN
 from utils.erc20 import ERC20
 from utils.erc20wrapper import ERC20Wrapper
+from utils.erc721ForMetaplex import ERC721ForMetaplex
 from utils.evm_loader import EvmLoader
 from utils.helpers import decode_function_signature, get_selectors, withdraw_neon_to_solana_eth_sign, gen_hash_of_block
 from utils.neon_user import NeonUser
@@ -140,7 +142,7 @@ def new_solana_account(
 
 
 @pytest.fixture(scope="class")
-def accounts(request, accounts_session, web3_client_session, pytestconfig: Config, eth_bank_account) -> EthAccounts:
+def accounts(request, accounts_session, web3_client_session, eth_bank_account) -> EthAccounts:
     if inspect.isclass(request.cls):
         request.cls.accounts = accounts_session
     return accounts_session
@@ -179,7 +181,7 @@ def neon_user(
 
 
 @pytest.fixture(scope="function")
-def neon_user_no_sols(pytestconfig, bank_account, faucet, environment) -> NeonUser:
+def neon_user_no_sols(bank_account, faucet, environment) -> NeonUser:
     user = NeonUser(environment.evm_loader, bank_account)
     return user
 
@@ -407,7 +409,7 @@ def withdraw_contract_sol_chain(
     bank_account,
     solana_account,
     environment: EnvironmentConfig,
-) -> Contract:
+) -> Generator[Contract, Any, None]:
     account = web3_client_session.create_account_with_balance(faucet, bank_account=eth_bank_account)
     if environment.use_bank:
         evm_loader.send_sol(bank_account, solana_account.pubkey(), int(2 * LAMPORT_PER_SOL))
@@ -686,7 +688,6 @@ def block_timestamp_contract(web3_client, accounts):
 @pytest.fixture(scope="class")
 def eip1559_setup(
     request: pytest.FixtureRequest,
-    pytestconfig: Config,
     accounts_session: EthAccounts,
     web3_client_session: NeonChainWeb3Client,
     env_name: EnvName,
@@ -832,6 +833,12 @@ def precompiled_caller(web3_client, faucet, accounts):
 @pytest.fixture(scope="class")
 def alt_contract(accounts, web3_client):
     contract, _ = web3_client.deploy_and_get_contract("common/ALT", "0.8.10", account=accounts[0], constructor_args=[8])
+    return contract
+
+
+@pytest.fixture(scope="class")
+def erc721(web3_client: NeonChainWeb3Client, faucet, accounts):
+    contract = ERC721ForMetaplex(web3_client, faucet, accounts[0])
     return contract
 
 

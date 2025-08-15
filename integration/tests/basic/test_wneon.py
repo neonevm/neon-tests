@@ -9,6 +9,8 @@ from spl.token.client import Token as SplToken
 from spl.token.constants import TOKEN_PROGRAM_ID
 
 import allure
+from web3.exceptions import ContractLogicError
+
 from utils.helpers import wait_condition
 from utils.web3client import NeonChainWeb3Client
 from utils.accounts import EthAccounts
@@ -19,25 +21,14 @@ from utils.solana_client import SolanaClient
 @allure.story("Wrapped NEON tests")
 @pytest.mark.usefixtures("accounts", "web3_client", "sol_client")
 class TestWNeon:
-    SPL_TOKEN_PROGRAM_ID = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
     web3_client: NeonChainWeb3Client
     accounts: EthAccounts
     sol_client: SolanaClient
 
     def deposit(self, wneon, amount, acc):
         value = self.web3_client._web3.to_wei(amount, "ether")
-        instruction_tx = wneon.functions.deposit().build_transaction(self.make_tx_object(acc, value))
+        instruction_tx = wneon.functions.deposit().build_transaction(self.web3_client.make_raw_tx(acc, amount=value))
         return self.web3_client.send_transaction(acc, instruction_tx)
-
-    def make_tx_object(self, acc, value=None):
-        tx = {
-            "from": acc.address,
-            "nonce": self.web3_client.eth.get_transaction_count(acc.address),
-            "gasPrice": self.web3_client.gas_price(),
-        }
-        if value is not None:
-            tx["value"] = value
-        return tx
 
     def get_balances(self, wneon, address):
         neon_balance = self.web3_client.get_balance(address)
@@ -75,7 +66,7 @@ class TestWNeon:
         withdraw_amount = random.randint(1, deposit_amount)
         instruction_tx = wneon.functions.withdraw(
             self.web3_client._web3.to_wei(withdraw_amount, "ether")
-        ).build_transaction(self.make_tx_object(recipient_account))
+        ).build_transaction(self.web3_client.make_raw_tx(recipient_account))
         receipt = self.web3_client.send_transaction(recipient_account, instruction_tx)
         assert receipt["status"] == 1
 
@@ -97,7 +88,7 @@ class TestWNeon:
         neon_balance_sender_before, wneon_balance_sender_before = self.get_balances(wneon, sender_account.address)
 
         transfer_amount = random.randint(1, deposit_amount)
-        tx = self.make_tx_object(sender_account)
+        tx = self.web3_client.make_raw_tx(sender_account)
         instruction_tx = wneon.functions.transfer(
             new_account.address, self.web3_client._web3.to_wei(transfer_amount, "ether")
         ).build_transaction(tx)
@@ -110,7 +101,7 @@ class TestWNeon:
             Signature.from_string(solana_trx["result"][0]), commitment=Confirmed
         )
         sol_accounts = solana_resp.value.transaction.transaction.message.account_keys
-        assert self.SPL_TOKEN_PROGRAM_ID not in sol_accounts
+        assert str(TOKEN_PROGRAM_ID) not in sol_accounts
 
         neon_balance_sender_after, wneon_balance_sender_after = self.get_balances(wneon, sender_account.address)
         _, wneon_balance_recipient_after = self.get_balances(wneon, new_account.address)
@@ -133,19 +124,19 @@ class TestWNeon:
         transfer_amount = random.randint(1, 2)
         transfer_amount_wei = self.web3_client._web3.to_wei(transfer_amount, "ether")
 
-        with pytest.raises(web3.exceptions.ContractLogicError):
+        with pytest.raises(ContractLogicError):
             wneon.functions.transferFrom(
                 sender_account.address, new_account.address, transfer_amount_wei
-            ).build_transaction(self.make_tx_object(new_account))
+            ).build_transaction(self.web3_client.make_raw_tx(new_account))
 
         instruction_tx = wneon.functions.approve(new_account.address, transfer_amount_wei).build_transaction(
-            self.make_tx_object(sender_account)
+            self.web3_client.make_raw_tx(sender_account)
         )
         receipt = self.web3_client.send_transaction(sender_account, instruction_tx)
         assert receipt["status"] == 1
         instruction_tx = wneon.functions.transferFrom(
             sender_account.address, new_account.address, transfer_amount_wei
-        ).build_transaction(self.make_tx_object(new_account))
+        ).build_transaction(self.web3_client.make_raw_tx(new_account))
         receipt = self.web3_client.send_transaction(new_account, instruction_tx)
         assert receipt["status"] == 1
         neon_balance_sender_after, wneon_balance_sender_after = self.get_balances(wneon, sender_account.address)
@@ -166,7 +157,9 @@ class TestWNeon:
 
         neon_balance_before, wneon_balance_before = self.get_balances(wneon, recipient_account.address)
 
-        instruction_tx = wneon.functions.withdraw(full_amount).build_transaction(self.make_tx_object(recipient_account))
+        instruction_tx = wneon.functions.withdraw(full_amount).build_transaction(
+            self.web3_client.make_raw_tx(recipient_account)
+        )
 
         receipt = self.web3_client.send_transaction(recipient_account, instruction_tx)
         assert receipt["status"] == 1

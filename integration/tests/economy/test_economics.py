@@ -22,14 +22,13 @@ from web3.exceptions import Web3RPCError
 
 from utils import helpers
 from utils.accounts import EthAccounts
-from utils.consts import LAMPORT_PER_SOL, Time, COUNTER_ID
+from utils.consts import LAMPORT_PER_SOL, COUNTER_ID
 from utils.erc20 import ERC20
 from utils.helpers import wait_condition, gen_hash_of_block, serialize_instruction
 from utils.operator import Operator
 from utils.solana_client import SolanaClient
 from utils.types import TransactionType
 from utils.web3client import NeonChainWeb3Client, Web3Client
-from .const import INSUFFICIENT_FUNDS_ERROR, GAS_LIMIT_ERROR, BIG_STRING
 from .steps import (
     assert_profit,
     get_gas_used_percent,
@@ -39,6 +38,7 @@ from .steps import (
     sum_balances,
     assert_tokens_volumes_stayed_same,
 )
+from ..basic.helpers.assert_message import ErrorMessage
 
 from ..basic.helpers.chains import make_nonce_the_biggest_for_chain
 
@@ -191,7 +191,7 @@ class TestEconomics:
         sum_of_tokens_before = sum_balances(w3_client, operator, [account_with_all_tokens, acc2])
         acc3 = w3_client.create_account()
 
-        with pytest.raises(Web3RPCError, match=INSUFFICIENT_FUNDS_ERROR):
+        with pytest.raises(Web3RPCError, match=ErrorMessage.INSUFFICIENT_FUNDS.value.lower()):
             w3_client.send_tokens(acc2, acc3, transfer_amount, tx_type=tx_type)
 
         sol_balance_after = operator.get_solana_balance()
@@ -232,27 +232,27 @@ class TestEconomics:
 
         get_gas_used_percent(w3_client, transfer_tx)
 
-    def test_erc721_mint(self, erc721, client_and_price, account_with_all_tokens, sol_price, operator):
-        w3_client, token_price = client_and_price
+    def test_erc721_mint(self, erc721, web3_client, sol_price, operator, neon_price, accounts):
         sol_balance_before = operator.get_solana_balance()
-        token_balance_before = operator.get_token_balance(w3_client)
-        sum_of_tokens_before = sum_balances(w3_client, operator, [account_with_all_tokens])
-        seed = w3_client.text_to_bytes32(gen_hash_of_block(8))
+        token_balance_before = operator.get_token_balance(web3_client)
+        sender = accounts[0]
+        sum_of_tokens_before = sum_balances(web3_client, operator, [sender])
+        seed = web3_client.text_to_bytes32(gen_hash_of_block(8))
 
-        erc721.mint(seed, account_with_all_tokens.address, "uri")
+        erc721.mint(seed, sender.address, "uri")
 
         wait_condition(lambda: sol_balance_before > operator.get_solana_balance())
         sol_balance_after = operator.get_solana_balance()
-        token_balance_after = operator.get_token_balance(w3_client)
+        token_balance_after = operator.get_token_balance(web3_client)
 
-        sum_of_tokens_after = sum_balances(w3_client, operator, [account_with_all_tokens])
+        sum_of_tokens_after = sum_balances(web3_client, operator, [sender])
         assert_tokens_volumes_stayed_same(sum_of_tokens_before, sum_of_tokens_after)
 
         sol_diff = sol_balance_before - sol_balance_after
 
         assert sol_balance_before > sol_balance_after
-        token_diff = w3_client.to_main_currency(token_balance_after - token_balance_before)
-        assert_profit(sol_diff, sol_price, token_diff, token_price, w3_client.native_token_name)
+        token_diff = web3_client.to_main_currency(token_balance_after - token_balance_before)
+        assert_profit(sol_diff, sol_price, token_diff, neon_price, web3_client.native_token_name)
 
     @pytest.mark.parametrize("tx_type", TransactionType)
     @pytest.mark.eip_1559
@@ -489,7 +489,7 @@ class TestEconomics:
         acc2 = w3_client.create_account()
         w3_client.send_tokens(account_with_all_tokens, acc2, value=1, tx_type=tx_type)
 
-        with pytest.raises(Web3RPCError, match=INSUFFICIENT_FUNDS_ERROR):
+        with pytest.raises(Web3RPCError, match=ErrorMessage.INSUFFICIENT_FUNDS.value.lower()):
             w3_client.deploy_and_get_contract(
                 contract="common/Counter",
                 version="0.8.10",
@@ -746,7 +746,7 @@ class TestEconomics:
         tx = w3_client.make_raw_tx(from_=account_with_all_tokens.address, gas=1000, tx_type=tx_type)
         instruction_tx = counter_contract_two_chain.functions.moreInstruction(0, 100).build_transaction(tx)
 
-        with pytest.raises(Web3RPCError, match=GAS_LIMIT_ERROR):
+        with pytest.raises(Web3RPCError, match=ErrorMessage.GAS_LIMIT_REACHED.value):
             w3_client.send_transaction(account_with_all_tokens, instruction_tx)
 
         sol_balance_after = operator.get_solana_balance()
@@ -780,7 +780,7 @@ class TestEconomics:
         tx = w3_client.make_raw_tx(from_=acc2.address, tx_type=tx_type)
 
         instruction_tx = counter_contract_two_chain.functions.moreInstruction(0, 1500).build_transaction(tx)
-        with pytest.raises(Web3RPCError, match=INSUFFICIENT_FUNDS_ERROR):
+        with pytest.raises(Web3RPCError, match=ErrorMessage.INSUFFICIENT_FUNDS.value.lower()):
             w3_client.send_transaction(acc2, instruction_tx)
 
         sol_balance_after = operator.get_solana_balance()
@@ -811,7 +811,8 @@ class TestEconomics:
         sum_of_tokens_before = sum_balances(w3_client, operator, [account_with_all_tokens])
 
         tx = w3_client.make_raw_tx(from_=account_with_all_tokens.address, tx_type=tx_type)
-        instruction_tx = counter_contract_two_chain.functions.bigString(BIG_STRING).build_transaction(tx)
+        big_string = "a" * 2024
+        instruction_tx = counter_contract_two_chain.functions.bigString(big_string).build_transaction(tx)
         receipt = w3_client.send_transaction(account_with_all_tokens, instruction_tx)
 
         check_alt_off(w3_client, sol_client, receipt)
@@ -950,7 +951,7 @@ class TestEconomics:
         contract_address = w3_client.to_checksum_address(
             w3_client.keccak(rlp.encode((bytes.fromhex(account_with_all_tokens.address[2:]), nonce)))[-20:].hex()
         )
-        with pytest.raises(Web3RPCError, match=GAS_LIMIT_ERROR):
+        with pytest.raises(Web3RPCError, match=ErrorMessage.GAS_LIMIT_REACHED.value):
             w3_client.send_tokens(
                 from_=account_with_all_tokens,
                 to=contract_address,
@@ -983,8 +984,6 @@ class TestEconomics:
         )
         get_gas_used_percent(w3_client, contract_deploy_tx)
 
-    @pytest.mark.slow
-    @pytest.mark.timeout(16 * Time.MINUTE)
     @pytest.mark.parametrize("tx_type", TransactionType)
     @pytest.mark.eip_1559
     def test_trx_alt_on(
@@ -1135,7 +1134,6 @@ class TestEconomics:
         )
         get_gas_used_percent(web3_client, receipt)
 
-    @pytest.mark.timeout(30 * Time.MINUTE)
     @pytest.mark.slow
     @pytest.mark.parametrize("value", [20, 30])
     @pytest.mark.parametrize("tx_type", TransactionType)

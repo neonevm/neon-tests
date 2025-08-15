@@ -10,7 +10,8 @@ from utils.consts import Unit
 @allure.feature("Ethereum compatibility")
 @allure.story("Verify RLP decoding with invalid values")
 class TestTrxRlpDecoding:
-    def modify_raw_trx(self, signed_tx, new_v=None, new_r=None, new_s=None):
+    @staticmethod
+    def modify_raw_trx(signed_tx, new_v=None, new_r=None, new_s=None):
         decoded_tx = rlp.decode(signed_tx.raw_transaction)
         if new_s is not None:
             decoded_tx[-1] = new_s
@@ -34,8 +35,8 @@ class TestTrxRlpDecoding:
             "nonce": web3_client.eth.get_transaction_count(acc.address),
         }
 
-        signed_tx = web3_client.eth.account.sign_transaction(transaction, acc.key)
-        return signed_tx
+        tx = web3_client.eth.account.sign_transaction(transaction, acc.key)
+        return tx
 
     @pytest.mark.parametrize(
         "new_v, expected_error",

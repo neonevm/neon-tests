@@ -7,7 +7,6 @@ from integration.tests.basic.helpers.rpc_checks import (
     assert_solana_trxs_in_neon_receipt,
     count_instructions,
 )
-from integration.tests.economy.const import BIG_STRING
 from utils.accounts import EthAccounts
 from utils.consts import COUNTER_ID
 from utils.helpers import gen_hash_of_block, generate_text, serialize_instruction
@@ -119,7 +118,8 @@ class TestInstruction:
     def test_step_from_account(self, counter_contract):
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account)
-        instruction_tx = counter_contract.functions.bigStringIterative(BIG_STRING).build_transaction(tx)
+        big_string = "a" * 2000
+        instruction_tx = counter_contract.functions.bigStringIterative(big_string).build_transaction(tx)
 
         resp = self.web3_client.send_transaction(sender_account, instruction_tx)
         response = self.web3_client.get_neon_trx_receipt(resp["transactionHash"].hex())

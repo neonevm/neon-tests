@@ -15,12 +15,12 @@ import solcx
 import web3
 from eth_abi import abi, decode
 from eth_abi.exceptions import InsufficientDataBytes
+from eth_typing import HexStr
 from eth_utils import keccak
 from semantic_version import Version
 from solana.rpc.commitment import Confirmed
 from solcx import link_code
 from solders.pubkey import Pubkey
-from solders.rpc.responses import GetTransactionResp
 from spl.token.client import Token as SplToken
 from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
 from spl.token.instructions import get_associated_token_address
@@ -36,6 +36,7 @@ def get_contract_abi(name, compiled):
     for key in compiled.keys():
         if name == key.rsplit(":")[-1]:
             return compiled[key]
+    return None
 
 
 @allure.step("Get contract interface")
@@ -137,12 +138,12 @@ def wait_condition(
 
 
 @allure.step("Decode function signature")
-def decode_function_signature(function_name: str, args=None) -> str:
+def decode_function_signature(function_name: str, args=None) -> HexStr:
     data = keccak(text=function_name)[:4]
     if args is not None:
         types = function_name.split("(")[1].split(")")[0].split(",")
         data += abi.encode(types, args)
-    return "0x" + data.hex()
+    return HexStr("0x" + data.hex())
 
 
 @allure.step("Decode function signature")
@@ -177,16 +178,6 @@ def get_selectors(abi_):
         encoded_selector = f"{function['name']}({input_types})"
         selectors.append(keccak(text=encoded_selector)[:4])
     return selectors
-
-
-def get_event_signatures(abi: tp.List[tp.Dict]) -> tp.List[str]:
-    """Get topics as keccak256 from abi Events"""
-    topics = []
-    for event in filter(lambda item: item["type"] == "event", abi):
-        input_types = ",".join(i["type"] for i in event["inputs"])
-        signature = f"{event['name']}({input_types})"
-        topics.append(f"0x{keccak(signature.encode()).hex()}")
-    return topics
 
 
 @allure.step("Create non-existing account address")
@@ -233,10 +224,6 @@ def pubkey2neon_address(pubkey: Pubkey) -> bytes:
     return bytes_part
 
 
-def to_little_endian_byte(value: int) -> bytes:
-    return value.to_bytes(1, "little")
-
-
 def ether2bytes(ether: typing.Union[str, bytes]):
     if isinstance(ether, str):
         if ether.startswith("0x"):
@@ -277,18 +264,6 @@ def case_snake_to_camel(snake_str: str) -> str:
 
 def padhex(s, size):
     return "0x" + s[2:].zfill(size)
-
-
-def split_into_tuples(collection: tp.Collection[T], length: int) -> tuple[tuple[T, ...], ...]:
-    return tuple(tuple(collection[i : i + length]) for i in range(0, len(collection), length))
-
-
-def get_key_index_from_solana_tx(tx: GetTransactionResp, key: Pubkey) -> int:
-    for index, account_key in enumerate(tx.value.transaction.transaction.message.account_keys):
-        if account_key == key:
-            return index
-    else:
-        raise LookupError(f"Key {key} not found in transaction {tx.value}")
 
 
 # Selector for revert and panic in Solidity.
@@ -344,11 +319,11 @@ def decode_error_output(data_hex):
 
 def withdraw_neon_to_solana_eth_sign(web3_client, withdraw_from, withdraw_to, withdraw_contract):
     amount = web3_client.get_balance(withdraw_from)
-    assert amount > 0, "Withdraw value shoul be > 0"
+    assert amount > 0, "Withdraw value should be > 0"
     data = decode_function_signature("withdraw_on_chain(bytes32)", [bytes(withdraw_to.pubkey())])
     """
         Withdraw contract requires trx value to be divisible to 10**9,
-        remainings of the value are dropped with // operation.
+        remaining of the value are dropped with // operation.
     """
     tx_estimate = web3_client.make_raw_tx(
         from_=withdraw_from, to=withdraw_contract.address, amount=(amount // 10**9) * 10**9, data=data
@@ -369,7 +344,7 @@ def withdraw_neon_to_solana_sol_sign(
     ata_balance_before = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
 
     amount = web3_client_sol.get_balance(withdraw_from.checksum_address)
-    assert amount > 0, "Withdraw value shoul be > 0"
+    assert amount > 0, "Withdraw value should be > 0"
     data = decode_function_signature("withdraw_on_chain(bytes32)", [bytes(withdraw_to.pubkey())])
     trx_estimate_obj = ScheduledTrxEstimateRequest(
         withdraw_from.checksum_address, withdraw_contract.address, data, amount
@@ -378,12 +353,12 @@ def withdraw_neon_to_solana_sol_sign(
     gas = web3_client_sol.gas_price() * int(estimate_result["gasList"][0], 16)
     """
         withdraw contract requires trx value to be divisible to 10**9
-        remainings of the value are dropped with // operation
+        remaining of the value are dropped with // operation
     """
     trx_estimate_obj.value = ((trx_estimate_obj.value - gas) // 10**9) * 10**9
     tx = ScheduledTransaction.from_estimate_result(0, trx_estimate_obj, estimate_result)
     evm_loader.create_tree_account(withdraw_from, treasury_pool, tx.encode())
-    web3_client_sol.wait_for_transaction_receipt(tx.hash())["status"] == 1
+    assert web3_client_sol.wait_for_transaction_receipt(tx.hash())["status"] == 1
 
     ata_balance_after = int(spl_token.get_balance(ata, commitment=Confirmed).value.amount)
     assert ata_balance_after >= ata_balance_before + trx_estimate_obj.value // 10**9

@@ -1,7 +1,6 @@
 import allure
 import pytest
 import web3
-from _pytest.config import Config
 from eth_account.signers.local import LocalAccount
 from solana.rpc.commitment import Commitment
 from solders.keypair import Keypair
@@ -9,8 +8,8 @@ from solders.pubkey import Pubkey
 from spl.token.client import Token as SplToken
 from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
 from spl.token.instructions import get_associated_token_address
-from web3 import exceptions as web3_exceptions
 from web3.contract import Contract
+from web3.exceptions import ContractLogicError, Web3RPCError
 
 from utils.accounts import EthAccounts
 from utils.consts import LAMPORT_PER_SOL, MULTITOKEN_MINTS_USDT
@@ -103,19 +102,15 @@ class TestWithdraw:
         receipt = self.web3_client.send_transaction(sender_acc, instruction_tx)
         assert receipt["status"] == 1
 
-    @pytest.mark.parametrize(
-        "move_amount, error", [(11000, web3.exceptions.ContractLogicError), (10000, web3.exceptions.Web3RPCError)]
-    )
+    @pytest.mark.parametrize("move_amount, error", [(11000, ContractLogicError), (10000, Web3RPCError)])
     def test_failed_withdraw_insufficient_balance(
-        self, pytestconfig: Config, move_amount, error, withdraw_contract, neon_mint, solana_account
+        self, move_amount, error, withdraw_contract, neon_mint, solana_account
     ):
         amount = move_amount * pow(10, 18)
         with pytest.raises(error):
             self.withdraw(self.accounts.create_account(10000), solana_account, amount, withdraw_contract)
 
-    def test_success_withdraw_to_non_existing_account(
-        self, pytestconfig: Config, withdraw_contract, neon_mint, solana_account, bank_account
-    ):
+    def test_success_withdraw_to_non_existing_account(self, withdraw_contract, neon_mint, solana_account, bank_account):
         """Should successfully withdraw NEON tokens to previously non-existing Associated Token Account"""
         sender_account = self.accounts[0]
         dest_acc = Keypair()
@@ -132,9 +127,7 @@ class TestWithdraw:
         assert int(destination_balance_after.value.amount) == int(move_amount / 1_000_000_000)
 
     @pytest.mark.mainnet
-    def test_success_withdraw_to_existing_account(
-        self, pytestconfig: Config, withdraw_contract, neon_mint, solana_account
-    ):
+    def test_success_withdraw_to_existing_account(self, withdraw_contract, neon_mint, solana_account):
         """Should successfully withdraw NEON tokens to existing Associated Token Account"""
         sender_account = self.accounts[0]
 
@@ -158,7 +151,7 @@ class TestWithdraw:
         sender_account = self.accounts[0]
         move_amount = pow(10, 18) + 123
 
-        with pytest.raises(web3_exceptions.ContractLogicError):
+        with pytest.raises(ContractLogicError):
             self.withdraw(sender_account, solana_account, move_amount, withdraw_contract)
 
     def test_withdraw_wrapped_sol(
@@ -217,7 +210,7 @@ class TestWithdraw:
         solana_account = Keypair()
         amount = 100
         tx = web3_client_sol.make_raw_tx(from_=account_with_all_tokens, amount=amount)
-        with pytest.raises(web3_exceptions.ContractLogicError) as exc_info:
+        with pytest.raises(ContractLogicError) as exc_info:
             withdraw_contract_sol_chain.functions.withdraw_on_chain(bytes(solana_account.pubkey())).build_transaction(
                 tx
             )
@@ -234,7 +227,7 @@ class TestWithdraw:
     ):
         amount = 1 * 10**9
         tx = web3_client_sol.make_raw_tx(from_=account_with_all_tokens, amount=amount)
-        with pytest.raises(web3_exceptions.ContractLogicError) as exc_info:
+        with pytest.raises(ContractLogicError) as exc_info:
             withdraw_contract_sol_chain.functions.withdraw_on_chain(
                 self.web3_client.chain_id, bytes(solana_account.pubkey())
             ).build_transaction(tx)

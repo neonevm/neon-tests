@@ -1,14 +1,12 @@
 import logging
-from decimal import Decimal
+from decimal import Decimal, getcontext
 import pytest
 import allure
 from eth_account.signers.local import LocalAccount
 
 
-from integration.tests.economy.const import DECIMAL_CONTEXT
 from utils.consts import (
     LAMPORT_PER_SOL,
-    Time,
     PAYMENT_FOR_TRX_FINISHING,
     PAYMENT_FOR_TREE_ACCOUNT_DELETING,
     TRX_EXECUTION_PRICE,
@@ -22,6 +20,9 @@ from utils.solana_data_for_neon_trx_helper import get_alt_by_neon_trx
 from utils.web3client import Web3Client
 
 logger = logging.getLogger(__name__)
+
+DECIMAL_CONTEXT = getcontext()
+DECIMAL_CONTEXT.prec = 9
 
 
 @allure.step("Verify operator profit")
@@ -67,7 +68,7 @@ def wait_until_alt_deleted(web3_client, sol_client, receipt):
     if alt is not None:
         wait_condition(
             lambda: not sol_client.account_exists(alt),
-            timeout_sec=10 * Time.MINUTE,
+            timeout_sec=10 * 60,
             delay=3,
         )
 

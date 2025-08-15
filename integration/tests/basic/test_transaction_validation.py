@@ -118,9 +118,9 @@ class TestTransactionsValidation:
         )
         address = contract_deploy_tx["contractAddress"]
 
-        contractTwo, _ = self.web3_client.deploy_and_get_contract(
+        contract_two, _ = self.web3_client.deploy_and_get_contract(
             "issues/ndev1004/ContractTwo", "0.8.15", account=sender_account
         )
-        balance = contractTwo.functions.getBalance().call()
+        balance = contract_two.functions.getBalance().call()
         assert balance == 0
-        contractTwo.functions.depositOnContractOne(address).call()
+        contract_two.functions.depositOnContractOne(address).call()

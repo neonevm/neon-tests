@@ -24,8 +24,7 @@ from spl.token.client import Token
 from spl.token.constants import TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address, create_associated_token_account
 
-from integration.tests.economy.const import TX_COST
-from utils.consts import COMPUTE_BUDGET_ID, InstructionTags, LAMPORT_PER_SOL
+from utils.consts import COMPUTE_BUDGET_ID, InstructionTags, LAMPORT_PER_SOL, TRX_EXECUTION_PRICE
 from utils.helpers import wait_condition
 from utils.logger import log_text_to_allure_and_stdout
 
@@ -213,7 +212,7 @@ class SolanaClient(solana.rpc.api.Client):
     @allure.step("Drain SOL")
     def drain_sol(self, from_: Keypair, to: Pubkey):
         balance = self.get_solana_balance(from_.pubkey())
-        amount_lamports = max(0, balance - TX_COST)
+        amount_lamports = max(0, balance - TRX_EXECUTION_PRICE)
 
         if amount_lamports > 0:
             self.send_sol(

@@ -1,9 +1,6 @@
 from eth_account.signers.local import LocalAccount
-from _pytest.config import Config
 
 from utils import web3client
-
-pytestconfig: Config
 
 
 class ERC20:

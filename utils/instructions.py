@@ -592,6 +592,29 @@ def make_container_allocate(
     )
 
 
+@log_instruction_fields("make_container_disassemble")
+def make_container_disassemble(
+    operator: Keypair,
+    treasury: TreasuryPool,
+    container_address: Pubkey,
+    evm_loader_id: Pubkey,
+    contract_accounts: list = None,
+):
+    data = InstructionTags.CONTAINER_DISASSEMBLE + treasury.buffer
+    accounts = [
+        AccountMeta(pubkey=operator.pubkey(), is_signer=True, is_writable=True),
+        AccountMeta(pubkey=treasury.account, is_signer=False, is_writable=True),
+        AccountMeta(pubkey=sp.ID, is_signer=False, is_writable=False),
+        AccountMeta(pubkey=container_address, is_signer=False, is_writable=True),
+    ]
+    if contract_accounts is not None:
+        for acc in contract_accounts:
+            accounts.append(
+                AccountMeta(acc, is_signer=False, is_writable=True),
+            )
+    return Instruction(program_id=evm_loader_id, data=data, accounts=accounts)
+
+
 def make_increment_counter(counter_resource_address: Pubkey) -> Instruction:
     return Instruction(
         program_id=COUNTER_ID,

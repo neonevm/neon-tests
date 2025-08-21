@@ -74,6 +74,254 @@ def test_assemble_and_allocate_container(
     check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
 
 
+def test_disassemble_not_allocated_container(
+    evm_loader,
+    operator_keypair,
+    treasury_pool,
+    sender_with_tokens,
+    neon_rpc_client,
+    rw_lock_contract_containerized_for_function,
+    holder_acc,
+):
+    function_signature = "update_storage(uint256)"
+    emulate_accounts = neon_rpc_client.get_additional_accounts_by_emulation(
+        sender=sender_with_tokens.eth_address.hex(),
+        contract=rw_lock_contract_containerized_for_function.eth_address.hex(),
+        function_signature=function_signature,
+        params=[10],
+    )
+    signed_tx = make_contract_call_trx(
+        evm_loader, sender_with_tokens, rw_lock_contract_containerized_for_function, function_signature, [10]
+    )
+    evm_loader.execute_transaction_steps_from_instruction(
+        operator_keypair, treasury_pool, holder_acc, signed_tx, emulate_accounts
+    )
+    data_accounts = evm_loader.filter_neon_accounts_by_type(emulate_accounts, AccountType.STORAGE)
+    accounts_len_before_assemble = len(
+        neon_rpc_client.get_container_accounts(rw_lock_contract_containerized_for_function.solana_address)
+    )
+
+    evm_loader.assemble_container(
+        operator=operator_keypair,
+        treasury=treasury_pool,
+        container_address=rw_lock_contract_containerized_for_function.solana_address,
+        accounts=data_accounts,
+    )
+    data_len_before = len(
+        evm_loader.get_solana_account_data(rw_lock_contract_containerized_for_function.solana_address)
+    )
+
+    accounts_len_before_disassemble = len(
+        neon_rpc_client.get_container_accounts(rw_lock_contract_containerized_for_function.solana_address)
+    )
+    evm_loader.disassemble_container(
+        operator=operator_keypair,
+        treasury=treasury_pool,
+        container_address=rw_lock_contract_containerized_for_function.solana_address,
+        accounts=data_accounts,
+    )
+
+    data_len_after = len(evm_loader.get_solana_account_data(rw_lock_contract_containerized_for_function.solana_address))
+    accounts_len_after_disassemble = len(
+        neon_rpc_client.get_container_accounts(rw_lock_contract_containerized_for_function.solana_address)
+    )
+
+    assert data_len_after < data_len_before
+    assert accounts_len_before_assemble == accounts_len_after_disassemble
+    assert accounts_len_after_disassemble < accounts_len_before_disassemble
+
+
+def test_disassemble_container_fully(
+    evm_loader,
+    operator_keypair,
+    treasury_pool,
+    neon_rpc_client,
+    session_user,
+    holder_acc,
+):
+    contract = evm_loader.deploy_contract(operator_keypair, session_user, "rw_lock", neon_rpc_client, treasury_pool)
+    function_signature = "update_storage(uint256)"
+    acc_count = 1
+
+    emulate_accounts = neon_rpc_client.get_additional_accounts_by_emulation(
+        sender=session_user.eth_address.hex(),
+        contract=contract.eth_address.hex(),
+        function_signature=function_signature,
+        params=[acc_count],
+    )
+
+    signed_tx = make_contract_call_trx(evm_loader, session_user, contract, function_signature, [acc_count])
+    evm_loader.execute_transaction_steps_from_instruction(
+        operator_keypair, treasury_pool, holder_acc, signed_tx, emulate_accounts
+    )
+
+    data_account = evm_loader.filter_neon_accounts_by_type(emulate_accounts, AccountType.STORAGE)
+
+    evm_loader.assemble_container(
+        operator=operator_keypair,
+        treasury=treasury_pool,
+        container_address=contract.solana_address,
+        accounts=data_account,
+    )
+
+    accounts_before = neon_rpc_client.get_container_accounts(contract.solana_address)
+
+    key_1 = str(contract.solana_address)
+    key_2 = str(data_account[0])
+
+    assert (key_1 in accounts_before[0]["pubkey"]) or (key_1 in accounts_before[1]["pubkey"])
+    assert (key_2 in accounts_before[0]["pubkey"]) or (key_2 in accounts_before[1]["pubkey"])
+    assert len(accounts_before) == 2
+
+    data_len_before = len(evm_loader.get_solana_account_data(contract.solana_address))
+
+    evm_loader.disassemble_container(
+        operator=operator_keypair,
+        treasury=treasury_pool,
+        container_address=contract.solana_address,
+        accounts=data_account,
+    )
+
+    data_len_after = len(evm_loader.get_solana_account_data(contract.solana_address))
+    accounts_len_after = len(neon_rpc_client.get_container_accounts(contract.solana_address))
+
+    assert data_len_after < data_len_before
+    assert accounts_len_after == 0
+
+
+def test_assemble_allocate_and_disassemble_container(
+    evm_loader,
+    operator_keypair,
+    treasury_pool,
+    sender_with_tokens,
+    neon_rpc_client,
+    rw_lock_contract_containerized_for_function,
+    holder_acc,
+):
+    accounts_len_before_assemble = len(
+        neon_rpc_client.get_container_accounts(rw_lock_contract_containerized_for_function.solana_address)
+    )
+
+    function_signature = "update_storage(uint256)"
+    emulate_accounts = neon_rpc_client.get_additional_accounts_by_emulation(
+        sender=sender_with_tokens.eth_address.hex(),
+        contract=rw_lock_contract_containerized_for_function.eth_address.hex(),
+        function_signature=function_signature,
+        params=[10],
+    )
+    signed_tx = make_contract_call_trx(
+        evm_loader, sender_with_tokens, rw_lock_contract_containerized_for_function, function_signature, [10]
+    )
+    evm_loader.execute_transaction_steps_from_instruction(
+        operator_keypair, treasury_pool, holder_acc, signed_tx, emulate_accounts
+    )
+    data_accounts = evm_loader.filter_neon_accounts_by_type(emulate_accounts, AccountType.STORAGE)
+    # assemble container and execute transaction with it
+    evm_loader.assemble_container(
+        operator=operator_keypair,
+        treasury=treasury_pool,
+        container_address=rw_lock_contract_containerized_for_function.solana_address,
+        accounts=data_accounts,
+    )
+    data_len_before = len(
+        evm_loader.get_solana_account_data(rw_lock_contract_containerized_for_function.solana_address)
+    )
+
+    accounts_len_after_assemble = len(
+        neon_rpc_client.get_container_accounts(rw_lock_contract_containerized_for_function.solana_address)
+    )
+    assert accounts_len_after_assemble > accounts_len_before_assemble
+
+    # allocate container and execute transaction with it
+    size = 256
+    evm_loader.allocate_container(
+        operator=operator_keypair,
+        treasury=treasury_pool,
+        container_address=rw_lock_contract_containerized_for_function.solana_address,
+        size=size,
+    )
+    data_len_after = len(evm_loader.get_solana_account_data(rw_lock_contract_containerized_for_function.solana_address))
+    assert data_len_after == data_len_before + size, "Container data length did not increase after allocation"
+    accounts_for_execution_with_container = [
+        rw_lock_contract_containerized_for_function.solana_address,
+        sender_with_tokens.solana_account_address,
+        sender_with_tokens.balance_account_address,
+    ]
+    signed_tx = make_contract_call_trx(
+        evm_loader, sender_with_tokens, rw_lock_contract_containerized_for_function, function_signature, [10]
+    )
+    resp = evm_loader.execute_transaction_steps_from_instruction(
+        operator_keypair,
+        treasury_pool,
+        holder_acc,
+        signed_tx,
+        accounts_for_execution_with_container,
+    )
+    check_transaction_logs_have_text(solana_client=evm_loader, trx=resp, text="exit_status=0x11")
+
+    evm_loader.disassemble_container(
+        operator=operator_keypair,
+        treasury=treasury_pool,
+        container_address=rw_lock_contract_containerized_for_function.solana_address,
+        accounts=data_accounts,
+    )
+
+    data_len_after_disassemble = len(
+        evm_loader.get_solana_account_data(rw_lock_contract_containerized_for_function.solana_address)
+    )
+    assert data_len_after > data_len_after_disassemble, "Container data length did not decrease after disassembling"
+
+    accounts_len_after_disassemble = len(
+        neon_rpc_client.get_container_accounts(rw_lock_contract_containerized_for_function.solana_address)
+    )
+    assert accounts_len_after_disassemble == accounts_len_before_assemble
+
+
+def test_deposit_neons_to_account_and_disassemble_container(
+    evm_loader,
+    operator_keypair,
+    treasury_pool,
+    neon_rpc_client,
+    rw_lock_contract_containerized_for_function,
+    user_account,
+):
+    evm_loader.assemble_container(
+        operator_keypair,
+        treasury_pool,
+        rw_lock_contract_containerized_for_function.solana_address,
+        [user_account.balance_account_address],
+    )
+    deposit_amount = 5000
+    evm_loader.deposit_neon(
+        operator_keypair,
+        user_account.eth_address.hex(),
+        deposit_amount,
+        rw_lock_contract_containerized_for_function.solana_address,
+    )
+
+    balance_data = neon_rpc_client.get_account_data_from_container(
+        rw_lock_contract_containerized_for_function.solana_address, user_account.balance_account_address
+    )
+    balance_account = BalanceAccount(balance_data)
+
+    assert balance_account.balance == deposit_amount * 10**9, "Balance after deposit is incorrect"
+
+    evm_loader.disassemble_container(
+        operator_keypair,
+        treasury_pool,
+        rw_lock_contract_containerized_for_function.solana_address,
+        [user_account.balance_account_address],
+    )
+
+    balance_data = neon_rpc_client.get_account_data_from_container(
+        rw_lock_contract_containerized_for_function.solana_address, user_account.balance_account_address
+    )
+    assert balance_data is None
+
+    balance_after_disassemble = evm_loader.get_neon_balance(user_account.eth_address.hex())
+    assert balance_after_disassemble == deposit_amount * 10**9, "Balance after container disassembling is incorrect"
+
+
 @pytest.mark.parametrize("execution_type", list(ExecuteTrxTypes))
 def test_execute_trx_with_containerized_contract(
     evm_loader,
@@ -359,33 +607,6 @@ def test_resize_storage_sell_in_container(
     check_transaction_logs_have_text(evm_loader, resp, "exit_status=0x11")
     container_size_after = len(evm_loader.get_solana_account_data(storage_checker_containerized.solana_address))
     assert container_size_after > container_size_before, "Container size did not increase after executing transaction"
-
-
-def test_deposit_neons_to_account_in_container(
-    evm_loader,
-    operator_keypair,
-    treasury_pool,
-    neon_rpc_client,
-    rw_lock_contract_containerized,
-    user_account,
-):
-    evm_loader.assemble_container(
-        operator_keypair,
-        treasury_pool,
-        rw_lock_contract_containerized.solana_address,
-        [user_account.balance_account_address],
-    )
-    deposit_amount = 5000
-    evm_loader.deposit_neon(
-        operator_keypair, user_account.eth_address.hex(), deposit_amount, rw_lock_contract_containerized.solana_address
-    )
-
-    balance_data = neon_rpc_client.get_account_data_from_container(
-        rw_lock_contract_containerized.solana_address, user_account.balance_account_address
-    )
-    balance_account = BalanceAccount(balance_data)
-
-    assert balance_account.balance == deposit_amount * 10**9, "Balance after deposit is incorrect"
 
 
 def test_limits_of_container_allocation(

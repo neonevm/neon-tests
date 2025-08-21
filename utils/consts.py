@@ -122,6 +122,7 @@ class InstructionTags(bytes, Enum):
     CONFIG_GET_VERSION = b"\xA7"
     CONTAINER_ALLOCATE = b"\x50"
     CONTAINER_ASSEMBLE = b"\x51"
+    CONTAINER_DISASSEMBLE = b"\x52"
 
 
 class NeonTxExitStatus(str, Enum):

@@ -59,6 +59,7 @@ from utils.instructions import (
     make_cancel,
     make_container_allocate,
     make_container_assemble,
+    make_container_disassemble,
 )
 from utils.neon_layouts.balance_account import BalanceAccount
 from utils.logger import log_text_to_allure_and_stdout
@@ -1075,6 +1076,12 @@ class EvmLoader(SolanaClient):
     def assemble_container(self, operator, treasury, container_address, accounts=None):
         trx = Transaction()
         trx.add(make_container_assemble(operator, treasury, container_address, self.loader_id, accounts))
+        return self.send_tx_and_check_status_ok(trx, operator)
+
+    @allure.step("Disassemble container")
+    def disassemble_container(self, operator, treasury, container_address, accounts=None):
+        trx = Transaction()
+        trx.add(make_container_disassemble(operator, treasury, container_address, self.loader_id, accounts))
         return self.send_tx_and_check_status_ok(trx, operator)
 
     def execute_neon_trx(

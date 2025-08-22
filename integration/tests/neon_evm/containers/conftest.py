@@ -131,6 +131,37 @@ def rw_lock_contract_containerized(
     return contract
 
 
+@pytest.fixture(scope="function")
+def rw_lock_contract_containerized_for_function(
+    evm_loader, operator_keypair, neon_rpc_client, session_user, treasury_pool, holder_acc
+) -> Contract:
+    contract = evm_loader.deploy_contract(operator_keypair, session_user, "rw_lock", neon_rpc_client, treasury_pool)
+    function_signature = "update_storage(uint256)"
+    acc_count = 3
+
+    emulate_accounts = neon_rpc_client.get_additional_accounts_by_emulation(
+        sender=session_user.eth_address.hex(),
+        contract=contract.eth_address.hex(),
+        function_signature=function_signature,
+        params=[acc_count],
+    )
+
+    signed_tx = make_contract_call_trx(evm_loader, session_user, contract, function_signature, [acc_count])
+    evm_loader.execute_transaction_steps_from_instruction(
+        operator_keypair, treasury_pool, holder_acc, signed_tx, emulate_accounts
+    )
+
+    data_accounts = evm_loader.filter_neon_accounts_by_type(emulate_accounts, AccountType.STORAGE)
+    evm_loader.assemble_container(
+        operator=operator_keypair,
+        treasury=treasury_pool,
+        container_address=contract.solana_address,
+        accounts=data_accounts,
+    )
+
+    return contract
+
+
 @pytest.fixture(scope="session")
 def revision_contract_containerized(
     evm_loader, operator_keypair, session_user, neon_rpc_client, treasury_pool, holder_acc

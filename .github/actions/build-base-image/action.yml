@@ -82,7 +82,7 @@ runs:
 
         # Check if there are changes in the requirements folder or Dockerfile-base
         if git diff --name-only HEAD origin/$parent_branch | \
-          grep -E "^requirements/|^Dockerfile-base$|^.github/actions/build-base-image/|^deploy/operator-keypairs/"; then
+          grep -E "^deploy/requirements/|^Dockerfile-base$|^.github/actions/build-base-image/|^deploy/operator-keypairs/"; then
           echo "Requirements folder | Dockerfile-base | Build-base-image action | operator-keypairs have changed "
           echo "changed=true" >> $GITHUB_OUTPUT
         else

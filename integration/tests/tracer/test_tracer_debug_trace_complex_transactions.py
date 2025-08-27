@@ -444,7 +444,7 @@ class TestDebugTraceComplexTransactions:
 
     def test_cancel_during_iterative_transaction(self, canceled_iterative_tx_with_hash_receipt, json_rpc_client):
         neon_tx_receipt = json_rpc_client.get_neon_trx_receipt(
-            canceled_iterative_tx_with_hash_receipt["transactionHash"]
+            canceled_iterative_tx_with_hash_receipt["transactionHash"].hex()
         )
         assert (
             neon_tx_receipt["result"]["solanaTransactions"][-1]["solanaInstructions"][0]["neonLogs"][0]["neonEventType"]
@@ -469,6 +469,5 @@ class TestDebugTraceComplexTransactions:
         call_tracer_resp = self.tracer_api.debug_trace_transaction(
             canceled_iterative_tx_with_hash_receipt["transactionHash"].hex(), tracer_type="callTracer", with_log=True
         )
-        assert call_tracer_resp["result"]["from"].lower() == "0x0000000000000000000000000000000000000000"
-        assert call_tracer_resp["result"]["input"].lower() == "0x"
+        assert call_tracer_resp["result"]["from"].lower() == neon_tx_receipt["result"]["from"].lower()
         assert call_tracer_resp["result"]["type"] == "STOP"

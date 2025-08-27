@@ -21,3 +21,4 @@ boto3==1.28.54
 deepdiff==7.0.1
 uv==0.1.13
 setuptools==80.9.0
+jsonschema==4.25.1

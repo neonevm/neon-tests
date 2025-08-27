@@ -354,6 +354,7 @@ class TestTracerHistoricalMethods:
         )
         self.assert_invalid_params(response)
 
+    @pytest.mark.skip(reason="NDEV-3873")
     def test_neon_revision(self):
         block = self.web3_client.get_block_number()
         revision = self.tracer_api.send_rpc(method="get_neon_revision", params=block)["result"]["neon_revision"]

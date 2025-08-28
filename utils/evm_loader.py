@@ -1068,20 +1068,26 @@ class EvmLoader(SolanaClient):
 
     @allure.step("Allocate container")
     def allocate_container(self, operator, treasury, container_address, size):
-        trx = Transaction()
+        trx = TransactionWithComputeBudget(operator)
         trx.add(make_container_allocate(operator, treasury, container_address, size, self.loader_id))
+        trx.recent_blockhash = self.get_latest_blockhash().value.blockhash
+        trx.fee_payer = operator.pubkey()
         return self.send_tx_and_check_status_ok(trx, operator)
 
     @allure.step("Assemble container")
     def assemble_container(self, operator, treasury, container_address, accounts=None):
-        trx = Transaction()
+        trx = TransactionWithComputeBudget(operator)
         trx.add(make_container_assemble(operator, treasury, container_address, self.loader_id, accounts))
+        trx.recent_blockhash = self.get_latest_blockhash().value.blockhash
+        trx.fee_payer = operator.pubkey()
         return self.send_tx_and_check_status_ok(trx, operator)
 
     @allure.step("Disassemble container")
     def disassemble_container(self, operator, treasury, container_address, accounts=None):
-        trx = Transaction()
+        trx = TransactionWithComputeBudget(operator)
         trx.add(make_container_disassemble(operator, treasury, container_address, self.loader_id, accounts))
+        trx.recent_blockhash = self.get_latest_blockhash().value.blockhash
+        trx.fee_payer = operator.pubkey()
         return self.send_tx_and_check_status_ok(trx, operator)
 
     def execute_neon_trx(

@@ -598,7 +598,7 @@ def make_container_disassemble(
     treasury: TreasuryPool,
     container_address: Pubkey,
     evm_loader_id: Pubkey,
-    contract_accounts: list = None,
+    remove_accounts: list = None,
 ):
     data = InstructionTags.CONTAINER_DISASSEMBLE + treasury.buffer
     accounts = [
@@ -607,8 +607,8 @@ def make_container_disassemble(
         AccountMeta(pubkey=sp.ID, is_signer=False, is_writable=False),
         AccountMeta(pubkey=container_address, is_signer=False, is_writable=True),
     ]
-    if contract_accounts is not None:
-        for acc in contract_accounts:
+    if remove_accounts is not None:
+        for acc in remove_accounts:
             accounts.append(
                 AccountMeta(acc, is_signer=False, is_writable=True),
             )

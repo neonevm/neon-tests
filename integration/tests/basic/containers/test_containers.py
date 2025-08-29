@@ -16,6 +16,7 @@ from utils.solana_interoperability_helper import prepare_transfer_spl_data
 from utils.web3client import NeonChainWeb3Client
 
 
+@pytest.mark.only_stands
 @allure.feature("Containers")
 @allure.story("Send trxs with containers")
 @pytest.mark.usefixtures("accounts", "web3_client")

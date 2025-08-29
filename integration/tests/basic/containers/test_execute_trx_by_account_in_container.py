@@ -13,6 +13,7 @@ from utils.scheduled_trx import ScheduledTrxEstimateRequest, CreateTreeAccMultip
 from utils.web3client import NeonChainWeb3Client
 
 
+@pytest.mark.only_stands
 @allure.feature("Containers")
 @allure.story("Send trxs by accounts in containers")
 @pytest.mark.usefixtures("accounts", "web3_client")

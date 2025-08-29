@@ -19,8 +19,6 @@ from allure_commons.model2 import TestResult, StatusDetails
 from solana.rpc.commitment import Confirmed
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
-from spl.token.client import Token as SplToken
-from spl.token.constants import TOKEN_PROGRAM_ID, WRAPPED_SOL_MINT
 from web3.middleware import ExtraDataToPOAMiddleware
 
 import allure
@@ -299,14 +297,16 @@ def bank_account(pytestconfig: Config, sol_client_session: SolanaClient) -> Gene
             raise ValueError("set BANK_PRIVATE_KEY or BANK_PRIVATE_KEY_MAINNET env variable")
         key = base58.b58decode(private_key)
         account = Keypair.from_bytes(key)
-
-    if pytestconfig.environment.use_bank:
-        ata = sol_client_session.create_associate_token_acc(account, account, WRAPPED_SOL_MINT)
-
     yield account
-    if pytestconfig.environment.use_bank:
-        spl_token = SplToken(sol_client_session, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID, account)
-        spl_token.close_account(account=ata, dest=account.pubkey(), authority=account)
+
+    # TODO: enable after fix NDEV-3795, resolve multiworkers run
+    # if pytestconfig.environment.use_bank:
+    #     ata = sol_client_session.create_associate_token_acc(account, account, WRAPPED_SOL_MINT)
+
+    # yield account
+    # if pytestconfig.environment.use_bank:
+    #     spl_token = SplToken(sol_client_session, WRAPPED_SOL_MINT, TOKEN_PROGRAM_ID, account)
+    #     spl_token.close_account(account=ata, dest=account.pubkey(), authority=account)
 
 
 @pytest.fixture(scope="session")

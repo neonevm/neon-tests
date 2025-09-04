@@ -95,19 +95,6 @@
     "neon_erc20wrapper_address": "0x053e3d1b12726f648B2e45CEAbDF9078B742576D",
     "default_cu_price": 210000
   },
-  "geth": {
-    "evm_loader": "",
-    "proxy_url": "http://3.67.164.222:8545",
-    "network_ids": {
-      "neon": 22222
-    },
-    "solana_url": "",
-    "faucet_url": "",
-    "tracer_url": "",
-    "spl_neon_mint": "",
-    "neon_erc20wrapper_address": "",
-    "eth_bank_account": "0x9c10beb3e7eae0fa3e4695fe378bfa3bbf668aded6440e4a8412844d319c19b4"
-  },
   "tracer_ci": {
     "evm_loader": "53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io",
     "proxy_url": "http://proxy:9090/",

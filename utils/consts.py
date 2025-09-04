@@ -69,7 +69,6 @@ class EnvName(str, Enum):
     TESTNET = "testnet"
     LOCAL = "local"
     TERRAFORM = "terraform"
-    GETH = "geth"
     TRACER_CI = "tracer_ci"
     CUSTOM = "custom"
     DOCKER_NET = "docker_net"

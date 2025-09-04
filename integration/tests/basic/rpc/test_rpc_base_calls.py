@@ -111,7 +111,6 @@ class TestRpcBaseCalls:
         assert "error" not in response, "Error not in response"
         assert "result" in response, "Result not in response"
 
-    @pytest.mark.mainnet
     @pytest.mark.parametrize("tag", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST])
     def test_eth_call(self, tag, json_rpc_client):
         """Verify implemented rpc calls work eth_call"""
@@ -152,7 +151,6 @@ class TestRpcBaseCalls:
         assert rpc_checks.is_hex(response["result"]), AssertMessage.WRONG_AMOUNT.value
         EthGetBalanceResult(**response)
 
-    @pytest.mark.mainnet
     @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, None])
     @pytest.mark.neon_only
     # since there's no tracer on devnet, "earliest" == "latest" over there
@@ -178,7 +176,6 @@ class TestRpcBaseCalls:
                 result
             ), "Response result hex str should not consist only of zeros"
 
-    @pytest.mark.mainnet
     def test_eth_get_code_sender_address(self, json_rpc_client):
         sender_account = self.accounts[0]
         response = json_rpc_client.send_rpc(
@@ -219,7 +216,6 @@ class TestRpcBaseCalls:
         assert int(response["result"]) == self.web3_client.eth.chain_id, f"Invalid response result {response['result']}"
         NetVersionResult(**response)
 
-    @pytest.mark.mainnet
     def test_eth_send_raw_transaction(self, json_rpc_client):
         """Verify implemented rpc calls work eth_sendRawTransaction"""
         sender_account = self.accounts[0]
@@ -260,7 +256,6 @@ class TestRpcBaseCalls:
         )
         assert rpc_checks.is_hex(contract.address)
 
-    @pytest.mark.mainnet
     def test_eth_block_number(self, json_rpc_client):
         """Verify implemented rpc calls work work eth_blockNumber"""
         response = json_rpc_client.send_rpc(method="eth_blockNumber")
@@ -268,7 +263,6 @@ class TestRpcBaseCalls:
         assert rpc_checks.is_hex(response["result"]), f"Invalid response result {response['result']}"
         EthResult(**response)
 
-    @pytest.mark.mainnet
     def test_eth_block_number_next_block_different(self, json_rpc_client):
         response = json_rpc_client.send_rpc(method="eth_blockNumber")
         assert wait_condition(
@@ -276,7 +270,6 @@ class TestRpcBaseCalls:
         )
 
     # Geth returns different error message for None NDEV-3169
-    @pytest.mark.mainnet
     @pytest.mark.parametrize("param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, Tag.SAFE, Tag.FINALIZED, None])
     @pytest.mark.neon_only
     def test_eth_get_storage_at(self, event_caller_contract, param: tp.Union[Tag, None], json_rpc_client):
@@ -328,7 +321,6 @@ class TestRpcBaseCalls:
         assert new_data in web3.Web3.to_text(response["result"]), "wrong variable value"
         EthGetStorageAt(**response)
 
-    @pytest.mark.mainnet
     @pytest.mark.neon_only
     def test_eth_mining(self, json_rpc_client):
         """Verify implemented rpc calls work eth_mining"""
@@ -337,7 +329,6 @@ class TestRpcBaseCalls:
         assert isinstance(response["result"], bool), f"Invalid response: {response['result']}"
         EthMiningResult(**response)
 
-    @pytest.mark.mainnet
     def test_eth_syncing(self, json_rpc_client):
         """Verify implemented rpc calls work eth_syncing"""
         response = json_rpc_client.send_rpc(method="eth_syncing")
@@ -349,7 +340,6 @@ class TestRpcBaseCalls:
                 assert not response.result, err_msg
         EthSyncingResult(**response)
 
-    @pytest.mark.mainnet
     def test_net_peer_count(self, json_rpc_client):
         """Verify implemented rpc calls work net_peerCount"""
         response = json_rpc_client.send_rpc(method="net_peerCount")

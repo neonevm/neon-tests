@@ -30,7 +30,6 @@ class TestLogs:
         assert event_logs[0].args == {}
         assert event_logs[0].event == "NonArgs"
 
-    @pytest.mark.mainnet
     def test_all_types_args_event(self, event_caller_contract):
         sender_account = self.accounts[0]
         tx = self.web3_client.make_raw_tx(sender_account)

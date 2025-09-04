@@ -33,7 +33,6 @@ class TestRpcGetBlock:
         recipient_account = self.accounts[1]
         return self.web3_client.send_neon(sender_account, recipient_account, 1)
 
-    @pytest.mark.mainnet
     @pytest.mark.parametrize("full_trx", [False, True])
     def test_eth_get_block_by_hash(
         self, full_trx: bool, json_rpc_client: JsonRPCSession, env_name: EnvName, send_neon_transaction
@@ -73,7 +72,6 @@ class TestRpcGetBlock:
         assert "result" in response and response["result"] is None, "Result should be None"
         EthGetBlockByHashResult(**response)
 
-    @pytest.mark.mainnet
     @pytest.mark.parametrize("full_trx", [False, True])
     def test_eth_get_block_by_number_via_numbers(
         self, full_trx: bool, json_rpc_client: JsonRPCSession, env_name: EnvName, send_neon_transaction

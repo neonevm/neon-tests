@@ -3,7 +3,6 @@ import random
 import allure
 import pytest
 import web3
-from _pytest.config import Config
 from solana.rpc.commitment import Confirmed
 from solana.rpc.types import TokenAccountOpts
 from solana.transaction import Transaction
@@ -43,16 +42,13 @@ class TestERC20SPL:
     sol_client: SolanaClient
 
     @pytest.fixture(scope="class")
-    def erc20_contract(self, erc20_spl, eth_bank_account, pytestconfig: Config) -> ERC20Wrapper:
-        if pytestconfig.getoption("--network") == "mainnet":
-            self.web3_client.send_neon(eth_bank_account, erc20_spl.owner.address, 10)
+    def erc20_contract(self, erc20_spl) -> ERC20Wrapper:
         return erc20_spl
 
     @pytest.fixture
     def restore_balance(self, erc20_contract):
         pass
 
-    @pytest.mark.mainnet
     def test_metaplex_data(self, erc20_contract):
         metaplex.wait_account_info(self.sol_client, erc20_contract.token_mint.pubkey)
         metadata = metaplex.get_metadata(self.sol_client, erc20_contract.token_mint.pubkey)
@@ -60,7 +56,6 @@ class TestERC20SPL:
         assert metadata["data"]["symbol"] == erc20_contract.symbol
         assert metadata["is_mutable"] is True
 
-    @pytest.mark.mainnet
     def test_balanceOf(self, erc20_contract):
         recipient_account = self.accounts[1]
         transfer_amount = random.randint(0, 1000)
@@ -83,7 +78,6 @@ class TestERC20SPL:
         symbol = erc20_contract.contract.functions.symbol().call()
         assert symbol == erc20_contract.symbol
 
-    @pytest.mark.mainnet
     def test_name(self, erc20_contract):
         name = erc20_contract.contract.functions.name().call()
         assert name == erc20_contract.name
@@ -146,7 +140,6 @@ class TestERC20SPL:
         with pytest.raises(Web3RPCError, match=msg):
             erc20_contract.burn(erc20_contract.owner, 1, **param)
 
-    @pytest.mark.mainnet
     def test_burnFrom(self, erc20_contract, restore_balance):
         new_account = self.accounts[1]
         balance_before = erc20_contract.contract.functions.balanceOf(erc20_contract.owner.address).call()

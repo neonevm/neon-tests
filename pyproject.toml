@@ -16,7 +16,6 @@ timeout = 800
 markers = [
     "only_stands: these tests work only on test stands",
     "only_devnet: these tests work only on devnet env",
-    "mainnet: these tests can be run on mainnet",
     "multipletokens: these tests work only on stands with several chains",
     "slow: these tests are slow and should be run separately",
     "bug: mark for tests containing bugs which need to be fixed or refactored",

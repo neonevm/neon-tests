@@ -92,7 +92,6 @@ class TestRpcGetLogs:
 
     @pytest.mark.parametrize("method", [Method.NEON_GET_LOGS, Method.ETH_GET_LOGS])
     @pytest.mark.parametrize("param_fields", [("address", "topics"), ("address",), ("topics",)])
-    @pytest.mark.mainnet
     def test_get_logs_blockhash(
         self, method, event_caller_contract, param_fields, json_rpc_client, trx_with_big_amount_of_logs
     ):

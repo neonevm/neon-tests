@@ -485,8 +485,6 @@ def run(
     command = commands[name]
 
     if name == "basic":
-        if network == EnvName.MAINNET:
-            command += " -m mainnet"
         if network == EnvName.DEVNET:
             command += " --retries 3 --retry-delay 2"
 

@@ -88,10 +88,7 @@ def assert_block_fields(
         assert result["extraData"].startswith("0x")  # this field's value is optional
 
         difficulty = result["totalDifficulty"]
-        if env_name is EnvName.GETH:
-            assert is_hex(difficulty)
-        else:
-            assert difficulty == "0x0"
+        assert difficulty == "0x0"
 
     assert result["uncles"] == []
     transactions = result["transactions"]

@@ -18,7 +18,6 @@ from _pytest.runner import runtestprotocol
 from allure_commons.model2 import TestResult, StatusDetails
 from solana.rpc.commitment import Confirmed
 from solders.keypair import Keypair
-from web3.middleware import ExtraDataToPOAMiddleware
 
 import allure
 from integration.tests.neon_evm.utils.constants import ACCOUNT_SEED_VERSION
@@ -248,8 +247,6 @@ def web3_client_session(
         environment.proxy_url,
         tracer_url=environment.tracer_url,
     )
-    if env_name is EnvName.GETH:
-        client._web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
     return client
 
 

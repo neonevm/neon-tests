@@ -509,8 +509,7 @@ def run(
         return
 
     if name == "tracer":
-        if network != EnvName.GETH:
-            assert wait_for_tracer_service(network)
+        assert wait_for_tracer_service(network)
 
     if case:
         if " " in case:

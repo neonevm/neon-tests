@@ -732,7 +732,7 @@ def eip1559_setup(
         assert receipt.status == 1
 
         # Sleep to make sure the next transaction goes to the next block
-        min_pause = 3 if env_name is EnvName.GETH else 0.4
+        min_pause = 0.4
         pause = min_pause - (time.time() - start)
         if pause > 0:
             time.sleep(pause)

@@ -24,7 +24,6 @@ class TestRejectingContractsStartingWith0xEF:
     accounts: EthAccounts
 
     @pytest.mark.parametrize("data", BAD_CALLDATA)
-    @pytest.mark.bug  # Geth raises ValueError("{'code': -32000, 'message': 'invalid code: must not begin with 0xef'}")
     def test_sent_incorrect_calldata_via_trx(self, data):
         sender_account = self.accounts[0]
         with pytest.raises(web3.exceptions.ContractLogicError, match=EIP_3541_ERROR_MESSAGE):

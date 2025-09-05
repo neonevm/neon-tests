@@ -140,9 +140,7 @@ class TestRpcGetTransaction:
             else:
                 EthGetBlockByNumberAndIndexNoneResult(**response)
 
-    # Geth returns invalid argument 0: hex string has length 62, want 64 for common.Hash
     @pytest.mark.parametrize("method", ["neon_getTransactionReceipt", "eth_getTransactionReceipt"])
-    @pytest.mark.neon_only
     def test_get_transaction_receipt_with_incorrect_hash(self, method, json_rpc_client):
         """Verify implemented rpc calls work with neon_getTransactionReceipt and eth_getTransactionReceipt
         when transaction hash is not correct"""
@@ -170,7 +168,6 @@ class TestRpcGetTransaction:
             EthResult(**response)
 
     @pytest.mark.parametrize("param", [32, 16, None])
-    @pytest.mark.bug  # fails on geth (returns a different error message), needs a fix, and refactor of Error32602
     def test_eth_get_transaction_by_hash_negative(self, param: tp.Union[int, None], json_rpc_client):
         response = json_rpc_client.send_rpc(
             method="eth_getTransactionByHash",
@@ -215,7 +212,6 @@ class TestRpcGetTransaction:
         EthGetTransactionByHashResult(**response)
 
     @pytest.mark.parametrize("method", ["neon_getTransactionReceipt", "eth_getTransactionReceipt"])
-    @pytest.mark.neon_only
     def test_get_transaction_receipt(self, method, json_rpc_client):
         """Verify implemented rpc calls work with neon_getTransactionReceipt and eth_getTransactionReceipt"""
         sender_account = self.accounts[0]
@@ -253,7 +249,6 @@ class TestRpcGetTransaction:
         EthGetTransactionReceiptResult(**response)
 
     @pytest.mark.parametrize("method", ["neon_getTransactionReceipt", "eth_getTransactionReceipt"])
-    @pytest.mark.neon_only
     def test_eth_get_transaction_receipt_when_hash_doesnt_exist(self, method, json_rpc_client):
         """Verify implemented rpc calls work eth_getTransactionReceipt when transaction hash doesn't exist"""
         response = json_rpc_client.send_rpc(method=method, params=gen_hash_of_block(32))
@@ -269,7 +264,6 @@ class TestRpcGetTransaction:
             (["0x874E87B5ccb467f07Ca42cF82e11aD44c7be159F", None], Error32602.CODE, Error32602.INVALID_NONCE),
         ],
     )
-    @pytest.mark.bug  # Geth returns code 32601
     def test_neon_get_transaction_by_sender_nonce_negative(self, params, error_code, error_message, json_rpc_client):
         response = json_rpc_client.send_rpc(method="neon_getTransactionBySenderNonce", params=params)
         assert "error" in response, "error field not in response"
@@ -278,7 +272,6 @@ class TestRpcGetTransaction:
         assert error_code == response["error"]["code"]
         assert error_message == response["error"]["message"]
 
-    @pytest.mark.neon_only
     def test_neon_get_transaction_by_sender_nonce_plus_one(self, json_rpc_client):
         """Request nonce+1, which is not exist"""
         sender_account = self.accounts[0]
@@ -292,7 +285,6 @@ class TestRpcGetTransaction:
         assert "error" not in response
         assert response["result"] is None
 
-    @pytest.mark.neon_only
     def test_neon_get_transaction_by_sender_nonce(self, json_rpc_client):
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
@@ -315,7 +307,6 @@ class TestRpcGetTransaction:
             {"hash": "transactionHash"},
         )
 
-    @pytest.mark.neon_only
     @pytest.mark.parametrize(
         "params_case, method",
         [
@@ -366,7 +357,6 @@ class TestRpcGetTransaction:
         # transactions_with_sig = web3_client_sol.get_solana_trx_by_neon(tx_receipt.transactionHash.hex())
         # assert result["scheduledSolanaSignature"] in transactions_with_sig["result"]
 
-    @pytest.mark.neon_only
     def test_get_scheduled_transaction_by_sender_nonce(
         self,
         json_sol_rpc_client,
@@ -408,7 +398,6 @@ class TestRpcGetTransaction:
 
         wait_condition(lambda: not evm_loader.account_exists(tree_account), timeout_sec=120, delay=2)
 
-    @pytest.mark.neon_only
     @pytest.mark.parametrize(
         "params_case, method",
         [
@@ -485,7 +474,6 @@ class TestRpcGetTransaction:
         # assert result["scheduledSolanaSignature"] in transactions_with_sig["result"]
 
     @pytest.mark.parametrize("method", ["neon_getTransactionReceipt", "eth_getTransactionReceipt"])
-    @pytest.mark.neon_only
     def test_get_scheduled_transaction_receipt(
         self,
         method,
@@ -533,7 +521,6 @@ class TestRpcGetTransaction:
         assert result["logs"] == []
 
     @pytest.mark.parametrize("method", ["neon_getTransactionReceipt", "eth_getTransactionReceipt"])
-    @pytest.mark.neon_only
     def test_get_multiple_scheduled_transaction_receipt(
         self,
         json_rpc_client,

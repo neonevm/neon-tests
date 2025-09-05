@@ -9,7 +9,6 @@ from utils.web3client import NeonChainWeb3Client
 
 @allure.feature("EIP Verifications")
 @allure.story("EIP-1559: Verify new fields in eth_ JSON-RPC methods")
-@pytest.mark.neon_only
 @pytest.mark.eip_1559
 class TestRpcEthMethods:
     def test_get_transaction_by_hash(
@@ -108,7 +107,6 @@ class TestRpcEthMethods:
         assert int(result["maxFeePerGas"], 16) > 0
         assert int(result["maxPriorityFeePerGas"], 16) > 0
 
-    @pytest.mark.neon_only
     @pytest.mark.parametrize(
         argnames="full_transaction_objects",
         argvalues=(True, False),
@@ -148,7 +146,6 @@ class TestRpcEthMethods:
         block_base_fee = int(result["baseFeePerGas"], 16)
         assert block_base_fee > 0
 
-    @pytest.mark.neon_only
     @pytest.mark.parametrize(
         argnames="full_transaction_objects",
         argvalues=(True, False),

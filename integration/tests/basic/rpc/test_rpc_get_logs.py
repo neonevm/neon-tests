@@ -28,9 +28,6 @@ class Method(str, Enum):
 @allure.feature("JSON-RPC validation")
 @allure.story("Verify getLogs method")
 @pytest.mark.usefixtures("accounts", "web3_client")
-@pytest.mark.neon_only
-# it's better to split thi class into two, since all these tests have both Neon and Ethereum parameters.
-# Otherwise, we have 0 Geth tests for get_logs
 class TestRpcGetLogs:
     accounts: EthAccounts
     web3_client: NeonChainWeb3Client

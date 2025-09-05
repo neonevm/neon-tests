@@ -28,7 +28,6 @@ from utils.scheduled_trx import ScheduledTrxEstimateRequest
 
 @allure.feature("JSON-RPC validation")
 @allure.story("Verify JSON-RPC neon_estimateScheduledGas work")
-@pytest.mark.neon_only
 class TestNeonRPCEstimateScheduledGas:
 
     def test_estimate_one_transaction(self, web3_client_sol, neon_user, common_contract, evm_loader):

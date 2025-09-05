@@ -18,8 +18,6 @@ markers = [
     "only_devnet: these tests work only on devnet env",
     "multipletokens: these tests work only on stands with several chains",
     "slow: these tests are slow and should be run separately",
-    "bug: mark for tests containing bugs which need to be fixed or refactored",
-    "neon_only: tests for Neon functionality",
     "eip_1559: tests covering EIP-1559 functionality",
     "need_eip1559_blocks: values passed to this marker will be used by fixture eip1559_setup",
     "cost_report: enables Cost Report data collection for this test",

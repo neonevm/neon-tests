@@ -11,5 +11,5 @@ Tests for rpc get block
 | TestRpcGetBlock::test_eth_get_block_by_number_with_incorrect_data  | Try to get block by number with bad params          |           |
 | TestRpcGetBlock::test_eth_get_block_by_number_with_not_exist_data  | Try to get block by number with bad params          |           |
 | TestRpcGetBlock::test_eth_get_block_by_number_via_tags             | Get block by number with tags                       |           |
-| TestRpcGetBlock::test_eth_get_block_by_number_with_big_int         | Get block by unexpectedly large int                 | NDEV-3072 |
-| TestRpcGetBlock::test_eth_get_block_by_number_via_tags             | Get block by one of Tags: earliest, latest, pending | NDEV-3072 |
+| TestRpcGetBlock::test_eth_get_block_by_number_with_big_int         | Get block by unexpectedly large int                 |           |
+| TestRpcGetBlock::test_eth_get_block_by_number_via_tags             | Get block by one of Tags: earliest, latest, pending |           |

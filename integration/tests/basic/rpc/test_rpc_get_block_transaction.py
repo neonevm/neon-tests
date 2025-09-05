@@ -22,7 +22,6 @@ class TestRpcGetBlockTransaction:
     accounts: EthAccounts
 
     @pytest.mark.parametrize("param", [32, 16, None])
-    @pytest.mark.bug  # fails on geth (returns a different error message), needs a fix, and refactor of the test
     def test_eth_get_block_transaction_count_by_hash_negative(self, param: tp.Union[int, None], json_rpc_client):
         response = json_rpc_client.send_rpc(
             method="eth_getBlockTransactionCountByHash",

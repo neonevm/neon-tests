@@ -28,7 +28,6 @@ class TestRpcEstimateGas:
     web3_client: NeonChainWeb3Client
 
     @pytest.mark.parametrize("block_param", [Tag.LATEST, Tag.PENDING, Tag.EARLIEST, Tag.FINALIZED, 1, None])
-    @pytest.mark.neon_only
     @pytest.mark.only_stands
     def test_eth_estimate_gas_different_block_param(self, block_param: tp.Union[int, Tag, None], json_rpc_client):
         sender_account = self.accounts[0]
@@ -59,7 +58,6 @@ class TestRpcEstimateGas:
         EthEstimateGas(**response)
         assert int(response["result"], 16) == _MIN_GAS_LIMIT
 
-    @pytest.mark.bug  # fails on geth (returns a different error message), needs a fix, and refactor of Error32602
     def test_eth_estimate_gas_negative(self, json_rpc_client):
         response = json_rpc_client.send_rpc(method="eth_estimateGas", params=[])
         assert "error" in response, "error field not in response"
@@ -73,7 +71,6 @@ class TestRpcEstimateGas:
 
     @pytest.mark.parametrize("contract_name", ["BigGasFactory1", "BigGasFactory2"])
     @pytest.mark.parametrize("process_gas, reserve_gas", [(850_000, 15_000), (8_500_000, 150_000)])
-    @pytest.mark.neon_only
     def test_eth_estimate_gas_with_big_int(self, contract_name, process_gas, reserve_gas, json_rpc_client):
         sender_account = self.accounts.create_account()
 
@@ -110,7 +107,6 @@ class TestRpcEstimateGas:
         assert gas_estimate >= int(deploy_trx_big_gas["gasUsed"]), "Estimated Gas < Used Gas"
         EthEstimateGas(**response)
 
-    @pytest.mark.neon_only  # Geth returns a different estimate
     @pytest.mark.only_stands
     def test_rpc_estimate_gas_send_neon(self):
         sender_account = self.accounts[0]
@@ -122,7 +118,6 @@ class TestRpcEstimateGas:
         estimated_gas = transaction["gas"]
         assert estimated_gas == _MIN_GAS_LIMIT
 
-    @pytest.mark.neon_only  # Geth returns a different estimate
     @pytest.mark.only_stands
     def test_rpc_estimate_gas_erc20(self, erc20_simple, env_name: EnvName):
         recipient_account = self.accounts[1]
@@ -133,7 +128,6 @@ class TestRpcEstimateGas:
         estimated_gas = transaction["gas"]
         assert estimated_gas == 2_087_407
 
-    @pytest.mark.neon_only  # Geth returns a different estimate
     @pytest.mark.only_stands
     def test_rpc_estimate_gas_spl(self, erc20_spl):
         recipient_account = self.accounts.create_account()
@@ -141,7 +135,6 @@ class TestRpcEstimateGas:
         transaction = self.web3_client.get_transaction_by_hash(tx_receipt["transactionHash"])
         assert transaction["gas"] == 3_004_911
 
-    @pytest.mark.neon_only  # Geth returns a different estimate
     @pytest.mark.only_stands
     def test_rpc_estimate_gas_contract_get_value(self, common_contract):
         sender_account = self.accounts[0]
@@ -154,7 +147,6 @@ class TestRpcEstimateGas:
         estimated_gas = transaction["gas"]
         assert estimated_gas == _MIN_GAS_LIMIT
 
-    @pytest.mark.neon_only  # Geth returns a different estimate
     @pytest.mark.only_stands
     def test_rpc_estimate_gas_contract_set_value(self, common_contract):
         sender_account = self.accounts[0]
@@ -166,7 +158,6 @@ class TestRpcEstimateGas:
         estimated_gas = transaction["gas"]
         assert estimated_gas == _MIN_GAS_LIMIT
 
-    @pytest.mark.neon_only  # Geth returns a different estimate
     @pytest.mark.only_stands
     def test_rpc_estimate_gas_contract_calls_another_contract(self, common_contract):
         sender_account = self.accounts[0]

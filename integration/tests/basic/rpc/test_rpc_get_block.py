@@ -55,7 +55,6 @@ class TestRpcGetBlock:
         "hash_len, full_trx",
         [(31, False), ("bad_hash", True)],
     )
-    @pytest.mark.bug  # fails on geth (returns a different error message), needs a fix, and refactor of Error32602
     def test_eth_get_block_by_hash_with_incorrect_hash(self, hash_len, full_trx, json_rpc_client):
         """Verify implemented rpc calls work eth_getBlockByHash with incorrect hash"""
         block_hash = gen_hash_of_block(hash_len) if isinstance(hash_len, int) else hash_len
@@ -92,7 +91,6 @@ class TestRpcGetBlock:
         else:
             EthGetBlockByHashResult(**response)
 
-    @pytest.mark.bug  # fails on geth (returns a different error message), needs a fix, and refactor of Error32602
     def test_eth_get_block_by_number_with_incorrect_data(self, json_rpc_client):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
         response = json_rpc_client.send_rpc(method="eth_getBlockByNumber", params=["bad_tag", True])
@@ -108,7 +106,6 @@ class TestRpcGetBlock:
             (8, False),
         ],
     )
-    @pytest.mark.bug  # fails on geth (returns a different error message), needs a fix, and refactor of Error32602
     def test_eth_get_block_by_number_with_not_exist_data(self, number, full_trx, json_rpc_client):
         """Verify implemented rpc calls work eth_getBlockByNumber"""
         response = json_rpc_client.send_rpc(method="eth_getBlockByNumber", params=[gen_hash_of_block(number), full_trx])

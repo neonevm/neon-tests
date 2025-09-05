@@ -19,7 +19,6 @@ from utils.web3client import NeonChainWeb3Client
 @allure.feature("JSON-RPC validation")
 @allure.story("Verify events")
 @pytest.mark.usefixtures("accounts", "web3_client", "sol_client")
-@pytest.mark.neon_only
 class TestInstruction:
     web3_client: NeonChainWeb3Client
     accounts: EthAccounts

@@ -16,7 +16,7 @@ class TestERC1820PseudoIntrospectionRegistryContract:
     ):
         account = accounts[0]
 
-        if env_name in (EnvName.DEVNET, EnvName.MAINNET):
+        if env_name in (EnvName.DEVNET):
             registry_address = "0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24"
 
         else:

@@ -22,7 +22,6 @@ class TestRpcGetBlockTransaction:
     accounts: EthAccounts
 
     @pytest.mark.parametrize("param", [32, 16, None])
-    @pytest.mark.bug  # fails on geth (returns a different error message), needs a fix, and refactor of the test
     def test_eth_get_block_transaction_count_by_hash_negative(self, param: tp.Union[int, None], json_rpc_client):
         response = json_rpc_client.send_rpc(
             method="eth_getBlockTransactionCountByHash",
@@ -43,7 +42,6 @@ class TestRpcGetBlockTransaction:
         assert code == Error32602.CODE, "wrong code"
         assert Error32602.INVALID_BLOCKHASH in message, "wrong message"
 
-    @pytest.mark.mainnet
     def test_eth_get_block_transaction_count_by_hash(self, json_rpc_client):
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]
@@ -72,7 +70,6 @@ class TestRpcGetBlockTransaction:
         assert rpc_checks.is_hex(response["result"]), f"Invalid response: {response['result']}"
         EthResult(**response)
 
-    @pytest.mark.mainnet
     @pytest.mark.parametrize("tag", [Tag.LATEST, Tag.EARLIEST, Tag.PENDING])
     def test_eth_get_block_transaction_count_by_number_tags(self, tag: Tag, json_rpc_client):
         response = json_rpc_client.send_rpc(method="eth_getBlockTransactionCountByNumber", params=tag.value)
@@ -81,7 +78,6 @@ class TestRpcGetBlockTransaction:
         assert rpc_checks.is_hex(result), f"Invalid response: {result}"
         EthResult(**response)
 
-    @pytest.mark.mainnet
     def test_eth_get_block_transaction_count_by_number(self, json_rpc_client):
         sender_account = self.accounts[0]
         recipient_account = self.accounts[1]

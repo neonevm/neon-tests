@@ -485,8 +485,6 @@ def run(
     command = commands[name]
 
     if name == "basic":
-        if network == EnvName.MAINNET:
-            command += " -m mainnet"
         if network == EnvName.DEVNET:
             command += " --retries 3 --retry-delay 2"
 
@@ -511,8 +509,7 @@ def run(
         return
 
     if name == "tracer":
-        if network != EnvName.GETH:
-            assert wait_for_tracer_service(network)
+        assert wait_for_tracer_service(network)
 
     if case:
         if " " in case:

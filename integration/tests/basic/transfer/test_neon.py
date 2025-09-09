@@ -17,7 +17,6 @@ class TestNeonTransfer:
     accounts: EthAccounts
 
     @pytest.mark.parametrize("transfer_amount", [0, 0.1, 1, 0.000000001])
-    @pytest.mark.mainnet
     def test_send_neon_from_one_account_to_another(self, transfer_amount: tp.Union[int, float]):
         """Send neon from one account to another"""
         sender_account = self.accounts[0]

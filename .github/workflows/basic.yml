@@ -286,8 +286,6 @@ jobs:
         run: |
           docker pull ${{ env.IMAGE }}:${{ needs.dockerize.outputs.tag }}
           docker run -i -d -e CI -e GITHUB_RUN_ID -e GITHUB_WORKFLOW \
-            -e ETH_BANK_PRIVATE_KEY_MAINNET=${{ secrets.ETH_BANK_PRIVATE_KEY_MAINNET }} \
-            -e BANK_PRIVATE_KEY_MAINNET=${{ secrets.BANK_PRIVATE_KEY_MAINNET }} \
             -e BANK_PRIVATE_KEY=${{ secrets.BANK_PRIVATE_KEY }} \
             -e FAUCET_REFUND_ADDRESS \
             -e DEVNET_SOLANA_URL \

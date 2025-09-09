@@ -8,7 +8,6 @@ from utils.web3client import NeonChainWeb3Client
 
 @allure.feature("EIP Verifications")
 @allure.story("EIP-1559: Verify new fields in neon_ JSON-RPC methods")
-@pytest.mark.neon_only
 @pytest.mark.eip_1559
 class TestRpcNeonMethods:
     def test_neon_get_transaction_by_sender_nonce(

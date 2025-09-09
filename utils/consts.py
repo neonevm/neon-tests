@@ -64,13 +64,11 @@ class Unit(Enum):
 
 
 class EnvName(str, Enum):
-    MAINNET = "mainnet"
     DEVNET = "devnet"
     DEVNET_2 = "devnet-2"
     TESTNET = "testnet"
     LOCAL = "local"
     TERRAFORM = "terraform"
-    GETH = "geth"
     TRACER_CI = "tracer_ci"
     CUSTOM = "custom"
     DOCKER_NET = "docker_net"

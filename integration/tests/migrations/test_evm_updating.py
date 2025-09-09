@@ -27,7 +27,6 @@ Expected Result:
 
 
 @pytest.mark.usefixtures("accounts", "web3_client")
-@pytest.mark.neon_only
 class TestEvmUpdating:
     web3_client: NeonChainWeb3Client
     accounts: EthAccounts

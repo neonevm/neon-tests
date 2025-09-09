@@ -235,7 +235,6 @@ class TestEIP1559:
             access_list=None,
         )
 
-    @pytest.mark.neon_only
     def test_transfer_invalid_chain_id_negative(
         self,
         json_rpc_client: JsonRPCSession,
@@ -408,7 +407,6 @@ class TestEIP1559:
             tx_hash = self.web3_client.eth.send_raw_transaction(signed_tx.raw_transaction)
             self.web3_client._web3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
 
-    @pytest.mark.neon_only
     @pytest.mark.only_stands
     def test_compute_unit_price_default_value(
         self,
@@ -451,7 +449,6 @@ class TestEIP1559:
         cu_price_actual = sol_client.get_compute_budget_set_cu_price_from_tx(solana_transaction)
         assert cu_price_actual == default_cu_price
 
-    @pytest.mark.neon_only
     @pytest.mark.only_stands
     def test_compute_unit_price_estimated_value(
         self,
@@ -572,7 +569,6 @@ class TestRpcMaxPriorityFeePerGas:
 @allure.feature("EIP Verifications")
 @allure.story("EIP-1559: Verify JSON-RPC method eth_feeHistory")
 @pytest.mark.usefixtures("eip1559_setup")
-@pytest.mark.neon_only
 @pytest.mark.eip_1559
 class TestRpcFeeHistory:
     """
@@ -629,7 +625,6 @@ class TestRpcFeeHistory:
                 reward = int(tx_reward, 16)
                 assert reward >= 0
 
-    @pytest.mark.neon_only
     def test_positive_zero_block_count(
         self,
         json_rpc_client: JsonRPCSession,
@@ -652,7 +647,6 @@ class TestRpcFeeHistory:
         assert int(fee_history.oldestBlock, 16) == 0
         assert fee_history.reward == []
 
-    @pytest.mark.neon_only
     @pytest.mark.need_eip1559_blocks(3)
     @pytest.mark.parametrize("reward_percentiles", ([], [50]))
     def test_positive_fewer_blocks_than_count(
@@ -862,7 +856,6 @@ class TestAccessList:
 
 @allure.feature("EIP Verifications")
 @allure.story("EIP-1559: multiple tokens")
-@pytest.mark.neon_only
 @pytest.mark.eip_1559
 class TestMultipleTokens:
     @pytest.mark.multipletokens

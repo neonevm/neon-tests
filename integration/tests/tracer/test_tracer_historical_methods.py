@@ -28,7 +28,6 @@ class TestTracerHistoricalMethods:
         assert response["error"]["code"] == -32602, "Invalid error code"
         assert response["error"]["message"] == "Invalid params"
 
-    # GETH: NDEV-3252
     def test_eth_call_without_params(self):
         response = self.tracer_api.send_rpc(method="eth_call", params=[None])
         assert "error" in response, "Error not in response"
@@ -77,7 +76,6 @@ class TestTracerHistoricalMethods:
             timeout_sec=120,
         )
 
-    # GETH: NDEV-3250
     def test_eth_call_invalid_params(self, storage_object):
         sender_account = self.accounts[0]
         store_value_1 = random.randint(0, 100)
@@ -151,7 +149,6 @@ class TestTracerHistoricalMethods:
             timeout_sec=120,
         )
 
-    # GETH: NDEV-3250
     def test_eth_get_storage_at_invalid_params(self):
         response = self.tracer_api.send_rpc(
             method="eth_getTransactionCount", req_type="blockNumber", params=["0x0", {"blockNumber": "0x001"}]
@@ -199,7 +196,6 @@ class TestTracerHistoricalMethods:
             timeout_sec=120,
         )
 
-    # GETH: NDEV-3250
     def test_eth_get_transaction_count_invalid_params(self):
         response = self.tracer_api.send_rpc(
             method="eth_getTransactionCount", req_type="blockNumber", params=["0x0", {"blockNumber": "0x001"}]
@@ -282,7 +278,6 @@ class TestTracerHistoricalMethods:
             timeout_sec=120,
         )
 
-    # GETH: NDEV-3250
     def test_eth_get_balance_invalid_params(self):
         sender_account = self.accounts[0]
         response = self.tracer_api.send_rpc(
@@ -290,7 +285,6 @@ class TestTracerHistoricalMethods:
         )
         self.assert_invalid_params(response)
 
-    # GETH: NDEV-3251, NDEV-3252
     def test_eth_get_code(self, storage_contract_with_deploy_tx):
         storage_contract_code = (
             storage_contract_with_deploy_tx[0]
@@ -345,7 +339,6 @@ class TestTracerHistoricalMethods:
             timeout_sec=120,
         )
 
-    # GETH: NDEV-3250
     def test_eth_get_code_invalid_params(self, storage_contract_with_deploy_tx):
         response = self.tracer_api.send_rpc(
             method="eth_getCode",

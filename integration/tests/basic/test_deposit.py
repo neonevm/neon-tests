@@ -126,7 +126,6 @@ class TestWithdraw:
         destination_balance_after = spl_neon_token.get_balance(dest_token_acc, commitment=Commitment("confirmed"))
         assert int(destination_balance_after.value.amount) == int(move_amount / 1_000_000_000)
 
-    @pytest.mark.mainnet
     def test_success_withdraw_to_existing_account(self, withdraw_contract, neon_mint, solana_account):
         """Should successfully withdraw NEON tokens to existing Associated Token Account"""
         sender_account = self.accounts[0]

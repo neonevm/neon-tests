@@ -101,30 +101,14 @@ class TestDebugTraceTransactionCallTracer:
         return expected_response
 
     @allure.step("Check tracer response matches expected response")
-    def assert_response_contains_expected(self, pytestconfig, expected_response, response, sort_calls=False):
+    def assert_response_contains_expected(self, expected_response, response, sort_calls=False):
         if sort_calls:
             expected_response["calls"] = sorted(expected_response["calls"], key=lambda d: d["type"])
             response["result"]["calls"] = sorted(response["result"]["calls"], key=lambda d: d["type"])
 
-        if pytestconfig.getoption("--network") == "geth":
-            # we do not fill whole response, that is why we skip some of fields
-            # we can build compare function for each field in the future if it needed
-            exclude_list = ["root['gas']", "root['output']", "root['value']"]
-            if "calls" in expected_response:
-                for i in range(len(expected_response["calls"])):
-                    exclude_list.append(f"root['calls'][{i}]['to']")
-                    exclude_list.append(f"root['calls'][{i}]['gas']")
-                    exclude_list.append(f"root['calls'][{i}]['gasUsed']")
-                    exclude_list.append(f"root['calls'][{i}]['input']")
-                    exclude_list.append(f"root['calls'][{i}]['output']")
-                    exclude_list.append(f"root['calls'][{i}]['value']")
-                    exclude_list.append(f"root['calls'][{i}]['logs'][0]['address']")
-                    exclude_list.append(f"root['calls'][{i}]['logs'][0]['position']")
-        else:
-            exclude_list = []
         logging.debug(f"Expected response: {expected_response}")
         logging.debug(f"Response: {response['result']}")
-        diff = DeepDiff(expected_response, response["result"], exclude_paths=exclude_list)
+        diff = DeepDiff(expected_response, response["result"], exclude_paths=[])
         # check if expected_response is subset of response
         assert "dictionary_item_removed" not in diff
         # check if expected_response and response match in identical keys
@@ -348,10 +332,7 @@ class TestDebugTraceTransactionCallTracer:
             revert_in_called_contract_tx_receipt["transactionHash"].hex()
         )
         address_to = tx_data["to"].lower()
-        if pytestconfig.getoption("--network") == "geth":
-            reason = "insufficient balance for transfer"
-        else:
-            reason = f"Insufficient balance for transfer, account = {address_to}, chain = {self.web3_client.eth.chain_id}, required = 1"
+        reason = f"Insufficient balance for transfer, account = {address_to}, chain = {self.web3_client.eth.chain_id}, required = 1"
         expected_response = self.fill_expected_response(
             tx_data, revert_in_called_contract_tx_receipt, logs=True, revert=True, error=reason
         )

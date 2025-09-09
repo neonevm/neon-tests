@@ -1,6 +1,5 @@
 import inspect
 import logging
-import os
 import random
 import string
 import time
@@ -97,8 +96,6 @@ def eth_bank_account(pytestconfig: Config, web3_client_session) -> tp.Generator[
     account = None
     if pytestconfig.environment.eth_bank_account != "":
         account = web3_client_session.eth.account.from_key(pytestconfig.environment.eth_bank_account)
-    if pytestconfig.getoption("--network") == "mainnet":
-        account = web3_client_session.eth.account.from_key(os.environ.get("ETH_BANK_PRIVATE_KEY_MAINNET"))
     yield account
 
 
@@ -429,16 +426,12 @@ def withdraw_contract_sol_chain(
 
 @pytest.fixture(scope="class")
 def common_contract(web3_client, accounts, pytestconfig) -> tp.Generator[Contract, None, None]:
-    if pytestconfig.getoption("--network") == "mainnet":
-        address = os.environ.get("MAINNET_COMMON_CONTRACT_ADDRESS")
-        contract = web3_client.get_deployed_contract(address, "common/Common", contract_name="Common")
-    else:
-        contract, tx = web3_client.deploy_and_get_contract(
-            contract="common/Common",
-            version="0.8.12",
-            contract_name="Common",
-            account=accounts[0],
-        )
+    contract, tx = web3_client.deploy_and_get_contract(
+        contract="common/Common",
+        version="0.8.12",
+        contract_name="Common",
+        account=accounts[0],
+    )
     yield contract
 
 
@@ -739,7 +732,7 @@ def eip1559_setup(
         assert receipt.status == 1
 
         # Sleep to make sure the next transaction goes to the next block
-        min_pause = 3 if env_name is EnvName.GETH else 0.4
+        min_pause = 0.4
         pause = min_pause - (time.time() - start)
         if pause > 0:
             time.sleep(pause)

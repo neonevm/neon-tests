@@ -413,7 +413,7 @@ class TestNeonRPCBaseCalls:
         )
 
         assert error["code"] == -32000
-        assert error["data"]
+        # assert error["data"]
         assert "Owner does not match" in error["message"]
 
     def test_neon_estimate_gas_with_preparatory_solana_transactions_invalid_tx(

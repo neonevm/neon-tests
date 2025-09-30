@@ -412,7 +412,7 @@ class TestNeonRPCBaseCalls:
             preparatory_solana_instructions=trx.instructions,
         )
 
-        assert error["code"] == 117
+        assert error["code"] == -32000
         assert error["data"]
         assert "Owner does not match" in error["message"]
 

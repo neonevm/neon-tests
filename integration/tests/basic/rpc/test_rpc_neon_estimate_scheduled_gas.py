@@ -562,5 +562,5 @@ class TestNeonRPCEstimateScheduledGas:
             preparatory_solana_trxs=trx.instructions,
             check_result=False,
         )
-        assert resp["error"]["code"] == 117
+        assert resp["error"]["code"] == -32000
         assert "invalid instruction data" in resp["error"]["message"], "wrong error message"
